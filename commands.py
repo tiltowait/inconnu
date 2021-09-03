@@ -22,6 +22,12 @@ async def new_character(ctx, *args):
     await inconnu.newchar.parse(ctx, *args)
 
 
+@bot.command(name="update", aliases=["u", "up"])
+async def update_character(ctx, *args):
+    """Update a character's parameters but not the traits."""
+    await inconnu.update.parse(ctx, *args)
+
+
 # Events
 
 @bot.event

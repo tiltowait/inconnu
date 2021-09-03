@@ -1,0 +1,227 @@
+"""update/paramupdate.py - Functions for updating a character's non-trait parameters."""
+
+import re
+
+from ..constants import character_db, DAMAGE, valid_splats
+
+
+def update_name(guildid: int, userid: int, charid: int, new_name: str):
+    """Update the character's name."""
+    if not re.match(r"[A-z_]+", new_name):
+        raise ValueError("Names may only contain letters and underscores.")
+
+    character_db.rename_character(guildid, userid, charid, new_name)
+
+
+def update_splat(guildid: int, userid: int, charid: int, new_splat: str):
+    """Updates the character's splat."""
+    try:
+        splat = valid_splats[new_splat]
+        character_db.set_splat(guildid, userid, charid, splat)
+    except KeyError:
+        splats = map(lambda splat: f"`{splat}`", valid_splats)
+        splats = ", ".join(splats)
+        raise ValueError(f"The `splat` must be one of: {splats}.") # pylint: disable=raise-missing-from
+
+
+def update_health(guildid: int, userid: int, charid: int, new_max: str):
+    """Update the character's maximum HP. If decreasing, this truncates from the right."""
+    __update_track(guildid, userid, charid, "health", new_max)
+
+
+def update_willpower(guildid: int, userid: int, charid: int, new_max: str):
+    """Update the character's maximum WP. If decreasing, this truncates from the right."""
+    __update_track(guildid, userid, charid, "willpower", new_max)
+
+
+def update_humanity(guildid: int, userid: int, charid: int, delta: str):
+    """Update the character's humanity rating. If decreasing, this truncates from the right."""
+    __update_humanity(guildid, userid, charid, "humanity", delta)
+    __update_humanity(guildid, userid, charid, "stains", "0")
+
+
+def update_stains(guildid: int, userid: int, charid: int, delta: str):
+    """Apply or remove superficial health damage."""
+    __update_humanity(guildid, userid, charid, "stains", delta)
+
+
+def update_sh(guildid: int, userid: int, charid: int, delta: str):
+    """Apply or remove superficial health damage."""
+    __update_damage(guildid, userid, charid, "health", DAMAGE.superficial, delta)
+
+
+def update_ah(guildid: int, userid: int, charid: int, delta: str):
+    """Apply or remove aggravated health damage."""
+    __update_damage(guildid, userid, charid, "health", DAMAGE.aggravated, delta)
+
+
+def update_sw(guildid: int, userid: int, charid: int, delta: str):
+    """Apply or remove superficial health damage."""
+    __update_damage(guildid, userid, charid, "willpower", DAMAGE.superficial, delta)
+
+
+def update_aw(guildid: int, userid: int, charid: int, delta: str):
+    """Apply or remove aggravated health damage."""
+    __update_damage(guildid, userid, charid, "willpower", DAMAGE.aggravated, delta)
+
+
+def update_cur_xp(guildid: int, userid: int, charid: int, delta: str):
+    """Set or modify current XP."""
+    __update_xp(guildid, userid, charid, "current", delta)
+
+
+def update_total_xp(guildid: int, userid: int, charid: int, delta: str):
+    """Set or modify total XP."""
+    __update_xp(guildid, userid, charid, "total", delta)
+
+
+def __update_track(guildid: int, userid: int, charid: int, tracker: str, new_len: int):
+    """
+    Update the size of a character's tracker.
+    Args:
+        guildid (int): The guild's Discord ID
+        userid (int): The user's Discord ID
+        charid (int): The character's database ID
+        tracker (str): "health" or "willpower"
+        new_size (int): The tracker's new size
+
+    Does not catch exceptions.
+    """
+    if tracker not in ["health", "willpower"]:
+        raise SyntaxError(f"Unknown tracker {tracker}")
+
+    track = getattr(character_db, f"get_{tracker}")(guildid, userid, charid) # Get tracker string
+
+    cur_len = len(track)
+    new_len = int(new_len)
+
+    if new_len > cur_len: # Growing
+        track = track.rjust(new_len, DAMAGE.none)
+    elif new_len < cur_len:
+        track = track[-new_len:]
+
+    getattr(character_db, f"set_{tracker}")(guildid, userid, charid, track) # Set the tracker
+
+
+# pylint: disable=too-many-arguments
+def __update_damage(guildid: int, userid: int, charid: int, tracker: str, dtype: str, delta: int):
+    """
+    Update a character's tracker damage.
+    Args:
+        guildid (int): The guild's Discord ID
+        userid (int): The user's Discord ID
+        charid (int): The character's database ID
+        tracker (str): "health" or "willpower"
+        type (str): "/" or "x"
+        delta (int): The amount to add or remove
+
+    Does not catch exceptions.
+    """
+    setting = False
+
+    # If the user doesn't supply a sign, they are setting the XP total rather
+    # than modifying it
+    if isinstance(delta, str):
+        if delta[0] not in ["+", "-"]:
+            setting = True
+
+    delta = int(delta)
+
+    if tracker not in ["health", "willpower"]:
+        raise SyntaxError(f"Unknown tracker {tracker}")
+
+    if not dtype in [DAMAGE.superficial, DAMAGE.aggravated]:
+        raise SyntaxError(f"Unknown damage type: {dtype}")
+
+    track = getattr(character_db, f"get_{tracker}")(guildid, userid, charid) # Get
+    track_size = len(track)
+
+    fine = track.count(DAMAGE.none)
+    sup = track.count(DAMAGE.superficial)
+    agg = track.count(DAMAGE.aggravated)
+
+    if dtype == DAMAGE.superficial:
+        sup = delta if setting else sup + delta
+    else:
+        agg = delta if setting else agg + delta
+
+    fine = DAMAGE.none * fine
+    sup = DAMAGE.superficial * sup
+    agg = DAMAGE.aggravated * agg
+
+    track = f"{fine}{sup}{agg}"
+
+    if len(track) > track_size:
+        track = track[-track_size:]
+    else:
+        track = track.rjust(track_size, DAMAGE.none)
+
+    getattr(character_db, f"set_{tracker}")(guildid, userid, charid, track) # Set
+
+
+def __update_xp(guildid: int, userid: int, charid: int, xp_type: str, delta: str):
+    """
+    Update a character's XP.
+    Args:
+        guildid (int): The guild's Discord ID
+        userid (int): The user's Discord ID
+        charid (int): The character's database ID
+        xp_type (str): "total" or "current"
+        delta (str): The amount to add or remove
+
+    Does not catch exceptions.
+    """
+    setting = False
+
+    # If the user doesn't supply a sign, they are setting the XP total rather
+    # than modifying it
+    if isinstance(delta, str):
+        if delta[0] not in ["+", "-"]:
+            setting = True
+
+    if not xp_type in ["total", "current"]:
+        raise SyntaxError(f"Unknown XP type: {xp_type}.") # Should never be seen
+
+    delta = int(delta)
+    new_xp = None
+
+    if setting:
+        new_xp = delta
+    else:
+        current = getattr(character_db, f"get_{xp_type.lower()}_xp")(guildid, userid, charid)
+        new_xp = current + delta
+
+    getattr(character_db, f"set_{xp_type.lower()}_xp")(guildid, userid, charid, new_xp)
+
+
+def __update_humanity(guildid: int, userid: int, charid: int, hu_type: str, delta: str):
+    """
+    Update a character's humanity or stains.
+    Args:
+        guildid (int): The guild's Discord ID
+        userid (int): The user's Discord ID
+        charid (int): The character's database ID
+        xp_type (str): "humanity" or "stains"
+        delta (str): The amount to add or remove
+
+    Does not catch exceptions.
+    """
+    setting = False
+
+    if isinstance(delta, str):
+        if delta[0] not in ["+", "-"]:
+            setting = True
+
+    if hu_type not in ["humanity", "stains"]:
+        raise SyntaxError(f"Unknown humanity syntax: {hu_type}.")
+
+    delta = int(delta)
+    if not 0 <= delta <= 10:
+        raise ValueError(f"{hu_type.title()} must be between 0 and 10.")
+
+    new_value = delta if setting else None
+    if new_value is None:
+        current = getattr(character_db, f"get_{hu_type}")(guildid, userid, charid)
+        new_value = current + delta
+
+    getattr(character_db, f"set_{hu_type}")(guildid, userid, charid, new_value)

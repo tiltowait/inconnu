@@ -57,11 +57,11 @@ class Wizard:
         userid = self.ctx.author.id
         char_type = self.parameters.type
         name = self.parameters.name
-        humanity = "." * self.parameters.humanity
+        humanity = self.parameters.humanity
         health =  "." *self.parameters.hp
         willpower =  "." *self.parameters.wp
 
-        character_db.add_character(guildid, userid, char_type, name, humanity, health, willpower)
+        character_db.add_character(guildid, userid, char_type, name, humanity, 0, health, willpower)
 
         # Need to add the fields one-by-one
         for trait, rating in self.assigned_traits.items():

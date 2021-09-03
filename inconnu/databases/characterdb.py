@@ -1,6 +1,8 @@
 """Describes the UserDB class for managing characters across different guilds."""
 # pylint: disable=too-many-arguments
 
+from psycopg2.sql import SQL, Identifier
+
 from .base import Database
 from .exceptions import CharacterNotFoundError, AmbiguousTraitError, TraitNotFoundError
 
@@ -16,10 +18,11 @@ class CharacterDB(Database):
             CREATE TABLE IF NOT EXISTS Characters(
                 GuildID   bigint NOT NULL,
                 UserID    bigint NOT NULL,
-                CharType  int    NOT NULL,
+                Splat     int    NOT NULL,
                 CharName  text   NOT NULL,
-                Humanity  text   NOT NULL,
-                Heatlh    text   NOT NULL,
+                Humanity  int    DEFAULT 7,
+                Stains    int    DEFAULT 0,
+                Health    text   NOT NULL,
                 Willpower text   NOT NULL,
                 CurrentXP int    DEFAULT 0,
                 TotalXP   int    DEFAULT 0,
@@ -123,7 +126,7 @@ class CharacterDB(Database):
         self._execute(query, guildid, userid, char_name)
         results = self.cursor.fetchone()
 
-        if len(results) == 0:
+        if results is None:
             raise CharacterNotFoundError(f"You do not have a character named {char_name}.")
 
         return results[0]
@@ -142,12 +145,13 @@ class CharacterDB(Database):
         self._execute(query, guildid, userid, char_name)
         results = self.cursor.fetchone()
 
-        return len(results) == 1
+        return results is not None
 
 
     #pylint: disable=invalid-name
-    def add_character(
-        self, guildid: int, userid: int, char_type: int, name: str, humanity: int, hp: str, wp: str
+    def add_character(self,
+        guildid: int, userid: int, char_type: int,
+        name: str, humanity: int, stains: int, hp: str, wp: str
     ):
         """
         Adds a character to a guild.
@@ -156,8 +160,8 @@ class CharacterDB(Database):
             userid (int): Discord ID of the user
             char_name (str): The new character's name
         """
-        query = "INSERT INTO Characters VALUES (%s, %s, %s, %s, %s, %s, %s);"
-        self._execute(query, guildid, userid, char_type, name, humanity, hp, wp)
+        query = "INSERT INTO Characters VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
+        self._execute(query, guildid, userid, char_type, name, humanity, stains, hp, wp)
 
 
     def delete_character(self, guildid: int, userid: int, char_name: str) -> bool:
@@ -172,23 +176,289 @@ class CharacterDB(Database):
         query = "DELETE FROM Characters WHERE GuildID=%s AND UserID=%s AND CharName=%s;"
         self._execute(query, guildid, userid, char_name)
 
-        return self.cursor.statusmessage == "UPDATE 0"
+        return self.cursor.statusmessage != "UPDATE 0"
 
 
-    def rename_character(self, guildid: int, userid: int, old_name: str, new_name: str) -> bool:
+    def rename_character(self, guildid: int, userid: int, char_id: int, new_name: str):
         """
-        Renames a given character.
+        Rename a given character.
         Args:
             guildid (int): Discord ID of the guild
             userid (int): Discord ID of the user
-            old_name (str): The character's current name
+            char_id (int): The character's database ID
             new_name (str): The character's new name
-        Returns (bool): True if the character was successfully renamed.
+        Raises CharacterNotFoundError if the character does not exist.
         """
-        query = "UPDATE Characters SET CharName=%s WHERE GuildID=%s AND UserID=%s AND CharName=%s;"
-        self._execute(query, new_name, guildid, userid, old_name)
+        query = "UPDATE Characters SET CharName=%s WHERE GuildID=%s AND UserID=%s AND CharID=%s;"
+        self._execute(query, new_name, guildid, userid, char_id)
 
-        return self.cursor.statusmessage == "UPDATE 0"
+        if self.cursor.statusmessage == "UPDATE 0":
+            raise CharacterNotFoundError("Character does not exist.")
+
+
+    def get_health(self, guildid: int, userid: int, charid: int) -> str:
+        """
+        Retrieve the given character health string.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+        Returns (str): The character's health string.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        return self.__get_attribute(guildid, userid, charid, "Health")
+
+
+    def set_health(self, guildid: int, userid: int, charid: int, new_health: str) -> str:
+        """
+        Update the given character health string.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            new_health (str): The character's new health string
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        self.__set_attribute(guildid, userid, charid, "Health", new_health)
+
+
+    def get_willpower(self, guildid: int, userid: int, charid: int) -> str:
+        """
+        Retrieve the given character willpower string.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+        Returns (str): The character's willpower string.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        return self.__get_attribute(guildid, userid, charid, "Willpower")
+
+
+    def set_willpower(self, guildid: int, userid: int, charid: int, new_willpower: str) -> str:
+        """
+        Update the given character willpower string.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            new_willpower (str): The character's new willpower string
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        self.__set_attribute(guildid, userid, charid, "Willpower", new_willpower)
+
+
+    def get_humanity(self, guildid: int, userid: int, charid: int) -> str:
+        """
+        Retrieve the given character humanity string.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+        Returns (int): The character's humanity string.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        return self.__get_attribute(guildid, userid, charid, "Humanity")
+
+
+    def set_humanity(self, guildid: int, userid: int, charid: int, new_humanity: int) -> str:
+        """
+        Set the given character humanity string.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            new_humanity (int): The character's new humanity string
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        self.__set_attribute(guildid, userid, charid, "Humanity", new_humanity)
+
+
+    def get_stains(self, guildid: int, userid: int, charid: int) -> str:
+        """
+        Retrieve the character's stains.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+        Returns (str): The number of stains.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        return self.__get_attribute(guildid, userid, charid, "Stains")
+
+
+    def set_stains(self, guildid: int, userid: int, charid: int, new_stains: int) -> str:
+        """
+        Set the character's stains.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            new_stains (int): The new number of stains
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        self.__set_attribute(guildid, userid, charid, "Stains", new_stains)
+
+
+
+    def get_splat(self, guildid: int, userid: int, charid: int) -> str:
+        """
+        Retrieve the given character splat.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+        Returns (str): The character's splat.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        return self.__get_attribute(guildid, userid, charid, "Splat")
+
+
+    def set_splat(self, guildid: int, userid: int, charid: int, new_splat: str) -> str:
+        """
+        Set the given character splat.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            new_splat (str): The character's new splat
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        self.__set_attribute(guildid, userid, charid, "Splat", new_splat)
+
+
+    def get_current_xp(self, guildid: int, userid: int, charid: int) -> str:
+        """
+        Retrieve the character's current XP.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+        Returns (str): The character's current XP.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        return self.__get_attribute(guildid, userid, charid, "CurrentXP")
+
+
+    def set_current_xp(self, guildid: int, userid: int, charid: int, new_cur_xp: int) -> str:
+        """
+        Set the character's current XP.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            new_cur_xp (str): The character's new current XP
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        total_xp = self.get_total_xp(guildid, userid, charid)
+        if new_cur_xp > total_xp:
+            raise ValueError(f"Current XP cannot exceed total XP! (`{new_cur_xp}` > `{total_xp}`)")
+
+        self.__set_attribute(guildid, userid, charid, "CurrentXP", new_cur_xp)
+
+
+    def get_total_xp(self, guildid: int, userid: int, charid: int) -> str:
+        """
+        Retrieve the character's total XP.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+        Returns (str): The character's total XP.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        return self.__get_attribute(guildid, userid, charid, "TotalXP")
+
+
+    def set_total_xp(self, guildid: int, userid: int, charid: int, new_tot_xp: int) -> str:
+        """
+        Set the character's total XP and modify the character's current XP by the same delta.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            new_cur_xp (str): The character's new total XP
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        delta = new_tot_xp - self.get_total_xp(guildid, userid, charid)
+        new_cur_xp = self.get_current_xp(guildid, userid, charid) + delta
+
+        if new_cur_xp < 0:
+            new_cur_xp = 0 # No negatives allowed
+
+        self.__set_attribute(guildid, userid, charid, "TotalXP", new_tot_xp)
+        self.set_current_xp(guildid, userid, charid, new_cur_xp)
+
+
+    def __get_attribute(self, guildid: int, userid: int, charid: int, attribute: str):
+        """
+        Retrieve the given character attribute.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            attribute (str): The column name of an attribute
+        Returns: The value contained in the column.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        This method does no checking for column validity!
+        """
+        attribute = attribute.lower()
+        query = SQL("""
+            SELECT {key}
+            FROM Characters
+            WHERE GuildID=%s AND UserID=%s AND CharID=%s;
+            """
+        ).format(key=Identifier(attribute))
+
+        self._execute(query, guildid, userid, charid)
+        results = self.cursor.fetchone()
+
+        if len(results) == 0:
+            raise CharacterNotFoundError("Character not found.")
+
+        return results[0]
+
+
+    def __set_attribute(self, guildid: int, userid: int, charid: int, attribute: str, new_value):
+        """
+        Update the given character attribute.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            attribute (str): The column name of an attribute
+            new_value: The column's new attribute
+
+        Raises CharacterNotFoundError if the character does not exist.
+        This method does no checking for column validity!
+        """
+        attribute = attribute.lower()
+        query = SQL("""
+            UPDATE Characters
+            SET {key}=%s
+            WHERE GuildID=%s AND UserID=%s AND CharID=%s;
+            """
+        ).format(key=Identifier(attribute))
+
+        self._execute(query, new_value, guildid, userid, charid)
+
+        if self.cursor.statusmessage == "UPDATE 0":
+            raise CharacterNotFoundError("Character not found.")
 
 
     # Trait CRUD

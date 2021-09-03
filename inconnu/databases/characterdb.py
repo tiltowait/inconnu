@@ -69,6 +69,44 @@ class CharacterDB(Database):
         return char_dict
 
 
+    def character(self, guildid: int, userid: int, char_name: str) -> tuple:
+        """
+        Retrieve the name and ID for a given character.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_name (str): The name of the character
+        Returns (int): The character's ID.
+
+        Character names are case-insensitive, which is why the name is also returned.
+        Raises CharacterNotFoundError if the character isn't found.
+        """
+        query = """
+            SELECT CharName, CharID
+            FROM Characters
+            WHERE GuildID=%s AND UserID=%s AND CharName ILIKE %s;
+        """
+        self._execute(query, guildid, userid, char_name)
+        results = self.cursor.fetchone()
+
+        return results
+
+
+    def character_count(self, guildid: int, userid: int) -> int:
+        """
+        Retrieve the number of characters the user has in the guild.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+        Returns (int): The number of characters.
+        """
+        query = "SELECT COUNT(*) FROM Characters WHERE GuildID=%s AND UserID=%s;"
+        self._execute(query, guildid, userid)
+        results = self.cursor.fetchone()
+
+        return results[0]
+
+
     def character_id(self, guildid: int, userid: int, char_name: str) -> int:
         """
         Retrieve the ID for a given character.
@@ -100,8 +138,11 @@ class CharacterDB(Database):
             char_name (str): The name of the character
         Returns (bool): True if the character exists.
         """
-        user_characters = self.characters(guildid, userid).keys()
-        return char_name in user_characters
+        query = "SELECT 1 FROM Characters WHERE GuildID=%s AND UserID=%s AND CharName ILIKE %s;"
+        self._execute(query, guildid, userid, char_name)
+        results = self.cursor.fetchone()
+
+        return len(results) == 1
 
 
     #pylint: disable=invalid-name

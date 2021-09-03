@@ -25,7 +25,6 @@ RollParameters = namedtuple("RollParameters", ["pool", "hunger", "difficulty"])
 
 async def parse(ctx, *args):
     """Parse the user's arguments and attempt to roll the dice."""
-
     global __DICEMOJI
     if __DICEMOJI is None:
         __DICEMOJI = Dicemoji(ctx.bot)
@@ -33,25 +32,27 @@ async def parse(ctx, *args):
     args = list(args) # To allow for item deletion
 
     # Determine the character being used, if any
-    user_characters = character_db.characters(ctx.guild.id, ctx.author.id)
-    character_name = None
-    character = None
+    character_name, character = character_db.character(
+        ctx.guild.id,
+        ctx.author.id,
+        args[0]
+    ) or (None, None) # Method returns None if no match, so we need to make something to unpack
 
-    if args[0] in user_characters:
-        character_name = args[0]
-        character = user_characters[character_name]
+    if character_name is not None:
         del args[0]
 
         # Yell at the user if they only gave a character name and no roll syntax
         if len(args) == 0:
             await ctx.reply("You need to tell me what to roll!")
             return
-    elif len(user_characters) == 1:
+    elif character_db.character_count(ctx.guild.id, ctx.author.id) == 1:
         # If the user has one character, they are automatically assumed to be
         # using it even if they don't explicitly supply the name
 
         # It's only necessary, however, if they're calling traits
         if re.match(r"[A-z_]", " ".join(args)):
+            user_characters = character_db.characters(ctx.guild.id, ctx.author.id)
+
             character_name = list(user_characters.keys())[0]
             character = list(user_characters.values())[0]
 

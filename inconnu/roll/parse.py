@@ -17,9 +17,9 @@ import discord
 
 from .roll import roll
 from .dicemoji import Dicemoji
-from ..databases import CharacterDB, AmbiguousTraitError, TraitNotFoundError
+from ..databases import AmbiguousTraitError, TraitNotFoundError
+from ..constants import character_db
 
-__DATABASE = CharacterDB()
 __DICEMOJI = None
 RollParameters = namedtuple("RollParameters", ["pool", "hunger", "difficulty"])
 
@@ -33,7 +33,7 @@ async def parse(ctx, *args):
     args = list(args) # To allow for item deletion
 
     # Determine the character being used, if any
-    user_characters = __DATABASE.characters(ctx.guild.id, ctx.author.id)
+    user_characters = character_db.characters(ctx.guild.id, ctx.author.id)
     character_name = None
     character = None
 
@@ -145,7 +145,7 @@ def __substitute_traits(guildid: int, userid: int, character: int, *args):
             raise ValueError(f"You must supply a character name to use {item}.")
 
         try:
-            rating = __DATABASE.trait_rating(guildid, userid, character, item)
+            rating = character_db.trait_rating(guildid, userid, character, item)
             final_stack.append(rating)
         except (TraitNotFoundError, AmbiguousTraitError) as exception:
             raise ValueError(exception.message) #pylint: disable=raise-missing-from

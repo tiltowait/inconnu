@@ -2,7 +2,7 @@
 
 import discord
 
-from .databases import CharacterDB
+from .constants import character_db
 
 class Wizard:
     """A helper class that guides a user through the chargen process."""
@@ -61,12 +61,11 @@ class Wizard:
         health =  "." *self.parameters.hp
         willpower =  "." *self.parameters.wp
 
-        database = CharacterDB()
-        database.add_character(guildid, userid, char_type, name, humanity, health, willpower)
+        character_db.add_character(guildid, userid, char_type, name, humanity, health, willpower)
 
         # Need to add the fields one-by-one
         for trait, rating in self.assigned_traits.items():
-            database.add_trait(guildid, userid, name, trait, rating)
+            character_db.add_trait(guildid, userid, name, trait, rating)
 
         await self.ctx.author.send(f"{name} has been created in {self.ctx.guild.name}!")
 

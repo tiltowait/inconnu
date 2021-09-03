@@ -3,6 +3,7 @@
 from collections import namedtuple
 
 from . import wizard
+from .constants import character_db
 
 __WIZARDS = {}
 
@@ -20,9 +21,13 @@ Parameters = namedtuple('Parameters', ["name", "hp", "wp", "humanity", "type"])
 
 async def parse(ctx, *args):
     """Parse and handle character creation arguments."""
-
     try:
         parameters = parse_arguments(*args)
+
+        if character_db.character_exists(ctx.guild.id, ctx.author.id, parameters.name):
+            await ctx.reply(f"Sorry, you have a character named `{parameters.name}` already!")
+            return
+
         await ctx.reply("Please check your DMs!")
 
         character_wizard = wizard.Wizard(ctx, parameters)
@@ -35,7 +40,6 @@ async def parse(ctx, *args):
 
 async def process_response(message):
     """Process user response to a wizard message."""
-
     char_wizard = __WIZARDS[message.author.id]
 
     if not char_wizard:
@@ -57,7 +61,6 @@ def parse_arguments(*arguments):
     Parse the user's arguments.
     Raises ValueErrors and KeyErrors on exceptions.
     """
-
     if len(arguments) != 5:
         raise ValueError(__INSTRUCTIONS)
 

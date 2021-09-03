@@ -3,7 +3,7 @@
 from collections import namedtuple
 
 from . import wizard
-from .constants import character_db
+from ..constants import character_db
 
 __WIZARDS = {}
 

@@ -2,7 +2,7 @@
 
 import discord
 
-from .constants import character_db
+from ..constants import character_db
 
 class Wizard:
     """A helper class that guides a user through the chargen process."""

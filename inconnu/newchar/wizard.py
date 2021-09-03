@@ -77,12 +77,13 @@ class Wizard:
         if message is not None:
             description = f"{message}\n\n"
 
-        description += f"Enter the rating for **{self.core_traits[0]}**."
-
         embed = discord.Embed(
-            title=f"Creating {self.parameters.name} on {self.ctx.guild.name}",
+            title=f"Enter the rating for: {self.core_traits[0]}",
             description=description,
-            color=0xFF0000,
+            color=0xFF0000
+        )
+        embed.set_author(
+            name=f"Creating {self.parameters.name} on {self.ctx.guild.name}",
             icon_url=self.ctx.guild.icon_url
         )
         embed.set_footer(text="Type a number between 0-5.")

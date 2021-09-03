@@ -57,8 +57,7 @@ async def parse(ctx, *args):
 
     # Attempt to parse the user's roll syntax
     try:
-        stack = __expand_syntax(ctx.guild.id, ctx.author.id, character, *args)
-        roll_params = __standardize_syntax(*stack)
+        roll_params = evaluate_syntax(ctx.guild.id, ctx.author.id, character, *args)
 
         # Build the embed
         results = roll(roll_params)
@@ -81,17 +80,34 @@ async def parse(ctx, *args):
 
         await ctx.reply(content=emoji_string, embed=embed)
 
-    except ValueError as err:
+    except (SyntaxError, ValueError) as err:
         await ctx.reply(f"Error: {str(err)}")
 
 
-def __expand_syntax(guildid: int, userid: int, character: int, *args):
+def evaluate_syntax(guildid: int, userid: int, character: int, *args):
     """
-    Check the roll syntax for database calls and replace them with the appropriate
-    values.
+    Convert the user's syntax to the standardized format: pool, hunger, diff.
+    Args:
+        guildid (int): The guild's Discord ID
+        userid (int): The user's Discord ID
+        character (int) (optional): The character's database ID
+        args (list): The user's syntax
 
     Valid syntax: snake_case_words, integers, plus, minus.
     This function does not test if the given traits are in the database!
+
+    Raises ValueError if there is trouble querying the database.
+    """
+    stack = __substitute_traits(guildid, userid, character, *args)
+    return __combine_operators(*stack)
+
+
+def __substitute_traits(guildid: int, userid: int, character: int, *args):
+    """
+    Convert the roll syntax into a stack while simultaneously replacing database
+    calls with the appropriate values.
+
+    Valid syntax: snake_case_words, integers, plus, minus.
 
     Raises ValueError if there is trouble querying the database.
     """
@@ -137,7 +153,7 @@ def __expand_syntax(guildid: int, userid: int, character: int, *args):
     return final_stack
 
 
-def __standardize_syntax(*stack):
+def __combine_operators(*stack):
     """Perform required math operations to produce a <pool> <hunger> <diff> stack."""
     raw_stack = list(stack)
     compact_stack = []

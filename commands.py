@@ -9,6 +9,9 @@ import inconnu
 bot = commands.Bot(command_prefix="//", case_insensitive=True)
 _ = UI(bot)
 
+
+# Gameplay Commands
+
 @bot.command(name="v", aliases=["roll", "r"])
 async def roll(ctx, *args):
     """Roll a dice pool, either raw or calculated from traits."""
@@ -25,6 +28,12 @@ async def rouse(ctx, *args):
 async def remorse(ctx, *args):
     """Perform a remorse check."""
     await inconnu.rousemorse.parse(ctx, "remorse", *args)
+
+
+@bot.command()
+async def resonance(ctx):
+    """Perform a resonance check."""
+    await inconnu.resonance.generate(ctx)
 
 
 # Character CRUD

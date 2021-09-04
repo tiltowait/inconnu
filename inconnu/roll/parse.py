@@ -14,9 +14,11 @@ import re
 from collections import namedtuple
 
 import discord
+from discord_ui import Button
 
 from .roll import roll
 from .dicemoji import Dicemoji
+from . import reroll
 from ..databases import CharacterNotFoundError, AmbiguousTraitError, TraitNotFoundError
 from ..constants import character_db, DAMAGE
 
@@ -64,34 +66,51 @@ async def parse(ctx, *args):
 
     # Attempt to parse the user's roll syntax
     try:
-        roll_params = evaluate_syntax(ctx.guild.id, ctx.author.id, character, *args)
-
-        # Build the embed
+        roll_params = __evaluate_syntax(ctx.guild.id, ctx.author.id, character, *args)
         results = roll(roll_params)
-
-        author_name = character_name or ctx.author.display_name
-
-        normalmoji = __DICEMOJI.emoji_string(results.normal.dice, False)
-        hungermoji = __DICEMOJI.emoji_string(results.hunger.dice, True)
-
-        emoji_string = f"{normalmoji} {hungermoji}"
-
-        embed = discord.Embed(
-            title=f"{results.main_takeaway} ({results.total_successes} vs {results.difficulty})",
-            description=f"**Margin: {results.margin}**",
-            colour=results.embed_color
-        )
-        embed.set_author(name=f"{author_name}'s roll", icon_url=ctx.author.avatar_url)
-        embed.add_field(name="Pool", value=str(results.pool))
-        embed.add_field(name="Hunger", value=str(results.hunger.count))
-
-        await ctx.reply(content=emoji_string, embed=embed)
+        await __send_results(ctx, character_name, results)
 
     except (SyntaxError, ValueError) as err:
         await ctx.reply(f"Error: {str(err)}")
 
 
-def evaluate_syntax(guildid: int, userid: int, character: int, *args):
+async def __send_results(ctx, character_name, results, rerolled=False):
+    character_name = character_name or ctx.author.display_name
+    normalmoji = __DICEMOJI.emoji_string(results.normal.dice, False)
+    hungermoji = __DICEMOJI.emoji_string(results.hunger.dice, True)
+
+    emoji_string = f"{normalmoji} {hungermoji}"
+
+    embed = discord.Embed(
+        title=f"{results.main_takeaway} ({results.total_successes} vs {results.difficulty})",
+        description=f"**Margin: {results.margin}**",
+        colour=results.embed_color
+    )
+
+    # Author line
+    author_field = character_name + ("'s Reroll" if rerolled else "'s Roll")
+    if results.descriptor is not None:
+        author_field += f" ({results.descriptor})"
+
+    embed.set_author(
+        name=author_field,
+        icon_url=ctx.author.avatar_url
+    )
+
+    # Disclosure fields
+    embed.add_field(name="Pool", value=str(results.pool))
+    embed.add_field(name="Hunger", value=str(results.hunger.count))
+
+    reroll_buttons = __generate_reroll_buttons(results)
+    if len(reroll_buttons) == 0 or rerolled:
+        await ctx.reply(content=emoji_string, embed=embed)
+    else:
+        msg = await ctx.reply(content=emoji_string, embed=embed, components=reroll_buttons)
+        rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
+        await __send_results(ctx, character_name, rerolled_results, rerolled=True)
+
+
+def __evaluate_syntax(guildid: int, userid: int, character: int, *args):
     """
     Convert the user's syntax to the standardized format: pool, hunger, diff.
     Args:
@@ -251,3 +270,19 @@ def __match_universal_trait(match: str):
         return matches[0]
 
     return None
+
+
+def __generate_reroll_buttons(roll_result) -> list:
+    """Generate the buttons for Willpower re-rolls."""
+    buttons = []
+
+    if roll_result.can_reroll_failures:
+        buttons.append(Button("reroll_failures", "Re-Roll Failures"))
+
+    if roll_result.can_maximize_criticals:
+        buttons.append(Button("maximize_criticals", "Maximize Criticals"))
+
+    if roll_result.can_avoid_messy_critical:
+        buttons.append(Button("avoid_messy", "Avoid Messy Critical"))
+
+    return buttons

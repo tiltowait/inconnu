@@ -5,8 +5,11 @@ import random
 class DiceThrow:
     """Roll a specified number of dice and allow the user to query its statistics."""
 
-    def __init__(self, count):
-        self.dice = [random.randint(1, 10) for _ in range(count)]
+    def __init__(self, dice):
+        if isinstance(dice, int):
+            self.dice = [random.randint(1, 10) for _ in range(dice)]
+        else:
+            self.dice = dice
 
 
     @property

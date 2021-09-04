@@ -14,6 +14,7 @@ class RollResult:
         self.hunger = hunger
         self.pool = normal.count + hunger.count
         self.difficulty = difficulty
+        self.descriptor = None
 
 
     # We could technically do this with stored properties, but the math is extremely
@@ -112,3 +113,26 @@ class RollResult:
         """Return true if the roll is a bestial failure."""
         bestial = self.hunger.ones > 0
         return bestial and not self.is_successful
+
+
+    # Re-roll strategies
+
+    @property
+    def can_reroll_failures(self):
+        """Whether there are any non-Hunger failures to re-roll."""
+        return self.normal.failures > 0
+
+
+    @property
+    def can_maximize_criticals(self):
+        """Whether there are any non-critical non-Hunger failures to re-roll."""
+        return self.normal.tens != self.normal.count
+
+
+    @property
+    def can_avoid_messy_critical(self):
+        """Whether it's possible to avoid a messy critical, assuming we have one."""
+        if not self.is_messy:
+            return False
+
+        return self.hunger.tens == 1

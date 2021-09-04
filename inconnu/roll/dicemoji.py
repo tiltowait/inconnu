@@ -1,7 +1,5 @@
 """dicemoji.py - A tool for fetching emoji for representing dice rolls."""
 
-import discord
-
 class Dicemoji:
     """A class that translates between dice values and emoji."""
 

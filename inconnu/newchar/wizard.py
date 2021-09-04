@@ -91,10 +91,10 @@ class Wizard:
 
         description = "This wizard will guide you through the character creation process.\n\n"
         if message is not None:
-            description = f"{message}\n\n"
+            description = message
 
         embed = discord.Embed(
-            title=f"Enter the rating for: {self.core_traits[0]}",
+            title=f"Select the rating for: {self.core_traits[0]}",
             description=description,
             color=0xFF0000
         )
@@ -102,7 +102,7 @@ class Wizard:
             name=f"Creating {self.parameters.name} on {self.ctx.guild.name}",
             icon_url=self.ctx.guild.icon_url
         )
-        embed.set_footer(text="Type a number between 0-5.")
+        embed.set_footer(text="Your character will not be saved until you have entered all traits.")
 
         menu = SelectMenu("rating_selector",
             options=self.__RATING_OPTIONS,

@@ -2,6 +2,8 @@
 
 from collections import namedtuple
 
+from discord_ui import SelectedMenu
+
 from . import wizard
 from ..constants import character_db
 
@@ -22,13 +24,13 @@ Parameters = namedtuple('Parameters', ["name", "hp", "wp", "humanity", "type"])
 async def parse(ctx, *args):
     """Parse and handle character creation arguments."""
     try:
-        parameters = parse_arguments(*args)
+        parameters = __parse_arguments(*args)
 
         if character_db.character_exists(ctx.guild.id, ctx.author.id, parameters.name):
             await ctx.reply(f"Sorry, you have a character named `{parameters.name}` already!")
             return
 
-        await ctx.reply("Please check your DMs!")
+        await ctx.reply("Please check your DMs! I hope you have your character sheet ready.")
 
         character_wizard = wizard.Wizard(ctx, parameters)
         __WIZARDS[ctx.author.id] = character_wizard
@@ -38,25 +40,18 @@ async def parse(ctx, *args):
         await ctx.reply(__INSTRUCTIONS)
 
 
-async def process_response(message):
-    """Process user response to a wizard message."""
-    char_wizard = __WIZARDS[message.author.id]
-
-    if not char_wizard:
-        return
-
+async def response_selected(menu: SelectedMenu):
+    """Process a rating menu selection."""
     try:
-        rating = int(message.content.split()[0])
-
-        if 0 <= rating <= 5:
-            await char_wizard.assign_next_trait(rating)
-        else:
-            raise ValueError("Range: 0-5")
-    except ValueError:
-        await char_wizard.resend_last_query("Error: You must respond with a number between 0-5.")
+        char_wizard = __WIZARDS[menu.author.id]
+        rating = int(menu.selected_values[0].value)
+        await menu.respond()
+        await char_wizard.assign_next_trait(rating)
+    except KeyError:
+        print(f"{menu.author.display_name} just tried to select on a non-existent wizard")
 
 
-def parse_arguments(*arguments):
+def __parse_arguments(*arguments):
     """
     Parse the user's arguments.
     Raises ValueErrors and KeyErrors on exceptions.

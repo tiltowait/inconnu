@@ -1,11 +1,23 @@
 """wizard.py - The new character wizard."""
 
 import discord
+from discord_ui import SelectMenu, SelectOption
 
 from ..constants import character_db
 
 class Wizard:
     """A helper class that guides a user through the chargen process."""
+
+    # Used in the select menu. The select menu is not a class variable, because
+    # we dynamically create it based on the trait name.
+    __RATING_OPTIONS = [
+        SelectOption("0", "0 dots"),
+        SelectOption("1", "1 dots"),
+        SelectOption("2", "2 dots"),
+        SelectOption("3", "3 dots"),
+        SelectOption("4", "4 dots"),
+        SelectOption("5", "5 dots")
+    ]
 
     def __init__(self, ctx, parameters):
         self.core_traits = [
@@ -17,6 +29,8 @@ class Wizard:
             "Science", "Technology"
         ]
         self.ctx = ctx
+        self.dm_channel = ctx.author.dm_channel # First half of ctx.author.send bug workaround
+                                                # https://github.com/discord-py-ui/discord-ui/issues/94
         self.parameters = parameters
 
         self.assigned_traits = {}
@@ -38,6 +52,8 @@ class Wizard:
         """
         trait = self.core_traits.pop(0)
         self.assigned_traits[trait] = rating
+        await self.last_query_message.delete()
+        self.last_query_message = None
 
         if len(self.core_traits) == 0:
             # We're finished; create the character
@@ -67,7 +83,7 @@ class Wizard:
         for trait, rating in self.assigned_traits.items():
             character_db.add_trait(guildid, userid, name, trait, rating)
 
-        await self.ctx.author.send(f"{name} has been created in {self.ctx.guild.name}!")
+        await self.dm_channel.send(f"{name} has been created in {self.ctx.guild.name}!")
 
 
     async def __query_trait(self, message=None):
@@ -88,4 +104,13 @@ class Wizard:
         )
         embed.set_footer(text="Type a number between 0-5.")
 
-        self.last_query_message = await self.ctx.author.send(embed=embed)
+        menu = SelectMenu("rating_selector",
+            options=self.__RATING_OPTIONS,
+            placeholder=f"Select {self.parameters.name}'s {self.core_traits[0]} rating"
+        )
+
+        # Second half of ctx.author.send bug workaround
+        if self.dm_channel is None:
+            self.dm_channel = await self.ctx.author.create_dm()
+
+        self.last_query_message = await self.dm_channel.send(embed=embed, components=[menu])

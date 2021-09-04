@@ -2,10 +2,12 @@
 
 import discord
 from discord.ext import commands
+from discord_ui import UI, SelectedMenu
 
 import inconnu
 
 bot = commands.Bot(command_prefix="//", case_insensitive=True)
+_ = UI(bot)
 
 @bot.command(name="v", aliases=["roll", "r"])
 async def roll(ctx, *args):
@@ -17,12 +19,14 @@ async def roll(ctx, *args):
 # Character CRUD
 
 @bot.command(name="new", aliases=["n"])
+@commands.guild_only()
 async def new_character(ctx, *args):
     """Create a new character."""
     await inconnu.newchar.parse(ctx, *args)
 
 
 @bot.command(name="update", aliases=["u", "up"])
+@commands.guild_only()
 async def update_character(ctx, *args):
     """Update a character's parameters but not the traits."""
     await inconnu.update.parse(ctx, *args)
@@ -39,16 +43,22 @@ async def on_ready():
 
     await bot.change_presence(activity=discord.Game(__status_message()))
 
+
 @bot.event
-async def on_message(message):
-    """Process messages based on if they're in a guild or a private message."""
-    if message.author == bot.user:
+async def on_command_error(ctx, error):
+    """Handle various errors we might encounter."""
+    if isinstance(error, commands.CommandNotFound):
+        return
+    if isinstance(error, commands.NoPrivateMessage):
+        await ctx.send("Sorry, this command isn't available in DMs!")
         return
 
-    if not message.guild:
-        await inconnu.newchar.process_response(message)
-    else:
-        await bot.process_commands(message)
+
+@bot.listen("on_menu_select")
+async def on_button(menu: SelectedMenu):
+    """Pass the selection to the appropriate manager."""
+    if menu.custom_id == "rating_selector":
+        await inconnu.newchar.response_selected(menu)
 
 
 # Misc and helpers

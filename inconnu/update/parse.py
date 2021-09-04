@@ -21,7 +21,8 @@ __KEYS = {
     "aw": "+/- Aggravated Willpower damage",
     "stains": "+/- Stains",
     "cur_xp": "+/- Current XP",
-    "total_xp": "+/- Total XP"
+    "total_xp": "+/- Total XP",
+    "hunger": "+/- The character's Hunger"
 }
 
 

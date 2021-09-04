@@ -14,7 +14,7 @@ def update_name(guildid: int, userid: int, charid: int, new_name: str):
 
 
 def update_splat(guildid: int, userid: int, charid: int, new_splat: str):
-    """Updates the character's splat."""
+    """Update the character's splat."""
     try:
         splat = valid_splats[new_splat]
         character_db.set_splat(guildid, userid, charid, splat)
@@ -22,6 +22,25 @@ def update_splat(guildid: int, userid: int, charid: int, new_splat: str):
         splats = map(lambda splat: f"`{splat}`", valid_splats)
         splats = ", ".join(splats)
         raise ValueError(f"The `splat` must be one of: {splats}.") # pylint: disable=raise-missing-from
+
+
+def update_hunger(guildid: int, userid: int, charid: int, delta: str):
+    """Update the character's hunger if they are a vampire."""
+    splat = character_db.get_splat(guildid, userid, charid)
+    if splat != 0: # Not a vampire
+        raise ValueError("Mortals and ghouls do not have Hunger.")
+
+    setting = not delta[0] in ["+", "-"]
+    try:
+        delta = int(delta)
+    except ValueError:
+        raise ValueError(f"Hunger {delta} is not between 0 and 5.") # pylint: disable=raise-missing-from
+
+    new_hunger = delta if setting else character_db.get_hunger(guildid, userid, charid) + delta
+    if not 0 <= new_hunger <= 5:
+        raise ValueError(f"Hunger {new_hunger} is not between 0 and 5.")
+
+    character_db.set_hunger(guildid, userid, charid, new_hunger)
 
 
 def update_health(guildid: int, userid: int, charid: int, new_max: str):

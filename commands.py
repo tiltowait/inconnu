@@ -59,6 +59,13 @@ async def update_character(ctx, *args):
     await inconnu.update.parse(ctx, *args)
 
 
+@bot.command(name="delete", aliases=["del"])
+@commands.guild_only()
+async def delete_character(ctx, char_name):
+    """Delete a character."""
+    await inconnu.delete.prompt(ctx, char_name)
+
+
 # Events
 
 @bot.event

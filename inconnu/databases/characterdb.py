@@ -168,17 +168,17 @@ class CharacterDB(Database):
         self._execute(query, guildid, userid, char_type, name, humanity, stains, hp, wp)
 
 
-    def delete_character(self, guildid: int, userid: int, char_name: str) -> bool:
+    def delete_character(self, guildid: int, userid: int, char_id: int) -> bool:
         """
         Removes a given character.
         Args:
             guildid (int): Discord ID of the guild
             userid (int): Discord ID of the user
-            char_name (str): The character's name
+            char_id (int): The character's ID
         Returns (bool): True if the character was successfully removed.
         """
-        query = "DELETE FROM Characters WHERE GuildID=%s AND UserID=%s AND CharName=%s;"
-        self._execute(query, guildid, userid, char_name)
+        query = "DELETE FROM Characters WHERE GuildID=%s AND UserID=%s AND CharID=%s;"
+        self._execute(query, guildid, userid, char_id)
 
         return self.cursor.statusmessage != "UPDATE 0"
 

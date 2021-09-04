@@ -6,3 +6,4 @@ from . import roll
 from . import display
 from . import rousemorse
 from . import resonance
+from . import delete

@@ -25,6 +25,13 @@ async def new_character(ctx, *args):
     await inconnu.newchar.parse(ctx, *args)
 
 
+@bot.command(name="display", aliases=["d", "find", "f", "list", "l"])
+@commands.guild_only()
+async def display_character(ctx, *args):
+    """Display a character's basic traits."""
+    await inconnu.display.parse(ctx, *args)
+
+
 @bot.command(name="update", aliases=["u", "up"])
 @commands.guild_only()
 async def update_character(ctx, *args):
@@ -52,6 +59,8 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.NoPrivateMessage):
         await ctx.send("Sorry, this command isn't available in DMs!")
         return
+
+    print(error)
 
 
 @bot.listen("on_menu_select")

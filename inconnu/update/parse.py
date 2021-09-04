@@ -3,6 +3,7 @@
 from . import paramupdate
 from ..constants import character_db
 from ..databases import CharacterNotFoundError
+from ..display import parse as display
 
 __INSTRUCTIONS = "USAGE: `//update CHAR_NAME PARAMETER=NEW_VALUE ...`"
 __INSTRUCTIONS += "\n\tUse `//update help` for a list of parameters."
@@ -31,14 +32,17 @@ async def parse(ctx, *args):
         return
 
     args = list(args) # To allow element deletion
+    char_name = args[0]
+    del args[0]
 
     try:
-        char_id = character_db.character_id(ctx.guild.id, ctx.author.id, args[0])
-        del args[0]
+        char_id = character_db.character_id(ctx.guild.id, ctx.author.id, char_name)
         parameters = __parse_arguments(*args)
 
         for parameter, new_value in parameters.items():
             __update_character(ctx.guild.id, ctx.author.id, char_id, parameter, new_value)
+
+        await display(ctx, char_name)
 
 
     except (ValueError, CharacterNotFoundError) as err:

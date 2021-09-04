@@ -66,11 +66,36 @@ def __reroll_failures(dice: list) -> list:
 
 def __maximize_criticals(dice: list) -> list:
     """Re-roll up to three non-critical dice."""
+
+    # If there are 3 or more failure dice, we don't need to re-roll any successes.
+    # To avoid accidentally skipping a die that needs to be re-rolled, we will
+    # convert successful dice until our total failures equals 3
+
+    # Technically, we could do this in two passes: re-roll failures, then re-
+    # roll non-criticals until we hit 3 re-rolls. It would certainly be the more
+    # elegant solution. However, that method would frequently result in the same
+    # die being re-rolled twice. This isn't technically against RAW, but it's
+    # against the spirit and furthermore increases the likelihood of bug reports
+    # due to people seeing dice frequently not being re-rolled when they expect
+    # them to be.
+
+    # Thus, we use this ugly method.
+    total_failures = len(list(filter(lambda die: die < 6, dice)))
+    if total_failures < __MAX_REROLL:
+        for index, die in enumerate(dice):
+            if 6 <= die < 10: # Non-critical success
+                dice[index] = 1
+                total_failures += 1
+
+                if total_failures == __MAX_REROLL:
+                    break
+
+    # We have as many re-rollable dice as we can
     new_dice = []
     rerolled = 0
 
     for die in dice:
-        if die == 10 or rerolled == __MAX_REROLL:
+        if die >= 6 or rerolled == __MAX_REROLL:
             new_dice.append(die)
         else:
             new_dice.append(__d10())

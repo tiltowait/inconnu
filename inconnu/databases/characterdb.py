@@ -597,7 +597,7 @@ class CharacterDB(Database):
         results = self.cursor.fetchall()
 
         if len(results) == 0:
-            raise TraitNotFoundError(f"{trait} not found.")
+            raise TraitNotFoundError(f"`{trait}` not found.")
 
         if len(results) == 1:
             rating = results[0][1]

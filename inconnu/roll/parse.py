@@ -18,9 +18,10 @@ import discord
 from .roll import roll
 from .dicemoji import Dicemoji
 from ..databases import CharacterNotFoundError, AmbiguousTraitError, TraitNotFoundError
-from ..constants import character_db
+from ..constants import character_db, DAMAGE
 
 __DICEMOJI = None
+__UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
 RollParameters = namedtuple("RollParameters", ["pool", "hunger", "difficulty"])
 
 async def parse(ctx, *args):
@@ -153,8 +154,17 @@ def __substitute_traits(guildid: int, userid: int, character: int, *args):
         try:
             rating = character_db.trait_rating(guildid, userid, character, item)
             final_stack.append(rating)
-        except (TraitNotFoundError, AmbiguousTraitError) as exception:
-            raise ValueError(exception.message) #pylint: disable=raise-missing-from
+        except TraitNotFoundError as err:
+            # We allow universal traits
+            match = __match_universal_trait(item)
+            if match:
+                rating = __get_universal_trait(guildid, userid, character, match)
+                final_stack.append(rating)
+            else:
+                raise ValueError(str(err)) # pylint: disable=raise-missing-from
+
+        except AmbiguousTraitError as err:
+            raise ValueError(err.message) # pylint: disable=raise-missing-from
 
     return final_stack
 
@@ -208,3 +218,36 @@ def __combine_operators(*stack):
     compact_stack.extend(padding)
 
     return RollParameters(*compact_stack)
+
+
+def __get_universal_trait(guildid: int, userid: int, charid: int, trait):
+    """Retrieve a universal trait (Hunger, Willpower, Humanity)."""
+    value = getattr(character_db, f"get_{trait}")(guildid, userid, charid)
+
+    if trait == "willpower":
+        # Willpower is a string. Additionally, per RAW only undamaged Willpower
+        # may be rolled.
+        return value.count(DAMAGE.none)
+
+    # All others are ints
+    return value
+
+
+def __match_universal_trait(match: str):
+    """Match a trait to a universal trait. Raise AmbiguousTraitError if ambiguous."""
+
+    # Right now, there are only three universal traits, so this is overkill. However,
+    # that number may change in the future, so this flexibility may prove valuable
+    # in the long run.
+    matches = []
+    for trait in __UNIVERSAL_TRAITS:
+        if trait.startswith(match.lower()):
+            matches.append(trait)
+
+    if len(matches) > 1:
+        raise ValueError(str(AmbiguousTraitError(match, matches))) # Cast to avoid messy try blocks
+
+    if len(matches) == 1:
+        return matches[0]
+
+    return None

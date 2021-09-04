@@ -15,6 +15,17 @@ async def roll(ctx, *args):
     if len(args) > 0:
         await inconnu.roll.parse(ctx, *args)
 
+@bot.command()
+async def rouse(ctx, *args):
+    """Perform a rouse check."""
+    await inconnu.rousemorse.parse(ctx, "rouse", *args)
+
+
+@bot.command()
+async def remorse(ctx, *args):
+    """Perform a remorse check."""
+    await inconnu.rousemorse.parse(ctx, "remorse", *args)
+
 
 # Character CRUD
 

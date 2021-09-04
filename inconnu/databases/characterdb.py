@@ -310,6 +310,7 @@ class CharacterDB(Database):
         Raises CharacterNotFoundError if the character does not exist.
         """
         self.__set_attribute(guildid, userid, charid, "Humanity", new_humanity)
+        self.set_stains(guildid, userid, charid, 0)
 
 
     def get_stains(self, guildid: int, userid: int, charid: int) -> str:

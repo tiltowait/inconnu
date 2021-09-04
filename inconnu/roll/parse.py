@@ -17,7 +17,7 @@ import discord
 
 from .roll import roll
 from .dicemoji import Dicemoji
-from ..databases import AmbiguousTraitError, TraitNotFoundError
+from ..databases import CharacterNotFoundError, AmbiguousTraitError, TraitNotFoundError
 from ..constants import character_db
 
 __DICEMOJI = None
@@ -32,11 +32,16 @@ async def parse(ctx, *args):
     args = list(args) # To allow for item deletion
 
     # Determine the character being used, if any
-    character_name, character = character_db.character(
-        ctx.guild.id,
-        ctx.author.id,
-        args[0]
-    ) or (None, None) # Method returns None if no match, so we need to make something to unpack
+    character_name = None
+    character = None
+    try:
+        character_name, character = character_db.character(
+            ctx.guild.id,
+            ctx.author.id,
+            args[0]
+        )
+    except CharacterNotFoundError:
+        pass
 
     if character_name is not None:
         del args[0]

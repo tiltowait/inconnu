@@ -20,6 +20,7 @@ class CharacterDB(Database):
                 UserID    bigint NOT NULL,
                 Splat     int    NOT NULL,
                 CharName  text   NOT NULL,
+                Hunger    int    DEFAULT 1,
                 Humanity  int    DEFAULT 7,
                 Stains    int    DEFAULT 0,
                 Health    text   NOT NULL,
@@ -91,6 +92,9 @@ class CharacterDB(Database):
         """
         self._execute(query, guildid, userid, char_name)
         results = self.cursor.fetchone()
+
+        if results is None:
+            raise CharacterNotFoundError(f"You do not have a character named `{char_name}`.")
 
         return results
 
@@ -194,6 +198,34 @@ class CharacterDB(Database):
 
         if self.cursor.statusmessage == "UPDATE 0":
             raise CharacterNotFoundError("Character does not exist.")
+
+
+    def get_hunger(self, guildid: int, userid: int, charid: int) -> int:
+        """
+        Retrieve the character's hunger.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+        Returns (str): The character's hunger.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        return self.__get_attribute(guildid, userid, charid, "Hunger")
+
+
+    def set_hunger(self, guildid: int, userid: int, charid: int, new_hunger: str) -> int:
+        """
+        Update the character's hunger.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            char_id (int): The character's database ID
+            new_hunger (int): The character's new hunger
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        self.__set_attribute(guildid, userid, charid, "Hunger", new_hunger)
 
 
     def get_health(self, guildid: int, userid: int, charid: int) -> str:

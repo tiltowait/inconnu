@@ -29,8 +29,6 @@ class Wizard:
             "Science", "Technology"
         ]
         self.ctx = ctx
-        self.dm_channel = ctx.author.dm_channel # First half of ctx.author.send bug workaround
-                                                # https://github.com/discord-py-ui/discord-ui/issues/94
         self.parameters = parameters
 
         self.assigned_traits = {}
@@ -83,7 +81,7 @@ class Wizard:
         for trait, rating in self.assigned_traits.items():
             character_db.add_trait(guildid, userid, name, trait, rating)
 
-        await self.dm_channel.send(f"{name} has been created in {self.ctx.guild.name}!")
+        await self.ctx.author.send(f"{name} has been created in {self.ctx.guild.name}!")
 
 
     async def __query_trait(self, message=None):
@@ -109,8 +107,4 @@ class Wizard:
             placeholder=f"Select {self.parameters.name}'s {self.core_traits[0]} rating"
         )
 
-        # Second half of ctx.author.send bug workaround
-        if self.dm_channel is None:
-            self.dm_channel = await self.ctx.author.create_dm()
-
-        self.last_query_message = await self.dm_channel.send(embed=embed, components=[menu])
+        self.last_query_message = await self.ctx.author.send(embed=embed, components=[menu])

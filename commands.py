@@ -13,10 +13,10 @@ _ = UI(bot)
 # Gameplay Commands
 
 @bot.command(name="v", aliases=["roll", "r"])
-async def roll(ctx, *args):
+async def roll(ctx, *, args=None):
     """Roll a dice pool, either raw or calculated from traits."""
-    if len(args) > 0:
-        await inconnu.roll.parse(ctx, *args)
+    if args is not None:
+        await inconnu.roll.parse(ctx, args)
 
 @bot.command()
 async def rouse(ctx, *args):

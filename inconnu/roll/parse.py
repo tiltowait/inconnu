@@ -26,12 +26,19 @@ __DICEMOJI = None
 __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
 RollParameters = namedtuple("RollParameters", ["pool", "hunger", "difficulty"])
 
-async def parse(ctx, *args):
+async def parse(ctx, args: str):
     """Parse the user's arguments and attempt to roll the dice."""
     global __DICEMOJI
     if __DICEMOJI is None:
         __DICEMOJI = Dicemoji(ctx.bot)
 
+    # Comments appear after the first # in a command
+    comment = None
+    if "#" in args:
+        args, comment = args.split("#", 1)
+        comment = comment.strip()
+
+    args = args.split()
     args = list(args) # To allow for item deletion
 
     # Determine the character being used, if any
@@ -68,13 +75,13 @@ async def parse(ctx, *args):
     try:
         roll_params = __evaluate_syntax(ctx.guild.id, ctx.author.id, character, *args)
         results = roll(roll_params)
-        await __send_results(ctx, character_name, results)
+        await __send_results(ctx, character_name, results, comment)
 
     except (SyntaxError, ValueError) as err:
         await ctx.reply(f"Error: {str(err)}")
 
 
-async def __send_results(ctx, character_name, results, rerolled=False):
+async def __send_results(ctx, character_name, results, comment, rerolled=False):
     character_name = character_name or ctx.author.display_name
     normalmoji = __DICEMOJI.emoji_string(results.normal.dice, False)
     hungermoji = __DICEMOJI.emoji_string(results.hunger.dice, True)
@@ -101,13 +108,18 @@ async def __send_results(ctx, character_name, results, rerolled=False):
     embed.add_field(name="Pool", value=str(results.pool))
     embed.add_field(name="Hunger", value=str(results.hunger.count))
 
+    # Comment
+    if comment is not None:
+        embed.set_footer(text=comment)
+
+    # Calculate re-roll options and display
     reroll_buttons = __generate_reroll_buttons(results)
     if len(reroll_buttons) == 0 or rerolled:
         await ctx.reply(content=emoji_string, embed=embed)
     else:
         msg = await ctx.reply(content=emoji_string, embed=embed, components=reroll_buttons)
         rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
-        await __send_results(ctx, character_name, rerolled_results, rerolled=True)
+        await __send_results(ctx, character_name, rerolled_results, comment, rerolled=True)
 
 
 def __evaluate_syntax(guildid: int, userid: int, character: int, *args):

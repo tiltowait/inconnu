@@ -180,7 +180,7 @@ async def on_ready():
     print(f"Playing on {len(bot.guilds)} servers.")
     print(discord.version_info)
 
-    await bot.change_presence(activity=discord.Game(__status_message()))
+    await bot.change_presence(activity=discord.Game("//help"))
 
 
 @bot.event

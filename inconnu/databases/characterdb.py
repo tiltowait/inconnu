@@ -498,13 +498,7 @@ class CharacterDB(Database):
 
     # Trait CRUD
 
-    def trait_exists(self,
-        guildid: int,
-        userid: int,
-        charid: int,
-        trait_name: str,
-        fuzzy=True
-    ) -> bool:
+    def trait_exists(self, guildid: int, userid: int, charid: int, trait: str) -> bool:
         """
         Determine whether a character already has a given trait.
         Args:
@@ -514,8 +508,6 @@ class CharacterDB(Database):
             trait (str): The name of the trait to add
         Returns (bool): True if the trait exists already.
         """
-        trait = f"{trait_name}%" if fuzzy else trait_name
-
         query = """
             SELECT Trait
             FROM Traits
@@ -527,17 +519,9 @@ class CharacterDB(Database):
             ;
         """
         self._execute(query, guildid, userid, charid, trait)
-        results = self.cursor.fetchall()
+        results = self.cursor.fetchone()
 
-        if len(results) == 0:
-            return False
-
-        if len(results) == 1:
-            return True
-
-        # More than one match
-        matches = list(map(lambda row: row[0], results))
-        raise AmbiguousTraitError(trait_name, matches)
+        return results is not None
 
 
     def add_trait(self, guildid: int, userid: int, char_id: int, trait: str, rating: int):
@@ -553,7 +537,7 @@ class CharacterDB(Database):
         Raises CharacterNotFound if the user does not have a character by that name.
         """
         # Figure out if we're updating or adding a trait
-        if self.trait_exists(guildid, userid, char_id, trait, fuzzy=False):
+        if self.trait_exists(guildid, userid, char_id, trait):
             query = """
                 UPDATE Traits
                 SET Rating=%s

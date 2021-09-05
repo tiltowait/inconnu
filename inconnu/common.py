@@ -1,5 +1,7 @@
 """common.py - Commonly used functions."""
 
+import discord
+
 from .databases import CharacterNotFoundError
 from .constants import character_db
 
@@ -60,3 +62,15 @@ def pluralize(value: int, noun: str) -> str:
             pluralized += "s"
 
     return pluralized
+
+
+async def display_error(ctx, char_name, error):
+    """Display an error in a nice embed."""
+    embed = discord.Embed(
+        title="Error",
+        description=str(error),
+        color=0xFF0000
+    )
+    embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
+
+    await ctx.reply(embed=embed)

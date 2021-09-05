@@ -37,11 +37,8 @@ async def parse(ctx, allow_overwrite: bool, *args):
             wizard = TraitWizard(ctx, char_name, wizard_traits)
             await wizard.begin()
 
-
     except (ValueError, SyntaxError) as err:
-        await ctx.reply(f"**Error:** {err}")
-
-# TODO: Build out a nice error embed
+        await common.display_error(ctx, char_name, err)
 
 
 async def __handle_traits(guildid: int, userid: int, charid: int, traits: dict, overwriting: bool):
@@ -94,5 +91,3 @@ async def __display_results(ctx, assigned: list, unassigned: list, char_name: st
         embed.set_footer(text="Check your DMs to finish assigning the traits.")
 
     await ctx.reply(embed=embed)
-
-

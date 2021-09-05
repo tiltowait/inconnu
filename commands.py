@@ -89,7 +89,7 @@ async def show_traits(ctx, *args):
 @modify_traits.command(name="update")
 async def update_traits(ctx, *args):
     """Update a character's trait(s)."""
-    await ctx.reply("Update traits")
+    await inconnu.traits.add_update.parse(ctx, True, *args)
 
 
 @modify_traits.command(name="delete")

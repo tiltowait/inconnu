@@ -545,7 +545,7 @@ class CharacterDB(Database):
                     GuildID=%s
                     AND UserID=%s
                     AND CharID=%s
-                    AND Trait=%s
+                    AND Trait ILIKE %s
                 ;
             """
             self._execute(query, rating, guildid, userid, char_id, trait)

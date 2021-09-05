@@ -99,14 +99,7 @@ You will be given a confirmation box before deletion occurs.
 
 TRAITS_COMMAND_BRIEF = "Character trait management commands"
 TRAITS_COMMAND_USAGE = "<subcommand>"
-TRAITS_COMMAND_HELP = """
-Available subcommands:
-
-    add
-    list
-    update
-    delete
-"""
+TRAITS_COMMAND_HELP = TRAITS_COMMAND_BRIEF + "."
 
 
 TRAITS_ADD_BRIEF = "Add trait(s) to a character"

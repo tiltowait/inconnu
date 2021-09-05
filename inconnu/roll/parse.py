@@ -89,14 +89,20 @@ async def __send_results(ctx, character_name, results, comment, rerolled=False):
 
     emoji_string = f"{normalmoji} {hungermoji}"
 
+    title = results.main_takeaway
+    if not results.is_total_failure and not results.is_bestial:
+        title += f" ({results.total_successes})"
+
     embed = discord.Embed(
-        title=f"{results.main_takeaway} ({results.total_successes} vs {results.difficulty})",
+        title=title,
         description=f"**Margin: {results.margin}**",
         colour=results.embed_color
     )
 
     # Author line
-    author_field = character_name + ("'s Reroll" if rerolled else "'s Roll")
+    author_field = character_name + ("'s reroll" if rerolled else "'s roll")
+    if results.difficulty > 0:
+        author_field += f" vs diff. {results.difficulty}"
     if results.descriptor is not None:
         author_field += f" ({results.descriptor})"
 
@@ -108,6 +114,7 @@ async def __send_results(ctx, character_name, results, comment, rerolled=False):
     # Disclosure fields
     embed.add_field(name="Pool", value=str(results.pool))
     embed.add_field(name="Hunger", value=str(results.hunger.count))
+    embed.add_field(name="Difficulty", value=str(results.difficulty), inline=False)
 
     # Comment
     if comment is not None:

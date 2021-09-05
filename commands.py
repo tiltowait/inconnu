@@ -77,7 +77,7 @@ async def modify_traits(ctx):
 @modify_traits.command(name="add")
 async def add_trait(ctx, *args):
     """Add trait(s) to a character."""
-    await ctx.reply("Add traits")
+    await inconnu.traits.add_update.parse(ctx, False, *args)
 
 
 @modify_traits.command(name="show")
@@ -119,7 +119,7 @@ async def on_command_error(ctx, error):
         await ctx.send("Sorry, this command isn't available in DMs!")
         return
 
-    print(error)
+    raise error
 
 
 @bot.listen("on_menu_select")

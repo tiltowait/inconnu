@@ -498,7 +498,13 @@ class CharacterDB(Database):
 
     # Trait CRUD
 
-    def trait_exists(self, guildid: int, userid: int, charid: int, trait_name: str) -> bool:
+    def trait_exists(self,
+        guildid: int,
+        userid: int,
+        charid: int,
+        trait_name: str,
+        fuzzy=True
+    ) -> bool:
         """
         Determine whether a character already has a given trait.
         Args:
@@ -508,11 +514,11 @@ class CharacterDB(Database):
             trait (str): The name of the trait to add
         Returns (bool): True if the trait exists already.
         """
-        trait = trait_name + "%" # Wildcard matching
+        trait = f"{trait_name}%" if fuzzy else trait_name
 
         query = """
             SELECT Trait
-            FROM TRAITS
+            FROM Traits
             WHERE
                 GuildID=%s
                 AND UserID=%s
@@ -534,41 +540,34 @@ class CharacterDB(Database):
         raise AmbiguousTraitError(trait_name, matches)
 
 
-    def add_trait(self, guildid: int, userid: int, char_name: str, trait: str, rating: int):
+    def add_trait(self, guildid: int, userid: int, char_id: int, trait: str, rating: int):
         """
         Adds or updates a trait on a given character
         Args:
             guildid (int): Discord ID of the guild
             userid (int): Discord ID of the user
-            char_name (str): The name of the character
+            char_id (int): The name of the character
             trait (str): The name of the trait to add
             rating (int): The trait's rating
 
         Raises CharacterNotFound if the user does not have a character by that name.
         """
-        charid = self.character_id(guildid, userid, char_name)
-
-        if charid is not None:
-            # Figure out if we're updating or adding a trait
-            if self.trait_exists(guildid, userid, charid, trait):
-                query = """
-                    UPDATE Traits
-                    SET Rating=%s
-                    WHERE
-                        GuildID=%s
-                        AND UserID=%s
-                        AND CharID=%s
-                        AND Trait=%s
-                    ;
-                """
-                self._execute(query, rating, guildid, userid, charid, trait)
-            else:
-                query = "INSERT INTO Traits VALUES (%s, %s, %s, %s, %s);"
-                self._execute(query, guildid, userid, charid, trait, rating)
-
+        # Figure out if we're updating or adding a trait
+        if self.trait_exists(guildid, userid, char_id, trait, fuzzy=False):
+            query = """
+                UPDATE Traits
+                SET Rating=%s
+                WHERE
+                    GuildID=%s
+                    AND UserID=%s
+                    AND CharID=%s
+                    AND Trait=%s
+                ;
+            """
+            self._execute(query, rating, guildid, userid, char_id, trait)
         else:
-            # pylint: disable=raise-missing-from
-            raise CharacterNotFoundError(f"You do not have a character named {char_name}.")
+            query = "INSERT INTO Traits VALUES (%s, %s, %s, %s, %s);"
+            self._execute(query, guildid, userid, char_id, trait, rating)
 
 
     def trait_rating(self, guildid: int, userid: int, charid: int, trait: str) -> int:

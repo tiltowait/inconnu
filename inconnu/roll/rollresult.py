@@ -93,13 +93,13 @@ class RollResult:
     @property
     def is_successful(self):
         """Return true if the roll meets or exceeds its target."""
-        return self.margin >= 0
+        return self.margin >= 0 and self.total_successes > 0
 
 
     @property
     def is_failure(self):
         """Return true if the target successes weren't achieved, but it isn't bestial."""
-        return self.hunger.ones == 0 and self.total_successes >= 0
+        return self.hunger.ones == 0 and self.total_successes > 0
 
 
     @property

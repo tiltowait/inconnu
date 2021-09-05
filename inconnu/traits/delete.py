@@ -28,7 +28,7 @@ async def parse(ctx, *args):
             description=", ".join(args)
         )
         embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
-        embed.set_footer(text="Use //traits list to see remaining traits.")
+        embed.set_footer(text="To see remaining traits: //traits list")
 
         await ctx.reply(embed=embed)
 

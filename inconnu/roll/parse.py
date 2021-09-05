@@ -19,13 +19,17 @@ from discord_ui import Button
 from .roll import roll
 from .dicemoji import Dicemoji
 from . import reroll
-from ..common import display_error
+from .. import common
 from ..databases import CharacterNotFoundError, AmbiguousTraitError, TraitNotFoundError
 from ..constants import character_db, DAMAGE
 
 __DICEMOJI = None
 __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
 RollParameters = namedtuple("RollParameters", ["pool", "hunger", "difficulty"])
+
+class TraitInDMsError(Exception):
+    """An error for when the user attempts to roll traits in a DM."""
+
 
 async def parse(ctx, args: str):
     """Parse the user's arguments and attempt to roll the dice."""
@@ -39,47 +43,37 @@ async def parse(ctx, args: str):
         args, comment = args.split("#", 1)
         comment = comment.strip()
 
+    if __is_unsafe_dm_roll(ctx, args):
+        await common.display_error(ctx, ctx.author.display_name, "You cannot roll traits in DMs!")
+        return
+
     args = args.split()
     args = list(args) # To allow for item deletion
 
     # Determine the character being used, if any
     character_name = None
     character = None
-    try:
-        character_name, character = character_db.character(
-            ctx.guild.id,
-            ctx.author.id,
-            args[0]
-        )
-    except CharacterNotFoundError:
-        pass
 
-    if character_name is not None:
-        del args[0]
+    if ctx.guild is not None:
+        # This is one of the few commands that can be rolled in DMs
+        character_name, character = common.get_character(ctx.guild.id, ctx.author.id, *args)
 
-        # Yell at the user if they only gave a character name and no roll syntax
-        if len(args) == 0:
-            await ctx.reply("You need to tell me what to roll!")
-            return
-    elif character_db.character_count(ctx.guild.id, ctx.author.id) == 1:
-        # If the user has one character, they are automatically assumed to be
-        # using it even if they don't explicitly supply the name
+        if character_name.lower() == args[0].lower():
+            del args[0]
 
-        # It's only necessary, however, if they're calling traits
-        if re.match(r"[A-z_]", " ".join(args)):
-            user_characters = character_db.characters(ctx.guild.id, ctx.author.id)
-
-            character_name = list(user_characters.keys())[0]
-            character = list(user_characters.values())[0]
+            # Yell at the user if they only gave a character name and no roll syntax
+            if len(args) == 0:
+                await ctx.reply("You need to tell me what to roll!")
+                return
 
     # Attempt to parse the user's roll syntax
     try:
-        roll_params = __evaluate_syntax(ctx.guild.id, ctx.author.id, character, *args)
+        roll_params = __evaluate_syntax(ctx, character, *args)
         results = roll(roll_params)
         await __send_results(ctx, character_name, results, comment)
 
     except (SyntaxError, ValueError) as err:
-        await display_error(ctx, character_name or ctx.author.display_name, str(err))
+        await common.display_error(ctx, character_name or ctx.author.display_name, str(err))
 
 
 async def __send_results(ctx, character_name, results, comment, rerolled=False):
@@ -130,7 +124,7 @@ async def __send_results(ctx, character_name, results, comment, rerolled=False):
         await __send_results(ctx, character_name, rerolled_results, comment, rerolled=True)
 
 
-def __evaluate_syntax(guildid: int, userid: int, character: int, *args):
+def __evaluate_syntax(ctx, character: int, *args):
     """
     Convert the user's syntax to the standardized format: pool, hunger, diff.
     Args:
@@ -144,11 +138,11 @@ def __evaluate_syntax(guildid: int, userid: int, character: int, *args):
 
     Raises ValueError if there is trouble querying the database.
     """
-    stack = __substitute_traits(guildid, userid, character, *args)
+    stack = __substitute_traits(ctx, character, *args)
     return __combine_operators(*stack)
 
 
-def __substitute_traits(guildid: int, userid: int, character: int, *args):
+def __substitute_traits(ctx, character: int, *args):
     """
     Convert the roll syntax into a stack while simultaneously replacing database
     calls with the appropriate values.
@@ -157,6 +151,16 @@ def __substitute_traits(guildid: int, userid: int, character: int, *args):
 
     Raises ValueError if there is trouble querying the database.
     """
+
+    # By the time we get here, we've already determined whether our roll is safe
+    # for DMs (i.e. no traits are being rolled). So it's okay to leave guildid
+    # and userid as Nones, because that pathway will never execute.
+    guildid = None
+    userid = None
+
+    if ctx.guild is not None:
+        guildid = ctx.guild.id
+        userid = ctx.author.id
 
     # Split the syntax into words and numbers. Pool elements require math operators
     # between them. Optional: If the final two lack operators, they are considered hunger
@@ -188,7 +192,7 @@ def __substitute_traits(guildid: int, userid: int, character: int, *args):
 
         # User is invoking a trait
         if character is None:
-            raise ValueError(f"You must supply a character name to use {item}.")
+            raise ValueError(f"You must supply a character name to use `{item}`.")
 
         try:
             rating = character_db.trait_rating(guildid, userid, character, item)
@@ -306,3 +310,14 @@ def __generate_reroll_buttons(roll_result) -> list:
         buttons.append(Button("avoid_messy", "Avoid Messy Critical"))
 
     return buttons
+
+
+def __is_unsafe_dm_roll(ctx, args: str):
+    """Raise an exception if attempting to makea roll in a DM."""
+    if ctx.guild is not None:
+        return False
+
+    if re.match(r"[A-z_]", args) is not None:
+        return True
+
+    return False

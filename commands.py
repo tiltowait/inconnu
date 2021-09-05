@@ -92,10 +92,10 @@ async def update_traits(ctx, *args):
     await inconnu.traits.add_update.parse(ctx, True, *args)
 
 
-@modify_traits.command(name="delete")
+@modify_traits.command(name="delete", aliases=["rm"])
 async def delete_traits(ctx, *args):
     """Remove traits from a character."""
-    await ctx.reply("Remove traits")
+    await inconnu.traits.delete.parse(ctx, *args)
 
 
 # Events

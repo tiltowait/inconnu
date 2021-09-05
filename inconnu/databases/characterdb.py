@@ -612,3 +612,23 @@ class CharacterDB(Database):
         results = self.cursor.fetchall()
 
         return OrderedDict(results)
+
+
+    def delete_trait(self, guildid: int, userid: int, charid: int, trait: str):
+        """
+        Fetch the rating for a given character's trait.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            charid (int): The character's database ID
+            trait (str): The name of the trait to add
+        Returns (int): The rating for the trait.
+        """
+        query = """
+            DELETE FROM Traits
+            WHERE GuildID=%s
+                AND UserID=%s
+                AND CharID=%s
+                AND Trait ILIKE %s;
+        """
+        self._execute(query, guildid, userid, charid, trait)

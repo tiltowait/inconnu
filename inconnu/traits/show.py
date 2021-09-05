@@ -25,4 +25,5 @@ async def parse(ctx, *args):
     embed.set_author(name=f"{char_name} on {ctx.guild.name}", icon_url=ctx.guild.icon_url)
     embed.set_footer(text=f"To see HP, WP, etc., use //display on {ctx.guild.name}")
 
+    await ctx.reply("Check your DMs!")
     await ctx.author.send(embed=embed)

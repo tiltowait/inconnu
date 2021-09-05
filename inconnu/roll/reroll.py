@@ -20,7 +20,7 @@ async def wait_for_reroll(ctx, message, old_roll):
     waiting = True
 
     while waiting:
-        btn = await message.wait_for("button", ctx.bot, timeout=60)
+        btn = await message.wait_for("button", ctx.bot)
         await btn.respond()
 
         if ctx.author.id != btn.author.id:

@@ -7,8 +7,6 @@ from discord_ui import SelectedMenu
 from . import wizard
 from ..constants import character_db
 
-__WIZARDS = {}
-
 __INSTRUCTIONS = "Character creation wizard usage:\n"
 __INSTRUCTIONS += "```\n"
 __INSTRUCTIONS += "name=NAME — The character's name\n"
@@ -33,9 +31,8 @@ async def parse(ctx, *args):
         await ctx.reply("Please check your DMs! I hope you have your character sheet ready.")
 
         character_wizard = wizard.Wizard(ctx, parameters)
-        __WIZARDS[ctx.author.id] = character_wizard
-
         await character_wizard.begin_chargen()
+
     except (ValueError, KeyError):
         await ctx.reply(__INSTRUCTIONS)
 

@@ -48,7 +48,7 @@ class TraitWizard:
         msg = await self.ctx.author.send(embed=embed, components=[menu])
 
         # Wait for response
-        btn = await msg.wait_for("select", self.ctx.bot, timeout=60)
+        btn = await msg.wait_for("select", self.ctx.bot)
         await btn.respond()
         await msg.delete()
 

@@ -77,7 +77,9 @@ class Wizard:
         for trait, rating in self.assigned_traits.items():
             character_db.add_trait(guildid, userid, char_id, trait, rating)
 
-        await self.ctx.author.send(f"{name} has been created in {self.ctx.guild.name}!")
+        success = f"{name} has been created in {self.ctx.guild.name}!"
+        success += " Make a mistake? Use `//traits update` to fix."
+        await self.ctx.author.send(success)
 
 
     async def __query_trait(self, message=None):

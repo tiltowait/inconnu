@@ -40,17 +40,6 @@ async def parse(ctx, *args):
         await ctx.reply(__INSTRUCTIONS)
 
 
-async def response_selected(menu: SelectedMenu):
-    """Process a rating menu selection."""
-    try:
-        char_wizard = __WIZARDS[menu.author.id]
-        rating = int(menu.selected_values[0].value)
-        await menu.respond()
-        await char_wizard.assign_next_trait(rating)
-    except KeyError:
-        print(f"{menu.author.display_name} just tried to select on a non-existent wizard")
-
-
 def __parse_arguments(*arguments):
     """
     Parse the user's arguments.

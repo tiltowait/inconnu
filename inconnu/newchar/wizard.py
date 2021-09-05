@@ -40,7 +40,7 @@ class Wizard:
         await self.__query_trait()
 
 
-    async def assign_next_trait(self, rating: int):
+    async def __assign_next_trait(self, rating: int):
         """
         Assign the next trait in the list and display the next trait or finish
         creating the character if finished.
@@ -58,11 +58,6 @@ class Wizard:
             await self.__finalize_character()
         else:
             await self.__query_trait(f"{trait} set to {rating}.")
-
-
-    async def resend_last_query(self, error):
-        """Re-send the last query message."""
-        await self.__query_trait(error)
 
 
     async def __finalize_character(self):
@@ -94,7 +89,7 @@ class Wizard:
         embed = discord.Embed(
             title=f"Select the rating for: {self.core_traits[0]}",
             description=description,
-            color=0xFF0000
+            color=0x7777FF
         )
         embed.set_author(
             name=f"Creating {self.parameters.name} on {self.ctx.guild.name}",
@@ -108,3 +103,10 @@ class Wizard:
         )
 
         self.last_query_message = await self.ctx.author.send(embed=embed, components=[menu])
+
+        # Await the user response
+        menu = await self.last_query_message.wait_for("select", self.ctx.bot)
+        await menu.respond()
+
+        rating = int(menu.selected_values[0].value)
+        await self.__assign_next_trait(rating)

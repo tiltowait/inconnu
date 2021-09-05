@@ -195,13 +195,6 @@ async def on_command_error(ctx, error):
     raise error
 
 
-@bot.listen("on_menu_select")
-async def on_button(menu: SelectedMenu):
-    """Pass the selection to the appropriate manager."""
-    if menu.custom_id == "rating_selector":
-        await inconnu.newchar.response_selected(menu)
-
-
 # Misc and helpers
 
 def __status_message():

@@ -1,6 +1,8 @@
 """Describes the UserDB class for managing characters across different guilds."""
 # pylint: disable=too-many-arguments
 
+from collections import OrderedDict
+
 from psycopg2.sql import SQL, Identifier
 
 from .base import Database
@@ -606,3 +608,24 @@ class CharacterDB(Database):
         # Ambiguous trait match
         matches = list(map(lambda row: row[0], results))
         raise AmbiguousTraitError(trait, matches)
+
+
+    def get_all_traits(self, guildid: int, userid: int, charid: int):
+        """
+        Retrieve all of a character's traits.
+        Args:
+            guildid (int): Discord ID of the guild
+            userid (int): Discord ID of the user
+            charid (int): The character's database ID
+        Returns (dict): All of the character's traits, plus their ratings.
+        """
+        query = """
+            SELECT Trait, Rating
+            FROM Traits
+            WHERE GuildID=%s AND UserID=%s AND CharID=%s
+            ORDER BY Trait;
+        """
+        self._execute(query, guildid, userid, charid)
+        results = self.cursor.fetchall()
+
+        return OrderedDict(results)

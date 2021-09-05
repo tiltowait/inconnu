@@ -66,6 +66,38 @@ async def delete_character(ctx, char_name):
     await inconnu.delete.prompt(ctx, char_name)
 
 
+# Trait CRUD
+
+@bot.group(invoke_without_command=True, name="traits", aliases=["trait", "t"])
+async def modify_traits(ctx):
+    """Traits subcommand start."""
+    await ctx.reply("Uh, you need to do more, dude")
+
+
+@modify_traits.command(name="add")
+async def add_trait(ctx, *args):
+    """Add trait(s) to a character."""
+    await ctx.reply("Add traits")
+
+
+@modify_traits.command(name="show")
+async def show_traits(ctx, *args):
+    """Display a character's traits."""
+    await inconnu.traits.show.parse(ctx, *args)
+
+
+@modify_traits.command(name="update")
+async def update_traits(ctx, *args):
+    """Update a character's trait(s)."""
+    await ctx.reply("Update traits")
+
+
+@modify_traits.command(name="delete")
+async def delete_traits(ctx, *args):
+    """Remove traits from a character."""
+    await ctx.reply("Remove traits")
+
+
 # Events
 
 @bot.event

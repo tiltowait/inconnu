@@ -11,4 +11,5 @@ import os
 import commands
 
 if __name__ == "__main__":
+    commands.setup()
     commands.bot.run(os.environ["INCONNU_TOKEN"])

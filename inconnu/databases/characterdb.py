@@ -166,7 +166,12 @@ class CharacterDB(Database):
             userid (int): Discord ID of the user
             char_name (str): The new character's name
         """
-        query = "INSERT INTO Characters VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
+        query = """
+        INSERT INTO Characters(
+            GuildID, UserID, Splat, CharName, Humanity, Stains, Health, Willpower
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        """
         self._execute(query, guildid, userid, char_type, name, humanity, stains, hp, wp)
 
 

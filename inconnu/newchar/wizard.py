@@ -71,10 +71,11 @@ class Wizard:
         willpower =  "." *self.parameters.wp
 
         character_db.add_character(guildid, userid, char_type, name, humanity, 0, health, willpower)
+        char_id = character_db.character_id(guildid, userid, name)
 
         # Need to add the fields one-by-one
         for trait, rating in self.assigned_traits.items():
-            character_db.add_trait(guildid, userid, name, trait, rating)
+            character_db.add_trait(guildid, userid, char_id, trait, rating)
 
         await self.ctx.author.send(f"{name} has been created in {self.ctx.guild.name}!")
 

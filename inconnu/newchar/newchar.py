@@ -2,8 +2,6 @@
 
 from collections import namedtuple
 
-from discord_ui import SelectedMenu
-
 from . import wizard
 from ..constants import character_db
 

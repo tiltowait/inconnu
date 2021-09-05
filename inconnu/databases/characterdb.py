@@ -576,17 +576,22 @@ class CharacterDB(Database):
                 AND UserID=%s
                 AND CharID=%s
                 AND Trait ILIKE %s
+            ORDER BY Trait
             ;
         """
+        # First, see if we have an exact match
+        self._execute(query, guildid, userid, charid, trait)
+        exact_match_results = self.cursor.fetchone()
+
+        if exact_match_results is not None:
+            return exact_match_results[1]
+
+        # Exact match not found; see if it's got ambiguous matches
         self._execute(query, guildid, userid, charid, fuzzy_trait)
         results = self.cursor.fetchall()
 
         if len(results) == 0:
             raise TraitNotFoundError(f"`{trait}` not found.")
-
-        if len(results) == 1:
-            rating = results[0][1]
-            return rating
 
         # Ambiguous trait match
         matches = list(map(lambda row: row[0], results))

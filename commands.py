@@ -80,8 +80,8 @@ async def add_trait(ctx, *args):
     await inconnu.traits.add_update.parse(ctx, False, *args)
 
 
-@modify_traits.command(name="show")
-async def show_traits(ctx, *args):
+@modify_traits.command(name="list", aliases=["show", "s"])
+async def list_traits(ctx, *args):
     """Display a character's traits."""
     await inconnu.traits.show.parse(ctx, *args)
 

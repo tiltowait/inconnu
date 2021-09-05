@@ -593,6 +593,9 @@ class CharacterDB(Database):
         if len(results) == 0:
             raise TraitNotFoundError(f"`{trait}` not found.")
 
+        if len(results) == 1:
+            return results[0][1]
+
         # Ambiguous trait match
         matches = list(map(lambda row: row[0], results))
         raise AmbiguousTraitError(trait, matches)

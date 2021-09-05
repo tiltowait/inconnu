@@ -19,6 +19,7 @@ from discord_ui import Button
 from .roll import roll
 from .dicemoji import Dicemoji
 from . import reroll
+from ..common import display_error
 from ..databases import CharacterNotFoundError, AmbiguousTraitError, TraitNotFoundError
 from ..constants import character_db, DAMAGE
 
@@ -78,7 +79,7 @@ async def parse(ctx, args: str):
         await __send_results(ctx, character_name, results, comment)
 
     except (SyntaxError, ValueError) as err:
-        await ctx.reply(f"Error: {str(err)}")
+        await display_error(ctx, character_name or ctx.author.display_name, str(err))
 
 
 async def __send_results(ctx, character_name, results, comment, rerolled=False):

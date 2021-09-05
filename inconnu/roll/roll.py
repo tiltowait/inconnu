@@ -5,6 +5,9 @@ from .rollresult import RollResult
 
 def roll(parameters):
     """Perform a roll."""
+    if parameters.pool > 50:
+        raise ValueError(f"Pool cannot exceed 50. (Got {parameters.pool}.)")
+
     pool = parameters.pool
     hunger = parameters.hunger
     difficulty = parameters.difficulty

@@ -15,7 +15,6 @@ character:  The character performing the roll
 pool:       May use character traits and simple math.
                Ex: 7
                Ex: strength + brawl - 2
-               CHARACTER is mandatory when rolling traits
 hunger:     The number of hunger dice to roll (default 0)
 difficulty: The difficulty of the roll (default 0)
 """

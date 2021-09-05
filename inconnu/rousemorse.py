@@ -17,13 +17,7 @@ async def parse(ctx, key: str, *args):
         __TRACKMOJI = Trackmoji(ctx.bot)
 
     args = list(args)
-    char_name = None
-    char_id = None
-
-    if len(args) > 0:
-        char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, args[0])
-    else:
-        char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, "")
+    char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, *args)
 
     if char_name is None:
         if len(args) > 0:

@@ -3,7 +3,7 @@
 from .databases import CharacterNotFoundError
 from .constants import character_db
 
-def get_character(guildid: int, userid: int, potential_name: str) -> tuple:
+def get_character(guildid: int, userid: int, *args) -> tuple:
     """
     Intelligently retrieve the user's character.
     Args:
@@ -15,6 +15,7 @@ def get_character(guildid: int, userid: int, potential_name: str) -> tuple:
     If the user didn't supply a name but has only one character, we return it.
     This function should never raise an exception in normal usage.
     """
+    potential_name = args[0] if len(args) > 0 else ''
     char_name = None
     char_id = None
 

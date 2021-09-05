@@ -32,7 +32,7 @@ async def parse(ctx, *args):
     Allow the user to omit a character if they have only one.
     """
     args = list(args) # To allow element removal
-    char_name, char_id = get_character(ctx.guild.id, ctx.author.id, args[0])
+    char_name, char_id = get_character(ctx.guild.id, ctx.author.id, *args)
 
     if char_id is None:
         err = __character_error_message(ctx.guild.id, ctx.author.id, char_name)

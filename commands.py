@@ -122,9 +122,9 @@ class TraitCommands(commands.Cog, name="Trait Management"):
         usage = c_help.TRAITS_COMMAND_USAGE,
         help = c_help.TRAITS_COMMAND_HELP
     )
-    async def modify_traits(self, ctx):
+    async def modify_traits(self, ctx, *, args):
         """Traits subcommand start."""
-        await ctx.reply("Uh, you need to do more, dude")
+        await ctx.reply(f"Unrecognized command: `{args}`.\nSee `//help traits` for help.")
 
 
     @modify_traits.command(

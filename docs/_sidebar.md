@@ -1,5 +1,6 @@
-* [Home](/ "Inconnu Dicebot")
+* [Docs Home](/#inconnu "Inconnu Dicebot")
 * [Quickstart](quickstart.md "Inconnu - Quickstart")
 * [Rolls](rolls.md "Inconnu - Rolls")
 * [Character Tracking](character-tracking.md "Inconnu - Character Tracking")
 * [Trait Management](trait-management.md "Inconnu - Trait Management")
+* [Additional Commands](additional-commands.md "Inconnu - Additional Commands")

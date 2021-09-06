@@ -74,7 +74,7 @@ The following trackers are available:
 
 Apart from `name`, each key expects an integer, which you may supply in one of three forms: `+X`, `-X`, or plain `X`. The first two adjust the current value by positive or negative `X`. The last, however, *sets* the tracker to `X`.
 
-!> When changing maximum Health and Willpower, Inconnu tries to prevent you from losing any *damage* data; however, modify it too much, and some will necessarily be lost. Similarly, when adjusting `total_xp`, reducing it below `cur_xp` will reduce `cur_xp` by the appropriate amount.
+!> When changing maximum Health and Willpower, **Inconnu** tries to prevent you from losing any *damage* data; however, modify it too much, and some will necessarily be lost. Similarly, when adjusting `total_xp`, reducing it below `cur_xp` will reduce `cur_xp` by the appropriate amount.
 
 ## Character Deletion
 
@@ -82,6 +82,6 @@ Apart from `name`, each key expects an integer, which you may supply in one of t
 //delete <character>
 
 ```
-`character` is mandatory. When running this command, Inconnu will give you a confirmation box before deleting the character.
+`character` is mandatory. When running this command, **Inconnu** will give you a confirmation box before deleting the character.
 
 !> **This cannot be undone!** Deleting a character also removes all associated traits.

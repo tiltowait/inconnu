@@ -32,7 +32,7 @@ You put these parameters together in a list with the `//new` command. As an exam
 
 ```
 
-Once this is done, Inconnu will DM you with the creation wizard. Follow the prompts to supply the ratings for all 9 Attributes and 27 Skills. Once you've finished, you're good to go!
+Once this is done, **Inconnu** will DM you with the creation wizard. Follow the prompts to supply the ratings for all 9 Attributes and 27 Skills. Once you've finished, you're good to go!
 
 !> You must complete the creation wizard before you can use your character. It can take a little while, but it's a one-time deal (per character) that enables you to access Inconnu's advanced features. So have your character sheet ready and get going!
 
@@ -47,11 +47,11 @@ As discussed above, the basic roll syntax calls for a `pool` plus optional value
 
 ```
 
-Inconnu will look up her *Resolve* and *Academics* traits and add them together with *1* to produce the correct pool, wich is then rolled against *difficulty 4* with *hunger 2*.
+**Inconnu** will look up her *Resolve* and *Academics* traits and add them together with *1* to produce the correct pool, wich is then rolled against *difficulty 4* with *hunger 2*.
 
-?> Notice that we didn't capitalize *Resolve* or *Academics*? That's fine. Inconnu doesn't care about cases. In fact, we didn't even need to write out the entire trait names! You can provide an abbreviated name so long as Inconnu can expand it to a *single* trait name. Thus, we could have supplied `r` for *Resolve* and `ac` for *Academics*, making our syntax a much quicker `//v r + ac + 1 2 4`!
+?> Notice that we didn't capitalize *Resolve* or *Academics*? That's fine. **Inconnu** doesn't care about cases. In fact, we didn't even need to write out the entire trait names! You can provide an abbreviated name so long as **Inconnu** can expand it to a *single* trait name. Thus, we could have supplied `r` for *Resolve* and `ac` for *Academics*, making our syntax a much quicker `//v r + ac + 1 2 4`!
 
-!> You'll notice we didn't provide a character name in our roll. So long as you have only **one character**, you won't need to supply a character name for most functions. As soon as you add a second, however, you will need to supply the name of the character so Inconnu knows which traits to look up.
+!> You'll notice we didn't provide a character name in our roll. So long as you have only **one character**, you won't need to supply a character name for most functions. As soon as you add a second, however, you will need to supply the name of the character so **Inconnu** knows which traits to look up.
 
 You may also supply a trait for `hunger` (appropriately enough, you can use *hunger*) and `difficulty`, but only the `pool` may have math operators.
 
@@ -68,13 +68,13 @@ Nadea has *4* dots in *Oblivion*, *2* in *Fortitude* and *2* in *Potence*. To ad
 
 You can add an arbitrary number of traits in a single command. If you want to *update* an *existing* trait, you can use `//traits update` instead. And, of course, you may delete traits with `//traits delete`.
 
-?> **Want to keep things secret?** Inconnu features Incognito Mode. Simply omit the ratings from your added traits, and you will be prompted to set them in DMs. Our command for Nadea thus becomes: `//traits add Oblivion Fortitude Potence`. You can mix and match explicit and secret traits in a single command.
+?> **Want to keep things secret?** **Inconnu** features Incognito Mode. Simply omit the ratings from your added traits, and you will be prompted to set them in DMs. Our command for Nadea thus becomes: `//traits add Oblivion Fortitude Potence`. You can mix and match explicit and secret traits in a single command.
 
 !> Unlike with rolls, trait modification and deletion require you to be *explicit* in your typing. You can't write *ac* to represent *Academics*. This is done to prevent you from accidentally creating a bunch of useless traits or modifying/deleting the wrong thing.
 
 ## Modifying your base trackers
 
-As we saw when we created Nadea, each character has base trackers: Humanity, Health, Willpower, and Hunger. In addition, Inconnu tracks both *current* XP and *total* XP. Modifying these is done with the `//update` command and is similar to the initial character creation process or adding traits.
+As we saw when we created Nadea, each character has base trackers: Humanity, Health, Willpower, and Hunger. In addition, **Inconnu** tracks both *current* XP and *total* XP. Modifying these is done with the `//update` command and is similar to the initial character creation process or adding traits.
 
 There are, however, some additional factors to consider. While you can increase your total *Health* by *1* with `//update health=+1`, you can also apply damage with the special `sh` and `ah` keys. The former applies/sets/removes *Superficial Damage*, and the latter applies *Aggravated Damage*.
 
@@ -95,7 +95,7 @@ Finally, we have three last commands: `//rouse`, `//remorse`, and `resonance`.
 
 ### Rouse Checks
 
-Inconnu can perform a rouse check and automatically update your Hunger in a single roll: `//rouse`. In fact, if you want to perform multiple rouses at once, you can simply add a number: `/rouse 2`. If the die resulted in a 1 or a 10, Inconnu will let you know (currently, Oblivion rouse checks result in Stains if you roll either of those two numbers).
+**Inconnu** can perform a rouse check and automatically update your Hunger in a single roll: `//rouse`. In fact, if you want to perform multiple rouses at once, you can simply add a number: `/rouse 2`. If the die resulted in a 1 or a 10, **Inconnu** will let you know (currently, Oblivion rouse checks result in Stains if you roll either of those two numbers).
 
 ### Remorse Checks
 
@@ -105,4 +105,4 @@ If your character has any Stains, you can run `//remorse`. This rolls a number o
 
 ## That's it!
 
-You should now have all the information you need to use Inconnu effectively. If you ever forget how to use a certain command, there is a comprehensive help system behind the `//help` command. If you want a more detailed (or at least easier to read) reference, you may click the links in the sidebar.
+You should now have all the information you need to use **Inconnu** effectively. If you ever forget how to use a certain command, there is a comprehensive help system behind the `//help` command. If you want a more detailed (or at least easier to read) reference, you may click the links in the sidebar.

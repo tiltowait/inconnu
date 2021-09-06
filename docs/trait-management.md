@@ -8,7 +8,7 @@ The following is a detailed reference of **Inconnu's** trait management commands
 
 ## What are traits?
 
-Inconnu stores two types of character data: *traits* and *trackers*. A *tracker* is one of the following: Humanity, Health, Willpower, current XP, total XP, Hunger. They describe your character's *state*. Trackers frequently change without spending XP. *Traits*, on the other hand, describe your character's *abilities* and rarely change without investing XP into them. *Traits* are Attributes, Skill, and Disciplines.
+**Inconnu** stores two types of character data: *traits* and *trackers*. A *tracker* is one of the following: Humanity, Health, Willpower, current XP, total XP, Hunger. They describe your character's *state*. Trackers frequently change without spending XP. *Traits*, on the other hand, describe your character's *abilities* and rarely change without investing XP into them. *Traits* are Attributes, Skill, and Disciplines.
 
 ## Adding Traits
 

@@ -34,7 +34,7 @@ async def generate(ctx):
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[resonance])
     embed.set_footer(text=f"Rolled {die} on the Resonance roll")
 
-    await ctx.reply(embed=embed)
+    await ctx.respond(embed=embed)
 
 
 def __get_temperament() -> str:

@@ -10,36 +10,24 @@ from .constants import character_db
 
 __TRACKMOJI = None
 
-async def parse(ctx, key: str, *args):
+async def parse(ctx, key: str, character: str, count=0):
     """Perform a rouse check."""
     global __TRACKMOJI
     if __TRACKMOJI is None:
         __TRACKMOJI = Trackmoji(ctx.bot)
 
-    args = list(args)
-    char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, *args)
+    char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, character)
 
     if char_name is None:
-        if len(args) > 0:
-            message = common.character_options_message(ctx.guild.id, ctx.author.id, args[0])
+        if character is not None:
+            message = common.character_options_message(ctx.guild.id, ctx.author.id, character)
         else:
             message = "You have no characters!"
-        await ctx.reply(message)
+        await ctx.respond(message, hidden=True)
         return
 
-    if len(args) > 0 and char_name.lower() == args[0].lower():
-        del args[0]
-
     if key == "rouse":
-        rolls = 1
-        if len(args) > 0:
-            if args[0].isdigit():
-                rolls = int(args[0])
-            else:
-                await ctx.reply(__instructions(key))
-                return
-
-        await __rouse_result(ctx, char_id, char_name, rolls)
+        await __rouse_result(ctx, char_id, char_name, count)
     elif key == "remorse":
         await __remorse_result(ctx, char_id, char_name)
 
@@ -48,7 +36,7 @@ async def __rouse_result(ctx, char_id: int, char_name: int, rolls: int):
     """Process the rouse result and display to the user."""
     current_hunger = character_db.get_hunger(ctx.guild.id, ctx.author.id, char_id)
     if current_hunger == 5:
-        await ctx.reply(f"{char_name}'s Hunger is already 5!")
+        await ctx.respond(f"{char_name}'s Hunger is already 5!")
         return
 
     dice = [random.randint(1, 10) for _ in range(rolls)]
@@ -84,7 +72,7 @@ async def __rouse_result(ctx, char_id: int, char_name: int, rolls: int):
     if potential_stains > 0:
         embed.set_footer(text=f"If this was an Oblivion roll, gain {potential_stains} stains!")
 
-    await ctx.reply(embed=embed)
+    await ctx.respond(embed=embed)
 
     # Update the database
     character_db.set_hunger(ctx.guild.id, ctx.author.id, char_id, new_hunger)
@@ -93,25 +81,24 @@ async def __rouse_result(ctx, char_id: int, char_name: int, rolls: int):
 async def __remorse_result(ctx, char_id: int, char_name: int):
     """Process the remorse result and display to the user."""
     if character_db.get_stains(ctx.guild.id, ctx.author.id, char_id) == 0:
-        await ctx.reply(f"{char_name} has no stains! No remorse necessary.")
+        await ctx.respond(f"{char_name} has no stains! No remorse necessary.", hidden=True)
         return
 
     successful = __remorse_roll(ctx.guild.id, ctx.author.id, char_id)
     humanity = character_db.get_humanity(ctx.guild.id, ctx.author.id, char_id)
 
-    title = None
-    if successful:
-        title = "Remorse Fail"
-        humanity -= 1
-    else:
-        title = "Remorse Success"
-
     embed = discord.Embed(
-        title=title,
-        description=__TRACKMOJI.emojify_humanity(humanity, 0)
+        title="Remorse Success" if successful else "Remorse Fail"
     )
     embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
-    await ctx.reply(embed=embed)
+    embed.add_field(name="Humanity", value=__TRACKMOJI.emojify_humanity(humanity, 0))
+
+    if successful:
+        embed.set_footer(text="You keep the Beast at bay. For now.")
+    else:
+        embed.set_footer(text="The downward spiral continues ...")
+
+    await ctx.respond(embed=embed)
 
 
 def __instructions(key: str) -> str:

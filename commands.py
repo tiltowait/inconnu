@@ -2,13 +2,14 @@
 
 import discord
 from discord.ext import commands
-from discord_ui import UI, SelectedMenu
+from discord_ui import UI, SlashOption
+from discord_ui.cogs import slash_cog
 
 import inconnu
 import c_help
 
 bot = commands.Bot(command_prefix="//", case_insensitive=True)
-_ = UI(bot)
+_ = UI(bot, slash_options={"delete_unused": True})
 
 
 # Gameplay Commands
@@ -28,32 +29,33 @@ class Gameplay(commands.Cog):
         if args is not None:
             await inconnu.roll.parse(ctx, args)
 
-    @commands.command(
-        brief = c_help.ROUSE_BRIEF,
-        usage=c_help.ROUSE_USAGE,
-        help=c_help.ROUSE_HELP
+
+    @slash_cog(
+        name="rouse",
+        options=[
+            SlashOption(str, "character"),
+            SlashOption(int, "count", description="The number of Rouse checks to make")
+        ]
+        #, guild_ids=[882411164468932609]
     )
-    async def rouse(self, ctx, *args):
+    async def rouse(self, ctx, character=None, count=1):
         """Perform a rouse check."""
-        await inconnu.rousemorse.parse(ctx, "rouse", *args)
+        await inconnu.rousemorse.parse(ctx, "rouse", character, count)
 
 
-    @commands.command(
-        brief = c_help.REMORSE_BRIEF,
-        usage=c_help.REMORSE_USAGE,
-        help=c_help.REMORSE_HELP
+    @slash_cog(
+        name="remorse",
+        options=[SlashOption(str, "character", description="The character undergoing Remorse")]
+        #, guild_ids=[882411164468932609]
     )
-    async def remorse(self, ctx, *args):
+    async def remorse(self, ctx, character=None):
         """Perform a remorse check."""
-        await inconnu.rousemorse.parse(ctx, "remorse", *args)
+        await inconnu.rousemorse.parse(ctx, "remorse", character)
 
 
-    @commands.command(
-        brief = c_help.RESONANCE_BRIEF,
-        help=c_help.RESONANCE_HELP
-    )
+    @slash_cog(name="resonance")
     async def resonance(self, ctx):
-        """Perform a resonance check."""
+        """Generate a random Resonance."""
         await inconnu.resonance.generate(ctx)
 
 

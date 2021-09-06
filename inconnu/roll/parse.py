@@ -151,7 +151,8 @@ def __evaluate_syntax(ctx, character: int, *args):
     evaluated_stack = __combine_operators(*substituted_stack)
 
     # Lop off Hunger and Difficulty from the trait stack, leaving just the pool behind
-    str_evalled = list(map(str, evaluated_stack))
+    # First, we need to remove any padded zeroes from the evaluated stack
+    str_evalled = list(map(str, filter(lambda item: item > 0, evaluated_stack)))
     while len(trait_stack) > 0 and trait_stack[-1] == str_evalled[-1]:
         del trait_stack[-1], str_evalled[-1]
 

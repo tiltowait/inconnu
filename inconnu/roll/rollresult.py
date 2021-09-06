@@ -3,7 +3,7 @@
 class RollResult:
     """A container class that determines the result of a roll."""
 
-    def __init__(self, normal, hunger, difficulty):
+    def __init__(self, normal, hunger, difficulty, pool_str):
         """
         Args:
             normal (DiceThrow): The rolled normal dice
@@ -14,6 +14,7 @@ class RollResult:
         self.hunger = hunger
         self.pool = normal.count + hunger.count
         self.difficulty = difficulty
+        self.pool_str = pool_str if len(pool_str) > 0 else None
         self.descriptor = None
 
 

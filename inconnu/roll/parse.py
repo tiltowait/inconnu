@@ -68,8 +68,8 @@ async def parse(ctx, args: str):
 
     # Attempt to parse the user's roll syntax
     try:
-        roll_params = __evaluate_syntax(ctx, character, *args)
-        results = roll(roll_params)
+        pool_str, roll_params = __evaluate_syntax(ctx, character, *args)
+        results = roll(roll_params, pool_str)
         await __send_results(ctx, character_name, results, comment)
 
     except (SyntaxError, ValueError) as err:
@@ -108,7 +108,10 @@ async def __send_results(ctx, character_name, results, comment, rerolled=False):
     # Disclosure fields
     embed.add_field(name="Pool", value=str(results.pool))
     embed.add_field(name="Hunger", value=str(results.hunger.count))
-    embed.add_field(name="Difficulty", value=str(results.difficulty), inline=False)
+    embed.add_field(name="Difficulty", value=str(results.difficulty))
+
+    if results.pool_str is not None:
+        embed.add_field(name="Pool", value=results.pool_str)
 
     # Comment
     if comment is not None:
@@ -138,16 +141,26 @@ def __evaluate_syntax(ctx, character: int, *args):
 
     Raises ValueError if there is trouble querying the database.
     """
-    stack = __substitute_traits(ctx, character, *args)
-    return __combine_operators(*stack)
+    trait_stack, substituted_stack = __substitute_traits(ctx, character, *args)
+    evaluated_stack = __combine_operators(*substituted_stack)
+
+    # Lop off Hunger and Difficulty from the trait stack, leaving just the pool behind
+    str_evalled = list(map(str, evaluated_stack))
+    while len(trait_stack) > 0 and trait_stack[-1] == str_evalled[-1]:
+        del trait_stack[-1], str_evalled[-1]
+
+    pool_str = " ".join(trait_stack)
+    return pool_str, evaluated_stack
 
 
-def __substitute_traits(ctx, character: int, *args):
+def __substitute_traits(ctx, character: int, *args) -> tuple:
     """
     Convert the roll syntax into a stack while simultaneously replacing database
     calls with the appropriate values.
 
     Valid syntax: snake_case_words, integers, plus, minus.
+
+    Returns (tuple): A stack with expanded trait names and the substituted stack.
 
     Raises ValueError if there is trouble querying the database.
     """
@@ -183,11 +196,13 @@ def __substitute_traits(ctx, character: int, *args):
         temp_stack.extend(elements)
 
     # Pass 2: Replace database calls with the appropriate values
-    final_stack = []
+    substituted_stack = []
+    trait_stack = []
 
     for item in temp_stack:
         if item in ["+", "-"] or item.isdigit():
-            final_stack.append(item)
+            substituted_stack.append(item)
+            trait_stack.append(item)
             continue
 
         # User is invoking a trait
@@ -195,21 +210,24 @@ def __substitute_traits(ctx, character: int, *args):
             raise ValueError(f"You must supply a character name to use `{item}`.")
 
         try:
-            rating = character_db.trait_rating(guildid, userid, character, item)
-            final_stack.append(rating)
+            trait, rating = character_db.trait_rating(guildid, userid, character, item)
+            substituted_stack.append(rating)
+            trait_stack.append(trait)
+
         except TraitNotFoundError as err:
             # We allow universal traits
             match = __match_universal_trait(item)
             if match:
                 rating = __get_universal_trait(guildid, userid, character, match)
-                final_stack.append(rating)
+                substituted_stack.append(rating)
+                trait_stack.append(match)
             else:
                 raise ValueError(str(err)) # pylint: disable=raise-missing-from
 
         except AmbiguousTraitError as err:
             raise ValueError(err.message) # pylint: disable=raise-missing-from
 
-    return final_stack
+    return trait_stack, substituted_stack
 
 
 def __combine_operators(*stack):

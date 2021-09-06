@@ -561,13 +561,13 @@ class CharacterDB(Database):
 
     def trait_rating(self, guildid: int, userid: int, charid: int, trait: str) -> int:
         """
-        Fetch the rating for a given character's trait.
+        Fetch a trait name and rating based off a fuzzy match.
         Args:
             guildid (int): Discord ID of the guild
             userid (int): Discord ID of the user
             charid (int): The character's database ID
             trait (str): The name of the trait to add
-        Returns (int): The rating for the trait.
+        Returns (tuple): The name and rating for the trait.
 
         Raises TraitNotFoundError if the trait does not exist.
         """
@@ -589,7 +589,7 @@ class CharacterDB(Database):
         exact_match_results = self.cursor.fetchone()
 
         if exact_match_results is not None:
-            return exact_match_results[1]
+            return exact_match_results
 
         # Exact match not found; see if it's got ambiguous matches
         self._execute(query, guildid, userid, charid, fuzzy_trait)
@@ -599,7 +599,7 @@ class CharacterDB(Database):
             raise TraitNotFoundError(f"`{trait}` not found.")
 
         if len(results) == 1:
-            return results[0][1]
+            return results[0]
 
         # Ambiguous trait match
         matches = list(map(lambda row: row[0], results))

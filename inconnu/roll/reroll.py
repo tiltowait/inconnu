@@ -43,7 +43,9 @@ async def wait_for_reroll(ctx, message, old_roll):
             descriptor = "Avoiding Messy Critical"
 
         new_throw = DiceThrow(new_dice)
-        new_results = RollResult(new_throw, old_roll.hunger, old_roll.difficulty)
+        new_results = old_roll
+        new_results.normal = new_throw
+        #new_results = RollResult(new_throw, old_roll.hunger, old_roll.difficulty)
         new_results.descriptor = descriptor
 
         return new_results

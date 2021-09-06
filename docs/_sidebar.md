@@ -4,3 +4,4 @@
 * [Character Tracking](character-tracking.md "Inconnu - Character Tracking")
 * [Trait Management](trait-management.md "Inconnu - Trait Management")
 * [Additional Commands](additional-commands.md "Inconnu - Additional Commands")
+* [Troubleshooting](troubleshooting.md "Inconnu - Troubleshooting")

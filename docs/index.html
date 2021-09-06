@@ -21,6 +21,11 @@
       height: auto;
       width: 50%;
     }
+
+    .copyright img {
+      vertical-align: middle;
+      margin-left: 0.5em;
+    }
   </style>
 
   <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png">
@@ -38,10 +43,19 @@
       loadSidebar: true,
       subMaxLevel: 3,
       auto2top: true,
-      logo: '/includes/inconnu_logo.png'
+      logo: '/includes/inconnu_logo.png',
+
+      footer: {
+        copy: '<span>Inconnu Dicebot &copy; 2021</span>',
+        auth: 'tiltowait <img src="/includes/tiltowait.png" width="50" height="50" />',
+        pre: '<hr/>',
+        style: 'text-align: right;',
+        class: 'copyright',
+      },
     }
   </script>
   <!-- Docsify v4 -->
   <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="//unpkg.com/docsify-footer-enh/dist/docsify-footer-enh.min.js"></script>
 </body>
 </html>

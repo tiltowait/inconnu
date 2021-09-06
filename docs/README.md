@@ -5,6 +5,7 @@
 > ### Quick Links
 > * **[Invite Inconnu to your server](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147829760&scope=bot%20applications.commands)**
 > * **[View the source code on GitHub](https://github.com/tiltowait/inconnu)**
+> * Need a V20 bot? **[Check out \[Tzimisce\], the most advanced V20 dice roller.](https://www.storyteller-bot.com)**
 
 
 ## General Features

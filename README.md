@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/inconnu_logo.png" alt="Inconnu Dicebot" style="width: auto, max-height: 125px" />
+  <img src="images/inconnu_logo.png" alt="Inconnu Dicebot" width=125 height=125 />
 </p>
 
 <p align="center">

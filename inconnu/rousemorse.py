@@ -61,12 +61,10 @@ async def __rouse_result(ctx, char_id: int, char_name: int, rolls: int):
         title = f"Rouse: {successes}, {failures}"
 
     embed = discord.Embed(
-        title=title,
-        description=f"New Hunger:\n{__TRACKMOJI.emojify_hunger(new_hunger)}"
+        title=title
     )
     embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
-    dice = ", ".join(list(map(str, dice)))
-    embed.add_field(name="Dice", value=f"```\n{dice}\n```")
+    embed.add_field(name="New Hunger", value=__TRACKMOJI.emojify_hunger(new_hunger))
 
     potential_stains = tens + ones
     if potential_stains > 0:

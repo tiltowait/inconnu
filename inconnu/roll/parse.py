@@ -59,7 +59,7 @@ async def parse(ctx, args: str):
         # This is one of the few commands that can be rolled in DMs
         character_name, character = common.get_character(ctx.guild.id, ctx.author.id, *args)
 
-        if character_name.lower() == args[0].lower():
+        if character_name is not None and character_name.lower() == args[0].lower():
             del args[0]
 
             # Yell at the user if they only gave a character name and no roll syntax

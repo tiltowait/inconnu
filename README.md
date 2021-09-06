@@ -24,7 +24,7 @@ An **Inconnu** roll uses the following syntax: `//v <pool> [hunger] [difficulty]
 ## Required Permissions
 
 * **Send Messages:** Should be obvious, no?
-* **Embed Links:** Used for roll display (outside of compact mode), initiative, help display, etc.
+* **Embed Links:** Used in most of the bot's replies
 * **Read Message History:** Used for the reply feature
 * **Use External Emoji:** For displaying individual dice throws
-* **Use Slash Commands:** For future-proofing due to impending Discord changes
+* **Use Slash Commands**

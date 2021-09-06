@@ -1,5 +1,7 @@
 """update/parse.py - Defines an interface for updating character traits."""
 
+import re
+
 from . import paramupdate
 from ..common import get_character
 from ..constants import character_db
@@ -26,12 +28,18 @@ __KEYS = {
 }
 
 
-async def parse(ctx, *args):
+async def parse(ctx, args: str):
     """
     Process the user's arguments.
     Allow the user to omit a character if they have only one.
     """
-    args = list(args) # To allow element removal
+    args = re.sub(r"\s+=\s+", r"=", args) # Remove gaps between keys and values
+    args = list(args.split()) # To allow element removal
+
+    if len(args) == 0:
+        await ctx.reply(__INSTRUCTIONS)
+        return
+
     char_name, char_id = get_character(ctx.guild.id, ctx.author.id, *args)
 
     if char_id is None:
@@ -44,6 +52,9 @@ async def parse(ctx, *args):
     # Delete args[0] if it was the character name
     if char_name.lower() == args[0].lower():
         del args[0]
+        if len(args) == 0:
+            await ctx.reply(__INSTRUCTIONS)
+            return
 
     try:
         parameters = __parse_arguments(*args)
@@ -73,6 +84,9 @@ def __parse_arguments(*arguments):
 
         if key in parameters:
             raise ValueError(f"You cannot use `{key}` more than once.")
+
+        if key not in __KEYS:
+            raise ValueError(f"Unknown parameter: `{key}`.")
 
         parameters[key] = value # Don't do any validation here
 

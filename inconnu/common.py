@@ -55,7 +55,7 @@ def pluralize(value: int, noun: str) -> str:
     nouns = {"success": "successes"}
 
     pluralized = f"{value} {noun}"
-    if value > 1:
+    if value != 1:
         if noun in nouns:
             pluralized = f"{value} {nouns[noun]}"
         else:

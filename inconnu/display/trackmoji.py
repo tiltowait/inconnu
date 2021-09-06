@@ -8,14 +8,14 @@ class Trackmoji:
     def __init__(self, bot):
         self.bot = bot
         self.emojis = {
-            DAMAGE.none: 883516968777449472,
-            DAMAGE.superficial: 883516968337035317,
-            DAMAGE.aggravated: 883516968727089202,
-            "hunger": 883527494832119858,
-            "no_hunger": 883527495394164776,
-            "hu_filled": 883532393946972160,
-            "hu_unfilled": 883532394051809290,
-            "stain": 883536498950025258
+            DAMAGE.none: "<:no_dmg:883516968777449472>",
+            DAMAGE.superficial: "<:sup_dmg:883516968337035317>",
+            DAMAGE.aggravated: "<:agg_dmg:883516968727089202>",
+            "hunger": "<:hunger:883527494832119858>",
+            "no_hunger": "<:no_hunger:883527495394164776>",
+            "hu_filled": "<:hu_filled:883532393946972160>",
+            "hu_unfilled": "<:hu_unfilled:883532394051809290>",
+            "stain": "<:stain:883536498950025258>"
         }
 
 
@@ -70,48 +70,21 @@ class Trackmoji:
         if len(box) == 0:
             raise ValueError("Invalid stress box") # Should never happen
 
-        box = box[0]
-
-        emoji = self.emojis[box]
-        if isinstance(emoji, int):
-            # Need to convert
-            emoji = str(self.bot.get_emoji(emoji))
-            self.emojis[box] = emoji
-
-        return emoji
+        return self.emojis[box]
 
 
     def __hungermoji(self, hungry: bool) -> str:
         """Return a filled or unfilled hunger emoji."""
         hunger = "hunger" if hungry else "no_hunger"
-        emoji = self.emojis[hunger]
-
-        if isinstance(emoji, int):
-            # Need to convert
-            emoji = str(self.bot.get_emoji(emoji))
-            self.emojis[hunger] = emoji
-
-        return emoji
+        return self.emojis[hunger]
 
 
     def __humanitymoji(self, filled) -> str:
         """Return a filled or unfilled humanity emoji."""
         humanity = "hu_filled" if filled else "hu_unfilled"
-        return self.__fetch_emoji(humanity)
+        return self.emojis[humanity]
 
 
     def __stainmoji(self) -> str:
         """Return a stain emoji."""
-        return self.__fetch_emoji("stain")
-
-
-    def __fetch_emoji(self, key) -> str:
-        """Fetch an emoji from a key, caching as necessary."""
-        emoji = self.emojis[key]
-
-        if isinstance(emoji, int):
-            # Need to convert
-            emoji = str(self.bot.get_emoji(emoji))
-            self.emojis[key] = emoji
-
-        return emoji
+        return self.emojis["stain"]

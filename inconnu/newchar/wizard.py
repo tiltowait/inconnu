@@ -1,5 +1,7 @@
 """wizard.py - The new character wizard."""
 
+import asyncio
+
 import discord
 from discord_ui import SelectMenu, SelectOption
 
@@ -108,8 +110,14 @@ class Wizard:
         self.last_query_message = await self.ctx.author.send(embed=embed, components=[menu])
 
         # Await the user response
-        menu = await self.last_query_message.wait_for("select", self.ctx.bot)
-        await menu.respond()
+        try:
+            menu = await self.last_query_message.wait_for("select", self.ctx.bot, timeout=60)
+            await menu.respond()
 
-        rating = int(menu.selected_values[0].value)
-        await self.__assign_next_trait(rating)
+            rating = int(menu.selected_values[0].value)
+            await self.__assign_next_trait(rating)
+
+        except asyncio.exceptions.TimeoutError:
+            await self.last_query_message.delete()
+            err = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
+            await self.ctx.author.send(err)

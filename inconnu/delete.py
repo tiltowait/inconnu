@@ -1,5 +1,7 @@
 """delete.py - Character deletion facilities."""
 
+import asyncio
+
 import discord
 from discord_ui import Button
 
@@ -20,19 +22,25 @@ async def prompt(ctx, char_name: str):
         msg = await ctx.reply(embed=embed, components=buttons)
 
         # Await the response
-        btn = await msg.wait_for("button", ctx.bot, timeout=20)
-        await btn.respond()
-        await msg.delete()
+        try:
+            btn = await msg.wait_for("button", ctx.bot, timeout=20)
+            await btn.respond()
+            await msg.delete()
 
-        # Process the response
-        if btn.custom_id == "_delete":
-            if character_db.delete_character(ctx.guild.id, ctx.author.id, char_id):
-                await ctx.reply(f"Deleted {char_name}!")
+            # Process the response
+            if btn.custom_id == "_delete":
+                if character_db.delete_character(ctx.guild.id, ctx.author.id, char_id):
+                    await ctx.reply(f"Deleted {char_name}!")
+                else:
+                    await ctx.reply("Something went wrong. Unable to delete.")
+
             else:
-                await ctx.reply("Something went wrong. Unable to delete.")
+                await ctx.reply("Deletion canceled.")
 
-        else:
-            await ctx.reply("Deletion canceled.")
+        except asyncio.exceptions.TimeoutError:
+            await msg.delete()
+            await ctx.reply("You didn't respond within 20 seconds. Deletion canceled.")
+
 
     except CharacterNotFoundError as err:
         await ctx.reply(str(err))

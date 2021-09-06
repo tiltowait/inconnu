@@ -1,5 +1,7 @@
 """traits/traitwizard.py - Private trait setter."""
 
+import asyncio
+
 import discord
 from discord_ui import SelectMenu, SelectOption
 
@@ -48,20 +50,25 @@ class TraitWizard:
         msg = await self.ctx.author.send(embed=embed, components=[menu])
 
         # Wait for response
-        btn = await msg.wait_for("select", self.ctx.bot)
-        await btn.respond()
-        await msg.delete()
+        try:
+            btn = await msg.wait_for("select", self.ctx.bot, timeout=60)
+            await btn.respond()
+            await msg.delete()
 
-        # Process response
-        trait = self.traits.pop(0)
-        rating = int(btn.selected_values[0].value)
+            # Process response
+            trait = self.traits.pop(0)
+            rating = int(btn.selected_values[0].value)
 
-        self.ratings[trait] = rating
+            self.ratings[trait] = rating
 
-        if len(self.traits) == 0:
-            await self.__finalize()
-        else:
-            await self.__send_prompt(f"Set **{trait}** to **{rating}**.")
+            if len(self.traits) == 0:
+                await self.__finalize()
+            else:
+                await self.__send_prompt(f"Set **{trait}** to **{rating}**.")
+        except asyncio.exceptions.TimeoutError:
+            await msg.delete()
+            err = f"Due to inactivity, **{self.char_name}'s** updates on **{self.ctx.guild.name}** have been canceled."
+            await self.ctx.author.send(err)
 
 
     async def __finalize(self):

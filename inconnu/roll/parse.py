@@ -11,6 +11,7 @@
 # trait-based roll, so we need to check for the character in either case.
 
 import re
+import asyncio
 from collections import namedtuple
 
 import discord
@@ -122,9 +123,14 @@ async def __send_results(ctx, character_name, results, comment, rerolled=False):
     if len(reroll_buttons) == 0 or rerolled:
         await ctx.reply(content=emoji_string, embed=embed)
     else:
-        msg = await ctx.reply(content=emoji_string, embed=embed, components=reroll_buttons)
-        rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
-        await __send_results(ctx, character_name, rerolled_results, comment, rerolled=True)
+        try:
+            msg = await ctx.reply(content=emoji_string, embed=embed, components=reroll_buttons)
+            rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
+            await __send_results(ctx, character_name, rerolled_results, comment, rerolled=True)
+        except asyncio.exceptions.TimeoutError:
+            pass
+        finally:
+            await msg.disable_components()
 
 
 def __evaluate_syntax(ctx, character: int, *args):

@@ -16,39 +16,38 @@ async def wait_for_reroll(ctx, message, old_roll):
         ctx: The Discord context, which includes the accepted user
         message: The Discord message to watch
         old_roll (RollResult): The original dice roll
+
+    Raises asyncio.exceptions.TimeoutError if the interaction times out.
     """
-    waiting = True
+    btn = await message.wait_for("button", ctx.bot)
+    await btn.respond()
 
-    while waiting:
-        btn = await message.wait_for("button", ctx.bot)
-        await btn.respond()
+    if ctx.author.id != btn.author.id:
+        # We only want the original roller to be able to press these buttons
+        return
 
-        if ctx.author.id != btn.author.id:
-            # We only want the original roller to be able to press these buttons
-            return
+    new_dice = None
+    descriptor = None
 
-        new_dice = None
-        descriptor = None
+    if btn.custom_id == "reroll_failures":
+        new_dice = __reroll_failures(old_roll.normal.dice)
+        descriptor = "Rerolling Failures"
 
-        if btn.custom_id == "reroll_failures":
-            new_dice = __reroll_failures(old_roll.normal.dice)
-            descriptor = "Rerolling Failures"
+    elif btn.custom_id == "maximize_criticals":
+        new_dice = __maximize_criticals(old_roll.normal.dice)
+        descriptor = "Maximizing Criticals"
 
-        elif btn.custom_id == "maximize_criticals":
-            new_dice = __maximize_criticals(old_roll.normal.dice)
-            descriptor = "Maximizing Criticals"
+    elif btn.custom_id == "avoid_messy":
+        new_dice = __avoid_messy(old_roll.normal.dice)
+        descriptor = "Avoiding Messy Critical"
 
-        elif btn.custom_id == "avoid_messy":
-            new_dice = __avoid_messy(old_roll.normal.dice)
-            descriptor = "Avoiding Messy Critical"
+    new_throw = DiceThrow(new_dice)
+    new_results = old_roll
+    new_results.normal = new_throw
+    #new_results = RollResult(new_throw, old_roll.hunger, old_roll.difficulty)
+    new_results.descriptor = descriptor
 
-        new_throw = DiceThrow(new_dice)
-        new_results = old_roll
-        new_results.normal = new_throw
-        #new_results = RollResult(new_throw, old_roll.hunger, old_roll.difficulty)
-        new_results.descriptor = descriptor
-
-        return new_results
+    return new_results
 
 
 def __reroll_failures(dice: list) -> list:

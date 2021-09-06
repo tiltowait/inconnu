@@ -28,3 +28,9 @@ An **Inconnu** roll uses the following syntax: `//v <pool> [hunger] [difficulty]
 * **Read Message History:** Used for the reply feature
 * **Use External Emoji:** For displaying individual dice throws
 * **Use Slash Commands:** For future-proofing due to impending Discord changes
+
+## Troubleshooting
+
+**Inconnu** is currently migrating to Discord's slash command system, and there may be some minor hiccups until this process is complete. **If emojis aren't showing**, check the server/channel permissions. Both **Inconnu** *and* the `@everyone` role need `Use External Emoji` permissions! This is a hard requirement by Discord that will affect *all* bots come April 2022.
+
+Users need the *Show website preview info from links pasted into chat* setting under *Text & Images* enabled in order to see **Inconnu's** embeds. Some AV software, such as McAfee, have also been known to block embeds.

@@ -20,7 +20,7 @@ from .roll import roll
 from .dicemoji import Dicemoji
 from . import reroll
 from .. import common
-from ..databases import CharacterNotFoundError, AmbiguousTraitError, TraitNotFoundError
+from ..databases import AmbiguousTraitError, TraitNotFoundError
 from ..constants import character_db, DAMAGE
 
 __DICEMOJI = None

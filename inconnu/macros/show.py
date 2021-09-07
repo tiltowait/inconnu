@@ -15,7 +15,7 @@ async def process(ctx, character=None):
     char_id = None
 
     try:
-        char_name, char_id = macro_common.match_character(ctx.guild.id, ctx.author.id, character)
+        char_name, char_id = common.match_character(ctx.guild.id, ctx.author.id, character)
     except ValueError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return

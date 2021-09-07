@@ -115,7 +115,7 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
         """
         await self._prepare()
         if await self.macro_exists(char_id, macro_name):
-            raise MacroAlreadyExistsError(f"Macro '{macro_name}' already exists.")
+            raise MacroAlreadyExistsError(f"Macro `{macro_name}` already exists.")
 
         await self._create.executemany(((char_id, macro_name, pool, diff, comment),))
 

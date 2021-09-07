@@ -19,13 +19,16 @@ async def process(ctx, syntax: str, character=None):
         await common.display_error(ctx, ctx.author.display_name, err)
         return
 
-    char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, character)
+    char_name = None
+    char_id = None
 
-    if char_name is None:
-        err = common.character_options_message(ctx.guild.id, ctx.author.id, character)
+    try:
+        char_name, char_id = macro_common.match_character(ctx.guild.id, ctx.author.id, character)
+    except ValueError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return
 
+    # We have a valid character
     if not macro_common.is_macro_name_valid(macro_name):
         await common.display_error(
             ctx, char_name, "Macro names may only contain letters and underscores."

@@ -2,7 +2,7 @@
 
 import re
 
-from ..databases import MacroDB
+from ..databases import MacroDB, CharacterNotFoundError
 from ..common import character_db
 
 macro_db = MacroDB()
@@ -28,4 +28,7 @@ def match_character(guildid: int, userid: int, char_name: str) -> tuple:
         raise ValueError(err)
 
     # They've supplied a character
-    return character_db.character(guildid, userid, char_name)
+    try:
+        return character_db.character(guildid, userid, char_name)
+    except CharacterNotFoundError as err:
+        raise ValueError(str(err)) from err

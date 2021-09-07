@@ -15,9 +15,13 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
         )
         return
 
-    char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, character)
-    if char_id is None:
-        await ctx.respond(f"You don't have a character named {character}.", hidden=True)
+    char_name = None
+    char_id = None
+
+    try:
+        char_name, char_id = macro_common.match_character(ctx.guild.id, ctx.author.id, character)
+    except ValueError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
         return
 
     if not macro_common.is_macro_name_valid(name):
@@ -31,7 +35,7 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
 
         await macro_common.macro_db.create_macro(char_id, name, pool, difficulty, comment)
 
-        await ctx.respond(f"Macro `{name}` created.", hidden=True)
+        await ctx.respond(f"**{char_name}:** Created macro `{name}`.", hidden=True)
 
     except (SyntaxError, AmbiguousTraitError, TraitNotFoundError, MacroAlreadyExistsError) as err:
         await common.display_error(ctx, char_name, err)

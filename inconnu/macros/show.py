@@ -11,14 +11,16 @@ MacroField = namedtuple("MacroField", ["name", "value"])
 
 async def process(ctx, character=None):
     """Show all of a character's macros."""
-    char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, character)
+    char_name = None
+    char_id = None
 
-    if char_name is None:
-        message = common.character_options_message(ctx.guild.id, ctx.author.id, character)
-        await common.display_error(ctx, ctx.author.display_name, message)
+    try:
+        char_name, char_id = macro_common.match_character(ctx.guild.id, ctx.author.id, character)
+    except ValueError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
         return
 
-    # We have a valid character.
+    # We have a valid character
     macros = await macro_common.macro_db.char_macros(char_id)
 
     if len(macros) == 0:
@@ -36,7 +38,7 @@ async def __send_macros(ctx, char_name, macros):
     embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
 
     for field in __generate_fields(macros):
-        embed.add_field(name=field.name, value=field.value)
+        embed.add_field(name=field.name, value=field.value, inline=False)
 
     await ctx.respond(embed=embed, hidden=True)
 

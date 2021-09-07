@@ -1,7 +1,7 @@
 """macros/delete.py - Deleting character macros."""
 
 from . import macro_common
-from ..databases import MacroNotFoundError, CharacterNotFoundError
+from ..databases import MacroNotFoundError
 from .. import common
 
 async def process(ctx, macro_name: str, character=None):
@@ -11,7 +11,7 @@ async def process(ctx, macro_name: str, character=None):
 
     try:
         char_name, char_id = macro_common.match_character(ctx.guild.id, ctx.author.id, character)
-    except (ValueError, CharacterNotFoundError) as err:
+    except ValueError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return
 

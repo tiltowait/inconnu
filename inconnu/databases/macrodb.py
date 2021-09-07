@@ -60,7 +60,7 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
         self.conn.add_termination_listener(self.__connection_closed)
 
         # Prepare some statements
-        check_exists = "SELECT COUNT(*) FROM Macros WHERE CharID = $1 AND Name = $2"
+        check_exists = "SELECT COUNT(*) FROM Macros WHERE CharID = $1 AND Name ILIKE $2"
         self._check_exists = await self.conn.prepare(check_exists)
 
         create = """
@@ -69,13 +69,13 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
         """
         self._create = await self.conn.prepare(create)
 
-        list_all = "SELECT Name, Pool, Comment FROM Macros WHERE CharID = $1"
+        list_all = "SELECT Name, Pool, Diff, Comment FROM Macros WHERE CharID = $1"
         self._list = await self.conn.prepare(list_all)
 
-        fetch = "SELECT Name, Pool, Diff, Comment FROM Macros WHERE CharID = $1 AND Name = $2"
+        fetch = "SELECT Name, Pool, Diff, Comment FROM Macros WHERE CharID = $1 AND Name ILIKE $2"
         self._fetch_macro = await self.conn.prepare(fetch)
 
-        delete = "DELETE FROM Macros WHERE CharID = $1 AND Name = $2"
+        delete = "DELETE FROM Macros WHERE CharID = $1 AND Name ILIKE $2"
         self._delete = await self.conn.prepare(delete)
 
 
@@ -122,7 +122,8 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
 
     async def char_macros(self, char_id: int):
         """Fetch all the macros owned by the character."""
-        return await self._list(char_id)
+        await self._prepare()
+        return await self._list.fetch(char_id)
 
 
     async def fetch_macro(self, char_id: int, macro_name: str):

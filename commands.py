@@ -120,7 +120,7 @@ class MacroCommands(commands.Cog, name="Macro Utilities"):
     )
     async def macro_list(self, ctx, character=None):
         """List a character's macros."""
-        await ctx.respond("Macro list", hidden=True)
+        await inconnu.macros.show.process(ctx, character)
 
 
     @subslash_cog(

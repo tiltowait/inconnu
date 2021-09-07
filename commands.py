@@ -3,7 +3,7 @@
 import discord
 from discord.ext import commands
 from discord_ui import UI, SlashOption
-from discord_ui.cogs import slash_cog
+from discord_ui.cogs import slash_cog, subslash_cog
 
 import inconnu
 import c_help
@@ -57,6 +57,82 @@ class Gameplay(commands.Cog):
     async def resonance(self, ctx):
         """Generate a random Resonance."""
         await inconnu.resonance.generate(ctx)
+
+
+# Macros!
+
+class Macros(commands.Cog, name="Macro Utilities"):
+    """Macro manaagement and rolls."""
+
+    @slash_cog(
+        name="macro",
+        description="Roll a macro."
+        , guild_ids=[882411164468932609]
+    )
+    async def macro(self, ctx):
+        """Base macro command. Unreachable."""
+
+
+    @subslash_cog(
+        base_names="macro",
+        name="roll",
+        description="Roll a macro.",
+        options=[
+            SlashOption(str, "syntax",
+                description="The macro to roll, plus Hunger and Difficulty",
+                required=True
+            ),
+            SlashOption(str, "character", description="The character that owns the macro")
+        ]
+        , guild_ids=[882411164468932609]
+    )
+    async def macro_roll(self, ctx, syntax: str, character=None):
+        """Create a macro."""
+        await ctx.respond(f"Rolling `{syntax}` for `{character}`", hidden=True)
+
+
+    @subslash_cog(
+        base_names="macro",
+        name="create",
+        description="Create a macro.",
+        options=[
+            SlashOption(str, "name", description="The macro's name", required=True),
+            SlashOption(str, "pool", description="The macro's pool", required=True),
+            SlashOption(str, "comment", description="A comment to apply to macro rolls"),
+            SlashOption(str, "character", description="The character that owns the macro")
+        ]
+        , guild_ids=[882411164468932609]
+    )
+    async def macro_create(self, ctx, name: str, pool: str, comment=None, character=None):
+        """Create a macro."""
+        await ctx.respond("Macro create", hidden=True)
+
+
+    @subslash_cog(
+        base_names="macro",
+        name="list",
+        description="List your macros.",
+        options=[
+            SlashOption(str, "character", description="The character to display")
+        ]
+    )
+    async def macro_list(self, ctx, character=None):
+        """List a character's macros."""
+        await ctx.respond("Macro list", hidden=True)
+
+
+    @subslash_cog(
+        base_names="macro",
+        name="delete",
+        description="Delete a macro.",
+        options=[
+            SlashOption(str, "macro", description="The macro to delete", required=True),
+            SlashOption(str, "character", description="The character that owns the macro")
+        ]
+    )
+    async def macro_delete(self, ctx, macro: str, character=None):
+        """Delete a macro."""
+        await ctx.respond("Macro delete", hidden=True)
 
 
 # Character CRUD
@@ -208,5 +284,6 @@ def __status_message():
 def setup():
     """Final bot setup."""
     bot.add_cog(Gameplay(bot))
+    bot.add_cog(Macros(bot))
     bot.add_cog(CharacterCommands(bot))
     bot.add_cog(TraitCommands(bot))

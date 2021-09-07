@@ -1,3 +1,4 @@
 discord.py==1.7.3
 discord-ui==4.2.14
 psycopg2-binary==2.8.6
+asyncpg==0.24.0

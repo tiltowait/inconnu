@@ -6,7 +6,7 @@ import discord
 from discord_ui.components import LinkButton
 
 from . import paramupdate
-from ..common import get_character
+from .. import common
 from ..constants import character_db
 from ..display import parse as display
 
@@ -27,30 +27,20 @@ __KEYS = {
 }
 
 
-async def parse(ctx, args: str):
+async def parse(ctx, parameters: str, character=None):
     """
     Process the user's arguments.
     Allow the user to omit a character if they have only one.
     """
-    args = re.sub(r"\s+=\s+", r"=", args) # Remove gaps between keys and values
+    args = re.sub(r"\s+=\s+", r"=", parameters) # Remove gaps between keys and values
     args = list(args.split()) # To allow element removal
 
     if len(args) == 0:
         await __display_help(ctx)
         return
 
-    char_name, char_id = get_character(ctx.guild.id, ctx.author.id, *args)
-
-    if char_id is None:
-        err = __character_error_message(ctx.guild.id, ctx.author.id, char_name)
-        await __display_help(ctx, err)
-        return
-
-    # Delete args[0] if it was the character name
-    if char_name.lower() == args[0].lower():
-        del args[0]
-
     try:
+        char_name, char_id = common.match_character(ctx.guild.id, ctx.author.id, character)
         parameters = __parse_arguments(*args)
 
         for parameter, new_value in parameters.items():
@@ -109,21 +99,6 @@ def __update_character(guildid: int, userid: int, charid: int, param: str, value
     getattr(paramupdate, f"update_{param}")(guildid, userid, charid, value)
 
 
-def __character_error_message(guildid: int, userid: int, input_name: str) -> str:
-    """Create a message informing the user they need to supply a correct character."""
-    user_chars = list(character_db.characters(guildid, userid).keys())
-    message = None
-
-    if len(user_chars) == 0:
-        message = "You have no characters to update."
-    else:
-        user_chars = list(map(lambda char: f"`{char}`", user_chars))
-        message = f"You have no character named `{input_name}`. Options:\n\n"
-        message += ", ".join(user_chars)
-
-    return message
-
-
 async def __display_help(ctx, err=None):
     """Display a help message that details the available keys."""
     embed = discord.Embed(
@@ -134,7 +109,7 @@ async def __display_help(ctx, err=None):
     if err is not None:
         embed.add_field(name="Error", value=str(err), inline=False)
 
-    instructions = "To update a character, use `//update CHARACTER key=value ...`"
+    instructions = "To update a character, use one or more `KEY=VALUE` pairs."
     embed.add_field(name="Instructions", value=instructions, inline=False)
 
     parameters = [f"**{key}:** {val}" for key, val in __KEYS.items()]
@@ -147,4 +122,4 @@ async def __display_help(ctx, err=None):
         "http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates",
         label="Full Documentation"
     )
-    await ctx.reply(embed=embed, components=[button])
+    await ctx.respond(embed=embed, components=[button], hidden=True)

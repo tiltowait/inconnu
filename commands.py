@@ -144,20 +144,58 @@ class MacroCommands(commands.Cog, name="Macro Utilities"):
 class CharacterCommands(commands.Cog, name="Character Management"):
     """Character management commands."""
 
-    @commands.command(
-        name="new", aliases=["n"],
-        brief = c_help.CHAR_NEW_BRIEF,
-        description = c_help.CHAR_NEW_DESCRIPTION,
-        usage = c_help.CHAR_NEW_USAGE,
-        help = c_help.CHAR_NEW_HELP
+    @slash_cog(
+        name="character",
+        description="Character management commands."
+        #, guild_ids=[882411164468932609]
+    )
+    async def character_commands(self, ctx):
+        """Base character command. Unreachable."""
+
+
+    @subslash_cog(
+        base_names="character",
+        name="create",
+        description="Create a new character",
+        options=[
+            SlashOption(str, "name", description="The character's name", required=True),
+            SlashOption(str, "splat",
+                description="The character type",
+                choices=[
+                    {"name": "vampire", "value": "vampire"},
+                    {"name": "mortal", "value": "mortal"},
+                    {"name": "ghoul", "value": "ghoul"}
+                ],
+                required=True
+            ),
+            SlashOption(int, "humanity",
+                description="Humanity rating (0-10)",
+                choices=[{"name": str(n), "value": n} for n in range(0, 11)],
+                required=True
+            ),
+            SlashOption(int, "health",
+                description="Health levels (4-15)",
+                choices=[{"name": str(n), "value": n} for n in range(4, 16)],
+                required=True
+            ),
+            SlashOption(int, "willpower",
+                description="Willpower levels (3-15)",
+                choices=[{"name": str(n), "value": n} for n in range(3, 16)],
+                required=True
+            )
+        ]
+        #, guild_ids=[882411164468932609]
     )
     @commands.guild_only()
-    async def new_character(self, ctx, *args):
+    async def new_character(
+        self, ctx, name: str, splat: str, humanity: int, health: int, willpower: int
+    ):
         """Create a new character."""
-        await inconnu.newchar.parse(ctx, *args)
+        await inconnu.newchar.create(ctx, name, splat, humanity, health, willpower)
 
 
-    @slash_cog(
+    @subslash_cog(
+        base_names="character",
         name="display",
         description="List all of your characters or show details about one character.",
         options=[SlashOption(str, "character", description="A character to display")]
@@ -168,20 +206,23 @@ class CharacterCommands(commands.Cog, name="Character Management"):
         await inconnu.display.parse(ctx, character)
 
 
-    @commands.command(
-        name="update", aliases=["u", "up"],
-        brief = c_help.CHAR_UPDATE_BRIEF,
-        usage = c_help.CHAR_UPDATE_USAGE,
-        help = c_help.CHAR_UPDATE_HELP
+    @subslash_cog(
+        base_names="character",
+        name="update",
+        description="Update a character's trackers.",
+        options=[
+            SlashOption(str, "parameters", description="KEY=VALUE parameters", required=True),
+            SlashOption(str, "character", description="The character to update")
+        ]
     )
     @commands.guild_only()
-    async def update_character(self, ctx, *, args=""):
+    async def update_character(self, ctx, parameters: str, character=None):
         """Update a character's parameters but not the traits."""
-        await inconnu.update.parse(ctx, args)
+        await inconnu.update.parse(ctx, parameters, character)
 
 
-    @commands.guild_only()
-    @slash_cog(
+    @subslash_cog(
+        base_names="character",
         name="delete",
         options=[
             SlashOption(str, "character", description="The character to delete", required=True)

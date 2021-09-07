@@ -35,7 +35,7 @@ async def process(ctx, syntax: str, character=None):
         macro = await macro_common.macro_db.fetch_macro(char_id, macro_name)
         parameters = macro["pool"]
         parameters.append(hunger)
-        parameters.append(difficulty)
+        parameters.append(difficulty or macro["diff"])
 
         results = perform_roll(ctx, char_id, *parameters)
         await display_outcome(ctx, char_name, results, macro["comment"])
@@ -50,25 +50,28 @@ async def process(ctx, syntax: str, character=None):
 def __expand_syntax(syntax: str):
     """Expands the syntax to fit pool, hunger, diff."""
     components = syntax.split()
-    padding = [0 for _ in range(3 - len(components))]
-    components.extend(padding)
 
-    if len(components) > 3:
+    if len(components) == 1:
+        components.append(0)
+        components.append(None)
+    elif len(components) == 2:
+        components.append(None)
+    elif len(components) > 3:
         raise SyntaxError
 
     try:
         hunger = int(components[1])
-        difficulty = int(components[2])
 
         if not 0 <= hunger <= 5:
             raise ValueError("Hunger must be between 0 and 5.")
 
-        if difficulty < 0:
-            raise ValueError("Difficulty cannot be less than 0.")
-
-        # Parser expects strings
-        components[1] = str(hunger)
-        components[2] = str(difficulty)
+        # If the user didn't supply a difficulty, we don't want to override
+        # the default difficulty stored in the macro.
+        difficulty = components[2]
+        if difficulty is not None:
+            difficulty = int(difficulty)
+            if difficulty < 0:
+                raise ValueError("Difficulty cannot be less than 0.")
 
     except ValueError:
         raise SyntaxError from ValueError

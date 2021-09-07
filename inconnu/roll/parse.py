@@ -207,6 +207,8 @@ def __substitute_traits(ctx, character: int, *args) -> tuple:
     pattern = re.compile(r"^[\w\d\s\+-]+$")
 
     for argument in args:
+        argument = str(argument)
+
         if not pattern.match(argument):
             raise ValueError("Invalid syntax.")
 

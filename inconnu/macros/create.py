@@ -7,8 +7,14 @@ from .. import common
 from ..constants import character_db
 from ..databases import AmbiguousTraitError, TraitNotFoundError, MacroAlreadyExistsError
 
-async def process(ctx, name: str, pool: str, comment=None, character=None):
+async def process(ctx, name: str, pool: str, difficulty=0, comment=None, character=None):
     """Create a macro if the syntax is valid."""
+    if difficulty < 0:
+        await common.display_error(
+            ctx, ctx.author.display_name, "`Difficulty` cannot be less than 0."
+        )
+        return
+
     char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, character)
     if char_id is None:
         await ctx.respond(f"You don't have a character named {character}.", hidden=True)
@@ -23,7 +29,7 @@ async def process(ctx, name: str, pool: str, comment=None, character=None):
     try:
         pool = __expand_syntax(ctx.guild.id, ctx.author.id, char_id, pool)
 
-        await macro_common.macro_db.create_macro(char_id, name, pool, comment)
+        await macro_common.macro_db.create_macro(char_id, name, pool, difficulty, comment)
 
         await ctx.respond(f"Macro `{name}` created.", hidden=True)
 

@@ -96,15 +96,18 @@ class MacroCommands(commands.Cog, name="Macro Utilities"):
         description="Create a macro.",
         options=[
             SlashOption(str, "name", description="The macro's name", required=True),
-            SlashOption(str, "pool", description="The macro's pool", required=True),
+            SlashOption(str, "pool", description="The dice pool", required=True),
+            SlashOption(int, "difficulty", description="The default difficulty (default 0"),
             SlashOption(str, "comment", description="A comment to apply to macro rolls"),
             SlashOption(str, "character", description="The character that owns the macro")
         ]
         , guild_ids=[882411164468932609]
     )
-    async def macro_create(self, ctx, name: str, pool: str, comment=None, character=None):
+    async def macro_create(
+        self, ctx, name: str, pool: str, difficulty=0, comment=None, character=None
+    ):
         """Create a macro."""
-        await inconnu.macros.create.process(ctx, name, pool, comment, character)
+        await inconnu.macros.create.process(ctx, name, pool, difficulty, comment, character)
 
 
     @subslash_cog(

@@ -46,6 +46,7 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
                 CharID  int    NOT NULL,
                 Name    text   NOT NULL,
                 Pool    text[] NOT NULL,
+                Diff    int    DEFAULT 0,
                 Comment text   DEFAULT NULL,
                 PRIMARY KEY (MacroID),
 
@@ -63,15 +64,15 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
         self._check_exists = await self.conn.prepare(check_exists)
 
         create = """
-            INSERT INTO Macros(CharID, Name, Pool, Comment)
-            VALUES($1, $2, $3, $4)
+            INSERT INTO Macros(CharID, Name, Pool, Diff, Comment)
+            VALUES($1, $2, $3, $4, $5)
         """
         self._create = await self.conn.prepare(create)
 
         list_all = "SELECT Name, Pool, Comment FROM Macros WHERE CharID = $1"
         self._list = await self.conn.prepare(list_all)
 
-        fetch = "SELECT Name, Pool, Comment FROM Macros WHERE CharID = $1 AND Name = $2"
+        fetch = "SELECT Name, Pool, Diff, Comment FROM Macros WHERE CharID = $1 AND Name = $2"
         self._fetch_macro = await self.conn.prepare(fetch)
 
         delete = "DELETE FROM Macros WHERE CharID = $1 AND Name = $2"
@@ -96,22 +97,27 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
         return count > 0
 
 
-    async def create_macro(self, char_id: int, macro_name: str, pool: list, comment: str):
+    async def create_macro(
+        self, char_id: int, macro_name: str, pool: list, diff: int, comment: str
+    ):
         """
         Create a a macro.
         Args:
             char_id (int): The character's ID
             macro_name (str): The new macro's name
             pool (list): The macro's pool
+            diff (int): The macro's default difficulty
             comment (str): The macro's comment
 
         Raises MacroAlreadyExistsError if the macro already exists.
+
+        Macros do not have predefined Hunger, because of the fluid nature of that stat.
         """
         await self._prepare()
         if await self.macro_exists(char_id, macro_name):
             raise MacroAlreadyExistsError(f"Macro '{macro_name}' already exists.")
 
-        await self._create.executemany(((char_id, macro_name, pool, comment),))
+        await self._create.executemany(((char_id, macro_name, pool, diff, comment),))
 
 
     async def char_macros(self, char_id: int):
@@ -149,4 +155,4 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
         if not await self.macro_exists(char_id, macro_name):
             raise MacroNotFoundError(f"That character has no macro named '{macro_name}.")
 
-        await self._delete.executemany((char_id, macro_name))
+        await self._delete.executemany(((char_id, macro_name),))

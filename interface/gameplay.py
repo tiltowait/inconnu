@@ -32,6 +32,7 @@ class Gameplay(commands.Cog):
         ]
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def rouse(self, ctx, character=None, count=1):
         """Perform a rouse check."""
         await inconnu.rousemorse.parse(ctx, "rouse", character, count)
@@ -42,6 +43,7 @@ class Gameplay(commands.Cog):
         options=[SlashOption(str, "character", description="The character undergoing Remorse")]
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def remorse(self, ctx, character=None):
         """Perform a remorse check."""
         await inconnu.rousemorse.parse(ctx, "remorse", character)

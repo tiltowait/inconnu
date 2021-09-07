@@ -15,6 +15,7 @@ class Characters(commands.Cog, name="Character Management"):
         description="Character management commands."
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def character_commands(self, ctx):
         """Base character command. Unreachable."""
 
@@ -67,6 +68,7 @@ class Characters(commands.Cog, name="Character Management"):
         options=[SlashOption(str, "character", description="A character to display")]
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def display_character(self, ctx, character=None):
         """Display a character's basic traits"""
         await inconnu.display.parse(ctx, character)
@@ -95,6 +97,7 @@ class Characters(commands.Cog, name="Character Management"):
         ]
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def delete_character(self, ctx, character: str):
         """Delete a character."""
         await inconnu.delete.prompt(ctx, character)

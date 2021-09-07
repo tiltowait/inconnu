@@ -209,8 +209,7 @@ def __substitute_traits(ctx, character: int, *args) -> tuple:
             raise ValueError("Invalid syntax.")
 
         # Put spaces around the operators so that we can use split()
-        argument = argument.replace("+", " + ")
-        argument = argument.replace("-", " - ")
+        argument = re.sub(r"\s*([+-])\s*", r" \g<1> ", argument)
 
         elements = argument.split()
         temp_stack.extend(elements)

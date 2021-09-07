@@ -15,6 +15,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         description="Roll a macro."
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def macro(self, ctx):
         """Base macro command. Unreachable."""
 
@@ -31,6 +32,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         ]
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def macro_roll(self, ctx, syntax: str, character=None):
         """Create a macro."""
         await inconnu.macros.roll.process(ctx, syntax, character)
@@ -49,6 +51,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         ]
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def macro_create(
         self, ctx, name: str, pool: str, difficulty=0, comment=None, character=None
     ):
@@ -65,6 +68,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         ]
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def macro_list(self, ctx, character=None):
         """List a character's macros."""
         await inconnu.macros.show.process(ctx, character)
@@ -80,6 +84,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         ]
         #, guild_ids=[882411164468932609]
     )
+    @commands.guild_only()
     async def macro_delete(self, ctx, macro: str, character=None):
         """Delete a macro."""
         await inconnu.macros.delete.process(ctx, macro, character)

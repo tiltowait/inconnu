@@ -59,24 +59,24 @@ This is a multi-parameter command. You may supply as many trackers as you like.
 
 The following trackers are available:
 
-| Parameter   | Description                                               |
-|-------------|-----------------------------------------------------------|
-| `name`      | The character's new name                                  |
-| `Health`    | Maximum Health                                            |
-| `Willpower` | Maximum Willpower                                         |
-| `sh`        | Superficial Health damage                                 |
-| `ah`        | Aggravated Health damage                                  |
-| `sw`        | Superficial Willpower damage                              |
-| `aw`        | Aggravated Willpower damage                               |
-| `hunger`    | Hunger                                                    |
-| `humanity`  | Humanity                                                  |
-| `stains`    | Stains                                                    |
-| `cur_xp`    | Current XP                                                |
-| `total_xp`  | Total XP                                                  |
+| Parameter    | Description                                               |
+|--------------|-----------------------------------------------------------|
+| `name`       | The character's new name                                  |
+| `Health`     | Maximum Health                                            |
+| `Willpower`  | Maximum Willpower                                         |
+| `sh`         | Superficial Health damage                                 |
+| `ah`         | Aggravated Health damage                                  |
+| `sw`         | Superficial Willpower damage                              |
+| `aw`         | Aggravated Willpower damage                               |
+| `hunger`     | Hunger                                                    |
+| `humanity`   | Humanity                                                  |
+| `stains`     | Stains                                                    |
+| `current_xp` | Current XP                                                |
+| `total_xp`   | Total XP                                                  |
 
 Apart from `name`, each key expects an integer, which you may supply in one of three forms: `+X`, `-X`, or plain `X`. The first two adjust the current value by positive or negative `X`. The last, however, *sets* the tracker to `X`.
 
-!> When changing maximum Health and Willpower, **Inconnu** tries to prevent you from losing any *damage* data; however, modify it too much, and some will necessarily be lost. Similarly, when adjusting `total_xp`, reducing it below `cur_xp` will reduce `cur_xp` by the appropriate amount.
+!> When changing maximum Health and Willpower, **Inconnu** tries to prevent you from losing any *damage* data; however, modify it too much, and some will necessarily be lost. Similarly, when adjusting `total_xp`, reducing it below `current_xp` will reduce `current_xp` by the appropriate amount.
 
 ## Character Deletion
 

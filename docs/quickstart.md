@@ -85,7 +85,7 @@ Nadea got in a scrap and took *2* levels of *Superficial Damage* plus *1* level 
 
 ```
 
-Similarly, Willpower damage uses the `sw` and `aw` keys, and you can set *current XP* with the `cur_xp` key and *total XP* with the `total_xp` key.
+Similarly, Willpower damage uses the `sw` and `aw` keys, and you can set *current XP* with the `current_xp` key and *total XP* with the `total_xp` key.
 
 Humanity has its own damage type in the form of Stains. To apply Stains: `//update Stains=+X` to add, `-x` to subtract, and plain `x` to set to an absolute value.
 

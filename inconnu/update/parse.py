@@ -13,7 +13,7 @@ from ..display import parse as display
 __KEYS = {
     "name": "The character's name",
     "health": "The character's max Health",
-    "wp": "The character's max Willpower",
+    "willpower": "The character's max Willpower",
     "humanity": "The character's Humanity",
     "splat": "The type of character: `vampire`, `mortal`, or `ghoul`",
     "sh": "+/- Superficial Health damage",

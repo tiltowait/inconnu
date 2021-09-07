@@ -8,7 +8,7 @@ from ..databases import CharacterNotFoundError
 
 __TRACKMOJI = None
 
-async def parse(ctx, *args):
+async def parse(ctx, character=None):
     """Determine which character to display, then display them."""
     global __TRACKMOJI
     if __TRACKMOJI is None:
@@ -17,7 +17,8 @@ async def parse(ctx, *args):
     try:
         char_name = None
         char_id = None
-        if len(args) == 0:
+
+        if character is None:
             user_chars = character_db.characters(ctx.guild.id, ctx.author.id)
 
             if len(user_chars) == 0:
@@ -29,20 +30,22 @@ async def parse(ctx, *args):
                 user_chars = "\n".join(user_chars)
 
                 response = f"**You have the following characters:**\n{user_chars}"
-                response += "\n\nView one with `//display NAME`"
+                response += "\n\nView one with `/display NAME`"
 
                 raise ValueError(response)
 
             if len(user_chars) == 1:
+                # Display their only character
                 char_name, char_id = list(user_chars.items())[0]
+
         else:
-            char_name, char_id = character_db.character(ctx.guild.id, ctx.author.id, args[0])
+            char_name, char_id = character_db.character(ctx.guild.id, ctx.author.id, character)
 
         # Character has been found
         await __display_character(ctx, char_name, char_id)
 
     except (ValueError, CharacterNotFoundError) as err:
-        await ctx.reply(str(err))
+        await ctx.respond(str(err), hidden=True)
 
 
 async def __display_character(ctx, char_name: str, char_id: int):
@@ -78,7 +81,7 @@ async def __display_character(ctx, char_name: str, char_id: int):
     if total_xp > 0:
         embed.add_field(name="Experience", value=__format_xp(current_xp, total_xp))
 
-    await ctx.reply(embed=embed)
+    await ctx.respond(embed=embed)
 
 
 def __format_xp(current: int, total: int) -> str:

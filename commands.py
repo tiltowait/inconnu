@@ -77,16 +77,15 @@ class CharacterCommands(commands.Cog, name="Character Management"):
         await inconnu.newchar.parse(ctx, *args)
 
 
-    @commands.command(
-        name="display", aliases=["d", "find", "f", "list", "l"],
-        brief = c_help.CHAR_DISPLAY_BRIEF,
-        usage = c_help.CHAR_DISPLAY_USAGE,
-        help = c_help.CHAR_DISPLAY_HELP
+    @slash_cog(
+        name="display",
+        description="List all of your characters or show details about one character.",
+        options=[SlashOption(str, "character", description="A character to display")]
+        #, guild_ids=[882411164468932609]
     )
-    @commands.guild_only()
-    async def display_character(self, ctx, *args):
+    async def display_character(self, ctx, character=None):
         """Display a character's basic traits"""
-        await inconnu.display.parse(ctx, *args)
+        await inconnu.display.parse(ctx, character)
 
 
     @commands.command(

@@ -1,9 +1,12 @@
 """databases/macrodp.py - Character macro database."""
 
 import os
-import asyncpg
 import ssl
+import asyncio
 
+import asyncpg
+
+from .exceptions import MacroAlreadyExistsError, MacroNotFoundError
 
 class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
     """A class for managing character macros."""
@@ -19,7 +22,7 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
         self._delete = None
 
 
-    async def prepare(self):
+    async def _prepare(self):
         """Establish database connection."""
         if self.conn is not None:
             return
@@ -53,6 +56,7 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
             );
             """
         )
+        self.conn.add_termination_listener(self.__connection_closed)
 
         # Prepare some statements
         check_exists = "SELECT COUNT(*) FROM Macros WHERE CharID = $1 AND Name = $2"
@@ -74,13 +78,9 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
         self._delete = await self.conn.prepare(delete)
 
 
-    async def _execute(self, query, *args):
-        """
-        Execute a database query. Connects to the database if the connection is
-        inactive.
-        """
-        await self.prepare()
-        await self.conn.execute(query, *args)
+    async def __connection_closed(self, _):
+        """A listener for connection closures."""
+        self.conn = None
 
 
     async def macro_exists(self, char_id: int, macro_name: str) -> bool:
@@ -91,8 +91,8 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
             macro_name (str): The new macro's name
         Returns (bool): True if the user has that macro already.
         """
+        await self._prepare()
         count = await self._check_exists.fetchval(char_id, macro_name)
-        print(count)
         return count > 0
 
 
@@ -107,6 +107,7 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
 
         Raises MacroAlreadyExistsError if the macro already exists.
         """
+        await self._prepare()
         if await self.macro_exists(char_id, macro_name):
             raise MacroAlreadyExistsError(f"Macro '{macro_name}' already exists.")
 
@@ -127,6 +128,7 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
 
         Raises MacroNotFoundError if the macro doesn't exist.
         """
+        await self._prepare()
         fetched = await self._fetch_macro.fetchrow(char_id, macro_name)
         if fetched is None:
             raise MacroNotFoundError(f"That character has no macro named '{macro_name}'.")
@@ -143,6 +145,7 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
 
         Raises MacroNotFoundError if the macro doesn't exist.
         """
+        await self._prepare()
         if not await self.macro_exists(char_id, macro_name):
             raise MacroNotFoundError(f"That character has no macro named '{macro_name}.")
 

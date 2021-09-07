@@ -5,9 +5,7 @@ import re
 from . import macro_common
 from .. import common
 from ..constants import character_db
-from ..databases import MacroDB, AmbiguousTraitError, TraitNotFoundError, MacroAlreadyExistsError
-
-__MACRO_DB = MacroDB()
+from ..databases import AmbiguousTraitError, TraitNotFoundError, MacroAlreadyExistsError
 
 async def process(ctx, name: str, pool: str, comment=None, character=None):
     """Create a macro if the syntax is valid."""
@@ -25,8 +23,7 @@ async def process(ctx, name: str, pool: str, comment=None, character=None):
     try:
         pool = __expand_syntax(ctx.guild.id, ctx.author.id, char_id, pool)
 
-        await __MACRO_DB.prepare()
-        await __MACRO_DB.create_macro(char_id, name, pool, comment)
+        await macro_common.macro_db.create_macro(char_id, name, pool, comment)
 
         await ctx.respond(f"Macro `{name}` created.", hidden=True)
 

@@ -73,9 +73,8 @@ class MacroCommands(commands.Cog, name="Macro Utilities"):
         """Base macro command. Unreachable."""
 
 
-    @subslash_cog(
-        base_names="macro",
-        name="roll",
+    @slash_cog(
+        name="vm",
         description="Roll a macro.",
         options=[
             SlashOption(str, "syntax",
@@ -88,7 +87,7 @@ class MacroCommands(commands.Cog, name="Macro Utilities"):
     )
     async def macro_roll(self, ctx, syntax: str, character=None):
         """Create a macro."""
-        await ctx.respond(f"Rolling `{syntax}` for `{character}`", hidden=True)
+        await inconnu.macros.roll.process(ctx, syntax, character)
 
 
     @subslash_cog(

@@ -17,7 +17,7 @@ from collections import namedtuple
 import discord
 from discord_ui import Button
 
-from .roll import roll
+from .roll import _roll_pool
 from .dicemoji import Dicemoji
 from . import reroll
 from .. import common
@@ -69,15 +69,15 @@ async def parse(ctx, args: str):
 
     # Attempt to parse the user's roll syntax
     try:
-        pool_str, roll_params = __evaluate_syntax(ctx, character, *args)
-        results = roll(roll_params, pool_str)
-        await __send_results(ctx, character_name, results, comment)
+        results = perform_roll(ctx, character, *args)
+        await display_outcome(ctx, character_name, results, comment)
 
     except (SyntaxError, ValueError) as err:
         await common.display_error(ctx, character_name or ctx.author.display_name, str(err))
 
 
-async def __send_results(ctx, character_name, results, comment, rerolled=False):
+async def display_outcome(ctx, character_name, results, comment, rerolled=False):
+    """Display the roll results in a nice embed."""
     character_name = character_name or ctx.author.display_name
 
     title = results.main_takeaway
@@ -124,16 +124,28 @@ async def __send_results(ctx, character_name, results, comment, rerolled=False):
     # Calculate re-roll options and display
     reroll_buttons = __generate_reroll_buttons(results)
     if len(reroll_buttons) == 0 or rerolled:
-        await ctx.reply(embed=embed)
+        if hasattr(ctx, "reply"):
+            msg = await ctx.reply(embed=embed)
+        else:
+            msg = await ctx.respond(embed=embed)
     else:
         try:
-            msg = await ctx.reply(embed=embed, components=reroll_buttons)
+            if hasattr(ctx, "reply"):
+                msg = await ctx.reply(embed=embed, components=reroll_buttons)
+            else:
+                msg = await ctx.respond(embed=embed, components=reroll_buttons)
             rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
-            await __send_results(ctx, character_name, rerolled_results, comment, rerolled=True)
+            await display_outcome(ctx, character_name, rerolled_results, comment, rerolled=True)
         except asyncio.exceptions.TimeoutError:
             pass
         finally:
             await msg.disable_components()
+
+
+def perform_roll(ctx, character: int, *args):
+    """Public interface for __evaluate_syntax() that returns a RollResult."""
+    pool_str, roll_params = __evaluate_syntax(ctx, character, *args)
+    return _roll_pool(roll_params, pool_str)
 
 
 def __evaluate_syntax(ctx, character: int, *args):

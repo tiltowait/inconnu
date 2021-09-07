@@ -3,7 +3,7 @@
 from .dicethrow import DiceThrow
 from .rollresult import RollResult
 
-def roll(parameters, pool_str):
+def _roll_pool(parameters, pool_str):
     """Perform a roll."""
     if parameters.pool > 50:
         raise ValueError(f"Pool cannot exceed 50. (Got {parameters.pool}.)")

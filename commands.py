@@ -95,7 +95,7 @@ class CharacterCommands(commands.Cog, name="Character Management"):
         help = c_help.CHAR_UPDATE_HELP
     )
     @commands.guild_only()
-    async def update_character(self, ctx, *, args):
+    async def update_character(self, ctx, *, args=""):
         """Update a character's parameters but not the traits."""
         await inconnu.update.parse(ctx, args)
 

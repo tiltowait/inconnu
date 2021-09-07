@@ -2,27 +2,26 @@
 
 import re
 
+import discord
+from discord_ui.components import LinkButton
+
 from . import paramupdate
 from ..common import get_character
 from ..constants import character_db
 from ..display import parse as display
-
-__INSTRUCTIONS = "USAGE: `//update CHAR_NAME PARAMETER=NEW_VALUE ...`"
-__INSTRUCTIONS += "\n\tUse `//update help` for a list of parameters."
-__INSTRUCTIONS += "\n\tUse `//update help PARAMETER` for a description of that parameter.."
 
 __KEYS = {
     "name": "The character's name",
     "health": "The character's max Health",
     "wp": "The character's max Willpower",
     "humanity": "The character's Humanity",
-    "splat": "The type of character: vampire, mortal, or ghoul",
+    "splat": "The type of character: `vampire`, `mortal`, or `ghoul`",
     "sh": "+/- Superficial Health damage",
     "ah": "+/- Aggravated Health damage",
     "sw": "+/- Superficial Willpower damage",
     "aw": "+/- Aggravated Willpower damage",
     "stains": "+/- Stains",
-    "cur_xp": "+/- Current XP",
+    "current_xp": "+/- Current XP",
     "total_xp": "+/- Total XP",
     "hunger": "+/- The character's Hunger"
 }
@@ -37,24 +36,19 @@ async def parse(ctx, args: str):
     args = list(args.split()) # To allow element removal
 
     if len(args) == 0:
-        await ctx.reply(__INSTRUCTIONS)
+        await __display_help(ctx)
         return
 
     char_name, char_id = get_character(ctx.guild.id, ctx.author.id, *args)
 
     if char_id is None:
         err = __character_error_message(ctx.guild.id, ctx.author.id, char_name)
-        err += f"\n\n{__INSTRUCTIONS}"
-
-        await ctx.reply(err)
+        await __display_help(ctx, err)
         return
 
     # Delete args[0] if it was the character name
     if char_name.lower() == args[0].lower():
         del args[0]
-        if len(args) == 0:
-            await ctx.reply(__INSTRUCTIONS)
-            return
 
     try:
         parameters = __parse_arguments(*args)
@@ -64,8 +58,8 @@ async def parse(ctx, args: str):
 
         await display(ctx, char_name)
 
-    except ValueError as err:
-        await ctx.reply(str(err))
+    except (SyntaxError, ValueError) as err:
+        await __display_help(ctx, err)
 
 
 def __parse_arguments(*arguments):
@@ -74,13 +68,21 @@ def __parse_arguments(*arguments):
     Raises ValueErrors and KeyErrors on exceptions.
     """
     if len(arguments) == 0:
-        raise ValueError(__INSTRUCTIONS)
+        raise ValueError("You must supply some parameters!")
 
     parameters = {}
 
     for argument in arguments:
-        key, value = argument.split("=")
-        key = key.lower()
+        split = argument.split("=")
+        key = split[0].lower()
+
+        if len(split) != 2:
+            err = "Parameters must be in `key = value` pairs."
+            if key not in __KEYS:
+                err += f" Also, `{key}` is not a valid option."
+            raise SyntaxError(err)
+
+        value = split[1]
 
         if key in parameters:
             raise ValueError(f"You cannot use `{key}` more than once.")
@@ -120,3 +122,29 @@ def __character_error_message(guildid: int, userid: int, input_name: str) -> str
         message += ", ".join(user_chars)
 
     return message
+
+
+async def __display_help(ctx, err=None):
+    """Display a help message that details the available keys."""
+    embed = discord.Embed(
+        title="Character Tracking",
+    )
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+    if err is not None:
+        embed.add_field(name="Error", value=str(err), inline=False)
+
+    instructions = "To update a character, use `//update CHARACTER key=value ...`"
+    embed.add_field(name="Instructions", value=instructions, inline=False)
+
+    parameters = [f"**{key}:** {val}" for key, val in __KEYS.items()]
+    parameters = "\n".join(parameters)
+    embed.add_field(name="Options", value=parameters, inline=False)
+
+    embed.set_footer(text="You may modify more than one tracker at a time.")
+
+    button = LinkButton(
+        "http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates",
+        label="Full Documentation"
+    )
+    await ctx.reply(embed=embed, components=[button])

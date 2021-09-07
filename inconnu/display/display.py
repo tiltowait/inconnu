@@ -81,7 +81,11 @@ async def __display_character(ctx, char_name: str, char_id: int):
     if total_xp > 0:
         embed.add_field(name="Experience", value=__format_xp(current_xp, total_xp))
 
-    await ctx.respond(embed=embed)
+    # There are still commands that need reply()
+    if hasattr(ctx, "respond"):
+        await ctx.respond(embed=embed)
+    else:
+        await ctx.reply(embed=embed)
 
 
 def __format_xp(current: int, total: int) -> str:

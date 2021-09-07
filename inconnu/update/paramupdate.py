@@ -84,7 +84,7 @@ def update_aw(guildid: int, userid: int, charid: int, delta: str):
     __update_damage(guildid, userid, charid, "willpower", DAMAGE.aggravated, delta)
 
 
-def update_cur_xp(guildid: int, userid: int, charid: int, delta: str):
+def update_current_xp(guildid: int, userid: int, charid: int, delta: str):
     """Set or modify current XP."""
     __update_xp(guildid, userid, charid, "current", delta)
 

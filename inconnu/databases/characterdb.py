@@ -82,7 +82,7 @@ class CharacterDB(Database):
             guildid (int): Discord ID of the guild
             userid (int): Discord ID of the user
             char_name (str): The name of the character
-        Returns (int): The character's ID.
+        Returns (tuple): The character's name and ID.
 
         Character names are case-insensitive, which is why the name is also returned.
         Raises CharacterNotFoundError if the character isn't found.

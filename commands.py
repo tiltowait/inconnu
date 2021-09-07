@@ -134,7 +134,7 @@ class MacroCommands(commands.Cog, name="Macro Utilities"):
     )
     async def macro_delete(self, ctx, macro: str, character=None):
         """Delete a macro."""
-        await ctx.respond("Macro delete", hidden=True)
+        await inconnu.macros.delete.process(ctx, macro, character)
 
 
 # Character CRUD

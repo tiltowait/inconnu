@@ -73,4 +73,7 @@ async def display_error(ctx, char_name, error):
     )
     embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
 
-    await ctx.reply(embed=embed)
+    if hasattr(ctx, "reply"):
+        await ctx.reply(embed=embed)
+    else:
+        await ctx.respond(embed=embed, hidden=True)

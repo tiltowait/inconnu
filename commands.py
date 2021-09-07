@@ -61,7 +61,7 @@ class Gameplay(commands.Cog):
 
 # Macros!
 
-class Macros(commands.Cog, name="Macro Utilities"):
+class MacroCommands(commands.Cog, name="Macro Utilities"):
     """Macro manaagement and rolls."""
 
     @slash_cog(
@@ -105,7 +105,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     )
     async def macro_create(self, ctx, name: str, pool: str, comment=None, character=None):
         """Create a macro."""
-        await ctx.respond("Macro create", hidden=True)
+        await inconnu.macros.create.process(ctx, name, pool, comment, character)
 
 
     @subslash_cog(
@@ -284,6 +284,6 @@ def __status_message():
 def setup():
     """Final bot setup."""
     bot.add_cog(Gameplay(bot))
-    bot.add_cog(Macros(bot))
+    bot.add_cog(MacroCommands(bot))
     bot.add_cog(CharacterCommands(bot))
     bot.add_cog(TraitCommands(bot))

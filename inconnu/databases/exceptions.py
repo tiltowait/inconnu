@@ -2,11 +2,9 @@
 
 class CharacterNotFoundError(Exception):
     """Raised when a user specifies a nonexistent character."""
-    pass
 
 class TraitNotFoundError(Exception):
     """Raised when a user specifies a nonexistent trait."""
-    pass
 
 class AmbiguousTraitError(Exception):
     """Raised when a user's trait argument is ambiguous."""
@@ -20,3 +18,10 @@ class AmbiguousTraitError(Exception):
         self.message = f'`{input_trait}` is ambiguous. Do you mean: {formatted_matches}?'
 
         super().__init__(self.message)
+
+
+class MacroAlreadyExistsError(Exception):
+    """Error for when a user tries to create a macro that already exists."""
+
+class MacroNotFoundError(Exception):
+    """Error for when a macro isn't found."""

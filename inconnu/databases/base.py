@@ -22,6 +22,10 @@ class Database:
         self.cursor = self.conn.cursor()
 
 
+    def __del__(self):
+        self.conn.close()
+
+
     def _execute(self, query: Union[str, psycopg2.sql.SQL], *args):
         """
         Execute the specified query. Tries to reconnect to the database if there's an error.

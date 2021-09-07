@@ -27,7 +27,7 @@ Character creation is done with the `//new` command, which has the following, re
 ## Character Display
 
 ```
-//display [character]
+/display [character]
 
 ```
 
@@ -39,6 +39,8 @@ If `character` is omitted, then one of two things will happen:
 
 * If you have only one character, that character will be displayed
 * If you have multiple characters, a list of them will be displayed
+
+[filename](includes/slash-disclosure.md ':include')
 
 ## Tracker Updates
 
@@ -79,9 +81,11 @@ Apart from `name`, each key expects an integer, which you may supply in one of t
 ## Character Deletion
 
 ```
-//delete <character>
+/delete <character>
 
 ```
 `character` is mandatory. When running this command, **Inconnu** will give you a confirmation box before deleting the character.
 
 !> **This cannot be undone!** Deleting a character also removes all associated traits.
+
+[filename](includes/slash-disclosure.md ':include')

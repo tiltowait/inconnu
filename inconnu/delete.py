@@ -19,7 +19,7 @@ async def prompt(ctx, char_name: str):
             Button("_cancel", "Cancel", "secondary"),
             Button("_delete", f"Delete {char_name}", "red")
         ]
-        msg = await ctx.reply(embed=embed, components=buttons)
+        msg = await ctx.respond(embed=embed, components=buttons, hidden=True)
 
         # Await the response
         try:
@@ -30,20 +30,19 @@ async def prompt(ctx, char_name: str):
             # Process the response
             if btn.custom_id == "_delete":
                 if character_db.delete_character(ctx.guild.id, ctx.author.id, char_id):
-                    await ctx.reply(f"Deleted {char_name}!")
+                    await ctx.respond(f"Deleted {char_name}!", hidden=True)
                 else:
-                    await ctx.reply("Something went wrong. Unable to delete.")
+                    await ctx.respond("Something went wrong. Unable to delete.", hidden=True)
 
             else:
-                await ctx.reply("Deletion canceled.")
+                await ctx.respond("Deletion canceled.", hidden=True)
 
         except asyncio.exceptions.TimeoutError:
-            await msg.delete()
-            await ctx.reply("You didn't respond within 20 seconds. Deletion canceled.")
-
+            await msg.edit(content="**Deletion canceled due to inactivity.**")
+            await msg.disable_components()
 
     except CharacterNotFoundError as err:
-        await ctx.reply(str(err))
+        await ctx.respond(str(err), hidden=True)
 
 
 def __generate_prompt(ctx, char_name: str):

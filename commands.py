@@ -101,16 +101,17 @@ class CharacterCommands(commands.Cog, name="Character Management"):
         await inconnu.update.parse(ctx, args)
 
 
-    @commands.command(
-        name="delete", aliases=["del"],
-        brief = c_help.CHAR_DELETE_BRIEF,
-        usage = c_help.CHAR_DELETE_USAGE,
-        help = c_help.CHAR_DELETE_HELP
-    )
     @commands.guild_only()
-    async def delete_character(self, ctx, char_name):
+    @slash_cog(
+        name="delete",
+        options=[
+            SlashOption(str, "character", description="The character to delete", required=True)
+        ]
+        #, guild_ids=[882411164468932609]
+    )
+    async def delete_character(self, ctx, character: str):
         """Delete a character."""
-        await inconnu.delete.prompt(ctx, char_name)
+        await inconnu.delete.prompt(ctx, character)
 
 
 # Trait CRUD

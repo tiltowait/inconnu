@@ -18,13 +18,12 @@ import discord
 from discord_ui import Button
 
 from .roll import _roll_pool
-from .dicemoji import Dicemoji
+from . import dicemoji
 from . import reroll
 from .. import common
 from ..databases import AmbiguousTraitError, TraitNotFoundError
 from ..constants import character_db, DAMAGE
 
-__DICEMOJI = None
 __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
 RollParameters = namedtuple("RollParameters", ["pool", "hunger", "difficulty"])
 
@@ -34,9 +33,6 @@ class TraitInDMsError(Exception):
 
 async def parse(ctx, args: str):
     """Parse the user's arguments and attempt to roll the dice."""
-    global __DICEMOJI
-    if __DICEMOJI is None:
-        __DICEMOJI = Dicemoji(ctx.bot)
 
     # Comments appear after the first # in a command
     comment = None
@@ -102,8 +98,8 @@ async def display_outcome(ctx, character_name, results, comment, rerolled=False)
     )
 
     # Disclosure fields
-    normalmoji = __DICEMOJI.emoji_string(results.normal.dice, False)
-    hungermoji = __DICEMOJI.emoji_string(results.hunger.dice, True)
+    normalmoji = dicemoji.emojify(results.normal.dice, False)
+    hungermoji = dicemoji.emojify(results.hunger.dice, True)
     embed.add_field(
         name=f"Margin: {results.margin}",
         value=f"{normalmoji} {hungermoji}",

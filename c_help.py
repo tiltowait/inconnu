@@ -19,29 +19,6 @@ hunger:     The number of hunger dice to roll (default 0)
 difficulty: The difficulty of the roll (default 0)
 """
 
-ROUSE_BRIEF = "Perform a rouse check"
-ROUSE_USAGE="[character] [rouses]"
-ROUSE_HELP = """
-character:  The character performing the rouse check.
-               If this is supplied, any hunger increases
-               will automatically be applied.
-rouses:     The number of rouses to perform
-"""
-
-
-REMORSE_BRIEF = "Perform a remorse check"
-REMORSE_USAGE = "[character]"
-REMORSE_HELP = """
-character:  The character undergoing remorse
-               REQUIRED if you have more than one character
-               OPTIONAL if you have only one character
-"""
-
-
-RESONANCE_BRIEF = "Generate a random resonance"
-RESONANCE_HELP = RESONANCE_BRIEF + "."
-
-
 # Character CRUD commands
 
 CHAR_NEW_BRIEF = "Create a new character"
@@ -60,14 +37,6 @@ Aside from tracking stats, characters let you roll traits, such as strength or o
 """
 
 
-CHAR_DISPLAY_BRIEF = "Display a character's basic statistics"
-CHAR_DISPLAY_USAGE = "[character]"
-CHAR_DISPLAY_HELP = """
-character:  The character to display
-               Optional if you only have one character
-"""
-
-
 CHAR_UPDATE_BRIEF = "Update a character's basic statistics"
 CHAR_UPDATE_USAGE = "[character] <stat>=<value> ..."
 CHAR_UPDATE_HELP = """
@@ -82,15 +51,6 @@ stat:       The stat to update
                   wp
                   cur_xp (current XP)
                   total_xp
-"""
-
-
-CHAR_DELETE_BRIEF = "Delete a character"
-CHAR_DELETE_USAGE = "<character>"
-CHAR_DELETE_HELP = """
-character:  The character to delete
-
-You will be given a confirmation box before deletion occurs.
 """
 
 

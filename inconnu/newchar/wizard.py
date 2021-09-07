@@ -34,7 +34,6 @@ class Wizard:
         self.parameters = parameters
 
         self.assigned_traits = {}
-        self.last_query_message = None
 
 
     async def begin_chargen(self):
@@ -52,8 +51,6 @@ class Wizard:
         """
         trait = self.core_traits.pop(0)
         self.assigned_traits[trait] = rating
-        await self.last_query_message.delete()
-        self.last_query_message = None
 
         if len(self.core_traits) == 0:
             # We're finished; create the character
@@ -107,17 +104,16 @@ class Wizard:
             placeholder=f"Select {self.parameters.name}'s {self.core_traits[0]} rating"
         )
 
-        self.last_query_message = await self.ctx.author.send(embed=embed, components=[menu])
+        query_msg = await self.ctx.author.send(embed=embed, components=[menu])
 
         # Await the user response
         try:
-            menu = await self.last_query_message.wait_for("select", self.ctx.bot, timeout=60)
+            menu = await query_msg.wait_for("select", self.ctx.bot, timeout=60)
             await menu.respond()
 
             rating = int(menu.selected_values[0].value)
             await self.__assign_next_trait(rating)
 
         except asyncio.exceptions.TimeoutError:
-            await self.last_query_message.delete()
             err = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
             await self.ctx.author.send(err)

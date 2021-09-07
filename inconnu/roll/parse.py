@@ -79,10 +79,6 @@ async def parse(ctx, args: str):
 
 async def __send_results(ctx, character_name, results, comment, rerolled=False):
     character_name = character_name or ctx.author.display_name
-    normalmoji = __DICEMOJI.emoji_string(results.normal.dice, False)
-    hungermoji = __DICEMOJI.emoji_string(results.hunger.dice, True)
-
-    emoji_string = f"{normalmoji} {hungermoji}"
 
     title = results.main_takeaway
     if not results.is_total_failure and not results.is_bestial:
@@ -90,7 +86,6 @@ async def __send_results(ctx, character_name, results, comment, rerolled=False):
 
     embed = discord.Embed(
         title=title,
-        description=f"**Margin: {results.margin}**",
         colour=results.embed_color
     )
 
@@ -107,6 +102,14 @@ async def __send_results(ctx, character_name, results, comment, rerolled=False):
     )
 
     # Disclosure fields
+    normalmoji = __DICEMOJI.emoji_string(results.normal.dice, False)
+    hungermoji = __DICEMOJI.emoji_string(results.hunger.dice, True)
+    embed.add_field(
+        name=f"Margin: {results.margin}",
+        value=f"{normalmoji} {hungermoji}",
+        inline=False
+    )
+
     embed.add_field(name="Pool", value=str(results.pool))
     embed.add_field(name="Hunger", value=str(results.hunger.count))
     embed.add_field(name="Difficulty", value=str(results.difficulty))
@@ -121,10 +124,10 @@ async def __send_results(ctx, character_name, results, comment, rerolled=False):
     # Calculate re-roll options and display
     reroll_buttons = __generate_reroll_buttons(results)
     if len(reroll_buttons) == 0 or rerolled:
-        await ctx.reply(content=emoji_string, embed=embed)
+        await ctx.reply(embed=embed)
     else:
         try:
-            msg = await ctx.reply(content=emoji_string, embed=embed, components=reroll_buttons)
+            msg = await ctx.reply(embed=embed, components=reroll_buttons)
             rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
             await __send_results(ctx, character_name, rerolled_results, comment, rerolled=True)
         except asyncio.exceptions.TimeoutError:

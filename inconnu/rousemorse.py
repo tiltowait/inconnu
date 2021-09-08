@@ -10,21 +10,17 @@ from .constants import character_db
 
 
 async def parse(ctx, key: str, character: str, count=0):
-    """Perform a rouse check."""
-    char_name, char_id = await common.get_character(ctx.guild.id, ctx.author.id, character)
+    """Determine whether to perform a rouse or remorse check."""
+    try:
+        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
 
-    if char_name is None:
-        if character is not None:
-            message = await common.character_options_message(ctx.guild.id, ctx.author.id, character)
-        else:
-            message = "You have no characters!"
-        await ctx.respond(message, hidden=True)
-        return
+        if key == "rouse":
+            await __rouse_result(ctx, char_id, char_name, count)
+        elif key == "remorse":
+            await __remorse_result(ctx, char_id, char_name)
 
-    if key == "rouse":
-        await __rouse_result(ctx, char_id, char_name, count)
-    elif key == "remorse":
-        await __remorse_result(ctx, char_id, char_name)
+    except ValueError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
 
 
 async def __rouse_result(ctx, char_id: int, char_name: int, rolls: int):

@@ -55,7 +55,12 @@ async def match_character(guildid: int, userid: int, char_name: str) -> tuple:
     try:
         return await character_db.character(guildid, userid, char_name)
     except CharacterNotFoundError as err:
-        raise ValueError(str(err)) from err
+        error = str(err)
+        if len(user_chars) > 0:
+            chars = "\n".join(user_chars.keys())
+            error += f"\n\n**Your characters:**\n{chars}"
+
+        raise ValueError(error) from err
 
 
 async def character_options_message(guildid: int, userid: int, input_name: str) -> str:

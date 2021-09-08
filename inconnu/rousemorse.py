@@ -5,17 +5,12 @@ import random
 import discord
 
 from . import common
-from .display import Trackmoji
+from .display import trackmoji
 from .constants import character_db
 
-__TRACKMOJI = None
 
 async def parse(ctx, key: str, character: str, count=0):
     """Perform a rouse check."""
-    global __TRACKMOJI
-    if __TRACKMOJI is None:
-        __TRACKMOJI = Trackmoji(ctx.bot)
-
     char_name, char_id = await common.get_character(ctx.guild.id, ctx.author.id, character)
 
     if char_name is None:
@@ -64,7 +59,7 @@ async def __rouse_result(ctx, char_id: int, char_name: int, rolls: int):
         title=title
     )
     embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
-    embed.add_field(name="New Hunger", value=__TRACKMOJI.emojify_hunger(new_hunger))
+    embed.add_field(name="New Hunger", value=trackmoji.emojify_hunger(new_hunger))
 
     potential_stains = tens + ones
     if potential_stains > 0:
@@ -89,7 +84,7 @@ async def __remorse_result(ctx, char_id: int, char_name: int):
         title="Remorse Success" if successful else "Remorse Fail"
     )
     embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
-    embed.add_field(name="Humanity", value=__TRACKMOJI.emojify_humanity(humanity, 0))
+    embed.add_field(name="Humanity", value=trackmoji.emojify_humanity(humanity, 0))
 
     if successful:
         embed.set_footer(text="You keep the Beast at bay. For now.")

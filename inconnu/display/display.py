@@ -2,18 +2,12 @@
 
 import discord
 
-from .trackmoji import Trackmoji
+from . import trackmoji
 from ..constants import character_db
 from ..databases import CharacterNotFoundError
 
-__TRACKMOJI = None
-
 async def parse(ctx, character=None):
     """Determine which character to display, then display them."""
-    global __TRACKMOJI
-    if __TRACKMOJI is None:
-        __TRACKMOJI = Trackmoji(ctx.bot)
-
     try:
         char_name = None
         char_id = None
@@ -60,10 +54,10 @@ async def __display_character(ctx, char_name: str, char_id: int):
     current_xp = await character_db.get_current_xp(char_id)
     total_xp = await character_db.get_total_xp(char_id)
 
-    health = __TRACKMOJI.emojify_track(health)
-    willpower = __TRACKMOJI.emojify_track(willpower)
-    hunger = __TRACKMOJI.emojify_hunger(hunger)
-    humanity = __TRACKMOJI.emojify_humanity(humanity, stains)
+    health = trackmoji.emojify_track(health)
+    willpower = trackmoji.emojify_track(willpower)
+    hunger = trackmoji.emojify_hunger(hunger)
+    humanity = trackmoji.emojify_humanity(humanity, stains)
 
     embed = discord.Embed(
         title=char_name,

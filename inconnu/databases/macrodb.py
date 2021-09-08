@@ -5,13 +5,14 @@ import ssl
 
 import asyncpg
 
+from .base import Database
 from .exceptions import MacroAlreadyExistsError, MacroNotFoundError
 
-class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
+class MacroDB(Database): # Auditing asyncpg, so we aren't inheriting Database
     """A class for managing character macros."""
 
     def __init__(self):
-        self.conn = None
+        super().__init__()
 
         # Prepared statements
         self._check_exists = None
@@ -26,16 +27,7 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
         if self.conn is not None:
             return
 
-        # Equivalent to sslmode="require"
-        sslctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-        sslctx.check_hostname = False
-        sslctx.verify_mode = ssl.CERT_NONE
-
-        self.conn = await asyncpg.connect(
-            os.environ["DATABASE_URL"],
-            database="inconnu",
-            ssl=sslctx
-        )
+        await super()._prepare()
 
         # Create the database
         await self.conn.execute(
@@ -56,7 +48,6 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
             );
             """
         )
-        self.conn.add_termination_listener(self.__connection_closed)
 
         # Prepare some statements
         check_exists = "SELECT COUNT(*) FROM Macros WHERE CharID = $1 AND Name ILIKE $2"
@@ -76,11 +67,6 @@ class MacroDB(): # Auditing asyncpg, so we aren't inheriting Database
 
         delete = "DELETE FROM Macros WHERE CharID = $1 AND Name ILIKE $2"
         self._delete = await self.conn.prepare(delete)
-
-
-    async def __connection_closed(self, _):
-        """A listener for connection closures."""
-        self.conn = None
 
 
     async def macro_exists(self, char_id: int, macro_name: str) -> bool:

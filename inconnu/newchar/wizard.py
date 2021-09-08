@@ -74,8 +74,7 @@ class Wizard:
         )
 
         # Need to add the fields one-by-one
-        for trait, rating in self.assigned_traits.items():
-            await character_db.add_trait(char_id, trait, rating)
+        await character_db.add_multiple_traits(char_id, self.assigned_traits)
 
         success = f"{name} has been created in {self.ctx.guild.name}!"
         success += " Make a mistake? Use `//traits update` to fix."

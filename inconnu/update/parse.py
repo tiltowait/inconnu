@@ -42,8 +42,12 @@ async def parse(ctx, parameters: str, character=None):
         char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
         parameters = __parse_arguments(*args)
 
-        for parameter, new_value in parameters.items():
-            await __update_character(char_id, parameter, new_value)
+        async with common.character_db.conn.transaction():
+            for parameter, new_value in parameters.items():
+                if parameter == "name":
+                    char_name = new_value
+
+                await __update_character(char_id, parameter, new_value)
 
         await display(ctx, char_name)
 

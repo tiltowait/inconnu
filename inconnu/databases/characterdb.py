@@ -229,7 +229,9 @@ class CharacterDB(Database):
         """
         await self._prepare()
         await self._add_char.fetch(guildid, userid, char_type, name, humanity, stains, hp, wp)
-        return await self.character(guildid, userid, name)[1] # Return the ID
+
+        _, char_id = await self.character(guildid, userid, name)
+        return char_id
 
 
     async def delete_character(self, char_id: int) -> bool:
@@ -558,8 +560,6 @@ class CharacterDB(Database):
             char_id (int): The name of the character
             trait (str): The name of the trait to add
             rating (int): The trait's rating
-
-        Raises CharacterNotFound if the user does not have a character by that name.
         """
         # Figure out if we're updating or adding a trait
         await self._prepare()
@@ -568,6 +568,18 @@ class CharacterDB(Database):
             await self._update_trait.fetch(rating, char_id, trait)
         else:
             await self._add_trait.fetch(char_id, trait, rating)
+
+
+    async def add_multiple_traits(self, charid: int, traits: dict):
+        """
+        Adds or updates a trait on a given character
+        Args:
+            char_id (int): The name of the character
+            traits (dict): The str: int trait pairs
+        """
+        async with self.conn.transaction():
+            for trait, rating in traits.items():
+                await self._add_trait.fetch(charid, trait, rating)
 
 
     async def trait_rating(self, charid: int, trait: str) -> int:

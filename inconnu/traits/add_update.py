@@ -23,11 +23,7 @@ async def parse(ctx, allow_overwrite: bool, *args):
     # Got the character
     try:
         traits = parse_traits(*args)
-        assigned_traits, wizard_traits = await __handle_traits(
-            char_id,
-            traits,
-            allow_overwrite
-        )
+        assigned_traits, wizard_traits = await __handle_traits(char_id, traits, allow_overwrite)
 
         await __display_results(ctx, assigned_traits, wizard_traits, char_name)
 

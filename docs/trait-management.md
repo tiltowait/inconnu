@@ -4,7 +4,9 @@ The following is a detailed reference of **Inconnu's** trait management commands
 
 [filename](includes/parameter-style.md ':include')
 
-?> For every **Trait** command, the `character` parameter is optional if you only have one character.
+?> For every **Trait** command, the `character` parameter is optional if you only have one character. `character` is always case-insensitive.
+
+All character management is done through the `/traits` application command prefix. As you begin typing, Discord should automatically show a list of command options above your textbox. Simply click/tap the one you want (or continue to type in the name). On the desktop, you can tab through command parameters, while mobile lets you tap through.
 
 ## What are traits?
 
@@ -13,17 +15,17 @@ The following is a detailed reference of **Inconnu's** trait management commands
 ## Adding Traits
 
 ```
-//trait add [character] <trait>[=rating] ...
+/trait add <trait>[=rating] ... [character]
 
 ```
 
 | Parameter   | Description                                               |
 |-------------|-----------------------------------------------------------|
-| `character` | The name of the character being updated                   |
 | `trait`     | The name of the trait to add                              |
 | `rating`    | The trait's rating (Optional)                             |
+| `character` | The name of the character being updated                   |
 
-**Example:** `//traits add Nadea Oblivion=4`
+**Example:** `/traits add Oblivion=4` `Nadea`
 
 Multiple traits can be added at once.
 
@@ -34,7 +36,7 @@ Multiple traits can be added at once.
 ## Displaying Traits
 
 ```
-//traits list [character]
+/traits list [character]
 
 ```
 
@@ -43,17 +45,17 @@ This command DMs you a list of the character's traits, sorted alphabetically.
 ## Updating Traits
 
 ```
-//traits update [character] <trait>[=rating]
+//traits update <trait>[=rating] [character]
 
 ```
 
 | Parameter   | Description                                               |
 |-------------|-----------------------------------------------------------|
-| `character` | The name of the character being updated                   |
 | `trait`     | The name of the trait to update                           |
 | `rating`    | The trait's rating (Optional)                             |
+| `character` | The name of the character being updated                   |
 
-**Example:** `//traits update Nadea Awareness`
+**Example:** `/traits update Awareness` `Nadea`
 
 Multiple traits can be updated at once.
 
@@ -64,16 +66,16 @@ Multiple traits can be updated at once.
 ## Deleting Traits
 
 ```
-//traits delete [character] <trait> ...
+//traits delete <trait> ... [character]
 
 ```
 
 | Parameter   | Description                                               |
 |-------------|-----------------------------------------------------------|
-| `character` | The name of the character being updated                   |
 | `trait`     | The name of the trait to remove                           |
+| `character` | The name of the character being updated                   |
 
-**Example:** `//traits delete Nadea Oblivion Academics`
+**Example:** `/traits delete Oblivion Academics` `Nadea`
 
 You may belete multiple traits at once.
 

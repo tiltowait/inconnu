@@ -7,22 +7,15 @@ from .traitwizard import TraitWizard
 from .. import common
 from ..constants import character_db
 
-async def parse(ctx, allow_overwrite: bool, *args):
+async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
     """Add traits to a character."""
-    char_name, char_id = await common.get_character(ctx.guild.id, ctx.author.id, *args)
-
-    if char_name is None:
-        message = await common.character_options_message(ctx.guild.id, ctx.author.id, "")
-        await ctx.reply(message)
-        return
-
-    args = list(args)
-    if char_name.lower() == args[0].lower():
-        del args[0]
+    char_name = None
 
     # Got the character
     try:
-        traits = parse_traits(*args)
+        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
+
+        traits = parse_traits(*traits.split())
         assigned_traits, wizard_traits = await __handle_traits(char_id, traits, allow_overwrite)
 
         await __display_results(ctx, assigned_traits, wizard_traits, char_name)
@@ -32,7 +25,7 @@ async def parse(ctx, allow_overwrite: bool, *args):
             await wizard.begin()
 
     except (ValueError, SyntaxError) as err:
-        await common.display_error(ctx, char_name, err)
+        await common.display_error(ctx, char_name or ctx.author.display_name, err)
 
 
 async def __handle_traits(charid: int, traits: dict, overwriting: bool):
@@ -84,4 +77,4 @@ async def __display_results(ctx, assigned: list, unassigned: list, char_name: st
         embed.add_field(name="Not yet assigned", value=unassigned)
         embed.set_footer(text="Check your DMs to finish assigning the traits.")
 
-    await ctx.reply(embed=embed)
+    await ctx.respond(embed=embed, hidden=True)

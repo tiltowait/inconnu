@@ -75,7 +75,7 @@ class TraitWizard:
         """Set the traits and tell the user they're all done."""
         guildid = self.ctx.guild.id
         userid = self.ctx.author.id
-        charid = await character_db.character(guildid, userid, self.char_name)[1]
+        _, charid = await character_db.character(guildid, userid, self.char_name)
 
         pretty = []
 

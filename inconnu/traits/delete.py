@@ -5,37 +5,32 @@ import discord
 from .. import common
 from .. import constants
 
-async def parse(ctx, *args):
+async def parse(ctx, traits: str, character=None):
     """Delete character traits. Core attributes and abilities are set to 0."""
-    char_name, char_id = await common.get_character(ctx.guild.id, ctx.author.id, *args)
+    char_name = None
 
     try:
-        if char_name is None:
-            raise ValueError("You have no characters.")
+        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
 
-        args = list(args)
-        if char_name.lower() == args[0].lower():
-            del args[0]
-
-        if len(args) == 0:
+        traits = traits.split()
+        if len(traits) == 0:
+            # Shouldn't be possible to reach here, but just in case Discord messes up
             raise SyntaxError("You must supply a list of traits to delete.")
 
-        await __validate_traits(char_id, *args)
-        await __delete_traits(char_id, *args)
+        await __validate_traits(char_id, *traits)
+        await __delete_traits(char_id, *traits)
 
         embed = discord.Embed(
             title="Traits Removed",
-            description=", ".join(args)
+            description=", ".join(map(lambda trait: f"`{trait}`", traits))
         )
         embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
-        embed.set_footer(text="To see remaining traits: //traits list")
+        embed.set_footer(text="To see remaining traits: /traits list")
 
-        await ctx.reply(embed=embed)
-
-
+        await ctx.respond(embed=embed, hidden=True)
 
     except (ValueError, SyntaxError) as err:
-        await common.display_error(ctx, char_name, err)
+        await common.display_error(ctx, char_name or ctx.author.display_name, err)
 
 
 async def __validate_traits(charid: int, *traits):
@@ -51,14 +46,15 @@ async def __validate_traits(charid: int, *traits):
         # in one go. This is easier on the user, because they can just copy + paste
         # after fixing a typo or what-have-you.
         if not await constants.character_db.trait_exists(charid, trait):
-            raise ValueError(f"You do not have a trait named `{trait}`.")
+            raise ValueError(f"You do not have a trait named `{trait}`. No traits removed.")
 
 
 async def __delete_traits(charid: int, *traits):
     """Delete the validated traits."""
-    for trait in traits:
-        if trait.lower() in constants.SKILLS_AND_ATTRIBUTES:
-            # Set attributes and skills to 0 for better UX
-            await constants.character_db.add_trait(charid, trait, 0)
-        else:
-            await constants.character_db.delete_trait(charid, trait)
+    async with constants.character_db.conn.transaction():
+        for trait in traits:
+            if trait.lower() in constants.SKILLS_AND_ATTRIBUTES:
+                # Set attributes and skills to 0 for better UX
+                await constants.character_db.add_trait(charid, trait, 0)
+            else:
+                await constants.character_db.delete_trait(charid, trait)

@@ -8,7 +8,6 @@ Don't care about managing characters? Trait pools don't interest you? That's fin
 
 ```
 //v <pool> [hunger] [difficulty]
-
 ```
 
 [More information here.](rolls.md) Now, on with the show ...
@@ -29,7 +28,6 @@ You put these parameters together in a list with the `//new` command. As an exam
 
 ```
 //new name=Nadea type=Vampire hp=8 wp=6 humanity=7
-
 ```
 
 Once this is done, **Inconnu** will DM you with the creation wizard. Follow the prompts to supply the ratings for all 9 Attributes and 27 Skills. Once you've finished, you're good to go!
@@ -44,7 +42,6 @@ As discussed above, the basic roll syntax calls for a `pool` plus optional value
 
 ```
 //v resolve + academics + 1 2 4
-
 ```
 
 **Inconnu** will look up her *Resolve* and *Academics* traits and add them together with *1* to produce the correct pool, wich is then rolled against *difficulty 4* with *hunger 2*.
@@ -63,7 +60,6 @@ Nadea has *4* dots in *Oblivion*, *2* in *Fortitude* and *2* in *Potence*. To ad
 
 ```
 //traits add Oblivion=4 Fortitude=2 Potence=2
-
 ```
 
 You can add an arbitrary number of traits in a single command. If you want to *update* an *existing* trait, you can use `//traits update` instead. And, of course, you may delete traits with `//traits delete`.
@@ -82,7 +78,6 @@ Nadea got in a scrap and took *2* levels of *Superficial Damage* plus *1* level 
 
 ```
 //update sh=+2 ah=+1
-
 ```
 
 Similarly, Willpower damage uses the `sw` and `aw` keys, and you can set *current XP* with the `current_xp` key and *total XP* with the `total_xp` key.

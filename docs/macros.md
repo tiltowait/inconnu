@@ -10,7 +10,6 @@ All macro management is done through the `/macro` application command prefix. As
 
 ```
 /macro create <syntax> [character]
-
 ```
 
 | Parameter   | Description                                   |
@@ -29,7 +28,6 @@ This command will list all macros owned by a given character.
 
 ```
 /macro list [character]
-
 ```
 
 | Parameter   | Description                                   |
@@ -41,13 +39,12 @@ This command will list all macros owned by a given character.
 ## Deletion
 
 ```
-/macro delete <macro_name> [character]
-
+/macro delete <macro> [character]
 ```
 
 | Parameter   | Description                                   |
 |-------------|-----------------------------------------------|
-| `syntax`    | The pool and (optionally) hunger for the roll |
+| `macro`    | The pool and (optionally) hunger for the roll  |
 | `character` | The character who owns the macro              |
 
 [filename](includes/character-requirement.md ':include')
@@ -56,7 +53,6 @@ This command will list all macros owned by a given character.
 
 ```
 /vm <syntax> [character]
-
 ```
 
 [filename](includes/character-requirement.md ':include')

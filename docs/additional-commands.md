@@ -10,13 +10,12 @@ Each command below is a "slash" or "application" command. As you type, Discord w
 
 ```
 /rouse [character] [count]
-
 ```
 
 | Parameter   | Description                              |
 |-------------|------------------------------------------|
-| `character` | The character performing the rouse check |
 | `count`     | The number of rouse checks to perform    |
+| `character` | The character performing the rouse check |
 
 !> At the time of this writing, **Inconnu** lacks the ability to perform a Rouse *re-roll*, such as one granted by Blood Potency. This functionality is a planned improvement.
 
@@ -26,7 +25,6 @@ When a character has [Stains](character-tracking.md#tracker-updates), you may pe
 
 ```
 /remorse [character]
-
 ```
 
 | Parameter   | Description                                |

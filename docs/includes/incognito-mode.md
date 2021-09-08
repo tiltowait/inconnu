@@ -1,1 +1,1 @@
-?> **Incognito Mode:** Should you omit the `rating`, **Inconnu** will ask for the ratings in DMs. This allows you to keep your traits secret from other players.
+?> **Incognito Mode:** Should you omit the `rating`, **Inconnu** will ask for the ratings in DMs. **Note:** This is a legacy option from before **Inconnu** adopted slash commands and may go away in the future, as its reason for being (that of hiding your traits from other players) no longer exists.

@@ -26,7 +26,6 @@ The only option that requires any typing (and thus the only one it is possible t
 
 ```
 /character display [character]
-
 ```
 
 | Parameter   | Description                                               |
@@ -42,7 +41,6 @@ The `character` field is only required if you have more than one character in th
 
 ```
 /character update <parameters> [character]
-
 ```
 This is a multi-parameter command. You may supply as many trackers as you like.
 
@@ -80,8 +78,8 @@ Apart from `name`, each key expects an integer, which you may supply in one of t
 
 ```
 /character delete <character>
-
 ```
+
 `character` is mandatory. When running this command, **Inconnu** will give you a confirmation box before deleting the character.
 
 !> **This cannot be undone!** Deleting a character also removes all associated traits and macros.

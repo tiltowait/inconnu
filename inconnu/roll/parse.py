@@ -148,8 +148,6 @@ async def __evaluate_syntax(character: int, *args):
     """
     Convert the user's syntax to the standardized format: pool, hunger, diff.
     Args:
-        guildid (int): The guild's Discord ID
-        userid (int): The user's Discord ID
         character (int) (optional): The character's database ID
         args (list): The user's syntax
 
@@ -162,8 +160,8 @@ async def __evaluate_syntax(character: int, *args):
     evaluated_stack = __combine_operators(*substituted_stack)
 
     # Lop off Hunger and Difficulty from the trait stack, leaving just the pool behind
-    # First, we need to remove any padded zeroes from the evaluated stack
-    str_evalled = list(map(str, filter(lambda item: item > 0, evaluated_stack)))
+    str_evalled = list(map(str, evaluated_stack))
+
     while len(trait_stack) > 0 and trait_stack[-1] == str_evalled[-1]:
         del trait_stack[-1], str_evalled[-1]
 

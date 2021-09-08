@@ -215,30 +215,28 @@ async def __update_humanity(charid: int, hu_type: str, delta: str):
     """
     Update a character's humanity or stains.
     Args:
-        guildid (int): The guild's Discord ID
-        userid (int): The user's Discord ID
         charid (int): The character's database ID
         xp_type (str): "humanity" or "stains"
         delta (str): The amount to add or remove
 
     Does not catch exceptions.
     """
-    setting = False
+    if hu_type not in ["humanity", "stains"]:
+        raise SyntaxError(f"Unknown humanity syntax: {hu_type}.")
 
+    setting = False
     if isinstance(delta, str):
         if delta[0] not in ["+", "-"]:
             setting = True
 
-    if hu_type not in ["humanity", "stains"]:
-        raise SyntaxError(f"Unknown humanity syntax: {hu_type}.")
-
     delta = int(delta)
-    if not 0 <= delta <= 10:
-        raise ValueError(f"{hu_type.title()} must be between 0 and 10.")
-
     new_value = delta if setting else None
+
     if new_value is None:
         current = await getattr(character_db, f"get_{hu_type}")(charid)
         new_value = current + delta
+
+    if not 0 <= new_value <= 10:
+        raise ValueError(f"{hu_type.title()} must be between 0 and 10.")
 
     await getattr(character_db, f"set_{hu_type}")(charid, new_value)

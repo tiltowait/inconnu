@@ -97,7 +97,7 @@ class MacroDB(Database): # Auditing asyncpg, so we aren't inheriting Database
         if await self.macro_exists(char_id, macro_name):
             raise MacroAlreadyExistsError(f"Macro `{macro_name}` already exists.")
 
-        await self._create.executemany(((char_id, macro_name, pool, diff, comment),))
+        await self._create.fetch(char_id, macro_name, pool, diff, comment)
 
 
     async def char_macros(self, char_id: int):
@@ -136,4 +136,4 @@ class MacroDB(Database): # Auditing asyncpg, so we aren't inheriting Database
         if not await self.macro_exists(char_id, macro_name):
             raise MacroNotFoundError(f"That character has no macro named '{macro_name}.")
 
-        await self._delete.executemany(((char_id, macro_name),))
+        await self._delete.fetch(char_id, macro_name)

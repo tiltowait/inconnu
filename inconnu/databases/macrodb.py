@@ -1,10 +1,5 @@
 """databases/macrodp.py - Character macro database."""
 
-import os
-import ssl
-
-import asyncpg
-
 from .base import Database
 from .exceptions import MacroAlreadyExistsError, MacroNotFoundError
 

@@ -19,7 +19,7 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
     char_id = None
 
     try:
-        char_name, char_id = common.match_character(ctx.guild.id, ctx.author.id, character)
+        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
     except ValueError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return
@@ -31,7 +31,7 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
         return
 
     try:
-        pool = __expand_syntax(ctx.guild.id, ctx.author.id, char_id, pool)
+        pool = await __expand_syntax(char_id, pool)
 
         await macro_common.macro_db.create_macro(char_id, name, pool, difficulty, comment)
 
@@ -41,7 +41,7 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
         await common.display_error(ctx, char_name, err)
 
 
-def __expand_syntax(guildid: int, userid: int, char_id: int, syntax):
+async def __expand_syntax(char_id: int, syntax):
     """Validates the pool syntax and replaces elements with full trait names."""
     syntax = re.sub(r"([+-])", r" \g<1> ", syntax) # Make sure there are spaces around all operators
     raw_stack = syntax.split()
@@ -58,7 +58,7 @@ def __expand_syntax(guildid: int, userid: int, char_id: int, syntax):
             if element.isdigit():
                 final_stack.append(int(element))
             else:
-                trait, _ = character_db.trait_rating(guildid, userid, char_id, element)
+                trait, _ = await character_db.trait_rating(char_id, element)
                 final_stack.append(trait)
 
             last_element_was_operator = False

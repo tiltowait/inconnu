@@ -69,12 +69,13 @@ class Wizard:
         health =  "." *self.parameters.hp
         willpower =  "." *self.parameters.wp
 
-        character_db.add_character(guildid, userid, char_type, name, humanity, 0, health, willpower)
-        char_id = character_db.character_id(guildid, userid, name)
+        char_id = await character_db.add_character(
+            guildid, userid, char_type, name, humanity, 0, health, willpower
+        )
 
         # Need to add the fields one-by-one
         for trait, rating in self.assigned_traits.items():
-            character_db.add_trait(guildid, userid, char_id, trait, rating)
+            await character_db.add_trait(char_id, trait, rating)
 
         success = f"{name} has been created in {self.ctx.guild.name}!"
         success += " Make a mistake? Use `//traits update` to fix."

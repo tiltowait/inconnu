@@ -53,7 +53,7 @@ async def parse(ctx, args: str):
 
     if ctx.guild is not None:
         # This is one of the few commands that can be rolled in DMs
-        character_name, character = common.get_character(ctx.guild.id, ctx.author.id, *args)
+        character_name, character = await common.get_character(ctx.guild.id, ctx.author.id, *args)
 
         if character_name is not None and character_name.lower() == args[0].lower():
             del args[0]
@@ -65,7 +65,7 @@ async def parse(ctx, args: str):
 
     # Attempt to parse the user's roll syntax
     try:
-        results = perform_roll(ctx, character, *args)
+        results = await perform_roll(character, *args)
         await display_outcome(ctx, character_name, results, comment)
 
     except (SyntaxError, ValueError) as err:
@@ -138,13 +138,13 @@ async def display_outcome(ctx, character_name, results, comment, rerolled=False)
             await msg.disable_components()
 
 
-def perform_roll(ctx, character: int, *args):
+async def perform_roll(character: int, *args):
     """Public interface for __evaluate_syntax() that returns a RollResult."""
-    pool_str, roll_params = __evaluate_syntax(ctx, character, *args)
+    pool_str, roll_params = await __evaluate_syntax(character, *args)
     return _roll_pool(roll_params, pool_str)
 
 
-def __evaluate_syntax(ctx, character: int, *args):
+async def __evaluate_syntax(character: int, *args):
     """
     Convert the user's syntax to the standardized format: pool, hunger, diff.
     Args:
@@ -158,7 +158,7 @@ def __evaluate_syntax(ctx, character: int, *args):
 
     Raises ValueError if there is trouble querying the database.
     """
-    trait_stack, substituted_stack = __substitute_traits(ctx, character, *args)
+    trait_stack, substituted_stack = await __substitute_traits(character, *args)
     evaluated_stack = __combine_operators(*substituted_stack)
 
     # Lop off Hunger and Difficulty from the trait stack, leaving just the pool behind
@@ -171,7 +171,7 @@ def __evaluate_syntax(ctx, character: int, *args):
     return pool_str, evaluated_stack
 
 
-def __substitute_traits(ctx, character: int, *args) -> tuple:
+async def __substitute_traits(character: int, *args) -> tuple:
     """
     Convert the roll syntax into a stack while simultaneously replacing database
     calls with the appropriate values.
@@ -182,16 +182,6 @@ def __substitute_traits(ctx, character: int, *args) -> tuple:
 
     Raises ValueError if there is trouble querying the database.
     """
-
-    # By the time we get here, we've already determined whether our roll is safe
-    # for DMs (i.e. no traits are being rolled). So it's okay to leave guildid
-    # and userid as Nones, because that pathway will never execute.
-    guildid = None
-    userid = None
-
-    if ctx.guild is not None:
-        guildid = ctx.guild.id
-        userid = ctx.author.id
 
     # Split the syntax into words and numbers. Pool elements require math operators
     # between them. Optional: If the final two lack operators, they are considered hunger
@@ -229,7 +219,7 @@ def __substitute_traits(ctx, character: int, *args) -> tuple:
             raise ValueError(f"You must supply a character name to use `{item}`.")
 
         try:
-            trait, rating = character_db.trait_rating(guildid, userid, character, item)
+            trait, rating = await character_db.trait_rating(character, item)
             substituted_stack.append(rating)
             trait_stack.append(trait)
 
@@ -237,7 +227,7 @@ def __substitute_traits(ctx, character: int, *args) -> tuple:
             # We allow universal traits
             match = __match_universal_trait(item)
             if match:
-                rating = __get_universal_trait(guildid, userid, character, match)
+                rating = await __get_universal_trait(character, match)
                 substituted_stack.append(rating)
                 trait_stack.append(match)
             else:
@@ -300,9 +290,9 @@ def __combine_operators(*stack):
     return RollParameters(*compact_stack)
 
 
-def __get_universal_trait(guildid: int, userid: int, charid: int, trait):
+async def __get_universal_trait(charid: int, trait):
     """Retrieve a universal trait (Hunger, Willpower, Humanity)."""
-    value = getattr(character_db, f"get_{trait}")(guildid, userid, charid)
+    value = await getattr(character_db, f"get_{trait}")(charid)
 
     if trait == "willpower":
         # Willpower is a string. Additionally, per RAW only undamaged Willpower

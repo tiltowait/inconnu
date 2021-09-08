@@ -13,7 +13,7 @@ class Characters(commands.Cog, name="Character Management"):
     @slash_cog(
         name="character",
         description="Character management commands."
-        #, guild_ids=[882411164468932609]
+        , guild_ids=[882411164468932609]
     )
     @commands.guild_only()
     async def character_commands(self, ctx):
@@ -51,7 +51,7 @@ class Characters(commands.Cog, name="Character Management"):
                 required=True
             )
         ]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=[882411164468932609]
     )
     @commands.guild_only()
     async def new_character(
@@ -66,7 +66,7 @@ class Characters(commands.Cog, name="Character Management"):
         name="display",
         description="List all of your characters or show details about one character.",
         options=[SlashOption(str, "character", description="A character to display")]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=[882411164468932609]
     )
     @commands.guild_only()
     async def display_character(self, ctx, character=None):
@@ -82,6 +82,7 @@ class Characters(commands.Cog, name="Character Management"):
             SlashOption(str, "parameters", description="KEY=VALUE parameters", required=True),
             SlashOption(str, "character", description="The character to update")
         ]
+        , guild_ids=[882411164468932609]
     )
     @commands.guild_only()
     async def update_character(self, ctx, parameters: str, character=None):
@@ -95,7 +96,7 @@ class Characters(commands.Cog, name="Character Management"):
         options=[
             SlashOption(str, "character", description="The character to delete", required=True)
         ]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=[882411164468932609]
     )
     @commands.guild_only()
     async def delete_character(self, ctx, character: str):

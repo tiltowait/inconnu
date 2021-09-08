@@ -19,7 +19,7 @@ async def parse(ctx, character=None):
         char_id = None
 
         if character is None:
-            user_chars = character_db.characters(ctx.guild.id, ctx.author.id)
+            user_chars = await character_db.characters(ctx.guild.id, ctx.author.id)
 
             if len(user_chars) == 0:
                 raise ValueError("You have no characters.")
@@ -39,7 +39,7 @@ async def parse(ctx, character=None):
                 char_name, char_id = list(user_chars.items())[0]
 
         else:
-            char_name, char_id = character_db.character(ctx.guild.id, ctx.author.id, character)
+            char_name, char_id = await character_db.character(ctx.guild.id, ctx.author.id, character)
 
         # Character has been found
         await __display_character(ctx, char_name, char_id)
@@ -52,13 +52,13 @@ async def __display_character(ctx, char_name: str, char_id: int):
     """Display the basic traits for the character."""
 
     # The user might have not provided proper capitalization, so get the name again
-    hunger = character_db.get_hunger(ctx.guild.id, ctx.author.id, char_id)
-    humanity = character_db.get_humanity(ctx.guild.id, ctx.author.id, char_id)
-    stains = character_db.get_stains(ctx.guild.id, ctx.author.id, char_id)
-    health = character_db.get_health(ctx.guild.id, ctx.author.id, char_id)
-    willpower = character_db.get_willpower(ctx.guild.id, ctx.author.id, char_id)
-    current_xp = character_db.get_current_xp(ctx.guild.id, ctx.author.id, char_id)
-    total_xp = character_db.get_total_xp(ctx.guild.id, ctx.author.id, char_id)
+    hunger = await character_db.get_hunger(char_id)
+    humanity = await character_db.get_humanity(char_id)
+    stains = await character_db.get_stains(char_id)
+    health = await character_db.get_health(char_id)
+    willpower = await character_db.get_willpower(char_id)
+    current_xp = await character_db.get_current_xp(char_id)
+    total_xp = await character_db.get_total_xp(char_id)
 
     health = __TRACKMOJI.emojify_track(health)
     willpower = __TRACKMOJI.emojify_track(willpower)

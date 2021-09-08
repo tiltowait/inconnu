@@ -5,28 +5,28 @@ import re
 from ..constants import character_db, DAMAGE, valid_splats
 
 
-def update_name(guildid: int, userid: int, charid: int, new_name: str):
+async def update_name(charid: int, new_name: str):
     """Update the character's name."""
     if not re.match(r"[A-z_]+", new_name):
         raise ValueError("Names may only contain letters and underscores.")
 
-    character_db.rename_character(guildid, userid, charid, new_name)
+    await character_db.rename_character(charid, new_name)
 
 
-def update_splat(guildid: int, userid: int, charid: int, new_splat: str):
+async def update_splat(charid: int, new_splat: str):
     """Update the character's splat."""
     try:
         splat = valid_splats[new_splat]
-        character_db.set_splat(guildid, userid, charid, splat)
+        await character_db.set_splat(charid, splat)
     except KeyError:
         splats = map(lambda splat: f"`{splat}`", valid_splats)
         splats = ", ".join(splats)
         raise ValueError(f"The `splat` must be one of: {splats}.") # pylint: disable=raise-missing-from
 
 
-def update_hunger(guildid: int, userid: int, charid: int, delta: str):
+async def update_hunger(charid: int, delta: str):
     """Update the character's hunger if they are a vampire."""
-    splat = character_db.get_splat(guildid, userid, charid)
+    splat = await character_db.get_splat(charid)
     if splat != 0: # Not a vampire
         raise ValueError("Mortals and ghouls do not have Hunger.")
 
@@ -36,70 +36,68 @@ def update_hunger(guildid: int, userid: int, charid: int, delta: str):
     except ValueError:
         raise ValueError(f"Hunger {delta} is not between 0 and 5.") # pylint: disable=raise-missing-from
 
-    new_hunger = delta if setting else character_db.get_hunger(guildid, userid, charid) + delta
+    new_hunger = delta if setting else await character_db.get_hunger(charid) + delta
     if not 0 <= new_hunger <= 5:
         raise ValueError(f"Hunger {new_hunger} is not between 0 and 5.")
 
-    character_db.set_hunger(guildid, userid, charid, new_hunger)
+    await character_db.set_hunger(charid, new_hunger)
 
 
-def update_health(guildid: int, userid: int, charid: int, new_max: str):
+async def update_health(charid: int, new_max: str):
     """Update the character's maximum HP. If decreasing, this truncates from the right."""
-    __update_track(guildid, userid, charid, "health", new_max)
+    await __update_track(charid, "health", new_max)
 
 
-def update_willpower(guildid: int, userid: int, charid: int, new_max: str):
+async def update_willpower(charid: int, new_max: str):
     """Update the character's maximum WP. If decreasing, this truncates from the right."""
-    __update_track(guildid, userid, charid, "willpower", new_max)
+    __update_track(charid, "willpower", new_max)
 
 
-def update_humanity(guildid: int, userid: int, charid: int, delta: str):
+async def update_humanity(charid: int, delta: str):
     """Update the character's humanity rating. If decreasing, this truncates from the right."""
-    __update_humanity(guildid, userid, charid, "humanity", delta)
-    __update_humanity(guildid, userid, charid, "stains", "0")
+    await __update_humanity(charid, "humanity", delta)
+    await __update_humanity(charid, "stains", "0")
 
 
-def update_stains(guildid: int, userid: int, charid: int, delta: str):
+async def update_stains(charid: int, delta: str):
     """Apply or remove superficial health damage."""
-    __update_humanity(guildid, userid, charid, "stains", delta)
+    await __update_humanity(charid, "stains", delta)
 
 
-def update_sh(guildid: int, userid: int, charid: int, delta: str):
+async def update_sh(charid: int, delta: str):
     """Apply or remove superficial health damage."""
-    __update_damage(guildid, userid, charid, "health", DAMAGE.superficial, delta)
+    await __update_damage(charid, "health", DAMAGE.superficial, delta)
 
 
-def update_ah(guildid: int, userid: int, charid: int, delta: str):
+async def update_ah(charid: int, delta: str):
     """Apply or remove aggravated health damage."""
-    __update_damage(guildid, userid, charid, "health", DAMAGE.aggravated, delta)
+    await __update_damage(charid, "health", DAMAGE.aggravated, delta)
 
 
-def update_sw(guildid: int, userid: int, charid: int, delta: str):
+async def update_sw(charid: int, delta: str):
     """Apply or remove superficial health damage."""
-    __update_damage(guildid, userid, charid, "willpower", DAMAGE.superficial, delta)
+    await __update_damage(charid, "willpower", DAMAGE.superficial, delta)
 
 
-def update_aw(guildid: int, userid: int, charid: int, delta: str):
+async def update_aw(charid: int, delta: str):
     """Apply or remove aggravated health damage."""
-    __update_damage(guildid, userid, charid, "willpower", DAMAGE.aggravated, delta)
+    await __update_damage(charid, "willpower", DAMAGE.aggravated, delta)
 
 
-def update_current_xp(guildid: int, userid: int, charid: int, delta: str):
+async def update_current_xp(charid: int, delta: str):
     """Set or modify current XP."""
-    __update_xp(guildid, userid, charid, "current", delta)
+    await __update_xp(charid, "current", delta)
 
 
-def update_total_xp(guildid: int, userid: int, charid: int, delta: str):
+async def update_total_xp(charid: int, delta: str):
     """Set or modify total XP."""
-    __update_xp(guildid, userid, charid, "total", delta)
+    await __update_xp(charid, "total", delta)
 
 
-def __update_track(guildid: int, userid: int, charid: int, tracker: str, new_len: int):
+async def __update_track(charid: int, tracker: str, new_len: int):
     """
     Update the size of a character's tracker.
     Args:
-        guildid (int): The guild's Discord ID
-        userid (int): The user's Discord ID
         charid (int): The character's database ID
         tracker (str): "health" or "willpower"
         new_size (int): The tracker's new size
@@ -109,7 +107,7 @@ def __update_track(guildid: int, userid: int, charid: int, tracker: str, new_len
     if tracker not in ["health", "willpower"]:
         raise SyntaxError(f"Unknown tracker {tracker}")
 
-    track = getattr(character_db, f"get_{tracker}")(guildid, userid, charid) # Get tracker string
+    track = await getattr(character_db, f"get_{tracker}")(charid) # Get tracker string
 
     cur_len = len(track)
     new_len = int(new_len)
@@ -119,11 +117,11 @@ def __update_track(guildid: int, userid: int, charid: int, tracker: str, new_len
     elif new_len < cur_len:
         track = track[-new_len:]
 
-    getattr(character_db, f"set_{tracker}")(guildid, userid, charid, track) # Set the tracker
+    await getattr(character_db, f"set_{tracker}")(charid, track) # Set the tracker
 
 
 # pylint: disable=too-many-arguments
-def __update_damage(guildid: int, userid: int, charid: int, tracker: str, dtype: str, delta: int):
+async def __update_damage(charid: int, tracker: str, dtype: str, delta: int):
     """
     Update a character's tracker damage.
     Args:
@@ -152,7 +150,7 @@ def __update_damage(guildid: int, userid: int, charid: int, tracker: str, dtype:
     if not dtype in [DAMAGE.superficial, DAMAGE.aggravated]:
         raise SyntaxError(f"Unknown damage type: {dtype}")
 
-    track = getattr(character_db, f"get_{tracker}")(guildid, userid, charid) # Get
+    track = await getattr(character_db, f"get_{tracker}")(charid) # Get
     track_size = len(track)
 
     fine = track.count(DAMAGE.none)
@@ -175,10 +173,10 @@ def __update_damage(guildid: int, userid: int, charid: int, tracker: str, dtype:
     else:
         track = track.rjust(track_size, DAMAGE.none)
 
-    getattr(character_db, f"set_{tracker}")(guildid, userid, charid, track) # Set
+    await getattr(character_db, f"set_{tracker}")(charid, track) # Set
 
 
-def __update_xp(guildid: int, userid: int, charid: int, xp_type: str, delta: str):
+async def __update_xp(charid: int, xp_type: str, delta: str):
     """
     Update a character's XP.
     Args:
@@ -207,13 +205,13 @@ def __update_xp(guildid: int, userid: int, charid: int, xp_type: str, delta: str
     if setting:
         new_xp = delta
     else:
-        current = getattr(character_db, f"get_{xp_type.lower()}_xp")(guildid, userid, charid)
+        current = await getattr(character_db, f"get_{xp_type.lower()}_xp")(charid)
         new_xp = current + delta
 
-    getattr(character_db, f"set_{xp_type.lower()}_xp")(guildid, userid, charid, new_xp)
+    await getattr(character_db, f"set_{xp_type.lower()}_xp")(charid, new_xp)
 
 
-def __update_humanity(guildid: int, userid: int, charid: int, hu_type: str, delta: str):
+async def __update_humanity(charid: int, hu_type: str, delta: str):
     """
     Update a character's humanity or stains.
     Args:
@@ -240,7 +238,7 @@ def __update_humanity(guildid: int, userid: int, charid: int, hu_type: str, delt
 
     new_value = delta if setting else None
     if new_value is None:
-        current = getattr(character_db, f"get_{hu_type}")(guildid, userid, charid)
+        current = await getattr(character_db, f"get_{hu_type}")(charid)
         new_value = current + delta
 
-    getattr(character_db, f"set_{hu_type}")(guildid, userid, charid, new_value)
+    await getattr(character_db, f"set_{hu_type}")(charid, new_value)

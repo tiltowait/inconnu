@@ -7,7 +7,7 @@ from .. import constants
 
 async def parse(ctx, *args):
     """Delete character traits. Core attributes and abilities are set to 0."""
-    char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, *args)
+    char_name, char_id = await common.get_character(ctx.guild.id, ctx.author.id, *args)
 
     try:
         if char_name is None:
@@ -20,8 +20,8 @@ async def parse(ctx, *args):
         if len(args) == 0:
             raise SyntaxError("You must supply a list of traits to delete.")
 
-        __validate_traits(ctx.guild.id, ctx.author.id, char_id, *args)
-        __delete_traits(ctx.guild.id, ctx.author.id, char_id, *args)
+        await __validate_traits(char_id, *args)
+        await __delete_traits(char_id, *args)
 
         embed = discord.Embed(
             title="Traits Removed",
@@ -38,7 +38,7 @@ async def parse(ctx, *args):
         await common.display_error(ctx, char_name, err)
 
 
-def __validate_traits(guildid: int, userid: int, charid: int, *traits):
+async def __validate_traits(charid: int, *traits):
     """
     Raises a ValueError if a trait doesn't exist and a SyntaxError
     if the syntax is bad.
@@ -50,15 +50,15 @@ def __validate_traits(guildid: int, userid: int, charid: int, *traits):
         # We check but do not delete traits yet, because we want to delete them all
         # in one go. This is easier on the user, because they can just copy + paste
         # after fixing a typo or what-have-you.
-        if not constants.character_db.trait_exists(guildid, userid, charid, trait):
+        if not await constants.character_db.trait_exists(charid, trait):
             raise ValueError(f"You do not have a trait named `{trait}`.")
 
 
-def __delete_traits(guildid: int, userid: int, charid: int, *traits):
+async def __delete_traits(charid: int, *traits):
     """Delete the validated traits."""
     for trait in traits:
         if trait.lower() in constants.SKILLS_AND_ATTRIBUTES:
             # Set attributes and skills to 0 for better UX
-            constants.character_db.add_trait(guildid, userid, charid, trait, 0)
+            await constants.character_db.add_trait(charid, trait, 0)
         else:
-            constants.character_db.delete_trait(guildid, userid, charid, trait)
+            await constants.character_db.delete_trait(charid, trait)

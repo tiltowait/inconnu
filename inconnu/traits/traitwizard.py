@@ -75,12 +75,12 @@ class TraitWizard:
         """Set the traits and tell the user they're all done."""
         guildid = self.ctx.guild.id
         userid = self.ctx.author.id
-        charid = character_db.character_id(guildid, userid, self.char_name)
+        charid = await character_db.character(guildid, userid, self.char_name)[1]
 
         pretty = []
 
         for trait, rating in self.ratings.items():
-            character_db.add_trait(guildid, userid, charid, trait, rating)
+            await character_db.add_trait(charid, trait, rating)
             pretty.append(f"**{trait}**: `{rating}`")
 
         embed = discord.Embed(

@@ -9,10 +9,10 @@ from ..constants import character_db
 
 async def parse(ctx, allow_overwrite: bool, *args):
     """Add traits to a character."""
-    char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, *args)
+    char_name, char_id = await common.get_character(ctx.guild.id, ctx.author.id, *args)
 
     if char_name is None:
-        message = common.character_options_message(ctx.guild.id, ctx.author.id, "")
+        message = await common.character_options_message(ctx.guild.id, ctx.author.id, "")
         await ctx.reply(message)
         return
 
@@ -24,8 +24,6 @@ async def parse(ctx, allow_overwrite: bool, *args):
     try:
         traits = parse_traits(*args)
         assigned_traits, wizard_traits = await __handle_traits(
-            ctx.guild.id,
-            ctx.author.id,
             char_id,
             traits,
             allow_overwrite
@@ -41,7 +39,7 @@ async def parse(ctx, allow_overwrite: bool, *args):
         await common.display_error(ctx, char_name, err)
 
 
-async def __handle_traits(guildid: int, userid: int, charid: int, traits: dict, overwriting: bool):
+async def __handle_traits(charid: int, traits: dict, overwriting: bool):
     """
     Add the rated traits to the character directly. Create a wizard for the rest.
     Args:
@@ -55,14 +53,14 @@ async def __handle_traits(guildid: int, userid: int, charid: int, traits: dict, 
     assigned_traits = []
     wizard_traits = []
     for trait, rating in traits.items():
-        if not overwriting and character_db.trait_exists(guildid, userid, charid, trait):
+        if not overwriting and await character_db.trait_exists(charid, trait):
             raise ValueError(f"You already have a trait named `{trait}`.")
 
         if rating is None:
             wizard_traits.append(trait)
             continue
 
-        character_db.add_trait(guildid, userid, charid, trait, rating)
+        await character_db.add_trait(charid, trait, rating)
         assigned_traits.append(trait)
 
     return (assigned_traits, wizard_traits)

@@ -15,7 +15,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
     try:
         __validate_parameters(name, humanity, health, willpower) # splat is guaranteed correct
 
-        if character_db.character_exists(ctx.guild.id, ctx.author.id, name):
+        if await character_db.character_exists(ctx.guild.id, ctx.author.id, name):
             raise ValueError(f"Sorry, you have a character named `{name}` already!")
 
         await ctx.respond(

@@ -12,7 +12,7 @@ from .constants import character_db
 async def prompt(ctx, char_name: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        char_name, char_id = character_db.character(ctx.guild.id, ctx.author.id, char_name)
+        char_name, char_id = await character_db.character(ctx.guild.id, ctx.author.id, char_name)
         embed = __generate_prompt(ctx, char_name)
 
         buttons = [
@@ -25,12 +25,12 @@ async def prompt(ctx, char_name: str):
         try:
             btn = await msg.wait_for("button", ctx.bot, timeout=20)
             await btn.respond()
-            await msg.delete()
+            await msg.disable_components()
 
             # Process the response
             if btn.custom_id == "_delete":
-                if character_db.delete_character(ctx.guild.id, ctx.author.id, char_id):
-                    await ctx.respond(f"Deleted {char_name}!", hidden=True)
+                if await character_db.delete_character(char_id):
+                    await ctx.respond(f"Deleted **{char_name}**!", hidden=True)
                 else:
                     await ctx.respond("Something went wrong. Unable to delete.", hidden=True)
 

@@ -16,11 +16,11 @@ async def parse(ctx, key: str, character: str, count=0):
     if __TRACKMOJI is None:
         __TRACKMOJI = Trackmoji(ctx.bot)
 
-    char_name, char_id = common.get_character(ctx.guild.id, ctx.author.id, character)
+    char_name, char_id = await common.get_character(ctx.guild.id, ctx.author.id, character)
 
     if char_name is None:
         if character is not None:
-            message = common.character_options_message(ctx.guild.id, ctx.author.id, character)
+            message = await common.character_options_message(ctx.guild.id, ctx.author.id, character)
         else:
             message = "You have no characters!"
         await ctx.respond(message, hidden=True)
@@ -34,7 +34,7 @@ async def parse(ctx, key: str, character: str, count=0):
 
 async def __rouse_result(ctx, char_id: int, char_name: int, rolls: int):
     """Process the rouse result and display to the user."""
-    current_hunger = character_db.get_hunger(ctx.guild.id, ctx.author.id, char_id)
+    current_hunger = await character_db.get_hunger(char_id)
     if current_hunger == 5:
         await ctx.respond(f"{char_name}'s Hunger is already 5!")
         return
@@ -73,17 +73,17 @@ async def __rouse_result(ctx, char_id: int, char_name: int, rolls: int):
     await ctx.respond(embed=embed)
 
     # Update the database
-    character_db.set_hunger(ctx.guild.id, ctx.author.id, char_id, new_hunger)
+    await character_db.set_hunger(char_id, new_hunger)
 
 
 async def __remorse_result(ctx, char_id: int, char_name: int):
     """Process the remorse result and display to the user."""
-    if character_db.get_stains(ctx.guild.id, ctx.author.id, char_id) == 0:
+    if await character_db.get_stains(char_id) == 0:
         await ctx.respond(f"{char_name} has no stains! No remorse necessary.", hidden=True)
         return
 
-    successful = __remorse_roll(ctx.guild.id, ctx.author.id, char_id)
-    humanity = character_db.get_humanity(ctx.guild.id, ctx.author.id, char_id)
+    successful = await __remorse_roll(char_id)
+    humanity = await character_db.get_humanity(char_id)
 
     embed = discord.Embed(
         title="Remorse Success" if successful else "Remorse Fail"
@@ -124,10 +124,10 @@ def __count_successes(dice: list) -> tuple:
     return (ones, successes, tens)
 
 
-def __remorse_roll(guildid: int, userid: int, charid: int) -> bool:
+async def __remorse_roll(charid: int) -> bool:
     """Perform a remorse roll."""
-    humanity = character_db.get_humanity(guildid, userid, charid)
-    stains = character_db.get_stains(guildid, userid, charid)
+    humanity = await character_db.get_humanity(charid)
+    stains = await character_db.get_stains(charid)
 
     unfilled = 10 - humanity - stains
     rolls = unfilled if unfilled > 0 else 1
@@ -142,5 +142,5 @@ def __remorse_roll(guildid: int, userid: int, charid: int) -> bool:
     if not successful:
         humanity -= 1
 
-    character_db.set_humanity(guildid, userid, charid, humanity)
+    await character_db.set_humanity(charid, humanity)
     return successful

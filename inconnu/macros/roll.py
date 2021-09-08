@@ -23,7 +23,7 @@ async def process(ctx, syntax: str, character=None):
     char_id = None
 
     try:
-        char_name, char_id = common.match_character(ctx.guild.id, ctx.author.id, character)
+        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
     except ValueError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return
@@ -40,7 +40,7 @@ async def process(ctx, syntax: str, character=None):
         parameters.append(hunger)
         parameters.append(difficulty or macro["diff"])
 
-        results = perform_roll(ctx, char_id, *parameters)
+        results = await perform_roll(char_id, *parameters)
         await display_outcome(ctx, char_name, results, macro["comment"])
 
     except MacroNotFoundError:

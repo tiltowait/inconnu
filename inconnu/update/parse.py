@@ -7,7 +7,6 @@ from discord_ui.components import LinkButton
 
 from . import paramupdate
 from .. import common
-from ..constants import character_db
 from ..display import parse as display
 
 __KEYS = {
@@ -40,11 +39,11 @@ async def parse(ctx, parameters: str, character=None):
         return
 
     try:
-        char_name, char_id = common.match_character(ctx.guild.id, ctx.author.id, character)
+        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
         parameters = __parse_arguments(*args)
 
         for parameter, new_value in parameters.items():
-            __update_character(ctx.guild.id, ctx.author.id, char_id, parameter, new_value)
+            await __update_character(char_id, parameter, new_value)
 
         await display(ctx, char_name)
 
@@ -85,18 +84,16 @@ def __parse_arguments(*arguments):
     return parameters
 
 
-def __update_character(guildid: int, userid: int, charid: int, param: str, value: str):
+async def __update_character(charid: int, param: str, value: str):
     """
     Update one of a character's parameters.
     Args:
-        guildid (int): The guild's Discord ID
-        userid (int): The user's Discord ID
         charid (int): The character's database ID
         param (str): The parameter to update
         value (str): The parameter's new value
     Raises ValueError if the parameter's value is invalid.
     """
-    getattr(paramupdate, f"update_{param}")(guildid, userid, charid, value)
+    await getattr(paramupdate, f"update_{param}")(charid, value)
 
 
 async def __display_help(ctx, err=None):

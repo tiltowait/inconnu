@@ -3,11 +3,39 @@
 import discord
 from discord.ext import commands
 from discord_ui import UI
+from discord_ui.components import LinkButton
 
 import interface
 
 bot = commands.Bot(command_prefix="//", case_insensitive=True)
-_ = UI(bot, slash_options={"delete_unused": True})
+bot.remove_command("help")
+ui = UI(bot, slash_options={"delete_unused": True})
+
+
+# Help command
+
+@ui.slash.command("help", description="Help with basic functions.")
+async def help_command(ctx):
+    """Display a help message."""
+    embed = discord.Embed(
+        title="Inconnu Help",
+        description="Basic commands listing. Click the link for detailed documentation."
+    )
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+    embed.add_field(name="Roll", value="`/v pool hunger difficulty`", inline=False)
+    char_info = "`/character create`\nIf you have a character, you can use their traits in rolls."
+    embed.add_field(name="Create a character", value=char_info, inline=False)
+    embed.add_field(name="Display character", value="`/character display`", inline=False)
+    embed.add_field(name="Add traits", value="`/traits add`")
+
+    button = LinkButton(
+        "https://www.inconnu-bot.com/#/quickstart",
+        label="New? Read the Quickstart!"
+    )
+
+    await ctx.respond(embed=embed, components=[button], hidden=True)
+
 
 # Events
 

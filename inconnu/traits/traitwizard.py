@@ -5,7 +5,6 @@ import asyncio
 import discord
 from discord_ui import SelectMenu, SelectOption
 
-from ..constants import character_db
 
 class TraitWizard:
     """A class for private trait-setting."""
@@ -19,9 +18,9 @@ class TraitWizard:
         SelectOption("5", "5 dots")
     ]
 
-    def __init__(self, ctx, char_name, traits):
+    def __init__(self, ctx, character, traits):
         self.ctx = ctx
-        self.char_name = char_name
+        self.character = character
         self.traits = traits
         self.ratings = {}
 
@@ -37,7 +36,7 @@ class TraitWizard:
             description=message if message is not None else ""
         )
         embed.set_author(
-            name=f"{self.char_name} on {self.ctx.guild.name}",
+            name=f"{self.character.name} on {self.ctx.guild.name}",
             icon_url=self.ctx.guild.icon_url
         )
         embed.set_footer(text=f"{len(self.traits)} traits remaining")
@@ -67,27 +66,23 @@ class TraitWizard:
                 await self.__send_prompt(f"Set **{trait}** to **{rating}**.")
         except asyncio.exceptions.TimeoutError:
             await msg.delete()
-            err = f"Due to inactivity, **{self.char_name}'s** updates on **{self.ctx.guild.name}** have been canceled."
+            err = f"Due to inactivity, **{self.character.name}'s** updates on **{self.ctx.guild.name}** have been canceled."
             await self.ctx.author.send(err)
 
 
     async def __finalize(self):
         """Set the traits and tell the user they're all done."""
-        guildid = self.ctx.guild.id
-        userid = self.ctx.author.id
-        _, charid = await character_db.character(guildid, userid, self.char_name)
-
         pretty = []
 
         for trait, rating in self.ratings.items():
-            await character_db.add_trait(charid, trait, rating)
+            self.character.add_trait(trait, rating)
             pretty.append(f"**{trait}**: `{rating}`")
 
         embed = discord.Embed(
             title="Assignment Complete"
         )
         embed.set_author(
-            name=f"{self.char_name} on {self.ctx.guild.name}",
+            name=f"{self.character.name} on {self.ctx.guild.name}",
             icon_url=self.ctx.guild.icon_url
         )
         embed.add_field(name="Traits", value="\n".join(pretty))

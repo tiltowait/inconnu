@@ -2,42 +2,43 @@
 
 import re
 
-from ..constants import character_db, DAMAGE, valid_splats
+from ..constants import DAMAGE
+from ..vchar import VChar
+
+VALID_SPLATS = ["vampire", "ghoul", "mortal"]
 
 
-async def update_name(charid: int, new_name: str):
+def update_name(character: VChar, new_name: str):
     """Update the character's name."""
     if not re.match(r"[A-z_]+", new_name):
         raise ValueError("Names may only contain letters and underscores.")
 
-    await character_db.rename_character(charid, new_name)
+    character.name = new_name
 
 
-async def update_splat(charid: int, new_splat: str):
+def update_splat(character: VChar, new_splat: str):
     """Update the character's splat."""
-    try:
-        splat = valid_splats[new_splat]
-        await character_db.set_splat(charid, splat)
-    except KeyError:
-        splats = map(lambda splat: f"`{splat}`", valid_splats)
+    if new_splat not in VALID_SPLATS:
+        splats = map(lambda splat: f"`{splat}`", VALID_SPLATS)
         splats = ", ".join(splats)
-        raise ValueError(f"The `splat` must be one of: {splats}.") # pylint: disable=raise-missing-from
+        raise ValueError(f"The `splat` must be one of: {splats}.")
+
+    character.splat = new_splat
 
 
-async def update_hunger(charid: int, delta: str):
+def update_hunger(character: VChar, delta: str):
     """Update the character's Hunger."""
-    await __update_hunger_potency(charid, delta, "hunger", 5)
+    __update_hunger_potency(character, delta, "hunger", 5)
 
 
-async def update_potency(charid: int, delta: str):
+def update_potency(character: VChar, delta: str):
     """Update the character's Blood Potency."""
-    await __update_hunger_potency(charid, delta, "potency", 10)
+    __update_hunger_potency(character, delta, "potency", 10)
 
 
-async def __update_hunger_potency(charid: int, delta: str, key: str, maximum: int):
+def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int):
     """Update the character's hunger if they are a vampire."""
-    splat = await character_db.get_splat(charid)
-    if splat != 0: # Not a vampire
+    if character.splat != "vampire": # Not a vampire
         raise ValueError(f"Mortals and ghouls do not have {key.title()}.")
 
     setting = not delta[0] in ["+", "-"]
@@ -46,69 +47,72 @@ async def __update_hunger_potency(charid: int, delta: str, key: str, maximum: in
     except ValueError:
         raise ValueError(f"{key.title()} must be a number.") # pylint: disable=raise-missing-from
 
-    new_value = delta if setting else await getattr(character_db, f"get_{key}")(charid) + delta
+    new_value = delta if setting else getattr(character, key) + delta
     if not 0 <= new_value <= maximum:
         raise ValueError(f"{key.title()} {new_value} is not between 0 and {maximum}.")
 
-    await getattr(character_db, f"set_{key}")(charid, new_value)
+    if key == "hunger":
+        character.hunger = new_value
+    else:
+        character.potency = new_value
 
 
-async def update_health(charid: int, new_max: str):
+def update_health(character: VChar, new_max: str):
     """Update the character's maximum HP. If decreasing, this truncates from the right."""
-    await __update_track(charid, "health", new_max)
+    __update_track(character, "health", new_max)
 
 
-async def update_willpower(charid: int, new_max: str):
+def update_willpower(character: VChar, new_max: str):
     """Update the character's maximum WP. If decreasing, this truncates from the right."""
-    __update_track(charid, "willpower", new_max)
+    __update_track(character, "willpower", new_max)
 
 
-async def update_humanity(charid: int, delta: str):
+def update_humanity(character: VChar, delta: str):
     """Update the character's humanity rating. If decreasing, this truncates from the right."""
-    await __update_humanity(charid, "humanity", delta)
-    await __update_humanity(charid, "stains", "0")
+    __update_humanity(character, "humanity", delta)
+    __update_humanity(character, "stains", "0")
 
 
-async def update_stains(charid: int, delta: str):
+def update_stains(character: VChar, delta: str):
     """Apply or remove superficial health damage."""
-    await __update_humanity(charid, "stains", delta)
+    __update_humanity(character, "stains", delta)
 
 
-async def update_sh(charid: int, delta: str):
+def update_sh(character: VChar, delta: str):
     """Apply or remove superficial health damage."""
-    await __update_damage(charid, "health", DAMAGE.superficial, delta)
+    __update_damage(character, "health", DAMAGE.superficial, delta)
 
 
-async def update_ah(charid: int, delta: str):
+def update_ah(character: VChar, delta: str):
     """Apply or remove aggravated health damage."""
-    await __update_damage(charid, "health", DAMAGE.aggravated, delta)
+    __update_damage(character, "health", DAMAGE.aggravated, delta)
 
 
-async def update_sw(charid: int, delta: str):
+def update_sw(character: VChar, delta: str):
     """Apply or remove superficial health damage."""
-    await __update_damage(charid, "willpower", DAMAGE.superficial, delta)
+    __update_damage(character, "willpower", DAMAGE.superficial, delta)
 
 
-async def update_aw(charid: int, delta: str):
+def update_aw(character: VChar, delta: str):
     """Apply or remove aggravated health damage."""
-    await __update_damage(charid, "willpower", DAMAGE.aggravated, delta)
+    __update_damage(character, "willpower", DAMAGE.aggravated, delta)
 
 
-async def update_current_xp(charid: int, delta: str):
+def update_current_xp(character: VChar, delta: str):
     """Set or modify current XP."""
-    await __update_xp(charid, "current", delta)
+    __update_xp(character, "current", delta)
 
 
-async def update_total_xp(charid: int, delta: str):
+def update_total_xp(character: VChar, delta: str):
     """Set or modify total XP."""
-    await __update_xp(charid, "total", delta)
+    __update_xp(character, "total", delta)
 
 
-async def __update_track(charid: int, tracker: str, new_len: int):
+def __update_track(character: VChar, tracker: str, new_len: int):
     """
     Update the size of a character's tracker.
     Args:
-        charid (int): The character's database ID
+        character (VChar): The character to update
         tracker (str): "health" or "willpower"
         new_size (int): The tracker's new size
 
@@ -117,7 +121,7 @@ async def __update_track(charid: int, tracker: str, new_len: int):
     if tracker not in ["health", "willpower"]:
         raise SyntaxError(f"Unknown tracker {tracker}")
 
-    track = await getattr(character_db, f"get_{tracker}")(charid) # Get tracker string
+    track = getattr(character, tracker) # Get tracker string
 
     cur_len = len(track)
     new_len = int(new_len)
@@ -127,17 +131,18 @@ async def __update_track(charid: int, tracker: str, new_len: int):
     elif new_len < cur_len:
         track = track[-new_len:]
 
-    await getattr(character_db, f"set_{tracker}")(charid, track) # Set the tracker
+    if tracker == "health":
+        character.health = track
+    else:
+        character.willpower = track
 
 
 # pylint: disable=too-many-arguments
-async def __update_damage(charid: int, tracker: str, dtype: str, delta: int):
+def __update_damage(character: VChar, tracker: str, dtype: str, delta: int):
     """
     Update a character's tracker damage.
     Args:
-        guildid (int): The guild's Discord ID
-        userid (int): The user's Discord ID
-        charid (int): The character's database ID
+        character (VChar): The character to update
         tracker (str): "health" or "willpower"
         type (str): "/" or "x"
         delta (int): The amount to add or remove
@@ -160,7 +165,7 @@ async def __update_damage(charid: int, tracker: str, dtype: str, delta: int):
     if not dtype in [DAMAGE.superficial, DAMAGE.aggravated]:
         raise SyntaxError(f"Unknown damage type: {dtype}")
 
-    track = await getattr(character_db, f"get_{tracker}")(charid) # Get
+    track = getattr(character, tracker) # Get
     track_size = len(track)
 
     fine = track.count(DAMAGE.none)
@@ -183,16 +188,17 @@ async def __update_damage(charid: int, tracker: str, dtype: str, delta: int):
     else:
         track = track.rjust(track_size, DAMAGE.none)
 
-    await getattr(character_db, f"set_{tracker}")(charid, track) # Set
+    if tracker == "health":
+        character.health = track
+    else:
+        character.willpower = track
 
 
-async def __update_xp(charid: int, xp_type: str, delta: str):
+def __update_xp(character: VChar, xp_type: str, delta: str):
     """
     Update a character's XP.
     Args:
-        guildid (int): The guild's Discord ID
-        userid (int): The user's Discord ID
-        charid (int): The character's database ID
+        character (VChar): The character to update
         xp_type (str): "total" or "current"
         delta (str): The amount to add or remove
 
@@ -215,18 +221,21 @@ async def __update_xp(charid: int, xp_type: str, delta: str):
     if setting:
         new_xp = delta
     else:
-        current = await getattr(character_db, f"get_{xp_type.lower()}_xp")(charid)
+        current = getattr(character, f"{xp_type.lower()}_xp")
         new_xp = current + delta
 
-    await getattr(character_db, f"set_{xp_type.lower()}_xp")(charid, new_xp)
+    if xp_type == "current":
+        character.current_xp = new_xp
+    else:
+        character.total_xp = new_xp
 
 
-async def __update_humanity(charid: int, hu_type: str, delta: str):
+def __update_humanity(character: VChar, hu_type: str, delta: str):
     """
     Update a character's humanity or stains.
     Args:
-        charid (int): The character's database ID
-        xp_type (str): "humanity" or "stains"
+        character (VChar): The character to update
+        hu_type (str): "humanity" or "stains"
         delta (str): The amount to add or remove
 
     Does not catch exceptions.
@@ -243,10 +252,13 @@ async def __update_humanity(charid: int, hu_type: str, delta: str):
     new_value = delta if setting else None
 
     if new_value is None:
-        current = await getattr(character_db, f"get_{hu_type}")(charid)
+        current = getattr(character, hu_type)
         new_value = current + delta
 
     if not 0 <= new_value <= 10:
         raise ValueError(f"{hu_type.title()} must be between 0 and 10.")
 
-    await getattr(character_db, f"set_{hu_type}")(charid, new_value)
+    if hu_type == "humanity":
+        character.humanity = new_value
+    else:
+        character.stains = new_value

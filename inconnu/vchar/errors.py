@@ -3,6 +3,9 @@
 class CharacterNotFoundError(Exception):
     """Raised when a user specifies a nonexistent character."""
 
+class TraitAlreadyExistsError(Exception):
+    """Raised when the user tries to add an extant trait."""
+
 class TraitNotFoundError(Exception):
     """Raised when a user specifies a nonexistent trait."""
 

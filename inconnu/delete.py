@@ -5,19 +5,18 @@ import asyncio
 import discord
 from discord_ui import Button
 
-from .databases import CharacterNotFoundError
-from .constants import character_db
+from .vchar import errors, VChar
 
 
-async def prompt(ctx, char_name: str):
+async def prompt(ctx, character: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        char_name, char_id = await character_db.character(ctx.guild.id, ctx.author.id, char_name)
-        embed = __generate_prompt(ctx, char_name)
+        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+        embed = __generate_prompt(ctx, character.name)
 
         buttons = [
             Button("_cancel", "Cancel", "secondary"),
-            Button("_delete", f"Delete {char_name}", "red")
+            Button("_delete", f"Delete {character.name}", "red")
         ]
         msg = await ctx.respond(embed=embed, components=buttons, hidden=True)
 
@@ -29,8 +28,8 @@ async def prompt(ctx, char_name: str):
 
             # Process the response
             if btn.custom_id == "_delete":
-                if await character_db.delete_character(char_id):
-                    await ctx.respond(f"Deleted **{char_name}**!", hidden=True)
+                if character.delete_character():
+                    await ctx.respond(f"Deleted **{character.name}**!", hidden=True)
                 else:
                     await ctx.respond("Something went wrong. Unable to delete.", hidden=True)
 
@@ -41,7 +40,7 @@ async def prompt(ctx, char_name: str):
             await msg.edit(content="**Deletion canceled due to inactivity.**")
             await msg.disable_components()
 
-    except CharacterNotFoundError as err:
+    except (ValueError, errors.CharacterNotFoundError) as err:
         await ctx.respond(str(err), hidden=True)
 
 

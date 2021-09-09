@@ -5,36 +5,34 @@ import discord
 from .parser import parse_traits
 from .traitwizard import TraitWizard
 from .. import common
-from ..constants import character_db
+from ..vchar import errors, VChar
 
 async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
     """Add traits to a character."""
-    char_name = None
+    character = None
 
     # Got the character
     try:
-        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
-
+        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
         traits = parse_traits(*traits.split())
-        assigned_traits, wizard_traits = await __handle_traits(char_id, traits, allow_overwrite)
+        assigned_traits, wizard_traits = await __handle_traits(character, traits, allow_overwrite)
 
-        await __display_results(ctx, assigned_traits, wizard_traits, char_name)
+        await __display_results(ctx, assigned_traits, wizard_traits, character.name)
 
         if len(wizard_traits) > 0:
-            wizard = TraitWizard(ctx, char_name, wizard_traits)
+            wizard = TraitWizard(ctx, character, wizard_traits)
             await wizard.begin()
 
-    except (ValueError, SyntaxError) as err:
-        await common.display_error(ctx, char_name or ctx.author.display_name, err)
+    except (ValueError, SyntaxError, errors.CharacterNotFoundError) as err:
+        name = character.name if character is not None else ctx.author.display_name
+        await common.display_error(ctx, name, err)
 
 
-async def __handle_traits(charid: int, traits: dict, overwriting: bool):
+async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
     """
     Add the rated traits to the character directly. Create a wizard for the rest.
     Args:
-        guildid (int): The guild's Discord ID
-        userid (int): The user's Discord ID
-        charid (int): The character's database ID
+        character (VChar): The character's database ID
         traits (dict): The {str: Optional[int]} dict of traits
         overwriting (bool): Whether we allow overwrites
     All traits and ratings are assumed to be valid at this time.
@@ -42,14 +40,15 @@ async def __handle_traits(charid: int, traits: dict, overwriting: bool):
     assigned_traits = []
     wizard_traits = []
     for trait, rating in traits.items():
-        if not overwriting and await character_db.trait_exists(charid, trait):
-            raise ValueError(f"You already have a trait named `{trait}`.")
-
         if rating is None:
             wizard_traits.append(trait)
             continue
 
-        await character_db.add_trait(charid, trait, rating)
+        if overwriting:
+            character.update_trait(trait, rating)
+        else:
+            character.add_trait(trait, rating)
+
         assigned_traits.append(trait)
 
     return (assigned_traits, wizard_traits)

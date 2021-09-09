@@ -8,6 +8,7 @@ from discord_ui.components import LinkButton
 from . import paramupdate
 from .. import common
 from ..display import parse as display
+from ..vchar import errors, VChar
 
 __KEYS = {
     "name": "The character's name",
@@ -40,17 +41,13 @@ async def parse(ctx, parameters: str, character=None):
         return
 
     try:
-        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
+        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
         parameters = __parse_arguments(*args)
 
-        async with common.character_db.conn.transaction():
-            for parameter, new_value in parameters.items():
-                if parameter == "name":
-                    char_name = new_value
+        for parameter, new_value in parameters.items():
+            __update_character(character, parameter, new_value)
 
-                await __update_character(char_id, parameter, new_value)
-
-        await display(ctx, char_name)
+        await display(ctx, character.name)
 
     except (SyntaxError, ValueError) as err:
         await update_help(ctx, err)
@@ -89,16 +86,16 @@ def __parse_arguments(*arguments):
     return parameters
 
 
-async def __update_character(charid: int, param: str, value: str):
+def __update_character(character: VChar, param: str, value: str):
     """
     Update one of a character's parameters.
     Args:
-        charid (int): The character's database ID
+        character (VChar): The character being updated
         param (str): The parameter to update
         value (str): The parameter's new value
     Raises ValueError if the parameter's value is invalid.
     """
-    await getattr(paramupdate, f"update_{param}")(charid, value)
+    getattr(paramupdate, f"update_{param}")(character, value)
 
 
 async def update_help(ctx, err=None, hidden=True):

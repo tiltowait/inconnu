@@ -5,7 +5,7 @@ import asyncio
 import discord
 from discord_ui import SelectMenu, SelectOption
 
-from ..constants import character_db
+from ..vchar import VChar
 
 class Wizard:
     """A helper class that guides a user through the chargen process."""
@@ -61,23 +61,18 @@ class Wizard:
 
     async def __finalize_character(self):
         """Add the character to the database and inform the user they are done."""
-        guildid = self.ctx.guild.id
-        userid = self.ctx.author.id
-        char_type = self.parameters.type
-        name = self.parameters.name
-        humanity = self.parameters.humanity
-        health =  "." *self.parameters.hp
-        willpower =  "." *self.parameters.wp
+        character = VChar.create_basic(self.ctx.guild.id, self.ctx.author.id, self.parameters.name)
+        character.splat= self.parameters.splat
+        character.humanity = self.parameters.humanity
+        character.health = "." * self.parameters.hp
+        character.willpower = "." * self.parameters.wp
 
-        char_id = await character_db.add_character(
-            guildid, userid, char_type, name, humanity, 0, health, willpower
-        )
+        # Need to add the traits one-by-one
+        for trait, rating in self.assigned_traits.items():
+            character.add_trait(trait, rating)
 
-        # Need to add the fields one-by-one
-        await character_db.add_multiple_traits(char_id, self.assigned_traits)
-
-        success = f"{name} has been created in {self.ctx.guild.name}!"
-        success += " Make a mistake? Use `//traits update` to fix."
+        success = f"{character.name} has been created in {self.ctx.guild.name}!"
+        success += " Make a mistake? Use `/traits update` to fix."
         await self.ctx.author.send(success)
 
 

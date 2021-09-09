@@ -2,10 +2,7 @@
 
 import random
 
-import discord
-
 from .dicethrow import DiceThrow
-from .rollresult import RollResult
 
 __MAX_REROLL = 3
 

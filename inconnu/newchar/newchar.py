@@ -1,13 +1,11 @@
 """newchar.py - Handle new character creation."""
 
 import re
-from collections import namedtuple
+from types import SimpleNamespace as SN
 
 from . import wizard
-from ..constants import character_db
+from ..vchar import VChar
 from .. import common
-
-Parameters = namedtuple('Parameters', ["name", "hp", "wp", "humanity", "type"])
 
 
 async def create(ctx, name: str, splat: str, humanity: int, health: int, willpower: int):
@@ -15,7 +13,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
     try:
         __validate_parameters(name, humanity, health, willpower) # splat is guaranteed correct
 
-        if await character_db.character_exists(ctx.guild.id, ctx.author.id, name):
+        if VChar.character_exists(ctx.guild.id, ctx.author.id, name):
             raise ValueError(f"Sorry, you have a character named `{name}` already!")
 
         await ctx.respond(
@@ -23,7 +21,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
             hidden=True
         )
 
-        parameters = Parameters(name, health, willpower, humanity, splat)
+        parameters = SN(name=name, hp=health, wp=willpower, humanity=humanity, splat=splat)
         character_wizard = wizard.Wizard(ctx, parameters)
         await character_wizard.begin_chargen()
 

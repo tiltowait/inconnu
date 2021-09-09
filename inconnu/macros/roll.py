@@ -3,7 +3,7 @@
 from ..roll import perform_roll, display_outcome
 from . import macro_common
 from .. import common
-from ..databases import MacroNotFoundError
+from ..vchar import errors, VChar
 
 async def process(ctx, syntax: str, character=None):
     """Roll a macro."""
@@ -19,35 +19,36 @@ async def process(ctx, syntax: str, character=None):
         await common.display_error(ctx, ctx.author.display_name, err)
         return
 
-    char_name = None
-    char_id = None
-
     try:
-        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
-    except ValueError as err:
+        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+    except (ValueError, errors.CharacterNotFoundError) as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return
 
     # We have a valid character
     if not macro_common.is_macro_name_valid(macro_name):
         await common.display_error(
-            ctx, char_name, "Macro names may only contain letters and underscores."
+            ctx, character.name, "Macro names may only contain letters and underscores."
         )
 
     try:
-        macro = await macro_common.macro_db.fetch_macro(char_id, macro_name)
-        parameters = macro["pool"]
+        macro = character.find_macro(macro_name)
+        parameters = macro.pool
         parameters.append(hunger)
-        parameters.append(difficulty or macro["diff"])
+        parameters.append(difficulty or macro.difficulty)
 
-        results = await perform_roll(char_id, *parameters)
-        await display_outcome(ctx, char_name, results, macro["comment"])
+        results = await perform_roll(character, *parameters)
+        await display_outcome(ctx, character.name, results, macro.comment)
 
-    except MacroNotFoundError:
-        await common.display_error(ctx, char_name, f"You do not have a macro named `{macro_name}`.")
+    except errors.MacroNotFoundError:
+        await common.display_error(
+            ctx,
+            character.name,
+            f"You do not have a macro named `{macro_name}`."
+        )
     except ValueError as err:
         # The user may have deleted a trait, which means the macro is invalid.
-        await common.display_error(ctx, char_name or ctx.author.display_name, str(err))
+        await common.display_error(ctx, character.name, str(err))
 
 
 def __expand_syntax(syntax: str):

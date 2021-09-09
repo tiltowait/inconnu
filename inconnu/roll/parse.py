@@ -21,8 +21,8 @@ from .roll import _roll_pool
 from . import dicemoji
 from . import reroll
 from .. import common
-from ..databases import AmbiguousTraitError, TraitNotFoundError
-from ..constants import character_db, DAMAGE
+from ..vchar import errors, VChar
+from ..constants import DAMAGE
 
 __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
 RollParameters = namedtuple("RollParameters", ["pool", "hunger", "difficulty"])
@@ -46,16 +46,18 @@ async def parse(ctx, args: str):
 
     args = args.split()
     args = list(args) # To allow for item deletion
-
-    # Determine the character being used, if any
-    character_name = None
     character = None
 
+    # Determine the character being used, if any
     if ctx.guild is not None:
         # This is one of the few commands that can be rolled in DMs
-        character_name, character = await common.get_character(ctx.guild.id, ctx.author.id, *args)
+        try:
+            character = VChar.fallback_find(ctx.guild.id, ctx.author.id, args[0])
+        except errors.CharacterNotFoundError as err:
+            await ctx.reply(str(err))
+            return
 
-        if character_name is not None and character_name.lower() == args[0].lower():
+        if character is not None and character.name.lower() == args[0].lower():
             del args[0]
 
             # Yell at the user if they only gave a character name and no roll syntax
@@ -66,10 +68,11 @@ async def parse(ctx, args: str):
     # Attempt to parse the user's roll syntax
     try:
         results = await perform_roll(character, *args)
-        await display_outcome(ctx, character_name, results, comment)
+        await display_outcome(ctx, character.name, results, comment)
 
     except (SyntaxError, ValueError) as err:
-        await common.display_error(ctx, character_name or ctx.author.display_name, str(err))
+        name = character.name if character is not None else ctx.author.display_name
+        await common.display_error(ctx, name, str(err))
 
 
 async def display_outcome(ctx, character_name, results, comment, rerolled=False):
@@ -138,17 +141,17 @@ async def display_outcome(ctx, character_name, results, comment, rerolled=False)
             await msg.disable_components()
 
 
-async def perform_roll(character: int, *args):
+async def perform_roll(character: VChar, *args):
     """Public interface for __evaluate_syntax() that returns a RollResult."""
     pool_str, roll_params = await __evaluate_syntax(character, *args)
     return _roll_pool(roll_params, pool_str)
 
 
-async def __evaluate_syntax(character: int, *args):
+async def __evaluate_syntax(character: VChar, *args):
     """
     Convert the user's syntax to the standardized format: pool, hunger, diff.
     Args:
-        character (int) (optional): The character's database ID
+        character (VChar) (optional): The character doing the roll
         args (list): The user's syntax
 
     Valid syntax: snake_case_words, integers, plus, minus.
@@ -169,7 +172,7 @@ async def __evaluate_syntax(character: int, *args):
     return pool_str, evaluated_stack
 
 
-async def __substitute_traits(character: int, *args) -> tuple:
+async def __substitute_traits(character: VChar, *args) -> tuple:
     """
     Convert the roll syntax into a stack while simultaneously replacing database
     calls with the appropriate values.
@@ -217,11 +220,11 @@ async def __substitute_traits(character: int, *args) -> tuple:
             raise ValueError(f"You must supply a character name to use `{item}`.")
 
         try:
-            trait, rating = await character_db.trait_rating(character, item)
-            substituted_stack.append(rating)
-            trait_stack.append(trait)
+            trait = character.find_trait(item)
+            substituted_stack.append(trait.rating)
+            trait_stack.append(trait.name)
 
-        except TraitNotFoundError as err:
+        except errors.TraitNotFoundError as err:
             # We allow universal traits
             match = __match_universal_trait(item)
             if match:
@@ -231,7 +234,7 @@ async def __substitute_traits(character: int, *args) -> tuple:
             else:
                 raise ValueError(str(err)) # pylint: disable=raise-missing-from
 
-        except AmbiguousTraitError as err:
+        except errors.AmbiguousTraitError as err:
             raise ValueError(err.message) # pylint: disable=raise-missing-from
 
     return trait_stack, substituted_stack
@@ -288,9 +291,9 @@ def __combine_operators(*stack):
     return RollParameters(*compact_stack)
 
 
-async def __get_universal_trait(charid: int, trait):
+async def __get_universal_trait(character: VChar, trait):
     """Retrieve a universal trait (Hunger, Willpower, Humanity)."""
-    value = await getattr(character_db, f"get_{trait}")(charid)
+    value = getattr(character, trait)
 
     if trait == "willpower":
         # Willpower is a string. Additionally, per RAW only undamaged Willpower
@@ -313,7 +316,7 @@ def __match_universal_trait(match: str):
             matches.append(trait)
 
     if len(matches) > 1:
-        raise ValueError(str(AmbiguousTraitError(match, matches))) # Cast to avoid messy try blocks
+        raise ValueError(str(errors.AmbiguousTraitError(match, matches))) # Avoid messy try blocks
 
     if len(matches) == 1:
         return matches[0]

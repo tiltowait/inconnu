@@ -26,12 +26,12 @@ class Characters(commands.Cog, name="Character Management"):
         description="Create a new character",
         options=[
             SlashOption(str, "name", description="The character's name", required=True),
-            SlashOption(int, "splat",
+            SlashOption(str, "splat",
                 description="The character type",
                 choices=[
-                    {"name": "vampire", "value": 0},
-                    {"name": "mortal", "value": 1},
-                    {"name": "ghoul", "value": 2}
+                    {"name": "vampire", "value": "vampire"},
+                    {"name": "ghoul", "value": "ghoul"},
+                    {"name": "mortal", "value": "mortal"}
                 ],
                 required=True
             ),

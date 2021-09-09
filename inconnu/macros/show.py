@@ -1,33 +1,27 @@
 """macros/show.py - Displaying character macros."""
 
-from collections import namedtuple
+from types import SimpleNamespace
 
 import discord
 
 from .. import common
-from . import macro_common
-
-MacroField = namedtuple("MacroField", ["name", "value"])
+from ..vchar import errors, VChar
 
 async def process(ctx, character=None):
     """Show all of a character's macros."""
-    char_name = None
-    char_id = None
-
     try:
-        char_name, char_id = await common.match_character(ctx.guild.id, ctx.author.id, character)
-    except ValueError as err:
+        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+    except (ValueError, errors.CharacterNotFoundError) as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return
 
     # We have a valid character
-    macros = await macro_common.macro_db.char_macros(char_id)
-
+    macros = character.macros
     if len(macros) == 0:
-        await common.display_error(ctx, char_name, f"{char_name} has no macros!")
+        await common.display_error(ctx, character.name, f"{character.name} has no macros!")
         return
 
-    await __send_macros(ctx, char_name, macros)
+    await __send_macros(ctx, character.name, macros)
 
 
 async def __send_macros(ctx, char_name, macros):
@@ -48,17 +42,13 @@ def __generate_fields(macros):
     fields = []
 
     for macro in macros:
-        name = macro["name"].upper()
-        pool = " ".join(macro["pool"])
-        difficulty = macro["diff"]
-        comment = macro["comment"]
+        pool = " ".join(macro.pool)
+        value = f"**Pool:** `{pool}`"
+        if macro.difficulty > 0:
+            value += f"\n**Difficulty:** *{macro.difficulty}*"
+        if macro.comment is not None:
+            value += f"\n**Comment:** *{macro.comment}*"
 
-        value = f"**Pool:** *{pool}*"
-        if difficulty > 0:
-            value += f"\n**Difficulty:** *{difficulty}*"
-        if comment is not None:
-            value += f"\n**Comment:** *{comment}*"
-
-        fields.append(MacroField(name, value))
+        fields.append(SimpleNamespace(name=macro.name.upper(), value=value))
 
     return fields

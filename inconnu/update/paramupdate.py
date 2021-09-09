@@ -38,7 +38,7 @@ async def __update_hunger_potency(charid: int, delta: str, key: str, maximum: in
     """Update the character's hunger if they are a vampire."""
     splat = await character_db.get_splat(charid)
     if splat != 0: # Not a vampire
-        raise ValueError("Mortals and ghouls do not have Hunger.")
+        raise ValueError(f"Mortals and ghouls do not have {key.title()}.")
 
     setting = not delta[0] in ["+", "-"]
     try:

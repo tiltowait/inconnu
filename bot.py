@@ -34,7 +34,7 @@ async def help_command(ctx):
         label="New? Read the Quickstart!"
     )
 
-    await ctx.respond(embed=embed, components=[button], hidden=True)
+    await ctx.respond(embed=embed, components=[button])
 
 
 # Events

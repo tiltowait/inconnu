@@ -36,7 +36,7 @@ async def parse(ctx, parameters: str, character=None):
     args = list(args.split()) # To allow element removal
 
     if len(args) == 0:
-        await __display_help(ctx)
+        await update_help(ctx)
         return
 
     try:
@@ -53,7 +53,7 @@ async def parse(ctx, parameters: str, character=None):
         await display(ctx, char_name)
 
     except (SyntaxError, ValueError) as err:
-        await __display_help(ctx, err)
+        await update_help(ctx, err)
 
 
 def __parse_arguments(*arguments):
@@ -101,7 +101,7 @@ async def __update_character(charid: int, param: str, value: str):
     await getattr(paramupdate, f"update_{param}")(charid, value)
 
 
-async def __display_help(ctx, err=None):
+async def update_help(ctx, err=None, hidden=True):
     """Display a help message that details the available keys."""
     embed = discord.Embed(
         title="Character Tracking",
@@ -124,4 +124,4 @@ async def __display_help(ctx, err=None):
         "http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates",
         label="Full Documentation"
     )
-    await ctx.respond(embed=embed, components=[button], hidden=True)
+    await ctx.respond(embed=embed, components=[button], hidden=hidden)

@@ -93,6 +93,7 @@ class Characters(commands.Cog, name="Character Management"):
     @subslash_cog(
         base_names="character",
         name="delete",
+        description="Delete a character.",
         options=[
             SlashOption(str, "character", description="The character to delete", required=True)
         ]
@@ -104,3 +105,13 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.delete.prompt(ctx, character)
 
 
+    @subslash_cog(
+        base_names="character",
+        name="help",
+        description="Show a list of character update keys."
+        #, guild_ids=[882411164468932609]
+    )
+    @commands.guild_only()
+    async def character_updates_help(self, ctx):
+        """Display the valid character update keys."""
+        await inconnu.update.update_help(ctx, hidden=False)

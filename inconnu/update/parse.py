@@ -22,7 +22,8 @@ __KEYS = {
     "stains": "+/- Stains",
     "current_xp": "+/- Current XP",
     "total_xp": "+/- Total XP",
-    "hunger": "+/- The character's Hunger"
+    "hunger": "+/- The character's Hunger",
+    "potency": "+/- The character's Blood Potency"
 }
 
 

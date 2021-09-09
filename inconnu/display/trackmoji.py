@@ -10,7 +10,8 @@ __EMOJIS = {
     "no_hunger": "<:no_hunger:883527495394164776>",
     "hu_filled": "<:hu_filled:883532393946972160>",
     "hu_unfilled": "<:hu_unfilled:883532394051809290>",
-    "stain": "<:stain:883536498950025258>"
+    "stain": "<:stain:883536498950025258>",
+    "bp_filled": ":red_circle:",
 }
 
 
@@ -35,6 +36,12 @@ def emojify_hunger(level: int) -> str:
     hunger.extend(unfilled)
 
     return " ".join(hunger)
+
+
+def emojify_blood_potency(level: int) -> str:
+    """Create a Blood Potency track."""
+    potency = [__EMOJIS["bp_filled"] for _ in range(level)]
+    return " ".join(potency)
 
 
 def emojify_humanity(humanity: int, stains: int) -> str:

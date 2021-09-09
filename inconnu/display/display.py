@@ -46,7 +46,7 @@ async def __display_character(ctx, char_name: str, char_id: int):
     """Display the basic traits for the character."""
 
     # The user might have not provided proper capitalization, so get the name again
-    hunger = await character_db.get_hunger(char_id)
+    splat = await character_db.get_splat(char_id)
     humanity = await character_db.get_humanity(char_id)
     stains = await character_db.get_stains(char_id)
     health = await character_db.get_health(char_id)
@@ -56,7 +56,6 @@ async def __display_character(ctx, char_name: str, char_id: int):
 
     health = trackmoji.emojify_track(health)
     willpower = trackmoji.emojify_track(willpower)
-    hunger = trackmoji.emojify_hunger(hunger)
     humanity = trackmoji.emojify_humanity(humanity, stains)
 
     embed = discord.Embed(
@@ -70,7 +69,15 @@ async def __display_character(ctx, char_name: str, char_id: int):
     embed.add_field(name="Health", value=health, inline=False)
     embed.add_field(name="Willpower", value=willpower, inline=False)
     embed.add_field(name="Humanity", value=humanity, inline=False)
-    embed.add_field(name="Hunger", value=hunger, inline=False)
+
+    if splat == 0:
+        hunger = await character_db.get_hunger(char_id)
+        potency = await character_db.get_potency(char_id)
+        hunger = trackmoji.emojify_hunger(hunger)
+        potency = trackmoji.emojify_blood_potency(potency)
+
+        embed.add_field(name="Blood Potency", value=potency, inline=False)
+        embed.add_field(name="Hunger", value=hunger, inline=False)
 
     if total_xp > 0:
         embed.add_field(name="Experience", value=__format_xp(current_xp, total_xp))

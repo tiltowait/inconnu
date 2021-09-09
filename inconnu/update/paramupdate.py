@@ -25,6 +25,16 @@ async def update_splat(charid: int, new_splat: str):
 
 
 async def update_hunger(charid: int, delta: str):
+    """Update the character's Hunger."""
+    await __update_hunger_potency(charid, delta, "hunger", 5)
+
+
+async def update_potency(charid: int, delta: str):
+    """Update the character's Blood Potency."""
+    await __update_hunger_potency(charid, delta, "potency", 10)
+
+
+async def __update_hunger_potency(charid: int, delta: str, key: str, maximum: int):
     """Update the character's hunger if they are a vampire."""
     splat = await character_db.get_splat(charid)
     if splat != 0: # Not a vampire
@@ -34,13 +44,13 @@ async def update_hunger(charid: int, delta: str):
     try:
         delta = int(delta)
     except ValueError:
-        raise ValueError(f"Hunger {delta} is not between 0 and 5.") # pylint: disable=raise-missing-from
+        raise ValueError(f"{key.title()} must be a number.") # pylint: disable=raise-missing-from
 
-    new_hunger = delta if setting else await character_db.get_hunger(charid) + delta
-    if not 0 <= new_hunger <= 5:
-        raise ValueError(f"Hunger {new_hunger} is not between 0 and 5.")
+    new_value = delta if setting else await getattr(character_db, f"get_{key}")(charid) + delta
+    if not 0 <= new_value <= maximum:
+        raise ValueError(f"{key.title()} {new_value} is not between 0 and {maximum}.")
 
-    await character_db.set_hunger(charid, new_hunger)
+    await getattr(character_db, f"set_{key}")(charid, new_value)
 
 
 async def update_health(charid: int, new_max: str):

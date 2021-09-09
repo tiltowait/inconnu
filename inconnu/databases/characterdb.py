@@ -44,6 +44,7 @@ class CharacterDB(Database):
                 Splat     int    NOT NULL,
                 CharName  text   NOT NULL,
                 Hunger    int    DEFAULT 1,
+                Potency   int    DEFAULT 0,
                 Humanity  int    DEFAULT 7,
                 Stains    int    DEFAULT 0,
                 Health    text   NOT NULL,
@@ -286,6 +287,32 @@ class CharacterDB(Database):
         """
         await self._prepare()
         await self.__set_attribute(charid, "Hunger", new_hunger)
+
+
+    async def get_potency(self, charid: int) -> int:
+        """
+        Retrieve the character's Blood Potency.
+        Args:
+            char_id (int): The character's database ID
+        Returns (str): The character's Blood Potency.
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        await self._prepare()
+        return await self.__get_attribute(charid, "Potency")
+
+
+    async def set_potency(self, charid: int, new_potency: str) -> int:
+        """
+        Update the character's Blood Potency.
+        Args:
+            char_id (int): The character's database ID
+            new_potency (int): The character's new Blood Potency
+
+        Raises CharacterNotFoundError if the character does not exist.
+        """
+        await self._prepare()
+        await self.__set_attribute(charid, "Potency", new_potency)
 
 
     async def get_health(self, charid: int) -> str:

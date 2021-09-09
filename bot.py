@@ -66,7 +66,7 @@ async def on_command_error(ctx, error):
 def __status_message():
     """Sets the bot's Discord presence message."""
     servers = len(bot.guilds)
-    return f"//help | {servers} chronicles"
+    return f"/help | {servers} chronicles"
 
 
 def setup():

@@ -12,7 +12,7 @@ __EMOJIS = {
     "hu_unfilled": "<:hu_unfilled:883532394051809290>",
     "stain": "<:stain:883536498950025258>",
     "bp_filled": ":red_circle:",
-    "bp_unfilled": ":white_circle:",
+    "bp_unfilled": ":o:",
 }
 
 

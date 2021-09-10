@@ -26,10 +26,24 @@ class Gameplay(commands.Cog):
 
 
     @slash_cog(
+        name="awaken",
+        options=[
+            SlashOption(str, "character", description="The character waking up"),
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    @commands.guild_only()
+    async def awaken(self, ctx, character=None):
+        """Perform a Rouse check and heal Superficial Willpower damage."""
+        await inconnu.misc.awaken.process(ctx, character)
+
+
+    @slash_cog(
         name="mend",
         options=[SlashOption(str, "character", description="The character to be mended")]
         , guild_ids=debug.WHITELIST
     )
+    @commands.guild_only()
     async def mend(self, ctx, character=None):
         """Mend Superficial damage."""
         await inconnu.misc.mend.process(ctx, character)
@@ -68,12 +82,18 @@ class Gameplay(commands.Cog):
 
 
     @slash_cog(
-        name="awaken",
+        name="slake",
         options=[
-            SlashOption(str, "character", description="The character waking up"),
-        ],
-        guild_ids=debug.WHITELIST
+            SlashOption(int, "amount",
+                description="How much Hunger to slake",
+                choices=[{"name": str(n), "value": n} for n in range(1, 6)],
+                required=True
+            ),
+            SlashOption(str, "character", description="The character performing the check"),
+        ]
+        , guild_ids=debug.WHITELIST
     )
-    async def awaken(self, ctx, character=None):
-        """Perform a Rouse check and heal Superficial Willpower damage."""
-        await inconnu.misc.awaken.process(ctx, character)
+    @commands.guild_only()
+    async def slake(self, ctx, amount: int, character=None):
+        """Slake 1 or more Hunger."""
+        await inconnu.misc.slake.process(ctx, amount, character)

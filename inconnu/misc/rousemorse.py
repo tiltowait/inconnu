@@ -70,7 +70,7 @@ async def __remorse_result(ctx, character: VChar):
         await ctx.respond(f"{character.name} has no stains! No remorse necessary.", hidden=True)
         return
 
-    successful = await __remorse_roll(character)
+    successful = __remorse_roll(character)
 
     embed = discord.Embed(
         title="Remorse Success" if successful else "Remorse Fail"
@@ -111,7 +111,7 @@ def __count_successes(dice: list) -> tuple:
     return (ones, successes, tens)
 
 
-async def __remorse_roll(character: VChar) -> bool:
+def __remorse_roll(character: VChar) -> bool:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
     rolls = unfilled if unfilled > 0 else 1

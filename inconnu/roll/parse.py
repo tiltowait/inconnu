@@ -68,7 +68,7 @@ async def parse(ctx, syntax: str):
 
     # Attempt to parse the user's roll syntax
     try:
-        results = await perform_roll(character, *args)
+        results = perform_roll(character, *args)
         name = character.name if character is not None else ctx.author.display_name
         await display_outcome(ctx, character, results, comment)
 
@@ -153,13 +153,13 @@ async def display_outcome(ctx, character, results, comment, rerolled=False):
             await msg.disable_components()
 
 
-async def perform_roll(character: VChar, *args):
+def perform_roll(character: VChar, *args):
     """Public interface for __evaluate_syntax() that returns a RollResult."""
-    pool_str, roll_params = await __evaluate_syntax(character, *args)
+    pool_str, roll_params = __evaluate_syntax(character, *args)
     return _roll_pool(roll_params, pool_str)
 
 
-async def __evaluate_syntax(character: VChar, *args):
+def __evaluate_syntax(character: VChar, *args):
     """
     Convert the user's syntax to the standardized format: pool, hunger, diff.
     Args:
@@ -171,7 +171,7 @@ async def __evaluate_syntax(character: VChar, *args):
 
     Raises ValueError if there is trouble querying the database.
     """
-    trait_stack, substituted_stack = await __substitute_traits(character, *args)
+    trait_stack, substituted_stack = __substitute_traits(character, *args)
     evaluated_stack = __combine_operators(*substituted_stack)
 
     # Lop off Hunger and Difficulty from the trait stack, leaving just the pool behind
@@ -182,7 +182,7 @@ async def __evaluate_syntax(character: VChar, *args):
     return pool_str, evaluated_stack
 
 
-async def __substitute_traits(character: VChar, *args) -> tuple:
+def __substitute_traits(character: VChar, *args) -> tuple:
     """
     Convert the roll syntax into a stack while simultaneously replacing database
     calls with the appropriate values.
@@ -238,7 +238,7 @@ async def __substitute_traits(character: VChar, *args) -> tuple:
             # We allow universal traits
             match = __match_universal_trait(item)
             if match:
-                rating = await __get_universal_trait(character, match)
+                rating = __get_universal_trait(character, match)
                 substituted_stack.append(rating)
                 trait_stack.append(match)
             else:
@@ -301,7 +301,7 @@ def __combine_operators(*stack):
     return RollParameters(*compact_stack)
 
 
-async def __get_universal_trait(character: VChar, trait):
+def __get_universal_trait(character: VChar, trait):
     """Retrieve a universal trait (Hunger, Willpower, Humanity)."""
     value = getattr(character, trait)
 

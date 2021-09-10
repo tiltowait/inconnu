@@ -15,7 +15,7 @@ async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
     try:
         character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
         traits = parse_traits(*traits.split())
-        assigned_traits, wizard_traits = await __handle_traits(character, traits, allow_overwrite)
+        assigned_traits, wizard_traits = __handle_traits(character, traits, allow_overwrite)
 
         await __display_results(ctx, assigned_traits, wizard_traits, character.name)
 
@@ -28,7 +28,7 @@ async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
         await common.display_error(ctx, name, err)
 
 
-async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
+def __handle_traits(character: VChar, traits: dict, overwriting: bool):
     """
     Add the rated traits to the character directly. Create a wizard for the rest.
     Args:

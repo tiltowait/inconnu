@@ -35,7 +35,7 @@ async def process(ctx, syntax: str, character=None):
         parameters.append(hunger)
         parameters.append(difficulty or macro.difficulty)
 
-        results = await perform_roll(character, *parameters)
+        results = perform_roll(character, *parameters)
         await display_outcome(ctx, character, results, macro.comment)
 
     except errors.MacroNotFoundError:

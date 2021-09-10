@@ -27,7 +27,7 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
         return
 
     try:
-        pool = await __expand_syntax(character, pool)
+        pool = __expand_syntax(character, pool)
         character.add_macro(name, pool, difficulty, comment)
         await ctx.respond(f"**{character.name}:** Created macro `{name}`.", hidden=True)
 
@@ -38,7 +38,7 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
         await common.display_error(ctx, character.name, err)
 
 
-async def __expand_syntax(character: VChar, syntax: str):
+def __expand_syntax(character: VChar, syntax: str):
     """Validates the pool syntax and replaces elements with full trait names."""
     syntax = re.sub(r"([+-])", r" \g<1> ", syntax) # Make sure there are spaces around all operators
     raw_stack = syntax.split()

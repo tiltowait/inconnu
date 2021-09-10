@@ -16,8 +16,8 @@ async def parse(ctx, traits: str, character=None):
             # Shouldn't be possible to reach here, but just in case Discord messes up
             raise SyntaxError("You must supply a list of traits to delete.")
 
-        await __validate_traits(character, *traits)
-        await __delete_traits(character, *traits)
+        __validate_traits(character, *traits)
+        __delete_traits(character, *traits)
 
         embed = discord.Embed(
             title="Traits Removed",
@@ -33,7 +33,7 @@ async def parse(ctx, traits: str, character=None):
         await common.display_error(ctx, name, err)
 
 
-async def __validate_traits(character: VChar, *traits):
+def __validate_traits(character: VChar, *traits):
     """
     Raises a ValueError if a trait doesn't exist and a SyntaxError
     if the syntax is bad.
@@ -48,7 +48,7 @@ async def __validate_traits(character: VChar, *traits):
         _ = character.find_trait(trait) # Raised exception will trigger failure
 
 
-async def __delete_traits(character: VChar, *traits):
+def __delete_traits(character: VChar, *traits):
     """Delete the validated traits."""
     for trait in traits:
         if trait.lower() in constants.SKILLS_AND_ATTRIBUTES:

@@ -7,15 +7,15 @@ What follows is a complete reference on **Inconnu's** roll function. If you're n
 ## Basic Syntax
 
 ```
-//v [character] <pool> [hunger] [difficulty]
+/vr <syntax: pool hunger difficulty> [character]
 
 ```
 | Parameter    | Description                                              |
 |--------------|----------------------------------------------------------|
-| `character`  | The character performing the roll                        |
 | `pool`       | The total number of dice, including Hunger dice, to roll |
 | `hunger`     | Your current level of Hunger (default 0)                 |
 | `difficulty` | The test's Difficulty (default 0)                        |
+| `character`  | The character performing the roll                        |
 
 ?> `character` is optional if you are not using a [trait pool](#trait-pools). Even if you are using one, `character` is still optional if you only have one character in the server.
 
@@ -23,7 +23,7 @@ What follows is a complete reference on **Inconnu's** roll function. If you're n
 
 `pool` is a special parameter. It accepts [traits](trait-management.md) in addition to numbers, and multiple traits can be combined in a simple addition/subtraction equation.
 
-**Example:** `//v Strength + Brawl + 2 2` (Roll *Strength + Brawl + 2* with *Hunger 2* and no set *Difficulty*. This roll assumes the user has only one character.)
+**Example:** `/vr Strength + Brawl + 2 2` (Roll *Strength + Brawl + 2* with *Hunger 2* and no set *Difficulty*. This roll assumes the user has only one character.)
 
 ?> Traits are **case-insensitive**, which is a fancy way of saying capitalization doesn't matter.
 
@@ -38,16 +38,16 @@ What follows is a complete reference on **Inconnu's** roll function. If you're n
 | `b`       | ✅   | Matches `brawl`                                           |
 | `in`      | ❌   | Could match `intimidation`, `insight`, or `investigation` |
 
-**Example:** `//v Nadea stren + b` (Rolls Nadea's *Strength + Brawl*, no *Hunger*, no *Difficulty*)
+**Example:** `/vr stren + b` `Nadea` (Rolls Nadea's *Strength + Brawl*, no *Hunger*, no *Difficulty*)
 
 ## Comments
 ```
-//v <syntax> # Comment
+/vr <syntax> # Comment
 
 ```
 Anything after a `#` will be ignored by **Inconnu's** roll parser and will be added to the bottom of the roll outcome view.
 
-**Example:** `//v Nadea stren + br + 2 2 0 # Nadea punches Jake` (Rolls Nadea's *Strength + Brawl + 2*, *Hunger 2*, no *Difficulty* with a comment of *Nadea punches Jake*.)
+**Example:** `/vr stren + br + 2 2 0 # Nadea punches Jake` `Nadea` (Rolls Nadea's *Strength + Brawl + 2*, *Hunger 2*, no *Difficulty* with a comment of *Nadea punches Jake*.)
 
 ## Willpower Re-rolls
 

@@ -7,7 +7,7 @@ Don't care about managing characters? Trait pools don't interest you? That's fin
 ### Basic Roll Syntax
 
 ```
-//v <pool> [hunger] [difficulty]
+/vr <pool> [hunger] [difficulty]
 ```
 
 [More information here.](rolls.md) Now, on with the show ...

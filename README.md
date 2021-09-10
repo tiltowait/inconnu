@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/discord.py-1.7.3-brightgreen" alt="Requires discord.py v1.7.3" />
-  <img src="https://img.shields.io/badge/discord--ui-4.2.14-blue" alt="Requires discord-ui v4.2.14" />
+  <img src="https://img.shields.io/badge/discord--ui-4.2.14-blue" alt="Requires discord-ui v4.2.15" />
   <img src="https://img.shields.io/badge/pymongo-3.12.0-yellow" alt="Requires pymongo v3.12.0" />
   <img src="https://img.shields.io/badge/python-3.9.6-9cf" alt="Requires python 3.9.6" />
 </p>

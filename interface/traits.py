@@ -5,6 +5,7 @@ from discord_ui import SlashOption
 from discord_ui.cogs import slash_cog, subslash_cog
 
 import inconnu
+from . import debug
 
 
 class Traits(commands.Cog, name="Trait Management"):
@@ -13,7 +14,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @slash_cog(
         name="traits",
         description="Traits command group"
-        #, guild_ids=[882411164468932609] # Enable in Inconnu Support for testing purposes
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def modify_traits(self, ctx):
@@ -28,7 +29,7 @@ class Traits(commands.Cog, name="Trait Management"):
             SlashOption(str, "traits", description="The traits to add", required=True),
             SlashOption(str, "character", description="The character to update")
         ]
-        #, guild_ids=[882411164468932609] # Enable in Inconnu Support for testing purposes
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def add_trait(self, ctx, traits: str, character=None):
@@ -43,7 +44,7 @@ class Traits(commands.Cog, name="Trait Management"):
         options=[
             SlashOption(str, "character", description="The character to update")
         ]
-        #, guild_ids=[882411164468932609] # Enable in Inconnu Support for testing purposes
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def list_traits(self, ctx, character=None):
@@ -59,7 +60,7 @@ class Traits(commands.Cog, name="Trait Management"):
             SlashOption(str, "traits", description="The traits to update", required=True),
             SlashOption(str, "character", description="The character to update")
         ]
-        #, guild_ids=[882411164468932609] # Enable in Inconnu Support for testing purposes
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def update_traits(self, ctx, traits: str, character=None):
@@ -75,7 +76,7 @@ class Traits(commands.Cog, name="Trait Management"):
             SlashOption(str, "traits", description="The traits to delete", required=True),
             SlashOption(str, "character", description="The character to update")
         ]
-        #, guild_ids=[882411164468932609] # Enable in Inconnu Support for testing purposes
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def delete_traits(self, ctx, traits: str, character=None):

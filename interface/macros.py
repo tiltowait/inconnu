@@ -5,6 +5,7 @@ from discord_ui import SlashOption
 from discord_ui.cogs import slash_cog, subslash_cog
 
 import inconnu
+from . import debug
 
 
 class Macros(commands.Cog, name="Macro Utilities"):
@@ -13,7 +14,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @slash_cog(
         name="macro",
         description="Roll a macro."
-        #, guild_ids=[882411164468932609]
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def macro(self, ctx):
@@ -30,7 +31,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
             ),
             SlashOption(str, "character", description="The character that owns the macro")
         ]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def macro_roll(self, ctx, syntax: str, character=None):
@@ -49,7 +50,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
             SlashOption(str, "comment", description="A comment to apply to macro rolls"),
             SlashOption(str, "character", description="The character that owns the macro")
         ]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def macro_create(
@@ -66,7 +67,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         options=[
             SlashOption(str, "character", description="The character to display")
         ]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def macro_list(self, ctx, character=None):
@@ -82,7 +83,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
             SlashOption(str, "macro", description="The macro to delete", required=True),
             SlashOption(str, "character", description="The character that owns the macro")
         ]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def macro_delete(self, ctx, macro: str, character=None):

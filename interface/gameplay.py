@@ -6,6 +6,7 @@ from discord_ui.cogs import slash_cog
 
 import inconnu
 from . import c_help
+from . import debug
 
 
 class Gameplay(commands.Cog):
@@ -27,7 +28,7 @@ class Gameplay(commands.Cog):
     @slash_cog(
         name="mend",
         options=[SlashOption(str, "character", description="The character to be mended")]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=debug.WHITELIST
     )
     async def mend(self, ctx, character=None):
         """Mend Superficial damage."""
@@ -37,7 +38,7 @@ class Gameplay(commands.Cog):
     @slash_cog(
         name="remorse",
         options=[SlashOption(str, "character", description="The character undergoing Remorse")]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def remorse(self, ctx, character=None):
@@ -57,7 +58,7 @@ class Gameplay(commands.Cog):
             SlashOption(int, "count", description="The number of Rouse checks to make"),
             SlashOption(str, "character")
         ]
-        #, guild_ids=[882411164468932609]
+        , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
     async def rouse(self, ctx, count=1, character=None):

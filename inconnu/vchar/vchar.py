@@ -151,6 +151,7 @@ class VChar:
         """The character's name."""
         return self._params["name"]
 
+
     @name.setter
     def name(self, new_name):
         """Set the character's name."""
@@ -163,6 +164,7 @@ class VChar:
         """The character's splat."""
         return self._params["splat"]
 
+
     @splat.setter
     def splat(self, new_splat):
         """Set the character's splat."""
@@ -174,6 +176,7 @@ class VChar:
     def humanity(self):
         """The character's humanity."""
         return self._params["humanity"]
+
 
     @humanity.setter
     def humanity(self, new_humanity):
@@ -188,6 +191,7 @@ class VChar:
         """The character's stains."""
         return self._params["stains"]
 
+
     @stains.setter
     def stains(self, new_stains):
         """Set the character's stains."""
@@ -199,6 +203,7 @@ class VChar:
     def health(self):
         """The character's health."""
         return self._params["health"]
+
 
     @health.setter
     def health(self, new_health):
@@ -212,6 +217,7 @@ class VChar:
         """The character's willpower."""
         return self._params["willpower"]
 
+
     @willpower.setter
     def willpower(self, new_willpower):
         """Set the character's willpower."""
@@ -223,6 +229,7 @@ class VChar:
     def hunger(self):
         """The character's hunger."""
         return self._params["hunger"]
+
 
     @hunger.setter
     def hunger(self, new_hunger):
@@ -236,6 +243,7 @@ class VChar:
         """The character's potency."""
         return self._params["potency"]
 
+
     @potency.setter
     def potency(self, new_potency):
         """Set the character's potency."""
@@ -247,6 +255,7 @@ class VChar:
     def current_xp(self):
         """The character's current xp."""
         return self._params["current_xp"]
+
 
     @current_xp.setter
     def current_xp(self, new_current_xp):
@@ -260,11 +269,21 @@ class VChar:
         """The character's total xp."""
         return self._params["total_xp"]
 
+
     @total_xp.setter
     def total_xp(self, new_total_xp):
         """Set the character's total xp."""
         self._params["total_xp"] = new_total_xp
         VChar._CHARS.update_one({ "_id": self._id }, { "$set": { "total_xp": new_total_xp } })
+
+
+    # Derived attributes
+
+    @property
+    def mend_amount(self):
+        """The amount of Superficial damage recovered when mending."""
+        mends = { 0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 5 }
+        return mends[self.potency]
 
 
     # Traits

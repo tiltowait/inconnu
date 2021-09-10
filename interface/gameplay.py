@@ -25,17 +25,13 @@ class Gameplay(commands.Cog):
 
 
     @slash_cog(
-        name="rouse",
-        options=[
-            SlashOption(int, "count", description="The number of Rouse checks to make"),
-            SlashOption(str, "character")
-        ]
+        name="mend",
+        options=[SlashOption(str, "character", description="The character to be mended")]
         #, guild_ids=[882411164468932609]
     )
-    @commands.guild_only()
-    async def rouse(self, ctx, count=1, character=None):
-        """Perform a rouse check."""
-        await inconnu.rousemorse.parse(ctx, "rouse", character, count)
+    async def mend(self, ctx, character=None):
+        """Mend Superficial damage."""
+        await inconnu.mend.process(ctx, character)
 
 
     @slash_cog(
@@ -53,3 +49,17 @@ class Gameplay(commands.Cog):
     async def resonance(self, ctx):
         """Generate a random Resonance."""
         await inconnu.resonance.generate(ctx)
+
+
+    @slash_cog(
+        name="rouse",
+        options=[
+            SlashOption(int, "count", description="The number of Rouse checks to make"),
+            SlashOption(str, "character")
+        ]
+        #, guild_ids=[882411164468932609]
+    )
+    @commands.guild_only()
+    async def rouse(self, ctx, count=1, character=None):
+        """Perform a rouse check."""
+        await inconnu.rousemorse.parse(ctx, "rouse", character, count)

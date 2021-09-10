@@ -6,7 +6,6 @@ import discord
 from discord_ui.components import LinkButton
 
 from . import paramupdate
-from .. import common
 from ..display import parse as display
 from ..vchar import errors, VChar
 
@@ -28,7 +27,7 @@ __KEYS = {
 }
 
 
-async def parse(ctx, parameters: str, character=None):
+async def parse(ctx, parameters: str, character=None, update_message=None):
     """
     Process the user's arguments.
     Allow the user to omit a character if they have only one.
@@ -47,9 +46,9 @@ async def parse(ctx, parameters: str, character=None):
         for parameter, new_value in parameters.items():
             __update_character(character, parameter, new_value)
 
-        await display(ctx, character.name)
+        await display(ctx, character.name, update_message)
 
-    except (SyntaxError, ValueError) as err:
+    except (SyntaxError, ValueError, errors.CharacterError) as err:
         await update_help(ctx, err)
 
 

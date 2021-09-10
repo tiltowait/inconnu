@@ -1,11 +1,12 @@
 """Set up the package interface."""
 
-from . import newchar
-from . import update
-from . import roll
-from . import display
-from . import rousemorse
-from . import resonance
 from . import delete
-from . import traits
+from . import display
 from . import macros
+from . import mend
+from . import newchar
+from . import resonance
+from . import roll
+from . import rousemorse
+from . import traits
+from . import update

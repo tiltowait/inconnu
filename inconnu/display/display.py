@@ -5,7 +5,7 @@ import discord
 from . import trackmoji
 from ..vchar import errors, VChar
 
-async def parse(ctx, character=None):
+async def parse(ctx, character=None, message=None):
     """Determine which character to display, then display them."""
     try:
         if character is None:
@@ -31,18 +31,22 @@ async def parse(ctx, character=None):
             character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
 
         # Character has been found
-        await __display_character(ctx, character)
+        await __display_character(ctx, character, message)
 
     except (ValueError, errors.CharacterError) as err:
         await ctx.respond(str(err), hidden=True)
 
 
-async def __display_character(ctx, character: VChar):
+async def __display_character(ctx, character: VChar, message=None):
     """Display the character's basic traits."""
     embed = discord.Embed(
         title=character.name,
         footer=f"To view traits: /traits list {character.name}"
     )
+
+    if message is not None:
+        embed.description = message
+
     embed.set_author(
         name=ctx.author.display_name,
         icon_url=ctx.author.avatar_url

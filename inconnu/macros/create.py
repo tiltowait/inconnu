@@ -16,7 +16,7 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
 
     try:
         character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
-    except (ValueError, errors.CharacterNotFoundError) as err:
+    except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return
 

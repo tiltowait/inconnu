@@ -40,7 +40,7 @@ async def prompt(ctx, character: str):
             await msg.edit(content="**Deletion canceled due to inactivity.**")
             await msg.disable_components()
 
-    except (ValueError, errors.CharacterNotFoundError) as err:
+    except errors.CharacterError as err:
         await ctx.respond(str(err), hidden=True)
 
 

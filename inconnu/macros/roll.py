@@ -13,15 +13,13 @@ async def process(ctx, syntax: str, character=None):
 
     try:
         macro_name, hunger, difficulty = __expand_syntax(syntax)
+        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
     except SyntaxError:
         err = "**Syntax:** `/vm <macro_name> [hunger] [difficulty]`"
         err += "\n\n `hunger` and `difficulty` are optional."
         await common.display_error(ctx, ctx.author.display_name, err)
         return
-
-    try:
-        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
-    except (ValueError, errors.CharacterNotFoundError) as err:
+    except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return
 

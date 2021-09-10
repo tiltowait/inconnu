@@ -28,7 +28,7 @@ async def parse(ctx, traits: str, character=None):
 
         await ctx.respond(embed=embed, hidden=True)
 
-    except (ValueError, SyntaxError, errors.CharacterNotFoundError) as err:
+    except (ValueError, SyntaxError, errors.CharacterError) as err:
         name = character.name if character is not None else ctx.author.display_name
         await common.display_error(ctx, name, err)
 

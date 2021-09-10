@@ -53,7 +53,7 @@ async def parse(ctx, args: str):
         # This is one of the few commands that can be rolled in DMs
         try:
             character = VChar.fallback_find(ctx.guild.id, ctx.author.id, args[0])
-        except errors.CharacterNotFoundError as err:
+        except errors.CharacterError as err:
             await ctx.reply(str(err))
             return
 

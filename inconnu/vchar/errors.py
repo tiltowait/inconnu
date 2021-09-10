@@ -1,7 +1,7 @@
 """exceptions.py - Character database exceptions."""
 
-class CharacterNotFoundError(Exception):
-    """Raised when a user specifies a nonexistent character."""
+class CharacterError(Exception):
+    """Raised when there is an issue fetching a character."""
 
 class TraitAlreadyExistsError(Exception):
     """Raised when the user tries to add an extant trait."""

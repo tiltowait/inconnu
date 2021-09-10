@@ -9,10 +9,7 @@ async def parse(ctx, character=None):
     """Present a character's traits to its owner."""
     try:
         character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
-
-        # Character obtained
-        traits = character.traits
-        traits = list(map(lambda row: f"**{row[0]}**: {row[1]}", list(traits.items())))
+        traits = map(lambda row: f"**{row[0]}**: {row[1]}", character.traits.items())
 
         embed = discord.Embed(
             title="Traits",
@@ -23,6 +20,6 @@ async def parse(ctx, character=None):
 
         await ctx.respond(embed=embed, hidden=True)
 
-    except (ValueError, errors.CharacterNotFoundError) as err:
+    except (ValueError, errors.CharacterError) as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return

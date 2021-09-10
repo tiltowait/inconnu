@@ -64,7 +64,7 @@ class VChar:
         """
         Fetch a character by the given name OR, if the user has only one character,
         fetch that.
-        Raises CharacterNotFoundError if they have more than one character.
+        Raises CharacterError if they have more than one character.
         """
         VChar.__prepare()
 
@@ -85,14 +85,14 @@ class VChar:
         if len(characters) == 0:
             return None
 
-        raise errors.CharacterNotFoundError("You must supply a valid character name.")
+        raise errors.CharacterError("You must supply a valid character name.")
 
 
     @classmethod
     def strict_find(cls, guild: int, user: int, name: str):
         """
         Fetch a character by name.
-        Raises CharacterNotFoundError if the character does not exist.
+        Raises CharacterError if the character does not exist.
         """
         VChar.__prepare()
 
@@ -102,10 +102,10 @@ class VChar:
                 return all_chars[0]
 
             if len(all_chars) == 0:
-                raise ValueError("You have no characters.")
+                raise errors.CharacterError("You have no characters.")
 
             if len(all_chars) > 1:
-                raise ValueError("You must supply a character name.")
+                raise errors.CharacterError("You must supply a character name.")
 
         query = {
             "guild": guild,
@@ -115,7 +115,7 @@ class VChar:
         character = VChar._CHARS.find_one(query)
 
         if character is None:
-            raise errors.CharacterNotFoundError(f"You do not have a character named `{name}`.")
+            raise errors.CharacterError(f"You do not have a character named `{name}`.")
 
         return VChar(character)
 

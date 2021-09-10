@@ -120,7 +120,15 @@ class VChar:
         character = VChar._CHARS.find_one(query)
 
         if character is None:
-            raise errors.CharacterError(f"You do not have a character named `{name}`.")
+            err = f"You do not have a character named `{name}`."
+
+            # Give them their character options
+            all_chars = VChar.all_characters(guild, user)
+            if len(all_chars) > 0:
+                err += "\n\n**Your characters:**\n"
+                err += "\n".join(map(lambda char: char.name, all_chars))
+
+            raise errors.CharacterError(err)
 
         return VChar(character)
 

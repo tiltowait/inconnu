@@ -1,5 +1,6 @@
 """stats.py - Various packages for user statistics."""
 
+import datetime
 import os
 
 import pymongo
@@ -41,12 +42,20 @@ class Stats:
         Stats.__prepare()
 
         if Stats._GUILDS.find_one({ "guild": guild }) is None:
-            Stats._GUILDS.insert_one({ "guild": guild, "name": name, "active": True })
+            Stats._GUILDS.insert_one({
+                "guild": guild,
+                "name": name,
+                "active": True,
+                "joined": datetime.datetime.utcnow(),
+                "left": None
+            })
         else:
             Stats._GUILDS.update_one({ "guild": guild }, {
                 "$set": {
                     "name": name, # The guild may have been renamed in the interim, so set the name
-                    "active": True
+                    "active": True,
+                    "joined": datetime.datetime.utcnow(), # Re-joined date
+                    "left": None
                 }
             })
 
@@ -58,7 +67,12 @@ class Stats:
         Args:
             guild (int): The guild's Discord ID
         """
-        Stats._GUILDS.update_one({ "guild": guild }, { "$set": { "active": False } })
+        Stats._GUILDS.update_one({ "guild": guild }, {
+            "$set": {
+                "active": False,
+                "left": datetime.datetime.utcnow()
+            }
+        })
 
 
     @classmethod

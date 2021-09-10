@@ -14,7 +14,7 @@ class RollResult:
             difficulty (int): The target number of successes
         """
         self.id = bson.objectid.ObjectId() # pylint: disable=invalid-name
-        self.reroll = None
+        self.strategy = None # The re-roll strategy
 
         self.normal = normal
         self.hunger = hunger

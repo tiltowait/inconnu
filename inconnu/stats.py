@@ -57,13 +57,14 @@ class Stats:
         """
         Stats._STATS.update_one({ "_id": outcome.id }, {
             "$set": {
-                "normal": outcome.normal.dice,
-                "margin": outcome.margin,
-                "outcome": outcome.outcome,
-                "reroll": outcome.reroll
+                "reroll": {
+                    "strategy": outcome.strategy,
+                    "dice": outcome.normal.dice,
+                    "margin": outcome.margin,
+                    "outcome": outcome.outcome
+                }
             }
         })
-
 
 
     @classmethod

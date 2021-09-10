@@ -28,17 +28,17 @@ async def wait_for_reroll(ctx, message, old_roll):
 
     if btn.custom_id == "reroll_failures":
         new_dice = __reroll_failures(old_roll.normal.dice)
-        old_roll.reroll = "failures"
+        old_roll.strategy = "failures"
         descriptor = "Rerolling Failures"
 
     elif btn.custom_id == "maximize_criticals":
         new_dice = __maximize_criticals(old_roll.normal.dice)
-        old_roll.reroll = "criticals"
+        old_roll.strategy = "criticals"
         descriptor = "Maximizing Criticals"
 
     elif btn.custom_id == "avoid_messy":
         new_dice = __avoid_messy(old_roll.normal.dice)
-        old_roll.reroll = "messy"
+        old_roll.strategy = "messy"
         descriptor = "Avoiding Messy Critical"
 
     new_throw = DiceThrow(new_dice)

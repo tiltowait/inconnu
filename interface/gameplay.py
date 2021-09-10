@@ -12,6 +12,9 @@ from . import debug
 class Gameplay(commands.Cog):
     """Gameplay-based commands."""
 
+    # This is a legacy command being left in place until Discord mandates its
+    # removal. Why? It's slightly faster to use. That's the only reason!
+
     @commands.command(
         name="v", aliases=["roll", "r"],
         brief=c_help.ROLL_BRIEF,
@@ -23,6 +26,20 @@ class Gameplay(commands.Cog):
         """Roll a dice pool, either raw or calculated from traits."""
         if args is not None:
             await inconnu.roll.parse(ctx, args)
+
+
+    @slash_cog(
+        name="vr", # Called "vr" instead of "roll" for quicker command entry
+        options=[
+            SlashOption(str, "syntax", description="The roll syntax", required=True),
+            SlashOption(str, "character", description="The performing the roll")
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    async def slash_roll(self, ctx, syntax: str, character=None):
+        """Roll the dice."""
+        await inconnu.roll.parse(ctx, syntax, character)
+
 
 
     @slash_cog(

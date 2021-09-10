@@ -32,7 +32,7 @@ class TraitInDMsError(Exception):
     """An error for when the user attempts to roll traits in a DM."""
 
 
-async def parse(ctx, syntax: str):
+async def parse(ctx, syntax: str, char_name=None):
     """Parse the user's arguments and attempt to roll the dice."""
 
     # Comments appear after the first # in a command
@@ -52,18 +52,24 @@ async def parse(ctx, syntax: str):
     if ctx.guild is not None:
         # This is one of the few commands that can be rolled in DMs
         try:
-            character = VChar.fallback_find(ctx.guild.id, ctx.author.id, args[0])
+            # For compatibility between the slash command and regular command
+            name = args[0] if char_name is None else char_name
+            character = VChar.fallback_find(ctx.guild.id, ctx.author.id, name)
+
         except errors.CharacterError as err:
             if __needs_character(syntax):
-                await ctx.reply(str(err))
+                await __respond_error(ctx, err)
                 return
 
         if character is not None and character.name.lower() == args[0].lower():
+            # Technically, we could wind up in a weird state here, but it's extremely unlikely
+            # that someone would both use the slash command *and* add a trait with the same
+            # name as their character
             del args[0]
 
             # Yell at the user if they only gave a character name and no roll syntax
             if len(args) == 0:
-                await ctx.reply("You need to tell me what to roll!")
+                await __respond_error(ctx, "You need to tell me what to roll!")
                 return
 
     # Attempt to parse the user's roll syntax
@@ -361,3 +367,13 @@ def __is_unsafe_dm_roll(ctx, args: str):
 def __needs_character(syntax: str):
     """Determines whether a roll needs a character."""
     return re.match(r"[A-z_]", syntax) is not None
+
+
+async def __respond_error(ctx, err):
+    """Replies or responds with an ephemeral message wherever available."""
+    err = str(err)
+
+    if hasattr(ctx, "respond"):
+        await ctx.respond(err, hidden=True)
+    else:
+        await ctx.reply(err)

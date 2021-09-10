@@ -9,9 +9,6 @@ from ..vchar import errors, VChar
 
 async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
     """Add traits to a character."""
-    character = None
-
-    # Got the character
     try:
         character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
         traits = parse_traits(*traits.split())
@@ -23,9 +20,10 @@ async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
             wizard = TraitWizard(ctx, character, wizard_traits)
             await wizard.begin()
 
-    except (ValueError, SyntaxError, errors.CharacterError) as err:
-        name = character.name if character is not None else ctx.author.display_name
-        await common.display_error(ctx, name, err)
+    except (ValueError, SyntaxError) as err:
+        await common.display_error(ctx, character.name, err)
+    except errors.CharacterError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
 
 
 def __handle_traits(character: VChar, traits: dict, overwriting: bool):

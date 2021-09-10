@@ -231,6 +231,15 @@ class VChar:
 
 
     @property
+    def willpower_recovery(self) -> int:
+        """The amount of Superficial Willpower damage healed per night."""
+        resolve = self.find_trait("Resolve")
+        composure = self.find_trait("Composure")
+
+        return max(resolve.rating, composure.rating)
+
+
+    @property
     def hunger(self):
         """The character's hunger."""
         return self._params["hunger"]

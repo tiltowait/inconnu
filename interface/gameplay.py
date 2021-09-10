@@ -65,3 +65,15 @@ class Gameplay(commands.Cog):
     async def rouse(self, ctx, count=1, character=None, purpose=None):
         """Perform a rouse check."""
         await inconnu.misc.rousemorse.parse(ctx, "rouse", character, count, purpose)
+
+
+    @slash_cog(
+        name="awaken",
+        options=[
+            SlashOption(str, "character", description="The character waking up"),
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    async def awaken(self, ctx, character=None):
+        """Perform a Rouse check and heal Superficial Willpower damage."""
+        await inconnu.misc.awaken.process(ctx, character)

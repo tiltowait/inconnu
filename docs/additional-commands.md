@@ -4,24 +4,13 @@
 
 Each command below is a "slash" or "application" command. As you type, Discord will automatically show a list of matching commands above your textbox, which you can tap or click to perform.
 
+## Awakening
+
+Each night a character wakes, they heal Superficial Willpower damage and make a Rouse check. **Inconnu** automates this process with the `/awaken` command. It will even tell you if you were unfortunate enough to fall into torpor!
+
 ## Mending Damage
 
 To mend Superficial damage, simply type `/mend` `[character]`. This will mend the appropriate amount of damage based on your Blood Potency (using the V5 Companion errata) and perform a Rouse check.
-
-## Rouse Checks
-
-**Inconnu** can perform basic Rouse checks. Additionally, **Inconnu** will automatically increase the indicated character's Hunger rating if the rouse is a failure.
-
-```
-/rouse [character] [count]
-```
-
-| Parameter   | Description                              |
-|-------------|------------------------------------------|
-| `count`     | The number of rouse checks to perform    |
-| `character` | The character performing the rouse check |
-
-!> At the time of this writing, **Inconnu** lacks the ability to perform a Rouse *re-roll*, such as one granted by Blood Potency. This functionality is a planned improvement.
 
 ## Remorse Checks
 
@@ -40,3 +29,22 @@ When a character has [Stains](character-tracking.md#tracker-updates), you may pe
 ## Resonance
 
 You may generate a random Resonance and Temperament with the `/resonance` command.
+
+## Rouse Checks
+
+**Inconnu** can perform basic Rouse checks. Additionally, **Inconnu** will automatically increase the indicated character's Hunger rating if the rouse is a failure.
+
+```
+/rouse [character] [count]
+```
+
+| Parameter   | Description                              |
+|-------------|------------------------------------------|
+| `count`     | The number of rouse checks to perform    |
+| `character` | The character performing the rouse check |
+
+!> At the time of this writing, **Inconnu** lacks the ability to perform a Rouse *re-roll*, such as one granted by Blood Potency. This functionality is a planned improvement.
+
+## Slaking Hunger
+
+As a shorthand for `/character update hunger=-X`, the `/slake` command allows you to quickly reduce your Hunger by whatever amount you specify.

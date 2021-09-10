@@ -9,6 +9,7 @@ class Stats:
     """Roll outcome logging."""
     _CLIENT = None
     _STATS = None
+    _GUILDS = None
 
 
     @classmethod
@@ -28,6 +29,50 @@ class Stats:
         else:
             Stats.__update_roll(outcome)
 
+
+    @classmethod
+    def guild_joined(cls, guild, name):
+        """
+        Log whenever a guild is joined.
+        Args:
+            guild (int): The guild's Discord ID
+            name (str): The guild's name
+        """
+        Stats.__prepare()
+
+        if Stats._GUILDS.find_one({ "guild": guild }) is None:
+            Stats._GUILDS.insert_one({ "guild": guild, "name": name, "active": True })
+        else:
+            Stats._GUILDS.update_one({ "guild": guild }, {
+                "$set": {
+                    "name": name, # The guild may have been renamed in the interim, so set the name
+                    "active": True
+                }
+            })
+
+
+    @classmethod
+    def guild_left(cls, guild):
+        """
+        Log whenever a guild is deleted or Inconnu is kicked from a guild.
+        Args:
+            guild (int): The guild's Discord ID
+        """
+        Stats._GUILDS.update_one({ "guild": guild }, { "$set": { "active": False } })
+
+
+    @classmethod
+    def guild_renamed(cls, guild, new_name):
+        """
+        Log guild renames.
+        Args:
+            guild (int): The guild's Discord ID
+            name (str): The guild's name
+        """
+        Stats._GUILDS.update_one({ "guild": guild }, { "$set": { "name": new_name } })
+
+
+    # Roll logging helpers
 
     @classmethod
     def __add_roll(cls, guild: int, user: int, char, outcome):
@@ -73,10 +118,10 @@ class Stats:
         try:
             Stats._CLIENT.admin.command('ismaster')
         except (AttributeError, pymongo.errors.ConnectionFailure):
-            print("Establishing MongoDB connection.")
             Stats._CLIENT = None
         finally:
             if Stats._CLIENT is None:
                 mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
                 Stats._CLIENT = mongo
                 Stats._STATS = mongo.inconnu.statistics
+                Stats._GUILDS = mongo.inconnu.guilds

@@ -28,9 +28,10 @@ async def parse(ctx, traits: str, character=None):
 
         await ctx.respond(embed=embed, hidden=True)
 
-    except (ValueError, SyntaxError, errors.CharacterError) as err:
-        name = character.name if character is not None else ctx.author.display_name
-        await common.display_error(ctx, name, err)
+    except (ValueError, SyntaxError) as err:
+        await common.display_error(ctx, character.name, err)
+    except errors.CharacterError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
 
 
 def __validate_traits(character: VChar, *traits):
@@ -45,7 +46,7 @@ def __validate_traits(character: VChar, *traits):
         # We check but do not delete traits yet, because we want to delete them all
         # in one go. This is easier on the user, because they can just copy + paste
         # after fixing a typo or what-have-you.
-        _ = character.find_trait(trait) # Raised exception will trigger failure
+        _ = character.find_trait(trait, exact=True) # Raised exception will trigger failure
 
 
 def __delete_traits(character: VChar, *traits):

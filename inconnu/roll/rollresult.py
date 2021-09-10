@@ -20,7 +20,7 @@ class RollResult:
         self.hunger = hunger
         self.pool = normal.count + hunger.count
         self.difficulty = difficulty
-        self.pool_str = pool_str if len(pool_str) > 0 else None
+        self.pool_str = pool_str if not pool_str.isdigit() else None
         self.descriptor = None
 
 

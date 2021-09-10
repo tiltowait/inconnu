@@ -175,10 +175,8 @@ async def __evaluate_syntax(character: VChar, *args):
     evaluated_stack = __combine_operators(*substituted_stack)
 
     # Lop off Hunger and Difficulty from the trait stack, leaving just the pool behind
-    str_evalled = list(map(str, evaluated_stack))
-
-    while len(trait_stack) > 0 and trait_stack[-1] == str_evalled[-1]:
-        del trait_stack[-1], str_evalled[-1]
+    while len(trait_stack) > 1 and trait_stack[-2] not in ["+", "-"]:
+        trait_stack = trait_stack[:-1]
 
     pool_str = " ".join(trait_stack)
     return pool_str, evaluated_stack

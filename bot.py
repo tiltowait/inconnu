@@ -24,7 +24,7 @@ async def help_command(ctx):
     )
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
-    embed.add_field(name="Roll", value="`/v pool hunger difficulty`", inline=False)
+    embed.add_field(name="Roll", value="`/vr pool hunger difficulty`", inline=False)
     char_info = "`/character create`\nIf you have a character, you can use their traits in rolls."
     embed.add_field(name="Create a character", value=char_info, inline=False)
     embed.add_field(name="Display character", value="`/character display`", inline=False)

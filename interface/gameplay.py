@@ -56,11 +56,12 @@ class Gameplay(commands.Cog):
         name="rouse",
         options=[
             SlashOption(int, "count", description="The number of Rouse checks to make"),
-            SlashOption(str, "character")
+            SlashOption(str, "character", description="The character performing the check"),
+            SlashOption(str, "purpose", description="The reason for the check"),
         ]
         , guild_ids=debug.WHITELIST
     )
     @commands.guild_only()
-    async def rouse(self, ctx, count=1, character=None):
+    async def rouse(self, ctx, count=1, character=None, purpose=None):
         """Perform a rouse check."""
-        await inconnu.misc.rousemorse.parse(ctx, "rouse", character, count)
+        await inconnu.misc.rousemorse.parse(ctx, "rouse", character, count, purpose)

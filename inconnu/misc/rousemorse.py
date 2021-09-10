@@ -9,13 +9,13 @@ from ..display import trackmoji
 from ..vchar import errors, VChar
 
 
-async def parse(ctx, key: str, character: str, count=0):
+async def parse(ctx, key: str, character: str, count=0, purpose=None):
     """Determine whether to perform a rouse or remorse check."""
     try:
         character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
 
         if key == "rouse":
-            await __rouse_result(ctx, character, count)
+            await __rouse_result(ctx, character, count, purpose)
         elif key == "remorse":
             await __remorse_result(ctx, character)
 
@@ -23,7 +23,7 @@ async def parse(ctx, key: str, character: str, count=0):
         await common.display_error(ctx, ctx.author.display_name, err)
 
 
-async def __rouse_result(ctx, character: VChar, rolls: int):
+async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):
     """Process the rouse result and display to the user."""
     if character.hunger == 5:
         await ctx.respond(f"{character.name}'s Hunger is already 5!")
@@ -56,9 +56,12 @@ async def __rouse_result(ctx, character: VChar, rolls: int):
     embed.set_author(name=character.name, icon_url=ctx.author.avatar_url)
     embed.add_field(name="New Hunger", value=trackmoji.emojify_hunger(new_hunger))
 
+    footer = purpose + "\n" if purpose is not None else ""
     potential_stains = tens + ones
     if potential_stains > 0:
-        embed.set_footer(text=f"If this was an Oblivion roll, gain {potential_stains} stains!")
+        footer += f"If this was an Oblivion roll, gain {potential_stains} stains!"
+
+    embed.set_footer(text=footer)
 
     await ctx.respond(embed=embed)
     character.hunger = new_hunger

@@ -13,9 +13,14 @@ from . import errors
 
 class VChar:
     """A class that maintains a character's property and automatically manages persistence."""
-    _CHARS = None # A MongoDB collection
-    _TRAITS = None
-    _MACROS = None
+
+    # We keep characters, traits, and macros all in their own collections in order to
+    # massively simplify queries and lookups.
+
+    _CLIENT = None # MongoDB client
+    _CHARS = None # Characters collection
+    _TRAITS = None # Traits collection
+    _MACROS = None # Macros collection
 
     def __init__(self, params: dict):
         VChar.__prepare()
@@ -413,8 +418,15 @@ class VChar:
     @classmethod
     def __prepare(cls):
         """Prepare the database."""
-        if VChar._CHARS is None:
-            mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
-            VChar._CHARS = mongo.inconnu.characters
-            VChar._TRAITS = mongo.inconnu.traits
-            VChar._MACROS = mongo.inconnu.macros
+        try:
+            VChar._CLIENT.admin.command('ismaster')
+        except (AttributeError, pymongo.errors.ConnectionFailure):
+            print("Establishing MongoDB connection.")
+            VChar._CLIENT = None
+        finally:
+            if VChar._CLIENT is None:
+                mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
+                VChar._CLIENT = mongo
+                VChar._CHARS = mongo.inconnu.characters
+                VChar._TRAITS = mongo.inconnu.traits
+                VChar._MACROS = mongo.inconnu.macros

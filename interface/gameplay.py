@@ -31,7 +31,7 @@ class Gameplay(commands.Cog):
     )
     async def mend(self, ctx, character=None):
         """Mend Superficial damage."""
-        await inconnu.mend.process(ctx, character)
+        await inconnu.misc.mend.process(ctx, character)
 
 
     @slash_cog(
@@ -42,13 +42,13 @@ class Gameplay(commands.Cog):
     @commands.guild_only()
     async def remorse(self, ctx, character=None):
         """Perform a remorse check."""
-        await inconnu.rousemorse.parse(ctx, "remorse", character)
+        await inconnu.misc.rousemorse.parse(ctx, "remorse", character)
 
 
     @slash_cog(name="resonance")
     async def resonance(self, ctx):
         """Generate a random Resonance."""
-        await inconnu.resonance.generate(ctx)
+        await inconnu.misc.resonance.generate(ctx)
 
 
     @slash_cog(
@@ -62,4 +62,4 @@ class Gameplay(commands.Cog):
     @commands.guild_only()
     async def rouse(self, ctx, count=1, character=None):
         """Perform a rouse check."""
-        await inconnu.rousemorse.parse(ctx, "rouse", character, count)
+        await inconnu.misc.rousemorse.parse(ctx, "rouse", character, count)

@@ -4,9 +4,9 @@ import random
 
 import discord
 
-from . import common
-from .display import trackmoji
-from .vchar import VChar
+from .. import common
+from ..display import trackmoji
+from ..vchar import VChar
 
 
 async def parse(ctx, key: str, character: str, count=0):

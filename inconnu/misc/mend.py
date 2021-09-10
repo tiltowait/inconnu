@@ -2,10 +2,10 @@
 
 import random
 
-from . import common
-from . import constants
-from .update import parse as update
-from .vchar import errors, VChar
+from .. import common
+from .. import constants
+from ..update import parse as update
+from ..vchar import errors, VChar
 
 async def process(ctx, character=None):
     """Mend damage on a character OR the user's only character."""

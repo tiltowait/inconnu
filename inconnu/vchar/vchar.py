@@ -22,6 +22,7 @@ class VChar:
     _TRAITS = None # Traits collection
     _MACROS = None # Macros collection
 
+
     def __init__(self, params: dict):
         VChar.__prepare()
         self._params = params
@@ -78,14 +79,16 @@ class VChar:
             return VChar(character)
 
         # Their character didn't match. Find all their characters
-        characters = list(VChar._CHARS.find({ "guild": guild, "user": user }))
+        characters = VChar.all_characters(guild, user)
         if len(characters) == 1:
-            return VChar(characters[0])
+            return characters[0]
 
         if len(characters) == 0:
             return None
 
-        raise errors.CharacterError("You must supply a valid character name.")
+        err = "You must supply a valid character name.\n\n**Your characters:**\n"
+        err += "\n".join(map(lambda char: char.name, characters))
+        raise errors.CharacterError(err)
 
 
     @classmethod
@@ -105,7 +108,9 @@ class VChar:
                 raise errors.CharacterError("You have no characters.")
 
             if len(all_chars) > 1:
-                raise errors.CharacterError("You must supply a character name.")
+                err = "You must supply a valid character name.\n\n**Your characters:**\n"
+                err += "\n".join(map(lambda char: char.name, all_chars))
+                raise errors.CharacterError(err)
 
         query = {
             "guild": guild,

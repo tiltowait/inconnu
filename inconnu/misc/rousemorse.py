@@ -6,7 +6,7 @@ import discord
 
 from .. import common
 from ..display import trackmoji
-from ..vchar import VChar
+from ..vchar import errors, VChar
 
 
 async def parse(ctx, key: str, character: str, count=0):
@@ -19,7 +19,7 @@ async def parse(ctx, key: str, character: str, count=0):
         elif key == "remorse":
             await __remorse_result(ctx, character)
 
-    except ValueError as err:
+    except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
 
 

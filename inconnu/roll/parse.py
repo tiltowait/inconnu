@@ -31,21 +31,20 @@ class TraitInDMsError(Exception):
     """An error for when the user attempts to roll traits in a DM."""
 
 
-async def parse(ctx, args: str):
+async def parse(ctx, syntax: str):
     """Parse the user's arguments and attempt to roll the dice."""
 
     # Comments appear after the first # in a command
     comment = None
-    if "#" in args:
-        args, comment = args.split("#", 1)
+    if "#" in syntax:
+        syntax, comment = syntax.split("#", 1)
         comment = comment.strip()
 
-    if __is_unsafe_dm_roll(ctx, args):
+    if __is_unsafe_dm_roll(ctx, syntax):
         await common.display_error(ctx, ctx.author.display_name, "You cannot roll traits in DMs!")
         return
 
-    args = args.split()
-    args = list(args) # To allow for item deletion
+    args = syntax.split()
     character = None
 
     # Determine the character being used, if any
@@ -54,8 +53,9 @@ async def parse(ctx, args: str):
         try:
             character = VChar.fallback_find(ctx.guild.id, ctx.author.id, args[0])
         except errors.CharacterError as err:
-            await ctx.reply(str(err))
-            return
+            if __needs_character(syntax):
+                await ctx.reply(str(err))
+                return
 
         if character is not None and character.name.lower() == args[0].lower():
             del args[0]
@@ -68,7 +68,8 @@ async def parse(ctx, args: str):
     # Attempt to parse the user's roll syntax
     try:
         results = await perform_roll(character, *args)
-        await display_outcome(ctx, character.name, results, comment)
+        name = character.name if character is not None else ctx.author.display_name
+        await display_outcome(ctx, name, results, comment)
 
     except (SyntaxError, ValueError) as err:
         name = character.name if character is not None else ctx.author.display_name
@@ -345,7 +346,9 @@ def __is_unsafe_dm_roll(ctx, args: str):
     if ctx.guild is not None:
         return False
 
-    if re.match(r"[A-z_]", args) is not None:
-        return True
+    return __needs_character(args)
 
-    return False
+
+def __needs_character(syntax: str):
+    """Determines whether a roll needs a character."""
+    return re.match(r"[A-z_]", syntax) is not None

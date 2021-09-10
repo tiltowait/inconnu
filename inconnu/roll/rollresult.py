@@ -1,5 +1,8 @@
 """rollresult.py - Class for calculating the results of a roll."""
 
+import bson
+
+
 class RollResult:
     """A container class that determines the result of a roll."""
 
@@ -10,6 +13,9 @@ class RollResult:
             hunger (DiceThrow): The rolled hunger dice
             difficulty (int): The target number of successes
         """
+        self.id = bson.objectid.ObjectId() # pylint: disable=invalid-name
+        self.reroll = None
+
         self.normal = normal
         self.hunger = hunger
         self.pool = normal.count + hunger.count
@@ -58,6 +64,24 @@ class RollResult:
 
         # Bestial failure
         return "**BESTIAL FAILURE!**"
+
+
+    @property
+    def outcome(self):
+        """Simplified version of main_takeaway. Used in logs."""
+        if self.is_critical:
+            return "critical"
+        if self.is_messy:
+            return "messy"
+        if self.is_successful:
+            return "success"
+        if self.is_failure:
+            return "fail"
+        if self.is_total_failure:
+            return "total_fail"
+
+        # Bestial failure
+        return "bestial"
 
 
     # Roll Reflection

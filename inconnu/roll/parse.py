@@ -21,6 +21,7 @@ from .roll import _roll_pool
 from . import dicemoji
 from . import reroll
 from .. import common
+from .. import stats
 from ..vchar import errors, VChar
 from ..constants import DAMAGE
 
@@ -69,16 +70,26 @@ async def parse(ctx, syntax: str):
     try:
         results = await perform_roll(character, *args)
         name = character.name if character is not None else ctx.author.display_name
-        await display_outcome(ctx, name, results, comment)
+        await display_outcome(ctx, character, results, comment)
 
     except (SyntaxError, ValueError) as err:
         name = character.name if character is not None else ctx.author.display_name
         await common.display_error(ctx, name, str(err))
 
 
-async def display_outcome(ctx, character_name, results, comment, rerolled=False):
+async def display_outcome(ctx, character, results, comment, rerolled=False):
     """Display the roll results in a nice embed."""
-    character_name = character_name or ctx.author.display_name
+    # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
+    stats.Stats.log_roll(ctx.guild.id, ctx.author.id, character, results)
+
+    # Determine the name for the "author" field
+    character_name = None
+    if isinstance(character, str):
+        character_name = character
+    elif isinstance(character, VChar):
+        character_name = character.name
+    else:
+        character_name = ctx.author.display_name
 
     title = results.main_takeaway
     if not results.is_total_failure and not results.is_bestial:

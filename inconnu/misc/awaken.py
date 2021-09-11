@@ -4,8 +4,8 @@ import random
 
 from .. import common
 from .. import constants
-from .. import update
 from ..vchar import errors, VChar
+from ..character import update
 
 async def process(ctx, character=None):
     """Perform a Rouse check and heal Superficial Willpower damage."""

@@ -1,9 +1,9 @@
-"""update/paramupdate.py - Functions for updating a character's non-trait parameters."""
+"""character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
 
 import re
 
-from ..constants import DAMAGE
-from ..vchar import VChar
+from ...constants import DAMAGE
+from ...vchar import VChar
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal"]
 

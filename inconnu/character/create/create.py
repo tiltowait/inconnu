@@ -1,14 +1,14 @@
-"""newchar.py - Handle new character creation."""
+"""character/create/create.py - Handle new character creation."""
 
 import re
 from types import SimpleNamespace as SN
 
 from . import wizard
-from ..vchar import VChar
-from .. import common
+from ...vchar import VChar
+from ... import common
 
 
-async def create(ctx, name: str, splat: str, humanity: int, health: int, willpower: int):
+async def process(ctx, name: str, splat: str, humanity: int, health: int, willpower: int):
     """Parse and handle character creation arguments."""
     try:
         __validate_parameters(name, humanity, health, willpower) # splat is guaranteed correct

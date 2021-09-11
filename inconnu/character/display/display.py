@@ -1,9 +1,9 @@
-"""display.py - Tools for displaying characters."""
+"""character/display/display.py - Tools for displaying characters."""
 
 import discord
 
 from . import trackmoji
-from ..vchar import errors, VChar
+from ...vchar import errors, VChar
 
 async def parse(ctx, character=None, message=None):
     """Determine which character to display, then display them."""

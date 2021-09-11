@@ -1,11 +1,11 @@
-"""wizard.py - The new character wizard."""
+"""character/create/wizard.py - The new character wizard."""
 
 import asyncio
 
 import discord
 from discord_ui import SelectMenu, SelectOption
 
-from ..vchar import VChar
+from ...vchar import VChar
 
 class Wizard:
     """A helper class that guides a user through the chargen process."""

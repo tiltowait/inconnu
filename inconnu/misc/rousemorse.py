@@ -1,11 +1,11 @@
-"""rousemorse.py - Perform rouse checks."""
+"""misc/rousemorse.py - Perform rouse checks."""
 
 import random
 
 import discord
 
 from .. import common
-from ..display import trackmoji
+from ..character.display import trackmoji
 from ..vchar import errors, VChar
 
 

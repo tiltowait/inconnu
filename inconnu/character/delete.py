@@ -5,7 +5,7 @@ import asyncio
 import discord
 from discord_ui import Button
 
-from .vchar import errors, VChar
+from ..vchar import errors, VChar
 
 
 async def prompt(ctx, character: str):

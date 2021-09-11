@@ -1,4 +1,4 @@
-"""update/parse.py - Defines an interface for updating character traits."""
+"""character/update/parse.py - Defines an interface for updating character traits."""
 
 import re
 
@@ -7,7 +7,7 @@ from discord_ui.components import LinkButton
 
 from . import paramupdate
 from ..display import parse as display
-from ..vchar import errors, VChar
+from ...vchar import errors, VChar
 
 __KEYS = {
     "name": "The character's name",

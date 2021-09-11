@@ -1,6 +1,6 @@
-"""display/trackmoji.py - A tool for converting a stress track to emoji."""
+"""character/display/trackmoji.py - A tool for converting a stress track to emoji."""
 
-from ..constants import DAMAGE
+from ...constants import DAMAGE
 
 __EMOJIS = {
     DAMAGE.none: "<:no_dmg:883516968777449472>",

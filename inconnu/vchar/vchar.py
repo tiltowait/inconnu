@@ -462,7 +462,6 @@ class VChar:
         try:
             VChar._CLIENT.admin.command('ismaster')
         except (AttributeError, pymongo.errors.ConnectionFailure):
-            print("Establishing MongoDB connection.")
             VChar._CLIENT = None
         finally:
             if VChar._CLIENT is None:

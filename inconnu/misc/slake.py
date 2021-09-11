@@ -1,7 +1,7 @@
 """misc/slake.py - Slake 1 or more Hunger."""
 
 from .. import common
-from .. import update
+from ..character import update
 from ..vchar import errors, VChar
 
 async def process(ctx, amount, character=None):

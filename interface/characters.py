@@ -58,7 +58,7 @@ class Characters(commands.Cog, name="Character Management"):
         self, ctx, name: str, splat: str, humanity: int, health: int, willpower: int
     ):
         """Create a new character."""
-        await inconnu.newchar.create(ctx, name, splat, humanity, health, willpower)
+        await inconnu.character.create.process(ctx, name, splat, humanity, health, willpower)
 
 
     @subslash_cog(
@@ -71,7 +71,7 @@ class Characters(commands.Cog, name="Character Management"):
     @commands.guild_only()
     async def display_character(self, ctx, character=None):
         """Display a character's basic traits"""
-        await inconnu.display.parse(ctx, character)
+        await inconnu.character.display.parse(ctx, character)
 
 
     @subslash_cog(
@@ -87,7 +87,7 @@ class Characters(commands.Cog, name="Character Management"):
     @commands.guild_only()
     async def update_character(self, ctx, parameters: str, character=None):
         """Update a character's parameters but not the traits."""
-        await inconnu.update.parse(ctx, parameters, character)
+        await inconnu.character.update.parse(ctx, parameters, character)
 
 
     @subslash_cog(
@@ -102,7 +102,7 @@ class Characters(commands.Cog, name="Character Management"):
     @commands.guild_only()
     async def delete_character(self, ctx, character: str):
         """Delete a character."""
-        await inconnu.delete.prompt(ctx, character)
+        await inconnu.character.delete.prompt(ctx, character)
 
 
     @subslash_cog(
@@ -114,4 +114,4 @@ class Characters(commands.Cog, name="Character Management"):
     @commands.guild_only()
     async def character_updates_help(self, ctx):
         """Display the valid character update keys."""
-        await inconnu.update.update_help(ctx, hidden=False)
+        await inconnu.character.update.update_help(ctx, hidden=False)

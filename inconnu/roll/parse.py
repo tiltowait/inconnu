@@ -12,7 +12,7 @@
 
 import re
 import asyncio
-from collections import namedtuple
+from types import SimpleNamespace as SN
 
 import discord
 from discord_ui import Button
@@ -26,7 +26,6 @@ from ..vchar import errors, VChar
 from ..constants import DAMAGE
 
 __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
-RollParameters = namedtuple("RollParameters", ["pool", "hunger", "difficulty"])
 
 class TraitInDMsError(Exception):
     """An error for when the user attempts to roll traits in a DM."""
@@ -304,7 +303,7 @@ def __combine_operators(*stack):
     padding = [0 for _ in range(3 - len(compact_stack))]
     compact_stack.extend(padding)
 
-    return RollParameters(*compact_stack)
+    return SN(pool=compact_stack[0], hunger=compact_stack[1], difficulty=compact_stack[2])
 
 
 def __get_universal_trait(character: VChar, trait):

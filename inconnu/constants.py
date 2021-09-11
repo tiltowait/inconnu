@@ -2,11 +2,10 @@
 
 import re
 
-from collections import namedtuple
+from types import SimpleNamespace
 
 # Tracker Stress
-__Damage = namedtuple("Damage", ["none", "superficial", "aggravated"]) #pylint: disable=invalid-name
-DAMAGE = __Damage(".", "/", "x")
+DAMAGE = SimpleNamespace(none=".", superficial="/", aggravated="x")
 
 SKILLS_AND_ATTRIBUTES = [
     "strength", "dexterity", "stamina", "charisma", "manipulation", "composure",

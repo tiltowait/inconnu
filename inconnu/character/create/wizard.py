@@ -106,7 +106,8 @@ class Wizard:
             menu = await query_msg.wait_for("select", self.ctx.bot, timeout=60)
             await menu.respond()
 
-            rating = int(menu.selected_values[0].value)
+            rating = int(menu.selected_values[0])
+            print(rating)
             await self.__assign_next_trait(rating)
 
         except asyncio.exceptions.TimeoutError:

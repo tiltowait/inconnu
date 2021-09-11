@@ -56,7 +56,8 @@ class TraitWizard:
 
             # Process response
             trait = self.traits.pop(0)
-            rating = int(btn.selected_values[0].value)
+            rating = int(btn.selected_values[0])
+            print(rating)
 
             self.ratings[trait] = rating
 

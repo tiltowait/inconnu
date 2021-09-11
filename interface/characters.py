@@ -29,25 +29,25 @@ class Characters(commands.Cog, name="Character Management"):
             SlashOption(str, "splat",
                 description="The character type",
                 choices=[
-                    {"name": "vampire", "value": "vampire"},
-                    {"name": "ghoul", "value": "ghoul"},
-                    {"name": "mortal", "value": "mortal"}
+                    ("vampire", "vampire"),
+                    ("ghoul", "ghoul"),
+                    ("ghoul", "ghoul")
                 ],
                 required=True
             ),
             SlashOption(int, "humanity",
                 description="Humanity rating (0-10)",
-                choices=[{"name": str(n), "value": n} for n in range(0, 11)],
+                choices=[(str(n), n) for n in range(0, 11)],
                 required=True
             ),
             SlashOption(int, "health",
                 description="Health levels (4-15)",
-                choices=[{"name": str(n), "value": n} for n in range(4, 16)],
+                choices=[(str(n), n) for n in range(4, 16)],
                 required=True
             ),
             SlashOption(int, "willpower",
                 description="Willpower levels (3-15)",
-                choices=[{"name": str(n), "value": n} for n in range(3, 16)],
+                choices=[(str(n), n) for n in range(3, 16)],
                 required=True
             )
         ]

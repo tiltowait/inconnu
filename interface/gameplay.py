@@ -103,7 +103,7 @@ class Gameplay(commands.Cog):
         options=[
             SlashOption(int, "amount",
                 description="How much Hunger to slake",
-                choices=[{"name": str(n), "value": n} for n in range(1, 6)],
+                choices=[(str(n), n) for n in range(1, 6)],
                 required=True
             ),
             SlashOption(str, "character", description="The character performing the check"),

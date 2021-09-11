@@ -138,7 +138,7 @@ def __update_track(character: VChar, tracker: str, new_len: int):
 
 
 # pylint: disable=too-many-arguments
-def __update_damage(character: VChar, tracker: str, dtype: str, delta: int):
+def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int):
     """
     Update a character's tracker damage.
     Args:
@@ -147,51 +147,24 @@ def __update_damage(character: VChar, tracker: str, dtype: str, delta: int):
         type (str): "/" or "x"
         delta (int): The amount to add or remove
 
-    Does not catch exceptions.
+    Raises ValueError if delta_str can't be made an integer.
     """
-    setting = False
-
-    # If the user doesn't supply a sign, they are setting the XP total rather
-    # than modifying it
-    if isinstance(delta, str):
-        if delta[0] not in ["+", "-"]:
-            setting = True
-
-    delta = int(delta)
-
     if tracker not in ["health", "willpower"]:
         raise SyntaxError(f"Unknown tracker {tracker}")
-
     if not dtype in [DAMAGE.superficial, DAMAGE.aggravated]:
         raise SyntaxError(f"Unknown damage type: {dtype}")
 
-    track = getattr(character, tracker) # Get
-    track_size = len(track)
+    # If the user doesn't supply a sign, they are setting the XP total rather
+    # than modifying it
 
-    fine = track.count(DAMAGE.none)
-    sup = track.count(DAMAGE.superficial)
-    agg = track.count(DAMAGE.aggravated)
-
-    if dtype == DAMAGE.superficial:
-        sup = delta if setting else sup + delta
-    else:
-        agg = delta if setting else agg + delta
-
-    fine = DAMAGE.none * fine
-    sup = DAMAGE.superficial * sup
-    agg = DAMAGE.aggravated * agg
-
-    track = f"{fine}{sup}{agg}"
-
-    if len(track) > track_size:
-        track = track[-track_size:]
-    else:
-        track = track.rjust(track_size, DAMAGE.none)
-
-    if tracker == "health":
-        character.health = track
-    else:
-        character.willpower = track
+    try:
+        delta = int(delta_str)
+        if isinstance(delta_str, str) and delta_str[0] in ["+", "-"]:
+            character.apply_damage(tracker, dtype, delta)
+        else:
+            character.set_damage(tracker, dtype, delta)
+    except ValueError as err:
+        raise ValueError(f"Expected a number. Got `{delta_str}`.") from err
 
 
 def __update_xp(character: VChar, xp_type: str, delta: str):

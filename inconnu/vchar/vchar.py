@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import pymongo
 
 from . import errors
+from ..constants import DAMAGE
 
 
 class VChar:
@@ -422,6 +423,99 @@ class VChar:
         VChar._MACROS.delete_one({ "charid": self.id, "name": macro.name })
 
 
+    # Specialized mutators
+
+    def set_damage(self, tracker: str, severity: str, amount: int):
+        """
+        Set the current damage level.
+        Args:
+            tracker (str): "willpower" or "health"
+            severity (str): DAMAGE.superficial or DAMAGE.aggravated
+            amount (int): The amount to set it to
+        """
+        if not severity in [DAMAGE.superficial, DAMAGE.aggravated]:
+            raise SyntaxError("Severity must be superficial or aggravated.")
+        if not tracker in ["health", "willpower"]:
+            raise SyntaxError("Tracker must be health or willpower.")
+
+        cur_track = self._params[tracker]
+        sup = cur_track.count(DAMAGE.superficial)
+        agg = cur_track.count(DAMAGE.aggravated)
+
+        if severity == DAMAGE.superficial:
+            old_damage = sup
+            sup = amount
+            new_damage = sup
+        else:
+            old_damage = agg
+            agg = amount
+            new_damage = agg
+
+        unhurt = (len(cur_track) - sup - agg) * DAMAGE.none
+        sup = sup * DAMAGE.superficial
+        agg = agg * DAMAGE.aggravated
+
+        new_track = unhurt + sup + agg
+        new_track = new_track[-len(cur_track):] # Shrink it if necessary
+
+        if tracker == "health":
+            self.health = new_track
+        else:
+            self.willpower = new_track
+
+        log_key = tracker + "_"
+        log_key += "superficial" if severity == DAMAGE.superficial else "aggravated"
+        self.log(log_key, new_damage - old_damage)
+
+
+    def apply_damage(self, tracker: str, severity: str, amount: int):
+        """
+        Apply Superficial damage.
+        Args:
+            tracker (str): "willpower" or "health"
+            severity (str): DAMAGE.superficial or DAMAGE.aggravated
+            amount (int): The amount to apply
+        If the damage exceeds the tracker, it will wrap around to aggravated.
+        """
+        if not severity in [DAMAGE.superficial, DAMAGE.aggravated]:
+            raise SyntaxError("Severity must be superficial or aggravated.")
+        if not tracker in ["health", "willpower"]:
+            raise SyntaxError("Tracker must be health or willpower.")
+
+        cur_track = self._params[tracker]
+        cur_unhurt = cur_track.count(DAMAGE.none)
+        sup = cur_track.count(DAMAGE.superficial)
+        agg = cur_track.count(DAMAGE.aggravated)
+
+        if severity == DAMAGE.superficial:
+            sup += amount
+        else:
+            agg += amount
+
+        new_track = (len(cur_track) - sup - agg) * DAMAGE.none
+        new_track += sup * DAMAGE.superficial
+        new_track += agg * DAMAGE.aggravated
+
+        new_track = new_track[-len(cur_track):] # Shrink it if necessary
+
+        if tracker == "health":
+            self.health = new_track
+        else:
+            self.willpower = new_track
+
+        log_key = tracker + "_"
+        if severity == DAMAGE.superficial:
+            log_key += "superficial"
+            if amount > cur_unhurt:
+                self.apply_damage(tracker, DAMAGE.aggravated, amount - cur_unhurt)
+                self.log(log_key, cur_unhurt)
+            else:
+                self.log(log_key, amount)
+        else:
+            log_key += "aggravated"
+            self.log(log_key, amount)
+
+
     # Misc
 
     def delete_character(self) -> bool:
@@ -433,7 +527,15 @@ class VChar:
 
     def log(self, key, increment=1):
         """Updates the log for a given field."""
-        if key not in ["remorse", "rouse", "slake"]:
+        if increment < 1:
+            return
+
+        valid_keys = [
+            "remorse", "rouse", "slake",
+            "health_superficial", "health_aggravated",
+            "willpower_superficial", "willpower_aggravated"
+        ]
+        if key not in valid_keys:
             raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
 
         VChar._CHARS.update_one({ "_id": self.id }, { "$inc": { f"log.{key}": increment } })

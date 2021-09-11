@@ -93,6 +93,7 @@ class Stats:
         """Add a new roll outcome entry to the database."""
         Stats._STATS.insert_one({
             "_id": outcome.id,
+            "date": datetime.datetime.utcnow(),
             "guild": guild, # We use the guild and user keys for easier lookups
             "user": user,
             "charid": char.id if char is not None else None,

@@ -67,6 +67,8 @@ class Stats:
         Args:
             guild (int): The guild's Discord ID
         """
+        Stats.__prepare()
+
         Stats._GUILDS.update_one({ "guild": guild }, {
             "$set": {
                 "active": False,
@@ -83,6 +85,7 @@ class Stats:
             guild (int): The guild's Discord ID
             name (str): The guild's name
         """
+        Stats.__prepare()
         Stats._GUILDS.update_one({ "guild": guild }, { "$set": { "name": new_name } })
 
 

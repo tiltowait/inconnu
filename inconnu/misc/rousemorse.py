@@ -65,6 +65,7 @@ async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):
 
     await ctx.respond(embed=embed)
     character.hunger = new_hunger
+    character.log("rouse", rolls)
 
 
 async def __remorse_result(ctx, character: VChar):
@@ -130,5 +131,7 @@ def __remorse_roll(character: VChar) -> bool:
         character.humanity -= 1
     else:
         character.stains = 0
+
+    character.log("remorse")
 
     return successful

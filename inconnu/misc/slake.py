@@ -19,6 +19,7 @@ async def process(ctx, amount, character=None):
                 character.name,
                 f"Slaked **{slaked}** Hunger."
             )
+            character.log("slake", slaked)
 
     except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)

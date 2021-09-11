@@ -28,3 +28,6 @@ class MacroAlreadyExistsError(Exception):
 
 class MacroNotFoundError(Exception):
     """Error for when a macro isn't found."""
+
+class InvalidLogKeyError(Exception):
+    """Error for when we try to modify an invalid log."""

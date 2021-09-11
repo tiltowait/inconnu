@@ -208,6 +208,7 @@ class VChar:
     @stains.setter
     def stains(self, new_stains):
         """Set the character's stains."""
+        self.__update_log("stains", self.stains, new_stains)
         self._params["stains"] = new_stains
         VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "stains": new_stains } })
 
@@ -256,6 +257,7 @@ class VChar:
     @hunger.setter
     def hunger(self, new_hunger):
         """Set the character's hunger."""
+        self.__update_log("hunger", self.hunger, new_hunger)
         self._params["hunger"] = new_hunger
         VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "hunger": new_hunger } })
 
@@ -429,6 +431,14 @@ class VChar:
         return VChar._CHARS.delete_one({ "_id": self.id }).acknowledged
 
 
+    def log(self, key, increment=1):
+        """Updates the log for a given field."""
+        if key not in ["remorse", "rouse", "slake"]:
+            raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
+
+        VChar._CHARS.update_one({ "_id": self.id }, { "$inc": { f"log.{key}": increment } })
+
+
     # Helpers
 
     def __find_items(self, collection, name, exact=False):
@@ -454,6 +464,18 @@ class VChar:
             "name": { "$regex": re.compile("^" + name + "$", re.IGNORECASE) }
         }
         return collection.count_documents(query) > 0
+
+
+    def __update_log(self, key, old_value, new_value):
+        """
+        Updates the character log.
+        Args:
+            key (str): The key to be updated
+            addition (int): The amount to increase it by
+        """
+        if new_value > old_value:
+            delta = new_value - old_value
+            VChar._CHARS.update_one({ "_id": self.id }, { "$inc": { f"log.{key}": delta } })
 
 
     @classmethod

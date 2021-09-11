@@ -107,7 +107,6 @@ class Wizard:
             await menu.respond()
 
             rating = int(menu.selected_values[0])
-            print(rating)
             await self.__assign_next_trait(rating)
 
         except asyncio.exceptions.TimeoutError:

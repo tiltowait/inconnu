@@ -14,7 +14,7 @@ class Wizard:
     # we dynamically create it based on the trait name.
     __RATING_OPTIONS = [
         SelectOption("0", "0 dots"),
-        SelectOption("1", "1 dots"),
+        SelectOption("1", "1 dot"),
         SelectOption("2", "2 dots"),
         SelectOption("3", "3 dots"),
         SelectOption("4", "4 dots"),

@@ -33,7 +33,7 @@ class VChar:
     # Character creation and fetching
 
     @classmethod
-    def create_basic(cls, guild: int, user: int, name: str):
+    def create(cls, guild: int, user: int, name: str):
         """
         Create a named character with an associated guild and user.
         All other stats are default, minimum values, and no traits are assigned.

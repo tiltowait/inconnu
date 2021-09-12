@@ -1,6 +1,8 @@
 """character/create/wizard.py - The new character wizard."""
+# pylint: disable=too-few-public-methods
 
 import asyncio
+import os
 
 import discord
 from discord_ui import SelectMenu, SelectOption
@@ -22,14 +24,17 @@ class Wizard:
     ]
 
     def __init__(self, ctx, parameters):
-        self.core_traits = [
-            "Strength", "Dexterity", "Stamina", "Charisma", "Manipulation", "Composure",
-            "Intelligence", "Wits", "Resolve", "Athletics", "Brawl", "Craft", "Drive", "Firearms",
-            "Larceny", "Melee", "Stealth", "Survival", "AnimalKen", "Etiquette", "Insight",
-            "Intimidation", "Leadership", "Performance", "Persuasion", "Streetwise", "Subterfuge",
-            "Academics", "Awareness", "Finance", "Investigation", "Medicine", "Occult", "Politics",
-            "Science", "Technology"
-        ]
+        if "INCONNU_DEV" in os.environ:
+            self.core_traits = ["Test1", "Test2"]
+        else:
+            self.core_traits = [
+                "Strength", "Dexterity", "Stamina", "Charisma", "Manipulation", "Composure",
+                "Intelligence", "Wits", "Resolve", "Athletics", "Brawl", "Craft", "Drive",
+                "Firearms", "Larceny", "Melee", "Stealth", "Survival", "AnimalKen", "Etiquette",
+                "Insight", "Intimidation", "Leadership", "Performance", "Persuasion", "Streetwise",
+                "Subterfuge", "Academics", "Awareness", "Finance", "Investigation", "Medicine",
+                "Occult", "Politics", "Science", "Technology"
+            ]
         self.ctx = ctx
         self.parameters = parameters
 

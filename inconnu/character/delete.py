@@ -5,6 +5,7 @@ import asyncio
 import discord
 from discord_ui import Button
 
+from .. import common
 from ..vchar import errors, VChar
 
 
@@ -41,7 +42,7 @@ async def prompt(ctx, character: str):
             await msg.disable_components()
 
     except errors.CharacterError as err:
-        await ctx.respond(str(err), hidden=True)
+        await common.display_error(ctx, ctx.author.display_name, err)
 
 
 def __generate_prompt(ctx, char_name: str):

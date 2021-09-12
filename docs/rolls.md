@@ -57,6 +57,9 @@ The strategies are as follows.
 
 | Strategy                 | Description                                                        | Available when ...                                        |
 |--------------------------|--------------------------------------------------------------------|-----------------------------------------------------------|
-| **Re-Roll Failures**     | Re-roll only non-successful dice                                   | There are one or more non-successful dice                 |
-| **Maximize Criticals**   | Re-roll up to three failures plus any non-critical successful dice | There are one or more non-critical dice                   |
-| **Avoid Messy Critical** | Re-roll up to three critical dice                                  | A Messy Critical exists with only one critical Hunger die |
+| **Re-Roll Failures**   | Re-roll only non-successful dice                               | There are one or more non-successful dice                 |
+| **Maximize Criticals** | Re-roll up to three failures plus non-critical successful dice | There are one or more non-critical dice                   |
+| **Avoid Messy**        | Re-roll up to three critical dice                              | A Messy Critical exists with only one critical Hunger die |
+| **Risky Avoid Messy**  | Re-roll up to three critical dice plus leftover failures       | A Messy Critical exists with only one critical Hunger die and there are one or more failure dice |
+
+?> **Just how risky is "risky"?** A *Risky* re-roll has up to a **27% chance** of retaining a Messy Critical, but the actual answer depends on your roll outcome. Each non-successful die rolled by *Risky* increases the likelihood you will retain a Messy Critical. At one re-rolled die, you have only a 10% chance of retaining a Messy critical. Even increasing it to two dice yields an 18% (nearly 1 in 5) chance of retaining a Messy Critical. Is it worth it? That's up to you.

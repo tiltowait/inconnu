@@ -1,3 +1,3 @@
 discord.py==1.7.3
-discord-ui==4.3.5
+discord-ui @ git+https://github.com/discord-py-ui/discord-ui@20ce6739c43af22eac8c1ba7a8cb43533870f657
 pymongo==3.12.0

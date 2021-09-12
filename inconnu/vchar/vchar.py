@@ -329,7 +329,7 @@ class VChar:
         all_traits = VChar._TRAITS.find(
             { "charid": self.id },
             { "_id": 0, "charid": 0 }
-        ).sort("name")
+        ).collation({ "locale": "en", "strength": 2}).sort("name")
         return OrderedDict(map(lambda trait: tuple(trait.values()), all_traits))
 
 

@@ -69,6 +69,7 @@ async def on_guild_join(guild):
     """Log whenever a guild is joined."""
     print(f"Joined {guild.name}!")
     stats.Stats.guild_joined(guild.id, guild.name)
+    await bot.change_presence(activity=discord.Game(__status_message()))
 
 
 @bot.event
@@ -76,6 +77,7 @@ async def on_guild_remove(guild):
     """Log guild removals."""
     print(f"Left {guild.name} :(")
     stats.Stats.guild_left(guild.id)
+    await bot.change_presence(activity=discord.Game(__status_message()))
 
 
 @bot.event

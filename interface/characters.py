@@ -31,7 +31,7 @@ class Characters(commands.Cog, name="Character Management"):
                 choices=[
                     ("vampire", "vampire"),
                     ("ghoul", "ghoul"),
-                    ("ghoul", "ghoul")
+                    ("mortal", "mortal")
                 ],
                 required=True
             ),

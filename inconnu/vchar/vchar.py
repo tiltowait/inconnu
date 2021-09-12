@@ -555,15 +555,27 @@ class VChar:
 
     def __find_items(self, collection, name, exact=False):
         """Find an item in the collection. Raises no exceptions."""
-        match_str = f"^{name}$" if exact else f"^{name}"
         query = {
             "charid": self.id,
             "name": {
-                "$regex": re.compile(match_str, re.IGNORECASE)
+                "$regex": re.compile(f"^{name}$", re.IGNORECASE)
             }
         }
-        items = list(collection.find(query, { "_id": 0, "charid": 0 }))
-        return items
+        exact_match = collection.find_one(query, { "_id": 0, "charid": 0 })
+
+        if exact_match is not None:
+            return [exact_match]
+
+        if not exact: # Fallback; try and get closest unambiguous
+            query = {
+                "charid": self.id,
+                "name": {
+                    "$regex": re.compile("^" + name, re.IGNORECASE)
+                }
+            }
+            return list(collection.find(query, { "_id": 0, "charid": 0 }))
+
+        return None
 
 
     def __item_exists(self, collection, name) -> bool:

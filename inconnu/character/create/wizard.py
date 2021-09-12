@@ -83,7 +83,10 @@ class Wizard:
             colour=discord.Color.blue()
         )
         embed.set_author(name=f"Inconnu on {self.ctx.guild.name}", icon_url=self.ctx.guild.icon_url)
-        embed.add_field(name="Make a mistake?", value="Use `/traits update` to fix.")
+        embed.add_field(
+            name="Make a mistake?",
+            value=f"Use `/traits update` on {self.ctx.guild.name} to fix."
+        )
 
         if self.parameters.splat == "vampire":
             field_name = "Your Blood Potency is currently 0!"

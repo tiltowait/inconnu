@@ -1,7 +1,7 @@
 """interface/traits.py - Traits command interface."""
 
 from discord.ext import commands
-from discord_ui import SlashOption
+from discord_ui import ext, SlashOption
 from discord_ui.cogs import slash_cog, subslash_cog
 
 import inconnu
@@ -11,16 +11,18 @@ from . import debug
 class Traits(commands.Cog, name="Trait Management"):
     """Trait management commands."""
 
+    @commands.guild_only()
     @slash_cog(
         name="traits",
         description="Traits command group"
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def modify_traits(self, ctx):
         """Traits command group start. Unreachable."""
 
 
+    @ext.check_failure_response("Characters and traits aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_cog(
         base_names="traits",
         name="add",
@@ -31,12 +33,13 @@ class Traits(commands.Cog, name="Trait Management"):
         ]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def add_trait(self, ctx, traits: str, character=None):
         """Add trait(s) to a character."""
         await inconnu.traits.add_update.parse(ctx, False, traits, character)
 
 
+    @ext.check_failure_response("Characters and traits aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_cog(
         base_names="traits",
         name="list",
@@ -46,12 +49,13 @@ class Traits(commands.Cog, name="Trait Management"):
         ]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def list_traits(self, ctx, character=None):
         """Display a character's traits."""
         await inconnu.traits.show.parse(ctx, character)
 
 
+    @ext.check_failure_response("Characters and traits aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_cog(
         base_names="traits",
         name="update",
@@ -62,12 +66,13 @@ class Traits(commands.Cog, name="Trait Management"):
         ]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def update_traits(self, ctx, traits: str, character=None):
         """Update a character's trait(s)."""
         await inconnu.traits.add_update.parse(ctx, True, traits, character)
 
 
+    @ext.check_failure_response("Characters and traits aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_cog(
         base_names="traits",
         name="delete",
@@ -78,7 +83,6 @@ class Traits(commands.Cog, name="Trait Management"):
         ]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def delete_traits(self, ctx, traits: str, character=None):
         """Remove traits from a character."""
         await inconnu.traits.delete.parse(ctx, traits, character)

@@ -1,7 +1,7 @@
 """interface/gameplay.py - Command interface directly related to gameplay."""
 
 from discord.ext import commands
-from discord_ui import SlashOption
+from discord_ui import ext, SlashOption
 from discord_ui.cogs import slash_cog
 
 import inconnu
@@ -42,6 +42,8 @@ class Gameplay(commands.Cog):
 
 
 
+    @ext.check_failure_response("Awaken rolls aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @slash_cog(
         name="awaken",
         options=[
@@ -49,12 +51,13 @@ class Gameplay(commands.Cog):
         ],
         guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def awaken(self, ctx, character=None):
         """Perform a Rouse check and heal Superficial Willpower damage."""
         await inconnu.misc.awaken.process(ctx, character)
 
 
+    @ext.check_failure_response("Frenzy checks aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @slash_cog(
         name="frenzy",
         options=[
@@ -67,29 +70,30 @@ class Gameplay(commands.Cog):
         ],
         guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def frenzy(self, ctx, difficulty: int, character=None):
         """Perform a Frenzy check."""
         await inconnu.misc.frenzy.process(ctx, difficulty, character)
 
 
+    @ext.check_failure_response("Mending isn't available in DMs.", hidden=True)
+    @commands.guild_only()
     @slash_cog(
         name="mend",
         options=[SlashOption(str, "character", description="The character to be mended")]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def mend(self, ctx, character=None):
         """Mend Superficial damage."""
         await inconnu.misc.mend.process(ctx, character)
 
 
+    @ext.check_failure_response("Remorse checks aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @slash_cog(
         name="remorse",
         options=[SlashOption(str, "character", description="The character undergoing Remorse")]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def remorse(self, ctx, character=None):
         """Perform a remorse check."""
         await inconnu.misc.rousemorse.parse(ctx, "remorse", character)
@@ -101,6 +105,8 @@ class Gameplay(commands.Cog):
         await inconnu.misc.resonance.generate(ctx)
 
 
+    @ext.check_failure_response("Rouse checks aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @slash_cog(
         name="rouse",
         options=[
@@ -110,12 +116,13 @@ class Gameplay(commands.Cog):
         ]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def rouse(self, ctx, count=1, character=None, purpose=None):
         """Perform a rouse check."""
         await inconnu.misc.rousemorse.parse(ctx, "rouse", character, count, purpose)
 
 
+    @ext.check_failure_response("You cannot slake in DMs.", hidden=True)
+    @commands.guild_only()
     @slash_cog(
         name="slake",
         options=[
@@ -128,7 +135,6 @@ class Gameplay(commands.Cog):
         ]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def slake(self, ctx, amount: int, character=None):
         """Slake 1 or more Hunger."""
         await inconnu.misc.slake.process(ctx, amount, character)

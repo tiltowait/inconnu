@@ -1,7 +1,7 @@
 """interface/characters.py - Character management Cog."""
 
 from discord.ext import commands
-from discord_ui import SlashOption
+from discord_ui import ext, SlashOption
 from discord_ui.cogs import slash_cog, subslash_cog
 
 import inconnu
@@ -10,16 +10,19 @@ from . import debug
 class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
 
+    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @slash_cog(
         name="character",
         description="Character management commands."
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def character_commands(self, ctx):
         """Base character command. Unreachable."""
 
 
+    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_cog(
         base_names="character",
         name="create",
@@ -53,7 +56,6 @@ class Characters(commands.Cog, name="Character Management"):
         ]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def new_character(
         self, ctx, name: str, splat: str, humanity: int, health: int, willpower: int
     ):
@@ -61,6 +63,8 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.create.process(ctx, name, splat, humanity, health, willpower)
 
 
+    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_cog(
         base_names="character",
         name="display",
@@ -68,12 +72,13 @@ class Characters(commands.Cog, name="Character Management"):
         options=[SlashOption(str, "character", description="A character to display")]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def display_character(self, ctx, character=None):
         """Display a character's basic traits"""
         await inconnu.character.display.parse(ctx, character)
 
 
+    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_cog(
         base_names="character",
         name="update",
@@ -84,12 +89,13 @@ class Characters(commands.Cog, name="Character Management"):
         ]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def update_character(self, ctx, parameters: str, character=None):
         """Update a character's parameters but not the traits."""
         await inconnu.character.update.parse(ctx, parameters, character)
 
 
+    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_cog(
         base_names="character",
         name="delete",
@@ -99,19 +105,19 @@ class Characters(commands.Cog, name="Character Management"):
         ]
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def delete_character(self, ctx, character: str):
         """Delete a character."""
         await inconnu.character.delete.prompt(ctx, character)
 
 
+    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_cog(
         base_names="character",
         name="help",
         description="Show a list of character update keys."
         , guild_ids=debug.WHITELIST
     )
-    @commands.guild_only()
     async def character_updates_help(self, ctx):
         """Display the valid character update keys."""
         await inconnu.character.update.update_help(ctx, hidden=False)

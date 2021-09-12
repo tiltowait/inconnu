@@ -161,3 +161,9 @@ class RollResult:
             return False
 
         return self.hunger.tens == 1
+
+
+    @property
+    def can_risky_messy_critical(self):
+        """Whether a messy critical is possible *and* there are failures to re-roll."""
+        return self.can_avoid_messy_critical and self.normal.failures > 0

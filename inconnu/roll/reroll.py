@@ -42,6 +42,11 @@ async def wait_for_reroll(ctx, message, old_roll):
         old_roll.strategy = "messy"
         descriptor = "Avoiding Messy Critical"
 
+    elif btn.custom_id == "risky":
+        new_dice = __risky_avoid_messy(old_roll.normal.dice)
+        old_roll.strategy = "risky"
+        descriptor = "Avoid Messy (Risky)"
+
     new_throw = DiceThrow(new_dice)
     new_results = old_roll
     new_results.normal = new_throw
@@ -117,6 +122,25 @@ def __avoid_messy(dice: list) -> list:
         else:
             new_dice.append(__d10())
             rerolled += 1
+
+    return new_dice
+
+
+def __risky_avoid_messy(dice: list) -> list:
+    """Re-roll up to three critical dice plus one or two failing dice."""
+    new_dice = []
+    tens_remaining = dice.count(10)
+    fails_remaining = 3 - tens_remaining
+
+    for die in dice:
+        if tens_remaining > 0 and die == 10:
+            new_dice.append(__d10())
+            tens_remaining -= 1
+        elif die < 6 and fails_remaining > 0:
+            new_dice.append(__d10())
+            fails_remaining -= 1
+        else:
+            new_dice.append(die)
 
     return new_dice
 

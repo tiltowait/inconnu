@@ -347,10 +347,13 @@ def __generate_reroll_buttons(roll_result) -> list:
         buttons.append(Button("reroll_failures", "Re-Roll Failures"))
 
     if roll_result.can_maximize_criticals:
-        buttons.append(Button("maximize_criticals", "Maximize Criticals"))
+        buttons.append(Button("maximize_criticals", "Maximize Crits"))
 
     if roll_result.can_avoid_messy_critical:
-        buttons.append(Button("avoid_messy", "Avoid Messy Critical"))
+        buttons.append(Button("avoid_messy", "Avoid Messy"))
+
+    if roll_result.can_risky_messy_critical:
+        buttons.append(Button("risky", "Risky Avoid Messy"))
 
     return buttons
 

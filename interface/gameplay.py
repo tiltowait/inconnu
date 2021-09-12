@@ -63,7 +63,7 @@ class Gameplay(commands.Cog):
                 choices=[(str(n), n) for n in range(0, 11)],
                 required=True
             ),
-            SlashOption(str, "character", description="The performing the roll")
+            SlashOption(str, "character", description="The character resisting frenzy")
         ],
         guild_ids=debug.WHITELIST
     )

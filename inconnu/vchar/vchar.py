@@ -156,7 +156,11 @@ class VChar:
         """
         VChar.__prepare()
 
-        characters = list(VChar._CHARS.find({ "guild": guild, "user": user }))
+        characters = list(
+            VChar._CHARS.find({ "guild": guild, "user": user })
+                .collation({ "locale": "en", "strength": 2 })
+                .sort("name")
+        )
         return [VChar(params) for params in characters]
 
 
@@ -401,7 +405,9 @@ class VChar:
     def macros(self):
         """The user's macros."""
         raw_macros = list(
-            VChar._MACROS.find({ "charid": self.id }, { "_id": 0, "charid": 0 }).sort("name")
+            VChar._MACROS.find({ "charid": self.id }, { "_id": 0, "charid": 0 })
+                .collation({ "locale": "en", "strength": 2 })
+                .sort("name")
         )
         return [SimpleNamespace(**macro) for macro in raw_macros]
 

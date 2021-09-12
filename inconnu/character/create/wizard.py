@@ -6,6 +6,7 @@ import os
 
 import discord
 from discord_ui import SelectMenu, SelectOption
+from discord_ui.components import LinkButton
 
 from ...vchar import VChar
 
@@ -76,9 +77,25 @@ class Wizard:
         for trait, rating in self.assigned_traits.items():
             character.add_trait(trait, rating)
 
-        success = f"{character.name} has been created in {self.ctx.guild.name}!"
-        success += " Make a mistake? Use `/traits update` to fix."
-        await self.ctx.author.send(success)
+        embed = discord.Embed(
+            title="Success!",
+            description=f"**{character.name}** has been created in ***{self.ctx.guild.name}***!",
+            colour=discord.Color.blue()
+        )
+        embed.set_author(name=f"Inconnu on {self.ctx.guild.name}", icon_url=self.ctx.guild.icon_url)
+        embed.add_field(name="Make a mistake?", value="Use `/traits update` to fix.")
+
+        if self.parameters.splat == "vampire":
+            field_name = "Your Blood Potency is currently 0!"
+            value = "To update: `/character update potency=X`, where `X` is your Blood Potency."
+            embed.add_field(name=field_name, value=value, inline=False)
+
+        button = LinkButton(
+            "https://www.inconnu-bot.com/#/quickstart",
+            label="Full Documentation"
+        )
+
+        await self.ctx.author.send(embed=embed, components=[button])
 
 
     async def __query_trait(self, message=None):

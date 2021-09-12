@@ -56,6 +56,24 @@ class Gameplay(commands.Cog):
 
 
     @slash_cog(
+        name="frenzy",
+        options=[
+            SlashOption(int, "difficulty",
+                description="The frenzy difficulty",
+                choices=[(str(n), n) for n in range(0, 11)],
+                required=True
+            ),
+            SlashOption(str, "character", description="The performing the roll")
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    @commands.guild_only()
+    async def frenzy(self, ctx, difficulty: int, character=None):
+        """Perform a Frenzy check."""
+        await inconnu.misc.frenzy.process(ctx, difficulty, character)
+
+
+    @slash_cog(
         name="mend",
         options=[SlashOption(str, "character", description="The character to be mended")]
         , guild_ids=debug.WHITELIST

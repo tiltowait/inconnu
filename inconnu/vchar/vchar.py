@@ -1,5 +1,7 @@
 """vchar/vchar.py - Persistent character management using MongoDB."""
+# pylint: disable=too-many-public-methods
 
+import math
 import os
 import re
 
@@ -309,6 +311,14 @@ class VChar:
         """The amount of Superficial damage recovered when mending."""
         mends = { 0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 5 }
         return mends[self.potency]
+
+
+    @property
+    def frenzy_resist(self):
+        """The dice pool for resisting frenzy. Equal to current WP + 1/3 Humanity."""
+        cur_wp = self.willpower.count(DAMAGE.none)
+        third_hu = math.floor(self.humanity / 3)
+        return cur_wp + third_hu
 
 
     # Traits

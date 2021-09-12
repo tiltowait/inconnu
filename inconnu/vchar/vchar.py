@@ -356,7 +356,6 @@ class VChar:
         Raises TraitAlreadyExistsError if the trait already exists.
         """
         if self.__item_exists(VChar._TRAITS, trait):
-            print("can't add", trait)
             raise errors.TraitAlreadyExistsError(f"You already have a trait named `{trait}`.")
 
         VChar._TRAITS.insert_one({ "charid": self.id, "name": trait, "rating": rating })
@@ -589,7 +588,7 @@ class VChar:
             }
             return list(collection.find(query, { "_id": 0, "charid": 0 }))
 
-        return None
+        return []
 
 
     def __item_exists(self, collection, name) -> bool:

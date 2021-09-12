@@ -1,7 +1,5 @@
 """constants.py - Define package-wide constants."""
 
-import re
-
 from types import SimpleNamespace
 
 # Tracker Stress
@@ -15,5 +13,3 @@ SKILLS_AND_ATTRIBUTES = [
     "academics", "awareness", "finance", "investigation", "medicine", "occult", "politics",
     "science", "technology"
 ]
-
-VALID_DB_KEY_PATTERN = re.compile(r"^[A-z_]+$")

@@ -1,6 +1,6 @@
 """traits/parser.py - Parses trait-based arguments."""
 
-import re
+from . import traitcommon
 
 def parse_traits(*args) -> dict:
     """Parses arguments and puts them into a dictionary."""
@@ -11,8 +11,8 @@ def parse_traits(*args) -> dict:
         trait = split[0].strip()
         rating = None
 
-        if re.match(r"^[A-z_]+$", trait) is None:
-            raise SyntaxError(f"Invalid trait: `{trait}`.")
+        if traitcommon.VALID_TRAIT_PATTERN.match(trait) is None:
+            raise SyntaxError(f"Invalid trait name: `{trait}`.")
 
         if len(split) > 2:
             raise SyntaxError(f"Invalid argument: `{arg}`.")

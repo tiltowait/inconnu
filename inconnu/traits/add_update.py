@@ -94,9 +94,9 @@ async def __display_results(ctx, outcome, char_name: str):
     if len(outcome.errors) > 0:
         errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
         if outcome.editing:
-            field_name = "Error! You don't have:"
+            field_name = "Error! You don't have these traits"
         else:
-            field_name = "Error! You already have:"
+            field_name = "Error! You already have these traits"
         embed.add_field(name=field_name, value=errs, inline=False)
 
     await ctx.respond(embed=embed, hidden=True)

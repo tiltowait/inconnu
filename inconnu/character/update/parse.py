@@ -42,9 +42,15 @@ async def parse(ctx, parameters: str, character=None, update_message=None):
     try:
         character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
         parameters = __parse_arguments(*args)
+        updates = []
 
         for parameter, new_value in parameters.items():
-            __update_character(character, parameter, new_value)
+            update = __update_character(character, parameter, new_value)
+            updates.append(update)
+
+        if update_message is None:
+             # We only want to set the update message if we didn't get a customized display message
+            update_message = "\n".join(updates)
 
         await display(ctx, character.name, update_message)
 
@@ -85,7 +91,7 @@ def __parse_arguments(*arguments):
     return parameters
 
 
-def __update_character(character: VChar, param: str, value: str):
+def __update_character(character: VChar, param: str, value: str) -> str:
     """
     Update one of a character's parameters.
     Args:
@@ -94,7 +100,7 @@ def __update_character(character: VChar, param: str, value: str):
         value (str): The parameter's new value
     Raises ValueError if the parameter's value is invalid.
     """
-    getattr(paramupdate, f"update_{param}")(character, value)
+    return getattr(paramupdate, f"update_{param}")(character, value)
 
 
 async def update_help(ctx, err=None, hidden=True):

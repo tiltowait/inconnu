@@ -8,15 +8,16 @@ from ...vchar import VChar
 VALID_SPLATS = ["vampire", "ghoul", "mortal"]
 
 
-def update_name(character: VChar, new_name: str):
+def update_name(character: VChar, new_name: str) -> str:
     """Update the character's name."""
     if not re.match(r"[A-z_]+", new_name):
         raise ValueError("Names may only contain letters and underscores.")
 
     character.name = new_name
+    return f"Set name to `{new_name}`."
 
 
-def update_splat(character: VChar, new_splat: str):
+def update_splat(character: VChar, new_splat: str) -> str:
     """Update the character's splat."""
     if new_splat not in VALID_SPLATS:
         splats = map(lambda splat: f"`{splat}`", VALID_SPLATS)
@@ -24,19 +25,20 @@ def update_splat(character: VChar, new_splat: str):
         raise ValueError(f"The `splat` must be one of: {splats}.")
 
     character.splat = new_splat
+    return f"Set splat to `{new_splat}`."
 
 
-def update_hunger(character: VChar, delta: str):
+def update_hunger(character: VChar, delta: str) -> str:
     """Update the character's Hunger."""
-    __update_hunger_potency(character, delta, "hunger", 5)
+    return __update_hunger_potency(character, delta, "hunger", 5)
 
 
-def update_potency(character: VChar, delta: str):
+def update_potency(character: VChar, delta: str) -> str:
     """Update the character's Blood Potency."""
-    __update_hunger_potency(character, delta, "potency", 10)
+    return __update_hunger_potency(character, delta, "potency", 10)
 
 
-def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int):
+def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int) -> str:
     """Update the character's hunger if they are a vampire."""
     if character.splat != "vampire": # Not a vampire
         raise ValueError(f"Mortals and ghouls do not have {key.title()}.")
@@ -53,62 +55,64 @@ def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int
 
     if key == "hunger":
         character.hunger = new_value
-    else:
-        character.potency = new_value
+        return f"Set Hunger to `{new_value}`."
+
+    character.potency = new_value
+    return f"Set Blood Potency to `{new_value}`."
 
 
-def update_health(character: VChar, new_max: str):
+def update_health(character: VChar, new_max: str) -> str:
     """Update the character's maximum HP. If decreasing, this truncates from the right."""
-    __update_track(character, "health", new_max)
+    return __update_track(character, "health", new_max)
 
 
-def update_willpower(character: VChar, new_max: str):
+def update_willpower(character: VChar, new_max: str) -> str:
     """Update the character's maximum WP. If decreasing, this truncates from the right."""
-    __update_track(character, "willpower", new_max)
+    return __update_track(character, "willpower", new_max)
 
 
-def update_humanity(character: VChar, delta: str):
+def update_humanity(character: VChar, delta: str) -> str:
     """Update the character's humanity rating. If decreasing, this truncates from the right."""
-    __update_humanity(character, "humanity", delta)
     __update_humanity(character, "stains", "0")
+    return __update_humanity(character, "humanity", delta)
 
 
-def update_stains(character: VChar, delta: str):
+def update_stains(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    __update_humanity(character, "stains", delta)
+    return __update_humanity(character, "stains", delta)
 
 
-def update_sh(character: VChar, delta: str):
+def update_sh(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    __update_damage(character, "health", DAMAGE.superficial, delta)
+    return __update_damage(character, "health", DAMAGE.superficial, delta)
 
 
-def update_ah(character: VChar, delta: str):
+def update_ah(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
-    __update_damage(character, "health", DAMAGE.aggravated, delta)
+    return __update_damage(character, "health", DAMAGE.aggravated, delta)
 
 
-def update_sw(character: VChar, delta: str):
+def update_sw(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    __update_damage(character, "willpower", DAMAGE.superficial, delta)
+    return __update_damage(character, "willpower", DAMAGE.superficial, delta)
 
 
-def update_aw(character: VChar, delta: str):
+def update_aw(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
-    __update_damage(character, "willpower", DAMAGE.aggravated, delta)
+    return __update_damage(character, "willpower", DAMAGE.aggravated, delta)
 
 
-def update_current_xp(character: VChar, delta: str):
+def update_current_xp(character: VChar, delta: str) -> str:
     """Set or modify current XP."""
-    __update_xp(character, "current", delta)
+    return __update_xp(character, "current", delta)
 
 
-def update_total_xp(character: VChar, delta: str):
+def update_total_xp(character: VChar, delta: str) -> str:
     """Set or modify total XP."""
-    __update_xp(character, "total", delta)
+    return __update_xp(character, "total", delta)
 
 
-def __update_track(character: VChar, tracker: str, new_len: int):
+def __update_track(character: VChar, tracker: str, new_len: int) -> str:
     """
     Update the size of a character's tracker.
     Args:
@@ -133,12 +137,14 @@ def __update_track(character: VChar, tracker: str, new_len: int):
 
     if tracker == "health":
         character.health = track
-    else:
-        character.willpower = track
+        return f"Set Health to `{len(track)}`."
+
+    character.willpower = track
+    return f"Set Willpower to `{len(track)}`."
 
 
 # pylint: disable=too-many-arguments
-def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int):
+def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) -> str:
     """
     Update a character's tracker damage.
     Args:
@@ -163,11 +169,27 @@ def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int):
             character.apply_damage(tracker, dtype, delta)
         else:
             character.set_damage(tracker, dtype, delta)
+
+        return __damage_adjust_message(tracker, dtype, delta_str)
+
     except ValueError as err:
         raise ValueError(f"Expected a number. Got `{delta_str}`.") from err
 
 
-def __update_xp(character: VChar, xp_type: str, delta: str):
+def __damage_adjust_message(tracker, dtype, delta_str) -> str:
+    """Generate a human-readable damage adjustment message."""
+    if dtype == DAMAGE.superficial:
+        severity = "Superficial"
+    else:
+        severity = "Aggravated"
+
+    if delta_str[0] in ["+", "-"]:
+        return f"`{delta_str}` {severity} {tracker.title()} damage."
+
+    return f"Set {severity} {tracker.title()} damage to `{delta_str}`."
+
+
+def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
     """
     Update a character's XP.
     Args:
@@ -199,11 +221,13 @@ def __update_xp(character: VChar, xp_type: str, delta: str):
 
     if xp_type == "current":
         character.current_xp = new_xp
-    else:
-        character.total_xp = new_xp
+        return f"Set current XP to `{new_xp}`."
+
+    character.total_xp = new_xp
+    return f"Set total XP to `{new_xp}`."
 
 
-def __update_humanity(character: VChar, hu_type: str, delta: str):
+def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
     """
     Update a character's humanity or stains.
     Args:
@@ -233,5 +257,7 @@ def __update_humanity(character: VChar, hu_type: str, delta: str):
 
     if hu_type == "humanity":
         character.humanity = new_value
-    else:
-        character.stains = new_value
+        return f"Set Humanity to `{new_value}`."
+
+    character.stains = new_value
+    return f"Set Stains to `{new_value}`."

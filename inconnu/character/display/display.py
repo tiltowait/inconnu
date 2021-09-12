@@ -3,6 +3,7 @@
 import discord
 
 from . import trackmoji
+from ... import common
 from ...vchar import errors, VChar
 
 async def parse(ctx, character=None, message=None):
@@ -15,13 +16,8 @@ async def parse(ctx, character=None, message=None):
                 raise ValueError("You have no characters.")
 
             if len(user_chars) > 1:
-                # Give them a list of characters
                 user_chars = "\n".join(map(lambda char: char.name, user_chars))
-
-                response = f"**You have the following characters:**\n{user_chars}"
-                response += "\n\nView one with `/character display` `NAME`"
-
-                raise ValueError(response)
+                raise errors.CharacterError(user_chars)
 
             if len(user_chars) == 1:
                 # Display their only character
@@ -33,8 +29,17 @@ async def parse(ctx, character=None, message=None):
         # Character has been found
         await __display_character(ctx, character, message)
 
-    except (ValueError, errors.CharacterError) as err:
-        await ctx.respond(str(err), hidden=True)
+    except ValueError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
+    except errors.CharacterError as err:
+        embed = discord.Embed(
+            title="Your Characters",
+            description=str(err)
+        )
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        embed.set_footer(text="To view one: /character display NAME")
+
+        await ctx.respond(embed=embed, hidden=True)
 
 
 async def __display_character(ctx, character: VChar, message=None):

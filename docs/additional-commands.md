@@ -8,6 +8,19 @@ Each command below is a "slash" or "application" command. As you type, Discord w
 
 Each night a character wakes, they heal Superficial Willpower damage and make a Rouse check. **Inconnu** automates this process with the `/awaken` command. It will even tell you if you were unfortunate enough to fall into torpor!
 
+## Frenzy Checks
+
+```
+/frenzy <difficulty> [character]
+```
+
+| Parameter    | Description                                |
+|--------------|--------------------------------------------|
+| `difficulty` | The difficulty of the frenzy check         |
+| `character`  | The character resisting frenzy             |
+
+Per *V5*, p.219, Inconnu will roll your current Willpower plus 1/3 of Humanity, rounded down, and tell you the results.
+
 ## Mending Damage
 
 To mend Superficial damage, simply type `/mend` `[character]`. This will mend the appropriate amount of damage based on your Blood Potency (using the V5 Companion errata) and perform a Rouse check.

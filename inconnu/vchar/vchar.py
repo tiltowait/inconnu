@@ -356,6 +356,7 @@ class VChar:
         Raises TraitAlreadyExistsError if the trait already exists.
         """
         if self.__item_exists(VChar._TRAITS, trait):
+            print("can't add", trait)
             raise errors.TraitAlreadyExistsError(f"You already have a trait named `{trait}`.")
 
         VChar._TRAITS.insert_one({ "charid": self.id, "name": trait, "rating": rating })
@@ -380,6 +381,19 @@ class VChar:
         """
         trait = self.find_trait(trait, exact=True) # Need to get the exact name
         VChar._TRAITS.delete_one({ "charid": self.id, "name": trait.name })
+
+
+    def owned_traits(self, **traits):
+        """Partition the list of traits into owned and unowned groups."""
+        owned = {}
+        unowned = {}
+        for trait, rating in traits.items():
+            if self.__item_exists(VChar._TRAITS, trait):
+                owned[trait] = rating
+            else:
+                unowned[trait] = rating
+
+        return SimpleNamespace(owned=owned, unowned=unowned)
 
 
     # Macros!
@@ -584,7 +598,7 @@ class VChar:
         The match is case-insensitive but otherwise exact.
         """
         query = {
-            "_id": self.id,
+            "charid": self.id,
             "name": { "$regex": re.compile("^" + name + "$", re.IGNORECASE) }
         }
         return collection.count_documents(query) > 0

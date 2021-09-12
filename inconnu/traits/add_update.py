@@ -1,5 +1,7 @@
 """traits/add.py - Add traits to a character."""
 
+from types import SimpleNamespace
+
 import discord
 
 from .parser import parse_traits
@@ -12,12 +14,12 @@ async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
     try:
         character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
         traits = parse_traits(*traits.split())
-        assigned_traits, wizard_traits = __handle_traits(character, traits, allow_overwrite)
+        outcome = __handle_traits(character, traits, allow_overwrite)
 
-        await __display_results(ctx, assigned_traits, wizard_traits, character.name)
+        await __display_results(ctx, outcome, character.name)
 
-        if len(wizard_traits) > 0:
-            wizard = TraitWizard(ctx, character, wizard_traits)
+        if len(outcome.unassigned) > 0:
+            wizard = TraitWizard(ctx, character, outcome.unassigned)
             await wizard.begin()
 
     except (ValueError, SyntaxError) as err:
@@ -35,27 +37,42 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
         overwriting (bool): Whether we allow overwrites
     All traits and ratings are assumed to be valid at this time.
     """
-    assigned_traits = []
-    wizard_traits = []
-    for trait, rating in traits.items():
-        if rating is None:
-            wizard_traits.append(trait)
-            continue
+    partition = character.owned_traits(**traits)
+    assigned = []
+    unassigned = []
 
-        if overwriting:
-            character.update_trait(trait, rating)
-        else:
-            character.add_trait(trait, rating)
+    if overwriting:
+        error_traits = list(partition.unowned.keys())
+        for trait, rating in partition.owned.items():
+            if rating is None:
+                unassigned.append(trait)
+            else:
+                character.update_trait(trait, rating)
+                assigned.append(trait)
 
-        assigned_traits.append(trait)
+    else:
+        error_traits = list(partition.owned.keys())
+        for trait, rating in partition.unowned.items():
+            if rating is None:
+                unassigned.append(trait)
+            else:
+                character.add_trait(trait, rating)
+                assigned.append(trait)
 
-    return (assigned_traits, wizard_traits)
+    return SimpleNamespace(
+        assigned=assigned,
+        unassigned=unassigned,
+        errors=error_traits,
+        editing=overwriting
+    )
 
 
-async def __display_results(ctx, assigned: list, unassigned: list, char_name: str):
+async def __display_results(ctx, outcome, char_name: str):
     """Display the results of the operation in a nice embed."""
     title = None
-    if len(unassigned) > 0:
+    if len(outcome.assigned) == 0 and len(outcome.unassigned) == 0 and len(outcome.errors) > 0:
+        title = "Unable to Modify Traits"
+    elif len(outcome.unassigned) > 0:
         title = "Entering Incognito Mode"
     else:
         title = "Traits Assigned"
@@ -65,13 +82,21 @@ async def __display_results(ctx, assigned: list, unassigned: list, char_name: st
         title=title
     )
     embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
-    if len(assigned) > 0:
-        assigned = ", ".join(list(map(lambda trait: f"`{trait}`", assigned)))
+    if len(outcome.assigned) > 0:
+        assigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.assigned)))
         embed.add_field(name="Assigned", value=assigned)
 
-    if len(unassigned) > 0:
-        unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", unassigned)))
+    if len(outcome.unassigned) > 0:
+        unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
         embed.add_field(name="Not yet assigned", value=unassigned)
         embed.set_footer(text="Check your DMs to finish assigning the traits.")
+
+    if len(outcome.errors) > 0:
+        errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
+        if outcome.editing:
+            field_name = "Error! You don't have:"
+        else:
+            field_name = "Error! You already have:"
+        embed.add_field(name=field_name, value=errs, inline=False)
 
     await ctx.respond(embed=embed, hidden=True)

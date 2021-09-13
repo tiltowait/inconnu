@@ -10,7 +10,7 @@ All character management is done through the `/character` application command pr
 
 ## Character Creation
 
-Character creation is done with the `/character create` command, which accepts the following parameters:
+Character creation is done with the `/character create` command, which requires the following parameters:
 
 | Parameter   | Description                                               |
 |-------------|-----------------------------------------------------------|
@@ -21,6 +21,10 @@ Character creation is done with the `/character create` command, which accepts t
 | `willpower` | The number of Willpower levels the character has          |
 
 The only option that requires any typing (and thus the only one it is possible to get wrong) is `character`. Once you've entered your command, Inconnu will DM you and guide you throguh the rest of the character creation process. This will fill out every Skill and Attribute on the character sheet.
+
+#### Example
+
+![Character creation example](includes/character-create.png)
 
 ## Character Display
 

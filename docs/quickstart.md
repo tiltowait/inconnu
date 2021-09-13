@@ -22,6 +22,8 @@ You may store as many characters on as many servers as you like. Each character 
 
 You should see the command show up above the textbox. Discord will require you to provide a name for the character, character type, HP, WP, etc.
 
+![Character creation example](includes/character-create.png)
+
 Once you have finished, **Inconnu** will DM you with the creation wizard. Follow the prompts to supply the ratings for all 9 Attributes and 27 Skills. Once you've finished, you're good to go!
 
 !> You must complete the creation wizard before you can use your character. It can take a little while, but it's a one-time deal (per character) that enables you to access Inconnu's advanced features. So have your character sheet ready and get going!

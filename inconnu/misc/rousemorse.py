@@ -59,7 +59,8 @@ async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):
     footer = purpose + "\n" if purpose is not None else ""
     potential_stains = tens + ones
     if potential_stains > 0:
-        footer += f"If this was an Oblivion roll, gain {potential_stains} stains!"
+        stains_txt = common.pluralize(potential_stains, "stain")
+        footer += f"If this was an Oblivion roll, gain {stains_txt}!"
 
     embed.set_footer(text=footer)
 

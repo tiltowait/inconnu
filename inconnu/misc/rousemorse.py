@@ -25,10 +25,6 @@ async def parse(ctx, key: str, character: str, count=0, purpose=None):
 
 async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):
     """Process the rouse result and display to the user."""
-    if character.hunger == 5:
-        await ctx.respond(f"{character.name}'s Hunger is already 5!")
-        return
-
     dice = [random.randint(1, 10) for _ in range(rolls)]
     ones, successes, tens = __count_successes(dice)
     total_rouses = len(dice)
@@ -36,6 +32,7 @@ async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):
     hunger_gain = total_rouses - successes
 
     new_hunger = character.hunger + hunger_gain
+    frenzy = new_hunger > 5
     if new_hunger > 5:
         new_hunger = 5
 
@@ -57,6 +54,13 @@ async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):
 
     field_name = "New Hunger" if "ailure" in title else "Hunger"
     embed.add_field(name=field_name, value=trackmoji.emojify_hunger(new_hunger))
+
+    if frenzy:
+        embed.add_field(
+            name="Roll against Hunger Frenzy",
+            value="You failed a Rouse check at Hunger 5 and should run the `/frenzy` command.",
+            inline=False
+        )
 
     footer = purpose + "\n" if purpose is not None else ""
     potential_stains = tens + ones

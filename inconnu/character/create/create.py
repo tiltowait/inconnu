@@ -3,6 +3,8 @@
 import re
 from types import SimpleNamespace as SN
 
+import discord
+
 from . import wizard
 from ...vchar import VChar
 from ... import common
@@ -16,7 +18,7 @@ async def process(ctx, name: str, splat: str, humanity: int, health: int, willpo
         if VChar.character_exists(ctx.guild.id, ctx.author.id, name):
             raise ValueError(f"Sorry, you have a character named `{name}` already!")
 
-        await ctx.respond(
+        response = await ctx.respond(
             "Please check your DMs! I hope you have your character sheet ready.",
             hidden=True
         )
@@ -27,6 +29,11 @@ async def process(ctx, name: str, splat: str, humanity: int, health: int, willpo
 
     except ValueError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
+    except discord.errors.Forbidden:
+        await response.edit(
+            content="**Whoops!** I can't DM your character wizard. Please enable DMs and try again."
+        )
+        del character_wizard
 
 
 def __validate_parameters(name, humanity, health, willpower):

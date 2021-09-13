@@ -26,6 +26,12 @@ async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
         await common.display_error(ctx, character.name, err)
     except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
+    except discord.errors.Forbidden:
+        await ctx.respond(
+            "**Whoops!** I can't DM your trait wizard. Please enable DMs and try again.",
+            hidden=True
+        )
+        del wizard
 
 
 def __handle_traits(character: VChar, traits: dict, overwriting: bool):

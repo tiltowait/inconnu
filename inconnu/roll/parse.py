@@ -22,8 +22,9 @@ from . import dicemoji
 from . import reroll
 from .. import common
 from .. import stats
-from ..vchar import errors, VChar
+from .. import common
 from ..constants import DAMAGE
+from ..vchar import errors, VChar
 
 __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
 
@@ -31,7 +32,7 @@ class TraitInDMsError(Exception):
     """An error for when the user attempts to roll traits in a DM."""
 
 
-async def parse(ctx, syntax: str, char_name=None):
+async def parse(ctx, syntax: str, character=None):
     """Parse the user's arguments and attempt to roll the dice."""
 
     # Comments appear after the first # in a command
@@ -40,35 +41,25 @@ async def parse(ctx, syntax: str, char_name=None):
         syntax, comment = syntax.split("#", 1)
         comment = comment.strip()
 
-    if __is_unsafe_dm_roll(ctx, syntax):
+    if ctx.guild is None and __needs_character(syntax):
         await common.display_error(ctx, ctx.author.display_name, "You cannot roll traits in DMs!")
         return
 
     args = syntax.split()
-    character = None
 
     # Determine the character being used, if any
     if ctx.guild is not None:
         # This is one of the few commands that can be rolled in DMs
         try:
-            # For compatibility between the slash command and regular command
-            name = args[0] if char_name is None else char_name
-            character = VChar.fallback_find(ctx.guild.id, ctx.author.id, name)
+            if character is not None or __needs_character(syntax):
+                character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
 
         except errors.CharacterError as err:
-            if __needs_character(syntax):
-                await __respond_error(ctx, err)
-                return
-
-        if character is not None and character.name.lower() == args[0].lower():
-            # Technically, we could wind up in a weird state here, but it's extremely unlikely
-            # that someone would both use the slash command *and* add a trait with the same
-            # name as their character
-            del args[0]
-
-            # Yell at the user if they only gave a character name and no roll syntax
-            if len(args) == 0:
-                await __respond_error(ctx, "You need to tell me what to roll!")
+            # Two error cases prevent us from continuing:
+            #   1. The roll explicitly requires a character (trait roll)
+            #   2. The user explicitly supplied a nonexistent character
+            if character is not None or __needs_character(syntax):
+                await common.display_error(ctx, ctx.author.display_name, err)
                 return
 
     # Attempt to parse the user's roll syntax
@@ -85,7 +76,10 @@ async def parse(ctx, syntax: str, char_name=None):
 async def display_outcome(ctx, character, results, comment, rerolled=False):
     """Display the roll results in a nice embed."""
     # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
-    stats.Stats.log_roll(ctx.guild.id, ctx.author.id, character, results)
+    if ctx.guild is not None:
+        stats.Stats.log_roll(ctx.guild.id, ctx.author.id, character, results)
+    else:
+        stats.Stats.log_roll(None, ctx.author.id, character, results)
 
     # Determine the name for the "author" field
     character_name = None
@@ -358,24 +352,6 @@ def __generate_reroll_buttons(roll_result) -> list:
     return buttons
 
 
-def __is_unsafe_dm_roll(ctx, args: str):
-    """Raise an exception if attempting to makea roll in a DM."""
-    if ctx.guild is not None:
-        return False
-
-    return __needs_character(args)
-
-
 def __needs_character(syntax: str):
     """Determines whether a roll needs a character."""
     return re.match(r"[A-z_]", syntax) is not None
-
-
-async def __respond_error(ctx, err):
-    """Replies or responds with an ephemeral message wherever available."""
-    err = str(err)
-
-    if hasattr(ctx, "respond"):
-        await ctx.respond(err, hidden=True)
-    else:
-        await ctx.reply(err)

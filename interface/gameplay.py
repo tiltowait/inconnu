@@ -5,7 +5,6 @@ from discord_ui import ext, SlashOption
 from discord_ui.cogs import slash_cog
 
 import inconnu
-from . import c_help
 from . import debug
 
 
@@ -15,17 +14,10 @@ class Gameplay(commands.Cog):
     # This is a legacy command being left in place until Discord mandates its
     # removal. Why? It's slightly faster to use. That's the only reason!
 
-    @commands.command(
-        name="v", aliases=["roll", "r"],
-        brief=c_help.ROLL_BRIEF,
-        description=c_help.ROLL_DESC,
-        usage=c_help.ROLL_USAGE,
-        help=c_help.ROLL_HELP
-    )
+    @commands.command(name="v", aliases=["roll", "r"])
     async def roll(self, ctx, *, args=None):
         """Roll a dice pool, either raw or calculated from traits."""
-        if args is not None:
-            await inconnu.roll.parse(ctx, args)
+        await ctx.reply("This command has been removed. Please use `/vr` instead.")
 
 
     @slash_cog(

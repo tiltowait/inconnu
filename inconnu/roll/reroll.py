@@ -18,9 +18,10 @@ async def wait_for_reroll(ctx, message, old_roll):
     """
     btn = await message.wait_for("button", ctx.bot)
 
-    if ctx.author.id != btn.author.id:
+    while ctx.author.id != btn.author.id:
         # We only want the original roller to be able to press these buttons
-        return
+        await btn.respond("Sorry, you can't reroll for another player.", hidden=True)
+        btn = await message.wait_for("button", ctx.bot)
 
     await btn.respond()
 

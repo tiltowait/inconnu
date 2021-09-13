@@ -5,8 +5,8 @@ from discord.ext import commands
 from discord_ui import UI
 from discord_ui.components import LinkButton
 
+import inconnu
 import interface
-from inconnu import stats
 
 bot = commands.Bot(command_prefix="//", case_insensitive=True)
 bot.remove_command("help")
@@ -65,10 +65,22 @@ async def on_command_error(ctx, error):
 # Guild Events
 
 @bot.event
+async def on_member_remove(member):
+    """Mark all of a member's characters as inactive."""
+    inconnu.VChar.mark_player_inactive(member)
+
+
+@bot.event
+async def on_member_join(member):
+    """Mark all the player's characters as active when they rejoin a guild."""
+    inconnu.VChar.reactivate_player_characters(member)
+
+
+@bot.event
 async def on_guild_join(guild):
     """Log whenever a guild is joined."""
     print(f"Joined {guild.name}!")
-    stats.Stats.guild_joined(guild.id, guild.name)
+    inconnu.stats.Stats.guild_joined(guild.id, guild.name)
     await bot.change_presence(activity=discord.Game(__status_message()))
 
 
@@ -76,7 +88,7 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     """Log guild removals."""
     print(f"Left {guild.name} :(")
-    stats.Stats.guild_left(guild.id)
+    inconnu.stats.Stats.guild_left(guild.id)
     await bot.change_presence(activity=discord.Game(__status_message()))
 
 
@@ -84,7 +96,7 @@ async def on_guild_remove(guild):
 async def on_guild_update(before, after):
     """Log guild name changes."""
     print(f"Renamed {before.name} => {after.name}")
-    stats.Stats.guild_renamed(after.id, after.name)
+    inconnu.stats.Stats.guild_renamed(after.id, after.name)
 
 
 # Misc and helpers

@@ -1,6 +1,7 @@
 """vchar/vchar.py - Persistent character management using MongoDB."""
 # pylint: disable=too-many-public-methods
 
+import datetime
 import math
 import os
 import re
@@ -552,6 +553,24 @@ class VChar:
         VChar._TRAITS.delete_many({ "charid": self.id })
         VChar._MACROS.delete_many({ "charid": self.id })
         return VChar._CHARS.delete_one({ "_id": self.id }).acknowledged
+
+
+    @classmethod
+    def mark_player_inactive(cls, player):
+        """Mark all of the player's characters as inactive."""
+        VChar._CHARS.update_many({ "guild": player.guild.id, "user": player.id }, {
+            "$set": { "log.left": datetime.datetime.utcnow() }
+            }
+        )
+
+
+    @classmethod
+    def reactivate_player_characters(cls, player):
+        """Reactivate all of the player's characters when they rejoin the guild."""
+        VChar._CHARS.update_many({ "guild": player.guild.id, "user": player.id }, {
+            "$unset": { "log.left": 1 }
+            }
+        )
 
 
     def log(self, key, increment=1):

@@ -54,7 +54,9 @@ async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):
         title=title
     )
     embed.set_author(name=character.name, icon_url=ctx.author.avatar_url)
-    embed.add_field(name="New Hunger", value=trackmoji.emojify_hunger(new_hunger))
+
+    field_name = "New Hunger" if "ailure" in title else "Hunger"
+    embed.add_field(name=field_name, value=trackmoji.emojify_hunger(new_hunger))
 
     footer = purpose + "\n" if purpose is not None else ""
     potential_stains = tens + ones

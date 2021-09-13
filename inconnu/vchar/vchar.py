@@ -65,37 +65,6 @@ class VChar:
 
 
     @classmethod
-    def fallback_find(cls, guild: int, user: int, name: str):
-        """
-        Fetch a character by the given name OR, if the user has only one character,
-        fetch that.
-        Raises CharacterError if they have more than one character.
-        """
-        VChar.__prepare()
-
-        query = {
-            "guild": guild,
-            "user": user,
-            "name": { "$regex": re.compile("^" + name + "$", re.IGNORECASE) }
-        }
-        character = VChar._CHARS.find_one(query)
-        if character is not None:
-            return VChar(character)
-
-        # Their character didn't match. Find all their characters
-        characters = VChar.all_characters(guild, user)
-        if len(characters) == 1:
-            return characters[0]
-
-        if len(characters) == 0:
-            return None
-
-        err = "You must supply a valid character name.\n\n**Your characters:**\n"
-        err += "\n".join(map(lambda char: char.name, characters))
-        raise errors.CharacterError(err)
-
-
-    @classmethod
     def strict_find(cls, guild: int, user: int, name: str):
         """
         Fetch a character by name.

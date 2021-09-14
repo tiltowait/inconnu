@@ -12,15 +12,23 @@ from ..vchar import errors, VChar
 async def parse(ctx, key: str, character: str, count=0, purpose=None):
     """Determine whether to perform a rouse or remorse check."""
     try:
-        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
 
-        if key == "rouse":
-            await __rouse_result(ctx, character, count, purpose)
-        elif key == "remorse":
-            await __remorse_result(ctx, character)
+    except errors.UnspecifiedCharacterError as err:
+        tip = f"`/{key}` `character:CHARACTER`"
+        character = await common.select_character(ctx, err, ("Proper syntax", tip))
 
+        if character is None:
+            # They didn't select a character
+            return
     except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
+        return
+
+    if key == "rouse":
+        await __rouse_result(ctx, character, count, purpose)
+    elif key == "remorse":
+        await __remorse_result(ctx, character)
 
 
 async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):

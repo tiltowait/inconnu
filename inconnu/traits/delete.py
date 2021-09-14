@@ -9,6 +9,9 @@ from ..vchar import errors, VChar
 from .. import common
 from .. import constants
 
+__HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=deleting-traits"
+
+
 async def parse(ctx, traits: str, character=None):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
@@ -16,13 +19,13 @@ async def parse(ctx, traits: str, character=None):
 
     except errors.UnspecifiedCharacterError as err:
         tip = f"`/traits delete` `traits:{traits}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
     try:
@@ -52,7 +55,7 @@ async def parse(ctx, traits: str, character=None):
         await ctx.respond(embed=embed, hidden=True)
 
     except (ValueError, SyntaxError) as err:
-        await common.display_error(ctx, character.name, err)
+        await common.display_error(ctx, character.name, err, __HELP_URL)
 
 
 def __delete_traits(character: VChar, *traits) -> list:

@@ -8,6 +8,11 @@ from .. import common
 from ..character.display import trackmoji
 from ..vchar import errors, VChar
 
+__HELP = {
+    "remorse": "https://www.inconnu-bot.com/#/additional-commands?id=remorse-checks",
+    "rouse": "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
+}
+
 
 async def parse(ctx, key: str, character: str, count=0, purpose=None):
     """Determine whether to perform a rouse or remorse check."""
@@ -16,13 +21,14 @@ async def parse(ctx, key: str, character: str, count=0, purpose=None):
 
     except errors.UnspecifiedCharacterError as err:
         tip = f"`/{key}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        url = __HELP[key]
+        character = await common.select_character(ctx, err, url, ("Proper syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, url)
         return
 
     if key == "rouse":

@@ -6,6 +6,9 @@ from . import trackmoji
 from ... import common
 from ...vchar import errors, VChar
 
+__HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
+
+
 async def parse(ctx, character=None, message=None):
     """Determine which character to display, then display them."""
     try:
@@ -23,7 +26,7 @@ async def parse(ctx, character=None, message=None):
         await ctx.respond(embed=embed, hidden=False)
 
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
 
 
 async def __display_character(ctx, character: VChar, message=None):

@@ -26,6 +26,7 @@ from ..constants import DAMAGE
 from ..vchar import errors, VChar
 
 __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
+__HELP_URL = "https://www.inconnu-bot.com/#/rolls"
 
 
 async def parse(ctx, raw_syntax: str, character=None):
@@ -39,7 +40,10 @@ async def parse(ctx, raw_syntax: str, character=None):
         comment = comment.strip()
 
     if ctx.guild is None and __needs_character(syntax):
-        await common.display_error(ctx, ctx.author.display_name, "You cannot roll traits in DMs!")
+        await common.display_error(ctx, ctx.author.display_name,
+            "You cannot roll traits in DMs!",
+            __HELP_URL
+        )
         return
 
     args = syntax.split()
@@ -58,14 +62,17 @@ async def parse(ctx, raw_syntax: str, character=None):
             if character is not None or __needs_character(syntax):
                 # Present the user with a list of their characters
                 tip = f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`"
-                character = await common.select_character(ctx, err, ("Proper syntax", tip))
+                character = await common.select_character(ctx, err,
+                    __HELP_URL,
+                    ("Proper syntax", tip)
+                )
 
                 if character is None:
                     # The user never made a selection
                     return
 
         except errors.CharacterError as err:
-            await common.display_error(ctx, ctx.author.display_name, err)
+            await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
             return
 
 
@@ -77,7 +84,7 @@ async def parse(ctx, raw_syntax: str, character=None):
 
     except (SyntaxError, ValueError) as err:
         name = character.name if character is not None else ctx.author.display_name
-        await common.display_error(ctx, name, str(err))
+        await common.display_error(ctx, name, str(err), __HELP_URL)
 
 
 async def display_outcome(ctx, character, results, comment, rerolled=False):

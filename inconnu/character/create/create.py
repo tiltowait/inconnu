@@ -1,4 +1,5 @@
 """character/create/create.py - Handle new character creation."""
+# pylint: disable=too-many-arguments
 
 import re
 from types import SimpleNamespace as SN
@@ -8,6 +9,8 @@ import discord
 from . import wizard
 from ...vchar import VChar
 from ... import common
+
+__HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-creation"
 
 
 async def process(ctx, name: str, splat: str, humanity: int, health: int, willpower: int):
@@ -28,7 +31,7 @@ async def process(ctx, name: str, splat: str, humanity: int, health: int, willpo
         await character_wizard.begin_chargen()
 
     except ValueError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
     except discord.errors.Forbidden:
         await response.edit(
             content="**Whoops!** I can't DM your character wizard. Please enable DMs and try again."

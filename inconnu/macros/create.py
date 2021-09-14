@@ -6,11 +6,15 @@ from . import macro_common
 from .. import common
 from ..vchar import VChar, errors
 
+__HELP_URL = "https://www.inconnu-bot.com/#/macros?id=creation"
+
+
 async def process(ctx, name: str, pool: str, difficulty=0, comment=None, character=None):
     """Create a macro if the syntax is valid."""
     if difficulty < 0:
         await common.display_error(
-            ctx, ctx.author.display_name, "`Difficulty` cannot be less than 0."
+            ctx, ctx.author.display_name, "`Difficulty` cannot be less than 0.",
+            __HELP_URL
         )
         return
 
@@ -18,18 +22,19 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
     except errors.UnspecifiedCharacterError as err:
         tip = "`/macro create` `name:NAME` `pool:POOL` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Minimal syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL, ("Minimal syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
     if not macro_common.is_macro_name_valid(name):
         await common.display_error(
-            ctx, character.name, "Macro names can only contain letters and underscores."
+            ctx, character.name, "Macro names can only contain letters and underscores.",
+            __HELP_URL
         )
         return
 
@@ -42,7 +47,7 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
         SyntaxError, errors.AmbiguousTraitError, errors.TraitNotFoundError,
         errors.MacroAlreadyExistsError
     ) as err:
-        await common.display_error(ctx, character.name, err)
+        await common.display_error(ctx, character.name, err, __HELP_URL)
 
 
 def __expand_syntax(character: VChar, syntax: str):

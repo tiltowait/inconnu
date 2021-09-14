@@ -7,6 +7,9 @@ from .. import constants
 from ..vchar import errors, VChar
 from ..character import update
 
+__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=awakening"
+
+
 async def process(ctx, character=None):
     """Perform a Rouse check and heal Superficial Willpower damage."""
     try:
@@ -14,13 +17,13 @@ async def process(ctx, character=None):
 
     except errors.UnspecifiedCharacterError as err:
         tip = "`/awaken` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
     message = "**Awakening:**"

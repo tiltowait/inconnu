@@ -9,6 +9,12 @@ from .traitwizard import TraitWizard
 from .. import common
 from ..vchar import errors, VChar
 
+__HELP_URL = {
+    False: "https://www.inconnu-bot.com/#/trait-management?id=adding-traits",
+    True: "https://www.inconnu-bot.com/#/trait-management?id=updating-traits"
+}
+
+
 async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
     """Add traits to a character."""
     try:
@@ -17,13 +23,16 @@ async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
     except errors.UnspecifiedCharacterError as err:
         key = "update" if allow_overwrite else "add"
         tip = f"`/traits {key}` `traits:{traits}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err,
+            __HELP_URL[allow_overwrite],
+            ("Proper syntax", tip)
+        )
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL[allow_overwrite])
         return
 
     # We have a good character
@@ -38,7 +47,7 @@ async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
             await wizard.begin()
 
     except (ValueError, SyntaxError) as err:
-        await common.display_error(ctx, character.name, err)
+        await common.display_error(ctx, character.name, err, __HELP_URL[allow_overwrite])
     except discord.errors.Forbidden:
         await ctx.respond(
             "**Whoops!** I can't DM your trait wizard. Please enable DMs and try again.",

@@ -7,25 +7,31 @@ import discord
 from .. import common
 from ..vchar import errors, VChar
 
+__HELP_URL = "https://www.inconnu-bot.com/#/macros?id=retrieval"
+
+
 async def process(ctx, character=None):
     """Show all of a character's macros."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
     except errors.UnspecifiedCharacterError as err:
         tip = "`/macro list` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
     # We have a valid character
     macros = character.macros
     if len(macros) == 0:
-        await common.display_error(ctx, character.name, f"{character.name} has no macros!")
+        await common.display_error(ctx, character.name,
+            f"{character.name} has no macros!",
+            __HELP_URL
+        )
         return
 
     await __send_macros(ctx, character.name, macros)

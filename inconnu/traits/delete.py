@@ -12,7 +12,20 @@ from .. import constants
 async def parse(ctx, traits: str, character=None):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
-        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
+
+    except errors.UnspecifiedCharacterError as err:
+        tip = f"`/traits delete` `traits:{traits}` `character:CHARACTER`"
+        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+
+        if character is None:
+            # They didn't select a character
+            return
+    except errors.CharacterError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
+        return
+
+    try:
         traits = traits.split()
 
         if len(traits) == 0:
@@ -40,8 +53,6 @@ async def parse(ctx, traits: str, character=None):
 
     except (ValueError, SyntaxError) as err:
         await common.display_error(ctx, character.name, err)
-    except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
 
 
 def __delete_traits(character: VChar, *traits) -> list:

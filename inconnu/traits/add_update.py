@@ -12,7 +12,22 @@ from ..vchar import errors, VChar
 async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
     """Add traits to a character."""
     try:
-        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
+
+    except errors.UnspecifiedCharacterError as err:
+        key = "update" if allow_overwrite else "add"
+        tip = f"`/traits {key}` `traits:{traits}` `character:CHARACTER`"
+        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+
+        if character is None:
+            # They didn't select a character
+            return
+    except errors.CharacterError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
+        return
+
+    # We have a good character
+    try:
         traits = parse_traits(*traits.split())
         outcome = __handle_traits(character, traits, allow_overwrite)
 
@@ -24,8 +39,6 @@ async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
 
     except (ValueError, SyntaxError) as err:
         await common.display_error(ctx, character.name, err)
-    except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
     except discord.errors.Forbidden:
         await ctx.respond(
             "**Whoops!** I can't DM your trait wizard. Please enable DMs and try again.",

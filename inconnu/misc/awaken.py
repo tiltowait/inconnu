@@ -44,3 +44,4 @@ async def process(ctx, character=None):
             message += f"Increase Hunger to **{character.hunger}**."
 
     await update.parse(ctx, f"sw=-{recovered}", character.name, message)
+    character.log("awaken")

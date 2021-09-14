@@ -38,6 +38,7 @@ async def process(ctx, difficulty: int, character: str):
         title = "Failure!"
         message = "You succumb to the Beast."
         color = 0x5C0700
+        character.log("frenzy")
 
     embed = discord.Embed(
         title=title,

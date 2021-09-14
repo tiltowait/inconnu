@@ -544,7 +544,7 @@ class VChar:
             return
 
         valid_keys = [
-            "remorse", "rouse", "slake",
+            "remorse", "rouse", "slake", "awaken", "frenzy",
             "health_superficial", "health_aggravated",
             "willpower_superficial", "willpower_aggravated"
         ]

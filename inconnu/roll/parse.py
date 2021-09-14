@@ -10,8 +10,8 @@
 # this is the fact they could theoretically supply a name despite not using a
 # trait-based roll, so we need to check for the character in either case.
 
-import re
 import asyncio
+import re
 from types import SimpleNamespace as SN
 
 import discord
@@ -22,18 +22,15 @@ from . import dicemoji
 from . import reroll
 from .. import common
 from .. import stats
-from .. import common
 from ..constants import DAMAGE
 from ..vchar import errors, VChar
 
 __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
 
-class TraitInDMsError(Exception):
-    """An error for when the user attempts to roll traits in a DM."""
 
-
-async def parse(ctx, syntax: str, character=None):
+async def parse(ctx, raw_syntax: str, character=None):
     """Parse the user's arguments and attempt to roll the dice."""
+    syntax = raw_syntax # Save the raw in case we get a character error
 
     # Comments appear after the first # in a command
     comment = None
@@ -52,15 +49,42 @@ async def parse(ctx, syntax: str, character=None):
         # This is one of the few commands that can be rolled in DMs
         try:
             if character is not None or __needs_character(syntax):
-                character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+                character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
 
-        except errors.CharacterError as err:
+        except errors.UnspecifiedCharacterError as err:
             # Two error cases prevent us from continuing:
             #   1. The roll explicitly requires a character (trait roll)
             #   2. The user explicitly supplied a nonexistent character
             if character is not None or __needs_character(syntax):
-                await common.display_error(ctx, ctx.author.display_name, err)
-                return
+                # Present the user with a list of their characters
+                character_options = common.character_options(ctx.guild.id, ctx.author.id)
+                tip = common.command_tip("/vr", f"syntax:{raw_syntax}", "character:CHARACTER")
+
+                errmsg = await common.display_error(
+                    ctx, ctx.author.display_name, err, ("Proper syntax", tip),
+                    components=character_options.components
+                )
+
+                try:
+                    if isinstance(character_options.components[0], Button):
+                        btn = await errmsg.wait_for("button", ctx.bot, timeout=60)
+                        character = character_options.characters[btn.custom_id]
+                    else:
+                        btn = await errmsg.wait_for("select", ctx.bot, timeout=60)
+                        character = character_options.characters[btn.selected_values[0]]
+
+                    await btn.respond()
+                    await errmsg.disable_components()
+
+                except asyncio.exceptions.TimeoutError:
+                    await errmsg.edit(components=None)
+                    #await errmsg.disable_components()
+                    return
+
+        except errors.CharacterError as err:
+            await common.display_error(ctx, ctx.author.display_name, err)
+            return
+
 
     # Attempt to parse the user's roll syntax
     try:
@@ -140,10 +164,7 @@ async def display_outcome(ctx, character, results, comment, rerolled=False):
             msg = await ctx.respond(embed=embed)
     else:
         try:
-            if hasattr(ctx, "reply"):
-                msg = await ctx.reply(embed=embed, components=reroll_buttons)
-            else:
-                msg = await ctx.respond(embed=embed, components=reroll_buttons)
+            msg = await ctx.respond(embed=embed, components=reroll_buttons)
             rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
             await display_outcome(ctx, character_name, rerolled_results, comment, rerolled=True)
         except asyncio.exceptions.TimeoutError:

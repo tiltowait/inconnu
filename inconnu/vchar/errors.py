@@ -3,6 +3,15 @@
 class CharacterError(Exception):
     """Raised when there is an issue fetching a character."""
 
+class NoCharactersError(CharacterError):
+    """Raised when the user has no characters."""
+
+class UnspecifiedCharacterError(CharacterError):
+    """Raised when the user needs to specify a character but hasn't."""
+
+class CharacterNotFoundError(CharacterError):
+    """Raised when a given character does not exist."""
+
 class TraitAlreadyExistsError(Exception):
     """Raised when the user tries to add an extant trait."""
 

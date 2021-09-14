@@ -65,6 +65,38 @@ class VChar:
 
 
     @classmethod
+    def fetch(cls, guild: int, user: int, name: str):
+        """
+        Fetch a character by name.
+        Raises CharacterError if the character does not exist.
+        """
+        VChar.__prepare()
+
+        count = VChar._CHARS.count_documents({ "guild": guild, "user": user })
+        if count == 0:
+            raise errors.NoCharactersError("You have no characters!")
+
+        if name is None:
+            if count == 1:
+                return VChar._CHARS.find_one({ "guild": guild, "user": user })
+
+            errmsg = f"You have {count} characters. Please specify which you want."
+            raise errors.UnspecifiedCharacterError(errmsg)
+
+        query = {
+            "guild": guild,
+            "user": user,
+            "name": { "$regex": re.compile("^" + name + "$", re.IGNORECASE) }
+        }
+        character = VChar._CHARS.find_one(query)
+
+        if character is None:
+            raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
+
+        return VChar(character)
+
+
+    @classmethod
     def strict_find(cls, guild: int, user: int, name: str):
         """
         Fetch a character by name.

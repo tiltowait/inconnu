@@ -68,7 +68,13 @@ class VChar:
     def fetch(cls, guild: int, user: int, name: str):
         """
         Fetch a character by name.
-        Raises CharacterError if the character does not exist.
+
+        Raises NoCharactersError if the user has no character.
+        Raises CharacterNotFoundError if the character doesn't exist.
+
+        If the name isn't specified, then:
+            1 character: Return that character
+           >1 character: Raise UnspecifiedCharacterError
         """
         VChar.__prepare()
 
@@ -92,48 +98,6 @@ class VChar:
 
         if character is None:
             raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
-
-        return VChar(character)
-
-
-    @classmethod
-    def strict_find(cls, guild: int, user: int, name: str):
-        """
-        Fetch a character by name.
-        Raises CharacterError if the character does not exist.
-        """
-        VChar.__prepare()
-
-        if name is None:
-            all_chars = VChar.all_characters(guild, user)
-            if len(all_chars) == 1:
-                return all_chars[0]
-
-            if len(all_chars) == 0:
-                raise errors.CharacterError("You have no characters.")
-
-            if len(all_chars) > 1:
-                err = "You must supply a valid character name.\n\n**Your characters:**\n"
-                err += "\n".join(map(lambda char: char.name, all_chars))
-                raise errors.CharacterError(err)
-
-        query = {
-            "guild": guild,
-            "user": user,
-            "name": { "$regex": re.compile("^" + name + "$", re.IGNORECASE) }
-        }
-        character = VChar._CHARS.find_one(query)
-
-        if character is None:
-            err = f"You do not have a character named `{name}`."
-
-            # Give them their character options
-            all_chars = VChar.all_characters(guild, user)
-            if len(all_chars) > 0:
-                err += "\n\n**Your characters:**\n"
-                err += "\n".join(map(lambda char: char.name, all_chars))
-
-            raise errors.CharacterError(err)
 
         return VChar(character)
 

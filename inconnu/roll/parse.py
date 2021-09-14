@@ -46,7 +46,7 @@ async def parse(ctx, raw_syntax: str, character=None):
 
     # Determine the character being used, if any
     if ctx.guild is not None:
-        # This is one of the few commands that can be rolled in DMs
+        # Only guilds have characters
         try:
             if character is not None or __needs_character(syntax):
                 character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
@@ -57,28 +57,11 @@ async def parse(ctx, raw_syntax: str, character=None):
             #   2. The user explicitly supplied a nonexistent character
             if character is not None or __needs_character(syntax):
                 # Present the user with a list of their characters
-                character_options = common.character_options(ctx.guild.id, ctx.author.id)
-                tip = common.command_tip("/vr", f"syntax:{raw_syntax}", "character:CHARACTER")
+                tip = f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`"
+                character = await common.select_character(ctx, err, ("Proper syntax", tip))
 
-                errmsg = await common.display_error(
-                    ctx, ctx.author.display_name, err, ("Proper syntax", tip),
-                    components=character_options.components
-                )
-
-                try:
-                    if isinstance(character_options.components[0], Button):
-                        btn = await errmsg.wait_for("button", ctx.bot, timeout=60)
-                        character = character_options.characters[btn.custom_id]
-                    else:
-                        btn = await errmsg.wait_for("select", ctx.bot, timeout=60)
-                        character = character_options.characters[btn.selected_values[0]]
-
-                    await btn.respond()
-                    await errmsg.disable_components()
-
-                except asyncio.exceptions.TimeoutError:
-                    await errmsg.edit(components=None)
-                    #await errmsg.disable_components()
+                if character is None:
+                    # The user never made a selection
                     return
 
         except errors.CharacterError as err:

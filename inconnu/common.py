@@ -1,5 +1,6 @@
 """common.py - Commonly used functions."""
 
+import asyncio
 from types import SimpleNamespace
 
 import discord
@@ -40,9 +41,30 @@ async def display_error(ctx, char_name, error, *fields, footer=None, components=
     return await ctx.respond(embed=embed, components=components, hidden=True)
 
 
-def command_tip(command: str, raw_syntax: str, *args):
-    """Generate a string that displays a suggested fix for the command syntax."""
-    return f"`{command}` `{raw_syntax}` `{' '.join(args)}`"
+async def select_character(ctx, err, tip):
+    """A prompt for the user to select a character from a list."""
+    options = character_options(ctx.guild.id, ctx.author.id)
+    errmsg = await display_error(
+        ctx, ctx.author.display_name, err, (tip[0], tip[1]),
+        components=options.components
+    )
+
+    try:
+        if isinstance(options.components[0], Button):
+            btn = await errmsg.wait_for("button", ctx.bot, timeout=60)
+            character = options.characters[btn.custom_id]
+        else:
+            btn = await errmsg.wait_for("select", ctx.bot, timeout=60)
+            character = options.characters[btn.selected_values[0]]
+
+        await btn.respond()
+        await errmsg.disable_components()
+
+        return character
+
+    except asyncio.exceptions.TimeoutError:
+        await errmsg.edit(components=None)
+        return None
 
 
 def character_options(guild: int, user: int):

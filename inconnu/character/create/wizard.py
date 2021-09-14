@@ -135,5 +135,6 @@ class Wizard:
             await self.__assign_next_trait(rating)
 
         except asyncio.exceptions.TimeoutError:
+            await query_msg.edit(components=None)
             err = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
             await self.ctx.author.send(err)

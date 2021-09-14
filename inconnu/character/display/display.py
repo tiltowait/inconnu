@@ -9,37 +9,21 @@ from ...vchar import errors, VChar
 async def parse(ctx, character=None, message=None):
     """Determine which character to display, then display them."""
     try:
-        if character is None:
-            user_chars = VChar.all_characters(ctx.guild.id, ctx.author.id)
-
-            if len(user_chars) == 0:
-                raise ValueError("You have no characters.")
-
-            if len(user_chars) > 1:
-                user_chars = "\n".join(map(lambda char: char.name, user_chars))
-                raise errors.CharacterError(user_chars)
-
-            if len(user_chars) == 1:
-                # Display their only character
-                character = user_chars[0]
-
-        else:
-            character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
-
-        # Character has been found
+        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
         await __display_character(ctx, character, message)
 
-    except ValueError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
-    except errors.CharacterError as err:
+    except errors.UnspecifiedCharacterError as err:
+        characters = [char.name for char in VChar.all_characters(ctx.guild.id, ctx.author.id)]
         embed = discord.Embed(
             title="Your Characters",
-            description=str(err)
+            description="\n".join(characters)
         )
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-        embed.set_footer(text="To view one: /character display NAME")
+        embed.set_footer(text="To view one: /character display character:NAME")
+        await ctx.respond(embed=embed, hidden=False)
 
-        await ctx.respond(embed=embed, hidden=True)
+    except errors.CharacterError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
 
 
 async def __display_character(ctx, character: VChar, message=None):

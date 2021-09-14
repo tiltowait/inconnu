@@ -12,7 +12,7 @@ from ..vchar import errors, VChar
 async def prompt(ctx, character: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
         embed = __generate_prompt(ctx, character.name)
 
         buttons = [
@@ -41,6 +41,10 @@ async def prompt(ctx, character: str):
             await msg.edit(content="**Deletion canceled due to inactivity.**")
             await msg.disable_components()
 
+    except errors.UnspecifiedCharacterError:
+        chars = [char.name for char in VChar.all_characters(ctx.guild.id, ctx.author.id)]
+        err = "You must specify a character.\n\n**Options:**\n" + "\n".join(chars)
+        await common.display_error(ctx, ctx.author.display_name, err)
     except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
 

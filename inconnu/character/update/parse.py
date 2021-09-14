@@ -7,6 +7,7 @@ from discord_ui.components import LinkButton
 
 from . import paramupdate
 from ..display import parse as display
+from ... import common
 from ...vchar import errors, VChar
 
 __KEYS = {
@@ -40,7 +41,20 @@ async def parse(ctx, parameters: str, character=None, update_message=None):
         return
 
     try:
-        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
+    except errors.UnspecifiedCharacterError as err:
+        tip = f"`/character update` `parameters:{parameters}` `character:CHARACTER`"
+        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+
+        if character is None:
+            # They didn't select a character
+            return
+    except errors.CharacterError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
+        return
+
+    # Character has been selected
+    try:
         parameters = __parse_arguments(*args)
         updates = []
 
@@ -54,7 +68,7 @@ async def parse(ctx, parameters: str, character=None, update_message=None):
 
         await display(ctx, character.name, update_message)
 
-    except (SyntaxError, ValueError, errors.CharacterError) as err:
+    except (SyntaxError, ValueError) as err:
         await update_help(ctx, err)
 
 

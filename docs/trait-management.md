@@ -15,7 +15,7 @@ All character management is done through the `/traits` application command prefi
 ## Adding Traits
 
 ```
-/trait add <trait>[=rating] ... [character]
+/trait add traits:<trait=rating ...> character:[character]
 
 ```
 
@@ -25,9 +25,11 @@ All character management is done through the `/traits` application command prefi
 | `rating`    | The trait's rating (Optional)                             |
 | `character` | The name of the character being updated                   |
 
-**Example:** `/traits add Oblivion=4` `Nadea`
-
 Multiple traits can be added at once.
+
+**Example:** Adding Oblivion 4, Fortitude 2, and Stunning 2 to Nadea:
+
+![/traits add traits:Oblivion=4 Fortitude=2 Stunning=2 character:nadea](images/traits/traits-add.png)
 
 [filename](includes/incognito-mode.md ':include')
 
@@ -36,16 +38,20 @@ Multiple traits can be added at once.
 ## Displaying Traits
 
 ```
-/traits list [character]
+/traits list character:[character]
 
 ```
 
-This command DMs you a list of the character's traits, sorted alphabetically.
+This command shows you a list of the character's traits, sorted alphabetically.
+
+**Example:** Showing Nadea's traits:
+
+![/traits list character:nadea](images/traits/traits-list.png)
 
 ## Updating Traits
 
 ```
-//traits update <trait>[=rating] [character]
+/traits update traits:<trait=rating ...> character:[character]
 
 ```
 
@@ -55,9 +61,11 @@ This command DMs you a list of the character's traits, sorted alphabetically.
 | `rating`    | The trait's rating (Optional)                             |
 | `character` | The name of the character being updated                   |
 
-**Example:** `/traits update Awareness` `Nadea`
-
 Multiple traits can be updated at once.
+
+**Example:** Updating Nadea's Awareness trait to 3:
+
+![/traits update traits:awareness=3 character:nadea](images/traits/traits-update.png)
 
 [filename](includes/incognito-mode.md ':include')
 
@@ -66,7 +74,7 @@ Multiple traits can be updated at once.
 ## Deleting Traits
 
 ```
-//traits delete <trait> ... [character]
+/traits delete traits:<trait ...>  character:[character]
 
 ```
 
@@ -75,9 +83,11 @@ Multiple traits can be updated at once.
 | `trait`     | The name of the trait to remove                           |
 | `character` | The name of the character being updated                   |
 
-**Example:** `/traits delete Oblivion Academics` `Nadea`
-
 You may belete multiple traits at once.
+
+**Example:** Removing Nadea's Oblivion and Fortitude traits:
+
+![/traits delete traits:oblivion fortitude character:nadea](images/traits/traits-delete.png)
 
 ?> If you delete a core Attribute or Skill, its rating will be set to *0* instead of removing the trait.
 

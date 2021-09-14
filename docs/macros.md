@@ -9,16 +9,22 @@ All macro management is done through the `/macro` application command prefix. As
 ## Creation
 
 ```
-/macro create <syntax> [character]
+/macro create name:<name> pool:<pool> difficulty:[difficulty] comment:[comment] character:[character]
 ```
 
-| Parameter   | Description                                   |
-|-------------|-----------------------------------------------|
-| `syntax`    | The pool and (optionally) hunger for the roll |
-| `comment`   | A comment to add when rolling                 |
-| `character` | The character who owns the macro              |
+| Parameter    | Description                                     |
+|--------------|-------------------------------------------------|
+| `name`       | The name of the macro                           |
+| `pool`       | The pool and (optional) difficulty for the roll |
+| `difficulty` | The roll's difficulty (default 0)               |
+| `comment`    | A comment to add when rolling                   |
+| `character`  | The character who owns the macro                |
 
-?> `syntax` follows the same syntax as standard [rolls](rolls.md#basic-syntax).
+?> `pool` follows the same syntax as standard [rolls](rolls.md#basic-syntax) and may include traits.
+
+**Example:** Creating a macro:
+
+![/macro create name:hunt pool:resolve + medicine 3 comment:Nadea hunts mortuaries for fresh bodies. character:nadea](images/macros/macro-create.png)
 
 [filename](includes/character-requirement.md ':include')
 
@@ -27,12 +33,16 @@ All macro management is done through the `/macro` application command prefix. As
 This command will list all macros owned by a given character.
 
 ```
-/macro list [character]
+/macro list character:[character]
 ```
 
 | Parameter   | Description                                   |
 |-------------|-----------------------------------------------|
 | `character` | The character of interest                     |
+
+**Example:**
+
+![/macro list character:nadea](images/macros/macro-list.png)
 
 [filename](includes/character-requirement.md ':include')
 
@@ -47,18 +57,27 @@ This command will list all macros owned by a given character.
 | `macro`    | The pool and (optionally) hunger for the roll  |
 | `character` | The character who owns the macro              |
 
+**Example:** Deleting Nadea's `hunt` macro:
+
+![/macro delete macro:hunt character:nadea](images/macros/macro-delete.png)
+
 [filename](includes/character-requirement.md ':include')
 
 ## Rolling
 
 ```
-/vm <syntax> [character]
+/vm syntax:<macro_name ...> character:[character]
 ```
 
 [filename](includes/character-requirement.md ':include')
 
 * At a minimum, `syntax` must begin with the macro name
-* To add *Hunger*, add a number 0-5 after the macro name
-* To add *Difficulty*, add a positive integer after *Hunger*
+* To add *Hunger*, add a number 0-5 after the macro name (and any modifiers)
+* To add or modify *Difficulty*, add a positive integer after *Hunger*
+* You may add modifiers to the macro pool.
 
-?> **Why `/vm`?** Macro rolling does not make use of the `/macro` command family namespace. This is intentional. By keeping macro rolling similar to the general roll command, users can quickly type it without having to choose from a list. If `//v` means "vampire roll", then `/vm` means "vampire roll macro".
+**Example:** Rolling Nadea's `hunt` macro, plus one die, at Hunger 4:
+
+![/vm macro:hunt + 1 4 character:nadea](images/macros/macro-roll.png)
+
+?> **Why `/vm`?** Macro rolling does not make use of the `/macro` command family namespace. This is intentional. By keeping macro rolling similar to the general roll command, users can quickly type it without having to choose from a list. If `/vr` means "vampire roll", then `/vm` means "vampire roll macro".

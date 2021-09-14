@@ -24,12 +24,12 @@ The only option that requires any typing (and thus the only one it is possible t
 
 #### Example
 
-![Character creation example](includes/character-create.png)
+![Character creation example](images/characters/character-create.png)
 
 ## Character Display
 
 ```
-/character display [character]
+/character display character:[character]
 ```
 
 | Parameter   | Description                                               |
@@ -41,10 +41,14 @@ The `character` field is only required if you have more than one character in th
 * If you have only one character or supply `character`, that character will be displayed
 * If you have multiple characters, a list of them will be displayed
 
+**Example:** Displaying a specific character.
+
+![/character display character:nadea](images/characters/character-display.png)
+
 ## Tracker Updates
 
 ```
-/character update <parameters> [character]
+/character update parameters:<parameters> character:[character]
 ```
 This is a multi-parameter command. You may supply as many trackers as you like.
 
@@ -72,7 +76,9 @@ The following `trackers` names are recognized:
 | `current_xp` | Current XP                                                |
 | `total_xp`   | Total XP                                                  |
 
-**Example:** `/character update sh=+2 ah=+1` (Add two *Superficial Health* and one *Aggravated Health* damage)
+**Example:** To *add* 2 Superficial Health damage, *set* Aggravated Health damage to 1, and *add* 1 Stain to the character named Nadea:
+
+![/character update parameters:sh=+2 ah=1 stains=+1 character:nadea](images/characters/character-update.png)
 
 Apart from `name`, each key expects an integer, which you may supply in one of three forms: `+X`, `-X`, or plain `X`. The first two adjust the current value by positive or negative `X` while the last *sets* the `tracker` to `X`.
 
@@ -81,9 +87,13 @@ Apart from `name`, each key expects an integer, which you may supply in one of t
 ## Character Deletion
 
 ```
-/character delete <character>
+/character delete character:<character>
 ```
 
 `character` is mandatory. When running this command, **Inconnu** will give you a confirmation box before deleting the character.
+
+**Example:**
+
+![/character delete character:nadea](images/characters/character-delete.png)
 
 !> **This cannot be undone!** Deleting a character also removes all associated traits and macros.

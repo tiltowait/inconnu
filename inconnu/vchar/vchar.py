@@ -84,7 +84,8 @@ class VChar:
 
         if name is None:
             if count == 1:
-                return VChar._CHARS.find_one({ "guild": guild, "user": user })
+                character = VChar._CHARS.find_one({ "guild": guild, "user": user })
+                return VChar(character)
 
             errmsg = f"You have {count} characters. Please specify which you want."
             raise errors.UnspecifiedCharacterError(errmsg)

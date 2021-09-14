@@ -10,7 +10,14 @@ from ..vchar import errors, VChar
 async def process(ctx, character=None):
     """Show all of a character's macros."""
     try:
-        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
+    except errors.UnspecifiedCharacterError as err:
+        tip = "`/macro list` `character:CHARACTER`"
+        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+
+        if character is None:
+            # They didn't select a character
+            return
     except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return

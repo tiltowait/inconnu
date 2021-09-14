@@ -14,8 +14,20 @@ async def process(ctx, syntax: str, character=None):
     difficulty = 0
 
     try:
+        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
+    except errors.UnspecifiedCharacterError as err:
+        tip = f"`/vm` `syntax:{syntax}` `character:CHARACTER`"
+        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+
+        if character is None:
+            # They didn't select a character
+            return
+    except errors.CharacterError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
+        return
+
+    try:
         macro_stack, hunger, difficulty = __normalize_syntax(syntax) # pylint: disable=unbalanced-tuple-unpacking
-        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
 
         if not macro_common.is_macro_name_valid(macro_stack[0]):
             raise ValueError("Macro names may only contain letters and underscores.")
@@ -43,9 +55,6 @@ async def process(ctx, syntax: str, character=None):
         err += "\n**Usage:** `/vm <macro_name> [hunger] [difficulty]`"
         err += "\n\nYou may add simple math after `macro_name`."
         err += "\n `hunger` and `difficulty` are optional."
-        await common.display_error(ctx, ctx.author.display_name, err)
-        return
-    except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return
 

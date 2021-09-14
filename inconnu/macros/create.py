@@ -15,7 +15,14 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
         return
 
     try:
-        character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
+        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
+    except errors.UnspecifiedCharacterError as err:
+        tip = "`/macro create` `name:NAME` `pool:POOL` `character:CHARACTER`"
+        character = await common.select_character(ctx, err, ("Minimal syntax", tip))
+
+        if character is None:
+            # They didn't select a character
+            return
     except errors.CharacterError as err:
         await common.display_error(ctx, ctx.author.display_name, err)
         return

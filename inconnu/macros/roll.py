@@ -1,5 +1,7 @@
 """macros/roll.py - Rolling character macros."""
 
+import re
+
 from ..roll import perform_roll, display_outcome
 from . import macro_common
 from .. import common
@@ -12,26 +14,15 @@ async def process(ctx, syntax: str, character=None):
     difficulty = 0
 
     try:
-        macro_name, hunger, difficulty = __expand_syntax(syntax)
+        macro_stack, hunger, difficulty = __normalize_syntax(syntax) # pylint: disable=unbalanced-tuple-unpacking
         character = VChar.strict_find(ctx.guild.id, ctx.author.id, character)
-    except SyntaxError:
-        err = "**Syntax:** `/vm <macro_name> [hunger] [difficulty]`"
-        err += "\n\n `hunger` and `difficulty` are optional."
-        await common.display_error(ctx, ctx.author.display_name, err)
-        return
-    except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
-        return
 
-    # We have a valid character
-    if not macro_common.is_macro_name_valid(macro_name):
-        await common.display_error(
-            ctx, character.name, "Macro names may only contain letters and underscores."
-        )
+        if not macro_common.is_macro_name_valid(macro_stack[0]):
+            raise ValueError("Macro names may only contain letters and underscores.")
 
-    try:
-        macro = character.find_macro(macro_name)
+        macro = character.find_macro(macro_stack.pop(0))
         parameters = macro.pool
+        parameters.extend(macro_stack)
         parameters.append(hunger)
         parameters.append(difficulty or macro.difficulty)
 
@@ -47,35 +38,57 @@ async def process(ctx, syntax: str, character=None):
     except ValueError as err:
         # The user may have deleted a trait, which means the macro is invalid.
         await common.display_error(ctx, character.name, str(err))
+    except SyntaxError:
+        err = f"**Unknown syntax:** `{syntax}`"
+        err += "\n**Usage:** `/vm <macro_name> [hunger] [difficulty]`"
+        err += "\n\nYou may add simple math after `macro_name`."
+        err += "\n `hunger` and `difficulty` are optional."
+        await common.display_error(ctx, ctx.author.display_name, err)
+        return
+    except errors.CharacterError as err:
+        await common.display_error(ctx, ctx.author.display_name, err)
+        return
 
 
-def __expand_syntax(syntax: str):
-    """Expands the syntax to fit pool, hunger, diff."""
-    components = syntax.split()
-
-    if len(components) == 1:
-        components.append(0)
-        components.append(None)
-    elif len(components) == 2:
-        components.append(None)
-    elif len(components) > 3:
-        raise SyntaxError
-
+def __normalize_syntax(syntax: str):
     try:
-        hunger = int(components[1])
+        syntax = re.sub(r"([+-])", r" \g<1> ", syntax)
+        stack = syntax.split()
+        params = []
 
-        if not 0 <= hunger <= 5:
-            raise ValueError("Hunger must be between 0 and 5.")
+        while len(stack) > 1 and stack[-2] not in ["+", "-"]:
+            params.insert(0, stack.pop())
 
-        # If the user didn't supply a difficulty, we don't want to override
-        # the default difficulty stored in the macro.
-        difficulty = components[2]
+        params.insert(0, stack)
+
+        if len(params) == 1:
+            params.append("0")
+
+        if len(params) == 2:
+            params.append(None)
+
+        # At this point, the stack contains the following items
+        # 0: Pool (list that will be parsed by the standard roll parser)
+        # 1: Hunger ("0" or the user's input)
+        # 2: Difficulty (None or the user's input)
+
+        # We validate the pool stack later, but we will validate hunger and difficulty
+        # here. We don't modify anything; the roll parser will do that for us. Insteat,
+        # we simply check for validity.
+
+        if params[1].lower() != "hunger": # "hunger" is a valid option here
+            hunger = int(params[1])
+            if not 0 <= hunger <= 5:
+                raise ValueError("Hunger must be between 0 and 5.")
+
+        difficulty = params[2]
         if difficulty is not None:
             difficulty = int(difficulty)
             if difficulty < 0:
                 raise ValueError("Difficulty cannot be less than 0.")
 
-    except ValueError:
+    except Exception as err:
+        print(type(err))
         raise SyntaxError from ValueError
 
-    return components
+    return params

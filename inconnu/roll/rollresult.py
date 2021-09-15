@@ -111,8 +111,7 @@ class RollResult:
     @property
     def is_messy(self):
         """Return true if the roll is a messy critical."""
-        messy = self.normal.tens > 0 and self.hunger.tens > 0
-        return messy and self.is_successful
+        return self.normal.tens + self.hunger.tens >= 2 and self.hunger.tens > 0
 
 
     @property

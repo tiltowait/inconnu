@@ -127,12 +127,19 @@ class Gameplay(commands.Cog):
             SlashOption(int, "count", description="The number of Rouse checks to make"),
             SlashOption(str, "character", description="The character performing the check"),
             SlashOption(str, "purpose", description="The reason for the check"),
+            SlashOption(str, "reroll",
+                description="Re-roll failures",
+                choices=[
+                    ("Yes", "true"),
+                    ("No", "false")
+                ]
+            )
         ]
         , guild_ids=debug.WHITELIST
     )
-    async def rouse(self, ctx, count=1, character=None, purpose=None):
+    async def rouse(self, ctx, count=1, character=None, purpose=None, reroll="false"):
         """Perform a rouse check."""
-        await inconnu.misc.rousemorse.parse(ctx, "rouse", character, count, purpose)
+        await inconnu.misc.rousemorse.parse(ctx, "rouse", character, count, purpose, reroll)
 
 
     @ext.check_failure_response("You cannot slake in DMs.", hidden=True)

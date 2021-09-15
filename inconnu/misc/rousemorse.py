@@ -14,7 +14,7 @@ __HELP = {
 }
 
 
-async def parse(ctx, key: str, character: str, count=0, purpose=None):
+async def parse(ctx, key: str, character: str, count=0, purpose=None, reroll="false"):
     """Determine whether to perform a rouse or remorse check."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
@@ -32,13 +32,21 @@ async def parse(ctx, key: str, character: str, count=0, purpose=None):
         return
 
     if key == "rouse":
-        await __rouse_result(ctx, character, count, purpose)
+        reroll = reroll == "true"
+        await __rouse_result(ctx, character, count, purpose, reroll)
     elif key == "remorse":
         await __remorse_result(ctx, character)
 
 
-async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):
+async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str, reroll: bool):
     """Process the rouse result and display to the user."""
+    dice = []
+    for _ in range(rolls):
+        die = random.randint(1, 10)
+        if reroll and die < 6:
+            die = random.randint(1, 10)
+        dice.append(die)
+
     dice = [random.randint(1, 10) for _ in range(rolls)]
     ones, successes, tens = __count_successes(dice)
     total_rouses = len(dice)
@@ -76,7 +84,13 @@ async def __rouse_result(ctx, character: VChar, rolls: int, purpose: str):
             inline=False
         )
 
-    footer = purpose + "\n" if purpose is not None else ""
+    footer = []
+    if purpose is not None:
+        footer.append(purpose)
+    if reroll:
+        footer.append("Re-rolling failures")
+    footer = "\n".join(footer)
+
     potential_stains = tens + ones
     if potential_stains > 0:
         stains_txt = common.pluralize(potential_stains, "stain")

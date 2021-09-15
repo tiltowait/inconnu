@@ -22,13 +22,13 @@ def emojify(dice: list, hunger: bool):
     emojified = []
 
     for die in dice:
-        emoji = __emojify_die(die, hunger)
+        emoji = emojify_die(die, hunger)
         emojified.append(emoji)
 
     return " ".join(emojified)
 
 
-def __emojify_die(die: int, hunger: bool):
+def emojify_die(die: int, hunger: bool):
     """
     Fetch the emoji associated with a given die.
     Args:

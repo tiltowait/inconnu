@@ -29,8 +29,5 @@ async def process(ctx, macro_name: str, character=None):
             hidden=True
         )
 
-    except errors.MacroNotFoundError:
-        await common.display_error(ctx, character.name,
-            f"You have no macro named `{macro_name}`.",
-            __HELP_URL
-        )
+    except errors.MacroNotFoundError as err:
+        await common.display_error(ctx, character.name, err, __HELP_URL)

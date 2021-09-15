@@ -386,7 +386,7 @@ class VChar:
         """
         matches = self.__find_items(VChar._MACROS, macro, exact=True)
         if len(matches) == 0:
-            raise errors.MacroNotFoundError(f"You have no macro named `{macro}`.")
+            raise errors.MacroNotFoundError(f"{self.name} has no macro named `{macro}`.")
 
         # We do not allow multiple macros of the same name, so this is safe
         return SimpleNamespace(**matches[0])

@@ -44,13 +44,8 @@ async def process(ctx, syntax: str, character=None):
         results = perform_roll(character, *parameters)
         await display_outcome(ctx, character, results, macro.comment)
 
-    except errors.MacroNotFoundError:
-        await common.display_error(
-            ctx,
-            character.name,
-            f"You do not have a macro named `{macro_name}`.",
-            __HELP_URL
-        )
+    except errors.MacroNotFoundError as err:
+        await common.display_error(ctx, character.name, err, __HELP_URL)
     except ValueError as err:
         # The user may have deleted a trait, which means the macro is invalid.
         await common.display_error(ctx, character.name, str(err), __HELP_URL)

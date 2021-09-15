@@ -15,7 +15,7 @@ class Gameplay(commands.Cog):
     # removal. Why? It's slightly faster to use. That's the only reason!
 
     @commands.command(name="v", aliases=["roll", "r"])
-    async def roll(self, ctx, *, args=None):
+    async def roll(self, ctx):
         """Roll a dice pool, either raw or calculated from traits."""
         await ctx.reply("This command has been removed. Please use `/vr` instead.")
 
@@ -77,6 +77,19 @@ class Gameplay(commands.Cog):
     async def mend(self, ctx, character=None):
         """Mend Superficial damage."""
         await inconnu.misc.mend.process(ctx, character)
+
+
+    @slash_cog(
+        name="probability",
+        options=[
+            SlashOption(str, "roll", description="The pool, difficulty, and hunger", required=True),
+            SlashOption(str, "character", description="The character if using traits")
+        ]
+        , guild_ids=debug.WHITELIST
+    )
+    async def probabilities(self, ctx, roll: str, character=None):
+        """Calculate outcome probabilities for a given roll."""
+        await inconnu.misc.probabilities.process(ctx, roll, character)
 
 
     @ext.check_failure_response("Remorse checks aren't available in DMs.", hidden=True)

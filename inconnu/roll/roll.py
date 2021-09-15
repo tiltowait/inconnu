@@ -3,7 +3,7 @@
 from .dicethrow import DiceThrow
 from .rollresult import RollResult
 
-def _roll_pool(parameters, pool_str):
+def roll_pool(parameters, pool_str=None):
     """Perform a roll."""
     if parameters.pool > 50:
         raise ValueError(f"Pool cannot exceed 50. (Got {parameters.pool}.)")
@@ -21,4 +21,8 @@ def _roll_pool(parameters, pool_str):
     normal_dice = DiceThrow(normal_dice)
     hunger_dice = DiceThrow(hunger)
 
-    return RollResult(normal_dice, hunger_dice, difficulty, pool_str)
+    outcome = RollResult(normal_dice, hunger_dice, difficulty)
+    if pool_str is not None and not pool_str.isdigit():
+        outcome.pool_str = pool_str
+
+    return outcome

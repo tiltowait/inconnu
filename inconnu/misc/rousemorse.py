@@ -150,6 +150,7 @@ def __remorse_roll(character: VChar) -> bool:
 
     if not successful:
         character.humanity -= 1
+        character.log("degen")
     else:
         character.stains = 0
 

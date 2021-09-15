@@ -73,13 +73,13 @@ async def __display_probabilities(ctx, params, probs):
     if params.pool > params.hunger:
         breakdown += roll.dicemoji.emojify_die(10, False) + f" {probs['critical']:.1%} Critical Win"
 
-    breakdown += f"\n{success}\n{messy}\n------"
+    breakdown += f"\n{success}\n{messy}\n------\n"
 
     if probs["fail"] != 0:
         # Only show regular failure if there's a distinction between it and total failure
-        breakdown += roll.dicemoji.emojify_die(3, False) + f"\n{probs['fail']:.1%} Failure"
+        breakdown += roll.dicemoji.emojify_die(3, False) + f"{probs['fail']:.1%} Failure\n"
 
-    breakdown += f"\n{total_fail}\n{bestial}"
+    breakdown += f"{total_fail}\n{bestial}"
 
     embed.add_field(name="Breakdown", value=breakdown)
 

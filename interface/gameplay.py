@@ -83,13 +83,22 @@ class Gameplay(commands.Cog):
         name="probability",
         options=[
             SlashOption(str, "roll", description="The pool, difficulty, and hunger", required=True),
-            SlashOption(str, "character", description="The character if using traits")
+            SlashOption(str, "reroll",
+                description="The re-roll strategy to use",
+                choices=[
+                    ("Re-roll Failures", "reroll_failures"),
+                    ("Maximize Crits", "maximize_criticals"),
+                    ("Avoid Messy", "avoid_messy"),
+                    ("Risky Avoid Messy", "risky")
+                ]
+            ),
+            SlashOption(str, "character", description="The character if using traits"),
         ]
         , guild_ids=debug.WHITELIST
     )
-    async def probabilities(self, ctx, roll: str, character=None):
+    async def probabilities(self, ctx, roll: str, reroll=None, character=None):
         """Calculate outcome probabilities for a given roll."""
-        await inconnu.misc.probabilities.process(ctx, roll, character)
+        await inconnu.misc.probabilities.process(ctx, roll, reroll, character)
 
 
     @ext.check_failure_response("Remorse checks aren't available in DMs.", hidden=True)

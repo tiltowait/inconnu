@@ -25,36 +25,41 @@ async def wait_for_reroll(ctx, message, old_roll):
 
     await btn.respond()
 
+    return reroll(btn.custom_id, old_roll)
+
+
+def reroll(strategy, original):
+    """Perform a reroll based on a given strategy."""
     new_dice = None
     descriptor = None
 
-    if btn.custom_id == "reroll_failures":
-        new_dice = __reroll_failures(old_roll.normal.dice)
-        old_roll.strategy = "failures"
+    rerolled = original
+
+    if strategy == "reroll_failures":
+        new_dice = __reroll_failures(original.normal.dice)
+        rerolled.strategy = "failures"
         descriptor = "Rerolling Failures"
 
-    elif btn.custom_id == "maximize_criticals":
-        new_dice = __maximize_criticals(old_roll.normal.dice)
-        old_roll.strategy = "criticals"
+    elif strategy == "maximize_criticals":
+        new_dice = __maximize_criticals(original.normal.dice)
+        rerolled.strategy = "criticals"
         descriptor = "Maximizing Criticals"
 
-    elif btn.custom_id == "avoid_messy":
-        new_dice = __avoid_messy(old_roll.normal.dice)
-        old_roll.strategy = "messy"
+    elif strategy == "avoid_messy":
+        new_dice = __avoid_messy(original.normal.dice)
+        rerolled.strategy = "messy"
         descriptor = "Avoiding Messy Critical"
 
-    elif btn.custom_id == "risky":
-        new_dice = __risky_avoid_messy(old_roll.normal.dice)
-        old_roll.strategy = "risky"
+    elif strategy == "risky":
+        new_dice = __risky_avoid_messy(original.normal.dice)
+        rerolled.strategy = "risky"
         descriptor = "Avoid Messy (Risky)"
 
     new_throw = DiceThrow(new_dice)
-    new_results = old_roll
-    new_results.normal = new_throw
-    #new_results = RollResult(new_throw, old_roll.hunger, old_roll.difficulty)
-    new_results.descriptor = descriptor
+    rerolled.normal = new_throw
+    rerolled.descriptor = descriptor
 
-    return new_results
+    return rerolled
 
 
 def __reroll_failures(dice: list) -> list:

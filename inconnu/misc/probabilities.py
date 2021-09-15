@@ -10,10 +10,16 @@ from .. import common
 from .. import roll
 from ..vchar import errors, VChar
 
-__HELP_URL = "https://www.inconnu-bot.com/#/"
+__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=probability-calculation"
+__STRATEGIES = {
+    "reroll_failures": "Re-rolling Failures",
+    "maximize_criticals": "Maximizing Crits",
+    "avoid_messy": "Avoiding Messy Crits",
+    "risky": "Riskily Avoiding Messy Crits"
+}
 
 
-async def process(ctx, syntax: str, character=None):
+async def process(ctx, syntax: str, strategy=None, character=None):
     """Calculate the probabilities surrounding a roll."""
     if roll.needs_character(syntax):
         if ctx.guild is None:
@@ -39,21 +45,28 @@ async def process(ctx, syntax: str, character=None):
     try:
         args = syntax.split()
         _, params = roll.prepare_roll(character, *args)
-        probabilities = __get_probabilities(params)
+        probabilities = __get_probabilities(params, strategy)
 
-        await __display_probabilities(ctx, params, probabilities)
+        await __display_probabilities(ctx, params, strategy, probabilities)
 
     except (SyntaxError, ValueError) as err:
         name = character.name if character is not None else ctx.author.display_name
-        await common.display_error(ctx, name, str(err))
+        await common.display_error(ctx, name, str(err), __HELP_URL)
 
 
-async def __display_probabilities(ctx, params, probs):
+async def __display_probabilities(ctx, params, strategy: str, probs: dict):
     """Display the probabilities."""
+    title = f"Pool {params.pool} | Hunger {params.hunger} | Diff. {params.difficulty}"
+    if strategy is not None:
+        title += " | " + __STRATEGIES[strategy]
+
     uncomplicated = probs["success"] + probs["critical"]
     description = f"**{uncomplicated:.1%}** success without complication"
     description += f"\n**{probs['total_successes']:.1f}** average successes"
     description += f"\n**{probs['margin']:.1f}** average margin"
+
+    if strategy is not None:
+        description = f"**{__STRATEGIES[strategy]}**\n\n{description}"
 
     embed = discord.Embed(
         title=f"Pool {params.pool} | Hunger {params.hunger} | Diff. {params.difficulty}",
@@ -86,7 +99,7 @@ async def __display_probabilities(ctx, params, probs):
     await ctx.respond(embed=embed)
 
 
-def __get_probabilities(params):
+def __get_probabilities(params, strategy):
     """Retrieve the probabilities from storage or, if not calculated yet, generate them."""
     client = pymongo.MongoClient(os.environ["MONGO_URL"])
     col = client.inconnu.probabilities
@@ -94,17 +107,19 @@ def __get_probabilities(params):
     probs = col.find_one({
         "pool": params.pool,
         "hunger": params.hunger,
-        "difficulty": params.difficulty
+        "difficulty": params.difficulty,
+        "strategy": strategy
     })
 
     if probs is None:
-        probs = __simulate(params)
+        probs = __simulate(params, strategy)
 
         # Save the probabilities
         col.insert_one({
             "pool": params.pool,
             "hunger": params.hunger,
             "difficulty": params.difficulty,
+            "strategy": strategy,
             "probabilities": probs
         })
     else:
@@ -116,7 +131,7 @@ def __get_probabilities(params):
     return probs
 
 
-def __simulate(params):
+def __simulate(params, strategy):
     """Simulate 1000 rolls and calculate the probabilities of each potential outcome."""
     trials = 10000
     totals = defaultdict(lambda: 0)
@@ -124,6 +139,17 @@ def __simulate(params):
 
     for _ in range(trials):
         outcome = roll.roll_pool(params)
+
+        # Check reroll options
+        if strategy is not None:
+            if strategy == "reroll_failures" and outcome.can_reroll_failures:
+                outcome = roll.reroll(strategy, outcome)
+            elif strategy == "maximize_criticals" and outcome.can_maximize_criticals:
+                outcome = roll.reroll(strategy, outcome)
+            elif strategy == "avoid_messy" and outcome.can_avoid_messy_critical:
+                outcome = roll.reroll(strategy, outcome)
+            elif strategy == "risky" and outcome.can_risky_messy_critical:
+                outcome = roll.reroll(strategy, outcome)
 
         totals["total_successes"] += outcome.total_successes
         totals["margin"] += outcome.margin

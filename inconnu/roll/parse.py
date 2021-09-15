@@ -17,7 +17,7 @@ from types import SimpleNamespace as SN
 import discord
 from discord_ui import Button
 
-from .roll import _roll_pool
+from .roll import roll_pool
 from . import dicemoji
 from . import reroll
 from .. import common
@@ -39,7 +39,7 @@ async def parse(ctx, raw_syntax: str, character=None):
         syntax, comment = syntax.split("#", 1)
         comment = comment.strip()
 
-    if ctx.guild is None and __needs_character(syntax):
+    if ctx.guild is None and needs_character(syntax):
         await common.display_error(ctx, ctx.author.display_name,
             "You cannot roll traits in DMs!",
             __HELP_URL
@@ -52,14 +52,14 @@ async def parse(ctx, raw_syntax: str, character=None):
     if ctx.guild is not None:
         # Only guilds have characters
         try:
-            if character is not None or __needs_character(syntax):
+            if character is not None or needs_character(syntax):
                 character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
 
         except errors.UnspecifiedCharacterError as err:
             # Two error cases prevent us from continuing:
             #   1. The roll explicitly requires a character (trait roll)
             #   2. The user explicitly supplied a nonexistent character
-            if character is not None or __needs_character(syntax):
+            if character is not None or needs_character(syntax):
                 # Present the user with a list of their characters
                 tip = f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`"
                 character = await common.select_character(ctx, err,
@@ -79,7 +79,7 @@ async def parse(ctx, raw_syntax: str, character=None):
     # Attempt to parse the user's roll syntax
     try:
         results = perform_roll(character, *args)
-        name = character.name if character is not None else ctx.author.display_name
+        name = character.name if character is not None else ctx.author.display_name # TODO: Get rid?
         await display_outcome(ctx, character, results, comment)
 
     except (SyntaxError, ValueError) as err:
@@ -165,11 +165,11 @@ async def display_outcome(ctx, character, results, comment, rerolled=False):
 
 def perform_roll(character: VChar, *args):
     """Public interface for __evaluate_syntax() that returns a RollResult."""
-    pool_str, roll_params = __evaluate_syntax(character, *args)
-    return _roll_pool(roll_params, pool_str)
+    pool_str, roll_params = prepare_roll(character, *args)
+    return roll_pool(roll_params, pool_str)
 
 
-def __evaluate_syntax(character: VChar, *args):
+def prepare_roll(character: VChar, *args):
     """
     Convert the user's syntax to the standardized format: pool, hunger, diff.
     Args:
@@ -363,6 +363,6 @@ def __generate_reroll_buttons(roll_result) -> list:
     return buttons
 
 
-def __needs_character(syntax: str):
+def needs_character(syntax: str):
     """Determines whether a roll needs a character."""
     return re.match(r"[A-z_]", syntax) is not None

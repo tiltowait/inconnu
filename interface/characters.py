@@ -69,12 +69,15 @@ class Characters(commands.Cog, name="Character Management"):
         base_names="character",
         name="display",
         description="List all of your characters or show details about one character.",
-        options=[SlashOption(str, "character", description="A character to display")]
+        options=[
+            SlashOption(str, "character", description="A character to display"),
+            SlashOption(str, "player", description="The player who owns the character (admin only)")
+        ]
         , guild_ids=debug.WHITELIST
     )
-    async def display_character(self, ctx, character=None):
+    async def display_character(self, ctx, character=None, player=None):
         """Display a character's basic traits"""
-        await inconnu.character.display.parse(ctx, character)
+        await inconnu.character.display.parse(ctx, character, player=player)
 
 
     @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)

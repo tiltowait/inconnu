@@ -11,9 +11,6 @@ from . import debug
 class Gameplay(commands.Cog):
     """Gameplay-based commands."""
 
-    # This is a legacy command being left in place until Discord mandates its
-    # removal. Why? It's slightly faster to use. That's the only reason!
-
     @commands.command(name="v", aliases=["roll", "r"])
     async def roll(self, ctx):
         """Roll a dice pool, either raw or calculated from traits."""

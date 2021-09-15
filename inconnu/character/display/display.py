@@ -9,27 +9,37 @@ from ...vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
 
 
-async def parse(ctx, character=None, message=None):
+async def parse(ctx, character=None, message=None, player=None):
     """Determine which character to display, then display them."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-        await __display_character(ctx, character, message)
+        owner = await common.player_lookup(ctx, player)
+
+        character = VChar.fetch(ctx.guild.id, owner.id, character)
+        await __display_character(ctx, character, owner, message)
 
     except errors.UnspecifiedCharacterError as err:
-        characters = [char.name for char in VChar.all_characters(ctx.guild.id, ctx.author.id)]
+        characters = [char.name for char in VChar.all_characters(ctx.guild.id, owner.id)]
+
+        if ctx.author == owner:
+            title = "Your Characters"
+        else:
+            title = f"{owner.display_name}'s Characters"
+
         embed = discord.Embed(
-            title="Your Characters",
+            title=title,
             description="\n".join(characters)
         )
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        embed.set_author(name=owner.display_name, icon_url=owner.avatar_url)
         embed.set_footer(text="To view one: /character display character:NAME")
         await ctx.respond(embed=embed, hidden=False)
 
     except errors.CharacterError as err:
+        await common.display_error(ctx, owner.display_name, err, __HELP_URL)
+    except LookupError as err:
         await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
 
 
-async def __display_character(ctx, character: VChar, message=None):
+async def __display_character(ctx, character: VChar, owner, message):
     """Display the character's basic traits."""
     embed = discord.Embed(
         title=character.name,
@@ -40,8 +50,8 @@ async def __display_character(ctx, character: VChar, message=None):
         embed.description = message
 
     embed.set_author(
-        name=ctx.author.display_name,
-        icon_url=ctx.author.avatar_url
+        name=owner.display_name,
+        icon_url=owner.avatar_url
     )
 
     # Set the universal tracks

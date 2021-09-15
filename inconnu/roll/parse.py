@@ -158,8 +158,8 @@ async def display_outcome(ctx, character, results, comment, rerolled=False):
             rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
             await display_outcome(ctx, character_name, rerolled_results, comment, rerolled=True)
         except asyncio.exceptions.TimeoutError:
-            pass
-        finally:
+            await msg.edit(components=None)
+        else:
             await msg.disable_components()
 
 

@@ -16,7 +16,7 @@ async def wait_for_reroll(ctx, message, old_roll):
 
     Raises asyncio.exceptions.TimeoutError if the interaction times out.
     """
-    btn = await message.wait_for("button", ctx.bot)
+    btn = await message.wait_for("button", ctx.bot, timeout=600)
 
     while ctx.author.id != btn.author.id:
         # We only want the original roller to be able to press these buttons

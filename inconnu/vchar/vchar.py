@@ -315,7 +315,7 @@ class VChar:
             raise errors.AmbiguousTraitError(trait, trait_names)
 
         if len(matches) == 0:
-            raise errors.TraitNotFoundError(f"Trait not found: `{trait}`.")
+            raise errors.TraitNotFoundError(f"{self.name} has no trait named `{trait}`.")
 
         # We found a single match!
         return SimpleNamespace(**matches[0]) # .name, .rating

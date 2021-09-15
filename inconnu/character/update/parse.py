@@ -27,6 +27,8 @@ __KEYS = {
     "potency": "+/- The character's Blood Potency"
 }
 
+__HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
+
 
 async def parse(ctx, parameters: str, character=None, update_message=None):
     """
@@ -44,13 +46,13 @@ async def parse(ctx, parameters: str, character=None, update_message=None):
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
     except errors.UnspecifiedCharacterError as err:
         tip = f"`/character update` `parameters:{parameters}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
     # Character has been selected

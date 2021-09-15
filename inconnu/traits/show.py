@@ -5,6 +5,9 @@ import discord
 from .. import common
 from ..vchar import errors, VChar
 
+__HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=displaying-traits"
+
+
 async def parse(ctx, character=None):
     """Present a character's traits to its owner."""
     try:
@@ -12,13 +15,13 @@ async def parse(ctx, character=None):
 
     except errors.UnspecifiedCharacterError as err:
         tip = "`/traits list` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
     traits = map(lambda row: f"**{row[0]}**: {row[1]}", character.traits.items())

@@ -7,6 +7,9 @@ import discord
 from .. import common
 from ..vchar import errors, VChar
 
+__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
+
+
 async def process(ctx, difficulty: int, character: str):
     """Perform a frenzy check."""
     try:
@@ -14,13 +17,13 @@ async def process(ctx, difficulty: int, character: str):
 
     except errors.UnspecifiedCharacterError as err:
         tip = f"`/frenzy` `difficulty:{difficulty}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
     dice = [random.randint(1, 10) for _ in range(character.frenzy_resist)]

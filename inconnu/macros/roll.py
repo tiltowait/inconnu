@@ -7,6 +7,9 @@ from . import macro_common
 from .. import common
 from ..vchar import errors, VChar
 
+__HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
+
+
 async def process(ctx, syntax: str, character=None):
     """Roll a macro."""
     macro_name = None
@@ -17,13 +20,13 @@ async def process(ctx, syntax: str, character=None):
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
     except errors.UnspecifiedCharacterError as err:
         tip = f"`/vm` `syntax:{syntax}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
     try:
@@ -45,17 +48,18 @@ async def process(ctx, syntax: str, character=None):
         await common.display_error(
             ctx,
             character.name,
-            f"You do not have a macro named `{macro_name}`."
+            f"You do not have a macro named `{macro_name}`.",
+            __HELP_URL
         )
     except ValueError as err:
         # The user may have deleted a trait, which means the macro is invalid.
-        await common.display_error(ctx, character.name, str(err))
+        await common.display_error(ctx, character.name, str(err), __HELP_URL)
     except SyntaxError:
         err = f"**Unknown syntax:** `{syntax}`"
         err += "\n**Usage:** `/vm <macro_name> [hunger] [difficulty]`"
         err += "\n\nYou may add simple math after `macro_name`."
         err += "\n `hunger` and `difficulty` are optional."
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
 

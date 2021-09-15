@@ -8,6 +8,8 @@ from discord_ui import Button
 from .. import common
 from ..vchar import errors, VChar
 
+__HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-deletion"
+
 
 async def prompt(ctx, character: str):
     """Prompt whether the user actually wants to delete the character."""
@@ -44,9 +46,9 @@ async def prompt(ctx, character: str):
     except errors.UnspecifiedCharacterError:
         chars = [char.name for char in VChar.all_characters(ctx.guild.id, ctx.author.id)]
         err = "You must specify a character.\n\n**Options:**\n" + "\n".join(chars)
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
 
 
 def __generate_prompt(ctx, char_name: str):

@@ -3,6 +3,9 @@
 from ..vchar import errors, VChar
 from .. import common
 
+__HELP_URL = "https://www.inconnu-bot.com/#/macros?id=deletion"
+
+
 async def process(ctx, macro_name: str, character=None):
     """Delete the given macro."""
     try:
@@ -10,13 +13,13 @@ async def process(ctx, macro_name: str, character=None):
 
     except errors.UnspecifiedCharacterError as err:
         tip = f"`/macro delete` `macro:{macro_name}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err)
+        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
     try:
@@ -27,4 +30,7 @@ async def process(ctx, macro_name: str, character=None):
         )
 
     except errors.MacroNotFoundError:
-        await common.display_error(ctx, character.name, f"You have no macro named `{macro_name}`.")
+        await common.display_error(ctx, character.name,
+            f"You have no macro named `{macro_name}`.",
+            __HELP_URL
+        )

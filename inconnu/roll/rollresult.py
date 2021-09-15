@@ -111,19 +111,20 @@ class RollResult:
     @property
     def is_messy(self):
         """Return true if the roll is a messy critical."""
-        return self.normal.tens + self.hunger.tens >= 2 and self.hunger.tens > 0
+        messy = (self.normal.tens + self.hunger.tens) >= 2 and self.hunger.tens > 0
+        return messy and self.is_successful
 
 
     @property
     def is_successful(self):
         """Return true if the roll meets or exceeds its target."""
-        return self.margin >= 0 and self.total_successes > 0
+        return self.total_successes >= self.difficulty and self.total_successes > 0
 
 
     @property
     def is_failure(self):
         """Return true if the target successes weren't achieved, but it isn't bestial."""
-        return self.hunger.ones == 0 and self.total_successes > 0
+        return (self.hunger.ones == 0 and self.total_successes > 0) and not self.is_successful
 
 
     @property

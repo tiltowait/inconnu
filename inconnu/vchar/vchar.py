@@ -258,6 +258,11 @@ class VChar:
     @current_xp.setter
     def current_xp(self, new_current_xp):
         """Set the character's current xp."""
+        if new_current_xp > self.total_xp:
+            new_current_xp = self.total_xp
+        elif new_current_xp < 0:
+            new_current_xp = 0
+
         self._params["current_xp"] = new_current_xp
         VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "current_xp": new_current_xp } })
 
@@ -270,9 +275,15 @@ class VChar:
 
     @total_xp.setter
     def total_xp(self, new_total_xp):
-        """Set the character's total xp."""
+        """Set the character's total XP and update current accordingly."""
+        if new_total_xp < 0:
+            new_total_xp = 0
+
+        delta = new_total_xp - self.total_xp
+
         self._params["total_xp"] = new_total_xp
         VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "total_xp": new_total_xp } })
+        self.current_xp += delta
 
 
     # Derived attributes

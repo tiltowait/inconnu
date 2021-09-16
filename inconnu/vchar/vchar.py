@@ -231,6 +231,8 @@ class VChar:
     @hunger.setter
     def hunger(self, new_hunger):
         """Set the character's hunger."""
+        new_hunger = max(0, min(5, new_hunger)) # Clamp between 0 and 5
+
         self.__update_log("hunger", self.hunger, new_hunger)
         self._params["hunger"] = new_hunger
         VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "hunger": new_hunger } })

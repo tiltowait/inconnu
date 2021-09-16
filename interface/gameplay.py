@@ -139,7 +139,7 @@ class Gameplay(commands.Cog):
     )
     async def rouse(self, ctx, count=1, character=None, purpose=None, reroll="false"):
         """Perform a rouse check."""
-        await inconnu.misc.rousemorse.parse(ctx, "rouse", character, count, purpose, reroll)
+        await inconnu.misc.rouse(ctx, count, character, purpose, reroll == "true")
 
 
     @ext.check_failure_response("You cannot slake in DMs.", hidden=True)

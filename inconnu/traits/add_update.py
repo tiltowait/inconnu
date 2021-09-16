@@ -15,7 +15,17 @@ __HELP_URL = {
 }
 
 
-async def parse(ctx, allow_overwrite: bool, traits: str, character=None):
+async def add(ctx, traits: str, character: str):
+    """Add traits to a character. Wrapper for add_update."""
+    await __parse(ctx, False, traits, character)
+
+
+async def update(ctx, traits: str, character: str):
+    """Update a character's traits. Wrapper for add_update."""
+    await __parse(ctx, True, traits, character)
+
+
+async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
     """Add traits to a character."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)

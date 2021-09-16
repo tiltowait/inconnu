@@ -35,7 +35,7 @@ class Traits(commands.Cog, name="Trait Management"):
     )
     async def add_trait(self, ctx, traits: str, character=None):
         """Add trait(s) to a character."""
-        await inconnu.traits.add_update.parse(ctx, False, traits, character)
+        await inconnu.traits.add(ctx, traits, character)
 
 
     @ext.check_failure_response("Characters and traits aren't available in DMs.", hidden=True)
@@ -52,7 +52,7 @@ class Traits(commands.Cog, name="Trait Management"):
     )
     async def list_traits(self, ctx, character=None, player=None):
         """Display a character's traits."""
-        await inconnu.traits.show.parse(ctx, character, player)
+        await inconnu.traits.show(ctx, character, player)
 
 
     @ext.check_failure_response("Characters and traits aren't available in DMs.", hidden=True)
@@ -69,7 +69,7 @@ class Traits(commands.Cog, name="Trait Management"):
     )
     async def update_traits(self, ctx, traits: str, character=None):
         """Update a character's trait(s)."""
-        await inconnu.traits.add_update.parse(ctx, True, traits, character)
+        await inconnu.traits.update(ctx, traits, character)
 
 
     @ext.check_failure_response("Characters and traits aren't available in DMs.", hidden=True)
@@ -86,4 +86,4 @@ class Traits(commands.Cog, name="Trait Management"):
     )
     async def delete_traits(self, ctx, traits: str, character=None):
         """Remove traits from a character."""
-        await inconnu.traits.delete.parse(ctx, traits, character)
+        await inconnu.traits.delete(ctx, traits, character)

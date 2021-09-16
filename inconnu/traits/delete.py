@@ -12,7 +12,7 @@ from .. import constants
 __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=deleting-traits"
 
 
-async def parse(ctx, traits: str, character=None):
+async def delete(ctx, traits: str, character=None):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)

@@ -29,7 +29,7 @@ __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
 
 
-async def parse(ctx, raw_syntax: str, character=None):
+async def parse(ctx, raw_syntax: str, character: str, player: str):
     """Parse the user's arguments and attempt to roll the dice."""
     syntax = raw_syntax # Save the raw in case we get a character error
 
@@ -52,8 +52,9 @@ async def parse(ctx, raw_syntax: str, character=None):
     if ctx.guild is not None:
         # Only guilds have characters
         try:
+            owner = await common.player_lookup(ctx, player)
             if character is not None or needs_character(syntax):
-                character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
+                character = VChar.fetch(ctx.guild.id, owner.id, character)
 
         except errors.UnspecifiedCharacterError as err:
             # Two error cases prevent us from continuing:
@@ -64,7 +65,8 @@ async def parse(ctx, raw_syntax: str, character=None):
                 tip = f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`"
                 character = await common.select_character(ctx, err,
                     __HELP_URL,
-                    ("Proper syntax", tip)
+                    ("Proper syntax", tip),
+                    player=owner
                 )
 
                 if character is None:
@@ -72,6 +74,9 @@ async def parse(ctx, raw_syntax: str, character=None):
                     return
 
         except errors.CharacterError as err:
+            await common.display_error(ctx, owner.display_name, err, __HELP_URL)
+            return
+        except LookupError as err:
             await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
             return
 
@@ -79,21 +84,20 @@ async def parse(ctx, raw_syntax: str, character=None):
     # Attempt to parse the user's roll syntax
     try:
         results = perform_roll(character, *args)
-        name = character.name if character is not None else ctx.author.display_name # TODO: Get rid?
-        await display_outcome(ctx, character, results, comment)
+        await display_outcome(ctx, owner, character, results, comment)
 
     except (SyntaxError, ValueError) as err:
-        name = character.name if character is not None else ctx.author.display_name
+        name = character.name if character is not None else owner.display_name
         await common.display_error(ctx, name, str(err), __HELP_URL)
 
 
-async def display_outcome(ctx, character, results, comment, rerolled=False):
+async def display_outcome(ctx, player, character, results, comment, rerolled=False):
     """Display the roll results in a nice embed."""
     # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
     if ctx.guild is not None:
-        stats.Stats.log_roll(ctx.guild.id, ctx.author.id, character, results)
+        stats.Stats.log_roll(ctx.guild.id, player.id, character, results)
     else:
-        stats.Stats.log_roll(None, ctx.author.id, character, results)
+        stats.Stats.log_roll(None, player.id, character, results)
 
     # Determine the name for the "author" field
     character_name = None
@@ -102,7 +106,7 @@ async def display_outcome(ctx, character, results, comment, rerolled=False):
     elif isinstance(character, VChar):
         character_name = character.name
     else:
-        character_name = ctx.author.display_name
+        character_name = player.display_name
 
     title = results.main_takeaway
     if not results.is_total_failure and not results.is_bestial:
@@ -122,7 +126,7 @@ async def display_outcome(ctx, character, results, comment, rerolled=False):
 
     embed.set_author(
         name=author_field,
-        icon_url=ctx.author.avatar_url
+        icon_url=player.avatar_url
     )
 
     # Disclosure fields
@@ -156,7 +160,9 @@ async def display_outcome(ctx, character, results, comment, rerolled=False):
         try:
             msg = await ctx.respond(embed=embed, components=reroll_buttons)
             rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
-            await display_outcome(ctx, character_name, rerolled_results, comment, rerolled=True)
+            await display_outcome(ctx, player, character_name, rerolled_results, comment,
+                rerolled=True
+            )
         except asyncio.exceptions.TimeoutError:
             await msg.edit(components=None)
         else:

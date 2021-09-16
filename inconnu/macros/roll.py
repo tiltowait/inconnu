@@ -12,8 +12,7 @@ __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
 
 async def process(ctx, syntax: str, character=None):
     """Roll a macro."""
-    macro_name = None
-    hunger = 0
+    hunger = 0 # TODO: Get rid?
     difficulty = 0
 
     try:
@@ -42,7 +41,7 @@ async def process(ctx, syntax: str, character=None):
         parameters.append(difficulty or macro.difficulty)
 
         results = perform_roll(character, *parameters)
-        await display_outcome(ctx, character, results, macro.comment)
+        await display_outcome(ctx, ctx.author, character, results, macro.comment)
 
     except errors.MacroNotFoundError as err:
         await common.display_error(ctx, character.name, err, __HELP_URL)

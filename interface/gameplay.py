@@ -21,13 +21,14 @@ class Gameplay(commands.Cog):
         name="vr", # Called "vr" instead of "roll" for quicker command entry
         options=[
             SlashOption(str, "syntax", description="The roll syntax", required=True),
-            SlashOption(str, "character", description="The performing the roll")
+            SlashOption(str, "character", description="The character performing the roll"),
+            SlashOption(str, "player", description="The character's owner (admin only)")
         ],
         guild_ids=debug.WHITELIST
     )
-    async def slash_roll(self, ctx, syntax: str, character=None):
+    async def slash_roll(self, ctx, syntax: str, character=None, player=None):
         """Roll the dice."""
-        await inconnu.roll.parse(ctx, syntax, character)
+        await inconnu.roll.parse(ctx, syntax, character, player)
 
 
 

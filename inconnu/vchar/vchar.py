@@ -168,6 +168,7 @@ class VChar:
     @humanity.setter
     def humanity(self, new_humanity):
         """Set the character's humanity."""
+        new_humanity = max(0, min(10, new_humanity))
         self._params["humanity"] = new_humanity
         VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "humanity": new_humanity } })
         self.stains = 0

@@ -124,11 +124,12 @@ class Gameplay(commands.Cog):
     @slash_cog(
         name="rouse",
         options=[
-            SlashOption(int, "count", description="The number of Rouse checks to make"),
+            SlashOption(int, "count", description="The number of Rouse checks to make",
+                choices=[(str(n), n) for n in range(1, 6)]
+            ),
             SlashOption(str, "character", description="The character performing the check"),
             SlashOption(str, "purpose", description="The reason for the check"),
-            SlashOption(str, "reroll",
-                description="Re-roll failures",
+            SlashOption(str, "reroll", description="Re-roll failures",
                 choices=[
                     ("Yes", "true"),
                     ("No", "false")

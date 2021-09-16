@@ -24,31 +24,28 @@ async def prompt(ctx, character: str):
         msg = await ctx.respond(embed=embed, components=buttons, hidden=True)
 
         # Await the response
-        try:
-            btn = await msg.wait_for("button", ctx.bot, timeout=20)
-            await btn.respond()
-            await msg.disable_components()
+        btn = await msg.wait_for("button", ctx.bot, timeout=20)
+        await btn.respond()
+        await msg.disable_components()
 
-            # Process the response
-            if btn.custom_id == "_delete":
-                if character.delete_character():
-                    await ctx.respond(f"Deleted **{character.name}**!", hidden=True)
-                else:
-                    await ctx.respond("Something went wrong. Unable to delete.", hidden=True)
-
+        # Process the response
+        if btn.custom_id == "_delete":
+            if character.delete_character():
+                await ctx.respond(f"Deleted **{character.name}**!", hidden=True)
             else:
-                await ctx.respond("Deletion canceled.", hidden=True)
+                await ctx.respond("Something went wrong. Unable to delete.", hidden=True)
 
-        except asyncio.exceptions.TimeoutError:
-            await msg.edit(content="**Deletion canceled due to inactivity.**")
-            await msg.disable_components()
+        else:
+            await ctx.respond("Deletion canceled.", hidden=True)
 
-    except errors.UnspecifiedCharacterError:
-        chars = [char.name for char in VChar.all_characters(ctx.guild.id, ctx.author.id)]
-        err = "You must specify a character.\n\n**Options:**\n" + "\n".join(chars)
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
+    except asyncio.exceptions.TimeoutError:
+        await msg.edit(
+            content="**Deletion canceled due to inactivity.**",
+            components=None,
+            embed=None
+        )
 
 
 def __generate_prompt(ctx, char_name: str):
@@ -58,7 +55,7 @@ def __generate_prompt(ctx, char_name: str):
         color=0xFF0000
     )
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-    embed.add_field(name="Are you certain?", value="This will delete all associated traits.")
+    embed.add_field(name="Are you certain?", value="This will delete all associated data.")
     embed.set_footer(text="THIS ACTION CANNOT BE UNDONE")
 
     return embed

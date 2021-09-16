@@ -12,9 +12,6 @@ __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
 
 async def roll(ctx, syntax: str, character=None):
     """Roll a macro."""
-    hunger = 0 # TODO: Get rid?
-    difficulty = 0
-
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
     except errors.UnspecifiedCharacterError as err:

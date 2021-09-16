@@ -55,44 +55,39 @@ async def roll(ctx, syntax: str, character=None):
 
 
 def __normalize_syntax(syntax: str):
-    try:
-        syntax = re.sub(r"([+-])", r" \g<1> ", syntax)
-        stack = syntax.split()
-        params = []
+    syntax = re.sub(r"([+-])", r" \g<1> ", syntax)
+    stack = syntax.split()
+    params = []
 
-        while len(stack) > 1 and stack[-2] not in ["+", "-"]:
-            params.insert(0, stack.pop())
+    while len(stack) > 1 and stack[-2] not in ["+", "-"]:
+        params.insert(0, stack.pop())
 
-        params.insert(0, stack)
+    params.insert(0, stack)
 
-        if len(params) == 1:
-            params.append("0")
+    if len(params) == 1:
+        params.append("0")
 
-        if len(params) == 2:
-            params.append(None)
+    if len(params) == 2:
+        params.append(None)
 
-        # At this point, the stack contains the following items
-        # 0: Pool (list that will be parsed by the standard roll parser)
-        # 1: Hunger ("0" or the user's input)
-        # 2: Difficulty (None or the user's input)
+    # At this point, the stack contains the following items
+    # 0: Pool (list that will be parsed by the standard roll parser)
+    # 1: Hunger ("0" or the user's input)
+    # 2: Difficulty (None or the user's input)
 
-        # We validate the pool stack later, but we will validate hunger and difficulty
-        # here. We don't modify anything; the roll parser will do that for us. Insteat,
-        # we simply check for validity.
+    # We validate the pool stack later, but we will validate hunger and difficulty
+    # here. We don't modify anything; the roll parser will do that for us. Insteat,
+    # we simply check for validity.
 
-        if params[1].lower() != "hunger": # "hunger" is a valid option here
-            hunger = int(params[1])
-            if not 0 <= hunger <= 5:
-                raise ValueError("Hunger must be between 0 and 5.")
+    if params[1].lower() != "hunger": # "hunger" is a valid option here
+        hunger = int(params[1])
+        if not 0 <= hunger <= 5:
+            raise ValueError("Hunger must be between 0 and 5.")
 
-        difficulty = params[2]
-        if difficulty is not None:
-            difficulty = int(difficulty)
-            if difficulty < 0:
-                raise ValueError("Difficulty cannot be less than 0.")
-
-    except Exception as err:
-        print(type(err))
-        raise SyntaxError from ValueError
+    difficulty = params[2]
+    if difficulty is not None:
+        difficulty = int(difficulty)
+        if difficulty < 0:
+            raise ValueError("Difficulty cannot be less than 0.")
 
     return params

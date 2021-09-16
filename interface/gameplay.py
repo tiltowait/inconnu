@@ -31,6 +31,19 @@ class Gameplay(commands.Cog):
         await inconnu.roll.parse(ctx, syntax, character, player)
 
 
+    @ext.check_failure_response("Awaken rolls aren't available in DMs.", hidden=True)
+    @commands.guild_only()
+    @slash_cog(
+        name="aggheal",
+        options=[
+            SlashOption(str, "character", description="The character to be healed"),
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    async def aggheal(self, ctx, character=None):
+        """Heal a character's aggravated damage."""
+        await inconnu.misc.aggheal(ctx, character)
+
 
     @ext.check_failure_response("Awaken rolls aren't available in DMs.", hidden=True)
     @commands.guild_only()

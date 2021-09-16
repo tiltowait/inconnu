@@ -1,5 +1,6 @@
 """Define the package interface."""
 
+from .aggheal import aggheal
 from .awaken import awaken
 from .frenzy import frenzy
 from .mend import mend

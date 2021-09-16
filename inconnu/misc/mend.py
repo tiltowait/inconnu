@@ -4,8 +4,7 @@ import random
 
 from .. import common
 from .. import constants
-from ..character.update import parse as update
-from ..vchar import errors, VChar
+from ..character import update as char_update
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=mending-damage"
 
@@ -13,33 +12,26 @@ __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=mending-damag
 async def mend(ctx, character=None):
     """Mend damage on a character OR the user's only character."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-
-    except errors.UnspecifiedCharacterError as err:
         tip = "`/mend` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        if character is None:
-            # They didn't select a character
-            return
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-        return
+        if character.hunger == 5:
+            await ctx.respond(f"Can't mend. **{character.name}'s** Hunger is at 5!", hidden=True)
+        else:
+            superficial = character.health.count(constants.DAMAGE.superficial)
+            if superficial == 0:
+                await ctx.respond("No damage to mend!", hidden=True)
+                return
 
-    if character.hunger == 5:
-        await ctx.respond(f"Can't mend. **{character.name}'s** Hunger is at 5!", hidden=True)
-    else:
-        superficial = character.health.count(constants.DAMAGE.superficial)
-        if superficial == 0:
-            await ctx.respond("No damage to mend!", hidden=True)
-            return
+            mending = min(superficial, character.mend_amount)
+            update_string = f"sh=-{mending}"
+            update_message = f"Mending **{mending}** damage."
 
-        mending = min(superficial, character.mend_amount)
-        update_string = f"sh=-{mending}"
-        update_message = f"Mending **{mending}** damage."
+            if random.randint(1, 10) < 6:
+                update_string += " hunger=+1"
+                update_message += " Hunger increased by **1**."
 
-        if random.randint(1, 10) < 6:
-            update_string += " hunger=+1"
-            update_message += " Hunger increased by **1**."
+            await char_update(ctx, update_string, character.name, update_message)
 
-        await update(ctx, update_string, character.name, update_message)
+    except common.FetchError:
+        pass

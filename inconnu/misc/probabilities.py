@@ -8,7 +8,6 @@ import pymongo
 
 from .. import common
 from .. import roll
-from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=probability-calculation"
 __STRATEGIES = {
@@ -27,18 +26,12 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
             return
 
         try:
-            character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-
-        except errors.UnspecifiedCharacterError as err:
             tip = f"`/probability` `roll:{syntax}` `character:CHARACTER`"
-            character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
+            character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-            if character is None:
-                # They didn't select a character
-                return
-        except errors.CharacterError as err:
-            await common.present_error(ctx, err, help_url=__HELP_URL)
+        except common.FetchError:
             return
+
     else:
         character = None
 

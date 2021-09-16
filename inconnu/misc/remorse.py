@@ -6,7 +6,7 @@ import discord
 
 from .. import common
 from ..character.display import trackmoji
-from ..vchar import errors, VChar
+from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=remorse-checks"
 
@@ -14,26 +14,19 @@ __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=remorse-check
 async def remorse(ctx, character=None):
     """Perform a remorse check on a given character."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-
-    except errors.UnspecifiedCharacterError as err:
         tip = "`/remorse` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        if character is None:
-            # They didn't select a character
+        # Character obtained
+        if character.stains == 0:
+            await ctx.respond(f"{character.name} has no stains! No remorse necessary.", hidden=True)
             return
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-        return
 
-    # Character obtained
-    if character.stains == 0:
-        await ctx.respond(f"{character.name} has no stains! No remorse necessary.", hidden=True)
-        return
+        remorseful = __remorse_roll(character)
+        await __display_outcome(ctx, character, remorseful)
 
-    remorseful = __remorse_roll(character)
-    await __display_outcome(ctx, character, remorseful)
+    except common.FetchError:
+        pass
 
 
 async def __display_outcome(ctx, character: VChar, remorseful: bool):

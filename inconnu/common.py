@@ -7,7 +7,7 @@ import discord
 from discord_ui import Button, SelectMenu, SelectOption
 from discord_ui.components import LinkButton
 
-from .vchar import VChar
+from .vchar import errors, VChar
 
 
 def pluralize(value: int, noun: str) -> str:
@@ -171,3 +171,34 @@ async def player_lookup(ctx, player_str: str):
         raise LookupError("You don't have lookup permissions.")
 
     return player
+
+
+class FetchError(Exception):
+    """An error for when we are unable to fetch a character."""
+
+
+async def fetch_character(ctx, character, tip, help_url, userid=None):
+    """
+    Attempt to fetch a character, presenting a selection dialogue if necessary.
+    Args:
+        ctx: The Discord context for displaying messages and retrieving guild info
+        character (str): The name of the character to fetch. Optional.
+        tip (str): The proper syntax for the command
+        help_url (str): The URL of the button to display on any error messages
+        userid (int): The ID of the user who owns the character, if different from the ctx author
+    """
+    try:
+        userid = userid or ctx.author.id
+        return VChar.fetch(ctx.guild.id, userid, character)
+
+    except errors.UnspecifiedCharacterError as err:
+        character = await select_character(ctx, err, help_url, ("Proper syntax", tip))
+
+        if character is None:
+            raise FetchError("No character was selected.") from err
+
+        return character
+
+    except errors.CharacterError as err:
+        await present_error(ctx, err, help_url=help_url)
+        raise FetchError(str(err)) from err

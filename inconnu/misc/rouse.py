@@ -7,7 +7,7 @@ import discord
 
 from .. import common
 from ..character.display import trackmoji
-from ..vchar import errors, VChar
+from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
 
@@ -22,21 +22,14 @@ async def rouse(ctx, count: int, character: str, purpose: str, reroll: bool):
         reroll (bool): Whether failures should be re-rolled
     """
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-
-    except errors.UnspecifiedCharacterError as err:
         tip = "`/rouse` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        if character is None:
-            # They didn't select a character
-            return
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-        return
+        outcome = __rouse_roll(character, count, reroll)
+        await __display_outcome(ctx, character, outcome, purpose)
 
-    outcome = __rouse_roll(character, count, reroll)
-    await __display_outcome(ctx, character, outcome, purpose)
+    except common.FetchError:
+        pass
 
 
 async def __display_outcome(ctx, character: VChar, outcome, purpose):

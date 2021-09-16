@@ -8,7 +8,7 @@ from discord_ui.components import LinkButton
 from . import paramupdate
 from ..display import display
 from ... import common
-from ...vchar import errors, VChar
+from ...vchar import VChar
 
 __KEYS = {
     "name": "The character's name",
@@ -43,26 +43,15 @@ async def update(ctx, parameters: str, character=None, update_message=None):
         return
 
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-    except errors.UnspecifiedCharacterError as err:
         tip = f"`/character update` `parameters:{parameters}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        if character is None:
-            # They didn't select a character
-            return
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-        return
-
-    # Character has been selected
-    try:
         parameters = __parse_arguments(*args)
         updates = []
 
         for parameter, new_value in parameters.items():
-            update = __update_character(character, parameter, new_value)
-            updates.append(update)
+            update_msg = __update_character(character, parameter, new_value)
+            updates.append(update_msg)
 
         if update_message is None:
              # We only want to set the update message if we didn't get a customized display message
@@ -72,6 +61,8 @@ async def update(ctx, parameters: str, character=None, update_message=None):
 
     except (SyntaxError, ValueError) as err:
         await update_help(ctx, err)
+    except common.FetchError:
+        pass
 
 
 def __parse_arguments(*arguments):

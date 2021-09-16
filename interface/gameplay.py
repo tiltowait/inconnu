@@ -43,7 +43,7 @@ class Gameplay(commands.Cog):
     )
     async def awaken(self, ctx, character=None):
         """Perform a Rouse check and heal Superficial Willpower damage."""
-        await inconnu.misc.awaken.process(ctx, character)
+        await inconnu.misc.awaken(ctx, character)
 
 
     @ext.check_failure_response("Frenzy checks aren't available in DMs.", hidden=True)
@@ -62,7 +62,7 @@ class Gameplay(commands.Cog):
     )
     async def frenzy(self, ctx, difficulty: int, character=None):
         """Perform a Frenzy check."""
-        await inconnu.misc.frenzy.process(ctx, difficulty, character)
+        await inconnu.misc.frenzy(ctx, difficulty, character)
 
 
     @ext.check_failure_response("Mending isn't available in DMs.", hidden=True)
@@ -74,7 +74,7 @@ class Gameplay(commands.Cog):
     )
     async def mend(self, ctx, character=None):
         """Mend Superficial damage."""
-        await inconnu.misc.mend.process(ctx, character)
+        await inconnu.misc.mend(ctx, character)
 
 
     @slash_cog(
@@ -96,7 +96,7 @@ class Gameplay(commands.Cog):
     )
     async def probabilities(self, ctx, roll: str, reroll=None, character=None):
         """Calculate outcome probabilities for a given roll."""
-        await inconnu.misc.probabilities.process(ctx, roll, reroll, character)
+        await inconnu.misc.probability(ctx, roll, reroll, character)
 
 
     @ext.check_failure_response("Remorse checks aren't available in DMs.", hidden=True)
@@ -114,7 +114,7 @@ class Gameplay(commands.Cog):
     @slash_cog(name="resonance")
     async def resonance(self, ctx):
         """Generate a random Resonance."""
-        await inconnu.misc.resonance.generate(ctx)
+        await inconnu.misc.resonance(ctx)
 
 
     @ext.check_failure_response("Rouse checks aren't available in DMs.", hidden=True)
@@ -157,4 +157,4 @@ class Gameplay(commands.Cog):
     )
     async def slake(self, ctx, amount: int, character=None):
         """Slake 1 or more Hunger."""
-        await inconnu.misc.slake.process(ctx, amount, character)
+        await inconnu.misc.slake(ctx, amount, character)

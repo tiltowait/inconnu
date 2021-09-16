@@ -12,7 +12,7 @@ from ..vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
 
 
-async def process(ctx, count: int, character: str, purpose: str, reroll: bool):
+async def rouse(ctx, count: int, character: str, purpose: str, reroll: bool):
     """
     Perform a remorse check on a given character and display the results.
     Args:

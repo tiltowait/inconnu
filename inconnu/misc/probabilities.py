@@ -19,7 +19,7 @@ __STRATEGIES = {
 }
 
 
-async def process(ctx, syntax: str, strategy=None, character=None):
+async def probability(ctx, syntax: str, strategy=None, character=None):
     """Calculate the probabilities surrounding a roll."""
     if roll.needs_character(syntax):
         if ctx.guild is None:

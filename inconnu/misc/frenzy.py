@@ -10,7 +10,7 @@ from ..vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
 
 
-async def process(ctx, difficulty: int, character: str):
+async def frenzy(ctx, difficulty: int, character: str):
     """Perform a frenzy check."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)

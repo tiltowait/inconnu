@@ -5,12 +5,12 @@ import random
 from .. import common
 from .. import constants
 from ..vchar import errors, VChar
-from ..character import update
+from ..character import update as char_update
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=awakening"
 
 
-async def process(ctx, character=None):
+async def awaken(ctx, character=None):
     """Perform a Rouse check and heal Superficial Willpower damage."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
@@ -46,5 +46,5 @@ async def process(ctx, character=None):
             character.hunger += 1
             message += f"Increase Hunger to **{character.hunger}**."
 
-    await update.parse(ctx, f"sw=-{recovered}", character.name, message)
+    await char_update(ctx, f"sw=-{recovered}", character.name, message)
     character.log("awaken")

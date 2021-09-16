@@ -21,7 +21,7 @@ __EMOTIONS = {
 }
 
 
-async def generate(ctx):
+async def resonance(ctx):
     """Generate and display a resonance."""
     temperament = __get_temperament()
     die, resonance = __get_resonance()

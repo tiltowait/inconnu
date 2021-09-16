@@ -10,7 +10,7 @@ from ..vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=mending-damage"
 
 
-async def process(ctx, character=None):
+async def mend(ctx, character=None):
     """Mend damage on a character OR the user's only character."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)

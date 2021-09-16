@@ -60,9 +60,9 @@ async def __display_probabilities(ctx, params, strategy: str, probs: dict):
         title += " | " + __STRATEGIES[strategy]
 
     uncomplicated = probs["success"] + probs["critical"]
-    description = f"**{uncomplicated:.1%}** success without complication"
-    description += f"\n**{probs['total_successes']:.1f}** average successes"
-    description += f"\n**{probs['margin']:.1f}** average margin"
+    description = f"**{uncomplicated:.2%}** success without complication"
+    description += f"\n**{probs['total_successes']:.2f}** average successes"
+    description += f"\n**{probs['margin']:.2f}** average margin"
 
     if strategy is not None:
         description = f"**{__STRATEGIES[strategy]}**\n\n{description}"
@@ -76,20 +76,20 @@ async def __display_probabilities(ctx, params, strategy: str, probs: dict):
     embed.set_footer(text="Simulated over 10,000 runs")
 
     # Breakdown field
-    success = roll.dicemoji.emojify_die(6, False) + f"{probs['success']:.1%} Success"
-    messy = roll.dicemoji.emojify_die(10, True) + f"{probs['messy']:.1%} Messy Critical"
-    total_fail = roll.dicemoji.emojify_die(3, True) + f"{probs['total_fail']:.1%} Total Failure"
-    bestial = roll.dicemoji.emojify_die(1, True) + f"{probs['bestial']:.1%} Bestial Failure"
+    success = roll.dicemoji.emojify_die(6, False) + f"{probs['success']:.2%} Success"
+    messy = roll.dicemoji.emojify_die(10, True) + f"{probs['messy']:.2%} Messy Critical"
+    total_fail = roll.dicemoji.emojify_die(3, True) + f"{probs['total_fail']:.2%} Total Failure"
+    bestial = roll.dicemoji.emojify_die(1, True) + f"{probs['bestial']:.2%} Bestial Failure"
 
     breakdown = ""
     if params.pool > params.hunger:
-        breakdown += roll.dicemoji.emojify_die(10, False) + f" {probs['critical']:.1%} Critical Win"
+        breakdown += roll.dicemoji.emojify_die(10, False) + f" {probs['critical']:.2%} Critical Win"
 
     breakdown += f"\n{success}\n{messy}\n------\n"
 
     if probs["fail"] != 0:
         # Only show regular failure if there's a distinction between it and total failure
-        breakdown += roll.dicemoji.emojify_die(3, False) + f"{probs['fail']:.1%} Failure\n"
+        breakdown += roll.dicemoji.emojify_die(3, False) + f"{probs['fail']:.2%} Failure\n"
 
     breakdown += f"{total_fail}\n{bestial}"
 

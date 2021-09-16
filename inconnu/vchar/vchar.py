@@ -113,7 +113,7 @@ class VChar:
             "user": user,
             "name": { "$regex": re.compile("^" + name + "$", re.IGNORECASE) }
         }
-        return VChar._CHARS.count_documents(query) > 1
+        return VChar._CHARS.count_documents(query) > 0
 
 
     @classmethod

@@ -11,7 +11,7 @@ from ..vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-deletion"
 
 
-async def prompt(ctx, character: str):
+async def delete(ctx, character: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)

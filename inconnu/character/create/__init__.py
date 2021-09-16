@@ -1,3 +1,3 @@
 """Defines the imported interfaces for creating characters."""
 
-from .create import process
+from .create import create

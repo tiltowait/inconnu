@@ -9,7 +9,7 @@ from ...vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
 
 
-async def parse(ctx, character=None, message=None, player=None):
+async def display(ctx, character=None, message=None, player=None):
     """Determine which character to display, then display them."""
     try:
         owner = await common.player_lookup(ctx, player)

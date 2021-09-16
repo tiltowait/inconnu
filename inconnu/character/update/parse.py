@@ -6,7 +6,7 @@ import discord
 from discord_ui.components import LinkButton
 
 from . import paramupdate
-from ..display import parse as display
+from ..display import display
 from ... import common
 from ...vchar import errors, VChar
 
@@ -30,7 +30,7 @@ __KEYS = {
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
 
 
-async def parse(ctx, parameters: str, character=None, update_message=None):
+async def update(ctx, parameters: str, character=None, update_message=None):
     """
     Process the user's arguments.
     Allow the user to omit a character if they have only one.

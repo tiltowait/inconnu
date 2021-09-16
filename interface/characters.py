@@ -60,7 +60,7 @@ class Characters(commands.Cog, name="Character Management"):
         self, ctx, name: str, splat: str, humanity: int, health: int, willpower: int
     ):
         """Create a new character."""
-        await inconnu.character.create.process(ctx, name, splat, humanity, health, willpower)
+        await inconnu.character.create(ctx, name, splat, humanity, health, willpower)
 
 
     @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
@@ -77,7 +77,7 @@ class Characters(commands.Cog, name="Character Management"):
     )
     async def display_character(self, ctx, character=None, player=None):
         """Display a character's basic traits"""
-        await inconnu.character.display.parse(ctx, character, player=player)
+        await inconnu.character.display(ctx, character, player=player)
 
 
     @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
@@ -94,7 +94,7 @@ class Characters(commands.Cog, name="Character Management"):
     )
     async def update_character(self, ctx, parameters: str, character=None):
         """Update a character's parameters but not the traits."""
-        await inconnu.character.update.parse(ctx, parameters, character)
+        await inconnu.character.update(ctx, parameters, character)
 
 
     @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
@@ -110,7 +110,7 @@ class Characters(commands.Cog, name="Character Management"):
     )
     async def delete_character(self, ctx, character: str):
         """Delete a character."""
-        await inconnu.character.delete.prompt(ctx, character)
+        await inconnu.character.delete(ctx, character)
 
 
     @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
@@ -123,4 +123,4 @@ class Characters(commands.Cog, name="Character Management"):
     )
     async def character_updates_help(self, ctx):
         """Display the valid character update keys."""
-        await inconnu.character.update.update_help(ctx, hidden=False)
+        await inconnu.character.update_help(ctx, hidden=False)

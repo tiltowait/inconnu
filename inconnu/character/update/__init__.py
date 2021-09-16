@@ -1,3 +1,3 @@
 """Set up the package interface."""
 
-from .parse import parse, update_help
+from .parse import update, update_help

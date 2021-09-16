@@ -13,7 +13,7 @@ from ... import common
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-creation"
 
 
-async def process(ctx, name: str, splat: str, humanity: int, health: int, willpower: int):
+async def create(ctx, name: str, splat: str, humanity: int, health: int, willpower: int):
     """Parse and handle character creation arguments."""
     try:
         __validate_parameters(name, humanity, health, willpower) # splat is guaranteed correct

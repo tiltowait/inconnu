@@ -168,6 +168,7 @@ class VChar:
     @humanity.setter
     def humanity(self, new_humanity):
         """Set the character's humanity."""
+        new_humanity = max(0, min(10, new_humanity))
         self._params["humanity"] = new_humanity
         VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "humanity": new_humanity } })
         self.stains = 0
@@ -231,6 +232,8 @@ class VChar:
     @hunger.setter
     def hunger(self, new_hunger):
         """Set the character's hunger."""
+        new_hunger = max(0, min(5, new_hunger)) # Clamp between 0 and 5
+
         self.__update_log("hunger", self.hunger, new_hunger)
         self._params["hunger"] = new_hunger
         VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "hunger": new_hunger } })

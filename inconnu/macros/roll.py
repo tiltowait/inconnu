@@ -5,7 +5,7 @@ import re
 from ..roll import perform_roll, display_outcome
 from . import macro_common
 from .. import common
-from ..vchar import errors, VChar
+from ..vchar import errors
 
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
 
@@ -13,19 +13,8 @@ __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
 async def roll(ctx, syntax: str, character=None):
     """Roll a macro."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-    except errors.UnspecifiedCharacterError as err:
         tip = f"`/vm` `syntax:{syntax}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
-
-        if character is None:
-            # They didn't select a character
-            return
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-        return
-
-    try:
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
         macro_stack, hunger, difficulty = __normalize_syntax(syntax) # pylint: disable=unbalanced-tuple-unpacking
 
         if not macro_common.is_macro_name_valid(macro_stack[0]):
@@ -54,6 +43,8 @@ async def roll(ctx, syntax: str, character=None):
         err += "\n `hunger` and `difficulty` are optional."
         await common.present_error(ctx, err, help_url=__HELP_URL)
         return
+    except common.FetchError:
+        pass
 
 
 def __normalize_syntax(syntax: str):

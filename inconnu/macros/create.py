@@ -16,28 +16,18 @@ async def create(ctx, name: str, pool: str, hunger: bool, difficulty: int, comme
         return
 
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-    except errors.UnspecifiedCharacterError as err:
         tip = "`/macro create` `name:NAME` `pool:POOL` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, __HELP_URL, ("Minimal syntax", tip))
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        if character is None:
-            # They didn't select a character
+        if not macro_common.is_macro_name_valid(name):
+            await common.present_error(
+                ctx,
+                "Macro names can only contain letters and underscores.",
+                character=character.name,
+                help_url=__HELP_URL
+            )
             return
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-        return
 
-    if not macro_common.is_macro_name_valid(name):
-        await common.present_error(
-            ctx,
-            "Macro names can only contain letters and underscores.",
-            character=character.name,
-            help_url=__HELP_URL
-        )
-        return
-
-    try:
         pool = __expand_syntax(character, pool)
         character.add_macro(name, pool, hunger, difficulty, comment)
         await ctx.respond(f"**{character.name}:** Created macro `{name}`.", hidden=True)
@@ -47,6 +37,8 @@ async def create(ctx, name: str, pool: str, hunger: bool, difficulty: int, comme
         errors.MacroAlreadyExistsError
     ) as err:
         await common.present_error(ctx, err, help_url=__HELP_URL, character=character.name)
+    except common.FetchError:
+        pass
 
 
 def __expand_syntax(character: VChar, syntax: str):

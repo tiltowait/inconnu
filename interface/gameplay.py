@@ -110,7 +110,7 @@ class Gameplay(commands.Cog):
     )
     async def remorse(self, ctx, character=None):
         """Perform a remorse check."""
-        await inconnu.misc.rousemorse.parse(ctx, "remorse", character)
+        await inconnu.misc.remorse(ctx, character)
 
 
     @slash_cog(name="resonance")

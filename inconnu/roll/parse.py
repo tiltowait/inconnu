@@ -371,4 +371,4 @@ def __generate_reroll_buttons(roll_result) -> list:
 
 def needs_character(syntax: str):
     """Determines whether a roll needs a character."""
-    return re.match(r"[A-z_]", syntax) is not None
+    return re.search(r"[A-z_]", syntax) is not None

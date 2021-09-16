@@ -177,7 +177,7 @@ class FetchError(Exception):
     """An error for when we are unable to fetch a character."""
 
 
-async def fetch_character(ctx, character, tip, help_url, userid=None):
+async def fetch_character(ctx, character, tip, help_url, owner=None):
     """
     Attempt to fetch a character, presenting a selection dialogue if necessary.
     Args:
@@ -188,11 +188,11 @@ async def fetch_character(ctx, character, tip, help_url, userid=None):
         userid (int): The ID of the user who owns the character, if different from the ctx author
     """
     try:
-        userid = userid or ctx.author.id
-        return VChar.fetch(ctx.guild.id, userid, character)
+        owner = owner or ctx.author
+        return VChar.fetch(ctx.guild.id, owner.id, character)
 
     except errors.UnspecifiedCharacterError as err:
-        character = await select_character(ctx, err, help_url, ("Proper syntax", tip))
+        character = await select_character(ctx, err, help_url, ("Proper syntax", tip), player=owner)
 
         if character is None:
             raise FetchError("No character was selected.") from err
@@ -200,5 +200,5 @@ async def fetch_character(ctx, character, tip, help_url, userid=None):
         return character
 
     except errors.CharacterError as err:
-        await present_error(ctx, err, help_url=help_url)
+        await present_error(ctx, err, help_url=help_url, author=owner)
         raise FetchError(str(err)) from err

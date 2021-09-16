@@ -25,23 +25,53 @@ def pluralize(value: int, noun: str) -> str:
 
 
 async def display_error(ctx, char_name, error, help_url, *fields, footer=None, components=None):
+    print("ERROR: Printing display_error")
+
+async def present_error(
+    ctx,
+    error,
+    *fields,
+    author = None,
+    character: str = None,
+    footer: str = None,
+    help_url: str = None,
+    components = None
+):
     """
     Display an error in a nice embed.
     Args:
         ctx: The Discord context for sending the response.
-        char_name (str): The name to display in the author field.
         error: The error message to display.
-        help_url (str): The documentation URL for the error.
         fields (list): Fields to add to the embed. (fields.0 is name; fields.1 is value)
+        author (discord.Member): The member the message is attributed to
+        character (str): The character the message is attributed to
         footer (str): Footer text to display.
+        help_url (str): The documentation URL for the error.
         components (list): Buttons or selection menus to add to the message.
     """
+    # Figure out the author
+    if author is None:
+        avatar = ctx.author.avatar_url
+        display_name = ctx.author.display_name
+    else:
+        if isinstance(author, str):
+            print("author is a string")
+            avatar = ctx.author.avatar_url
+            display_name = author
+        else:
+            print('author not str')
+            avatar = author.avatar_url
+            display_name = author.display_name
+
+    if character is not None:
+        display_name = character
+
     embed = discord.Embed(
         title="Error",
         description=str(error),
         color=0xFF0000
     )
-    embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=display_name, icon_url=avatar)
 
     for field in fields:
         embed.add_field(name=field[0], value=field[1])
@@ -49,15 +79,16 @@ async def display_error(ctx, char_name, error, help_url, *fields, footer=None, c
     if footer is not None:
         embed.set_footer(text=footer)
 
-    link = [LinkButton(
-        help_url,
-        label="Help"
-    )]
+    if help_url is not None:
+        link = [LinkButton(
+            help_url,
+            label="Help"
+        )]
 
-    if components is None:
-        components = link
-    else:
-        components = [components, link]
+        if components is None:
+            components = link
+        else:
+            components = [components, link]
 
     return await ctx.respond(embed=embed, components=components, hidden=True)
 

@@ -25,7 +25,7 @@ async def parse(ctx, traits: str, character=None):
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
         return
 
     try:
@@ -55,7 +55,7 @@ async def parse(ctx, traits: str, character=None):
         await ctx.respond(embed=embed, hidden=True)
 
     except (ValueError, SyntaxError) as err:
-        await common.display_error(ctx, character.name, err, __HELP_URL)
+        await common.present_error(ctx, err, character=character, help_url=__HELP_URL)
 
 
 def __delete_traits(character: VChar, *traits) -> list:

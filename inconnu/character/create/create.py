@@ -31,7 +31,7 @@ async def process(ctx, name: str, splat: str, humanity: int, health: int, willpo
         await character_wizard.begin_chargen()
 
     except ValueError as err:
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
     except discord.errors.Forbidden:
         await response.edit(
             content="**Whoops!** I can't DM your character wizard. Please enable DMs and try again."

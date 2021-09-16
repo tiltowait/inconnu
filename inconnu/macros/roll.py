@@ -25,7 +25,7 @@ async def process(ctx, syntax: str, character=None):
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
         return
 
     try:
@@ -43,17 +43,14 @@ async def process(ctx, syntax: str, character=None):
         results = perform_roll(character, *parameters)
         await display_outcome(ctx, ctx.author, character, results, macro.comment)
 
-    except errors.MacroNotFoundError as err:
-        await common.display_error(ctx, character.name, err, __HELP_URL)
-    except ValueError as err:
-        # The user may have deleted a trait, which means the macro is invalid.
-        await common.display_error(ctx, character.name, str(err), __HELP_URL)
+    except (ValueError, errors.MacroNotFoundError) as err:
+        await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)
     except SyntaxError:
         err = f"**Unknown syntax:** `{syntax}`"
         err += "\n**Usage:** `/vm <macro_name> [hunger] [difficulty]`"
         err += "\n\nYou may add simple math after `macro_name`."
         err += "\n `hunger` and `difficulty` are optional."
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
         return
 
 

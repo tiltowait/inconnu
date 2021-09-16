@@ -37,7 +37,7 @@ async def process(ctx, syntax: str, strategy=None, character=None):
                 # They didn't select a character
                 return
         except errors.CharacterError as err:
-            await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+            await common.present_error(ctx, err, help_url=__HELP_URL)
             return
     else:
         character = None
@@ -50,8 +50,7 @@ async def process(ctx, syntax: str, strategy=None, character=None):
         await __display_probabilities(ctx, params, strategy, probabilities)
 
     except (SyntaxError, ValueError) as err:
-        name = character.name if character is not None else ctx.author.display_name
-        await common.display_error(ctx, name, str(err), __HELP_URL)
+        await common.present_error(ctx, err, character=character, help_url=__HELP_URL)
 
 
 async def __display_probabilities(ctx, params, strategy: str, probs: dict):

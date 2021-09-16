@@ -12,10 +12,7 @@ __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=creation"
 async def process(ctx, name: str, pool: str, difficulty=0, comment=None, character=None):
     """Create a macro if the syntax is valid."""
     if difficulty < 0:
-        await common.display_error(
-            ctx, ctx.author.display_name, "`Difficulty` cannot be less than 0.",
-            __HELP_URL
-        )
+        await common.present_error(ctx, "`Difficulty` cannot be less than 0.", help_url=__HELP_URL)
         return
 
     try:
@@ -28,13 +25,15 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
         return
 
     if not macro_common.is_macro_name_valid(name):
-        await common.display_error(
-            ctx, character.name, "Macro names can only contain letters and underscores.",
-            __HELP_URL
+        await common.present_error(
+            ctx,
+            "Macro names can only contain letters and underscores.",
+            character=character.name,
+            help_url=__HELP_URL
         )
         return
 
@@ -47,7 +46,7 @@ async def process(ctx, name: str, pool: str, difficulty=0, comment=None, charact
         SyntaxError, errors.AmbiguousTraitError, errors.TraitNotFoundError,
         errors.MacroAlreadyExistsError
     ) as err:
-        await common.display_error(ctx, character.name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL, character=character.name)
 
 
 def __expand_syntax(character: VChar, syntax: str):

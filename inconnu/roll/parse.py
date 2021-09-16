@@ -40,10 +40,7 @@ async def parse(ctx, raw_syntax: str, character: str, player: str):
         comment = comment.strip()
 
     if ctx.guild is None and needs_character(syntax):
-        await common.display_error(ctx, ctx.author.display_name,
-            "You cannot roll traits in DMs!",
-            __HELP_URL
-        )
+        await common.present_error(ctx, "You cannot roll traits in DMs!", help_url=__HELP_URL)
         return
 
     args = syntax.split()
@@ -74,10 +71,10 @@ async def parse(ctx, raw_syntax: str, character: str, player: str):
                     return
 
         except errors.CharacterError as err:
-            await common.display_error(ctx, owner.display_name, err, __HELP_URL)
+            await common.present_error(ctx, err, author=owner, help_url=__HELP_URL)
             return
         except LookupError as err:
-            await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+            await common.present_error(ctx, err, help_url=__HELP_URL)
             return
 
 
@@ -87,8 +84,7 @@ async def parse(ctx, raw_syntax: str, character: str, player: str):
         await display_outcome(ctx, owner, character, results, comment)
 
     except (SyntaxError, ValueError) as err:
-        name = character.name if character is not None else owner.display_name
-        await common.display_error(ctx, name, str(err), __HELP_URL)
+        await common.present_error(ctx, err, author=owner, character=character, help_url=__HELP_URL)
 
 
 async def display_outcome(ctx, player, character, results, comment, rerolled=False):

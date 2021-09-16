@@ -34,9 +34,9 @@ async def parse(ctx, character=None, message=None, player=None):
         await ctx.respond(embed=embed, hidden=False)
 
     except errors.CharacterError as err:
-        await common.display_error(ctx, owner.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, author=owner, help_url=__HELP_URL)
     except LookupError as err:
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
 
 
 async def __display_character(ctx, character: VChar, owner, message):

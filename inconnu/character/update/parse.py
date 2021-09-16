@@ -52,7 +52,7 @@ async def parse(ctx, parameters: str, character=None, update_message=None):
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
         return
 
     # Character has been selected

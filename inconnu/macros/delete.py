@@ -19,15 +19,12 @@ async def process(ctx, macro_name: str, character=None):
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
         return
 
     try:
         character.delete_macro(macro_name)
-        await ctx.respond(
-            f"Deleted **{character.name}'s** `{macro_name}` macro.",
-            hidden=True
-        )
+        await ctx.respond(f"Deleted **{character.name}'s** `{macro_name}` macro.", hidden=True)
 
     except errors.MacroNotFoundError as err:
-        await common.display_error(ctx, character.name, err, __HELP_URL)
+        await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)

@@ -24,9 +24,6 @@ def pluralize(value: int, noun: str) -> str:
     return pluralized
 
 
-async def display_error(ctx, char_name, error, help_url, *fields, footer=None, components=None):
-    print("ERROR: Printing display_error")
-
 async def present_error(
     ctx,
     error,
@@ -43,7 +40,7 @@ async def present_error(
         ctx: The Discord context for sending the response.
         error: The error message to display.
         fields (list): Fields to add to the embed. (fields.0 is name; fields.1 is value)
-        author (discord.Member): The member the message is attributed to
+        author (discord.Member): The member the message is attributed to, if not the same as ctx
         character (str): The character the message is attributed to
         footer (str): Footer text to display.
         help_url (str): The documentation URL for the error.
@@ -54,17 +51,14 @@ async def present_error(
         avatar = ctx.author.avatar_url
         display_name = ctx.author.display_name
     else:
-        if isinstance(author, str):
-            print("author is a string")
-            avatar = ctx.author.avatar_url
-            display_name = author
-        else:
-            print('author not str')
-            avatar = author.avatar_url
-            display_name = author.display_name
+        avatar = author.avatar_url
+        display_name = author.display_name
 
     if character is not None:
-        display_name = character
+        if isinstance(character, str):
+            display_name = character
+        else:
+            display_name = character.name
 
     embed = discord.Embed(
         title="Error",
@@ -105,8 +99,12 @@ async def select_character(ctx, err, help_url, tip, player=None):
     """
     user = ctx.author if player is None else player
     options = character_options(ctx.guild.id, user.id)
-    errmsg = await display_error(
-        ctx, user.display_name, err, help_url, (tip[0], tip[1]),
+    errmsg = await present_error(
+        ctx,
+        err,
+        (tip[0], tip[1]),
+        author=user,
+        help_url=help_url,
         components=options.components
     )
 

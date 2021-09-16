@@ -25,10 +25,10 @@ async def parse(ctx, character: str, player: str):
             # They didn't select a character
             return
     except errors.CharacterError as err:
-        await common.display_error(ctx, owner.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, author=owner, help_url=__HELP_URL)
         return
     except LookupError as err:
-        await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
+        await common.present_error(ctx, err, help_url=__HELP_URL)
         return
 
     traits = map(lambda row: f"**{row[0]}**: {row[1]}", character.traits.items())

@@ -26,5 +26,7 @@ async def show(ctx, character: str, player: str):
 
         await ctx.respond(embed=embed, hidden=True)
 
+    except LookupError as err:
+        await common.present_error(ctx, err, help_url=__HELP_URL)
     except common.FetchError:
         pass

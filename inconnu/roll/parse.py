@@ -51,30 +51,15 @@ async def parse(ctx, raw_syntax: str, character: str, player: str):
         try:
             owner = await common.player_lookup(ctx, player)
             if character is not None or needs_character(syntax):
-                character = VChar.fetch(ctx.guild.id, owner.id, character)
-
-        except errors.UnspecifiedCharacterError as err:
-            # Two error cases prevent us from continuing:
-            #   1. The roll explicitly requires a character (trait roll)
-            #   2. The user explicitly supplied a nonexistent character
-            if character is not None or needs_character(syntax):
-                # Present the user with a list of their characters
                 tip = f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`"
-                character = await common.select_character(ctx, err,
-                    __HELP_URL,
-                    ("Proper syntax", tip),
-                    player=owner
+                character = await common.fetch_character(
+                    ctx, character, tip, __HELP_URL, owner=owner
                 )
 
-                if character is None:
-                    # The user never made a selection
-                    return
-
-        except errors.CharacterError as err:
-            await common.present_error(ctx, err, author=owner, help_url=__HELP_URL)
-            return
         except LookupError as err:
             await common.present_error(ctx, err, help_url=__HELP_URL)
+            return
+        except common.FetchError:
             return
 
 

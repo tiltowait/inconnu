@@ -62,11 +62,20 @@ async def display_error(ctx, char_name, error, help_url, *fields, footer=None, c
     return await ctx.respond(embed=embed, components=components, hidden=True)
 
 
-async def select_character(ctx, err, help_url, tip):
-    """A prompt for the user to select a character from a list."""
-    options = character_options(ctx.guild.id, ctx.author.id)
+async def select_character(ctx, err, help_url, tip, player=None):
+    """
+    A prompt for the user to select a character from a list.
+    Args:
+        ctx: Discord context
+        err: An error message to display
+        help_url: A URL pointing to the documentation
+        tip (tuple): A name and value for an embed field
+        player: (Optional) A Discord member to query instead
+    """
+    user = ctx.author if player is None else player
+    options = character_options(ctx.guild.id, user.id)
     errmsg = await display_error(
-        ctx, ctx.author.display_name, err, help_url, (tip[0], tip[1]),
+        ctx, user.display_name, err, help_url, (tip[0], tip[1]),
         components=options.components
     )
 
@@ -118,7 +127,11 @@ async def player_lookup(ctx, player_str: str):
     if player_str is None:
         return ctx.author
 
-    player_id = int(player_str.strip(' <@!>'))
+    player = player_str.strip(' <@!>')
+    if not player.isdigit():
+        raise LookupError(f"`{player_str}` is not a valid player.")
+
+    player_id = int(player)
     player = await ctx.bot.fetch_user(player_id)
 
     if player is None:

@@ -8,19 +8,26 @@ from ..vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=displaying-traits"
 
 
-async def parse(ctx, character=None):
+async def parse(ctx, character: str, player: str):
     """Present a character's traits to its owner."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
+        owner = await common.player_lookup(ctx, player)
+        character = VChar.fetch(ctx.guild.id, owner.id, character)
 
     except errors.UnspecifiedCharacterError as err:
         tip = "`/traits list` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
+        character = await common.select_character(ctx, err, __HELP_URL,
+            ("Proper syntax", tip),
+            player=owner
+        )
 
         if character is None:
             # They didn't select a character
             return
     except errors.CharacterError as err:
+        await common.display_error(ctx, owner.display_name, err, __HELP_URL)
+        return
+    except LookupError as err:
         await common.display_error(ctx, ctx.author.display_name, err, __HELP_URL)
         return
 
@@ -30,7 +37,7 @@ async def parse(ctx, character=None):
         title="Traits",
         description="\n".join(traits)
     )
-    embed.set_author(name=character.name, icon_url=ctx.guild.icon_url)
+    embed.set_author(name=character.name, icon_url=owner.avatar_url)
     embed.set_footer(text="To see HP, WP, etc., use /character display")
 
     await ctx.respond(embed=embed, hidden=True)

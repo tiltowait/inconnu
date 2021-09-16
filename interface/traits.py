@@ -45,13 +45,14 @@ class Traits(commands.Cog, name="Trait Management"):
         name="list",
         description="List all of a character's traits.",
         options=[
-            SlashOption(str, "character", description="The character to update")
+            SlashOption(str, "character", description="The character to look up"),
+            SlashOption(str, "player", description="The character's owner (admin only)")
         ]
         , guild_ids=debug.WHITELIST
     )
-    async def list_traits(self, ctx, character=None):
+    async def list_traits(self, ctx, character=None, player=None):
         """Display a character's traits."""
-        await inconnu.traits.show.parse(ctx, character)
+        await inconnu.traits.show.parse(ctx, character, player)
 
 
     @ext.check_failure_response("Characters and traits aren't available in DMs.", hidden=True)

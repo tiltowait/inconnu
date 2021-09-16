@@ -15,20 +15,8 @@ __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=deleting-traits"
 async def delete(ctx, traits: str, character=None):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-
-    except errors.UnspecifiedCharacterError as err:
         tip = f"`/traits delete` `traits:{traits}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err, __HELP_URL, ("Proper syntax", tip))
-
-        if character is None:
-            # They didn't select a character
-            return
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-        return
-
-    try:
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
         traits = traits.split()
 
         if len(traits) == 0:
@@ -56,6 +44,8 @@ async def delete(ctx, traits: str, character=None):
 
     except (ValueError, SyntaxError) as err:
         await common.present_error(ctx, err, character=character, help_url=__HELP_URL)
+    except common.FetchError:
+        pass
 
 
 def __delete_traits(character: VChar, *traits) -> list:

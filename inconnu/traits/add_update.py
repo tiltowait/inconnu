@@ -7,7 +7,7 @@ import discord
 from .parser import parse_traits
 from .traitwizard import TraitWizard
 from .. import common
-from ..vchar import errors, VChar
+from ..vchar import VChar
 
 __HELP_URL = {
     False: "https://www.inconnu-bot.com/#/trait-management?id=adding-traits",
@@ -28,25 +28,10 @@ async def update(ctx, traits: str, character: str):
 async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
     """Add traits to a character."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-
-    except errors.UnspecifiedCharacterError as err:
         key = "update" if allow_overwrite else "add"
         tip = f"`/traits {key}` `traits:{traits}` `character:CHARACTER`"
-        character = await common.select_character(ctx, err,
-            __HELP_URL[allow_overwrite],
-            ("Proper syntax", tip)
-        )
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        if character is None:
-            # They didn't select a character
-            return
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL[allow_overwrite])
-        return
-
-    # We have a good character
-    try:
         traits = parse_traits(*traits.split())
         outcome = __handle_traits(character, traits, allow_overwrite)
 
@@ -65,10 +50,12 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
         )
     except discord.errors.Forbidden:
         await ctx.respond(
-            "**Whoops!** I can't DM your trait wizard. Please enable DMs and try again.",
+            "**Whoops!** Your DMs are closed. Please open them so I can send your trait wizard.",
             hidden=True
         )
         del wizard
+    except common.FetchError:
+        pass
 
 
 def __handle_traits(character: VChar, traits: dict, overwriting: bool):

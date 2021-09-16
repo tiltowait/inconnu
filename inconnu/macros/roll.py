@@ -34,6 +34,11 @@ async def roll(ctx, syntax: str, character=None):
         macro = character.find_macro(macro_stack.pop(0))
         parameters = macro.pool
         parameters.extend(macro_stack)
+
+        # Macros can contain hunger by default, but the user can override
+        if hunger is None:
+            hunger = "hunger" if macro.hunger else "0"
+
         parameters.append(hunger)
         parameters.append(difficulty or macro.difficulty)
 
@@ -62,7 +67,7 @@ def __normalize_syntax(syntax: str):
     params.insert(0, stack)
 
     if len(params) == 1:
-        params.append("0")
+        params.append(None)
 
     if len(params) == 2:
         params.append(None)
@@ -76,9 +81,8 @@ def __normalize_syntax(syntax: str):
     # here. We don't modify anything; the roll parser will do that for us. Insteat,
     # we simply check for validity.
 
-    if params[1].lower() != "hunger": # "hunger" is a valid option here
-        hunger = int(params[1])
-        if not 0 <= hunger <= 5:
+    if params[1] is not None and params[1].lower() != "hunger": # "hunger" is a valid option here
+        if not 0 <= int(params[1]) <= 5:
             raise ValueError("Hunger must be between 0 and 5.")
 
     difficulty = params[2]

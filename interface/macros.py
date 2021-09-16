@@ -50,6 +50,11 @@ class Macros(commands.Cog, name="Macro Utilities"):
         options=[
             SlashOption(str, "name", description="The macro's name", required=True),
             SlashOption(str, "pool", description="The dice pool", required=True),
+            SlashOption(int, "hunger", description="Whether the roll should use Hunger",
+                choices=[
+                    ("Yes", 1), ("No", 0)
+                ]
+            ),
             SlashOption(int, "difficulty", description="The default difficulty (default 0"),
             SlashOption(str, "comment", description="A comment to apply to macro rolls"),
             SlashOption(str, "character", description="The character that owns the macro")
@@ -57,10 +62,10 @@ class Macros(commands.Cog, name="Macro Utilities"):
         , guild_ids=debug.WHITELIST
     )
     async def macro_create(
-        self, ctx, name: str, pool: str, difficulty=0, comment=None, character=None
+        self, ctx, name: str, pool: str, hunger=1, difficulty=0, comment=None, character=None
     ):
         """Create a macro."""
-        await inconnu.macros.create(ctx, name, pool, difficulty, comment, character)
+        await inconnu.macros.create(ctx, name, pool, bool(hunger), difficulty, comment, character)
 
 
     @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)

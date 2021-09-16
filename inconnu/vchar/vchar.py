@@ -1,5 +1,5 @@
 """vchar/vchar.py - Persistent character management using MongoDB."""
-# pylint: disable=too-many-public-methods
+# pylint: disable=too-many-public-methods, too-many-arguments
 
 import datetime
 import math
@@ -406,7 +406,7 @@ class VChar:
         return SimpleNamespace(**matches[0])
 
 
-    def add_macro(self, macro: str, pool: list, difficulty: int, comment):
+    def add_macro(self, macro: str, pool: list, hunger: bool, difficulty: int, comment):
         """
         Store a macro.
         Raises MacroAlreadyExistsError if the macro already exists.
@@ -418,6 +418,7 @@ class VChar:
             "charid": self.id,
             "name": macro,
             "pool": list(map(str, pool)),
+            "hunger": hunger,
             "difficulty": difficulty,
             "comment": comment
         }

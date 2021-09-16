@@ -6,7 +6,7 @@ from .. import common
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=deletion"
 
 
-async def process(ctx, macro_name: str, character=None):
+async def delete(ctx, macro_name: str, character=None):
     """Delete the given macro."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)

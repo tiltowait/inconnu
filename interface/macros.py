@@ -38,7 +38,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     )
     async def macro_roll(self, ctx, syntax: str, character=None):
         """Create a macro."""
-        await inconnu.macros.roll.process(ctx, syntax, character)
+        await inconnu.macros.roll(ctx, syntax, character)
 
 
     @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
@@ -60,7 +60,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         self, ctx, name: str, pool: str, difficulty=0, comment=None, character=None
     ):
         """Create a macro."""
-        await inconnu.macros.create.process(ctx, name, pool, difficulty, comment, character)
+        await inconnu.macros.create(ctx, name, pool, difficulty, comment, character)
 
 
     @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
@@ -76,7 +76,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     )
     async def macro_list(self, ctx, character=None):
         """List a character's macros."""
-        await inconnu.macros.show.process(ctx, character)
+        await inconnu.macros.show(ctx, character)
 
 
     @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
@@ -93,4 +93,4 @@ class Macros(commands.Cog, name="Macro Utilities"):
     )
     async def macro_delete(self, ctx, macro: str, character=None):
         """Delete a macro."""
-        await inconnu.macros.delete.process(ctx, macro, character)
+        await inconnu.macros.delete(ctx, macro, character)

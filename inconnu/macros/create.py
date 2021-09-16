@@ -9,7 +9,7 @@ from ..vchar import VChar, errors
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=creation"
 
 
-async def process(ctx, name: str, pool: str, difficulty=0, comment=None, character=None):
+async def create(ctx, name: str, pool: str, difficulty=0, comment=None, character=None):
     """Create a macro if the syntax is valid."""
     if difficulty < 0:
         await common.present_error(ctx, "`Difficulty` cannot be less than 0.", help_url=__HELP_URL)

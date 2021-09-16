@@ -10,7 +10,7 @@ from ..vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=retrieval"
 
 
-async def process(ctx, character=None):
+async def show(ctx, character=None):
     """Show all of a character's macros."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)

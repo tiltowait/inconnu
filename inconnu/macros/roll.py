@@ -10,7 +10,7 @@ from ..vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
 
 
-async def process(ctx, syntax: str, character=None):
+async def roll(ctx, syntax: str, character=None):
     """Roll a macro."""
     hunger = 0 # TODO: Get rid?
     difficulty = 0

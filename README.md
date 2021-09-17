@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/discord.py-1.7.3-brightgreen" alt="Requires discord.py v1.7.3" />
-  <img src="https://img.shields.io/badge/discord--ui-4.3.1-blue" alt="Requires discord-ui v4.3.6" />
+  <img src="https://img.shields.io/badge/discord--ui-4.3.8-blue" alt="Requires discord-ui v4.3.8" />
   <img src="https://img.shields.io/badge/pymongo-3.12.0-yellow" alt="Requires pymongo v3.12.0" />
   <img src="https://img.shields.io/badge/python-3.9.6-9cf" alt="Requires python 3.9.6" />
 </p>
@@ -13,7 +13,8 @@
 
 ## Getting Started
 
-Add **Inconnu** to your server by following [this link](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147829760&scope=bot%20applications.commands). A demo server will be created soon.
+* **Invite Inconnu to your server:** [Link](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147829760&scope=bot%20applications.commands)
+* **Demo server:** [Link](https://discord.gg/CPmsdWHUcZ)
 
 ### Basic Usage
 

@@ -31,7 +31,7 @@ class Gameplay(commands.Cog):
         await inconnu.roll.parse(ctx, syntax, character, player)
 
 
-    @ext.check_failure_response("Awaken rolls aren't available in DMs.", hidden=True)
+    @ext.check_failure_response("Aggravated healing isn't available in DMs.", hidden=True)
     @commands.guild_only()
     @slash_cog(
         name="aggheal",

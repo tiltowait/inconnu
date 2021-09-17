@@ -1,5 +1,6 @@
 """interface/gameplay.py - Command interface directly related to gameplay."""
 
+import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption
 from discord_ui.cogs import slash_cog
@@ -22,7 +23,7 @@ class Gameplay(commands.Cog):
         options=[
             SlashOption(str, "syntax", description="The roll syntax", required=True),
             SlashOption(str, "character", description="The character performing the roll"),
-            SlashOption(str, "player", description="The character's owner (admin only)")
+            SlashOption(discord.Member, "player", description="The character's owner (admin only)")
         ],
         guild_ids=debug.WHITELIST
     )

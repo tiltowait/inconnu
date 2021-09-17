@@ -1,5 +1,6 @@
 """interface/traits.py - Traits command interface."""
 
+import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption
 from discord_ui.cogs import slash_cog, subslash_cog
@@ -46,7 +47,7 @@ class Traits(commands.Cog, name="Trait Management"):
         description="List all of a character's traits.",
         options=[
             SlashOption(str, "character", description="The character to look up"),
-            SlashOption(str, "player", description="The character's owner (admin only)")
+            SlashOption(discord.Member, "player", description="The character's owner (admin only)")
         ]
         , guild_ids=debug.WHITELIST
     )

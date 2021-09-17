@@ -7,7 +7,7 @@ from .. import common
 __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=displaying-traits"
 
 
-async def show(ctx, character: str, player: str):
+async def show(ctx, character: str, player: discord.Member):
     """Present a character's traits to its owner."""
     try:
         owner = await common.player_lookup(ctx, player)

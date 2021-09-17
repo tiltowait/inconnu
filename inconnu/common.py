@@ -145,7 +145,7 @@ def character_options(guild: int, user: int):
     return SimpleNamespace(characters=chardict, components=components)
 
 
-async def player_lookup(ctx, player_str: str):
+async def player_lookup(ctx, player: discord.Member):
     """
     Look up a player.
     Returns the sought-after player OR the ctx author if player_str is None.
@@ -153,18 +153,8 @@ async def player_lookup(ctx, player_str: str):
     Raises PermissionError if the user doesn't have admin permissions.
     Raises ValueError if player is not a valid player name.
     """
-    if player_str is None:
-        return ctx.author
-
-    player = player_str.strip(' <@!>')
-    if not player.isdigit():
-        raise LookupError(f"`{player_str}` is not a valid player.")
-
-    player_id = int(player)
-    player = await ctx.bot.fetch_user(player_id)
-
     if player is None:
-        raise LookupError(f"`{player_str}` is not a valid player.")
+        return ctx.author
 
     # Players are allowed to look up themselves
     if not ctx.author.guild_permissions.administrator and ctx.author != player:

@@ -29,7 +29,7 @@ __UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity", "surge"]
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
 
 
-async def parse(ctx, raw_syntax: str, character: str, player: str):
+async def parse(ctx, raw_syntax: str, character: str, player: discord.Member):
     """Parse the user's arguments and attempt to roll the dice."""
     syntax = raw_syntax # Save the raw in case we get a character error
 

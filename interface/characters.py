@@ -1,5 +1,6 @@
 """interface/characters.py - Character management Cog."""
 
+import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption
 from discord_ui.cogs import slash_cog, subslash_cog
@@ -71,7 +72,9 @@ class Characters(commands.Cog, name="Character Management"):
         description="List all of your characters or show details about one character.",
         options=[
             SlashOption(str, "character", description="A character to display"),
-            SlashOption(str, "player", description="The player who owns the character (admin only)")
+            SlashOption(discord.Member, "player",
+                description="The player who owns the character (admin only)"
+            )
         ]
         , guild_ids=debug.WHITELIST
     )

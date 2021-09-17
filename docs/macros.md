@@ -9,13 +9,14 @@ All macro management is done through the `/macro` application command prefix. As
 ## Creation
 
 ```
-/macro create name:<name> pool:<pool> difficulty:[difficulty] comment:[comment] character:[character]
+/macro create name:<name> pool:<pool> hunger:[Yes/No] difficulty:[difficulty] comment:[comment] character:[character]
 ```
 
 | Parameter    | Description                                     |
 |--------------|-------------------------------------------------|
 | `name`       | The name of the macro                           |
 | `pool`       | The pool and (optional) difficulty for the roll |
+| `hunger`     | Whether to use Hunger in the roll               |
 | `difficulty` | The roll's difficulty (default 0)               |
 | `comment`    | A comment to add when rolling                   |
 | `character`  | The character who owns the macro                |

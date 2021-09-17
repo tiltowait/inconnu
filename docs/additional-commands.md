@@ -4,6 +4,10 @@
 
 Each command below is a "slash" or "application" command. As you type, Discord will automatically show a list of matching commands above your textbox, which you can tap or click to perform.
 
+## Aggravated Healing
+
+The `/aggheal` command automatically heals your character by one Aggravated damage and rolls three Rouse checks, displaying the results (and any ensuing Hunger Frenzies) in a single command.
+
 ## Awakening
 
 Each night a character wakes, they heal Superficial Willpower damage and make a Rouse check. **Inconnu** automates this process with the `/awaken` command. It will even tell you if you were unfortunate enough to fall into torpor!
@@ -58,7 +62,7 @@ You may generate a random Resonance and Temperament with the `/resonance` comman
 **Inconnu** can perform basic Rouse checks. Additionally, **Inconnu** will automatically increase the indicated character's Hunger rating if the rouse is a failure.
 
 ```
-/rouse count:[count] character:[character] purpose:[purpose]
+/rouse count:[count] character:[character] purpose:[purpose] reroll:[Yes/No]
 ```
 
 | Parameter   | Description                              |
@@ -66,8 +70,7 @@ You may generate a random Resonance and Temperament with the `/resonance` comman
 | `count`     | The number of rouse checks to perform    |
 | `character` | The character performing the rouse check |
 | `purpose`   | The reason for the rouse check           |
-
-!> At the time of this writing, **Inconnu** lacks the ability to perform a Rouse *re-roll*, such as one granted by Blood Potency. This functionality is a planned improvement.
+| `reroll`    | Whether to re-roll failures              |
 
 ## Slaking Hunger
 

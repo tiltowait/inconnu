@@ -17,7 +17,7 @@ Add **Inconnu** to your server by following [this link](https://discord.com/api/
 
 ### Basic Usage
 
-An **Inconnu** roll uses the following syntax: `//v <pool> [hunger] [difficulty]`. While `pool` is required, `hunger` and `difficulty` are optional and default to `0` if omitted.
+An **Inconnu** roll uses the following syntax: `/vr <pool> [hunger] [difficulty]`. While `pool` is required, `hunger` and `difficulty` are optional and default to `0` if omitted.
 
 *But that's not all!* **Inconnu** offers trait-based pools, allowing you to write human-readable pools, such as *"strength + brawl"* rather than a simple number. For more infomration, [check the documentation](https://www.inconnu-bot.com).
 

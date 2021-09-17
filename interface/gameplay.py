@@ -93,7 +93,7 @@ class Gameplay(commands.Cog):
     @slash_cog(
         name="probability",
         options=[
-            SlashOption(str, "roll", description="The pool, difficulty, and hunger", required=True),
+            SlashOption(str, "roll", description="The pool, hunger, and difficulty", required=True),
             SlashOption(str, "reroll",
                 description="The re-roll strategy to use",
                 choices=[

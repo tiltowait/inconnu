@@ -46,6 +46,7 @@ async def on_ready():
     print(f"Logged on as {bot.user}!")
     print(f"Playing on {len(bot.guilds)} servers.")
     print(discord.version_info)
+    print("Latency:", bot.latency * 1000, "ms")
 
     await bot.change_presence(activity=discord.Game(__status_message()))
 

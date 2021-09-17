@@ -51,7 +51,7 @@ def __generate_fields(macros):
 
     for macro in macros:
         pool = " ".join(macro.pool)
-        value = f"**Pool:** `{pool}`"
+        value = f"**Pool:** `{pool}`\n**Hunger:** " + "*Yes*" if macro.hunger else "*No*"
         if macro.difficulty > 0:
             value += f"\n**Difficulty:** *{macro.difficulty}*"
         if macro.comment is not None:

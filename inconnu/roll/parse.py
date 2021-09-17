@@ -25,7 +25,7 @@ from .. import stats
 from ..constants import DAMAGE
 from ..vchar import errors, VChar
 
-__UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity"]
+__UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity", "surge"]
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
 
 
@@ -237,7 +237,7 @@ def __substitute_traits(character: VChar, *args) -> tuple:
             if match:
                 rating = __get_universal_trait(character, match)
                 substituted_stack.append(rating)
-                trait_stack.append(match)
+                trait_stack.append(match.title())
             else:
                 raise ValueError(str(err)) # pylint: disable=raise-missing-from
 

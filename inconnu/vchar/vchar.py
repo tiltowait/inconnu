@@ -248,6 +248,8 @@ class VChar:
     @potency.setter
     def potency(self, new_potency):
         """Set the character's potency."""
+        new_potency = max(0, min(10, new_potency))
+
         self._params["potency"] = new_potency
         VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "potency": new_potency } })
 
@@ -290,6 +292,13 @@ class VChar:
 
 
     # Derived attributes
+
+    @property
+    def surge(self):
+        """The number of dice added to a Blood Surge."""
+        surges = { 0: 1, 1: 2, 2: 2, 3: 3, 4: 3, 5: 4, 6: 4, 7: 5, 8: 5, 9: 6, 10: 6}
+        return surges[self.potency]
+
 
     @property
     def mend_amount(self):

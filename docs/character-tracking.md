@@ -32,9 +32,10 @@ The only option that requires any typing (and thus the only one it is possible t
 /character display character:[character]
 ```
 
-| Parameter   | Description                                               |
-|-------------|-----------------------------------------------------------|
-| `character` | The name of the character to display                      |
+| Parameter   | Description                          | Notes               |
+|-------------|--------------------------------------|---------------------|
+| `character` | The name of the character to display | Optional            |
+| `player`    | The player who owns the charactor    | Administrators only |
 
 The `character` field is only required if you have more than one character in the server.
 
@@ -44,6 +45,8 @@ The `character` field is only required if you have more than one character in th
 **Example:** Displaying a specific character.
 
 ![/character display character:nadea](images/characters/character-display.png)
+
+[filename](includes/admin-description.md ':include')
 
 ## Tracker Updates
 

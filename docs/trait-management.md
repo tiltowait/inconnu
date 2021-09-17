@@ -37,16 +37,23 @@ Multiple traits can be added at once.
 
 ## Displaying Traits
 
-```
-/traits list character:[character]
-
-```
-
 This command shows you a list of the character's traits, sorted alphabetically.
+
+```
+/traits list character:[character] player:[player]
+
+```
+
+| Parameter   | Description                                       | Notes               |
+|-------------|---------------------------------------------------|---------------------|
+| `character` | The name of the character whose traits to display | Optional            |
+| `player`    | The player who owns the charactor                 | Administrators only |
 
 **Example:** Showing Nadea's traits:
 
 ![/traits list character:nadea](images/traits/traits-list.png)
+
+[filename](includes/admin-description.md ':include')
 
 ## Updating Traits
 

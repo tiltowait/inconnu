@@ -10,14 +10,17 @@ What follows is a complete reference on **Inconnu's** roll function. If you're n
 /vr syntax:<pool hunger difficulty> character:[character]
 ```
 
-| Parameter    | Description                                              |
-|--------------|----------------------------------------------------------|
-| `pool`       | The total number of dice, including Hunger dice, to roll |
-| `hunger`     | Your current level of Hunger (default 0)                 |
-| `difficulty` | The test's Difficulty (default 0)                        |
-| `character`  | The character performing the roll                        |
+| Parameter    | Description                                              | Notes               |
+|--------------|----------------------------------------------------------|---------------------|
+| `pool`       | The total number of dice, including Hunger dice, to roll |                     |
+| `hunger`     | Your current level of Hunger                             | Default 0           |
+| `difficulty` | The test's Difficulty                                    | Default 0           |
+| `character`  | The character performing the roll                        | Optional            |
+| `player`     | The player who owns the charactor                        | Administrators only |
 
-?> `character` is optional if you are not using a [trait pool](#trait-pools). Even if you are using one, `character` is still optional if you only have one character in the server.
+?> `character` is optional if you are not using a [trait pool](#trait-pools). Even with a trait pool, `character` is still optional if you only have one character in the server.
+
+[filename](includes/admin-description.md ':include')
 
 ## Trait Pools
 

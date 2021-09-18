@@ -315,6 +315,12 @@ class VChar:
         return cur_wp + third_hu
 
 
+    @property
+    def agg_health(self):
+        """The number of Aggravated health damage the character has taken."""
+        return self.health.count(DAMAGE.aggravated)
+
+
     # Traits
 
     @property

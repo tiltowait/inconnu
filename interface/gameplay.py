@@ -60,6 +60,19 @@ class Gameplay(commands.Cog):
         await inconnu.misc.awaken(ctx, character)
 
 
+    @slash_cog(
+        name="cripple",
+        options=[
+            SlashOption(int, "damage", description="The Aggravated damage sustained"),
+            SlashOption(str, "character", description="The character being injured"),
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    async def cripple(self, ctx, damage=None, character=None):
+        """Generate a random crippling injury based on Aggravated damage."""
+        await inconnu.misc.cripple(ctx, damage, character)
+
+
     @ext.check_failure_response("Frenzy checks aren't available in DMs.", hidden=True)
     @commands.guild_only()
     @slash_cog(

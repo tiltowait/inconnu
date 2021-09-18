@@ -48,7 +48,7 @@ async def on_ready():
     print(discord.version_info)
     print("Latency:", bot.latency * 1000, "ms")
 
-    await bot.change_presence(activity=discord.Game(__status_message()))
+    await __set_presence()
 
 
 @bot.event
@@ -82,7 +82,7 @@ async def on_guild_join(guild):
     """Log whenever a guild is joined."""
     print(f"Joined {guild.name}!")
     inconnu.stats.Stats.guild_joined(guild.id, guild.name)
-    await bot.change_presence(activity=discord.Game(__status_message()))
+    await __set_presence()
 
 
 @bot.event
@@ -90,7 +90,7 @@ async def on_guild_remove(guild):
     """Log guild removals."""
     print(f"Left {guild.name} :(")
     inconnu.stats.Stats.guild_left(guild.id)
-    await bot.change_presence(activity=discord.Game(__status_message()))
+    await __set_presence()
 
 
 @bot.event
@@ -102,10 +102,17 @@ async def on_guild_update(before, after):
 
 # Misc and helpers
 
-def __status_message():
-    """Sets the bot's Discord presence message."""
+async def __set_presence():
+    """Set the bot's presence message."""
     servers = len(bot.guilds)
-    return f"/help | {servers} chronicles"
+    message = f"/help | {servers} chronicles"
+
+    await bot.change_presence(
+        activity=discord.Activity(
+            type=discord.ActivityType.watching,
+            name=message
+        )
+    )
 
 
 def setup():

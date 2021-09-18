@@ -295,11 +295,17 @@ def __combine_operators(*stack):
     padding = [0 for _ in range(3 - len(compact_stack))]
     compact_stack.extend(padding)
 
-    if not 0 <= compact_stack[1] <= 5:
+    pool = compact_stack[0]
+    hunger = compact_stack[1]
+    difficulty = compact_stack[2]
+
+    if not 0 <= hunger <= 5:
         # Hunger is outside the accepted range
         raise ValueError("Hunger must be between 0 and 5.")
 
-    return SN(pool=compact_stack[0], hunger=compact_stack[1], difficulty=compact_stack[2])
+    hunger = min(pool, hunger) # Make sure we don't roll more hunger dice than the total pool
+
+    return SN(pool=pool, hunger=hunger, difficulty=difficulty)
 
 
 def __get_universal_trait(character: VChar, trait):

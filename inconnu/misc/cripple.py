@@ -21,6 +21,8 @@ async def cripple(ctx, damage: int, character: str):
             tip = "/cripple `damage:DAMAGE` `character:CHARACTER`"
             character = await common.fetch_character(ctx, character, tip, __HELP_URL)
             damage = character.agg_health
+        else:
+            character = None # Do not allow explicit damage on a character
 
         if damage < 1:
             await ctx.respond(
@@ -31,6 +33,11 @@ async def cripple(ctx, damage: int, character: str):
 
         injuries = __get_injury(damage)
         await __display_injury(ctx, damage, character, injuries)
+
+        if character is not None:
+            # Log the injuries
+            injuries = " / ".join([injury.injury for injury in injuries])
+            character.log_injury(injuries)
 
     except common.FetchError:
         pass

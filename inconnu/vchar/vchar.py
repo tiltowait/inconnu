@@ -585,6 +585,11 @@ class VChar:
         VChar._CHARS.update_one({ "_id": self.id }, { "$inc": { f"log.{key}": increment } })
 
 
+    def log_injury(self, injury: str):
+        """Log a crippling injury."""
+        VChar._CHARS.update_one({ "_id": self.id }, { "$push": { "injuries": injury } })
+
+
     # Helpers
 
     def __find_items(self, collection, name, exact=False):

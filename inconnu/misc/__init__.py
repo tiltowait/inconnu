@@ -5,6 +5,7 @@ from .awaken import awaken
 from .cripple import cripple
 from .frenzy import frenzy
 from .mend import mend
+from .percentile import percentile
 from .probabilities import probability
 from .remorse import remorse
 from .resonance import resonance

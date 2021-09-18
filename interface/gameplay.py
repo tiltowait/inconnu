@@ -1,5 +1,7 @@
 """interface/gameplay.py - Command interface directly related to gameplay."""
 
+import random
+
 import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption
@@ -102,6 +104,16 @@ class Gameplay(commands.Cog):
     async def mend(self, ctx, character=None):
         """Mend Superficial damage."""
         await inconnu.misc.mend(ctx, character)
+
+
+    @slash_cog(
+        name="percentile",
+        options=[SlashOption(int, "ceiling", description="The roll's highest possible value")],
+        guild_ids=debug.WHITELIST
+    )
+    async def percentile(self, ctx, ceiling=100):
+        """Roll between 1 and a given ceiling (default 100)."""
+        await inconnu.misc.percentile(ctx, ceiling)
 
 
     @slash_cog(

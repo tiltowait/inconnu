@@ -69,24 +69,43 @@ async def __display_probabilities(ctx, params, strategy: str, probs: dict):
     embed.set_footer(text="Simulated over 10,000 runs")
 
     # Breakdown field
+
+    # We show the following fields in this order:
+    # Critical (Opt)
+    # Success - Technically optional, but we will always show it
+    # Messy (Opt)
+    # ---
+    # Failure (Opt)
+    # Total Faiiure
+    # Bestial (Opt)
+
+    breakdown = []
+    if probs["critical"] != 0:
+        crit = roll.dicemoji.emojify_die(10, False) + f"{probs['critical']:.2%} Critical Win"
+        breakdown.append(crit)
+
     success = roll.dicemoji.emojify_die(6, False) + f"{probs['success']:.2%} Success"
-    messy = roll.dicemoji.emojify_die(10, True) + f"{probs['messy']:.2%} Messy Critical"
-    total_fail = roll.dicemoji.emojify_die(3, True) + f"{probs['total_fail']:.2%} Total Failure"
-    bestial = roll.dicemoji.emojify_die(1, True) + f"{probs['bestial']:.2%} Bestial Failure"
+    breakdown.append(success)
 
-    breakdown = ""
-    if params.pool > params.hunger:
-        breakdown += roll.dicemoji.emojify_die(10, False) + f" {probs['critical']:.2%} Critical Win"
+    if probs["messy"] != 0:
+        messy = roll.dicemoji.emojify_die(10, True) + f"{probs['messy']:.2%} Messy Critical"
+        breakdown.append(messy)
 
-    breakdown += f"\n{success}\n{messy}\n------\n"
+    breakdown.append("------")
 
     if probs["fail"] != 0:
         # Only show regular failure if there's a distinction between it and total failure
-        breakdown += roll.dicemoji.emojify_die(3, False) + f"{probs['fail']:.2%} Failure\n"
+        fail = roll.dicemoji.emojify_die(3, False) + f"{probs['fail']:.2%} Failure"
+        breakdown.append(fail)
 
-    breakdown += f"{total_fail}\n{bestial}"
+    total = roll.dicemoji.emojify_die(3, True) + f"{probs['total_fail']:.2%} Total Failure"
+    breakdown.append(total)
 
-    embed.add_field(name="Breakdown", value=breakdown)
+    if probs["bestial"] != 0:
+        bestial = roll.dicemoji.emojify_die(1, True) + f"{probs['bestial']:.2%} Bestial Failure"
+        breakdown.append(bestial)
+
+    embed.add_field(name="Breakdown", value="\n".join(breakdown))
 
     await ctx.respond(embed=embed)
 

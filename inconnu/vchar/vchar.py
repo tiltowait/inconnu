@@ -224,6 +224,18 @@ class VChar:
 
 
     @property
+    def superficial_wp(self) -> int:
+        """The amount of Superficial Willpower damage sustained."""
+        return self.willpower.count(DAMAGE.superficial)
+
+
+    @superficial_wp.setter
+    def superficial_wp(self, new_value):
+        """Set the Superficial Willpower damage."""
+        self.set_damage("willpower", DAMAGE.superficial, new_value, wrap=True)
+
+
+    @property
     def hunger(self):
         """The character's hunger."""
         return self._params["hunger"]
@@ -451,7 +463,7 @@ class VChar:
 
     # Specialized mutators
 
-    def set_damage(self, tracker: str, severity: str, amount: int):
+    def set_damage(self, tracker: str, severity: str, amount: int, wrap=False):
         """
         Set the current damage level.
         Args:
@@ -469,13 +481,15 @@ class VChar:
         agg = cur_track.count(DAMAGE.aggravated)
 
         if severity == DAMAGE.superficial:
-            old_damage = sup
             sup = amount
-            new_damage = sup
+
+            if wrap:
+                overflow = sup + agg - len(cur_track)
+                if overflow > 0:
+                    agg += overflow
+                    print(overflow)
         else:
-            old_damage = agg
             agg = amount
-            new_damage = agg
 
         unhurt = (len(cur_track) - sup - agg) * DAMAGE.none
         sup = sup * DAMAGE.superficial
@@ -489,18 +503,23 @@ class VChar:
         else:
             self.willpower = new_track
 
-        log_key = tracker + "_"
-        log_key += "superficial" if severity == DAMAGE.superficial else "aggravated"
-        self.log(log_key, new_damage - old_damage)
+        # Log it!
+        old_agg = cur_track.count(DAMAGE.aggravated)
+        old_sup = cur_track.count(DAMAGE.superficial)
+        new_agg = new_track.count(DAMAGE.aggravated)
+        new_sup = new_track.count(DAMAGE.superficial)
+
+        self.__update_log(f"{tracker}_superficial", old_sup, new_sup)
+        self.__update_log(f"{tracker}_aggravated", old_agg, new_agg)
 
 
-    def apply_damage(self, tracker: str, severity: str, amount: int):
+    def apply_damage(self, tracker: str, severity: str, delta: int):
         """
         Apply Superficial damage.
         Args:
             tracker (str): "willpower" or "health"
             severity (str): DAMAGE.superficial or DAMAGE.aggravated
-            amount (int): The amount to apply
+            delta (int): The amount to apply
         If the damage exceeds the tracker, it will wrap around to aggravated.
         """
         if not severity in [DAMAGE.superficial, DAMAGE.aggravated]:
@@ -509,37 +528,10 @@ class VChar:
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = self._params[tracker]
-        cur_unhurt = cur_track.count(DAMAGE.none)
-        sup = cur_track.count(DAMAGE.superficial)
-        agg = cur_track.count(DAMAGE.aggravated)
+        cur_dmg = cur_track.count(severity)
+        new_dmg = cur_dmg + delta
 
-        if severity == DAMAGE.superficial:
-            sup += amount
-        else:
-            agg += amount
-
-        new_track = (len(cur_track) - sup - agg) * DAMAGE.none
-        new_track += sup * DAMAGE.superficial
-        new_track += agg * DAMAGE.aggravated
-
-        new_track = new_track[-len(cur_track):] # Shrink it if necessary
-
-        if tracker == "health":
-            self.health = new_track
-        else:
-            self.willpower = new_track
-
-        log_key = tracker + "_"
-        if severity == DAMAGE.superficial:
-            log_key += "superficial"
-            if amount > cur_unhurt:
-                self.apply_damage(tracker, DAMAGE.aggravated, amount - cur_unhurt)
-                self.log(log_key, cur_unhurt)
-            else:
-                self.log(log_key, amount)
-        else:
-            log_key += "aggravated"
-            self.log(log_key, amount)
+        self.set_damage(tracker, severity, new_dmg, wrap=True)
 
 
     # Misc

@@ -1,8 +1,14 @@
 """reroll.py - Facilities for implementing Willpower re-roll strategies."""
 
+import asyncio
 import random
 
+import discord
+from discord_ui import Button
+
 from .dicethrow import DiceThrow
+from ..character.display import trackmoji
+from ..vchar import VChar
 
 __MAX_REROLL = 3
 
@@ -16,16 +22,52 @@ async def wait_for_reroll(ctx, message, old_roll):
 
     Raises asyncio.exceptions.TimeoutError if the interaction times out.
     """
-    btn = await message.wait_for("button", ctx.bot, timeout=600)
+    try:
+        btn = await message.wait_for("button", ctx.bot, timeout=600)
 
-    while ctx.author.id != btn.author.id:
-        # We only want the original roller to be able to press these buttons
-        await btn.respond("Sorry, you can't reroll for another player.", hidden=True)
-        btn = await message.wait_for("button", ctx.bot)
+        while ctx.author.id != btn.author.id:
+            # We only want the original roller to be able to press these buttons
+            await btn.respond("Sorry, you can't reroll for another player.", hidden=True)
+            btn = await message.wait_for("button", ctx.bot)
 
-    await btn.respond()
+        await btn.respond()
+        await message.disable_components()
 
-    return reroll(btn.custom_id, old_roll)
+        return reroll(btn.custom_id, old_roll)
+
+    except asyncio.exceptions.TimeoutError:
+        await message.edit(components=None)
+        return None
+
+
+async def present_reroll(ctx, embed, character, owner):
+    """Present a re-roll and optionally add a button to mark WP use."""
+    try:
+        components = None
+        if character is not None:
+            components = [Button("mark_wp", "Mark WP Use")]
+
+        msg = await ctx.respond(embed=embed, components=components)
+        btn = await msg.wait_for("button", ctx.bot, timeout=20)
+        while btn.author.id != ctx.author.id:
+            await ctx.respond("You can't mark Willpower use for someone else.", hidden=False)
+            btn = await msg.wait_for("button", ctx.bot, timeout=20)
+
+        character.superficial_wp += 1
+        await msg.disable_components()
+        await __display_wp(btn, character, owner)
+
+    except asyncio.exceptions.TimeoutError:
+        await msg.edit(components=None)
+
+
+async def __display_wp(ctx, character: VChar, owner: discord.Member):
+    """Display the character's new Willpower."""
+    embed = discord.Embed(title="Willpower Spent")
+    embed.set_author(name=character.name, icon_url=owner.avatar_url)
+    embed.add_field(name="New WP", value=trackmoji.emojify_track(character.willpower))
+
+    await ctx.respond(embed=embed)
 
 
 def reroll(strategy, original):

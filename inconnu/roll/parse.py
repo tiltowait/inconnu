@@ -72,7 +72,7 @@ async def parse(ctx, raw_syntax: str, character: str, player: discord.Member):
         await common.present_error(ctx, err, author=owner, character=character, help_url=__HELP_URL)
 
 
-async def display_outcome(ctx, player, character, results, comment, rerolled=False):
+async def display_outcome(ctx, player, character: VChar, results, comment, rerolled=False):
     """Display the roll results in a nice embed."""
     # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
     if ctx.guild is not None:
@@ -81,10 +81,7 @@ async def display_outcome(ctx, player, character, results, comment, rerolled=Fal
         stats.Stats.log_roll(None, player.id, character, results)
 
     # Determine the name for the "author" field
-    character_name = None
-    if isinstance(character, str):
-        character_name = character
-    elif isinstance(character, VChar):
+    if character is not None:
         character_name = character.name
     else:
         character_name = player.display_name
@@ -132,22 +129,18 @@ async def display_outcome(ctx, player, character, results, comment, rerolled=Fal
 
     # Calculate re-roll options and display
     reroll_buttons = __generate_reroll_buttons(results)
-    if len(reroll_buttons) == 0 or rerolled:
-        if hasattr(ctx, "reply"):
-            msg = await ctx.reply(embed=embed)
-        else:
-            msg = await ctx.respond(embed=embed)
+    if rerolled:
+        await reroll.present_reroll(ctx, embed, character, player)
+    elif len(reroll_buttons) == 0:
+        msg = await ctx.respond(embed=embed)
     else:
-        try:
-            msg = await ctx.respond(embed=embed, components=reroll_buttons)
-            rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
-            await display_outcome(ctx, player, character_name, rerolled_results, comment,
+        msg = await ctx.respond(embed=embed, components=reroll_buttons)
+        rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
+
+        if rerolled_results is not None:
+            await display_outcome(ctx, player, character, rerolled_results, comment,
                 rerolled=True
             )
-        except asyncio.exceptions.TimeoutError:
-            await msg.edit(components=None)
-        else:
-            await msg.disable_components()
 
 
 def perform_roll(character: VChar, *args):

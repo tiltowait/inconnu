@@ -8,6 +8,7 @@ from discord_ui.components import LinkButton
 from . import paramupdate
 from ..display import display
 from ... import common
+from ... import stats
 from ...vchar import VChar
 
 __KEYS = {
@@ -60,6 +61,7 @@ async def update(ctx, parameters: str, character=None, update_message=None):
         await display(ctx, character.name, update_message)
 
     except (SyntaxError, ValueError) as err:
+        stats.Stats.log_update_error(character.id, " ".join(args))
         await update_help(ctx, err)
     except common.FetchError:
         pass

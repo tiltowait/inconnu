@@ -19,7 +19,7 @@ async def wait_for_reroll(ctx, message, old_roll):
         ctx: The Discord context, which includes the accepted user
         message: The Discord message to watch
         old_roll (RollResult): The original dice roll
-
+    Returns (tuple): The button interaction and the re-rolled outcome.
     Raises asyncio.exceptions.TimeoutError if the interaction times out.
     """
     try:
@@ -30,14 +30,12 @@ async def wait_for_reroll(ctx, message, old_roll):
             await btn.respond("Sorry, you can't reroll for another player.", hidden=True)
             btn = await message.wait_for("button", ctx.bot)
 
-        await btn.respond()
         await message.disable_components()
-
-        return reroll(btn.custom_id, old_roll)
+        return btn, reroll(btn.custom_id, old_roll)
 
     except asyncio.exceptions.TimeoutError:
         await message.edit(components=None)
-        return None
+        return None, None
 
 
 async def present_reroll(ctx, embed, character, owner):
@@ -50,12 +48,12 @@ async def present_reroll(ctx, embed, character, owner):
         msg = await ctx.respond(embed=embed, components=components)
         btn = await msg.wait_for("button", ctx.bot, timeout=20)
         while btn.author.id != ctx.author.id:
-            await ctx.respond("You can't mark Willpower use for someone else.", hidden=False)
+            await btn.respond("You can't spend another player's Willpower!", hidden=True)
             btn = await msg.wait_for("button", ctx.bot, timeout=20)
 
         character.superficial_wp += 1
-        await msg.disable_components()
         await __display_wp(btn, character, owner)
+        await msg.disable_components()
 
     except asyncio.exceptions.TimeoutError:
         await msg.edit(components=None)

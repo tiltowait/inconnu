@@ -135,10 +135,10 @@ async def display_outcome(ctx, player, character: VChar, results, comment, rerol
         msg = await ctx.respond(embed=embed)
     else:
         msg = await ctx.respond(embed=embed, components=reroll_buttons)
-        rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
+        interaction, rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
 
         if rerolled_results is not None:
-            await display_outcome(ctx, player, character, rerolled_results, comment,
+            await display_outcome(interaction, player, character, rerolled_results, comment,
                 rerolled=True
             )
 

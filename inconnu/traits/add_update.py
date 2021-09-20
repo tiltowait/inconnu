@@ -30,7 +30,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
     try:
         key = "update" if allow_overwrite else "add"
         tip = f"`/traits {key}` `traits:{traits}` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL[allow_overwrite])
 
         traits = parse_traits(*traits.split())
         outcome = __handle_traits(character, traits, allow_overwrite)

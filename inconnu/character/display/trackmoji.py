@@ -24,6 +24,10 @@ def emojify_track(track: str) -> str:
     for box in track:
         emoji_track.append(__emojify_stressbox(box))
 
+    gaps = int(len(emoji_track) / 5)
+    for pos in range(gaps * 5, 0, -5):
+        emoji_track.insert(pos, "∙")
+
     return " ".join(emoji_track)
 
 

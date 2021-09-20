@@ -38,7 +38,7 @@ async def frenzy(ctx, difficulty: int, character: str):
             colour=color
         )
         author_field = f"{character.name}: Frenzy vs diff. {difficulty}"
-        embed.set_author(name=author_field, icon_url=ctx.author.avatar_url)
+        embed.set_author(name=author_field, icon_url=ctx.author.display_avatar)
         embed.set_footer(text="Dice: " + ", ".join(map(str, dice)))
 
         await ctx.respond(embed=embed)

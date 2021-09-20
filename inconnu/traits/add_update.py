@@ -111,7 +111,7 @@ async def __display_results(ctx, outcome, char_name: str):
     embed = discord.Embed(
         title=title
     )
-    embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=char_name, icon_url=ctx.author.display_avatar)
     if len(outcome.assigned) > 0:
         assigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.assigned)))
         embed.add_field(name="Assigned", value=assigned)

@@ -21,7 +21,7 @@ async def show(ctx, character: str, player: discord.Member):
             title="Traits",
             description="\n".join(traits)
         )
-        embed.set_author(name=character.name, icon_url=owner.avatar_url)
+        embed.set_author(name=character.name, icon_url=owner.display_avatar)
         embed.set_footer(text="To see HP, WP, etc., use /character display")
 
         await ctx.respond(embed=embed, hidden=True)

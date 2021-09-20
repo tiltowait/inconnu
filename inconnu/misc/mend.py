@@ -32,7 +32,7 @@ async def __display_outcome(ctx, character, outcome):
     embed = discord.Embed(
         title=f"Mended {outcome.mended} damage | Rouse {'Success' if outcome.rouse else 'Failure'}"
     )
-    embed.set_author(name=character.name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
 
     embed.add_field(name="Health", value=trackmoji.emojify_track(character.health), inline=False)
     embed.add_field(name="Hunger", value=trackmoji.emojify_hunger(character.hunger), inline=False)

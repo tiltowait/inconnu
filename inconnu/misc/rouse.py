@@ -44,7 +44,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose):
     embed = discord.Embed(
         title=title
     )
-    embed.set_author(name=character.name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
 
     field_name = "New Hunger" if "ailure" in title else "Hunger"
     embed.add_field(name=field_name, value=trackmoji.emojify_hunger(character.hunger))

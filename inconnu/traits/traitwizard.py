@@ -37,7 +37,7 @@ class TraitWizard:
         )
         embed.set_author(
             name=f"{self.character.name} on {self.ctx.guild.name}",
-            icon_url=self.ctx.guild.icon_url
+            icon_url=self.ctx.guild.icon
         )
         embed.set_footer(text=f"{len(self.traits)} traits remaining")
 
@@ -83,7 +83,7 @@ class TraitWizard:
         )
         embed.set_author(
             name=f"{self.character.name} on {self.ctx.guild.name}",
-            icon_url=self.ctx.guild.icon_url
+            icon_url=self.ctx.guild.icon
         )
         embed.add_field(name="Traits", value="\n".join(pretty))
         await self.ctx.author.send(embed=embed)

@@ -29,7 +29,7 @@ async def delete(ctx, traits: str, character=None):
         embed = discord.Embed(
             title="Trait Removal"
         )
-        embed.set_author(name=character.name, icon_url=ctx.author.avatar_url)
+        embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
         embed.set_footer(text="To see remaining traits: /traits list")
 
         if len(outcome.deleted) > 0:

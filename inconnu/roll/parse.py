@@ -104,7 +104,7 @@ async def display_outcome(ctx, player, character: VChar, results, comment, rerol
 
     embed.set_author(
         name=author_field,
-        icon_url=player.avatar_url
+        icon_url=player.display_avatar
     )
 
     # Disclosure fields

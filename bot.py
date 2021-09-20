@@ -22,7 +22,7 @@ async def help_command(ctx):
         title="Inconnu Help",
         description="Basic commands listing. Click the link for detailed documentation."
     )
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
 
     embed.add_field(name="Roll", value="`/vr pool hunger difficulty`", inline=False)
     char_info = "`/character create`\nIf you have a character, you can use their traits in rolls."

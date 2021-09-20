@@ -29,7 +29,7 @@ async def display(ctx, character=None, message=None, player=None):
             title=title,
             description="\n".join(characters)
         )
-        embed.set_author(name=owner.display_name, icon_url=owner.avatar_url)
+        embed.set_author(name=owner.display_name, icon_url=owner.display_avatar)
         embed.set_footer(text="To view one: /character display character:NAME")
         await ctx.respond(embed=embed, hidden=False)
 
@@ -43,15 +43,15 @@ async def __display_character(ctx, character: VChar, owner, message):
     """Display the character's basic traits."""
     embed = discord.Embed(
         title=character.name,
-        footer=f"To view traits: /traits list {character.name}"
     )
+    embed.set_footer(text=f"To view traits: /traits list character:{character.name}")
 
     if message is not None:
         embed.description = message
 
     embed.set_author(
         name=owner.display_name,
-        icon_url=owner.avatar_url
+        icon_url=owner.display_avatar
     )
 
     # Set the universal tracks

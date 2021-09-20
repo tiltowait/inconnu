@@ -34,7 +34,7 @@ async def __display_outcome(ctx, character: VChar, remorseful: bool):
     embed = discord.Embed(
         title="Remorse Success" if remorseful else "Remorse Fail"
     )
-    embed.set_author(name=character.name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
     embed.add_field(name="Humanity", value=trackmoji.emojify_humanity(character.humanity, 0))
 
     if remorseful:

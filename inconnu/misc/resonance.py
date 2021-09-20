@@ -29,7 +29,7 @@ async def resonance(ctx):
     embed = discord.Embed(
         title=f"{temperament} {resonance} Resonance"
     )
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
     embed.add_field(name="Disciplines", value=__DISCIPLINES[resonance])
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[resonance])
     embed.set_footer(text=f"Rolled {die} on the Resonance roll")

@@ -54,7 +54,7 @@ def __generate_prompt(ctx, char_name: str):
         title=f"Delete {char_name}",
         color=0xFF0000
     )
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
     embed.add_field(name="Are you certain?", value="This will delete all associated data.")
     embed.set_footer(text="THIS ACTION CANNOT BE UNDONE")
 

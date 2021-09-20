@@ -37,7 +37,7 @@ async def __send_macros(ctx, char_name, macros):
     embed = discord.Embed(
         title="Macros"
     )
-    embed.set_author(name=char_name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=char_name, icon_url=ctx.author.display_avatar)
 
     for field in __generate_fields(macros):
         embed.add_field(name=field.name, value=field.value, inline=False)

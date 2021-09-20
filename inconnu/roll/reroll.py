@@ -62,7 +62,7 @@ async def present_reroll(ctx, embed, character, owner):
 async def __display_wp(ctx, character: VChar, owner: discord.Member):
     """Display the character's new Willpower."""
     embed = discord.Embed(title="Willpower Spent")
-    embed.set_author(name=character.name, icon_url=owner.avatar_url)
+    embed.set_author(name=character.name, icon_url=owner.display_avatar)
     embed.add_field(name="New WP", value=trackmoji.emojify_track(character.willpower))
 
     await ctx.respond(embed=embed)

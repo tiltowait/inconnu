@@ -117,7 +117,7 @@ async def update_help(ctx, err=None, hidden=True):
     embed = discord.Embed(
         title="Character Tracking",
     )
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
 
     if err is not None:
         embed.add_field(name="Error", value=str(err), inline=False)

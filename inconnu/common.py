@@ -48,10 +48,10 @@ async def present_error(
     """
     # Figure out the author
     if author is None:
-        avatar = ctx.author.avatar_url
+        avatar = ctx.author.display_avatar
         display_name = ctx.author.display_name
     else:
-        avatar = author.avatar_url
+        avatar = author.display_avatar
         display_name = author.display_name
 
     if character is not None:

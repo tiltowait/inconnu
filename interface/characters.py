@@ -80,7 +80,7 @@ class Characters(commands.Cog, name="Character Management"):
     )
     async def display_character(self, ctx, character=None, player=None):
         """Display a character's basic traits"""
-        await inconnu.character.display(ctx, character, player=player)
+        await inconnu.character.display_requested(ctx, character, player=player)
 
 
     @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)

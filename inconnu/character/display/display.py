@@ -1,4 +1,5 @@
 """character/display/display.py - Tools for displaying characters."""
+# pylint: disable=too-many-arguments
 
 import discord
 
@@ -8,14 +9,28 @@ from ...vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
 
+# Display fields
 
-async def display(ctx, character=None, message=None, player=None):
-    """Determine which character to display, then display them."""
+HEALTH = 0
+WILLPOWER = 1
+HUMANITY = 2
+POTENCY = 3
+HUNGER = 4
+EXPERIENCE = 5
+
+
+async def display_requested(ctx, character=None, message=None, player=None):
+    """Display a character as directly requested by a user."""
     try:
         owner = await common.player_lookup(ctx, player)
 
         character = VChar.fetch(ctx.guild.id, owner.id, character)
-        await __display_character(ctx, character, owner, message)
+        await display(ctx, character,
+            owner=player,
+            message=message,
+            footer=f"To view traits: /traits list character:{character.name}"
+        )
+        #await __display_character(ctx, character, owner, message)
 
     except errors.UnspecifiedCharacterError as err:
         characters = [char.name for char in VChar.all_characters(ctx.guild.id, owner.id)]
@@ -39,47 +54,64 @@ async def display(ctx, character=None, message=None, player=None):
         await common.present_error(ctx, err, help_url=__HELP_URL)
 
 
-async def __display_character(ctx, character: VChar, owner, message):
-    """Display the character's basic traits."""
+async def display(
+    ctx,
+    character: VChar,
+    title=None,
+    message=None,
+    footer=None,
+    owner=None,
+    fields=None
+):
+    """
+    Display a character.
+    Args:
+        ctx: The Discord context with which to display
+        character (VChar): The character to display
+        title (str): The embed's title
+        message (str): The message to display alongside the fields
+        footer (str): The embed's footer
+        owner (discord.Member): The player who owns the character
+        fields ([tuple]): The fields to display, as well as their titles
+    """
+    if owner is None:
+        owner = ctx.author
+
+    if fields is None:
+        fields = [
+            ("Health", HEALTH),
+            ("Willpower", WILLPOWER),
+            ("Humanity", HUMANITY),
+            ("Blood Potency", POTENCY),
+            ("Hunger", HUNGER),
+            ("Experience", EXPERIENCE)
+        ]
+
+    # Begin building the embed
     embed = discord.Embed(
-        title=character.name,
+        title=title or character.name,
+        description=message or ""
     )
-    embed.set_footer(text=f"To view traits: /traits list character:{character.name}")
+    embed.set_author(name=owner.display_name, icon_url=owner.display_avatar)
+    embed.set_footer(text=footer or "")
 
-    if message is not None:
-        embed.description = message
+    for field, parameter in fields:
+        if parameter == HEALTH:
+            value = trackmoji.emojify_track(character.health)
+        elif parameter == WILLPOWER:
+            value = trackmoji.emojify_track(character.willpower)
+        elif parameter == HUMANITY:
+            value = trackmoji.emojify_humanity(character.humanity, character.stains)
+        elif parameter == POTENCY:
+            value = trackmoji.emojify_blood_potency(character.potency)
+        elif parameter == HUNGER:
+            value = trackmoji.emojify_hunger(character.hunger)
+        elif parameter == EXPERIENCE:
+            value = __format_xp(character.current_xp, character.total_xp)
 
-    embed.set_author(
-        name=owner.display_name,
-        icon_url=owner.display_avatar
-    )
+        embed.add_field(name=field, value=value, inline=False)
 
-    # Set the universal tracks
-    health = trackmoji.emojify_track(character.health)
-    willpower = trackmoji.emojify_track(character.willpower)
-    humanity = trackmoji.emojify_humanity(character.humanity, character.stains)
-
-    embed.add_field(name="Health", value=health, inline=False)
-    embed.add_field(name="Willpower", value=willpower, inline=False)
-    embed.add_field(name="Humanity", value=humanity, inline=False)
-
-    if character.splat == "vampire":
-        hunger = trackmoji.emojify_hunger(character.hunger)
-        potency = trackmoji.emojify_blood_potency(character.potency)
-
-        embed.add_field(name="Blood Potency", value=potency, inline=False)
-        embed.add_field(name="Hunger", value=hunger, inline=False)
-
-    embed.add_field(
-        name="Experience",
-        value=__format_xp(character.current_xp, character.total_xp)
-    )
-
-    # There are still commands that need reply()
-    if hasattr(ctx, "respond"):
-        await ctx.respond(embed=embed)
-    else:
-        await ctx.reply(embed=embed)
+    await ctx.respond(embed=embed)
 
 
 def __format_xp(current: int, total: int) -> str:

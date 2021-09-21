@@ -35,6 +35,8 @@ Multiple traits can be added at once.
 
 !> If a trait already exists, **Inconnu** will show an error. To update traits, use [this command](#updating-traits) instead.
 
+[filename](includes/universal-traits.md ':include')
+
 ## Displaying Traits
 
 This command shows you a list of the character's traits, sorted alphabetically.

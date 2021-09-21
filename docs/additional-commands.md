@@ -12,6 +12,19 @@ The `/aggheal` command automatically heals your character by one Aggravated dama
 
 Each night a character wakes, they heal Superficial Willpower damage and make a Rouse check. **Inconnu** automates this process with the `/awaken` command. It will even tell you if you were unfortunate enough to fall into torpor!
 
+## Crippling Injuries
+
+```
+/cripple damage:[DAMAGE] character:[CHARACTER]
+```
+
+This command rolls against the "crippling injury" table foudn on p.303. If a character is not supplied, then it is necessary to provide a `damage` value.
+
+| Parameter    | Description                                |
+|--------------|--------------------------------------------|
+| `damage`     | The total aggravated damage suffered       |
+| `character`  | The character taking the injury            |
+
 ## Frenzy checks
 
 ```
@@ -28,6 +41,10 @@ Per *V5*, p.219, Inconnu will roll your current Willpower plus 1/3 of Humanity, 
 ## Mending damage
 
 To mend Superficial damage, simply type `/mend` `[character]`. This will mend the appropriate amount of damage based on your Blood Potency (using the V5 Companion errata) and perform a Rouse check.
+
+## Percentile Dice
+
+A random number between 1 and `ceiling` (default `100`) may be rolled with the `/percentile` command.
 
 ## Probability calculation
 

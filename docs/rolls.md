@@ -34,6 +34,8 @@ Here is how a trait pool looks in the Discord textbox:
 
 ?> Traits are **case-insensitive**, which is a fancy way of saying capitalization doesn't matter.
 
+[filename](includes/universal-traits.md ':include')
+
 ### Trait Shorthand
 
 **Inconnu** does not require you to type out a full trait name. All you need is the minimum number of letters for it to unambiguously match a trait. Refer to the table below for examples of good and bad shorthand.

@@ -2,7 +2,6 @@
 # pylint: disable=too-many-public-methods, too-many-arguments
 
 import datetime
-import math
 import os
 import re
 
@@ -323,7 +322,7 @@ class VChar:
     def frenzy_resist(self):
         """The dice pool for resisting frenzy. Equal to current WP + 1/3 Humanity."""
         cur_wp = self.willpower.count(DAMAGE.none)
-        third_hu = math.floor(self.humanity / 3)
+        third_hu = int(self.humanity / 3)
         return cur_wp + third_hu
 
 

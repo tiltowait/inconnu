@@ -96,8 +96,9 @@ async def on_guild_remove(guild):
 @bot.event
 async def on_guild_update(before, after):
     """Log guild name changes."""
-    print(f"Renamed {before.name} => {after.name}")
-    inconnu.stats.Stats.guild_renamed(after.id, after.name)
+    if before.name != after.name:
+        print(f"Renamed {before.name} => {after.name}")
+        inconnu.stats.Stats.guild_renamed(after.id, after.name)
 
 
 # Misc and helpers

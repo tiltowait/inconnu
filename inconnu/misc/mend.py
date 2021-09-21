@@ -3,11 +3,9 @@
 import random
 from types import SimpleNamespace
 
-import discord
-
 from .. import common
 from ..constants import DAMAGE
-from ..character.display import trackmoji
+from .. import character as char
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=mending-damage"
 
@@ -29,18 +27,15 @@ async def mend(ctx, character=None):
 
 async def __display_outcome(ctx, character, outcome):
     """Display the results of the mend."""
-    embed = discord.Embed(
-        title=f"Mended {outcome.mended} damage | Rouse {'Success' if outcome.rouse else 'Failure'}"
+    title = f"Mended {outcome.mended} damage | Rouse " + ("Success" if outcome.rouse else "Failure")
+    await char.display(ctx, character,
+        title=title,
+        footer="ROLL FOR HUNGER FRENZY" if outcome.frenzy else None,
+        fields=[
+            ("Health", char.HEALTH),
+            ("Hunger", char.HUNGER)
+        ]
     )
-    embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
-
-    embed.add_field(name="Health", value=trackmoji.emojify_track(character.health), inline=False)
-    embed.add_field(name="Hunger", value=trackmoji.emojify_hunger(character.hunger), inline=False)
-
-    if outcome.frenzy:
-        embed.set_footer(text="ROLL FOR HUNGER FRENZY!")
-
-    await ctx.respond(embed=embed)
 
 
 def __heal(character):

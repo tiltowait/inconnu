@@ -45,6 +45,8 @@ async def cripple(ctx, damage: int, character: str):
 
 async def __display_injury(ctx, damage, character, injuries):
     """Display a crippling injury."""
+    # We don't use the modular display, because we don't necessarily have a character here
+
     embed = discord.Embed(title="Crippling Injury")
 
     author = character.name if character is not None else ctx.author.display_name

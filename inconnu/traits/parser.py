@@ -11,8 +11,7 @@ def parse_traits(*args) -> dict:
         trait = split[0].strip()
         rating = None
 
-        if traitcommon.VALID_TRAIT_PATTERN.match(trait) is None:
-            raise SyntaxError(f"Invalid trait name: `{trait}`.")
+        traitcommon.validate_trait_names(trait)
 
         if len(split) > 2:
             raise SyntaxError(f"Invalid argument: `{arg}`.")

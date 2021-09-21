@@ -13,3 +13,5 @@ SKILLS_AND_ATTRIBUTES = [
     "academics", "awareness", "finance", "investigation", "medicine", "occult", "politics",
     "science", "technology"
 ]
+
+UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity", "surge"]

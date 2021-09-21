@@ -22,10 +22,9 @@ from . import dicemoji
 from . import reroll
 from .. import common
 from .. import stats
-from ..constants import DAMAGE
+from ..constants import DAMAGE, UNIVERSAL_TRAITS
 from ..vchar import errors, VChar
 
-__UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity", "surge"]
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
 
 
@@ -321,7 +320,7 @@ def __match_universal_trait(match: str):
     # that number may change in the future, so this flexibility may prove valuable
     # in the long run.
     matches = []
-    for trait in __UNIVERSAL_TRAITS:
+    for trait in UNIVERSAL_TRAITS:
         if trait.startswith(match.lower()):
             matches.append(trait)
 

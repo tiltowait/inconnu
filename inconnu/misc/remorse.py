@@ -2,10 +2,8 @@
 
 import random
 
-import discord
-
 from .. import common
-from ..character.display import trackmoji
+from .. import character as char
 from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=remorse-checks"
@@ -31,18 +29,17 @@ async def remorse(ctx, character=None):
 
 async def __display_outcome(ctx, character: VChar, remorseful: bool):
     """Process the remorse result and display to the user."""
-    embed = discord.Embed(
-        title="Remorse Success" if remorseful else "Remorse Fail"
-    )
-    embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
-    embed.add_field(name="Humanity", value=trackmoji.emojify_humanity(character.humanity, 0))
-
+    title = "Remorse Success" if remorseful else "Remorse Fail"
     if remorseful:
-        embed.set_footer(text="You keep the Beast at bay. For now.")
+        footer ="You keep the Beast at bay. For now."
     else:
-        embed.set_footer(text="The downward spiral continues ...")
+        footer ="The downward spiral continues ..."
 
-    await ctx.respond(embed=embed)
+    await char.display(ctx, character,
+        title=title,
+        footer=footer,
+        fields=[("Humanity", char.HUMANITY)]
+    )
 
 
 def __remorse_roll(character: VChar) -> bool:

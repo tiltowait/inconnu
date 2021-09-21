@@ -92,7 +92,9 @@ async def display(
         title=title or character.name,
         description=message or ""
     )
-    embed.set_author(name=owner.display_name, icon_url=owner.display_avatar)
+
+    author_name = owner.display_name if title is None else character.name
+    embed.set_author(name=author_name, icon_url=owner.display_avatar)
     embed.set_footer(text=footer or "")
 
     for field, parameter in fields:

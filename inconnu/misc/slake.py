@@ -1,7 +1,7 @@
 """misc/slake.py - Slake 1 or more Hunger."""
 
 from .. import common
-from ..character import update as char_update
+from .. import character as char
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=slaking-hunger"
 
@@ -16,13 +16,13 @@ async def slake(ctx, amount, character=None):
         if slaked == 0:
             await ctx.respond(f"**{character.name}** has no Hunger!", hidden=True)
         else:
-            await char_update(
-                ctx,
-                f"hunger=-{slaked}",
-                character.name,
-                f"Slaked **{slaked}** Hunger."
-            )
+            character.hunger -= slaked
             character.log("slake", slaked)
+
+            await char.display(ctx, character,
+                title=f"Slaked {slaked} Hunger",
+                fields=[("New Hunger", char.HUNGER)]
+            )
 
     except common.FetchError:
         pass

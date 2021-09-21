@@ -58,7 +58,7 @@ async def update(ctx, parameters: str, character=None, update_message=None):
              # We only want to set the update message if we didn't get a customized display message
             update_message = "\n".join(updates)
 
-        await display(ctx, character.name, update_message)
+        await display(ctx, character, message=update_message)
 
     except (SyntaxError, ValueError) as err:
         stats.Stats.log_update_error(character.id, " ".join(args))

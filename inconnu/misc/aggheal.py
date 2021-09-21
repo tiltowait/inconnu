@@ -3,10 +3,8 @@
 import random
 from types import SimpleNamespace
 
-import discord
-
 from .. import common
-from ..character.display import trackmoji
+from .. import character as char
 from ..constants import DAMAGE
 from ..vchar import VChar
 
@@ -56,15 +54,11 @@ def __heal(character: VChar):
 async def __display_outcome(ctx, character, outcome):
     """Display the outcome of the healing."""
     gain = "Max Hunger" if character.hunger == 5 else f"Gain {outcome.gain} Hunger"
-    embed = discord.Embed(
-        title=f"Damage healed | {gain}",
+    title = f"Damage healed | {gain}"
+    footer = "ROLL FOR HUNGER FRENZY" if outcome.frenzy else None
+
+    await char.display(ctx, character,
+        title=title,
+        footer=footer,
+        fields=[("Health", char.HEALTH), ("Hunger", char.HUNGER)]
     )
-    embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
-
-    embed.add_field(name="Health", value=trackmoji.emojify_track(character.health), inline=False)
-    embed.add_field(name="Hunger", value=trackmoji.emojify_hunger(character.hunger), inline=False)
-
-    if outcome.frenzy:
-        embed.set_footer(text="ROLL FOR HUNGER FRENZY!")
-
-    await ctx.respond(embed=embed)

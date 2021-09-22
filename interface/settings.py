@@ -33,6 +33,6 @@ class SettingsCommands(commands.Cog):
 
         if inconnu.settings.set_key(ctx.author, "accessibility", enable):
             status = "enabled" if enable else "disabled"
-            await ctx.respond(f"Accessibility mode {status}.", hidden=True)
+            await ctx.respond(f"Accessibility mode **{status}**.", hidden=True)
         else:
             await ctx.respond("Error updating accessibility mode!", hidden=True)

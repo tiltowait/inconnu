@@ -18,11 +18,12 @@ class TraitWizard:
         SelectOption("5", "5 dots")
     ]
 
-    def __init__(self, ctx, character, traits):
+    def __init__(self, ctx, character, traits, overwriting):
         self.ctx = ctx
         self.character = character
         self.traits = traits
         self.ratings = {}
+        self.overwriting = overwriting
 
 
     async def begin(self):
@@ -75,7 +76,10 @@ class TraitWizard:
         pretty = []
 
         for trait, rating in self.ratings.items():
-            self.character.add_trait(trait, rating)
+            if self.overwriting:
+                self.character.update_trait(trait, rating)
+            else:
+                self.character.add_trait(trait, rating)
             pretty.append(f"**{trait}**: `{rating}`")
 
         embed = discord.Embed(

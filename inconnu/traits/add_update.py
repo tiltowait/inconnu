@@ -38,7 +38,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
         await __display_results(ctx, outcome, character.name)
 
         if len(outcome.unassigned) > 0:
-            wizard = TraitWizard(ctx, character, outcome.unassigned)
+            wizard = TraitWizard(ctx, character, outcome.unassigned, allow_overwrite)
             await wizard.begin()
 
     except (ValueError, SyntaxError) as err:

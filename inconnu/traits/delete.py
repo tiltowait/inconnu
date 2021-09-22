@@ -5,9 +5,10 @@ from types import SimpleNamespace
 import discord
 
 from . import traitcommon
-from ..vchar import errors, VChar
 from .. import common
 from .. import constants
+from ..settings import Settings
+from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=deleting-traits"
 
@@ -26,26 +27,49 @@ async def delete(ctx, traits: str, character=None):
         traitcommon.validate_trait_names(*traits)
         outcome = __delete_traits(character, *traits)
 
-        embed = discord.Embed(
-            title="Trait Removal"
-        )
-        embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
-        embed.set_footer(text="To see remaining traits: /traits list")
-
-        if len(outcome.deleted) > 0:
-            deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
-            embed.add_field(name="Deleted", value=deleted)
-
-        if len(outcome.errors) > 0:
-            errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
-            embed.add_field(name="Do not exist", value=errs, inline=False)
-
-        await ctx.respond(embed=embed, hidden=True)
+        if Settings.accessible(ctx.author):
+            await __outcome_text(ctx, character, outcome)
+        else:
+            await __outcome_embed(ctx, character, outcome)
 
     except (ValueError, SyntaxError) as err:
         await common.present_error(ctx, err, character=character, help_url=__HELP_URL)
     except common.FetchError:
         pass
+
+
+async def __outcome_text(ctx, character, outcome):
+    """Display the outcome in plain text."""
+    contents = [character.name + "\n"]
+
+    if len(outcome.deleted) > 0:
+        deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
+        contents.append(f"Deleted {deleted}.")
+
+    if len(outcome.errors) > 0:
+        errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
+        contents.append(f"These traits don't exist: {errs}.")
+
+    await ctx.respond("\n".join(contents), hidden=True)
+
+
+async def __outcome_embed(ctx, character, outcome):
+    """Display the operation outcome in an embed."""
+    embed = discord.Embed(
+        title="Trait Removal"
+    )
+    embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
+    embed.set_footer(text="To see remaining traits: /traits list")
+
+    if len(outcome.deleted) > 0:
+        deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
+        embed.add_field(name="Deleted", value=deleted)
+
+    if len(outcome.errors) > 0:
+        errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
+        embed.add_field(name="Do not exist", value=errs, inline=False)
+
+    await ctx.respond(embed=embed, hidden=True)
 
 
 def __delete_traits(character: VChar, *traits) -> list:

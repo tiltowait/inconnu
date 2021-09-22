@@ -206,8 +206,9 @@ async def __display_text(
         ]
 
     # Begin drafting the contents
-    contents = []
-    contents.append(title or character.name)
+    contents = [character.name]
+    if title is not None:
+        contents.append("\n" + title)
 
     if message is not None:
         contents.append(message)

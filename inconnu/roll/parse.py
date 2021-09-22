@@ -1,4 +1,5 @@
 """parse.py - Handles parsing and execution of roll commands."""
+# pylint: disable=too-many-arguments
 
 # When a user rolls, they have two options:
 #    * Roll straight numbers (7 3 2 == pool 7, hunger 3, diff 2)
@@ -10,7 +11,6 @@
 # this is the fact they could theoretically supply a name despite not using a
 # trait-based roll, so we need to check for the character in either case.
 
-import asyncio
 import re
 from types import SimpleNamespace as SN
 
@@ -23,6 +23,7 @@ from . import reroll
 from .. import common
 from .. import stats
 from ..constants import DAMAGE, UNIVERSAL_TRAITS
+from ..settings import Settings
 from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
@@ -72,6 +73,69 @@ async def parse(ctx, raw_syntax: str, character: str, player: discord.Member):
 
 
 async def display_outcome(ctx, player, character: VChar, results, comment, rerolled=False):
+    """Display the roll results."""
+    # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
+    if ctx.guild is not None:
+        stats.Stats.log_roll(ctx.guild.id, player.id, character, results)
+    else:
+        stats.Stats.log_roll(None, player.id, character, results)
+
+    if Settings.accessible(ctx.author):
+        await __outcome_text(ctx, player, character, results, comment, rerolled)
+    else:
+        await __outcome_embed(ctx, player, character, results, comment, rerolled)
+
+
+async def __outcome_text(ctx, player, character: VChar, results, comment, rerolled=False):
+    """Display the roll results in a nice embed."""
+    # Determine the name for the "author" field
+    if character is not None:
+        title = character.name
+    else:
+        title = player.display_name
+
+    title += "'s reroll" if rerolled else "'s roll"
+    if results.difficulty > 0:
+        title += f" vs diff. {results.difficulty}"
+    if results.descriptor is not None:
+        title += f" ({results.descriptor})"
+
+    contents = [f"```{title}```"]
+
+    takeaway = results.main_takeaway
+    if not results.is_total_failure and not results.is_bestial:
+        takeaway += f" ({results.total_successes})"
+
+    contents.append(takeaway)
+    contents.append(f"Margin: `{results.margin}`")
+    contents.append(f"Normal: `{', '.join(map(str, results.normal.dice))}`")
+    contents.append(f"Hunger: `{', '.join(map(str, results.hunger.dice))}`")
+
+    if results.pool_str is not None:
+        contents.append(f"Pool: `{results.pool_str}`")
+
+    if comment is not None:
+        contents.append(f"```{comment}```")
+
+    contents = "\n".join(contents)
+
+    # Calculate re-roll options and display
+    reroll_buttons = __generate_reroll_buttons(results)
+    if rerolled:
+        await reroll.present_reroll(ctx, contents, character, player)
+    elif len(reroll_buttons) == 0:
+        msg = await ctx.respond(contents)
+    else:
+        msg = await ctx.respond(contents, components=reroll_buttons)
+        interaction, rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
+
+        if rerolled_results is not None:
+            await display_outcome(interaction, player, character, rerolled_results, comment,
+                rerolled=True
+            )
+
+
+async def __outcome_embed(ctx, player, character: VChar, results, comment, rerolled=False):
     """Display the roll results in a nice embed."""
     # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
     if ctx.guild is not None:

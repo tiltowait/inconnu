@@ -7,7 +7,7 @@ import discord
 from discord_ui import Button
 
 from .dicethrow import DiceThrow
-from ..character.display import trackmoji
+from .. import character as char
 from ..vchar import VChar
 
 __MAX_REROLL = 3
@@ -38,14 +38,18 @@ async def wait_for_reroll(ctx, message, old_roll):
         return None, None
 
 
-async def present_reroll(ctx, embed, character, owner):
+async def present_reroll(ctx, message, character, owner):
     """Present a re-roll and optionally add a button to mark WP use."""
     try:
         components = None
         if character is not None:
             components = [Button("mark_wp", "Mark WP Use")]
 
-        msg = await ctx.respond(embed=embed, components=components)
+        if isinstance(message, str):
+            msg = await ctx.respond(message, components=components)
+        else:
+            msg = await ctx.respond(embed=message, components=components)
+
         btn = await msg.wait_for("button", ctx.bot, timeout=20)
         while btn.author.id != ctx.author.id:
             await btn.respond("You can't spend another player's Willpower!", hidden=True)
@@ -61,11 +65,11 @@ async def present_reroll(ctx, embed, character, owner):
 
 async def __display_wp(ctx, character: VChar, owner: discord.Member):
     """Display the character's new Willpower."""
-    embed = discord.Embed(title="Willpower Spent")
-    embed.set_author(name=character.name, icon_url=owner.display_avatar)
-    embed.add_field(name="New WP", value=trackmoji.emojify_track(character.willpower))
-
-    await ctx.respond(embed=embed)
+    await char.display(ctx, character,
+        title="Willpower Spent",
+        owner=owner,
+        fields=[("New WP", char.WILLPOWER)]
+    )
 
 
 def reroll(strategy, original):

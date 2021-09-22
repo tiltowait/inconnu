@@ -1,9 +1,13 @@
 """traits/traitwizard.py - Private trait setter."""
+# pylint: disable=too-few-public-methods
 
 import asyncio
 
 import discord
 from discord_ui import SelectMenu, SelectOption
+
+from .. import common
+from ..settings import Settings
 
 
 class TraitWizard:
@@ -33,21 +37,15 @@ class TraitWizard:
 
     async def __send_prompt(self, message=None):
         """Prompt the user."""
-        embed = discord.Embed(
-            description=message if message is not None else ""
-        )
-        embed.set_author(
-            name=f"{self.character.name} on {self.ctx.guild.name}",
-            icon_url=self.ctx.guild.icon
-        )
-        embed.set_footer(text=f"{len(self.traits)} traits remaining")
-
         menu = SelectMenu("incognito_trait",
             options=self.__RATING_OPTIONS,
             placeholder=f"Select the rating for {self.traits[0]}"
         )
 
-        msg = await self.ctx.author.send(embed=embed, components=[menu])
+        if Settings.accessible(self.ctx.author):
+            msg = await self.__prompt_text(menu, message)
+        else:
+            msg = await self.__prompt_embed(menu, message)
 
         # Wait for response
         try:
@@ -71,17 +69,56 @@ class TraitWizard:
             await self.ctx.author.send(err)
 
 
+    async def __prompt_text(self, menu: SelectMenu, message=None):
+        """Prompt the user using plain text."""
+        contents = [f"{self.character.name}: Trait Assignment"]
+        if message is not None:
+            contents.append(message + "\n")
+        contents.append(f"{common.pluralize(len(self.traits), 'trait')} remaining.")
+
+        return await self.ctx.author.send("\n".join(contents), components=[menu])
+
+
+    async def __prompt_embed(self, menu: SelectMenu, message=None):
+        """Prompt the user using an embed."""
+        embed = discord.Embed(
+            description=message if message is not None else ""
+        )
+        embed.set_author(
+            name=f"{self.character.name} on {self.ctx.guild.name}",
+            icon_url=self.ctx.guild.icon
+        )
+        embed.set_footer(text=f"{common.pluralize(len(self.traits), 'trait')} remaining")
+
+        return await self.ctx.author.send(embed=embed, components=[menu])
+
+
     async def __finalize(self):
         """Set the traits and tell the user they're all done."""
-        pretty = []
-
         for trait, rating in self.ratings.items():
             if self.overwriting:
                 self.character.update_trait(trait, rating)
             else:
                 self.character.add_trait(trait, rating)
-            pretty.append(f"**{trait}**: `{rating}`")
 
+        if Settings.accessible(self.ctx.author):
+            await self.__finalize_text()
+        else:
+            await self.__finalize_embed()
+
+
+    async def __finalize_text(self):
+        """Send the finalize message in plain text."""
+        contents = ["Assignment Complete\n"]
+        contents.append("```css")
+        contents.extend([f"{trait}: {rating}" for trait, rating in self.ratings.items()])
+        contents.append("```")
+
+        await self.ctx.author.send("\n".join(contents))
+
+
+    async def __finalize_embed(self):
+        """Send the finalize message in an embed."""
         embed = discord.Embed(
             title="Assignment Complete"
         )
@@ -89,5 +126,8 @@ class TraitWizard:
             name=f"{self.character.name} on {self.ctx.guild.name}",
             icon_url=self.ctx.guild.icon
         )
-        embed.add_field(name="Traits", value="\n".join(pretty))
+
+        traits = [f"**{trait}:** {rating}" for trait, rating in self.ratings.items()]
+        embed.add_field(name="Traits", value="\n".join(traits))
+
         await self.ctx.author.send(embed=embed)

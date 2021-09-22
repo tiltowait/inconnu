@@ -486,7 +486,6 @@ class VChar:
                 overflow = sup + agg - len(cur_track)
                 if overflow > 0:
                     agg += overflow
-                    print(overflow)
         else:
             agg = amount
 

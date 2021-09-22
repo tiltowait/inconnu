@@ -10,9 +10,6 @@ from . import debug
 class SettingsCommands(commands.Cog):
     """Settings-related commands."""
 
-    # TODO: Make this available in DMs, but only for users
-    @ext.check_failure_response("Accessibility settings aren't available in DMs.", hidden=True)
-    @commands.guild_only()
     @slash_cog(
         name="accessibility",
         options=[
@@ -23,16 +20,44 @@ class SettingsCommands(commands.Cog):
                     ("No", 0)
                 ],
                 required=True
+            ),
+            SlashOption(str, "scope",
+                description="Set for yourself or the entire server",
+                choices=[
+                    ("Self only", "user"),
+                    ("Entire server", "server")
+                ]
             )
         ],
         guild_ids=debug.WHITELIST
     )
-    async def settings_base(self, ctx, enable: int):
+    async def settings_base(self, ctx, enable: int, scope="user"):
         """Enable/disable accessibility mode for yourself."""
         enable = bool(enable)
 
-        if inconnu.settings.set_key(ctx.author, "accessibility", enable):
-            status = "enabled" if enable else "disabled"
-            await ctx.respond(f"Accessibility mode **{status}**.", hidden=True)
+        if scope == "user":
+            did_set = inconnu.settings.set_key(ctx.author, "accessibility", enable)
+        else:
+            if ctx.author.guild_permissions.administrator:
+                did_set = inconnu.settings.set_key(ctx.guild, "accessibility", enable)
+            else:
+                await ctx.respond("Sorry, you aren't a server administrator.", hidden=True)
+                return
+
+        if did_set and scope == "user":
+            if enable:
+                await ctx.respond("Accessibility mode enabled.", hidden=True)
+            else:
+                await ctx.respond(
+                    "Accessibility mode disabled. Note that server settings may override this.",
+                    hidden=True
+                )
+        elif did_set and scope == "server":
+            if enable:
+                await ctx.respond("Accessibility mode enabled server-wide.")
+            else:
+                await ctx.respond(
+                    "Accessibility mode disabled server-wide. User preferences can override."
+                )
         else:
             await ctx.respond("Error updating accessibility mode!", hidden=True)

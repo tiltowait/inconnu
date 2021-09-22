@@ -46,13 +46,25 @@ class Settings:
         Settings._prepare()
 
         if isinstance(scope, discord.Guild):
-            raise ValueError("Guild settings not yet implemented.")
+            Settings._set_guild(scope, key, enabled)
         elif isinstance(scope, discord.Member):
             Settings._set_user(scope, key, enabled)
         else:
             return ValueError(f"Unknown scope `{scope}`.")
 
         return True
+
+
+    @classmethod
+    def _set_guild(cls, guild: discord.Guild, key:str, enabled: bool):
+        """Enable or disable a guild setting."""
+        res = Settings._GUILDS.update_one({ "guild": guild.id }, {
+            "$set": {
+                f"settings.{key}": enabled
+            }
+        })
+        if res.matched_count == 0:
+            Settings._GUILDS.insert_one({ "guild": guild.id, "settings": { key: enabled } })
 
 
     @classmethod

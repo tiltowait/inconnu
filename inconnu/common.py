@@ -7,6 +7,7 @@ import discord
 from discord_ui import Button, SelectMenu, SelectOption
 from discord_ui.components import LinkButton
 
+from .settings import Settings
 from .vchar import errors, VChar
 
 
@@ -46,6 +47,32 @@ async def present_error(
         help_url (str): The documentation URL for the error.
         components (list): Buttons or selection menus to add to the message.
     """
+    if Settings.accessible(ctx.author):
+        return await __error_text(ctx, error, *fields,
+            footer=footer,
+            help_url=help_url,
+            components=components
+        )
+    else:
+        return await __error_embed(ctx, error, *fields,
+            author=author,
+            character=character,
+            footer=footer,
+            help_url=help_url,
+            components=components
+        )
+
+
+async def __error_embed(
+    ctx,
+    error,
+    *fields,
+    author = None,
+    character: str = None,
+    footer: str = None,
+    help_url: str = None,
+    components = None
+):
     # Figure out the author
     if author is None:
         avatar = ctx.author.display_avatar
@@ -85,6 +112,37 @@ async def present_error(
             components = [components, link]
 
     return await ctx.respond(embed=embed, components=components, hidden=True)
+
+
+async def __error_text(
+    ctx,
+    error,
+    *fields,
+    footer: str = None,
+    help_url: str = None,
+    components = None
+):
+    """Display the error as plaintext."""
+    contents = ["Error", str(error) + "\n"]
+
+    for field in fields:
+        contents.append(f"{field[0]}: {field[1]}")
+
+    if footer is not None:
+        contents.append(f"```{footer}```")
+
+    if help_url is not None:
+        link = [LinkButton(
+            help_url,
+            label="Help"
+        )]
+
+        if components is None:
+            components = link
+        else:
+            components = [components, link]
+
+    return await ctx.respond("\n".join(contents), components=components, hidden=True)
 
 
 async def select_character(ctx, err, help_url, tip, player=None):

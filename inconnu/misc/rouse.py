@@ -3,10 +3,8 @@
 import random
 from types import SimpleNamespace
 
-import discord
-
 from .. import common
-from ..character.display import trackmoji
+from .. import character as char
 from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
@@ -41,20 +39,13 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose):
         failures = common.pluralize(outcome.failures, "failure")
         title = f"Rouse: {successes}, {failures}"
 
-    embed = discord.Embed(
-        title=title
-    )
-    embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
-
-    field_name = "New Hunger" if "ailure" in title else "Hunger"
-    embed.add_field(name=field_name, value=trackmoji.emojify_hunger(character.hunger))
-
     if outcome.frenzy:
-        embed.add_field(
-            name="Roll against Hunger Frenzy",
-            value="You failed a Rouse check at Hunger 5 and should run the `/frenzy` command.",
-            inline=False
-        )
+        custom = [(
+            "Roll against Hunger Frenzy",
+            "You failed a Rouse check at Hunger 5 and should run the `/frenzy` command."
+        )]
+    else:
+        custom = None
 
     footer = []
     if purpose is not None:
@@ -66,9 +57,15 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose):
         footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
     footer = "\n".join(footer)
 
-    embed.set_footer(text=footer)
 
-    await ctx.respond(embed=embed)
+    hunger_title = "New Hunger" if "ailure" in title else "Hunger"
+
+    await char.display(ctx, character,
+        title=title,
+        footer=footer,
+        fields=[(hunger_title, char.HUNGER)],
+        custom=custom
+    )
 
 
 def __rouse_roll(character: VChar, rolls: int, reroll: bool):

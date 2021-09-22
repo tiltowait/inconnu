@@ -57,11 +57,12 @@ async def display_requested(ctx, character=None, message=None, player=None):
 async def display(
     ctx,
     character: VChar,
-    title=None,
-    message=None,
-    footer=None,
-    owner=None,
-    fields=None
+    title: str = None,
+    message: str = None,
+    footer: str = None,
+    owner: discord.Member = None,
+    fields: list = None,
+    custom: list = None
 ):
     """
     Display a character.
@@ -73,6 +74,7 @@ async def display(
         footer (str): The embed's footer
         owner (discord.Member): The player who owns the character
         fields ([tuple]): The fields to display, as well as their titles
+        custom ([tuple]): Custom fields to display, as well as their titles
     """
     if owner is None:
         owner = ctx.author
@@ -105,13 +107,21 @@ async def display(
         elif parameter == HUMANITY:
             value = trackmoji.emojify_humanity(character.humanity, character.stains)
         elif parameter == POTENCY:
+            if character.splat != "vampire":
+                continue
             value = trackmoji.emojify_blood_potency(character.potency)
         elif parameter == HUNGER:
+            if character.splat != "vampire":
+                continue
             value = trackmoji.emojify_hunger(character.hunger)
         elif parameter == EXPERIENCE:
             value = __format_xp(character.current_xp, character.total_xp)
 
         embed.add_field(name=field, value=value, inline=False)
+
+    if custom is not None:
+        for field, value in custom:
+            embed.add_field(name=field, value=value, inline=False)
 
     await ctx.respond(embed=embed)
 

@@ -122,3 +122,4 @@ def setup():
     bot.add_cog(interface.Macros(bot))
     bot.add_cog(interface.Characters(bot))
     bot.add_cog(interface.Traits(bot))
+    bot.add_cog(interface.SettingsCommands(bot))

@@ -7,6 +7,7 @@ import discord
 from .parser import parse_traits
 from .traitwizard import TraitWizard
 from .. import common
+from ..settings import Settings
 from ..vchar import VChar
 
 __HELP_URL = {
@@ -98,15 +99,21 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
 
 
 async def __display_results(ctx, outcome, char_name: str):
+    """Display the results of the operation."""
+    if Settings.accessible(ctx.author):
+        await __results_text(ctx, outcome, char_name)
+    else:
+        await __results_embed(ctx, outcome, char_name)
+
+
+async def __results_embed(ctx, outcome, char_name: str):
     """Display the results of the operation in a nice embed."""
-    title = None
     if len(outcome.assigned) == 0 and len(outcome.unassigned) == 0 and len(outcome.errors) > 0:
         title = "Unable to Modify Traits"
     elif len(outcome.unassigned) > 0:
         title = "Entering Incognito Mode"
     else:
         title = "Traits Assigned"
-
 
     embed = discord.Embed(
         title=title
@@ -130,3 +137,31 @@ async def __display_results(ctx, outcome, char_name: str):
         embed.add_field(name=field_name, value=errs, inline=False)
 
     await ctx.respond(embed=embed, hidden=True)
+
+
+async def __results_text(ctx, outcome, char_name: str):
+    """Display the results in plain text."""
+    contents = [f"{char_name}: Trait Assignment\n"]
+
+    if len(outcome.assigned) > 0:
+        assigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.assigned)))
+        contents.append(f"Assigned: {assigned}")
+
+    footer = None
+    if len(outcome.unassigned) > 0:
+        unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
+        contents.append(f"Not yet assigned: {unassigned}")
+        footer = "Check your DMs to finish assigning the traits."
+
+    if len(outcome.errors) > 0:
+        errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
+        if outcome.editing:
+            err_field = "Error! You don't have " + errs
+        else:
+            err_field = "Error! You already have " + errs
+        contents.append(err_field)
+
+    if footer is not None:
+        contents.append(f"```{footer}```")
+
+    await ctx.respond("\n".join(contents), hidden=True)

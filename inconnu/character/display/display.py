@@ -186,39 +186,41 @@ async def __display_text(
 
     # Begin drafting the contents
     contents = []
-    contents.append("**" + (title or character.name) + "**")
+    contents.append(title or character.name)
 
     if message is not None:
         contents.append(message)
 
-    contents.append("") # Blank line
+    contents.append("```json") # Blank line
 
     for field, parameter in fields:
         if parameter == HEALTH:
-            contents.append(f"**{field}:** {__stringify_track(character.health)}")
+            contents.append(f"{field}: {__stringify_track(character.health)}")
         elif parameter == WILLPOWER:
-            contents.append(f"**{field}:** {__stringify_track(character.willpower)}")
+            contents.append(f"{field}: {__stringify_track(character.willpower)}")
         elif parameter == HUMANITY:
-            contents.append(f"**{field}:** {character.humanity}, **Stains:** {character.stains}")
+            contents.append(f"{field}: {character.humanity}")
+            contents.append(f"Stains: {character.stains}")
         elif parameter == POTENCY:
             if character.splat != "vampire":
                 continue
-            contents.append(f"**{field}:** {character.potency}")
+            contents.append(f"{field}: {character.potency}")
         elif parameter == HUNGER:
             if character.splat != "vampire":
                 continue
-            contents.append(f"**{field}:** {character.hunger}")
+            contents.append(f"{field}: {character.hunger}")
         elif parameter == EXPERIENCE:
-            contents.append(f"**{field}:** {character.current_xp} / {character.total_xp}")
+            contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
 
     if custom is not None:
         contents.append("")
         for field, value in custom:
-            contents.append(f"**{field}:** {value}")
+            contents.append(f"{field}: {value}")
 
+    contents.append("```")
     contents = "\n".join(contents)
     if footer is not None:
-        contents += "\n\n" + footer
+        contents += "\n" + footer
     await ctx.respond(contents)
 
 

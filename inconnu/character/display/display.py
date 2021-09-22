@@ -5,8 +5,9 @@ import discord
 
 from . import trackmoji
 from ... import common
-from ...vchar import errors, VChar
+from ...constants import DAMAGE
 from ...settings import Settings as settings
+from ...vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
 
@@ -194,9 +195,9 @@ async def __display_text(
 
     for field, parameter in fields:
         if parameter == HEALTH:
-            contents.append(f"**{field}:** {character.health}")
+            contents.append(f"**{field}:** {__stringify_track(character.health)}")
         elif parameter == WILLPOWER:
-            contents.append(f"**{field}:** {character.willpower}")
+            contents.append(f"**{field}:** {__stringify_track(character.willpower)}")
         elif parameter == HUMANITY:
             contents.append(f"**{field}:** {character.humanity}, **Stains:** {character.stains}")
         elif parameter == POTENCY:
@@ -219,3 +220,20 @@ async def __display_text(
     if footer is not None:
         contents += "\n\n" + footer
     await ctx.respond(contents)
+
+
+def __stringify_track(track: str):
+    """Convert a track into a textual representation."""
+    agg = track.count(DAMAGE.aggravated)
+    sup = track.count(DAMAGE.superficial)
+    unh = track.count(DAMAGE.none)
+
+    representation = []
+    if agg > 0:
+        representation.append(f"{agg} Agg")
+    if sup > 0:
+        representation.append(f"{sup} Sup")
+    if unh > 0:
+        representation.append(f"{unh} Unhurt")
+
+    return " / ".join(representation)

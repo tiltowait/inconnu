@@ -8,6 +8,7 @@ import discord
 from discord_ui import SelectMenu, SelectOption
 from discord_ui.components import LinkButton
 
+from ...settings import Settings
 from ...vchar import VChar
 
 class Wizard:
@@ -77,6 +78,27 @@ class Wizard:
         for trait, rating in self.assigned_traits.items():
             character.add_trait(trait, rating)
 
+        if Settings.accessible(self.ctx.author):
+            await self.__finalixe_text(character)
+        else:
+            await self.__finalixe_embed(character)
+
+
+    async def __finalixe_text(self, character):
+        """Display finalizing message in plain text."""
+        contents = f"Success! {character.name} has been created in {self.ctx.guild.name}!"
+        contents += f"\nMake a mistake? Use `/traits update` on {self.ctx.guild.name} to fix."
+
+        button = LinkButton(
+            "https://www.inconnu-bot.com/#/quickstart",
+            label="Full Documentation"
+        )
+
+        await self.ctx.author.send(contents, components=[button])
+
+
+    async def __finalixe_embed(self, character):
+        """Display finalizing message in an embed."""
         embed = discord.Embed(
             title="Success!",
             description=f"**{character.name}** has been created in ***{self.ctx.guild.name}***!",
@@ -102,8 +124,48 @@ class Wizard:
 
 
     async def __query_trait(self, message=None):
-        """Query for the next trait.."""
+        """Query for the next trait."""
+        menu = SelectMenu("rating_selector",
+            options=self.__RATING_OPTIONS,
+            placeholder=f"Select {self.parameters.name}'s {self.core_traits[0]} rating"
+        )
 
+        if Settings.accessible(self.ctx.author):
+            query_msg = await self.__query_text(menu, message)
+        else:
+            query_msg = await self.__query_embed(menu, message)
+
+        # Await the user response
+        try:
+            menu = await query_msg.wait_for("select", self.ctx.bot, timeout=60)
+            await menu.respond()
+
+            rating = int(menu.selected_values[0])
+            await self.__assign_next_trait(rating)
+
+        except asyncio.exceptions.TimeoutError:
+            await query_msg.edit(components=None)
+            err = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
+            await self.ctx.author.send(err)
+        finally:
+            await query_msg.disable_components()
+
+
+    async def __query_text(self, menu, message=None):
+        """Present the query in plain text."""
+        if message is not None:
+            contents = [message]
+        else:
+            contents = ["This wizard will guide you through the character creation process."]
+            contents.append("Your character will not be saved until you have entered all traits.")
+
+        contents.append(f"```Select the rating for: {self.core_traits[0]}```")
+
+        return await self.ctx.author.send("\n".join(contents), components=[menu])
+
+
+    async def __query_embed(self, menu, message=None):
+        """Present the query in an embed."""
         description = "This wizard will guide you through the character creation process.\n\n"
         if message is not None:
             description = message
@@ -119,22 +181,4 @@ class Wizard:
         )
         embed.set_footer(text="Your character will not be saved until you have entered all traits.")
 
-        menu = SelectMenu("rating_selector",
-            options=self.__RATING_OPTIONS,
-            placeholder=f"Select {self.parameters.name}'s {self.core_traits[0]} rating"
-        )
-
-        query_msg = await self.ctx.author.send(embed=embed, components=[menu])
-
-        # Await the user response
-        try:
-            menu = await query_msg.wait_for("select", self.ctx.bot, timeout=60)
-            await menu.respond()
-
-            rating = int(menu.selected_values[0])
-            await self.__assign_next_trait(rating)
-
-        except asyncio.exceptions.TimeoutError:
-            await query_msg.edit(components=None)
-            err = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
-            await self.ctx.author.send(err)
+        return await self.ctx.author.send(embed=embed, components=[menu])

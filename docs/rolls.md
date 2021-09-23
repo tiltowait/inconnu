@@ -15,6 +15,7 @@ What follows is a complete reference on **Inconnu's** roll function. If you're n
 | `pool`       | The total number of dice, including Hunger dice, to roll |                     |
 | `hunger`     | Your current level of Hunger                             | Default 0           |
 | `difficulty` | The test's Difficulty                                    | Default 0           |
+| `comment`    | A description of the roll                                | Optional            |
 | `character`  | The character performing the roll                        | Optional            |
 | `player`     | The player who owns the charactor                        | Administrators only |
 
@@ -50,19 +51,6 @@ Here is how a trait pool looks in the Discord textbox:
 **Example:** `/vr syntax:stren + b` `Nadea` (Rolls Nadea's *Strength + Brawl*, no *Hunger*, no *Difficulty*)
 
 ![Shorthand traits in a roll](images/rolls/roll-traits-short.png)
-
-## Comments
-```
-/vr <syntax> # Comment
-
-```
-Anything after a `#` will be ignored by **Inconnu's** roll parser and will be added to the bottom of the roll outcome view.
-
-**Example:** `/vr syntax:stren + br + 2 2 0 # Nadea punches Jake` `Nadea` (Rolls Nadea's *Strength + Brawl + 2*, *Hunger 2*, no *Difficulty* with a comment of *Nadea punches Jake*.)
-
-Or, in the Discord textbox:
-
-![Basic roll with comment](images/rolls/roll-basic-comment.png)
 
 ## Willpower Re-rolls
 

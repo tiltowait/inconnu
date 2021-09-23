@@ -12,16 +12,22 @@ All macro management is done through the `/macro` application command prefix. As
 /macro create name:<name> pool:<pool> hunger:[Yes/No] difficulty:[difficulty] comment:[comment] character:[character]
 ```
 
-| Parameter    | Description                                     |
-|--------------|-------------------------------------------------|
-| `name`       | The name of the macro                           |
-| `pool`       | The pool and (optional) difficulty for the roll |
-| `hunger`     | Whether to use Hunger in the roll               |
-| `difficulty` | The roll's difficulty (default 0)               |
-| `comment`    | A comment to add when rolling                   |
-| `character`  | The character who owns the macro                |
+| Parameter       | Description                                     | Notes
+|-----------------|-------------------------------------------------|-------
+| `name`          | The name of the macro                           | A-Z plus underscores
+| `pool`          | The pool and (optional) difficulty for the roll |
+| `hunger`        | Whether to use Hunger in the roll               |
+| `difficulty`    | The roll's difficulty (default 0)               | Default 0
+| `rouses`        | The number of Rouse checks to make              | Default 0
+| `reroll_rouses` | Whether to re-roll the macro's Rouse checks     | Default `No`
+| `comment`       | A comment to add when rolling                   | Optional
+| `character`     | The character who owns the macro                |
 
 ?> `pool` follows the same syntax as standard [rolls](rolls.md#basic-syntax) and may include traits.
+
+?> **Automatic rouse checks:** If `rouses` is greater than 0, **Inconnu** will automatically make an appropriate number of Rouse checks when you use the macro. `reroll_rouses` will have no effect if `rouses` is equal to 0.
+
+!> Macro names may not exceed 50 characters. Macro comments may not exceed 300 characters.
 
 **Example:** Creating a macro:
 

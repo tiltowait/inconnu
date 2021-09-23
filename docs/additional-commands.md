@@ -89,6 +89,8 @@ You may generate a random Resonance and Temperament with the `/resonance` comman
 | `purpose`   | The reason for the rouse check           |
 | `reroll`    | Whether to re-roll failures              |
 
+!> **Mortals and Ghouls:** Mortals may not make Rouse checks. Ghouls, on the other hand, take one level of Aggravated damage instead of making a Rouse check, as per p.234 in the V5 core book.
+
 ## Slaking Hunger
 
 As a shorthand for `/character update hunger=-X`, the `/slake` command allows you to quickly reduce your Hunger by whatever amount you specify.

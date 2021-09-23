@@ -30,12 +30,11 @@ from ..vchar import errors, VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
 
 
-async def parse(ctx, raw_syntax: str, character: str, player: discord.Member):
+async def parse(ctx, raw_syntax: str, comment: str, character: str, player: discord.Member):
     """Parse the user's arguments and attempt to roll the dice."""
     syntax = raw_syntax # Save the raw in case we get a character error
 
     # Comments appear after the first # in a command
-    comment = None
     if "#" in syntax:
         syntax, comment = syntax.split("#", 1)
         comment = comment.strip()

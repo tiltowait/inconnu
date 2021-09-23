@@ -22,6 +22,7 @@ class Gameplay(commands.Cog):
         name="vr", # Called "vr" instead of "roll" for quicker command entry
         options=[
             SlashOption(str, "syntax", description="The roll syntax", required=True),
+            SlashOption(str, "comment", description="A description of the roll"),
             SlashOption(str, "character", description="The character performing the roll",
                 autocomplete=True, choice_generator=inconnu.available_characters
             ),
@@ -29,9 +30,9 @@ class Gameplay(commands.Cog):
         ],
         guild_ids=debug.WHITELIST
     )
-    async def slash_roll(self, ctx, syntax: str, character=None, player=None):
+    async def slash_roll(self, ctx, syntax: str, comment=None, character=None, player=None):
         """Roll the dice."""
-        await inconnu.roll.parse(ctx, syntax, character, player)
+        await inconnu.roll.parse(ctx, syntax, comment, character, player)
 
 
     @ext.check_failure_response("Aggravated healing isn't available in DMs.", hidden=True)

@@ -1,4 +1,5 @@
 """misc/rouse.py - Perform rouse checks."""
+# pylint: disable=too-many-arguments
 
 import random
 from types import SimpleNamespace
@@ -23,8 +24,14 @@ async def rouse(ctx, count: int, character: str, purpose: str, reroll: bool, mes
         tip = "`/rouse` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        outcome = __rouse_roll(character, count, reroll)
-        await __display_outcome(ctx, character, outcome, purpose, message)
+        if character.splat == "mortal":
+            await ctx.respond("Mortals can't make rouse checks.", hidden=True)
+        elif character.splat == "ghoul":
+            await __damage_ghoul(ctx, character)
+        else:
+            # Vampire
+            outcome = __rouse_roll(character, count, reroll)
+            await __display_outcome(ctx, character, outcome, purpose, message)
 
     except common.FetchError:
         pass
@@ -66,6 +73,17 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, message):
         message=message,
         fields=[(hunger_title, char.HUNGER)],
         custom=custom
+    )
+
+
+async def __damage_ghoul(ctx, ghoul):
+    """Apply Aggravated damage to a ghoul and display."""
+    ghoul.aggravated_hp += 1
+    await char.display(ctx, ghoul,
+        title="Ghoul Rouse Damage",
+        message="Ghouls take Aggravated damage instead of making a Rouse check.",
+        fields=[("Health", char.HEALTH)],
+        footer="V5 Core, p.234"
     )
 
 

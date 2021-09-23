@@ -202,6 +202,18 @@ class VChar:
 
 
     @property
+    def aggravated_hp(self) -> int:
+        """The amount of Aggravated Health damage sustained."""
+        return self.health.count(DAMAGE.aggravated)
+
+
+    @aggravated_hp.setter
+    def aggravated_hp(self, new_value):
+        """Set the Aggravated Health damage."""
+        self.set_damage("health", DAMAGE.aggravated, new_value, wrap=False)
+
+
+    @property
     def willpower(self):
         """The character's willpower."""
         return self._params["willpower"]

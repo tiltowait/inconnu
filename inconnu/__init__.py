@@ -24,4 +24,7 @@ async def available_characters(ctx):
 
 
     chars = VChar.all_characters(ctx.guild.id, owner.id)
-    return [(char.name, char.name) for char in chars]
+    return [
+        (char.name, char.name) for char in chars
+            if char.name.lower().startswith(ctx.value_query.lower())
+    ]

@@ -27,7 +27,7 @@ class Wizard:
 
     def __init__(self, ctx, parameters):
         if "INCONNU_DEV" in os.environ:
-            self.core_traits = ["Test1", "Test2"]
+            self.core_traits = ["Resolve", "Composure"]
         else:
             self.core_traits = [
                 "Strength", "Dexterity", "Stamina", "Charisma", "Manipulation", "Composure",

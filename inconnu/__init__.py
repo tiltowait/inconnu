@@ -12,7 +12,16 @@ from .vchar import VChar
 async def available_characters(ctx):
     """Generate a list of the user's available characters."""
     if ctx.guild is None:
-        return ("You have no characters", "")
+        return [("You have no characters", "")]
 
-    chars = VChar.all_characters(ctx.guild.id, ctx.author.id)
+    # Check if they're looking up a player and have lookup permissions
+    if "player" in ctx.selected_options:
+        owner = ctx.selected_options["player"]
+        if owner != ctx.author and not ctx.author.guild_permissions.administrator:
+            return [("You do not have admin permissions", "")]
+    else:
+        owner = ctx.author
+
+
+    chars = VChar.all_characters(ctx.guild.id, owner.id)
     return [(char.name, char.name) for char in chars]

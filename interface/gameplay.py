@@ -24,7 +24,9 @@ class Gameplay(commands.Cog):
         name="vr", # Called "vr" instead of "roll" for quicker command entry
         options=[
             SlashOption(str, "syntax", description="The roll syntax", required=True),
-            SlashOption(str, "character", description="The character performing the roll"),
+            SlashOption(str, "character", description="The character performing the roll",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            ),
             SlashOption(discord.Member, "player", description="The character's owner (admin only)")
         ],
         guild_ids=debug.WHITELIST
@@ -39,7 +41,9 @@ class Gameplay(commands.Cog):
     @slash_cog(
         name="aggheal",
         options=[
-            SlashOption(str, "character", description="The character to be healed"),
+            SlashOption(str, "character", description="The character to be healed",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ],
         guild_ids=debug.WHITELIST
     )
@@ -53,7 +57,9 @@ class Gameplay(commands.Cog):
     @slash_cog(
         name="awaken",
         options=[
-            SlashOption(str, "character", description="The character waking up"),
+            SlashOption(str, "character", description="The character waking up",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ],
         guild_ids=debug.WHITELIST
     )
@@ -66,7 +72,9 @@ class Gameplay(commands.Cog):
         name="cripple",
         options=[
             SlashOption(int, "damage", description="The Aggravated damage sustained"),
-            SlashOption(str, "character", description="The character being injured"),
+            SlashOption(str, "character", description="The character being injured",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ],
         guild_ids=debug.WHITELIST
     )
@@ -85,7 +93,9 @@ class Gameplay(commands.Cog):
                 choices=[(str(n), n) for n in range(0, 11)],
                 required=True
             ),
-            SlashOption(str, "character", description="The character resisting frenzy")
+            SlashOption(str, "character", description="The character resisting frenzy",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ],
         guild_ids=debug.WHITELIST
     )
@@ -98,7 +108,11 @@ class Gameplay(commands.Cog):
     @commands.guild_only()
     @slash_cog(
         name="mend",
-        options=[SlashOption(str, "character", description="The character to be mended")]
+        options=[
+            SlashOption(str, "character", description="The character to be mended",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
+        ]
         , guild_ids=debug.WHITELIST
     )
     async def mend(self, ctx, character=None):
@@ -129,7 +143,9 @@ class Gameplay(commands.Cog):
                     ("Risky Avoid Messy", "risky")
                 ]
             ),
-            SlashOption(str, "character", description="The character if using traits"),
+            SlashOption(str, "character", description="The character if using traits",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )
@@ -142,7 +158,11 @@ class Gameplay(commands.Cog):
     @commands.guild_only()
     @slash_cog(
         name="remorse",
-        options=[SlashOption(str, "character", description="The character undergoing Remorse")]
+        options=[
+            SlashOption(str, "character", description="The character undergoing Remorse",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
+        ]
         , guild_ids=debug.WHITELIST
     )
     async def remorse(self, ctx, character=None):
@@ -164,7 +184,9 @@ class Gameplay(commands.Cog):
             SlashOption(int, "count", description="The number of Rouse checks to make",
                 choices=[(str(n), n) for n in range(1, 6)]
             ),
-            SlashOption(str, "character", description="The character performing the check"),
+            SlashOption(str, "character", description="The character performing the check",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            ),
             SlashOption(str, "purpose", description="The reason for the check"),
             SlashOption(int, "reroll", description="Re-roll failures",
                 choices=[
@@ -190,7 +212,9 @@ class Gameplay(commands.Cog):
                 choices=[(str(n), n) for n in range(1, 6)],
                 required=True
             ),
-            SlashOption(str, "character", description="The character performing the check"),
+            SlashOption(str, "character", description="The character performing the check",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )

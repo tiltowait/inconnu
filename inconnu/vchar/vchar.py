@@ -57,6 +57,7 @@ class VChar:
             "potency": 0,
             "current_xp": 0,
             "total_xp": 0,
+            "log": { "created": datetime.datetime.utcnow() }
         }
         _id = VChar._CHARS.insert_one(character).inserted_id
         params = VChar._CHARS.find_one({ "_id": _id })

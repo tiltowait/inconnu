@@ -21,6 +21,7 @@ from .roll import roll_pool
 from . import dicemoji
 from . import reroll
 from .. import common
+from ..log import Log
 from .. import stats
 from ..constants import DAMAGE, UNIVERSAL_TRAITS
 from ..settings import Settings
@@ -69,6 +70,9 @@ async def parse(ctx, raw_syntax: str, character: str, player: discord.Member):
         await display_outcome(ctx, owner, character, results, comment)
 
     except (SyntaxError, ValueError) as err:
+        charid = character.id if character is not None else None
+        Log.log("roll_error", user=ctx.author.id, charid=charid, syntax=raw_syntax)
+
         await common.present_error(ctx, err, author=owner, character=character, help_url=__HELP_URL)
 
 

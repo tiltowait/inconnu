@@ -11,14 +11,6 @@ class Stats:
     _CLIENT = None
     _STATS = None
     _GUILDS = None
-    _UP_ERRS = None
-
-
-    @classmethod
-    def log_update_error(cls, charid, syntax):
-        """Log a /character update syntax error."""
-        Stats.__prepare()
-        Stats._UP_ERRS.insert_one({ "charid": charid, "syntax": syntax })
 
 
     @classmethod
@@ -151,4 +143,3 @@ class Stats:
                 Stats._CLIENT = mongo
                 Stats._STATS = mongo.inconnu.roll_stats
                 Stats._GUILDS = mongo.inconnu.guilds
-                Stats._UP_ERRS = mongo.inconnu.update_errors

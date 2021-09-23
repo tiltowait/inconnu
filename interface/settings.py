@@ -32,7 +32,7 @@ class SettingsCommands(commands.Cog):
         guild_ids=debug.WHITELIST
     )
     async def settings_base(self, ctx, enable: int, scope="user"):
-        """Enable/disable accessibility mode for yourself."""
+        """Enable/disable accessibility mode for yourself or the server."""
         enable = bool(enable)
 
         if scope == "user":

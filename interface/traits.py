@@ -30,7 +30,9 @@ class Traits(commands.Cog, name="Trait Management"):
         description="Add one or more traits to a character.",
         options=[
             SlashOption(str, "traits", description="The traits to add", required=True),
-            SlashOption(str, "character", description="The character to update")
+            SlashOption(str, "character", description="The character to update",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )
@@ -46,7 +48,9 @@ class Traits(commands.Cog, name="Trait Management"):
         name="list",
         description="List all of a character's traits.",
         options=[
-            SlashOption(str, "character", description="The character to look up"),
+            SlashOption(str, "character", description="The character to look up",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            ),
             SlashOption(discord.Member, "player", description="The character's owner (admin only)")
         ]
         , guild_ids=debug.WHITELIST
@@ -64,7 +68,9 @@ class Traits(commands.Cog, name="Trait Management"):
         description="Update one or more traits.",
         options=[
             SlashOption(str, "traits", description="The traits to update", required=True),
-            SlashOption(str, "character", description="The character to update")
+            SlashOption(str, "character", description="The character to update",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )
@@ -81,7 +87,9 @@ class Traits(commands.Cog, name="Trait Management"):
         description="Delete one or more traits.",
         options=[
             SlashOption(str, "traits", description="The traits to delete", required=True),
-            SlashOption(str, "character", description="The character to update")
+            SlashOption(str, "character", description="The character to update",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )

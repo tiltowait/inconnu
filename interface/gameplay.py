@@ -1,7 +1,5 @@
 """interface/gameplay.py - Command interface directly related to gameplay."""
 
-import random
-
 import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption

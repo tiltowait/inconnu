@@ -33,7 +33,9 @@ class Macros(commands.Cog, name="Macro Utilities"):
                 description="The macro to roll, plus Hunger and Difficulty",
                 required=True
             ),
-            SlashOption(str, "character", description="The character that owns the macro")
+            SlashOption(str, "character", description="The character that owns the macro",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )
@@ -66,7 +68,9 @@ class Macros(commands.Cog, name="Macro Utilities"):
                 ]
             ),
             SlashOption(str, "comment", description="A comment to apply to macro rolls"),
-            SlashOption(str, "character", description="The character that owns the macro")
+            SlashOption(str, "character", description="The character that owns the macro",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )
@@ -96,7 +100,9 @@ class Macros(commands.Cog, name="Macro Utilities"):
         name="list",
         description="List your macros.",
         options=[
-            SlashOption(str, "character", description="The character to display")
+            SlashOption(str, "character", description="The character to display",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )
@@ -113,7 +119,9 @@ class Macros(commands.Cog, name="Macro Utilities"):
         description="Delete a macro.",
         options=[
             SlashOption(str, "macro", description="The macro to delete", required=True),
-            SlashOption(str, "character", description="The character that owns the macro")
+            SlashOption(str, "character", description="The character that owns the macro",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )

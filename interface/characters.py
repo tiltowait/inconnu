@@ -71,7 +71,9 @@ class Characters(commands.Cog, name="Character Management"):
         name="display",
         description="List all of your characters or show details about one character.",
         options=[
-            SlashOption(str, "character", description="A character to display"),
+            SlashOption(str, "character", description="A character to display",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            ),
             SlashOption(discord.Member, "player",
                 description="The player who owns the character (admin only)"
             )
@@ -91,7 +93,9 @@ class Characters(commands.Cog, name="Character Management"):
         description="Update a character's trackers.",
         options=[
             SlashOption(str, "parameters", description="KEY=VALUE parameters", required=True),
-            SlashOption(str, "character", description="The character to update")
+            SlashOption(str, "character", description="The character to update",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )
@@ -107,7 +111,9 @@ class Characters(commands.Cog, name="Character Management"):
         name="delete",
         description="Delete a character.",
         options=[
-            SlashOption(str, "character", description="The character to delete", required=True)
+            SlashOption(str, "character", description="The character to delete", required=True,
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
         ]
         , guild_ids=debug.WHITELIST
     )

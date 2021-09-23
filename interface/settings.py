@@ -7,8 +7,18 @@ from discord_ui.cogs import slash_cog
 import inconnu
 from . import debug
 
+
+async def _available_scopes(ctx):
+    """Determine the available settings scopes."""
+    if ctx.author.guild_permissions.administrator:
+        return [("Self only", "user"), ("Entire server", "server")]
+    return [("Self only", "user")]
+
+
 class SettingsCommands(commands.Cog):
     """Settings-related commands."""
+
+
 
     @slash_cog(
         name="accessibility",
@@ -23,15 +33,12 @@ class SettingsCommands(commands.Cog):
             ),
             SlashOption(str, "scope",
                 description="Set for yourself or the entire server",
-                choices=[
-                    ("Self only", "user"),
-                    ("Entire server", "server")
-                ]
+                autocomplete=True, choice_generator=_available_scopes
             )
         ],
         guild_ids=debug.WHITELIST
     )
-    async def settings_base(self, ctx, enable: int, scope="user"):
+    async def accessibility(self, ctx, enable: int, scope="user"):
         """Enable/disable accessibility mode for yourself or the server."""
         enable = bool(enable)
 

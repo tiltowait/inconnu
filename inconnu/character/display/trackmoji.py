@@ -4,7 +4,7 @@ from ...constants import DAMAGE
 
 __EMOJIS = {
     DAMAGE.none: "<:no_dmg:883516968777449472>",
-    DAMAGE.superficial: "<:sup_dmg:883516968337035317>",
+    DAMAGE.superficial: "<:sup_dmg:890694337212579930>",
     DAMAGE.aggravated: "<:agg_dmg:883516968727089202>",
     "hunger": "<:hunger:883527494832119858>",
     "no_hunger": "<:no_hunger:883527495394164776>",

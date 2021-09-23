@@ -72,23 +72,23 @@ def __generate_fields(macros, accessible: bool):
     for macro in macros:
         pool = " ".join(macro.pool)
         if accessible:
-            value = f"Pool: `{pool}`\nHunger: " + "`Yes`" if macro.hunger else "`No`"
+            value = f"Pool: `{pool}`\nHunger: " + ("`Yes`" if macro.hunger else "`No`")
             if macro.difficulty > 0:
                 value += f"\nDifficulty: `{macro.difficulty}`"
             if macro.rouses > 0:
                 value += f"\nRouse checks: `{macro.rouses}`"
-                value += "\nRe-rolling Rouses:" + "`Yes`" if macro.reroll_rouses else "`No`"
+                value += "\nRe-rolling Rouses:" + ("`Yes`" if macro.reroll_rouses else "`No`")
             if macro.comment is not None:
                 value += f"\nComment: `{macro.comment}`"
         else:
-            value = f"**Pool:** `{pool}`\n**Hunger:** " + "*Yes*" if macro.hunger else "*No*"
+            value = f"**Pool:** `{pool}`\n**Hunger:** " + ("`Yes`" if macro.hunger else "`No`")
             if macro.difficulty > 0:
-                value += f"\n**Difficulty:** *{macro.difficulty}*"
+                value += f"\n**Difficulty:** `{macro.difficulty}`"
             if macro.rouses > 0:
                 value += f"\n**Rouse checks:** `{macro.rouses}`"
-                value += "\n**Re-rolling Rouses:**" + "`Yes`" if macro.reroll_rouses else "`No`"
+                value += "\n**Re-rolling Rouses:**" + ("`Yes`" if macro.reroll_rouses else "`No`")
             if macro.comment is not None:
-                value += f"\n**Comment:** *{macro.comment}*"
+                value += f"\n**Comment:** `{macro.comment}`"
 
         fields.append(SimpleNamespace(name=macro.name.upper(), value=value))
 

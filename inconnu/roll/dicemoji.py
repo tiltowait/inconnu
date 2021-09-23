@@ -1,9 +1,9 @@
 """dicemoji.py - A tool for fetching emoji for representing dice rolls."""
 
 __EMOJIS = {
-    "n_crit": "<:n_crit:883181399417434132>",
-    "n_succ": "<:n_succ:883181399438417940>",
-    "n_fail": "<:n_fail:883181399539077163>",
+    "ln_crit": "<:ln_crit:890427149213909042>",
+    "ln_fail": "<:ln_fail:890427148945489971>",
+    "ln_succ": "<:ln_succ:890427148920291339>",
     "h_crit": "<:h_crit:888880025082953769>",
     "h_succ": "<:h_succ:888880025493962813>",
     "h_fail": "<:h_fail:888880025359757402>",
@@ -37,7 +37,7 @@ def emojify_die(die: int, hunger: bool):
     Returns (emoji): The associated emoji
     """
 
-    emoji_name = "h_" if hunger else "n_"
+    emoji_name = "h_" if hunger else "ln_"
 
     if die == 1:
         emoji_name += "bestial" if hunger else "fail"

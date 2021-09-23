@@ -433,7 +433,16 @@ class VChar:
         return SimpleNamespace(**matches[0])
 
 
-    def add_macro(self, macro: str, pool: list, hunger: bool, difficulty: int, comment):
+    def add_macro(
+        self,
+        macro: str,
+        pool: list,
+        hunger: bool,
+        rouses:int,
+        reroll_rouses: int,
+        difficulty: int,
+        comment: str
+    ):
         """
         Store a macro.
         Raises MacroAlreadyExistsError if the macro already exists.
@@ -445,6 +454,8 @@ class VChar:
             "charid": self.id,
             "name": macro,
             "pool": list(map(str, pool)),
+            "rouses": rouses,
+            "reroll_rouses": reroll_rouses,
             "hunger": hunger,
             "difficulty": difficulty,
             "comment": comment

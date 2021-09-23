@@ -5,6 +5,7 @@ import re
 from ..roll import perform_roll, display_outcome
 from . import macro_common
 from .. import common
+from ..misc import rouse
 from ..vchar import errors
 
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
@@ -32,7 +33,11 @@ async def roll(ctx, syntax: str, character=None):
         parameters.append(difficulty or macro.difficulty)
 
         results = perform_roll(character, *parameters)
+
+        # We show the rouse check first, because display_outcome() is blocking
+        await __rouse(ctx, character, macro)
         await display_outcome(ctx, ctx.author, character, results, macro.comment)
+
 
     except (ValueError, errors.MacroNotFoundError) as err:
         await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)
@@ -45,6 +50,18 @@ async def roll(ctx, syntax: str, character=None):
         return
     except common.FetchError:
         pass
+
+
+async def __rouse(ctx, character, macro):
+    """Perform a rouse check."""
+    if macro.comment is not None:
+        purpose = macro.comment
+    else:
+        purpose = f"{macro.name} macro"
+    msg = "Hunger gained does not apply to the roll."
+
+    if macro.rouses > 0:
+        await rouse(ctx, macro.rouses, character.name, purpose, macro.reroll_rouses, message=msg)
 
 
 def __normalize_syntax(syntax: str):

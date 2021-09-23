@@ -1,4 +1,5 @@
 """interface/macros.py - Macro command interface."""
+# pylint: disable=too-many-arguments
 
 from discord.ext import commands
 from discord_ui import ext, SlashOption
@@ -15,7 +16,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @commands.guild_only()
     @slash_cog(
         name="macro",
-        description="Roll a macro."
+        description="Macro command group"
         , guild_ids=debug.WHITELIST
     )
     async def macro(self, ctx):
@@ -55,17 +56,37 @@ class Macros(commands.Cog, name="Macro Utilities"):
                     ("Yes", 1), ("No", 0)
                 ]
             ),
-            SlashOption(int, "difficulty", description="The default difficulty (default 0"),
+            SlashOption(int, "difficulty", description="The default difficulty (default 0)"),
+            SlashOption(int, "rouses", description="The number of Rouse checks (default 0)",
+                choices=[(str(n), n) for n in range(4)]
+            ),
+            SlashOption(int, "reroll_rouses", description="Whether to re-roll Rouse checks",
+                choices=[
+                    ("Yes", 1), ("No", 0)
+                ]
+            ),
             SlashOption(str, "comment", description="A comment to apply to macro rolls"),
             SlashOption(str, "character", description="The character that owns the macro")
         ]
         , guild_ids=debug.WHITELIST
     )
     async def macro_create(
-        self, ctx, name: str, pool: str, hunger=1, difficulty=0, comment=None, character=None
+        self,
+        ctx,
+        name: str,
+        pool: str,
+        hunger=1,
+        difficulty=0,
+        rouses=0,
+        reroll_rouses=0,
+        comment=None,
+        character=None
     ):
         """Create a macro."""
-        await inconnu.macros.create(ctx, name, pool, bool(hunger), difficulty, comment, character)
+        await inconnu.macros.create(
+            ctx, name, pool, bool(hunger), difficulty, rouses,
+            bool(reroll_rouses), comment, character
+        )
 
 
     @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)

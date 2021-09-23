@@ -10,7 +10,7 @@ from ..vchar import VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
 
 
-async def rouse(ctx, count: int, character: str, purpose: str, reroll: bool):
+async def rouse(ctx, count: int, character: str, purpose: str, reroll: bool, message=None):
     """
     Perform a remorse check on a given character and display the results.
     Args:
@@ -24,13 +24,13 @@ async def rouse(ctx, count: int, character: str, purpose: str, reroll: bool):
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
         outcome = __rouse_roll(character, count, reroll)
-        await __display_outcome(ctx, character, outcome, purpose)
+        await __display_outcome(ctx, character, outcome, purpose, message)
 
     except common.FetchError:
         pass
 
 
-async def __display_outcome(ctx, character: VChar, outcome, purpose):
+async def __display_outcome(ctx, character: VChar, outcome, purpose, message):
     """Process the rouse result and display to the user."""
     if outcome.total == 1:
         title = "Rouse Success" if outcome.successes == 1 else "Rouse Failure"
@@ -63,6 +63,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose):
     await char.display(ctx, character,
         title=title,
         footer=footer,
+        message=message,
         fields=[(hunger_title, char.HUNGER)],
         custom=custom
     )

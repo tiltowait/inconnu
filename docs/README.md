@@ -5,7 +5,7 @@
 ?> **New to Inconnu?** Try the [Quickstart](quickstart.md)!
 
 > ### Quick Links
-> * **[Invite Inconnu to your server](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147829760&scope=bot%20applications.commands)**
+> * **[Invite Inconnu to your server](https://top.gg/bot/882409882119196704)**
 > * **[Demo server](https://discord.gg/CPmsdWHUcZ)**
 > * **[View the source code on GitHub](https://github.com/tiltowait/inconnu)**
 > * Need a V20 bot? **[Check out \[Tzimisce\], the most advanced V20 dice roller.](https://www.storyteller-bot.com)**

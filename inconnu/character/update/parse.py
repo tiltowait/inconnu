@@ -11,6 +11,8 @@ from ... import common
 from ...log import Log
 from ...vchar import VChar
 
+__MATCHES = {}
+
 __KEYS = {
     "name": "The character's name",
     "health": "The character's max Health",
@@ -92,8 +94,10 @@ def __parse_arguments(*arguments):
         if key in parameters:
             raise ValueError(f"You cannot use `{key}` more than once.")
 
-        if key not in __KEYS:
+        if key not in __MATCHES:
             raise ValueError(f"Unknown parameter: `{key}`.")
+        else:
+            key = __MATCHES[key] # Get the canonical key
 
         parameters[key] = value # Don't do any validation here
 
@@ -136,3 +140,42 @@ async def update_help(ctx, err=None, hidden=True):
         label="Full Documentation"
     )
     await ctx.respond(embed=embed, components=[button], hidden=hidden)
+
+# We do flexible matching for the keys. Many of these are the same as RoD's
+# keys, while others have been observed in syntax error logs. This should be
+# a little more user-friendly.
+
+def __setup_matches():
+    """Register all the update keys."""
+    __register_keys("name")
+    __register_keys("health", "hp")
+    __register_keys("willpower", "wp", "w")
+    __register_keys("humanity", "hm")
+    __register_keys("splat", "type")
+    __register_keys("sh", "shp", "suphp", "suph", "supd", "superficialhealth", "superficialdamage")
+    __register_keys("ah", "ahp", "agghp", "aggd", "aggh", "agghealth", "aggdamage")
+    __register_keys("sw", "swp", "supwp", "supw", "superficialwillpower")
+    __register_keys("aw", "awp", "aggwp", "aggw", "aggwillpower")
+    __register_keys("stains", "stain", "s")
+    __register_keys(
+        "current_xp", "xp_current", "current_exp", "exp_current", "currentxp",
+        "currentexp", "xpcurrent", "expcurrent"
+    )
+    __register_keys(
+        "total_xp", "xp_total", "total_exp", "exp_total", "totalxp",
+        "totalexp", "xptotal", "exptotal"
+    )
+    __register_keys("hunger", "h")
+    __register_keys("potency", "bp", "p")
+
+
+def __register_keys(canonical, *alternates):
+    """Register an update key along with some alternates."""
+    __MATCHES[canonical] = canonical
+    for alternate in alternates:
+        if alternate in __MATCHES:
+            raise KeyError(f"{alternate} is already an update parameter.")
+        __MATCHES[alternate] = canonical
+
+
+__setup_matches()

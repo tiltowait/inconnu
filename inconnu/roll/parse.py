@@ -39,6 +39,10 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         syntax, comment = syntax.split("#", 1)
         comment = comment.strip()
 
+    if comment is not None and len(comment) > 300:
+        await common.present_error(ctx, f"Comment is too long by {len(comment) - 300} characters.")
+        return
+
     if ctx.guild is None and needs_character(syntax):
         await common.present_error(ctx, "You cannot roll traits in DMs!", help_url=__HELP_URL)
         return

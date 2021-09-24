@@ -1,11 +1,9 @@
 """macros/create.py - Creating user macros."""
 # pylint: disable=too-many-arguments
 
-import re
-
 from . import macro_common
 from .. import common
-from ..vchar import VChar, errors
+from ..vchar import errors
 
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=creation"
 
@@ -31,10 +29,10 @@ async def create(
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
         # Make sure fields aren't too long
-        if len(name) > 50:
+        if len(name) > macro_common.NAME_LEN:
             length = len(name)
             raise SyntaxError(f"Macro names can't be longer than 50 characters. (Yours: {length})")
-        if comment is not None and len(comment) > 300:
+        if comment is not None and len(comment) > macro_common.COMMENT_LEN:
             length = len(comment)
             raise SyntaxError(f"Comments can't be longer than 300 characters. (Yours: {length})")
 
@@ -47,7 +45,7 @@ async def create(
             )
             return
 
-        pool = __expand_syntax(character, pool)
+        pool = macro_common.expand_syntax(character, pool)
         character.add_macro(name, pool, hunger, rouses, reroll_rouses, difficulty, comment)
         await ctx.respond(f"**{character.name}:** Created macro `{name}`.", hidden=True)
 
@@ -58,35 +56,3 @@ async def create(
         await common.present_error(ctx, err, help_url=__HELP_URL, character=character.name)
     except common.FetchError:
         pass
-
-
-def __expand_syntax(character: VChar, syntax: str):
-    """Validates the pool syntax and replaces elements with full trait names."""
-    syntax = re.sub(r"([+-])", r" \g<1> ", syntax) # Make sure there are spaces around all operators
-    raw_stack = syntax.split()
-    final_stack = []
-
-    expecting_operand = True
-
-    for element in raw_stack:
-        if expecting_operand:
-            # Expecting a number or a trait
-            if element in ["+", "-"]:
-                raise SyntaxError("The macro must use valid pool syntax!")
-
-            if element.isdigit():
-                final_stack.append(int(element))
-            else:
-                trait = character.find_trait(element)
-                final_stack.append(trait.name)
-
-            expecting_operand = False
-        else:
-            # Expecting an operator
-            if not element in ["+", "-"]:
-                raise SyntaxError("The macro must use valid pool syntax!")
-
-            final_stack.append(element)
-            expecting_operand = True
-
-    return final_stack

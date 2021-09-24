@@ -475,6 +475,12 @@ class VChar:
         VChar._MACROS.insert_one(macro_query)
 
 
+    def update_macro(self, macro: str, update: dict):
+        """Update a macro."""
+        query = { "name": { "$regex": re.compile(f"^{macro}$", re.IGNORECASE) }, "charid": self.id }
+        VChar._MACROS.update_one(query, { "$set": update })
+
+
     def delete_macro(self, macro):
         """
         Delete a macro.

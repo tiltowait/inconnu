@@ -95,7 +95,7 @@ async def __error_embed(
     embed.set_author(name=display_name, icon_url=avatar)
 
     for field in fields:
-        embed.add_field(name=field[0], value=field[1])
+        embed.add_field(name=field[0], value=field[1], inline=False)
 
     if footer is not None:
         embed.set_footer(text=footer)

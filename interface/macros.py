@@ -115,6 +115,25 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @commands.guild_only()
     @subslash_cog(
         base_names="macro",
+        name="update",
+        options=[
+            SlashOption(str, "macro", description="The macro's name", required=True),
+            SlashOption(str, "parameters", description="The update parameters", required=True),
+            SlashOption(str, "character", description="The character to display",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
+        ]
+        , guild_ids=debug.WHITELIST
+    )
+    async def macro_update(self, ctx, macro: str, parameters: str, character=None):
+        """Update a macro using PARAMETER=VALUE pairs. Parameter names match macro creation."""
+        await inconnu.macros.update(ctx, macro, parameters, character)
+
+
+    @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
+    @commands.guild_only()
+    @subslash_cog(
+        base_names="macro",
         name="delete",
         description="Delete a macro.",
         options=[

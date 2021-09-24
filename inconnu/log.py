@@ -17,7 +17,7 @@ class Log:
         """Log a bot event."""
         Log._prepare()
 
-        if event_key in ["update_error", "roll_error"]:
+        if event_key in ["update_error", "roll_error", "macro_update_error"]:
             Log._LOG.insert_one({
                 "date": datetime.datetime.utcnow(),
                 "event": event_key,

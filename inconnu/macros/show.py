@@ -1,5 +1,6 @@
 """macros/show.py - Displaying character macros."""
 
+import asyncio
 from types import SimpleNamespace
 
 import discord
@@ -43,26 +44,43 @@ async def __display_macros(ctx, char_name, macros):
 
 async def __macro_text(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
-    contents = [f"{char_name}'s Macros\n"]
+    fields = __generate_fields(macros, True)
+    pages = common.paginate(1200, *fields)
+    print(len(pages))
 
-    for field in __generate_fields(macros, True):
-        contents.append(f"```{field.name}```")
-        contents.append(field.value + "\n")
+    for page_num, page in enumerate(pages):
+        if len(pages) == 1:
+            contents = [f"{char_name}'s Macros\n"]
+        else:
+            contents = [f"{char_name}'s Macros: Page {page_num + 1} of {len(pages)}\n"]
 
-    await ctx.respond("\n".join(contents), hidden=True)
+        for field in page:
+            contents.append(f"```{field.name}```")
+            contents.append(field.value + "\n")
+
+        await ctx.respond("\n".join(contents), hidden=True)
+        await asyncio.sleep(0.5)
 
 
 async def __macro_embed(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
-    embed = discord.Embed(
-        title="Macros"
-    )
-    embed.set_author(name=char_name, icon_url=ctx.author.display_avatar)
+    fields = __generate_fields(macros, False)
+    pages = common.paginate(1200, *fields)
 
-    for field in __generate_fields(macros, False):
-        embed.add_field(name=field.name, value=field.value, inline=False)
+    for page_num, page in enumerate(pages):
+        page_text = f"Page {page_num + 1} of {len(pages)}"
 
-    await ctx.respond(embed=embed, hidden=True)
+        embed = discord.Embed(
+            title="Macros" if len(pages) == 1 else f"Macros: {page_text}"
+        )
+        embed.set_author(name=char_name, icon_url=ctx.author.display_avatar)
+        embed.set_footer(text=page_text)
+
+        for field in page:
+            embed.add_field(name=field.name, value=field.value, inline=False)
+
+        await ctx.respond(embed=embed, hidden=True)
+        await asyncio.sleep(0.5)
 
 
 def __generate_fields(macros, accessible: bool):

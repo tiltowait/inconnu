@@ -1,5 +1,7 @@
 """traits/show.py - Display character traits."""
 
+import asyncio
+
 import discord
 
 from .. import common
@@ -28,24 +30,35 @@ async def show(ctx, character: str, player: discord.Member):
 
 async def __list_embed(ctx, character, owner):
     """Display traits in an embed."""
-    traits = map(lambda row: f"**{row[0]}**: {row[1]}", character.traits.items())
+    traits = [f"**{trait}:** {rating}" for trait, rating in character.traits.items()]
+    pages = common.paginate(1200, *traits) # Array of strings
 
-    embed = discord.Embed(
-        title="Traits",
-        description="\n".join(traits)
-    )
-    embed.set_author(name=character.name, icon_url=owner.display_avatar)
-    embed.set_footer(text="To see HP, WP, etc., use /character display")
+    for page_num, page in enumerate(pages):
+        embed = discord.Embed(
+            title="Traits" if len(pages) == 1 else f"Traits: Page {page_num + 1} of {len(pages)}",
+            description=page
+        )
+        embed.set_author(name=character.name, icon_url=owner.display_avatar)
+        embed.set_footer(text="To see HP, WP, etc., use /character display")
 
-    await ctx.respond(embed=embed, hidden=True)
+        await ctx.respond(embed=embed, hidden=True)
+        await asyncio.sleep(0.5)
 
 
 async def __list_text(ctx, character):
     """Display traits in plain text."""
-    contents = [f"{character.name}'s Traits"]
-    contents.append("```css")
-    contents.extend([f"{trait}: {rating}" for trait, rating in character.traits.items()])
-    contents.append("```")
-    contents.append("To see HP, WP, etc., use `/character display`")
+    traits = [f"{trait}: {rating}" for trait, rating in character.traits.items()]
+    pages = common.paginate(1200, *traits) # Array of strings
 
-    await ctx.respond("\n".join(contents), hidden=True)
+    for page_num, page in enumerate(pages):
+        if len(pages) == 1:
+            contents = [f"{character.name}'s Traits"]
+        else:
+            contents = [f"{character.name}'s Traits: Page {page_num + 1} of {len(pages)}"]
+        contents.append("```css")
+        contents.append(page)
+        contents.append("```")
+        contents.append("To see HP, WP, etc., use `/character display`")
+
+        await ctx.respond("\n".join(contents), hidden=True)
+        await asyncio.sleep(0.5)

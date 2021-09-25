@@ -68,7 +68,9 @@ class Wizard:
 
     async def __finalize_character(self):
         """Add the character to the database and inform the user they are done."""
-        character = VChar.create(self.ctx.guild.id, self.ctx.author.id, self.parameters.name)
+        owner = self.ctx.author.id if not self.parameters.spc else os.environ["INCONNU_ID"]
+
+        character = VChar.create(self.ctx.guild.id, owner, self.parameters.name)
         character.splat= self.parameters.splat
         character.humanity = self.parameters.humanity
         character.health = "." * self.parameters.hp

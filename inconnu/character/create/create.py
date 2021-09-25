@@ -13,8 +13,12 @@ from ... import common
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-creation"
 
 
-async def create(ctx, name: str, splat: str, humanity: int, health: int, willpower: int):
+async def create(ctx, name: str, splat: str, humanity: int, health: int, willpower: int, spc: bool):
     """Parse and handle character creation arguments."""
+    if spc and not ctx.author.guild_permissions.administrator:
+        await common.present_error(ctx, "You need Administrator permissions to make an SPC.")
+        return
+
     try:
         __validate_parameters(name, humanity, health, willpower) # splat is guaranteed correct
 
@@ -26,7 +30,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
             hidden=True
         )
 
-        parameters = SN(name=name, hp=health, wp=willpower, humanity=humanity, splat=splat)
+        parameters = SN(name=name, hp=health, wp=willpower, humanity=humanity, splat=splat, spc=spc)
         character_wizard = wizard.Wizard(ctx, parameters)
         await character_wizard.begin_chargen()
 

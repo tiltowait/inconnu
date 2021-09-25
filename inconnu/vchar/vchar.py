@@ -9,9 +9,19 @@ from collections import OrderedDict
 from types import SimpleNamespace
 
 import pymongo
+import bson
+from bson.objectid import ObjectId
 
 from . import errors
 from ..constants import DAMAGE
+
+
+_digits = re.compile(r"\d")
+def contains_digit(string: str):
+    """Determine whether a string contains a digit."""
+    if string is None:
+        return False
+    return bool(_digits.search(string)) # Much faster than using any()
 
 
 class VChar:
@@ -65,6 +75,19 @@ class VChar:
 
 
     @classmethod
+    def _id_fetch(cls, charid: str):
+        """Fetch a character by ID and return its raw parameters."""
+        VChar.__prepare()
+
+        try:
+            params = VChar._CHARS.find_one({ "_id": ObjectId(charid) })
+        except bson.errors.InvalidId:
+            return None
+
+        return params
+
+
+    @classmethod
     def fetch(cls, guild: int, user: int, name: str):
         """
         Fetch a character by name.
@@ -76,6 +99,12 @@ class VChar:
             1 character: Return that character
            >1 character: Raise UnspecifiedCharacterError
         """
+        if contains_digit(name):
+            char_params = VChar._id_fetch(name)
+            if char_params is None:
+                raise errors.CharacterNotFoundError(f"`{name}` is not a valid character name.")
+            return VChar(char_params)
+
         VChar.__prepare()
 
         count = VChar._CHARS.count_documents({ "guild": guild, "user": user })

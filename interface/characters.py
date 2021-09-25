@@ -8,6 +8,14 @@ from discord_ui.cogs import slash_cog, subslash_cog
 import inconnu
 from . import debug
 
+# Unused due to Discord API issues
+async def _spc_options(ctx):
+    """Determine whether the user can make an SPC."""
+    if ctx.author.guild_permissions.administrator:
+        return [("No", "0"), ("Yes", "1")]
+    return [("No", "0")]
+
+
 class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
 
@@ -53,15 +61,20 @@ class Characters(commands.Cog, name="Character Management"):
                 description="Willpower levels (3-15)",
                 choices=[(str(n), n) for n in range(3, 16)],
                 required=True
+            ),
+            SlashOption(int, "spc",
+                description="(Admin only) Make an SPC",
+                #autocomplete=True, choice_generator=_spc_options
+                choices=[("No", 0), ("Yes", 1)]
             )
         ]
         , guild_ids=debug.WHITELIST
     )
     async def new_character(
-        self, ctx, name: str, splat: str, humanity: int, health: int, willpower: int
+        self, ctx, name: str, splat: str, humanity: int, health: int, willpower: int, spc=0
     ):
         """Create a new character."""
-        await inconnu.character.create(ctx, name, splat, humanity, health, willpower)
+        await inconnu.character.create(ctx, name, splat, humanity, health, willpower, bool(spc))
 
 
     @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)

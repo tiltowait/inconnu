@@ -116,7 +116,8 @@ async def __outcome_text(ctx, player, character: VChar, results, comment, reroll
     contents.append(takeaway)
     contents.append(f"Margin: `{results.margin}`")
     contents.append(f"Normal: `{', '.join(map(str, results.normal.dice))}`")
-    contents.append(f"Hunger: `{', '.join(map(str, results.hunger.dice))}`")
+    if len(results.hunger.dice) > 0:
+        contents.append(f"Hunger: `{', '.join(map(str, results.hunger.dice))}`")
 
     if results.pool_str is not None:
         contents.append(f"Pool: `{results.pool_str}`")

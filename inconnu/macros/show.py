@@ -46,7 +46,6 @@ async def __macro_text(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
     fields = __generate_fields(macros, True)
     pages = common.paginate(1200, *fields)
-    print(len(pages))
 
     for page_num, page in enumerate(pages):
         if len(pages) == 1:

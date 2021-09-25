@@ -1,7 +1,7 @@
 """interface/settings.py - Settings-related commands."""
 
 from discord.ext import commands
-from discord_ui import ext, SlashOption
+from discord_ui import SlashOption
 from discord_ui.cogs import slash_cog
 
 import inconnu
@@ -17,8 +17,6 @@ async def _available_scopes(ctx):
 
 class SettingsCommands(commands.Cog):
     """Settings-related commands."""
-
-
 
     @slash_cog(
         name="accessibility",

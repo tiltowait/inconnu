@@ -96,9 +96,8 @@ def __parse_arguments(*arguments):
 
         if key not in __MATCHES:
             raise ValueError(f"Unknown parameter: `{key}`.")
-        else:
-            key = __MATCHES[key] # Get the canonical key
 
+        key = __MATCHES[key] # Get the canonical key
         parameters[key] = value # Don't do any validation here
 
     return parameters

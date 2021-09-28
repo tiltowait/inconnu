@@ -151,7 +151,10 @@ def __setup_matches():
     __register_keys("willpower", "wp", "w")
     __register_keys("humanity", "hm")
     __register_keys("splat", "type")
-    __register_keys("sh", "shp", "suphp", "suph", "supd", "superficialhealth", "superficialdamage")
+    __register_keys(
+        "sh", "sd", "shp", "suphp", "suph", "supd", "superficialhealth",
+        "superficialdamage"
+    )
     __register_keys("ah", "ahp", "agghp", "aggd", "aggh", "agghealth", "aggdamage")
     __register_keys("sw", "swp", "supwp", "supw", "superficialwillpower")
     __register_keys("aw", "awp", "aggwp", "aggw", "aggwillpower")

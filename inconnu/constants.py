@@ -1,6 +1,9 @@
 """constants.py - Define package-wide constants."""
 
+import os
 from types import SimpleNamespace
+
+INCONNU_ID = int(os.environ["INCONNU_ID"])
 
 # Tracker Stress
 DAMAGE = SimpleNamespace(none=".", superficial="/", aggravated="x")

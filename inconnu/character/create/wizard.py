@@ -8,6 +8,7 @@ import discord
 from discord_ui import SelectMenu, SelectOption
 from discord_ui.components import LinkButton
 
+from ...constants import INCONNU_ID
 from ...settings import Settings
 from ...vchar import VChar
 
@@ -68,7 +69,7 @@ class Wizard:
 
     async def __finalize_character(self):
         """Add the character to the database and inform the user they are done."""
-        owner = self.ctx.author.id if not self.parameters.spc else int(os.environ["INCONNU_ID"])
+        owner = self.ctx.author.id if not self.parameters.spc else INCONNU_ID
 
         character = VChar.create(self.ctx.guild.id, owner, self.parameters.name)
         character.splat= self.parameters.splat

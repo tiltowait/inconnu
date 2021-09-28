@@ -13,7 +13,7 @@ import bson
 from bson.objectid import ObjectId
 
 from . import errors
-from ..constants import DAMAGE
+from ..constants import DAMAGE, INCONNU_ID
 
 
 _digits = re.compile(r"\d")
@@ -139,7 +139,7 @@ class VChar:
 
         query = {
             "guild": guild,
-            "user": user if not is_spc else int(os.environ["INCONNU_ID"]),
+            "user": user if not is_spc else INCONNU_ID,
             "name": { "$regex": re.compile("^" + name + "$", re.IGNORECASE) }
         }
         return VChar._CHARS.count_documents(query) > 0
@@ -345,6 +345,12 @@ class VChar:
 
 
     # Derived attributes
+
+    @property
+    def is_pc(self):
+        """Whether the character is a PC."""
+        return self._params["user"] != INCONNU_ID
+
 
     @property
     def surge(self):

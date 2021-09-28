@@ -175,7 +175,7 @@ async def __outcome_embed(ctx, player, character: VChar, results, comment, rerol
 
     embed.set_author(
         name=author_field,
-        icon_url=player.display_avatar
+        icon_url=player.display_avatar if character.is_pc else ctx.guild.icon
     )
 
     # Disclosure fields

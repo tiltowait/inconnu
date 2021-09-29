@@ -2,6 +2,7 @@
 
 from .aggheal import aggheal
 from .awaken import awaken
+from .bol import bol
 from .cripple import cripple
 from .frenzy import frenzy
 from .mend import mend

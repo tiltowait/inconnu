@@ -235,6 +235,9 @@ async def fetch_character(ctx, character, tip, help_url, owner=None):
         help_url (str): The URL of the button to display on any error messages
         userid (int): The ID of the user who owns the character, if different from the ctx author
     """
+    if isinstance(character, VChar):
+        return character
+
     try:
         owner = owner or ctx.author
         return VChar.fetch(ctx.guild.id, owner.id, character)

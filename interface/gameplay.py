@@ -67,6 +67,22 @@ class Gameplay(commands.Cog):
         await inconnu.misc.awaken(ctx, character)
 
 
+    @ext.check_failure_response("Blush of Life isn't available in DMs.", hidden=True)
+    @commands.guild_only()
+    @slash_cog(
+        name="bol",
+        options=[
+            SlashOption(str, "character", description="The character waking up",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            )
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    async def bol(self, ctx, character=None):
+        """Perform a Blush of Life check, taking Humanity into account."""
+        await inconnu.misc.bol(ctx, character)
+
+
     @slash_cog(
         name="cripple",
         options=[

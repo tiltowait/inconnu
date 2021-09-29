@@ -24,16 +24,17 @@ async def awaken(ctx, character=None):
         if recovered > 0:
             message += f"\nRecovered **{recovered}** Willpower."
 
-        rouse_success = random.randint(1, 10) >= 6
-        if rouse_success:
-            message += "\n**No** Hunger gain."
-        else:
-            message += "\nRouse failure. "
-            if character.hunger == 5:
-                message += "**Enter torpor!**"
+        if character.splat == "vampire":
+            rouse_success = random.randint(1, 10) >= 6
+            if rouse_success:
+                message += "\n**No** Hunger gain."
             else:
-                character.hunger += 1
-                message += f"Increase Hunger to **{character.hunger}**."
+                message += "\nRouse failure. "
+                if character.hunger == 5:
+                    message += "**Enter torpor!**"
+                else:
+                    character.hunger += 1
+                    message += f"Increase Hunger to **{character.hunger}**."
 
         await char_update(ctx, f"sw=-{recovered}", character.name, message)
         character.log("awaken")

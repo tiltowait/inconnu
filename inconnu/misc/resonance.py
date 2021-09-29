@@ -53,7 +53,7 @@ async def __display_embed(ctx, temperament, res, die):
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
     embed.add_field(name="Disciplines", value=__DISCIPLINES[res])
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[res])
-    embed.set_footer(text=f"Rolled {die} on the Resonance roll")
+    embed.set_footer(text=f"Rolled {die} for the Resonance")
 
     await ctx.respond(embed=embed)
 

@@ -165,7 +165,9 @@ class VChar:
     @property
     def name(self):
         """The character's name."""
-        return self._params["name"]
+        if self.is_pc:
+            return self._params["name"]
+        return self._params["name"] + " (SPC)"
 
 
     @name.setter

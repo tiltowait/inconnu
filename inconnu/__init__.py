@@ -29,7 +29,7 @@ async def available_characters(ctx):
         if ctx.author.guild_permissions.administrator:
             # Add SPCs
             spcs = VChar.all_characters(ctx.guild.id, int(os.environ["INCONNU_ID"]))
-            spcs = [(f"{spc.name} (SPC)", str(spc.id)) for spc in spcs]
+            spcs = [(spc.name, str(spc.id)) for spc in spcs]
 
     chars = VChar.all_characters(ctx.guild.id, owner.id)
     chars = [(char.name, str(char.id)) for char in chars]

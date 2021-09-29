@@ -1,10 +1,14 @@
 """character/display/display.py - Tools for displaying characters."""
 # pylint: disable=too-many-arguments
 
+import asyncio
+
 import discord
+from discord_ui import Button
 
 from . import trackmoji
 from ... import common
+from ... import traits
 from ...constants import DAMAGE
 from ...settings import Settings
 from ...vchar import errors, VChar
@@ -100,7 +104,7 @@ async def display(
         custom ([tuple]): Custom fields to display, as well as their titles
     """
     if Settings.accessible(ctx.author):
-        await __display_text(ctx, character,
+        msg = await __display_text(ctx, character,
             title=title,
             message=message,
             footer=footer,
@@ -109,7 +113,7 @@ async def display(
             custom=custom
         )
     else:
-        await __display_embed(ctx, character,
+        msg = await __display_embed(ctx, character,
             title=title,
             message=message,
             footer=footer,
@@ -117,6 +121,18 @@ async def display(
             fields=fields,
             custom=custom
         )
+
+    try:
+        btn = await msg.wait_for("button", ctx.bot, timeout=60)
+        while btn.author != ctx.author:
+            await btn.respond("Sorry, you can't view these traits.", hidden=True)
+            btn = await msg.wait_for("button", ctx.bot, timeout=60)
+
+        await traits.show(btn, character.name, owner)
+        await msg.disable_components()
+
+    except asyncio.exceptions.TimeoutError:
+        await msg.disable_components()
 
 
 async def __display_embed(
@@ -178,7 +194,8 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    await ctx.respond(embed=embed)
+    button = Button("traits", "Traits")
+    return await ctx.respond(embed=embed, components=[button])
 
 
 async def __display_text(
@@ -243,7 +260,9 @@ async def __display_text(
     contents = "\n".join(contents)
     if footer is not None:
         contents += "\n" + footer
-    await ctx.respond(contents)
+
+    button = Button("traits", "Traits")
+    return await ctx.respond(contents, components=[button])
 
 
 def __stringify_track(track: str):

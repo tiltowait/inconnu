@@ -649,16 +649,15 @@ class VChar:
 
     def __find_items(self, collection, name, exact=False):
         """Find an item in the collection. Raises no exceptions."""
-        query = {
-            "charid": self.id,
-            "name": {
-                "$regex": re.compile(f"^{name}$", re.IGNORECASE)
+        query = { "charid": self.id, "name": name }
+        exact_match = collection.find(query, { "_id": 0, "charid": 0 }).collation({
+            'locale': 'en',
+            'strength': 2
             }
-        }
-        exact_match = collection.find_one(query, { "_id": 0, "charid": 0 })
+        )
 
-        if exact_match is not None:
-            return [exact_match]
+        if exact_match.count() == 1:
+            return list(exact_match)
 
         if not exact: # Fallback; try and get closest unambiguous
             query = {

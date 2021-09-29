@@ -34,7 +34,8 @@ async def display_requested(ctx, character=None, message=None, player=None):
         await display(ctx, character,
             owner=player,
             message=message,
-            footer=f"To view traits: /traits list character:{character.name}"
+            footer=f"To view traits: /traits list character:{character.name}",
+            traits_button=True
         )
         #await __display_character(ctx, character, owner, message)
 
@@ -89,7 +90,8 @@ async def display(
     footer: str = None,
     owner: discord.Member = None,
     fields: list = None,
-    custom: list = None
+    custom: list = None,
+    traits_button: bool = False
 ):
     """
     Display a character.
@@ -102,6 +104,7 @@ async def display(
         owner (discord.Member): The player who owns the character
         fields ([tuple]): The fields to display, as well as their titles
         custom ([tuple]): Custom fields to display, as well as their titles
+        traits_button (bool): Whether to show a traits button. Default false
     """
     if Settings.accessible(ctx.author):
         msg = await __display_text(ctx, character,
@@ -110,7 +113,8 @@ async def display(
             footer=footer,
             owner=owner,
             fields=fields,
-            custom=custom
+            custom=custom,
+            traits_button=traits_button
         )
     else:
         msg = await __display_embed(ctx, character,
@@ -119,20 +123,22 @@ async def display(
             footer=footer,
             owner=owner,
             fields=fields,
-            custom=custom
+            custom=custom,
+            traits_button=traits_button
         )
 
-    try:
-        btn = await msg.wait_for("button", ctx.bot, timeout=60)
-        while btn.author != ctx.author:
-            await btn.respond("Sorry, you can't view these traits.", hidden=True)
+    if traits_button:
+        try:
             btn = await msg.wait_for("button", ctx.bot, timeout=60)
+            while btn.author != ctx.author:
+                await btn.respond("Sorry, you can't view these traits.", hidden=True)
+                btn = await msg.wait_for("button", ctx.bot, timeout=60)
 
-        await traits.show(btn, character.name, owner)
-        await msg.disable_components()
+            await traits.show(btn, character.name, owner)
+            await msg.disable_components()
 
-    except asyncio.exceptions.TimeoutError:
-        await msg.disable_components()
+        except asyncio.exceptions.TimeoutError:
+            await msg.disable_components()
 
 
 async def __display_embed(
@@ -143,7 +149,8 @@ async def __display_embed(
     footer: str = None,
     owner: discord.Member = None,
     fields: list = None,
-    custom: list = None
+    custom: list = None,
+    traits_button: bool = False
 ):
     if owner is None:
         owner = ctx.author
@@ -194,8 +201,8 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    button = Button("traits", "Traits")
-    return await ctx.respond(embed=embed, components=[button])
+    components = [Button("traits", "Traits")] if traits_button else None
+    return await ctx.respond(embed=embed, components=components)
 
 
 async def __display_text(
@@ -206,7 +213,8 @@ async def __display_text(
     footer: str = None,
     owner: discord.Member = None,
     fields: list = None,
-    custom: list = None
+    custom: list = None,
+    traits_button: bool = False
 ):
     """Display a text representation of the character."""
     if owner is None:
@@ -261,8 +269,8 @@ async def __display_text(
     if footer is not None:
         contents += "\n" + footer
 
-    button = Button("traits", "Traits")
-    return await ctx.respond(contents, components=[button])
+    components = [Button("traits", "Traits")] if traits_button else None
+    return await ctx.respond(contents, components=components)
 
 
 def __stringify_track(track: str):

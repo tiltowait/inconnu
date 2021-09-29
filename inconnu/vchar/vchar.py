@@ -634,7 +634,7 @@ class VChar:
         valid_keys = [
             "remorse", "rouse", "slake", "awaken", "frenzy", "degen",
             "health_superficial", "health_aggravated",
-            "willpower_superficial", "willpower_aggravated"
+            "willpower_superficial", "willpower_aggravated", "blush"
         ]
         if key not in valid_keys:
             raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")

@@ -18,6 +18,7 @@ async def bol(ctx, character):
             await ctx.respond("Blush of Life is unnecessary. You look somewhat ill but not dead.")
         else:
             await rouse(ctx, 1, character, "Blush of Life", character.humanity == 8)
+            character.log("blush")
 
     except common.FetchError:
         pass

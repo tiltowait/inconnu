@@ -155,7 +155,7 @@ def __setup_matches():
         "sh", "sd", "shp", "suphp", "suph", "supd", "superficialhealth",
         "superficialdamage"
     )
-    __register_keys("ah", "ahp", "agghp", "aggd", "aggh", "agghealth", "aggdamage")
+    __register_keys("ah", "ad", "ahp", "agghp", "aggd", "aggh", "agghealth", "aggdamage")
     __register_keys("sw", "swp", "supwp", "supw", "superficialwillpower")
     __register_keys("aw", "awp", "aggwp", "aggw", "aggwillpower")
     __register_keys("stains", "stain", "s")

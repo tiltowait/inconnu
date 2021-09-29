@@ -173,9 +173,14 @@ async def __outcome_embed(ctx, player, character: VChar, results, comment, rerol
     if results.descriptor is not None:
         author_field += f" ({results.descriptor})"
 
+    if character is not None:
+        icon = player.display_avatar if character.is_pc else ctx.guild.icon
+    else:
+        icon = player.display_avatar
+
     embed.set_author(
         name=author_field,
-        icon_url=player.display_avatar if character.is_pc else ctx.guild.icon
+        icon_url=icon
     )
 
     # Disclosure fields

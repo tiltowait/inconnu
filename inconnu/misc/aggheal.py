@@ -53,9 +53,16 @@ def __heal(character: VChar):
 
 async def __display_outcome(ctx, character, outcome):
     """Display the outcome of the healing."""
-    gain = "Max Hunger" if character.hunger == 5 else f"Gain {outcome.gain} Hunger"
-    title = f"Damage healed | {gain}"
-    footer = "FALL INTO TORPOR!" if outcome.torpor else None
+    fields = [("Health", char.HEALTH)]
+
+    if character.splat == "vampire":
+        gain = "Max Hunger" if character.hunger == 5 else f"Gain {outcome.gain} Hunger"
+        title = f"Damage healed | {gain}"
+        footer = "FALL INTO TORPOR!" if outcome.torpor else None
+        fields.append(("Hunger", char.HUNGER))
+    else:
+        title = "Damage healed"
+        footer = None
 
     await char.display(ctx, character,
         title=title,

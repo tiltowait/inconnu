@@ -364,8 +364,12 @@ class VChar:
     @property
     def mend_amount(self):
         """The amount of Superficial damage recovered when mending."""
-        mends = { 0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 5 }
-        return mends[self.potency]
+        if self.splat == "vampire":
+            mends = { 0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 5 }
+            return mends[self.potency]
+
+        # Mortal or ghoul
+        return self.find_trait("Stamina", exact=True).rating
 
 
     @property

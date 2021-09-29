@@ -27,14 +27,21 @@ async def mend(ctx, character=None):
 
 async def __display_outcome(ctx, character, outcome):
     """Display the results of the mend."""
-    title = f"Mended {outcome.mended} damage | Rouse " + ("Success" if outcome.rouse else "Failure")
+    title = f"Mended {outcome.mended} damage"
+    fields = [("Health", char.HEALTH)]
+
+    if character.splat == "vampire":
+        success_text = "Success" if outcome.rouse else "Failure"
+        title += f" | Rouse {success_text}"
+        fields.append(("Hunger", char.HUNGER))
+        footer = "ROLL FOR HUNGER FRENZY" if outcome.frenzy else None
+    else:
+        footer = None
+
     await char.display(ctx, character,
         title=title,
-        footer="ROLL FOR HUNGER FRENZY" if outcome.frenzy else None,
-        fields=[
-            ("Health", char.HEALTH),
-            ("Hunger", char.HUNGER)
-        ]
+        fields=fields,
+        footer=footer
     )
 
 

@@ -38,24 +38,24 @@ def __heal(character: VChar):
         if random.randint(1, 10) < 6:
             hunger_gain += 1
 
-    frenzy = False
+    torpor = False
     if character.hunger + hunger_gain > 5:
         hunger_gain = 5 - character.hunger
-        frenzy = True
+        torpor = True
 
 
     # Update the character
     character.hunger += hunger_gain
     character.health = DAMAGE.none + character.health[:-1]
 
-    return SimpleNamespace(gain=hunger_gain, frenzy=frenzy)
+    return SimpleNamespace(gain=hunger_gain, torpor=torpor)
 
 
 async def __display_outcome(ctx, character, outcome):
     """Display the outcome of the healing."""
     gain = "Max Hunger" if character.hunger == 5 else f"Gain {outcome.gain} Hunger"
     title = f"Damage healed | {gain}"
-    footer = "ROLL FOR HUNGER FRENZY" if outcome.frenzy else None
+    footer = "FALL INTO TORPOR!" if outcome.torpor else None
 
     await char.display(ctx, character,
         title=title,

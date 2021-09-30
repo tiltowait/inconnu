@@ -38,7 +38,7 @@ async def update(ctx, parameters: str, character=None, update_message=None):
     Process the user's arguments.
     Allow the user to omit a character if they have only one.
     """
-    args = re.sub(r"\s+=\s+", r"=", parameters) # Remove gaps between keys and values
+    args = re.sub(r"\s*=\s*", r"=", parameters) # Remove gaps between keys and values
     args = list(args.split()) # To allow element removal
 
     if len(args) == 0:

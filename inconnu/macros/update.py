@@ -56,7 +56,7 @@ async def update(ctx, macro: str, syntax: str, character: str):
 
 def __parameterize(parameters):
     """Convert multi-word parameter/value pairs to a dictionary."""
-    parameters = re.sub(r"\s+=\s+", r"=", parameters) # Remove gaps between keys and values
+    parameters = re.sub(r"\s*=\s*", r"=", parameters) # Remove gaps between keys and values
     pattern = re.compile(r"([A-z]+)=")
 
     params = {}

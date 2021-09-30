@@ -38,6 +38,8 @@ async def awaken(ctx, character=None):
 
         await char_update(ctx, f"sw=-{recovered}", character.name, message)
         character.log("awaken")
+        if character.splat == "vampire":
+            character.log("rouse")
 
     except common.FetchError:
         pass

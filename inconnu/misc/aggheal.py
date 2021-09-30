@@ -48,6 +48,8 @@ def __heal(character: VChar):
     character.hunger += hunger_gain
     character.health = DAMAGE.none + character.health[:-1]
 
+    if character.splat == "vampire":
+        character.log("rouse", 3)
     return SimpleNamespace(gain=hunger_gain, torpor=torpor)
 
 

@@ -66,4 +66,6 @@ def __heal(character):
     else:
         frenzy = False
 
+    if character.splat == "vampire":
+        character.log("rouse")
     return SimpleNamespace(mended=mending, rouse=rouse, frenzy=frenzy)

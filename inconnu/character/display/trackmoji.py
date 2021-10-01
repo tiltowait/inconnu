@@ -10,6 +10,7 @@ __EMOJIS = {
     "no_hunger": "<:no_hunger:883527495394164776>",
     "hu_filled": "<:hu_filled:883532393946972160>",
     "hu_unfilled": "<:hu_unfilled:883532394051809290>",
+    "degen": "<:degen:893638753304850452>",
     "stain": "<:stain:883536498950025258>",
     "bp_filled": ":red_circle:",
     "bp_unfilled": ":o:",
@@ -57,16 +58,25 @@ def emojify_humanity(humanity: int, stains: int) -> str:
 
     # Humanity fills from the right, to a max of 10. Stains fill from the right
     # and can overlap filled boxes
+
+    # Need: Filled, Overlapped, Empty, Stained
+
     unfilled = 10 - humanity - stains
     if unfilled < 0:
+        overlapped = abs(unfilled)
+        stains -= overlapped
         unfilled = 0 # So we don't accidentally add to filled boxes
-    filled = 10 - unfilled - stains
+    else:
+        overlapped = 0
+    filled = 10 - unfilled - stains - overlapped
 
     filled = [__humanitymoji(True) for _ in range(filled)]
+    overlapped = [__degenerationmoji() for _ in range(overlapped)]
     unfilled = [__humanitymoji(False) for _ in range(unfilled)]
     stains = [__stainmoji() for _ in range(stains)]
 
     track = filled
+    track.extend(overlapped)
     track.extend(unfilled)
     track.extend(stains)
 
@@ -98,3 +108,8 @@ def __humanitymoji(filled) -> str:
 def __stainmoji() -> str:
     """Return a stain emoji."""
     return __EMOJIS["stain"]
+
+
+def __degenerationmoji() -> str:
+    """Return a degeneration emoji."""
+    return __EMOJIS["degen"]

@@ -94,7 +94,7 @@ def __generate_fields(macros, accessible: bool):
                 value += f"\nDifficulty: `{macro.difficulty}`"
             if macro.rouses > 0:
                 value += f"\nRouse checks: `{macro.rouses}`"
-                value += "\nRe-rolling Rouses:" + ("`Yes`" if macro.reroll_rouses else "`No`")
+                value += "\nRe-rolling Rouses: " + ("`Yes`" if macro.reroll_rouses else "`No`")
             if macro.comment is not None:
                 value += f"\nComment: `{macro.comment}`"
         else:
@@ -103,7 +103,7 @@ def __generate_fields(macros, accessible: bool):
                 value += f"\n**Difficulty:** `{macro.difficulty}`"
             if macro.rouses > 0:
                 value += f"\n**Rouse checks:** `{macro.rouses}`"
-                value += "\n**Re-rolling Rouses:**" + ("`Yes`" if macro.reroll_rouses else "`No`")
+                value += "\n**Re-rolling Rouses:** " + ("`Yes`" if macro.reroll_rouses else "`No`")
             if macro.comment is not None:
                 value += f"\n**Comment:** `{macro.comment}`"
 

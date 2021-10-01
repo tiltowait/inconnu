@@ -86,7 +86,7 @@ class TraitWizard:
         )
         embed.set_author(
             name=f"{self.character.name} on {self.ctx.guild.name}",
-            icon_url=self.ctx.guild.icon
+            icon_url=self.ctx.guild.icon or ""
         )
         embed.set_footer(text=f"{common.pluralize(len(self.traits), 'trait')} remaining")
 
@@ -124,7 +124,7 @@ class TraitWizard:
         )
         embed.set_author(
             name=f"{self.character.name} on {self.ctx.guild.name}",
-            icon_url=self.ctx.guild.icon
+            icon_url=self.ctx.guild.icon or ""
         )
 
         traits = [f"**{trait}:** {rating}" for trait, rating in self.ratings.items()]

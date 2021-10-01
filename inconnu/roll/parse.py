@@ -174,7 +174,7 @@ async def __outcome_embed(ctx, player, character: VChar, results, comment, rerol
         author_field += f" ({results.descriptor})"
 
     if character is not None:
-        icon = player.display_avatar if character.is_pc else ctx.guild.icon
+        icon = player.display_avatar if character.is_pc else (ctx.guild.icon or "")
     else:
         icon = player.display_avatar
 

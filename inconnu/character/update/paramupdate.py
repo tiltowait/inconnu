@@ -266,5 +266,17 @@ def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
         character.humanity = new_value
         return f"Set Humanity to `{new_value}`."
 
+    # If a character enters degeneration, they automatically take AW damage
+    message = f"Set Stains to `{new_value}`."
+    delta = new_value - character.stains
+    if delta > 0 and new_value > (10 - character.humanity):
+        # We are in degeneration; calculate the overlap
+        old_overlap = abs(min(10 - character.humanity - character.stains, 0))
+        new_overlap = abs(10 - character.humanity - new_value)
+        overlap_delta = new_overlap - old_overlap
+
+        character.apply_damage("willpower", DAMAGE.aggravated, overlap_delta)
+        message += f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
+
     character.stains = new_value
-    return f"Set Stains to `{new_value}`."
+    return message

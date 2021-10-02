@@ -356,13 +356,13 @@ class VChar:
         total = self.stains > (10 - self.humanity) or (physical and mental)
 
         if total:
-            return "You are impaired. Remember to subtract 2 dice from all rolls."
+            return "You are impaired. Remember to subtract 2 dice from all pools."
 
         if physical:
-            return "You are physically impaired. Remember to subtract 2 dice from physical rolls."
+            return "You are physically impaired. Remember to subtract 2 dice from physical pools."
 
         if mental:
-            return "You are mentally impaired. Remember to subtract 2 dice from mental rolls."
+            return "You are mentally impaired. Remember to subtract 2 dice from mental pools."
 
         return None
 

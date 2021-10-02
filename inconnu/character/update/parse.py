@@ -161,11 +161,11 @@ def __setup_matches():
     __register_keys("stains", "stain", "s")
     __register_keys(
         "current_xp", "xp_current", "current_exp", "exp_current", "currentxp",
-        "currentexp", "xpcurrent", "expcurrent"
+        "currentexp", "xpcurrent", "expcurrent", "cxp"
     )
     __register_keys(
         "total_xp", "xp_total", "total_exp", "exp_total", "totalxp",
-        "totalexp", "xptotal", "exptotal"
+        "totalexp", "xptotal", "exptotal", "txp"
     )
     __register_keys("hunger", "h")
     __register_keys("potency", "bp", "p")

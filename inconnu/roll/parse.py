@@ -76,7 +76,15 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         charid = character.id if character is not None else None
         Log.log("roll_error", user=ctx.author.id, charid=charid, syntax=raw_syntax)
 
-        await common.present_error(ctx, err, author=owner, character=character, help_url=__HELP_URL)
+        await common.present_error(
+            ctx,
+            err,
+            ("Input", f"/vr syntax:`{raw_syntax}`"),
+            author=owner,
+            character=character,
+            help_url=__HELP_URL,
+            hidden=False
+        )
 
 
 async def display_outcome(ctx, player, character: VChar, results, comment, rerolled=False):

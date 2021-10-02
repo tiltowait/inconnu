@@ -33,7 +33,8 @@ async def present_error(
     character: str = None,
     footer: str = None,
     help_url: str = None,
-    components = None
+    components = None,
+    hidden=True
 ):
     """
     Display an error in a nice embed.
@@ -51,16 +52,18 @@ async def present_error(
         return await __error_text(ctx, error, *fields,
             footer=footer,
             help_url=help_url,
-            components=components
+            components=components,
+            hidden=hidden
         )
-    else:
-        return await __error_embed(ctx, error, *fields,
-            author=author,
-            character=character,
-            footer=footer,
-            help_url=help_url,
-            components=components
-        )
+
+    return await __error_embed(ctx, error, *fields,
+        author=author,
+        character=character,
+        footer=footer,
+        help_url=help_url,
+        components=components,
+        hidden=hidden
+    )
 
 
 async def __error_embed(
@@ -71,7 +74,8 @@ async def __error_embed(
     character: str = None,
     footer: str = None,
     help_url: str = None,
-    components = None
+    components = None,
+    hidden: bool
 ):
     # Figure out the author
     if author is None:
@@ -111,7 +115,7 @@ async def __error_embed(
         else:
             components = [components, link]
 
-    return await ctx.respond(embed=embed, components=components, hidden=True)
+    return await ctx.respond(embed=embed, components=components, hidden=hidden)
 
 
 async def __error_text(
@@ -120,7 +124,8 @@ async def __error_text(
     *fields,
     footer: str = None,
     help_url: str = None,
-    components = None
+    components = None,
+    hidden: bool
 ):
     """Display the error as plaintext."""
     contents = ["Error", str(error) + "\n"]
@@ -142,7 +147,7 @@ async def __error_text(
         else:
             components = [components, link]
 
-    return await ctx.respond("\n".join(contents), components=components, hidden=True)
+    return await ctx.respond("\n".join(contents), components=components, hidden=hidden)
 
 
 async def select_character(ctx, err, help_url, tip, player=None):

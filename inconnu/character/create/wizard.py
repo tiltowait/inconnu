@@ -41,6 +41,9 @@ class Wizard:
         self.ctx = ctx
         self.parameters = parameters
 
+        if parameters.splat == "vampire":
+            self.core_traits.append("Blood Potency")
+
         self.assigned_traits = {}
 
 
@@ -77,6 +80,12 @@ class Wizard:
         character.health = "." * self.parameters.hp
         character.willpower = "." * self.parameters.wp
 
+        # Set blood potency when applicable
+        if character.splat == "vampire":
+            blood_potency = self.assigned_traits["Blood Potency"]
+            character.potency = blood_potency
+            del self.assigned_traits["Blood Potency"] # Don't want to make this a trait
+
         # Need to add the traits one-by-one
         for trait, rating in self.assigned_traits.items():
             character.add_trait(trait, rating)
@@ -112,11 +121,6 @@ class Wizard:
             name="Make a mistake?",
             value=f"Use `/traits update` on {self.ctx.guild.name} to fix."
         )
-
-        if self.parameters.splat == "vampire":
-            field_name = "Your Blood Potency is currently 0!"
-            value = "To update: `/character update potency=X`, where `X` is your Blood Potency."
-            embed.add_field(name=field_name, value=value, inline=False)
 
         button = LinkButton(
             "https://www.inconnu-bot.com/#/quickstart",

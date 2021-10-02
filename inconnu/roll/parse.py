@@ -122,6 +122,14 @@ async def __outcome_text(ctx, player, character: VChar, results, comment, reroll
     if results.pool_str is not None:
         contents.append(f"Pool: `{results.pool_str}`")
 
+    # Comment
+    impairment = character.impairment
+    if impairment is not None:
+        if comment is not None:
+            comment += f"\n{impairment}"
+        else:
+            comment = impairment
+
     if comment is not None:
         contents.append(f"```{comment}```")
 
@@ -200,6 +208,13 @@ async def __outcome_embed(ctx, player, character: VChar, results, comment, rerol
         embed.add_field(name="Pool", value=results.pool_str)
 
     # Comment
+    impairment = character.impairment
+    if impairment is not None:
+        if comment is not None:
+            comment += f"\n{impairment}"
+        else:
+            comment = impairment
+
     if comment is not None:
         embed.set_footer(text=comment)
 

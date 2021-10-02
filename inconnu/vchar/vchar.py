@@ -349,6 +349,37 @@ class VChar:
     # Derived attributes
 
     @property
+    def impairment(self):
+        """A string for describing the character's physical/mental impairment."""
+        physical = self.health.count(DAMAGE.none) == 0
+        mental = self.willpower.count(DAMAGE.none) == 0
+        total = self.stains > (10 - self.humanity) or (physical and mental)
+
+        if total:
+            return "You are impaired. Remember to subtract 2 dice from all rolls."
+
+        if physical:
+            return "You are physically impaired. Remember to subtract 2 dice from physical rolls."
+
+        if mental:
+            return "You are mentally impaired. Remember to subtract 2 dice from mental rolls."
+
+        return None
+
+
+    @property
+    def physically_impaired(self):
+        """Whether the character is physically impaired."""
+        return self.health.count(DAMAGE.none) == 0 or self.stains > (10 - self.humanity)
+
+
+    @property
+    def mentally_impaired(self):
+        """Whether the character is physically impaired."""
+        return self.willpower.count(DAMAGE.none) == 0 or self.stains > (10 - self.humanity)
+
+
+    @property
     def is_pc(self):
         """Whether the character is a PC."""
         return self._params["user"] != INCONNU_ID

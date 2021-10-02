@@ -65,8 +65,7 @@ class VChar:
             "willpower": "...",
             "hunger": 1,
             "potency": 0,
-            "current_xp": 0,
-            "total_xp": 0,
+            "experience": { "current": 0, "total": 0 },
             "log": { "created": datetime.datetime.utcnow() }
         }
         _id = VChar._CHARS.insert_one(character).inserted_id
@@ -312,7 +311,7 @@ class VChar:
     @property
     def current_xp(self):
         """The character's current xp."""
-        return self._params["current_xp"]
+        return self._params["experience"]["current"]
 
 
     @current_xp.setter
@@ -323,14 +322,17 @@ class VChar:
         elif new_current_xp < 0:
             new_current_xp = 0
 
-        self._params["current_xp"] = new_current_xp
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "current_xp": new_current_xp } })
+        self._params["experience"]["current"] = new_current_xp
+        VChar._CHARS.update_one(
+            { "_id": self.id },
+            { "$set": { "experience.current": new_current_xp } }
+        )
 
 
     @property
     def total_xp(self):
         """The character's total xp."""
-        return self._params["total_xp"]
+        return self._params["experience"]["total"]
 
 
     @total_xp.setter
@@ -341,8 +343,11 @@ class VChar:
 
         delta = new_total_xp - self.total_xp
 
-        self._params["total_xp"] = new_total_xp
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "total_xp": new_total_xp } })
+        self._params["experience"]["total"] = new_total_xp
+        VChar._CHARS.update_one(
+            { "_id": self.id },
+            { "$set": { "experience.total": new_total_xp } }
+        )
         self.current_xp += delta
 
 

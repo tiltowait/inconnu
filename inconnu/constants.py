@@ -17,4 +17,4 @@ SKILLS_AND_ATTRIBUTES = [
     "science", "technology"
 ]
 
-UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity", "surge"]
+UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity", "surge", "potency"]

@@ -100,6 +100,7 @@ class Wizard:
         """Display finalizing message in plain text."""
         contents = f"Success! {character.name} has been created in {self.ctx.guild.name}!"
         contents += f"\nMake a mistake? Use `/traits update` on {self.ctx.guild.name} to fix."
+        contents += f"\nWant to add Disciplines? Use `/traits add` on {self.ctx.guild.name}."
 
         button = LinkButton(
             "https://www.inconnu-bot.com/#/quickstart",
@@ -120,6 +121,11 @@ class Wizard:
         embed.add_field(
             name="Make a mistake?",
             value=f"Use `/traits update` on {self.ctx.guild.name} to fix."
+        )
+        embed.add_field(
+            name="Want to add Discipline ratings?",
+            value=f"Use `/traits add` on {self.ctx.guild.name}.",
+            inline=False
         )
 
         button = LinkButton(

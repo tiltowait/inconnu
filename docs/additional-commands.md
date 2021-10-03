@@ -12,6 +12,14 @@ The `/aggheal` command automatically heals your character by one Aggravated dama
 
 Each night a character wakes, they heal Superficial Willpower damage and make a Rouse check. **Inconnu** automates this process with the `/awaken` command. It will even tell you if you were unfortunate enough to fall into torpor!
 
+## Blush of Life
+
+```
+/bol character:CHARACTER
+```
+
+This command performs a "blush of life" check for your character, taking your Humanity into account. It is equivalent to `/rouse` `count:1` `purpose:Blush of Life`, plus `reroll:Yes` if your character is at Humanity 8. At Humanity 9 and 10, it will inform you that you do not need to make the check.
+
 ## Crippling Injuries
 
 ```

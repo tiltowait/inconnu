@@ -228,10 +228,10 @@ def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
 
     if xp_type == "current":
         character.current_xp = new_xp
-        return f"Set current XP to `{new_xp}`."
+        return f"Set current/unspent XP to `{new_xp}`."
 
     character.total_xp = new_xp
-    return f"Set total XP to `{new_xp}`."
+    return f"Set current/unspent XP to `{character.current_xp}.`\nSet total XP to `{new_xp}`."
 
 
 def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:

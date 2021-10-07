@@ -83,6 +83,12 @@ class Gameplay(commands.Cog):
         await inconnu.misc.bol(ctx, character)
 
 
+    @slash_cog(name="coinflip", guild_ids=debug.WHITELIST)
+    async def coinflip(self, ctx):
+        """Flip a coin."""
+        await inconnu.misc.coinflip(ctx)
+
+
     @slash_cog(
         name="cripple",
         options=[

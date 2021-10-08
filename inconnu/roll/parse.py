@@ -91,9 +91,9 @@ async def display_outcome(ctx, player, character: VChar, results, comment, rerol
     """Display the roll results."""
     # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
     if ctx.guild is not None:
-        stats.Stats.log_roll(ctx.guild.id, player.id, character, results)
+        stats.Stats.log_roll(ctx.guild.id, player.id, character, results, comment)
     else:
-        stats.Stats.log_roll(None, player.id, character, results)
+        stats.Stats.log_roll(None, player.id, character, results, comment)
 
     if Settings.accessible(ctx.author):
         await __outcome_text(ctx, player, character, results, comment, rerolled)
@@ -162,12 +162,6 @@ async def __outcome_text(ctx, player, character: VChar, results, comment, reroll
 
 async def __outcome_embed(ctx, player, character: VChar, results, comment, rerolled=False):
     """Display the roll results in a nice embed."""
-    # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
-    if ctx.guild is not None:
-        stats.Stats.log_roll(ctx.guild.id, player.id, character, results)
-    else:
-        stats.Stats.log_roll(None, player.id, character, results)
-
     # Determine the name for the "author" field
     if character is not None:
         character_name = character.name

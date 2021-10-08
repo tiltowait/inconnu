@@ -14,7 +14,7 @@ class Stats:
 
 
     @classmethod
-    def log_roll(cls, guild: int, user: int, char, outcome):
+    def log_roll(cls, guild: int, user: int, char, outcome, comment):
         """
         Log a roll and its outcome. If the roll is a reroll, simply replace it.
         Args:
@@ -26,7 +26,7 @@ class Stats:
         Stats.__prepare()
 
         if Stats._STATS.find_one({ "_id": outcome.id }) is None:
-            Stats.__add_roll(guild, user, char, outcome)
+            Stats.__add_roll(guild, user, char, outcome, comment)
         else:
             Stats.__update_roll(outcome)
 
@@ -92,7 +92,7 @@ class Stats:
     # Roll logging helpers
 
     @classmethod
-    def __add_roll(cls, guild: int, user: int, char, outcome):
+    def __add_roll(cls, guild: int, user: int, char, outcome, comment):
         """Add a new roll outcome entry to the database."""
         Stats._STATS.insert_one({
             "_id": outcome.id,
@@ -106,6 +106,7 @@ class Stats:
             "margin": outcome.margin,
             "outcome": outcome.outcome,
             "pool": outcome.pool_str,
+            "comment": comment,
             "reroll": None,
         })
 

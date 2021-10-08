@@ -142,5 +142,5 @@ class Stats:
             if Stats._CLIENT is None:
                 mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
                 Stats._CLIENT = mongo
-                Stats._STATS = mongo.inconnu.roll_stats
+                Stats._STATS = mongo.inconnu.rolls
                 Stats._GUILDS = mongo.inconnu.guilds

@@ -13,3 +13,4 @@ from .remorse import remorse
 from .resonance import resonance
 from .rouse import rouse
 from .slake import slake
+from .statistics import statistics

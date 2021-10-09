@@ -34,19 +34,26 @@ async def statistics(ctx):
           "$project": {
             "_id": 1,
             "name": 1,
-            "outcome": { "$cond": [ { "$ne": [ '$rolls.reroll', None ] }, '$rolls.reroll.outcome', '$rolls.outcome' ] }
+            "rerolled": { "$cond": [ { "$ne": [ "$rolls.reroll", None ] }, 1, 0 ] },
+            "outcome": {
+                "$cond": [
+                    { "$ne": [ '$rolls.reroll', None ] }, '$rolls.reroll.outcome', '$rolls.outcome'
+                ]
+            }
           }
         },
         {
           "$group": {
             "_id": { "charid": '$_id', "character": '$name', "outcome": '$outcome' },
             "outcome": { "$addToSet": '$outcome' },
+            "rerolls": { "$sum": '$rerolled' },
             "count": { "$sum": 1 }
           }
         },
         {
           "$group": {
             "_id": { "charid": '$_id.charid', "character": '$_id.character' },
+            "rerolls": { "$sum": "$rerolls" },
             "outcomes": { "$push": { "k": { "$first": '$outcome' }, "v": '$count' } }
           }
         },
@@ -54,10 +61,14 @@ async def statistics(ctx):
           "$project": {
             "_id": '$_id.charid',
             "name": '$$ROOT._id.character',
+            "rerolls": '$rerolls',
             "outcomes": {
               "$arrayToObject": '$outcomes'
             }
           }
+        },
+        {
+            "$sort": { "name": 1 }
         }
     ]
     results = list(col.aggregate(pipeline))
@@ -87,6 +98,7 @@ async def __display_text(ctx, results):
         lines.append(f"Failures: `{outcomes['fail']}`")
         lines.append(f"Total Failures: `{outcomes['total_fail']}`")
         lines.append(f"Bestial Failures: `{outcomes['bestial']}`")
+        lines.append(f"Rerolls: `{character['rerolls']}`")
 
         msg += "\n" + "\n".join(lines)
 
@@ -97,7 +109,6 @@ async def __display_embed(ctx, results):
     """Display the statistics in an embed."""
     embed = discord.Embed(title="Roll Statistics")
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
-    embed.set_footer(text="These numbers account for any Willpower re-rolls")
 
     for character in results:
         outcomes = defaultdict(lambda: 0)
@@ -110,6 +121,7 @@ async def __display_embed(ctx, results):
         lines.append(f"Failures: `{outcomes['fail']}`")
         lines.append(f"Total Failures: `{outcomes['total_fail']}`")
         lines.append(f"Bestial Failures: `{outcomes['bestial']}`")
+        lines.append(f"Rerolls: `{character['rerolls']}`")
 
         embed.add_field(name=character["name"], value="\n".join(lines), inline=False)
 

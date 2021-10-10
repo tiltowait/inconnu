@@ -9,6 +9,7 @@
 > * **[Demo server](https://discord.gg/CPmsdWHUcZ)**
 > * **[View the source code on GitHub](https://github.com/tiltowait/inconnu)**
 > * Need a V20 bot? **[Check out \[Tzimisce\], the most advanced V20 dice roller.](https://www.storyteller-bot.com)**
+> * **[Support Inconnu's development!](https://www.patreon.com/tiltowait)**
 
 
 ## General Features

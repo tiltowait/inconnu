@@ -1,4 +1,4 @@
-# Additional Commands
+# Character Shortcuts
 
 ?> For each command listed here, the `character` parameter is optional if you only have one character.
 
@@ -49,20 +49,6 @@ Per *V5*, p.219, Inconnu will roll your current Willpower plus 1/3 of Humanity, 
 ## Mending damage
 
 To mend Superficial damage, simply type `/mend` `[character]`. This will mend the appropriate amount of damage based on your Blood Potency (using the V5 Companion errata) and perform a Rouse check.
-
-## Percentile Dice
-
-A random number between 1 and `ceiling` (default `100`) may be rolled with the `/percentile` command.
-
-## Probability calculation
-
-It is possible to calculate roll outcome probabilities using the `/probability` command.
-
-```
-/probability roll:<roll> character:[character]
-```
-
-The `roll` parameter can be any valid roll, such as `7 3 2` (pool 7, hunger 3, difficulty 2) or even a trait-based roll like `Resolve + Academics 2 4`.
 
 ## Remorse Checks
 

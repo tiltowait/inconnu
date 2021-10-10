@@ -30,12 +30,16 @@ async def help_command(ctx):
     embed.add_field(name="Display character", value="`/character display`", inline=False)
     embed.add_field(name="Add traits", value="`/traits add`")
 
-    button = LinkButton(
+    help_button = LinkButton(
         "https://www.inconnu-bot.com/#/quickstart",
         label="New? Read the Quickstart!"
     )
+    patreon_button = LinkButton(
+        "https://www.patreon.com/tiltowait",
+        label="Patreon"
+    )
 
-    await ctx.respond(embed=embed, components=[button])
+    await ctx.respond(embed=embed, components=[help_button, patreon_button])
 
 
 # Events

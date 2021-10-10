@@ -151,6 +151,11 @@ class RollResult:
     @property
     def can_maximize_criticals(self):
         """Whether there are any non-critical non-Hunger failures to re-roll."""
+        if self.normal.count + self.hunger.count < 2:
+            return False
+        if self.normal.count == 1:
+            return self.normal.tens == 0 and self.hunger.tens > 0
+
         return self.normal.tens != self.normal.count
 
 

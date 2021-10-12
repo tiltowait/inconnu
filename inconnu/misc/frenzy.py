@@ -9,13 +9,16 @@ from .. import common
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
 
 
-async def frenzy(ctx, difficulty: int, character: str):
+async def frenzy(ctx, difficulty: int, brujah: bool, character: str):
     """Perform a frenzy check."""
     try:
         tip = "`/frenzy` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        frenzy_pool = character.frenzy_resist
+        if brujah:
+            frenzy_pool = max(frenzy_pool - character.bane_severity, 1)
 
-        dice = [random.randint(1, 10) for _ in range(character.frenzy_resist)]
+        dice = [random.randint(1, 10) for _ in range(frenzy_pool)]
 
         if sum(map(lambda die: die >= 6, dice)) >= difficulty:
             if dice.count(10) >= 2:
@@ -39,7 +42,11 @@ async def frenzy(ctx, difficulty: int, character: str):
         )
         author_field = f"{character.name}: Frenzy vs diff. {difficulty}"
         embed.set_author(name=author_field, icon_url=ctx.author.display_avatar)
-        embed.set_footer(text="Dice: " + ", ".join(map(str, dice)))
+
+        footer = "Dice: " + ", ".join(map(str, dice))
+        if brujah:
+            footer = f"Subtracting {character.bane_severity} dice due to Brujah bane.\n{footer}"
+        embed.set_footer(text=footer)
 
         await ctx.respond(embed=embed)
 

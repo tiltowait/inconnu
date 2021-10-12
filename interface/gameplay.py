@@ -108,15 +108,21 @@ class Gameplay(commands.Cog):
                 choices=[(str(n), n) for n in range(0, 11)],
                 required=True
             ),
+            SlashOption(str, "brujah", description="Whether the Brujah bane should apply",
+                choices=[
+                    ("Yes", "1"),
+                    ("No", "0")
+                ]
+            ),
             SlashOption(str, "character", description="The character resisting frenzy",
                 autocomplete=True, choice_generator=inconnu.available_characters
             )
         ],
         guild_ids=debug.WHITELIST
     )
-    async def frenzy(self, ctx, difficulty: int, character=None):
+    async def frenzy(self, ctx, difficulty: int, brujah="0", character=None):
         """Perform a Frenzy check."""
-        await inconnu.misc.frenzy(ctx, difficulty, character)
+        await inconnu.misc.frenzy(ctx, difficulty, bool(int(brujah)), character)
 
 
     @ext.check_failure_response("Mending isn't available in DMs.", hidden=True)

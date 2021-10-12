@@ -2,6 +2,7 @@
 # pylint: disable=too-many-public-methods, too-many-arguments
 
 import datetime
+import math
 import os
 import re
 
@@ -420,6 +421,14 @@ class VChar:
     def agg_health(self):
         """The number of Aggravated health damage the character has taken."""
         return self.health.count(DAMAGE.aggravated)
+
+
+    @property
+    def bane_severity(self) -> int:
+        """The character's bane severity."""
+        if self.potency == 0:
+            return 0
+        return math.ceil(self.potency / 2) + 1
 
 
     # Traits

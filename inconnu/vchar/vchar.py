@@ -394,8 +394,7 @@ class VChar:
     @property
     def surge(self):
         """The number of dice added to a Blood Surge."""
-        surges = { 0: 1, 1: 2, 2: 2, 3: 3, 4: 3, 5: 4, 6: 4, 7: 5, 8: 5, 9: 6, 10: 6}
-        return surges[self.potency]
+        return math.ceil(self.potency / 2) + 1
 
 
     @property

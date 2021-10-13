@@ -243,7 +243,7 @@ def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
     cur_delta = character.current_xp - current
 
     if setting:
-        return f"Set current/unspent XP to `{character.current_xp}.`\nSet total XP to `{new_xp}`."
+        return f"Set current/unspent XP to `{character.current_xp}`.\nSet total XP to `{new_xp}`."
     return f"`{cur_delta:+}` current/unspent XP.\n`{tot_delta:+}` total XP."
 
 

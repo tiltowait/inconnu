@@ -226,12 +226,25 @@ def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
         current = getattr(character, f"{xp_type.lower()}_xp")
         new_xp = current + delta
 
+    # When displaying the update, we want to say whether they are doing a delta vs
+    # set and, if doing a delta, the *final* amound added/subtracted, after doing
+    # bounds-checking.
+    current = character.current_xp
     if xp_type == "current":
         character.current_xp = new_xp
-        return f"Set current/unspent XP to `{new_xp}`."
+        cur_delta = character.current_xp - current
+        if setting:
+            return f"Set current/unspent XP to `{new_xp}`."
+        return f"`{cur_delta:+}` current/unspent XP."
 
+    total = character.total_xp
     character.total_xp = new_xp
-    return f"Set current/unspent XP to `{character.current_xp}.`\nSet total XP to `{new_xp}`."
+    tot_delta = character.total_xp - total
+    cur_delta = character.current_xp - current
+
+    if setting:
+        return f"Set current/unspent XP to `{character.current_xp}.`\nSet total XP to `{new_xp}`."
+    return f"`{cur_delta:+}` current/unspent XP.\n`{tot_delta:+}` total XP."
 
 
 def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:

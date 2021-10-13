@@ -11,7 +11,9 @@ from ..vchar import VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
 
 
-async def rouse(ctx, count: int, character: str, purpose: str, reroll: bool, message=None):
+async def rouse(
+    ctx, count: int, character: str, purpose: str, reroll: bool, oblivion=True, message=None
+):
     """
     Perform a remorse check on a given character and display the results.
     Args:
@@ -19,6 +21,7 @@ async def rouse(ctx, count: int, character: str, purpose: str, reroll: bool, mes
         character (str): (Optional): The name of a character
         purpose (str): The reason for the rouse
         reroll (bool): Whether failures should be re-rolled
+        oblivion (bool, default False): Whether to show the Oblivion message.
     """
     try:
         tip = "`/rouse` `character:CHARACTER`"
@@ -31,13 +34,13 @@ async def rouse(ctx, count: int, character: str, purpose: str, reroll: bool, mes
         else:
             # Vampire
             outcome = __rouse_roll(character, count, reroll)
-            await __display_outcome(ctx, character, outcome, purpose, message)
+            await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
 
     except common.FetchError:
         pass
 
 
-async def __display_outcome(ctx, character: VChar, outcome, purpose, message):
+async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, message):
     """Process the rouse result and display to the user."""
     if outcome.total == 1:
         title = "Rouse Success" if outcome.successes == 1 else "Rouse Failure"
@@ -59,7 +62,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, message):
         footer.append(purpose)
     if outcome.reroll:
         footer.append("Re-rolling failures")
-    if outcome.stains > 0:
+    if oblivion and outcome.stains > 0:
         stains_txt = common.pluralize(outcome.stains, "stain")
         footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
     footer = "\n".join(footer)

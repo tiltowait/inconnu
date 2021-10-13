@@ -45,7 +45,7 @@ async def __display_outcome(ctx, character: VChar, remorseful: bool):
 def __remorse_roll(character: VChar) -> bool:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
-    rolls = unfilled if unfilled > 0 else 1
+    rolls = max(unfilled, 1)
     successful = False
 
     for _ in range(rolls):

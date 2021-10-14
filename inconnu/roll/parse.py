@@ -195,13 +195,28 @@ async def __outcome_embed(ctx, player, character: VChar, results, comment, rerol
     )
 
     # Disclosure fields
-    normalmoji = dicemoji.emojify(results.normal.dice, False)
-    hungermoji = dicemoji.emojify(results.hunger.dice, True)
-    embed.add_field(
-        name=f"Margin: {results.margin}",
-        value=f"{normalmoji} {hungermoji}",
-        inline=False
-    )
+    if results.dice_count < 35:
+        normalmoji = dicemoji.emojify(results.normal.dice, False)
+        hungermoji = dicemoji.emojify(results.hunger.dice, True)
+        embed.add_field(
+            name=f"Margin: {results.margin}",
+            value=f"{normalmoji} {hungermoji}",
+            inline=False
+        )
+    else:
+        lines = []
+        if results.normal.count > 0:
+            dice = sorted(results.normal.dice, reverse=True)
+            lines.append("**Normal Dice:** " + ", ".join(map(str, dice)))
+        if results.hunger.count > 0:
+            dice = sorted(results.hunger.dice, reverse=True)
+            lines.append("**Hunger Dice:** " + ", ".join(map(str, dice)))
+
+        embed.add_field(
+            name=f"Margin: {results.margin}",
+            value="\n".join(lines),
+            inline=False
+        )
 
     embed.add_field(name="Pool", value=str(results.pool))
     embed.add_field(name="Hunger", value=str(results.hunger.count))

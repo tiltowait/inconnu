@@ -87,6 +87,12 @@ class RollResult:
     # Roll Reflection
 
     @property
+    def dice_count(self):
+        """The total number of dice rolled."""
+        return self.normal.count + self.hunger.count
+
+
+    @property
     def total_successes(self):
         """The total number of successes."""
         total_tens = self.normal.tens + self.hunger.tens

@@ -1,10 +1,12 @@
 """misc/frenzy.py - Perform a frenzy check."""
+#pylint: disable=too-many-arguments
 
 import random
 
 import discord
 
 from .. import common
+from ..settings import Settings
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
 
@@ -35,20 +37,35 @@ async def frenzy(ctx, difficulty: int, brujah: bool, character: str):
             color = 0x5C0700
             character.log("frenzy")
 
-        embed = discord.Embed(
-            title=title,
-            description=message,
-            colour=color
-        )
-        author_field = f"{character.name}: Frenzy vs diff. {difficulty}"
-        embed.set_author(name=author_field, icon_url=ctx.author.display_avatar)
-
         footer = "Dice: " + ", ".join(map(str, dice))
         if brujah:
             footer = f"Subtracting {character.bane_severity} dice due to Brujah bane.\n{footer}"
-        embed.set_footer(text=footer)
 
-        await ctx.respond(embed=embed)
+        if Settings.accessible(ctx.author):
+            await __display_text(ctx, title, message, character.name, difficulty, footer)
+        else:
+            await __display_embed(ctx, title, message, character.name, difficulty, footer, color)
 
     except common.FetchError:
         pass
+
+
+async def __display_text(ctx, title: str, message: str, name: str, difficulty: str, footer: str):
+    """Display the outcome in plain text."""
+    await ctx.respond(f"**{name}: Frenzy {title} (diff. {difficulty})**\n{message}\n*{footer}*")
+
+
+async def __display_embed(
+    ctx, title: str, message: str, name: str, difficulty: str, footer: str, color: int
+):
+    """Display the frenzy outcome in an embed."""
+    embed = discord.Embed(
+        title=title,
+        description=message,
+        colour=color
+    )
+    author_field = f"{name}: Frenzy vs diff. {difficulty}"
+    embed.set_author(name=author_field, icon_url=ctx.author.display_avatar)
+    embed.set_footer(text=footer)
+
+    await ctx.respond(embed=embed)

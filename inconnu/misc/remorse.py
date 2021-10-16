@@ -9,7 +9,7 @@ from ..vchar import VChar
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=remorse-checks"
 
 
-async def remorse(ctx, character=None):
+async def remorse(ctx, character=None, minimum=1):
     """Perform a remorse check on a given character."""
     try:
         tip = "`/remorse` `character:CHARACTER`"
@@ -20,20 +20,21 @@ async def remorse(ctx, character=None):
             await ctx.respond(f"{character.name} has no stains! No remorse necessary.", hidden=True)
             return
 
-        remorseful = __remorse_roll(character)
-        await __display_outcome(ctx, character, remorseful)
+        remorseful = __remorse_roll(character, minimum)
+        await __display_outcome(ctx, character, minimum, remorseful)
 
     except common.FetchError:
         pass
 
 
-async def __display_outcome(ctx, character: VChar, remorseful: bool):
+async def __display_outcome(ctx, character: VChar, minimum: int, remorseful: bool):
     """Process the remorse result and display to the user."""
     title = "Remorse Success" if remorseful else "Remorse Fail"
     if remorseful:
         footer ="You keep the Beast at bay. For now."
     else:
         footer ="The downward spiral continues ..."
+    footer += f"\nRolled a minimum of {common.pluralize(minimum, 'die')}."
 
     await char.display(ctx, character,
         title=title,
@@ -42,10 +43,10 @@ async def __display_outcome(ctx, character: VChar, remorseful: bool):
     )
 
 
-def __remorse_roll(character: VChar) -> bool:
+def __remorse_roll(character: VChar, minimum: int) -> bool:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
-    rolls = max(unfilled, 1)
+    rolls = max(unfilled, minimum)
     successful = False
 
     for _ in range(rolls):

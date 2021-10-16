@@ -13,7 +13,7 @@ from .vchar import errors, VChar
 
 def pluralize(value: int, noun: str) -> str:
     """Pluralize a noun."""
-    nouns = {"success": "successes"}
+    nouns = {"success": "successes", "die": "dice"}
 
     pluralized = f"{value} {noun}"
     if value != 1:

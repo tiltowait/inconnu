@@ -30,28 +30,20 @@ async def display_requested(ctx, character=None, message=None, player=None):
     """Display a character as directly requested by a user."""
     try:
         owner = await common.player_lookup(ctx, player)
+        tip = "`/character display` `character:CHARACTER`"
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        character = VChar.fetch(ctx.guild.id, owner.id, character)
         await display(ctx, character,
             owner=player,
             message=message,
             footer=None,
             traits_button=True
         )
-        #await __display_character(ctx, character, owner, message)
 
-    except errors.UnspecifiedCharacterError as err:
-        characters = [char.name for char in VChar.all_characters(ctx.guild.id, owner.id)]
-
-        if Settings.accessible(ctx.author):
-            await __list_text(ctx, owner, characters)
-        else:
-            await __list_embed(ctx, owner, characters)
-
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, author=owner, help_url=__HELP_URL)
     except LookupError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
+    except common.FetchError:
+        pass
 
 
 async def __list_text(ctx, owner, characters):

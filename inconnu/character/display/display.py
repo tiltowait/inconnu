@@ -23,6 +23,7 @@ HUMANITY = 2
 POTENCY = 3
 HUNGER = 4
 EXPERIENCE = 5
+SEVERITY = 6
 
 
 async def display_requested(ctx, character=None, message=None, player=None):
@@ -34,7 +35,7 @@ async def display_requested(ctx, character=None, message=None, player=None):
         await display(ctx, character,
             owner=player,
             message=message,
-            footer=f"To view traits: /traits list character:{character.name}",
+            footer=None,
             traits_button=True
         )
         #await __display_character(ctx, character, owner, message)
@@ -162,6 +163,7 @@ async def __display_embed(
             ("Humanity", HUMANITY),
             ("Blood Potency", POTENCY),
             ("Hunger", HUNGER),
+            ("Bane Severity", SEVERITY),
             ("Experience", EXPERIENCE)
         ]
 
@@ -190,6 +192,10 @@ async def __display_embed(
             if character.splat != "vampire":
                 continue
             value = trackmoji.emojify_hunger(character.hunger)
+        elif parameter == SEVERITY:
+            if character.splat != "vampire":
+                continue
+            value = f"```{character.bane_severity}```"
         elif parameter == EXPERIENCE:
             value = "```\n"
             value += f"{character.current_xp} / {character.total_xp}\n"
@@ -227,6 +233,7 @@ async def __display_text(
             ("Humanity", HUMANITY),
             ("Blood Potency", POTENCY),
             ("Hunger", HUNGER),
+            ("Bane Severity", SEVERITY),
             ("Experience", EXPERIENCE)
         ]
 
@@ -256,6 +263,10 @@ async def __display_text(
             if character.splat != "vampire":
                 continue
             contents.append(f"{field}: {character.hunger}")
+        elif parameter == SEVERITY:
+            if character.splat != "vampire":
+                continue
+            contents.append(f"Bane Severity: {character.bane_severity}")
         elif parameter == EXPERIENCE:
             contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
 

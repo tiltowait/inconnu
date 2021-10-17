@@ -150,7 +150,7 @@ class Wizard:
 
         # Await the user response
         try:
-            menu = await query_msg.wait_for("select", self.ctx.bot, timeout=60)
+            menu = await query_msg.wait_for("select", self.ctx.bot, timeout=120)
             await menu.respond()
 
             rating = int(menu.selected_values[0])

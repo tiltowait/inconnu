@@ -49,7 +49,7 @@ class TraitWizard:
 
         # Wait for response
         try:
-            btn = await msg.wait_for("select", self.ctx.bot, timeout=60)
+            btn = await msg.wait_for("select", self.ctx.bot, timeout=120)
             await btn.respond()
             await msg.delete()
 

@@ -29,7 +29,10 @@ def emojify_track(track: str) -> str:
     for pos in range(gaps * 5, 0, -5):
         emoji_track.insert(pos, "∙")
 
-    return " ".join(emoji_track)
+    # <0x200b> is a zero-width space. Its use is a hack to fix a bug with
+    # Discord for Android that prints emojis giant-sized if you only have a
+    # regular space between them.
+    return " ​".join(emoji_track)
 
 
 def emojify_hunger(level: int) -> str:
@@ -41,16 +44,16 @@ def emojify_hunger(level: int) -> str:
     unfilled = [__hungermoji(False) for _ in range(unfilled)]
     hunger.extend(unfilled)
 
-    return " ".join(hunger)
+    return " ​".join(hunger)
 
 
 def emojify_blood_potency(level: int) -> str:
     """Create a Blood Potency track."""
     if level > 0:
         potency = [__EMOJIS["bp_filled"] for _ in range(level)]
-        return " ".join(potency)
+        return " ​".join(potency)
 
-    return __EMOJIS["bp_unfilled"]
+    return "​" + __EMOJIS["bp_unfilled"]
 
 
 def emojify_humanity(humanity: int, stains: int) -> str:
@@ -80,7 +83,7 @@ def emojify_humanity(humanity: int, stains: int) -> str:
     track.extend(unfilled)
     track.extend(stains)
 
-    return " ".join(track)
+    return " ​".join(track)
 
 
 # Helper Methods

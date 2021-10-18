@@ -1,5 +1,7 @@
 """commands.py - Define the commands and event handlers for the bot."""
 
+import os
+
 import discord
 from discord.ext import commands
 from discord_ui import UI
@@ -128,3 +130,7 @@ def setup():
     bot.add_cog(interface.MiscCommands(bot))
     bot.add_cog(interface.SettingsCommands(bot))
     bot.add_cog(interface.Traits(bot))
+
+    statcord_token = os.environ.get("INCONNU_STATCORD")
+    if statcord_token is not None:
+        bot.add_cog(interface.StatcordPost(bot, statcord_token))

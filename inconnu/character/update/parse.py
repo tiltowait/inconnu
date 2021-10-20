@@ -127,8 +127,8 @@ async def update_help(ctx, err=None, hidden=True):
     if err is not None:
         embed.add_field(name="Error", value=str(err), inline=False)
 
-    instructions = "To update a character, use one or more `KEY=VALUE` pairs."
-    embed.add_field(name="Instructions", value=instructions, inline=False)
+    inst = "To update a character, use `/character update` with one or more `KEY=VALUE` pairs."
+    embed.add_field(name="Instructions", value=inst, inline=False)
 
     parameters = [f"**{key}:** {val}" for key, val in __KEYS.items()]
     parameters = "\n".join(parameters)

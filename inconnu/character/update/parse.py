@@ -39,8 +39,8 @@ async def update(ctx, parameters: str, character=None, update_message=None):
     Allow the user to omit a character if they have only one.
     """
     args = re.sub(r":", r"=", parameters) # Some people think colons work ...
-    args = re.sub(r"\s*=+\s*", r"=", args) # Remove gaps between keys and values
     args = re.sub(r"([+-])=", r"=\g<1>", args) # Let +/-= work, for the CS nerds
+    args = re.sub(r"\s*=+\s*", r"=", args) # Remove gaps between keys and values
     args = list(args.split()) # To allow element removal
 
     if len(args) == 0:

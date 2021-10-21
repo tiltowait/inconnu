@@ -514,6 +514,13 @@ class VChar:
                 .collation({ "locale": "en", "strength": 2 })
                 .sort("name")
         )
+
+        # All characters have a hunger stat in the background, but we only care
+        # about it if the character is a vampire
+        if self.splat != "vampire":
+            for macro in raw_macros:
+                macro["hunger"] = False
+
         return [SimpleNamespace(**macro) for macro in raw_macros]
 
 
@@ -526,8 +533,11 @@ class VChar:
         if len(matches) == 0:
             raise errors.MacroNotFoundError(f"{self.name} has no macro named `{macro}`.")
 
-        # We do not allow multiple macros of the same name, so this is safe
-        return SimpleNamespace(**matches[0])
+        macro = matches[0] # We do not allow multiple macros of the same name, so this is safe
+        if self.splat != "vampire":
+            macro["hunger"] = False
+
+        return SimpleNamespace(**macro)
 
 
     def add_macro(

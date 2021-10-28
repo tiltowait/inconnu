@@ -1,6 +1,7 @@
 """misc/remorse.py - Perform a remorse check."""
 
 import random
+from types import SimpleNamespace as SN
 
 from .. import common
 from .. import character as char
@@ -20,21 +21,24 @@ async def remorse(ctx, character=None, minimum=1):
             await ctx.respond(f"{character.name} has no stains! No remorse necessary.", hidden=True)
             return
 
-        remorseful = __remorse_roll(character, minimum)
-        await __display_outcome(ctx, character, minimum, remorseful)
+        outcome = __remorse_roll(character, minimum)
+        await __display_outcome(ctx, character, outcome)
 
     except common.FetchError:
         pass
 
 
-async def __display_outcome(ctx, character: VChar, minimum: int, remorseful: bool):
+async def __display_outcome(ctx, character: VChar, outcome):
     """Process the remorse result and display to the user."""
-    title = "Remorse Success" if remorseful else "Remorse Fail"
-    if remorseful:
+    title = "Remorse Success" if outcome.remorseful else "Remorse Fail"
+    if outcome.remorseful:
         footer ="You keep the Beast at bay. For now."
     else:
         footer ="The downward spiral continues ..."
-    footer += f"\nRolled a minimum of {common.pluralize(minimum, 'die')}."
+    footer += "\nDice: " + ", ".join(map(str, outcome.dice))
+    if outcome.overrode:
+        dice = common.pluralize(outcome.minimum, 'die')
+        footer += f"\nOverride: Rolled {dice} instead of {outcome.nominal}"
 
     await char.display(ctx, character,
         title=title,
@@ -43,17 +47,20 @@ async def __display_outcome(ctx, character: VChar, minimum: int, remorseful: boo
     )
 
 
-def __remorse_roll(character: VChar, minimum: int) -> bool:
+def __remorse_roll(character: VChar, minimum: int) -> SN:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
     rolls = max(unfilled, minimum)
+    overrode = unfilled < minimum and minimum > 1
+    nominal = unfilled if unfilled > 0 else 1
     successful = False
 
+    dice = []
     for _ in range(rolls):
         throw = random.randint(1, 10)
+        dice.append(throw)
         if throw >= 6:
             successful = True
-            break
 
     if not successful:
         character.humanity -= 1
@@ -63,4 +70,4 @@ def __remorse_roll(character: VChar, minimum: int) -> bool:
 
     character.log("remorse")
 
-    return successful
+    return SN(remorseful=successful, minimum=minimum, dice=dice, overrode=overrode, nominal=nominal)

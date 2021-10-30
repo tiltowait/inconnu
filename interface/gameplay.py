@@ -149,15 +149,15 @@ class Gameplay(commands.Cog):
             SlashOption(str, "character", description="The character undergoing Remorse",
                 autocomplete=True, choice_generator=inconnu.available_characters
             ),
-            SlashOption(int, "minimum", description="The minimum dice to roll (defalt 1)",
+            SlashOption(int, "min_override", description="Override the minimum dice to roll",
                 choices=[(str(n), n) for n in range(1, 5)]
             )
         ]
         , guild_ids=debug.WHITELIST
     )
-    async def remorse(self, ctx, character=None, minimum=1):
+    async def remorse(self, ctx, character=None, min_override=1):
         """Perform a remorse check."""
-        await inconnu.misc.remorse(ctx, character, minimum)
+        await inconnu.misc.remorse(ctx, character, min_override)
 
 
     @slash_cog(name="resonance")

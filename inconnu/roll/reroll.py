@@ -50,10 +50,10 @@ async def present_reroll(ctx, message, character, owner):
         else:
             msg = await ctx.respond(embed=message, components=components)
 
-        btn = await msg.wait_for("button", ctx.bot, timeout=20)
+        btn = await msg.wait_for("button", ctx.bot, timeout=200)
         while btn.author.id != ctx.author.id:
             await btn.respond("You can't spend another player's Willpower!", hidden=True)
-            btn = await msg.wait_for("button", ctx.bot, timeout=20)
+            btn = await msg.wait_for("button", ctx.bot, timeout=200)
 
         character.superficial_wp += 1
         await __display_wp(btn, character, owner)

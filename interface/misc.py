@@ -55,8 +55,12 @@ class MiscCommands(commands.Cog):
     @commands.guild_only()
     @slash_cog(
         name="statistics",
+        options=[
+            SlashOption(str, "trait", description="(Optional) A trait to look for"),
+            SlashOption(str, "date", description="(Optional) YYYYMMDD date to count from")
+        ],
         guild_ids=debug.WHITELIST
     )
-    async def statistics(self, ctx):
+    async def statistics(self, ctx, trait=None, date="19700101"):
         """View roll statistics for your characters."""
-        await inconnu.misc.statistics(ctx)
+        await inconnu.misc.statistics(ctx, trait, date)

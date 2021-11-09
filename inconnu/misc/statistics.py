@@ -1,14 +1,135 @@
 """misc/statistics.py - View character roll statistics"""
 
 import os
+import re
 from collections import defaultdict
+from datetime import datetime
 
 import discord
 import pymongo
 
+from .. import common
 from ..settings import Settings
 
-async def statistics(ctx):
+EPOCH = "1970-01-01"
+
+
+async def statistics(ctx, trait: str, date):
+    """
+    View the roll statistics for the user's characters.
+    Args:
+        trait (optional str): The trait to count
+        date (optional date): The date from which to look
+
+    If trait is not provided, the bot will simply tally all roll results
+    across all characters for the given time period. If it's provided, however,
+    the bot will count all successes and number of rolls for the indicated trait
+    across all of the user's characters on the server.
+    """
+    try:
+        date = datetime.strptime(date, "%Y%m%d")
+
+        if trait is None:
+            await __all_statistics(ctx, date)
+        else:
+            await __trait_statistics(ctx, trait.title(), date)
+
+    except ValueError:
+        await common.present_error(ctx, f"`{date}` is not a valid date.")
+
+
+async def __trait_statistics(ctx, trait, date):
+    """View the roll statistics for a given trait."""
+    client = pymongo.MongoClient(os.environ["MONGO_URL"])
+    rolls = client.inconnu.rolls
+    pipeline = [
+        {
+            "$match": {
+                "user": ctx.author.id,
+                "date": { "$gte": date },
+                "pool": re.compile(trait, flags=re.I)
+            }
+        },
+        {
+            "$lookup": {
+                "from": "characters",
+                "localField": "charid",
+                "foreignField": "_id",
+                "as": "character"
+            }
+        },
+        {
+            "$unwind": "$character"
+        },
+        {
+            "$project": {
+                "name": "$character.name",
+                "margin": { "$cond": [ { "$ne": [ "$reroll", None ] }, "$reroll.margin", "$margin"] },
+                "successes": { "$add": ["$margin", "$difficulty" ] }
+            }
+        },
+        {
+            "$group": {
+                "_id": "$name",
+                "num_rolls": { "$sum": 1 },
+                "successes": { "$sum": "$successes" }
+            }
+        }
+    ]
+    stats = list(rolls.aggregate(pipeline))
+    formatted_date = date.strftime("%Y-%m-%d")
+    if len(stats) > 0:
+        if Settings.accessible(ctx.author):
+            await __trait_stats_text(ctx, trait, stats, formatted_date)
+        else:
+            await __trait_stats_embed(ctx, trait, stats, formatted_date)
+    else:
+        await ctx.respond(f"None of your characters have rolled `{trait}` since {date}.")
+
+
+async def __trait_stats_embed(ctx, trait, stats, date):
+    """Display the trait statistics in an embed."""
+    if date == EPOCH:
+        title = f"{trait}: Roll statistics (Lifetime)"
+    else:
+        title = f"{trait}: Roll statistics since {date}"
+    embed = discord.Embed(title=title)
+    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
+
+    for character in stats:
+        name = character["_id"]
+        rolls = character["num_rolls"]
+        successes = character["successes"]
+
+        field = f"Rolls: `{rolls}`\nSuccesses: `{successes}`"
+        embed.add_field(name=name, value=field)
+
+    embed.set_footer(text=f"If a character is not displayed, then no rolls were made with {trait}.")
+    await ctx.respond(embed=embed)
+
+
+
+async def __trait_stats_text(ctx, trait, stats, date):
+    """Print the trait statistics in text."""
+    if len(stats) > 0:
+        if date == EPOCH:
+            output = [f"**{trait}: Roll statistics (Lifetime)**"]
+        else:
+            output = [f"**{trait}: Roll statistics since {date}**\n"]
+
+        for character in stats:
+            name = character["_id"]
+            rolls = character["num_rolls"]
+            successes = character["successes"]
+
+            output.append(f"**{name}**\nRolls: `{rolls}`\nSuccesses: `{successes}`\n")
+
+        await ctx.respond("\n".join(output))
+    else:
+        await ctx.respond(f"None of your characters have rolled `{trait}` since {date}.")
+
+
+async def __all_statistics(ctx, date):
     """View the roll statistics for the user's characters."""
     client = pymongo.MongoClient(os.environ["MONGO_URL"])
     col = client.inconnu.characters
@@ -29,6 +150,11 @@ async def statistics(ctx):
         },
         {
           "$unwind": '$rolls'
+        },
+        {
+            "$match": {
+                "rolls.date": { "$gte": date }
+            }
         },
         {
           "$project": {

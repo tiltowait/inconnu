@@ -104,7 +104,7 @@ async def __trait_stats_embed(ctx, trait, stats, date):
         field = f"Rolls: `{rolls}`\nSuccesses: `{successes}`"
         embed.add_field(name=name, value=field)
 
-    embed.set_footer(text=f"If a character is not displayed, then no rolls were made with {trait}.")
+    embed.set_footer(text=f"If a character is missing, then no rolls were made with {trait}.")
     await ctx.respond(embed=embed)
 
 

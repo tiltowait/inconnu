@@ -2,10 +2,12 @@
 #pylint: disable=too-many-arguments
 
 import random
+from types import SimpleNamespace as SN
 
 import discord
 
 from .. import common
+from ..roll import roll_pool
 from ..settings import Settings
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
@@ -20,10 +22,11 @@ async def frenzy(ctx, difficulty: int, brujah: bool, character: str):
         if brujah:
             frenzy_pool = max(frenzy_pool - character.bane_severity, 1)
 
-        dice = [random.randint(1, 10) for _ in range(frenzy_pool)]
+        parameters = SN(pool=frenzy_pool, difficulty=difficulty, hunger=0)
+        outcome = roll_pool(parameters)
 
-        if sum(map(lambda die: die >= 6, dice)) >= difficulty:
-            if dice.count(10) >= 2:
+        if outcome.total_successes >= difficulty:
+            if outcome.is_critical:
                 title = "Critical Success!"
                 message = "Resist frenzy without losing a turn."
                 color = 0x00FF00
@@ -37,7 +40,7 @@ async def frenzy(ctx, difficulty: int, brujah: bool, character: str):
             color = 0x5C0700
             character.log("frenzy")
 
-        footer = "Dice: " + ", ".join(map(str, dice))
+        footer = "Dice: " + ", ".join(map(str, outcome.normal.dice))
         if brujah:
             footer = f"Subtracting {character.bane_severity} dice due to Brujah bane.\n{footer}"
 

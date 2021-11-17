@@ -46,6 +46,7 @@ async def __trait_statistics(ctx, trait, date):
         {
             "$match": {
                 "user": ctx.author.id,
+                "guild": ctx.guild.id,
                 "date": { "$gte": date },
                 "pool": re.compile(trait, flags=re.I)
             }

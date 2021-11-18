@@ -29,7 +29,7 @@ async def delete(ctx, character: str):
         # Process the response
         if btn.custom_id == "_delete":
             if character.delete_character():
-                await btn.respond(f"Deleted **{character.name}**!", hidden=True)
+                await btn.respond(f"Deleted **{character.name}**!")
             else:
                 await btn.respond("Something went wrong. Unable to delete.", hidden=True)
 

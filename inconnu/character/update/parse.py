@@ -24,8 +24,8 @@ __KEYS = {
     "sw": "+/- Superficial Willpower damage",
     "aw": "+/- Aggravated Willpower damage",
     "stains": "+/- Stains",
-    "current_xp": "+/- Current (Unspent) XP",
-    "total_xp": "+/- Total XP",
+    "unspent_xp": "+/- Unspent XP",
+    "lifetime_xp": "+/- Total Lifetime XP",
     "hunger": "+/- The character's Hunger",
     "potency": "+/- The character's Blood Potency"
 }
@@ -169,7 +169,8 @@ def __setup_matches():
     )
     __register_keys(
         "total_xp", "xp_total", "total_exp", "exp_total", "totalxp",
-        "totalexp", "xptotal", "exptotal", "txp"
+        "totalexp", "xptotal", "exptotal", "txp",
+        "lifetimexp", "xplifetime", "explifetime", "lxp", "lifetime_xp", "life_time_xp"
     )
     __register_keys("hunger", "h")
     __register_keys("potency", "bp", "p")

@@ -59,7 +59,7 @@ async def __display_outcome(ctx, character, outcome):
 
     if character.splat == "vampire":
         gain = "Max Hunger" if character.hunger == 5 else f"Gain {outcome.gain} Hunger"
-        title = f"Damage healed | {gain}"
+        title = f"Agg damage healed | {gain}"
         footer = "FALL INTO TORPOR!" if outcome.torpor else None
         fields.append(("Hunger", char.HUNGER))
     else:

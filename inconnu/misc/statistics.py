@@ -65,8 +65,22 @@ async def __trait_statistics(ctx, trait, date):
         {
             "$project": {
                 "name": "$character.name",
-                "margin": { "$cond": [ { "$ne": [ "$reroll", None ] }, "$reroll.margin", "$margin"] },
-                "successes": { "$add": ["$margin", "$difficulty" ] }
+                "successes": {
+                    "$add": [
+                        {
+                            "$cond": [
+                                {
+                                    "$ne": [
+                                        "$reroll", None
+                                    ]
+                                },
+                                "$reroll.margin",
+                                "$margin"
+                            ]
+                        },
+                        "$difficulty"
+                    ]
+                }
             }
         },
         {

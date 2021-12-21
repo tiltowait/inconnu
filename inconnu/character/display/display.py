@@ -156,7 +156,7 @@ async def __display_embed(
             ("Blood Potency", POTENCY),
             ("Hunger", HUNGER),
             ("Bane Severity", SEVERITY),
-            ("Experience", EXPERIENCE)
+            ("Experience (Unspent / Lifetime)", EXPERIENCE)
         ]
 
     # Begin building the embed
@@ -226,7 +226,7 @@ async def __display_text(
             ("Blood Potency", POTENCY),
             ("Hunger", HUNGER),
             ("Bane Severity", SEVERITY),
-            ("Experience", EXPERIENCE)
+            ("Experience (Unspent / Lifetime)", EXPERIENCE)
         ]
 
     # Begin drafting the contents

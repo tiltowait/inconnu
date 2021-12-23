@@ -135,7 +135,8 @@ async def __outcome_text(ctx, player, character: VChar, results, comment, reroll
         impairment = character.impairment
         if impairment is not None:
             if comment is not None:
-                comment += f"\n{impairment}"
+                if impairment not in comment:
+                    comment += f"\n{impairment}"
             else:
                 comment = impairment
 
@@ -230,7 +231,8 @@ async def __outcome_embed(ctx, player, character: VChar, results, comment, rerol
         impairment = character.impairment
         if impairment is not None:
             if comment is not None:
-                comment += f"\n{impairment}"
+                if impairment not in comment:
+                    comment += f"\n{impairment}"
             else:
                 comment = impairment
 

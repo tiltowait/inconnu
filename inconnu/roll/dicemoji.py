@@ -1,13 +1,13 @@
 """dicemoji.py - A tool for fetching emoji for representing dice rolls."""
 
 __EMOJIS = {
-    "ln_crit": "<:ln_crit:890427149213909042>",
-    "ln_fail": "<:ln_fail:890427148945489971>",
-    "ln_succ": "<:ln_succ:890427148920291339>",
-    "h_crit": "<:h_crit:888880025082953769>",
-    "h_succ": "<:h_succ:888880025493962813>",
-    "h_fail": "<:h_fail:888880025359757402>",
-    "h_bestial": "<:h_bestial:883189689895501844>"
+    "ln_crit": "<:ln_crit:890427149213909042>​",
+    "ln_fail": "<:ln_fail:890427148945489971>​",
+    "ln_succ": "<:ln_succ:890427148920291339>​",
+    "h_crit": "<:h_crit:888880025082953769>​",
+    "h_succ": "<:h_succ:888880025493962813>​",
+    "h_fail": "<:h_fail:888880025359757402>​",
+    "h_bestial": "<:h_bestial:883189689895501844>​"
 }
 
 

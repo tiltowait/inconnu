@@ -1,7 +1,6 @@
 """misc/frenzy.py - Perform a frenzy check."""
 #pylint: disable=too-many-arguments
 
-import random
 from types import SimpleNamespace as SN
 
 import discord
@@ -13,14 +12,17 @@ from ..settings import Settings
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
 
 
-async def frenzy(ctx, difficulty: int, brujah: bool, character: str):
+async def frenzy(ctx, difficulty: int, penalty: str, character: str):
     """Perform a frenzy check."""
     try:
         tip = "`/frenzy` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
         frenzy_pool = character.frenzy_resist
-        if brujah:
+
+        if penalty == "brujah":
             frenzy_pool = max(frenzy_pool - character.bane_severity, 1)
+        elif penalty == "malkavian":
+            frenzy_pool = max(frenzy_pool - 2, 1)
 
         parameters = SN(pool=frenzy_pool, difficulty=difficulty, hunger=0)
         outcome = roll_pool(parameters)
@@ -41,8 +43,10 @@ async def frenzy(ctx, difficulty: int, brujah: bool, character: str):
             character.log("frenzy")
 
         footer = "Dice: " + ", ".join(map(str, outcome.normal.dice))
-        if brujah:
+        if penalty == "brujah":
             footer = f"Subtracting {character.bane_severity} dice due to Brujah bane.\n{footer}"
+        elif penalty == "malkavian":
+            footer = f"Subtracting 2 dice due to Malkavian compulsion.\n{footer}"
 
         if Settings.accessible(ctx.author):
             await __display_text(ctx, title, message, character.name, difficulty, footer)

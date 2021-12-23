@@ -92,14 +92,17 @@ async def __trait_statistics(ctx, trait, date):
         }
     ]
     stats = list(rolls.aggregate(pipeline))
-    formatted_date = date.strftime("%Y-%m-%d")
+    fmt_date = date.strftime("%Y-%m-%d")
     if len(stats) > 0:
         if Settings.accessible(ctx.author):
-            await __trait_stats_text(ctx, trait, stats, formatted_date)
+            await __trait_stats_text(ctx, trait, stats, fmt_date)
         else:
-            await __trait_stats_embed(ctx, trait, stats, formatted_date)
+            await __trait_stats_embed(ctx, trait, stats, fmt_date)
     else:
-        await ctx.respond(f"None of your characters have rolled `{trait}` since {date}.")
+        if date.year < 2021: # Bot was made in 2021; anything prior to that is lifetime statistics
+            await ctx.respond(f"None of your characters have ever rolled `{trait}`.")
+        else:
+            await ctx.respond(f"None of your characters have rolled `{trait}` since {fmt_date}.")
 
 
 async def __trait_stats_embed(ctx, trait, stats, date):
@@ -119,7 +122,7 @@ async def __trait_stats_embed(ctx, trait, stats, date):
         field = f"Rolls: `{rolls}`\nSuccesses: `{successes}`"
         embed.add_field(name=name, value=field)
 
-    embed.set_footer(text=f"If a character is missing, then no rolls were made with {trait}.")
+    embed.set_footer(text=f"Only characters who rolled {trait} during this period are listed.")
     await ctx.respond(embed=embed)
 
 

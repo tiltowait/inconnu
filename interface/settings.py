@@ -19,6 +19,57 @@ class SettingsCommands(commands.Cog):
     """Settings-related commands."""
 
     @slash_cog(
+        name="settings",
+        options=[
+            SlashOption(int, "oblivion_stains",
+                description="Which Rouse results should give stain warnings",
+                choices=[
+                    ("1s and 10s (RAW)", 100),
+                    ("1s only", 1),
+                    ("10s only", 10),
+                    ("None", 0)
+                ]
+            ),
+            SlashOption(str, "scope",
+                description="Set for yourself or the entire server",
+                autocomplete=True, choice_generator=_available_scopes
+            ),
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    async def settings(self, ctx, oblivion_stains=None, scope="user"):
+        """Assign various user- or server-wide settings."""
+        error_msg = "Sorry, you must be a server administrator to do this."
+
+        if scope == "guild" and not ctx.author.guild_permissions.administrator:
+            await ctx.respond(error_msg, hidden=True)
+            return
+
+        responses = []
+
+        if oblivion_stains is not None:
+            if not ctx.author.guild_permissions.administrator:
+                await ctx.respond(error_msg, hidden=True)
+                return
+
+            response = "Set **Oblivion Rouse stains** to "
+            if oblivion_stains == 100:
+                oblivion_stains = [1, 10]
+                response += "`1` and `10`."
+            elif oblivion_stains == 0:
+                oblivion_stains = []
+                response = "**Oblivion Rouses** give `no` stains."
+            else:
+                oblivion_stains = [oblivion_stains]
+                response += f"`{oblivion_stains[0]}`."
+
+            inconnu.settings.set_key(ctx.guild, "oblivion_stains", oblivion_stains)
+            responses.append(response)
+
+        await ctx.respond("\n".join(responses))
+
+
+    @slash_cog(
         name="accessibility",
         options=[
             SlashOption(int, "enable",

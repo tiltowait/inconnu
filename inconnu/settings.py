@@ -35,20 +35,34 @@ class Settings:
 
 
     @classmethod
-    def set_key(cls, scope, key: str, enabled: bool):
+    def oblivion_stains(cls, guild) -> list:
+        """Retrieve the Rouse results that grant Oblivion stains."""
+        Settings._prepare()
+
+        guild = Settings._GUILDS.find_one({"guild": guild })
+        try:
+            oblivion = guild["settings"]["oblivion_stains"]
+        except KeyError:
+            oblivion = [1, 10]
+
+        return oblivion
+
+
+    @classmethod
+    def set_key(cls, scope, key: str, value):
         """
         Enable or disable a setting.
         Args:
-            scope (str): "user" or "guild"
+            scope (discord.Guild | discord.Member): user or guild
             key (str): The setting key
-            enabled (bool): Enable or disable
+            value: The value to set
         """
         Settings._prepare()
 
         if isinstance(scope, discord.Guild):
-            Settings._set_guild(scope, key, enabled)
+            Settings._set_guild(scope, key, value)
         elif isinstance(scope, discord.Member):
-            Settings._set_user(scope, key, enabled)
+            Settings._set_user(scope, key, value)
         else:
             return ValueError(f"Unknown scope `{scope}`.")
 
@@ -56,27 +70,27 @@ class Settings:
 
 
     @classmethod
-    def _set_guild(cls, guild: discord.Guild, key:str, enabled: bool):
+    def _set_guild(cls, guild: discord.Guild, key:str, value):
         """Enable or disable a guild setting."""
         res = Settings._GUILDS.update_one({ "guild": guild.id }, {
             "$set": {
-                f"settings.{key}": enabled
+                f"settings.{key}": value
             }
         })
         if res.matched_count == 0:
-            Settings._GUILDS.insert_one({ "guild": guild.id, "settings": { key: enabled } })
+            Settings._GUILDS.insert_one({ "guild": guild.id, "settings": { key: value } })
 
 
     @classmethod
-    def _set_user(cls, user: discord.Member, key:str, enabled: bool):
+    def _set_user(cls, user: discord.Member, key:str, value):
         """Enable or disable a user setting."""
         res = Settings._USERS.update_one({ "user": user.id }, {
             "$set": {
-                f"settings.{key}": enabled
+                f"settings.{key}": value
             }
         })
         if res.matched_count == 0:
-            Settings._USERS.insert_one({ "user": user.id, "settings": { key: enabled } })
+            Settings._USERS.insert_one({ "user": user.id, "settings": { key: value } })
 
 
     @classmethod

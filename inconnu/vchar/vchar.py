@@ -352,6 +352,12 @@ class VChar:
         self.current_xp += delta
 
 
+    @property
+    def guild(self):
+        """The guild the character belongs to."""
+        return self._params["guild"]
+
+
     # Derived attributes
 
     @property

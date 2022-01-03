@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from .. import common
 from .. import character as char
+from ..settings import Settings
 from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
@@ -96,12 +97,15 @@ def __rouse_roll(character: VChar, rolls: int, reroll: bool):
     failures = 0
     stains = 0
 
+    oblivion = Settings.oblivion_stains(character.guild)
+    print(oblivion)
+
     for _ in range(rolls):
         die = random.randint(1, 10)
         if reroll and die < 6:
             die = random.randint(1, 10)
 
-        if die in [1, 10]:
+        if die in oblivion:
             stains += 1
 
         if die >= 6:

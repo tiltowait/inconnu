@@ -98,7 +98,6 @@ def __rouse_roll(character: VChar, rolls: int, reroll: bool):
     stains = 0
 
     oblivion = Settings.oblivion_stains(character.guild)
-    print(oblivion)
 
     for _ in range(rolls):
         die = random.randint(1, 10)

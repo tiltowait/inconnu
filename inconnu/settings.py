@@ -35,9 +35,42 @@ class Settings:
 
 
     @classmethod
+    def set_accessibility(cls, ctx, enabled: bool, scope: str):
+        """
+        Set the accessibility mode.
+        Args:
+            ctx: Discord context
+            enabled (bool): The accessibility toggle
+            scope (str): "user" or "server"
+        """
+        if scope == "user":
+            Settings._set_key(ctx.author, "accessibility", enabled)
+
+            if enabled:
+                response = "**Accessibility mode** enabled."
+            else:
+                response = "**Accessibility mode** disabled. Note: the server may override."
+        else: # Server-wide setting
+            if not ctx.author.guild_permissions.administrator:
+                raise PermissionError("Sorry, only admins can set server-wide accessibility mode.")
+
+            Settings._set_key(ctx.guild, "accessibility", enabled)
+
+            if enabled:
+                response = "**Accessibility mode** enabled server-wide."
+            else:
+                response = "**Accessibility mode** disabled server-wide. Users may override."
+
+        return response
+
+
+    @classmethod
     def oblivion_stains(cls, guild) -> list:
         """Retrieve the Rouse results that grant Oblivion stains."""
         Settings._prepare()
+
+        if not isinstance(guild, int):
+            guild = guild.id
 
         guild = Settings._GUILDS.find_one({"guild": guild })
         try:
@@ -49,7 +82,30 @@ class Settings:
 
 
     @classmethod
-    def set_key(cls, scope, key: str, value):
+    def set_oblivion_stains(cls, ctx, stains):
+        """Set which dice outcomes will give stains for Oblivion rouse checks."""
+        if not ctx.author.guild_permissions.administrator:
+            raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
+
+        response = "**Rouse checks:** Warn for Oblivion stains when rolling "
+
+        stains = int(stains)
+        if stains == 100:
+            stains = [1, 10]
+            response += "`1` or `10`."
+        elif stains == 0:
+            stains = []
+            response = "**Rouse checks:** Oblivion Rouses never give stains."
+        else:
+            response += f"`{stains}`."
+            stains = [stains]
+
+        Settings._set_key(ctx.guild, "oblivion_stains", stains)
+        return response
+
+
+    @classmethod
+    def _set_key(cls, scope, key: str, value):
         """
         Enable or disable a setting.
         Args:

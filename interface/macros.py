@@ -67,6 +67,11 @@ class Macros(commands.Cog, name="Macro Utilities"):
                     ("Yes", 1), ("No", 0)
                 ]
             ),
+            SlashOption(str, "staining", description="Whether the Rouse check can stain",
+                choices=[
+                    ("Yes", "apply"), ("No", "show")
+                ]
+            ),
             SlashOption(str, "comment", description="A comment to apply to macro rolls"),
             SlashOption(str, "character", description="The character that owns the macro",
                 autocomplete=True, choice_generator=inconnu.available_characters
@@ -83,13 +88,14 @@ class Macros(commands.Cog, name="Macro Utilities"):
         difficulty=0,
         rouses=0,
         reroll_rouses=0,
+        staining="show",
         comment=None,
         character=None
     ):
         """Create a macro."""
         await inconnu.macros.create(
             ctx, name, pool, bool(hunger), difficulty, rouses,
-            bool(reroll_rouses), comment, character
+            bool(reroll_rouses), staining, comment, character
         )
 
 

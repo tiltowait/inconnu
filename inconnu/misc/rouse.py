@@ -13,7 +13,7 @@ __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
 
 
 async def rouse(
-    ctx, count: int, character: str, purpose: str, reroll: bool, oblivion=True, message=None
+    ctx, count: int, character: str, purpose: str, reroll: bool, oblivion="show", message=None
 ):
     """
     Perform a remorse check on a given character and display the results.
@@ -59,23 +59,30 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         custom = None
 
     footer = []
+    fields = [("New Hunger" if "ailure" in title else "Hunger", char.HUNGER)]
+
     if purpose is not None:
         footer.append(purpose)
     if outcome.reroll:
         footer.append("Re-rolling failures")
-    if oblivion and outcome.stains > 0:
+    if outcome.stains > 0:
         stains_txt = common.pluralize(outcome.stains, "stain")
-        footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
+
+        if oblivion == "show":
+            footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
+        elif oblivion == "apply":
+            character.stains += outcome.stains
+            character.log("stains", outcome.stains)
+            fields.append((f"Gain {stains_txt}", char.HUMANITY))
+
     footer = "\n".join(footer)
 
-
-    hunger_title = "New Hunger" if "ailure" in title else "Hunger"
 
     await char.display(ctx, character,
         title=title,
         footer=footer,
         message=message,
-        fields=[(hunger_title, char.HUNGER)],
+        fields=fields,
         custom=custom
     )
 

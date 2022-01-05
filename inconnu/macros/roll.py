@@ -61,7 +61,10 @@ async def __rouse(ctx, character, macro):
     msg = "Hunger gained does not apply to the roll."
 
     if macro.rouses > 0:
-        await rouse(ctx, macro.rouses, character.name, purpose, macro.reroll_rouses, message=msg)
+        await rouse(
+            ctx, macro.rouses, character.name, purpose, macro.reroll_rouses,
+            oblivion=macro.staining, message=msg
+        )
 
 
 def __normalize_syntax(syntax: str):

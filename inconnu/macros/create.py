@@ -16,6 +16,7 @@ async def create(
     difficulty: int,
     rouses: int,
     reroll_rouses: bool,
+    staining: str,
     comment: str,
     character: str
 ):
@@ -46,7 +47,7 @@ async def create(
             return
 
         pool = macro_common.expand_syntax(character, pool)
-        character.add_macro(name, pool, hunger, rouses, reroll_rouses, difficulty, comment)
+        character.add_macro(name, pool, hunger, rouses, reroll_rouses, staining, difficulty, comment)
         await ctx.respond(f"**{character.name}:** Created macro `{name}`.", hidden=True)
 
     except (

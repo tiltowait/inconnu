@@ -104,6 +104,7 @@ def __generate_fields(macros, accessible: bool):
             if macro.rouses > 0:
                 value += f"\n**Rouse checks:** `{macro.rouses}`"
                 value += "\n**Re-rolling Rouses:** " + ("`Yes`" if macro.reroll_rouses else "`No`")
+                value += "\n**Staining:** " + ("`Yes`" if macro.staining == "apply" else "`No`")
             if macro.comment is not None:
                 value += f"\n**Comment:** `{macro.comment}`"
 

@@ -523,9 +523,11 @@ class VChar:
 
         # All characters have a hunger stat in the background, but we only care
         # about it if the character is a vampire
-        if self.splat != "vampire":
-            for macro in raw_macros:
+        for macro in raw_macros:
+            if self.splat != "vampire":
                 macro["hunger"] = False
+            if not "staining" in macro:
+                macro["staining"] = "show"
 
         return [SimpleNamespace(**macro) for macro in raw_macros]
 
@@ -543,6 +545,9 @@ class VChar:
         if self.splat != "vampire":
             macro["hunger"] = False
 
+        if "staining" not in macro:
+            macro["staining"] = "show"
+
         return SimpleNamespace(**macro)
 
 
@@ -553,6 +558,7 @@ class VChar:
         hunger: bool,
         rouses:int,
         reroll_rouses: int,
+        staining: str,
         difficulty: int,
         comment: str
     ):
@@ -569,6 +575,7 @@ class VChar:
             "pool": list(map(str, pool)),
             "rouses": rouses,
             "reroll_rouses": reroll_rouses,
+            "staining": staining,
             "hunger": hunger,
             "difficulty": difficulty,
             "comment": comment
@@ -697,7 +704,7 @@ class VChar:
 
         valid_keys = [
             "remorse", "rouse", "slake", "awaken", "frenzy", "degen",
-            "health_superficial", "health_aggravated",
+            "health_superficial", "health_aggravated", "stains",
             "willpower_superficial", "willpower_aggravated", "blush"
         ]
         if key not in valid_keys:

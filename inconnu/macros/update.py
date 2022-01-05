@@ -16,6 +16,7 @@ __VALID_KEYS = {
     "difficulty": "The macro's default difficulty",
     "rouses": "The number of Rouse checks to make",
     "reroll_rouses": "Whether to re-roll the Rouse checks",
+    "staining": "Whether the Rouse checks can stain (Yes/No)",
     "comment": "The macro's comment"
 }
 
@@ -136,6 +137,14 @@ def __validate_parameters(character: VChar, parameters: dict):
                 macro_update[key] = value
             except ValueError:
                 raise ValueError("`reroll_rouses` requires yes/no or true/false.") from ValueError
+
+        elif key in ["stain", "stains", "staining"]:
+            if value.lower() == "yes":
+                macro_update["staining"] = "apply"
+            elif value.lower() == "no":
+                macro_update["staining"] = "no"
+            else:
+                raise ValueError("`stains` must be `YES` or `NO`.")
 
         else:
             raise ValueError(f"Unknown key `{key}`.")

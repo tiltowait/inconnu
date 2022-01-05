@@ -92,8 +92,6 @@ def __parse_arguments(*arguments):
                 err += f" Also, `{key}` is not a valid option."
             raise SyntaxError(err)
 
-        value = split[1]
-
         if key in parameters:
             raise ValueError(f"You cannot use `{key}` more than once.")
 
@@ -101,6 +99,11 @@ def __parse_arguments(*arguments):
             raise ValueError(f"Unknown parameter: `{key}`.")
 
         key = __MATCHES[key] # Get the canonical key
+
+        value = split[1]
+        if len(value) == 0:
+            raise ValueError(f"No value given for `{key}`.")
+
         parameters[key] = value # Don't do any validation here
 
     return parameters

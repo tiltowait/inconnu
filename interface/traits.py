@@ -3,7 +3,7 @@
 import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption
-from discord_ui.cogs import slash_command, subslash_command
+from discord_ui.cogs import subslash_command
 
 import inconnu
 from . import debug
@@ -11,16 +11,6 @@ from . import debug
 
 class Traits(commands.Cog, name="Trait Management"):
     """Trait management commands."""
-
-    @commands.guild_only()
-    @slash_command(
-        name="traits",
-        description="Traits command group"
-        , guild_ids=debug.WHITELIST
-    )
-    async def modify_traits(self, ctx):
-        """Traits command group start. Unreachable."""
-
 
     @ext.check_failed("Characters and traits aren't available in DMs.", hidden=True)
     @commands.guild_only()

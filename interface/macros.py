@@ -15,17 +15,6 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @ext.check_failed("Macros aren't available in DMs.", hidden=True)
     @commands.guild_only()
     @slash_command(
-        name="macro",
-        description="Macro command group"
-        , guild_ids=debug.WHITELIST
-    )
-    async def macro(self, ctx):
-        """Base macro command. Unreachable."""
-
-
-    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
-    @commands.guild_only()
-    @slash_command(
         name="vm",
         description="Roll a macro.",
         options=[

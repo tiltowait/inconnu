@@ -476,7 +476,7 @@ def __generate_reroll_buttons(roll_result, surging: bool) -> list:
         buttons.append(Button("Risky Avoid Messy", "risky"))
 
     if surging:
-        buttons.append(Button("Rouse for Surge", "surge", "red"))
+        buttons.append(Button("Rouse", "surge", "red"))
 
     return buttons
 

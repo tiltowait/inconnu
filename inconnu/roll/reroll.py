@@ -40,7 +40,9 @@ async def wait_for_reroll(ctx, character, message, old_roll):
 
             btn = await message.wait_for("button", ctx.bot)
 
-        await message.disable_components()
+        message.components.disable()
+        await message.edit(components=[c for c in message.components])
+        #await message.disable_components()
         return btn, reroll(btn.custom_id, old_roll)
 
     except asyncio.exceptions.TimeoutError:
@@ -67,7 +69,9 @@ async def present_reroll(ctx, message, character, owner):
 
         character.superficial_wp += 1
         await __display_wp(btn, character, owner)
-        await msg.disable_components()
+        msg.components.disable()
+        await msg.edit(components=[c for c in msg.components])
+        #await msg.disable_components()
 
     except asyncio.exceptions.TimeoutError:
         await msg.edit(components=None)

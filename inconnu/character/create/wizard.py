@@ -159,8 +159,8 @@ class Wizard:
             await query_msg.edit(components=None)
             err = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
             await self.ctx.author.send(err)
-        finally:
-            await query_msg.disable_components()
+        #finally:
+            #await query_msg.disable_components()
 
 
     async def __query_text(self, menu, message=None):

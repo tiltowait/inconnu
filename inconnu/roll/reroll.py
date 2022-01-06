@@ -6,17 +6,20 @@ import random
 import discord
 from discord_ui import Button
 
+from ..misc.rouse import rouse
 from .dicethrow import DiceThrow
 from .. import character as char
 from ..vchar import VChar
 
 __MAX_REROLL = 3
 
-async def wait_for_reroll(ctx, message, old_roll):
+
+async def wait_for_reroll(ctx, character, message, old_roll):
     """
-    Wait for the user to click a re-roll button.
+    Wait for the user to click a re-roll or surge button.
     Args:
         ctx: The Discord context, which includes the accepted user
+        character (optional, VChar): The character rolling
         message: The Discord message to watch
         old_roll (RollResult): The original dice roll
     Returns (tuple): The button interaction and the re-rolled outcome.
@@ -25,9 +28,16 @@ async def wait_for_reroll(ctx, message, old_roll):
     try:
         btn = await message.wait_for("button", ctx.bot, timeout=600)
 
-        while ctx.author.id != btn.author.id:
-            # We only want the original roller to be able to press these buttons
-            await btn.respond("Sorry, you can't reroll for another player.", hidden=True)
+        while ctx.author.id != btn.author.id or btn.custom_id == "surge":
+            if ctx.author.id != btn.author.id:
+                # We only want the original roller to be able to press these buttons
+                await btn.respond("You can't interact with another player's roll.", hidden=True)
+            else:
+                # Surge button pressed
+                await rouse(btn, 1, character, "Surge", False)
+                index = len(message.components) - 1 # Disabling the last button
+                await message.disable_components(index=index)
+
             btn = await message.wait_for("button", ctx.bot)
 
         await message.disable_components()
@@ -43,7 +53,7 @@ async def present_reroll(ctx, message, character, owner):
     try:
         components = None
         if character is not None:
-            components = [Button("mark_wp", "Mark WP Use")]
+            components = [Button("Mark WP Use", "mark_wp")]
 
         if isinstance(message, str):
             msg = await ctx.respond(message, components=components)

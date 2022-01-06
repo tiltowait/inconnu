@@ -4,20 +4,20 @@ import discord
 
 from discord.ext import commands
 from discord_ui import SlashOption
-from discord_ui.cogs import slash_cog
+from discord_ui.cogs import slash_command
 
 import inconnu
 from . import debug
 
 
-async def _available_scopes(ctx):
+async def _available_scopes(_, ctx):
     """Determine the available settings scopes."""
     if ctx.author.guild_permissions.administrator:
         return [("Self only", "user"), ("Entire server", "guild")]
     return [("Self only", "user")]
 
 
-async def _available_oblivion_options(ctx):
+async def _available_oblivion_options(_, ctx):
     """Determine the available Oblivion stains options."""
     if ctx.author.guild_permissions.administrator:
         return [
@@ -32,7 +32,7 @@ async def _available_oblivion_options(ctx):
 class SettingsCommands(commands.Cog):
     """Settings-related commands."""
 
-    @slash_cog(
+    @slash_command(
         name="set",
         options=[
             SlashOption(str, "oblivion_stains",
@@ -76,7 +76,7 @@ class SettingsCommands(commands.Cog):
             await ctx.respond(err, hidden=True)
 
 
-    @slash_cog(
+    @slash_command(
         name="settings",
         guild_ids=debug.WHITELIST
     )

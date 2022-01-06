@@ -138,8 +138,7 @@ class Wizard:
 
     async def __query_trait(self, message=None):
         """Query for the next trait."""
-        menu = SelectMenu("rating_selector",
-            options=self.__RATING_OPTIONS,
+        menu = SelectMenu(self.__RATING_OPTIONS, "rating_selector",
             placeholder=f"Select {self.parameters.name}'s {self.core_traits[0]} rating"
         )
 

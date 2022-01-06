@@ -3,13 +3,13 @@
 import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption
-from discord_ui.cogs import slash_cog, subslash_cog
+from discord_ui.cogs import slash_command, subslash_command
 
 import inconnu
 from . import debug
 
 # Unused due to Discord API issues
-async def _spc_options(ctx):
+async def _spc_options(_, ctx):
     """Determine whether the user can make an SPC."""
     if ctx.author.guild_permissions.administrator:
         return [("No", "0"), ("Yes", "1")]
@@ -19,9 +19,9 @@ async def _spc_options(ctx):
 class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
 
-    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="character",
         description="Character management commands."
         , guild_ids=debug.WHITELIST
@@ -30,9 +30,9 @@ class Characters(commands.Cog, name="Character Management"):
         """Base character command. Unreachable."""
 
 
-    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @subslash_cog(
+    @subslash_command(
         base_names="character",
         name="create",
         description="Create a new character",
@@ -77,9 +77,9 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.create(ctx, name, splat, humanity, health, willpower, bool(spc))
 
 
-    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @subslash_cog(
+    @subslash_command(
         base_names="character",
         name="display",
         description="List all of your characters or show details about one character.",
@@ -98,9 +98,9 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.display_requested(ctx, character, player=player)
 
 
-    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @subslash_cog(
+    @subslash_command(
         base_names="character",
         name="update",
         description="Update a character's trackers.",
@@ -117,9 +117,9 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.update(ctx, parameters, character)
 
 
-    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @subslash_cog(
+    @subslash_command(
         base_names="character",
         name="delete",
         description="Delete a character.",
@@ -135,9 +135,9 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.delete(ctx, character)
 
 
-    @ext.check_failure_response("Characters aren't available in DMs.", hidden=True)
+    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @subslash_cog(
+    @subslash_command(
         base_names="character",
         name="help",
         description="Show a list of character update keys."

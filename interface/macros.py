@@ -3,7 +3,7 @@
 
 from discord.ext import commands
 from discord_ui import ext, SlashOption
-from discord_ui.cogs import slash_cog, subslash_cog
+from discord_ui.cogs import slash_command, subslash_command
 
 import inconnu
 from . import debug
@@ -12,9 +12,9 @@ from . import debug
 class Macros(commands.Cog, name="Macro Utilities"):
     """Macro manaagement and rolls."""
 
-    @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
+    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="macro",
         description="Macro command group"
         , guild_ids=debug.WHITELIST
@@ -23,9 +23,9 @@ class Macros(commands.Cog, name="Macro Utilities"):
         """Base macro command. Unreachable."""
 
 
-    @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
+    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="vm",
         description="Roll a macro.",
         options=[
@@ -44,9 +44,9 @@ class Macros(commands.Cog, name="Macro Utilities"):
         await inconnu.macros.roll(ctx, syntax, character)
 
 
-    @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
+    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @subslash_cog(
+    @subslash_command(
         base_names="macro",
         name="create",
         description="Create a macro.",
@@ -99,9 +99,9 @@ class Macros(commands.Cog, name="Macro Utilities"):
         )
 
 
-    @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
+    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @subslash_cog(
+    @subslash_command(
         base_names="macro",
         name="list",
         description="List your macros.",
@@ -117,9 +117,9 @@ class Macros(commands.Cog, name="Macro Utilities"):
         await inconnu.macros.show(ctx, character)
 
 
-    @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
+    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @subslash_cog(
+    @subslash_command(
         base_names="macro",
         name="update",
         options=[
@@ -136,9 +136,9 @@ class Macros(commands.Cog, name="Macro Utilities"):
         await inconnu.macros.update(ctx, macro, parameters, character)
 
 
-    @ext.check_failure_response("Macros aren't available in DMs.", hidden=True)
+    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @subslash_cog(
+    @subslash_command(
         base_names="macro",
         name="delete",
         description="Delete a macro.",

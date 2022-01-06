@@ -199,10 +199,10 @@ def character_options(guild: int, user: int):
     chardict = {str(char.id): char for char in characters}
 
     if len(characters) < 6:
-        components = [Button(str(char.id), char.name) for char in characters]
+        components = [Button(char.name, str(char.id)) for char in characters]
     else:
         options = [SelectOption(str(char.id), char.name) for char in characters]
-        menu = SelectMenu("character_selector", options=options, placeholder="Select a character")
+        menu = SelectMenu(options, "character_selector", placeholder="Select a character")
         components = [menu]
 
     return SimpleNamespace(characters=chardict, components=components)

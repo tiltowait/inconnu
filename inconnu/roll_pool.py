@@ -1,7 +1,7 @@
 """roll.py - Perform a pool-based roll with hunger and difficulty."""
 
-from .dicethrow import DiceThrow
-from .rollresult import RollResult
+from .roll.dicethrow import DiceThrow
+from .roll.rollresult import RollResult
 
 def roll_pool(parameters, pool_str=None):
     """Perform a roll."""

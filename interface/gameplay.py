@@ -3,7 +3,7 @@
 import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption
-from discord_ui.cogs import slash_cog
+from discord_ui.cogs import slash_command
 
 import inconnu
 from . import debug
@@ -18,7 +18,7 @@ class Gameplay(commands.Cog):
         await ctx.reply("This command has been removed. Please use `/vr` instead.")
 
 
-    @slash_cog(
+    @slash_command(
         name="vr", # Called "vr" instead of "roll" for quicker command entry
         options=[
             SlashOption(str, "syntax", description="The roll syntax", required=True),
@@ -35,9 +35,9 @@ class Gameplay(commands.Cog):
         await inconnu.roll.parse(ctx, syntax, comment, character, player)
 
 
-    @ext.check_failure_response("Aggravated healing isn't available in DMs.", hidden=True)
+    @ext.check_failed("Aggravated healing isn't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="aggheal",
         options=[
             SlashOption(str, "character", description="The character to be healed",
@@ -51,9 +51,9 @@ class Gameplay(commands.Cog):
         await inconnu.misc.aggheal(ctx, character)
 
 
-    @ext.check_failure_response("Awaken rolls aren't available in DMs.", hidden=True)
+    @ext.check_failed("Awaken rolls aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="awaken",
         options=[
             SlashOption(str, "character", description="The character waking up",
@@ -67,9 +67,9 @@ class Gameplay(commands.Cog):
         await inconnu.misc.awaken(ctx, character)
 
 
-    @ext.check_failure_response("Blush of Life isn't available in DMs.", hidden=True)
+    @ext.check_failed("Blush of Life isn't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="bol",
         options=[
             SlashOption(str, "character", description="The character waking up",
@@ -83,7 +83,7 @@ class Gameplay(commands.Cog):
         await inconnu.misc.bol(ctx, character)
 
 
-    @slash_cog(
+    @slash_command(
         name="cripple",
         options=[
             SlashOption(int, "damage", description="The Aggravated damage sustained"),
@@ -98,9 +98,9 @@ class Gameplay(commands.Cog):
         await inconnu.misc.cripple(ctx, damage, character)
 
 
-    @ext.check_failure_response("Frenzy checks aren't available in DMs.", hidden=True)
+    @ext.check_failed("Frenzy checks aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="frenzy",
         options=[
             SlashOption(int, "difficulty",
@@ -125,9 +125,9 @@ class Gameplay(commands.Cog):
         await inconnu.misc.frenzy(ctx, difficulty, penalty, character)
 
 
-    @ext.check_failure_response("Mending isn't available in DMs.", hidden=True)
+    @ext.check_failed("Mending isn't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="mend",
         options=[
             SlashOption(str, "character", description="The character to be mended",
@@ -141,9 +141,9 @@ class Gameplay(commands.Cog):
         await inconnu.misc.mend(ctx, character)
 
 
-    @ext.check_failure_response("Remorse checks aren't available in DMs.", hidden=True)
+    @ext.check_failed("Remorse checks aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="remorse",
         options=[
             SlashOption(str, "character", description="The character undergoing Remorse",
@@ -160,15 +160,15 @@ class Gameplay(commands.Cog):
         await inconnu.misc.remorse(ctx, character, min_override)
 
 
-    @slash_cog(name="resonance")
+    @slash_command(name="resonance")
     async def resonance(self, ctx):
         """Generate a random Resonance."""
         await inconnu.misc.resonance(ctx)
 
 
-    @ext.check_failure_response("Rouse checks aren't available in DMs.", hidden=True)
+    @ext.check_failed("Rouse checks aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="rouse",
         options=[
             SlashOption(int, "count", description="The number of Rouse checks to make",
@@ -192,9 +192,9 @@ class Gameplay(commands.Cog):
         await inconnu.misc.rouse(ctx, count, character, purpose, bool(reroll))
 
 
-    @ext.check_failure_response("You cannot slake in DMs.", hidden=True)
+    @ext.check_failed("You cannot slake in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="slake",
         options=[
             SlashOption(int, "amount",

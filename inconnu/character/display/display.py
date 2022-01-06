@@ -199,7 +199,7 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    components = [Button("traits", "Traits")] if traits_button else None
+    components = [Button("Traits", "traits")] if traits_button else None
     return await ctx.respond(embed=embed, components=components)
 
 
@@ -270,9 +270,9 @@ async def __display_text(
     contents.append("```")
     contents = "\n".join(contents)
     if footer is not None:
-        contents += "\n" + footer
+        contents += f"\n*{footer}*"
 
-    components = [Button("traits", "Traits")] if traits_button else None
+    components = [Button("Traits", "traits")] if traits_button else None
     return await ctx.respond(contents, components=components)
 
 

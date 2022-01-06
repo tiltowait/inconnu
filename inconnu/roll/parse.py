@@ -17,7 +17,7 @@ from types import SimpleNamespace as SN
 import discord
 from discord_ui import Button
 
-from .roll import roll_pool
+from ..roll_pool import roll_pool
 from . import dicemoji
 from . import reroll
 from .. import common
@@ -146,14 +146,15 @@ async def __outcome_text(ctx, player, character: VChar, results, comment, reroll
     contents = "\n".join(contents)
 
     # Calculate re-roll options and display
-    reroll_buttons = __generate_reroll_buttons(results)
+    surging = __determine_surging(character, comment, results.pool_str)
+    reroll_buttons = __generate_reroll_buttons(results, surging)
     if rerolled:
         await reroll.present_reroll(ctx, contents, character, player)
     elif len(reroll_buttons) == 0:
         msg = await ctx.respond(contents)
     else:
         msg = await ctx.respond(contents, components=reroll_buttons)
-        interaction, rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
+        interaction, rerolled_results = await reroll.wait_for_reroll(ctx, character, msg, results)
 
         if rerolled_results is not None:
             await display_outcome(interaction, player, character, rerolled_results, comment,
@@ -240,14 +241,16 @@ async def __outcome_embed(ctx, player, character: VChar, results, comment, rerol
         embed.set_footer(text=comment)
 
     # Calculate re-roll options and display
-    reroll_buttons = __generate_reroll_buttons(results)
+    surging = __determine_surging(character, comment, results.pool_str)
+    reroll_buttons = __generate_reroll_buttons(results, surging)
+
     if rerolled:
         await reroll.present_reroll(ctx, embed, character, player)
     elif len(reroll_buttons) == 0:
         msg = await ctx.respond(embed=embed)
     else:
         msg = await ctx.respond(embed=embed, components=reroll_buttons)
-        interaction, rerolled_results = await reroll.wait_for_reroll(ctx, msg, results)
+        interaction, rerolled_results = await reroll.wait_for_reroll(ctx, character, msg, results)
 
         if rerolled_results is not None:
             await display_outcome(interaction, player, character, rerolled_results, comment,
@@ -446,21 +449,34 @@ def __match_universal_trait(match: str):
     return None
 
 
-def __generate_reroll_buttons(roll_result) -> list:
+def __determine_surging(character, comment, pool) -> bool:
+    """Determine whether to show the surge button."""
+    if character is None or character.splat == "mortal":
+        return False
+
+    combined = f"{comment} {pool}"
+    match = re.match(r"^.*(\s+surge|surge\s+.*|surge)$", combined, re.IGNORECASE)
+    return match is not None
+
+
+def __generate_reroll_buttons(roll_result, surging: bool) -> list:
     """Generate the buttons for Willpower re-rolls."""
     buttons = []
 
     if roll_result.can_reroll_failures:
-        buttons.append(Button("reroll_failures", "Re-Roll Failures"))
+        buttons.append(Button("Re-Roll Failures", "reroll_failures"))
 
     if roll_result.can_maximize_criticals:
-        buttons.append(Button("maximize_criticals", "Maximize Crits"))
+        buttons.append(Button("Maximize Crits", "maximize_criticals"))
 
     if roll_result.can_avoid_messy_critical:
-        buttons.append(Button("avoid_messy", "Avoid Messy"))
+        buttons.append(Button("Avoid Messy", "avoid_messy"))
 
     if roll_result.can_risky_messy_critical:
-        buttons.append(Button("risky", "Risky Avoid Messy"))
+        buttons.append(Button("Risky Avoid Messy", "risky"))
+
+    if surging:
+        buttons.append(Button("Rouse for Surge", "surge", "red"))
 
     return buttons
 

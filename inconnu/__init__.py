@@ -11,7 +11,7 @@ from . import traits
 from .vchar import VChar
 
 
-async def available_characters(ctx):
+async def available_characters(_, ctx):
     """Generate a list of the user's available characters."""
     if ctx.guild is None:
         return [("You have no characters", "")]

@@ -2,7 +2,7 @@
 
 from discord.ext import commands
 from discord_ui import ext, SlashOption
-from discord_ui.cogs import slash_cog
+from discord_ui.cogs import slash_command
 
 import inconnu
 from . import debug
@@ -11,13 +11,13 @@ from . import debug
 class MiscCommands(commands.Cog):
     """Miscellaneous commands."""
 
-    @slash_cog(name="coinflip", guild_ids=debug.WHITELIST)
+    @slash_command(name="coinflip", guild_ids=debug.WHITELIST)
     async def coinflip(self, ctx):
         """Flip a coin."""
         await inconnu.misc.coinflip(ctx)
 
 
-    @slash_cog(
+    @slash_command(
         name="percentile",
         options=[SlashOption(int, "ceiling", description="The roll's highest possible value")],
         guild_ids=debug.WHITELIST
@@ -27,7 +27,7 @@ class MiscCommands(commands.Cog):
         await inconnu.misc.percentile(ctx, ceiling)
 
 
-    @slash_cog(
+    @slash_command(
         name="probability",
         options=[
             SlashOption(str, "roll", description="The pool, hunger, and difficulty", required=True),
@@ -51,9 +51,9 @@ class MiscCommands(commands.Cog):
         await inconnu.misc.probability(ctx, roll, reroll, character)
 
 
-    @ext.check_failure_response("Statistics aren't available in DMs.", hidden=True)
+    @ext.check_failed("Statistics aren't available in DMs.", hidden=True)
     @commands.guild_only()
-    @slash_cog(
+    @slash_command(
         name="statistics",
         options=[
             SlashOption(str, "trait", description="(Optional) A trait to look for"),

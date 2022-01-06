@@ -17,8 +17,8 @@ async def delete(ctx, character: str):
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
         buttons = [
-            Button("_cancel", "Cancel", "secondary"),
-            Button("_delete", f"Delete {character.name}", "red")
+            Button("Cancel", "_cancel", "secondary"),
+            Button(f"Delete {character.name}", "_delete", "red")
         ]
         msg = await __prompt(ctx, character.name, buttons)
 

@@ -6,7 +6,7 @@ from types import SimpleNamespace as SN
 import discord
 
 from .. import common
-from ..roll import roll_pool
+from ..roll_pool import roll_pool
 from ..settings import Settings
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"

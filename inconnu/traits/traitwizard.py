@@ -37,8 +37,7 @@ class TraitWizard:
 
     async def __send_prompt(self, message=None):
         """Prompt the user."""
-        menu = SelectMenu("incognito_trait",
-            options=self.__RATING_OPTIONS,
+        menu = SelectMenu(self.__RATING_OPTIONS, "incognito_trait",
             placeholder=f"Select the rating for {self.traits[0]}"
         )
 

@@ -26,7 +26,8 @@ async def rouse(
     """
     try:
         tip = "`/rouse` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        if isinstance(character, str):
+            character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
         if character.splat == "mortal":
             await ctx.respond("Mortals can't make rouse checks.", hidden=True)

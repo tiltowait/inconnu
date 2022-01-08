@@ -97,13 +97,16 @@ class Characters(commands.Cog, name="Character Management"):
             SlashOption(str, "parameters", description="KEY=VALUE parameters", required=True),
             SlashOption(str, "character", description="The character to update",
                 autocomplete=True, choice_generator=inconnu.available_characters
+            ),
+            SlashOption(discord.Member, "player",
+                description="The player who owns the character (admin only)"
             )
         ]
         , guild_ids=debug.WHITELIST
     )
-    async def update_character(self, ctx, parameters: str, character=None):
+    async def update_character(self, ctx, parameters: str, character=None, player=None):
         """Update a character's parameters but not the traits."""
-        await inconnu.character.update(ctx, parameters, character)
+        await inconnu.character.update(ctx, parameters, character, player=player)
 
 
     @ext.check_failed("Characters aren't available in DMs.", hidden=True)

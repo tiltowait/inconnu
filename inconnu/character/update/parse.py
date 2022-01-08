@@ -33,7 +33,7 @@ __KEYS = {
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
 
 
-async def update(ctx, parameters: str, character=None, update_message=None):
+async def update(ctx, parameters: str, character=None, update_message=None, player=None):
     """
     Process the user's arguments.
     Allow the user to omit a character if they have only one.
@@ -48,8 +48,9 @@ async def update(ctx, parameters: str, character=None, update_message=None):
         return
 
     try:
+        owner = await common.player_lookup(ctx, player)
         tip = f"`/character update` `parameters:{parameters}` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
         parameters = __parse_arguments(*args)
         updates = []
@@ -63,11 +64,13 @@ async def update(ctx, parameters: str, character=None, update_message=None):
             update_message = "\n".join(updates)
 
         Log.log("update", user=ctx.author.id, guild=ctx.guild.id, charid=character.id, syntax=" ".join(args))
-        await display(ctx, character, message=update_message)
+        await display(ctx, character, owner=player, message=update_message)
 
     except (SyntaxError, ValueError) as err:
         Log.log("update_error", user=ctx.author.id, guild=ctx.guild.id, charid=character.id, syntax=" ".join(args))
         await update_help(ctx, err)
+    except LookupError as err:
+        await common.present_error(ctx, err, help_url=__HELP_URL)
     except common.FetchError:
         pass
 

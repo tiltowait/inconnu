@@ -1,6 +1,7 @@
 """rolldisplay.py - A class for managing the display of roll outcomes and rerolls."""
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments, too-many-instance-attributes
 
+import asyncio
 import random
 import re
 
@@ -36,6 +37,7 @@ class RollDisplay(Listener):
         self.owner = owner
         self.rerolled = False
         self.surged = False
+        self.msg = None # This is used for disabling the buttons at the end of the timeout
 
         # Add impairment to the comment, if necessary
         if character is not None:
@@ -47,7 +49,11 @@ class RollDisplay(Listener):
                 else:
                     self.comment = impairment
 
-        super().__init__()
+        super().__init__(timeout=60, target_users=[ctx.author])
+
+
+    def __del__(self):
+        asyncio.create_task(self.msg.disable_components())
 
 
     async def display(self, use_embed: bool, alt_ctx=None):
@@ -69,17 +75,19 @@ class RollDisplay(Listener):
         else:
             msg = await ctx.respond(self.text, components=self.buttons)
 
-        self.attach_me_to(msg)
+        # In order to avoid errors, we spawn a new listener in the case of a reroll
+        if alt_ctx:
+            alt = RollDisplay(ctx, self.outcome, self.character, self.comment, self.owner)
+            alt.attach_me_to(msg)
+            alt.msg = msg
+        else:
+            self.attach_me_to(msg)
+            self.msg = msg
 
 
     @Listener.button()
     async def respond_to_button(self, btn):
         """Respond to the buttons."""
-        if btn.author.id != self.ctx.author.id:
-            await btn.respond("You aren't allowed to click this button.", hidden=True)
-            return
-
-        # Valid button press
 
         if btn.custom_id == self._WILLPOWER:
             if self.character is not None:
@@ -96,8 +104,8 @@ class RollDisplay(Listener):
             self.surged = True
             await rouse(btn, 1, self.character, "Surge", False)
 
-            # Disable the surge button only
-            index = len(btn.message.components) - 1 # Surge is always the last button
+            # The surge button is always the last button
+            index = len(btn.message.components) - 1
             await btn.message.disable_components(index=index)
 
         else:
@@ -110,6 +118,17 @@ class RollDisplay(Listener):
             use_embed = len(btn.message.embeds) > 0
             await self.display(use_embed, btn)
             await btn.message.disable_components()
+
+
+    @Listener.wrong_user()
+    async def wrong(self, ctx):
+        """Inform the user they can't click the button."""
+        await ctx.respond("Only the person who made this roll can click this button.", hidden=True)
+
+
+    @Listener.on_error()
+    async def exception(self, ctx, exception):
+        """Ignore exceptions."""
 
 
     @property

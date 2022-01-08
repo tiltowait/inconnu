@@ -6,6 +6,8 @@ from operator import itemgetter
 
 import pymongo
 
+from .vchar import VChar
+
 
 class Culler:
     """A class for culling inactive characters and guilds."""
@@ -32,9 +34,14 @@ class Culler:
         }, { "_id": 1 })
         characters = list(map(itemgetter("_id"), characters))
 
-        print(guilds)
-        print(characters)
-        #print(list(map(lambda character: character["_id"], characters)))
+        for guild in guilds:
+            #Culler._GUILDS.delete_one({ "guild": guild })
+            print("Deleting guild", guild)
+
+        for character in characters:
+            character = VChar.fetch(0, 0, str(character))
+            print("Deleting", character.name)
+            #character.delete_character()
 
 
     @classmethod

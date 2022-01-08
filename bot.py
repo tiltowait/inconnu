@@ -5,46 +5,16 @@ import os
 import discord
 from discord.ext import commands, tasks
 from discord_ui import UI
-from discord_ui.components import LinkButton
 
 import inconnu
 import interface
 
 bot = commands.Bot(command_prefix="//", case_insensitive=True)
 bot.remove_command("help")
-ui = UI(bot, slash_options={"delete_unused": True})
+UI(bot, slash_options={"delete_unused": True})
 
 
-# Help command
-
-@ui.slash.command("help", description="Help with basic functions.")
-async def help_command(ctx):
-    """Display a help message."""
-    embed = discord.Embed(
-        title="Inconnu Help",
-        description="Basic commands listing. Click the link for detailed documentation."
-    )
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
-
-    embed.add_field(name="Roll", value="`/vr pool hunger difficulty`", inline=False)
-    char_info = "`/character create`\nIf you have a character, you can use their traits in rolls."
-    embed.add_field(name="Create a character", value=char_info, inline=False)
-    embed.add_field(name="Display character", value="`/character display`", inline=False)
-    embed.add_field(name="Add traits", value="`/traits add`")
-
-    help_button = LinkButton(
-        "https://www.inconnu-bot.com/#/quickstart",
-        label="New? Read the Quickstart!"
-    )
-    patreon_button = LinkButton(
-        "https://www.patreon.com/tiltowait",
-        label="Patreon"
-    )
-
-    await ctx.respond(embed=embed, components=[help_button, patreon_button])
-
-
-# Events
+# General Events
 
 @bot.event
 async def on_ready():
@@ -134,6 +104,7 @@ async def __set_presence():
 def setup():
     """Add the cogs to the bot."""
     bot.add_cog(interface.Characters(bot))
+    bot.add_cog(interface.Help(bot))
     bot.add_cog(interface.Gameplay(bot))
     bot.add_cog(interface.Macros(bot))
     bot.add_cog(interface.MiscCommands(bot))

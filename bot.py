@@ -3,7 +3,7 @@
 import os
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord_ui import UI
 from discord_ui.components import LinkButton
 
@@ -55,6 +55,7 @@ async def on_ready():
     print("Latency:", bot.latency * 1000, "ms")
 
     await __set_presence()
+    cull_inactive.start()
 
 
 @bot.event
@@ -105,6 +106,14 @@ async def on_guild_update(before, after):
     if before.name != after.name:
         print(f"Renamed {before.name} => {after.name}")
         inconnu.stats.Stats.guild_renamed(after.id, after.name)
+
+
+# Tasks
+
+@tasks.loop(hours=720)
+async def cull_inactive():
+    """Cull inactive characters and guilds."""
+    inconnu.culler.cull()
 
 
 # Misc and helpers

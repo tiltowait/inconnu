@@ -82,7 +82,8 @@ class RollDisplay(Listener):
         # Valid button press
 
         if btn.custom_id == self._WILLPOWER:
-            self.character.superficial_wp += 1
+            if self.character is not None:
+                self.character.superficial_wp += 1
 
             await char.display(btn, self.character,
                 title="Willpower Spent",
@@ -250,7 +251,7 @@ class RollDisplay(Listener):
                 buttons.append(Button("Mark WP", self._WILLPOWER))
                 if self.surging:
                     buttons.append(Button("Rouse", str(self.character.id), "red"))
-            return buttons
+            return buttons if len(buttons) > 0 else None
 
         # We haven't re-rolled
 
@@ -269,7 +270,7 @@ class RollDisplay(Listener):
         if self.surging:
             buttons.append(Button("Rouse", str(self.character.id), "red"))
 
-        return buttons
+        return buttons if len(buttons) > 0 else None
 
 
     def reroll(self, strategy):

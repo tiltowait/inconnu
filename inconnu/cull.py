@@ -23,9 +23,8 @@ class Culler:
         Culler._prepare()
 
         past = datetime.utcnow() - timedelta(days=days)
-        guilds = Culler._GUILDS.find({ "left": { "$lt": past } }, { "guild": 1 })
+        guilds = Culler._GUILDS.find({ "active": False, "left": { "$lt": past } }, { "guild": 1 })
         guilds = list(map(itemgetter("guild"), guilds))
-        print(len(guilds))
 
         characters = Culler._CHARACTERS.find({
             "$or": [
@@ -36,13 +35,15 @@ class Culler:
         characters = list(map(itemgetter("_id"), characters))
 
         for guild in guilds:
-            #Culler._GUILDS.delete_one({ "guild": guild })
-            print("Deleting guild", guild)
+            Culler._GUILDS.delete_one({ "guild": guild })
+
+        if len(guilds) > 0:
+            print(f"Culled {len(guilds)} guilds.")
 
         for character in characters:
             character = VChar.fetch(0, 0, str(character))
-            print("Deleting", character.name)
-            #character.delete_character()
+            print(f"Culling {character.name}.")
+            character.delete_character()
 
 
     @classmethod

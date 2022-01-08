@@ -49,10 +49,12 @@ class RollDisplay(Listener):
                 else:
                     self.comment = impairment
 
-        super().__init__(timeout=60, target_users=[ctx.author])
+        super().__init__(timeout=60)
 
 
-    def __del__(self):
+    def _stop(self):
+        """Stop the listener and disable the buttons."""
+        super()._stop()
         asyncio.create_task(self.msg.disable_components())
 
 
@@ -88,6 +90,9 @@ class RollDisplay(Listener):
     @Listener.button()
     async def respond_to_button(self, btn):
         """Respond to the buttons."""
+        if btn.author.id != self.ctx.author.id:
+            await btn.respond("This button doesn't belong to you!", hidden=True)
+            return
 
         if btn.custom_id == self._WILLPOWER:
             if self.character is not None:
@@ -118,17 +123,6 @@ class RollDisplay(Listener):
             use_embed = len(btn.message.embeds) > 0
             await self.display(use_embed, btn)
             await btn.message.disable_components()
-
-
-    @Listener.wrong_user()
-    async def wrong(self, ctx):
-        """Inform the user they can't click the button."""
-        await ctx.respond("Only the person who made this roll can click this button.", hidden=True)
-
-
-    @Listener.on_error()
-    async def exception(self, ctx, exception):
-        """Ignore exceptions."""
 
 
     @property

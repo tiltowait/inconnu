@@ -15,14 +15,11 @@ import re
 from types import SimpleNamespace as SN
 
 import discord
-from discord_ui import Button
 
 from ..roll_pool import roll_pool
-from . import dicemoji
-from . import reroll
+from .rolldisplay import RollDisplay
 from .. import common
 from ..log import Log
-from .. import stats
 from ..constants import DAMAGE, UNIVERSAL_TRAITS
 from ..settings import Settings
 from ..vchar import errors, VChar
@@ -87,175 +84,14 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         )
 
 
-async def display_outcome(ctx, player, character: VChar, results, comment, rerolled=False):
+async def display_outcome(ctx, player, character: VChar, results, comment):
     """Display the roll results."""
-    # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
-    if ctx.guild is not None:
-        stats.Stats.log_roll(ctx.guild.id, player.id, character, results, comment)
-    else:
-        stats.Stats.log_roll(None, player.id, character, results, comment)
+    roll_display = RollDisplay(ctx, results, comment, character, player)
 
     if Settings.accessible(ctx.author):
-        await __outcome_text(ctx, player, character, results, comment, rerolled)
+        await roll_display.display(False)
     else:
-        await __outcome_embed(ctx, player, character, results, comment, rerolled)
-
-
-async def __outcome_text(ctx, player, character: VChar, results, comment, rerolled=False):
-    """Display the roll results in a nice embed."""
-    # Determine the name for the "author" field
-    if character is not None:
-        title = character.name
-    else:
-        title = player.display_name
-
-    title += "'s reroll" if rerolled else "'s roll"
-    if results.difficulty > 0:
-        title += f" vs diff. {results.difficulty}"
-    if results.descriptor is not None:
-        title += f" ({results.descriptor})"
-
-    contents = [f"```{title}```"]
-
-    takeaway = results.main_takeaway
-    if not results.is_total_failure and not results.is_bestial:
-        takeaway += f" ({results.total_successes})"
-
-    contents.append(takeaway)
-    contents.append(f"Margin: `{results.margin}`")
-    contents.append(f"Normal: `{', '.join(map(str, results.normal.dice))}`")
-    if len(results.hunger.dice) > 0:
-        contents.append(f"Hunger: `{', '.join(map(str, results.hunger.dice))}`")
-
-    if results.pool_str is not None:
-        contents.append(f"Pool: `{results.pool_str}`")
-
-    # Comment
-    if character is not None:
-        impairment = character.impairment
-        if impairment is not None:
-            if comment is not None:
-                if impairment not in comment:
-                    comment += f"\n{impairment}"
-            else:
-                comment = impairment
-
-    if comment is not None:
-        contents.append(f"```{comment}```")
-
-    contents = "\n".join(contents)
-
-    # Calculate re-roll options and display
-    surging = __determine_surging(character, comment, results.pool_str)
-    reroll_buttons = __generate_reroll_buttons(results, surging)
-    if rerolled:
-        await reroll.present_reroll(ctx, contents, character, player)
-    elif len(reroll_buttons) == 0:
-        msg = await ctx.respond(contents)
-    else:
-        msg = await ctx.respond(contents, components=reroll_buttons)
-        interaction, rerolled_results = await reroll.wait_for_reroll(ctx, character, msg, results)
-
-        if rerolled_results is not None:
-            await display_outcome(interaction, player, character, rerolled_results, comment,
-                rerolled=True
-            )
-
-
-async def __outcome_embed(ctx, player, character: VChar, results, comment, rerolled=False):
-    """Display the roll results in a nice embed."""
-    # Determine the name for the "author" field
-    if character is not None:
-        character_name = character.name
-    else:
-        character_name = player.display_name
-
-    title = results.main_takeaway
-    if not results.is_total_failure and not results.is_bestial:
-        title += f" ({results.total_successes})"
-
-    embed = discord.Embed(
-        title=title,
-        colour=results.embed_color
-    )
-
-    # Author line
-    author_field = character_name + ("'s reroll" if rerolled else "'s roll")
-    if results.difficulty > 0:
-        author_field += f" vs diff. {results.difficulty}"
-    if results.descriptor is not None:
-        author_field += f" ({results.descriptor})"
-
-    if character is not None:
-        icon = player.display_avatar if character.is_pc else (ctx.guild.icon or "")
-    else:
-        icon = player.display_avatar
-
-    embed.set_author(
-        name=author_field,
-        icon_url=icon
-    )
-
-    # Disclosure fields
-    if results.dice_count < 35:
-        normalmoji = dicemoji.emojify(results.normal.dice, False)
-        hungermoji = dicemoji.emojify(results.hunger.dice, True)
-        embed.add_field(
-            name=f"Margin: {results.margin}",
-            value=f"{normalmoji} {hungermoji}",
-            inline=False
-        )
-    else:
-        lines = []
-        if results.normal.count > 0:
-            dice = sorted(results.normal.dice, reverse=True)
-            lines.append("**Normal Dice:** " + ", ".join(map(str, dice)))
-        if results.hunger.count > 0:
-            dice = sorted(results.hunger.dice, reverse=True)
-            lines.append("**Hunger Dice:** " + ", ".join(map(str, dice)))
-
-        embed.add_field(
-            name=f"Margin: {results.margin}",
-            value="\n".join(lines),
-            inline=False
-        )
-
-    embed.add_field(name="Pool", value=str(results.pool))
-    embed.add_field(name="Hunger", value=str(results.hunger.count))
-    embed.add_field(name="Difficulty", value=str(results.difficulty))
-
-    if results.pool_str is not None:
-        embed.add_field(name="Pool", value=results.pool_str)
-
-    # Comment
-    if character is not None:
-        impairment = character.impairment
-        if impairment is not None:
-            if comment is not None:
-                if impairment not in comment:
-                    comment += f"\n{impairment}"
-            else:
-                comment = impairment
-
-    if comment is not None:
-        embed.set_footer(text=comment)
-
-    # Calculate re-roll options and display
-    surging = __determine_surging(character, comment, results.pool_str)
-    reroll_buttons = __generate_reroll_buttons(results, surging)
-
-    if rerolled:
-        await reroll.present_reroll(ctx, embed, character, player)
-    elif len(reroll_buttons) == 0:
-        msg = await ctx.respond(embed=embed)
-    else:
-        msg = await ctx.respond(embed=embed, components=reroll_buttons)
-        interaction, rerolled_results = await reroll.wait_for_reroll(ctx, character, msg, results)
-
-        if rerolled_results is not None:
-            await display_outcome(interaction, player, character, rerolled_results, comment,
-                rerolled=True
-            )
+        await roll_display.display(True)
 
 
 def perform_roll(character: VChar, *args):
@@ -447,38 +283,6 @@ def __match_universal_trait(match: str):
         return matches[0]
 
     return None
-
-
-def __determine_surging(character, comment, pool) -> bool:
-    """Determine whether to show the surge button."""
-    if character is None or character.splat == "mortal":
-        return False
-
-    combined = f"{comment} {pool}"
-    match = re.match(r"^.*(\s+surge|surge\s+.*|surge)$", combined, re.IGNORECASE)
-    return match is not None
-
-
-def __generate_reroll_buttons(roll_result, surging: bool) -> list:
-    """Generate the buttons for Willpower re-rolls."""
-    buttons = []
-
-    if roll_result.can_reroll_failures:
-        buttons.append(Button("Re-Roll Failures", "reroll_failures"))
-
-    if roll_result.can_maximize_criticals:
-        buttons.append(Button("Maximize Crits", "maximize_criticals"))
-
-    if roll_result.can_avoid_messy_critical:
-        buttons.append(Button("Avoid Messy", "avoid_messy"))
-
-    if roll_result.can_risky_messy_critical:
-        buttons.append(Button("Risky Avoid Messy", "risky"))
-
-    if surging:
-        buttons.append(Button("Rouse", "surge", "red"))
-
-    return buttons
 
 
 def needs_character(syntax: str):

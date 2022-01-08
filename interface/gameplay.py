@@ -12,12 +12,6 @@ from . import debug
 class Gameplay(commands.Cog):
     """Gameplay-based commands."""
 
-    @commands.command(name="v", aliases=["roll", "r"])
-    async def roll(self, ctx):
-        """Roll a dice pool, either raw or calculated from traits."""
-        await ctx.reply("This command has been removed. Please use `/vr` instead.")
-
-
     @slash_command(
         name="vr", # Called "vr" instead of "roll" for quicker command entry
         options=[

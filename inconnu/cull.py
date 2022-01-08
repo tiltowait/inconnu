@@ -25,6 +25,7 @@ class Culler:
         past = datetime.utcnow() - timedelta(days=days)
         guilds = Culler._GUILDS.find({ "left": { "$lt": past } }, { "guild": 1 })
         guilds = list(map(itemgetter("guild"), guilds))
+        print(len(guilds))
 
         characters = Culler._CHARACTERS.find({
             "$or": [

@@ -151,6 +151,25 @@ class RollDisplay(Listener):
 
 
     @property
+    def thumbnail_url(self) -> str:
+        """The URL for the embed thumbnail."""
+        # pylint: disable=line-too-long
+
+        if self.outcome.is_critical:
+            return "https://cdn.discordapp.com/attachments/929802715280846848/929810770013872188/crit.webp"
+        if self.outcome.is_messy:
+            return "https://cdn.discordapp.com/attachments/929802715280846848/929810769745440799/messy.webp"
+        if self.outcome.is_successful:
+            return "https://cdn.discordapp.com/attachments/929802715280846848/929810770177458256/success.webp"
+        if self.outcome.is_failure:
+            return "https://cdn.discordapp.com/attachments/929802715280846848/929811372924088380/fail.webp"
+        if self.outcome.is_total_failure:
+            return "https://cdn.discordapp.com/attachments/929802715280846848/929811373150572574/total-fail.webp"
+
+        return "https://cdn.discordapp.com/attachments/929802715280846848/929810770370379857/bestial.webp"
+
+
+    @property
     def embed(self) -> discord.Embed:
         """The graphical representation of the roll."""
         title = self.outcome.main_takeaway
@@ -173,6 +192,7 @@ class RollDisplay(Listener):
             name=author_field,
             icon_url=self.icon
         )
+        embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
         if self.outcome.dice_count < 35:

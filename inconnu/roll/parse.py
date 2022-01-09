@@ -11,10 +11,12 @@
 # this is the fact they could theoretically supply a name despite not using a
 # trait-based roll, so we need to check for the character in either case.
 
+import asyncio
 import re
 from types import SimpleNamespace as SN
 
 import discord
+from discord_ui.components import Button
 
 from ..roll_pool import roll_pool
 from .rolldisplay import RollDisplay
@@ -22,6 +24,7 @@ from .. import common
 from ..log import Log
 from ..constants import DAMAGE, UNIVERSAL_TRAITS
 from ..settings import Settings
+from .. import traits
 from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
@@ -69,19 +72,40 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         results = perform_roll(character, *args)
         await display_outcome(ctx, owner, character, results, comment)
 
-    except (SyntaxError, ValueError) as err:
+    except (SyntaxError, ValueError, errors.TraitError) as err:
         charid = character.id if character is not None else None
         Log.log("roll_error", user=ctx.author.id, charid=charid, syntax=raw_syntax)
 
-        await common.present_error(
+        if isinstance(err, errors.TraitError):
+            components = [Button("Show Traits")]
+            hidden = True
+        else:
+            components = None
+            hidden = False
+
+        msg = await common.present_error(
             ctx,
             err,
             ("Input", f"/vr syntax:`{raw_syntax}`"),
             author=owner,
             character=character,
             help_url=__HELP_URL,
-            hidden=False
+            components=components,
+            hidden=hidden
         )
+
+        # Show the traits button
+        if components is not None:
+            try:
+                btn = await msg.wait_for("button", ctx.bot, timeout=60)
+
+                # No need to check for button ownership; this message is ephemeral
+                await traits.show(btn, character, owner)
+
+            except asyncio.exceptions.TimeoutError:
+                pass
+            finally:
+                await msg.disable_components(index=0)
 
 
 async def display_outcome(ctx, player, character: VChar, results, comment):
@@ -148,7 +172,7 @@ def __substitute_traits(character: VChar, *args) -> tuple:
         argument = str(argument)
 
         if not pattern.match(argument):
-            raise ValueError("Invalid syntax.")
+            raise SyntaxError("Invalid syntax.")
 
         # Put spaces around the operators so that we can use split()
         argument = re.sub(r"\s*([+-])\s*", r" \g<1> ", argument)
@@ -183,10 +207,10 @@ def __substitute_traits(character: VChar, *args) -> tuple:
                 substituted_stack.append(rating)
                 trait_stack.append(match.title())
             else:
-                raise ValueError(str(err)) # pylint: disable=raise-missing-from
+                raise err
 
         except errors.AmbiguousTraitError as err:
-            raise ValueError(err.message) # pylint: disable=raise-missing-from
+            raise err
 
     return trait_stack, substituted_stack
 

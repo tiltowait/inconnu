@@ -12,13 +12,16 @@ class UnspecifiedCharacterError(CharacterError):
 class CharacterNotFoundError(CharacterError):
     """Raised when a given character does not exist."""
 
-class TraitAlreadyExistsError(Exception):
+class TraitError(Exception):
+    """Base error class for trait errors."""
+
+class TraitAlreadyExistsError(TraitError):
     """Raised when the user tries to add an extant trait."""
 
-class TraitNotFoundError(Exception):
+class TraitNotFoundError(TraitError):
     """Raised when a user specifies a nonexistent trait."""
 
-class AmbiguousTraitError(Exception):
+class AmbiguousTraitError(TraitError):
     """Raised when a user's trait argument is ambiguous."""
 
     def __init__(self, input_trait, matches):

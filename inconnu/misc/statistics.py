@@ -42,13 +42,14 @@ async def __trait_statistics(ctx, trait, date):
     """View the roll statistics for a given trait."""
     client = pymongo.MongoClient(os.environ["MONGO_URL"])
     rolls = client.inconnu.rolls
+    regex  = r"^.*(\s+" + f"{trait}|{trait}" + r"\s+.*|" + trait + ")$"
     pipeline = [
         {
             "$match": {
                 "user": ctx.author.id,
                 "guild": ctx.guild.id,
                 "date": { "$gte": date },
-                "pool": re.compile(trait, flags=re.I)
+                "pool": re.compile(regex, flags=re.I)
             }
         },
         {

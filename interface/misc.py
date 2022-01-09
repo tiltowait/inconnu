@@ -22,6 +22,7 @@ class MiscCommands(commands.Cog):
         options=[SlashOption(int, "ceiling", description="The roll's highest possible value")],
         guild_ids=debug.WHITELIST
     )
+    @ext.alias(["random"])
     async def percentile(self, ctx, ceiling=100):
         """Roll between 1 and a given ceiling (default 100)."""
         await inconnu.misc.percentile(ctx, ceiling)

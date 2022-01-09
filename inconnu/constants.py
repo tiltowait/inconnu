@@ -3,6 +3,10 @@
 import os
 from types import SimpleNamespace
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 INCONNU_ID = int(os.environ["INCONNU_ID"])
 
 # Tracker Stress

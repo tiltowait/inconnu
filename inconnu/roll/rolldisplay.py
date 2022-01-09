@@ -77,9 +77,11 @@ class RollDisplay(Listener):
         else:
             msg = await ctx.respond(self.text, components=self.buttons)
 
-        # In order to avoid errors, we spawn a new listener in the case of a reroll
+        # A listener can only listen to one message at a time, so we need a second
+        # one for the new message. It won't display data, so it doesn't need any
+        # of the state variables, only the user/character data.
         if alt_ctx:
-            alt = RollDisplay(ctx, self.outcome, self.character, self.comment, self.owner)
+            alt = RollDisplay(ctx, self.outcome, self.comment, self.character, self.owner)
             alt.attach_me_to(msg)
             alt.msg = msg
         else:
@@ -262,7 +264,7 @@ class RollDisplay(Listener):
         if self.rerolled:
             if self.character is not None:
                 buttons.append(Button("Mark WP", self._WILLPOWER))
-                if self.surging:
+                if not self.surged and self.surging:
                     buttons.append(Button("Rouse", str(self.character.id), "red"))
             return buttons if len(buttons) > 0 else None
 

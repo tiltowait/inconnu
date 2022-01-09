@@ -22,6 +22,9 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
     try:
         __validate_parameters(name, humanity, health, willpower) # splat is guaranteed correct
 
+        # Remove extraenous spaces from the name
+        name = re.sub(r"\s+", " ", name)
+
         if VChar.character_exists(ctx.guild.id, ctx.author.id, name, spc):
             if spc:
                 raise ValueError(f"Sorry, there is already an SPC named `{name}`!")
@@ -55,8 +58,8 @@ def __validate_parameters(name, humanity, health, willpower):
     if len(name) > 30:
         errors.append(f"`{name}` is too long by {len(name) - 30} characters.")
 
-    if re.match(r"^[A-z_]+$", name) is None:
-        errors.append("Character names may only contain letters and underscores.")
+    if re.match(r"^[A-z_\s]+$", name) is None:
+        errors.append("Character names may only contain letters, spaces and underscores.")
 
     if not 0 <= humanity <= 10:
         errors.append(f"Humanity must be between 0 and 10. (Got `{humanity}`)")

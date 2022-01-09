@@ -1,7 +1,7 @@
 python-dotenv
 
 discord.py @ git+https://github.com/rapptz/discord.py@45d498c1b76deaf3b394d17ccf56112fa691d160
-discord-ui==5.1.5
-#discord-ui @ git+https://github.com/discord-py-ui/discord-ui@e1044ae9121178f60ff7afae56601165b286e642
+#discord-ui==5.1.5
+discord-ui @ git+https://github.com/discord-py-ui/discord-ui@e1044ae9121178f60ff7afae56601165b286e642
 pymongo==3.12.0
 statcord.py==3.1.0

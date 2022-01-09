@@ -20,7 +20,7 @@
 
 At its most basic, **Inconnu** performs standard rolls with a Pool, Hunger, and Difficulty. In addition, it allows you to perform Willpower re-rolls using one of three strategies: re-roll failures, maximize criticals, and avoid messy criticals.
 
-However, what makes **Inconnu** unique is its combination of dice rolling and character statictics.
+However, what makes **Inconnu** unique is its combination of dice rolling and character statistics.
 
 ### Macro support
 

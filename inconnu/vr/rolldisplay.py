@@ -47,7 +47,7 @@ class RollDisplay(Listener):
                 else:
                     self.comment = impairment
 
-        super().__init__(timeout=60)
+        super().__init__(timeout=600)
 
 
     def _stop(self):

@@ -8,6 +8,7 @@ import pymongo
 
 from .. import common
 from .. import roll
+from ..roll_pool import roll_pool
 from ..settings import Settings
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=probability-calculation"
@@ -203,18 +204,18 @@ def __simulate(params, strategy):
     outcomes = defaultdict(lambda: 0)
 
     for _ in range(trials):
-        outcome = roll.roll_pool(params)
+        outcome = roll_pool(params)
 
         # Check reroll options
         if strategy is not None:
             if strategy == "reroll_failures" and outcome.can_reroll_failures:
-                outcome = roll.reroll(strategy, outcome)
+                outcome.reroll(strategy)
             elif strategy == "maximize_criticals" and outcome.can_maximize_criticals:
-                outcome = roll.reroll(strategy, outcome)
+                outcome.reroll(strategy)
             elif strategy == "avoid_messy" and outcome.can_avoid_messy_critical:
-                outcome = roll.reroll(strategy, outcome)
+                outcome.reroll(strategy)
             elif strategy == "risky" and outcome.can_risky_messy_critical:
-                outcome = roll.reroll(strategy, outcome)
+                outcome.reroll(strategy)
 
         totals["total_successes"] += outcome.total_successes
         totals["margin"] += outcome.margin

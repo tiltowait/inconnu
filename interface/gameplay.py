@@ -205,3 +205,21 @@ class Gameplay(commands.Cog):
     async def slake(self, ctx, amount: int, character=None):
         """Slake 1 or more Hunger."""
         await inconnu.misc.slake(ctx, amount, character)
+
+
+    @ext.check_failed("You cannot add stains in DMs.", hidden=True)
+    @commands.guild_only()
+    @slash_command(
+        name="stain",
+        options=[
+            SlashOption(int, "delta", description="How many stains to add/subtract", required=True),
+            SlashOption(str, "character", description="The character performing the check",
+                autocomplete=True, choice_generator=inconnu.available_characters
+            ),
+            SlashOption(discord.Member, "player", description="The character's owner (admin only)")
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    async def stain(self, ctx, delta: int, character=None, player=None):
+        """Apply or remove stains from a character."""
+        await inconnu.misc.stain(ctx, delta, character, player)

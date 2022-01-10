@@ -360,12 +360,19 @@ class VChar:
 
     # Derived attributes
 
+
+    @property
+    def degeneration(self) -> bool:
+        """Whether the character is in degeneration."""
+        return self.stains > (10 - self.humanity)
+
+
     @property
     def impairment(self):
         """A string for describing the character's physical/mental impairment."""
         physical = self.health.count(DAMAGE.none) == 0
         mental = self.willpower.count(DAMAGE.none) == 0
-        total = self.stains > (10 - self.humanity) or (physical and mental)
+        total = self.degeneration or (physical and mental)
 
         if total:
             return "You are impaired. Remember to subtract 2 dice from all pools."

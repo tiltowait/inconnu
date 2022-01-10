@@ -7,6 +7,7 @@ import discord
 import pymongo
 
 from .. import common
+from ..roll import Roll
 from .. import vr as roll
 from ..settings import Settings
 
@@ -203,7 +204,7 @@ def __simulate(params, strategy):
     outcomes = defaultdict(lambda: 0)
 
     for _ in range(trials):
-        outcome = roll.Roll(params.pool, params.hunger, params.difficulty)
+        outcome = Roll(params.pool, params.hunger, params.difficulty)
 
         # Check reroll options
         if strategy is not None:

@@ -14,8 +14,6 @@ from .. import stats
 from ..misc import rouse
 from ..vchar import contains_digit
 
-__MAX_REROLL = 3
-
 
 class RollDisplay(Listener):
     """Display and manipulate roll outcomes. Provides buttons for rerolls, wp, and rouse."""

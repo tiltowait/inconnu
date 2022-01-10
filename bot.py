@@ -3,6 +3,7 @@
 import os
 
 import discord
+import topgg
 from discord.ext import commands, tasks
 from discord_ui import UI
 
@@ -23,6 +24,7 @@ async def on_ready():
     print(f"Playing on {len(bot.guilds)} servers.")
     print(discord.version_info)
     print("Latency:", bot.latency * 1000, "ms")
+    print("------------\n")
 
     await __set_presence()
     cull_inactive.start()
@@ -111,6 +113,10 @@ def setup():
     bot.add_cog(interface.SettingsCommands(bot))
     bot.add_cog(interface.Traits(bot))
 
-    statcord_token = os.environ.get("INCONNU_STATCORD")
-    if statcord_token is not None:
-        bot.add_cog(interface.StatcordPost(bot, statcord_token))
+    if "STATCORD_TOKEN" in os.environ:
+        print("Establishing statcord connection.")
+        bot.add_cog(interface.StatcordPost(bot, os.environ["STATCORD_TOKEN"]))
+
+    if "TOPGG_TOKEN" in os.environ:
+        print("Establishing top.gg connection.")
+        bot.dblpy = topgg.DBLClient(bot, os.environ["TOPGG_TOKEN"], autopost=True)

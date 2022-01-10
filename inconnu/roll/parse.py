@@ -203,6 +203,9 @@ def __substitute_traits(character: VChar, *args) -> tuple:
             # We allow universal traits
             match = __match_universal_trait(item)
             if match:
+                if match.lower() == "surge" and character.splat == "mortal":
+                    raise ValueError("Mortals cannot perform a blood surge.") from err
+
                 rating = __get_universal_trait(character, match)
                 substituted_stack.append(rating)
                 trait_stack.append(match.title())

@@ -2,7 +2,7 @@
 
 import re
 
-from ..roll import perform_roll, display_outcome
+from ..vr import perform_roll, display_outcome
 from . import macro_common
 from .. import common
 from ..misc import rouse

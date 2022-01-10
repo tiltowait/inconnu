@@ -4,29 +4,38 @@ import random
 
 import bson
 
-from . import DiceThrow
+from .dicethrow import DiceThrow
 
 __MAX_REROLL = 3
 
 
-class RollResult:
+class Roll:
     """A container class that determines the result of a roll."""
 
-    def __init__(self, normal, hunger, difficulty):
+    def __init__(self, pool, hunger, difficulty, pool_str=None):
         """
         Args:
-            normal (DiceThrow): The rolled normal dice
-            hunger (DiceThrow): The rolled hunger dice
+            pool (int): The pool's total size, including hunger
+            hunger (int): The rolled hunger dice
             difficulty (int): The target number of successes
+            pool_str (Optional[int]): The pool's attribute + skill representation
         """
         self.id = bson.objectid.ObjectId() # pylint: disable=invalid-name
-        self.strategy = None # The re-roll strategy
 
-        self.normal = normal
-        self.hunger = hunger
+        if not 1 <= pool <= 100:
+            raise ValueError(f"Pool must be between 1 and 100. (Got {pool}.)")
+
+        normal_dice = max(0, pool - hunger)
+
+        self.normal = DiceThrow(normal_dice)
+        self.hunger = DiceThrow(hunger)
         self.difficulty = difficulty
-        self.pool_str = None
         self.descriptor = None
+
+        if pool_str is not None and not pool_str.isdigit():
+            self.pool_str = pool_str
+        else:
+            self.pool_str = None
 
 
     # We could technically do this with stored properties, but the math is extremely

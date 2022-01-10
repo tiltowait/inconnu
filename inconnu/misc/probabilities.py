@@ -7,8 +7,7 @@ import discord
 import pymongo
 
 from .. import common
-from .. import roll
-from ..roll_pool import roll_pool
+from .. import vr as roll
 from ..settings import Settings
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=probability-calculation"
@@ -204,7 +203,7 @@ def __simulate(params, strategy):
     outcomes = defaultdict(lambda: 0)
 
     for _ in range(trials):
-        outcome = roll_pool(params)
+        outcome = roll.Roll(params.pool, params.hunger, params.difficulty)
 
         # Check reroll options
         if strategy is not None:

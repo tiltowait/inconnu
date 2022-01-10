@@ -18,8 +18,8 @@ from types import SimpleNamespace as SN
 import discord
 from discord_ui.components import Button
 
-from ..roll_pool import roll_pool
 from .rolldisplay import RollDisplay
+from ..roll import Roll
 from .. import common
 from ..log import Log
 from ..constants import DAMAGE, UNIVERSAL_TRAITS
@@ -119,9 +119,9 @@ async def display_outcome(ctx, player, character: VChar, results, comment):
 
 
 def perform_roll(character: VChar, *args):
-    """Public interface for __evaluate_syntax() that returns a RollResult."""
+    """Public interface for __evaluate_syntax() that returns a Roll."""
     pool_str, roll_params = prepare_roll(character, *args)
-    return roll_pool(roll_params, pool_str)
+    return Roll(roll_params.pool, roll_params.hunger, roll_params.difficulty, pool_str)
 
 
 def prepare_roll(character: VChar, *args):

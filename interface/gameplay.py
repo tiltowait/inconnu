@@ -26,7 +26,7 @@ class Gameplay(commands.Cog):
     )
     async def slash_roll(self, ctx, syntax: str, comment=None, character=None, player=None):
         """Roll the dice."""
-        await inconnu.roll.parse(ctx, syntax, comment, character, player)
+        await inconnu.vr.parse(ctx, syntax, comment, character, player)
 
 
     @ext.check_failed("Aggravated healing isn't available in DMs.", hidden=True)

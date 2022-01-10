@@ -21,7 +21,7 @@ class Stats:
             guild (int): The Discord ID of the guild where the roll was made
             user (int): The Discord ID of the user making the roll
             charid (VChar): The character that made the roll (optional)
-            outcome (RollResult): The roll's parameters and outcome
+            outcome (Roll): The roll's parameters and outcome
         """
         Stats.__prepare()
 
@@ -117,7 +117,7 @@ class Stats:
         Update a roll entry.
         Args:
             ident (ObjectId): The entry's identifier
-            outcome (RollResult): The new outcome
+            outcome (Roll): The new outcome
         """
         Stats._STATS.update_one({ "_id": outcome.id }, {
             "$set": {

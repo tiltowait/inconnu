@@ -1,7 +1,3 @@
-"""Defines the imported interfaces for performing rolls."""
+"""roll - Roll model and related files."""
 
-from . import dicemoji
-from .dicethrow import DiceThrow
-from .parse import parse, perform_roll, display_outcome, prepare_roll, needs_character
-#from .roll import roll_pool
-from .rollresult import RollResult
+from .roll import Roll

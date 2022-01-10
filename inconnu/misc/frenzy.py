@@ -1,12 +1,10 @@
 """misc/frenzy.py - Perform a frenzy check."""
 #pylint: disable=too-many-arguments
 
-from types import SimpleNamespace as SN
-
 import discord
 
 from .. import common
-from ..roll_pool import roll_pool
+from ..roll import Roll
 from ..settings import Settings
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
@@ -24,8 +22,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
         elif penalty == "malkavian":
             frenzy_pool = max(frenzy_pool - 2, 1)
 
-        parameters = SN(pool=frenzy_pool, difficulty=difficulty, hunger=0)
-        outcome = roll_pool(parameters)
+        outcome = Roll(frenzy_pool, 0, difficulty)
 
         if outcome.total_successes >= difficulty:
             if outcome.is_critical:

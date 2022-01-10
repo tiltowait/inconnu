@@ -271,6 +271,9 @@ class RollDisplay(Listener):
     @property
     def surging(self) -> bool:
         """Whether the roll uses a Blood Surge."""
+        if self.character is None or self.character.splat == "mortal":
+            return False
+
         search = f"{self.outcome.pool_str} {self.comment}"
         match = re.match(r"^.*(\s+surge|surge\s+.*|surge)$", search, re.IGNORECASE)
         return match is not None

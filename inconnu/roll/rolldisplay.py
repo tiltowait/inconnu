@@ -2,7 +2,6 @@
 # pylint: disable=too-many-arguments, too-many-instance-attributes
 
 import asyncio
-import random
 import re
 
 import discord
@@ -12,7 +11,6 @@ from discord_ui.components import Button
 from . import dicemoji
 from .. import character as char
 from .. import stats
-from .dicethrow import DiceThrow
 from ..misc import rouse
 from ..vchar import contains_digit
 
@@ -118,7 +116,7 @@ class RollDisplay(Listener):
         else:
             # We're rerolling
             strategy = btn.custom_id
-            self.outcome = self.reroll(strategy)
+            self.outcome.reroll(strategy)
             self.rerolled = True
 
             # Determine whether to display an embed or not
@@ -195,7 +193,7 @@ class RollDisplay(Listener):
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        if self.outcome.dice_count < 35:
+        if self.outcome.pool < 35:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
             embed.add_field(
@@ -309,131 +307,3 @@ class RollDisplay(Listener):
             buttons.append(Button("Rouse", str(self.character.id), "red"))
 
         return buttons if len(buttons) > 0 else None
-
-
-    def reroll(self, strategy):
-        """Perform a reroll based on a given strategy."""
-        new_dice = None
-        descriptor = None
-
-        rerolled = self.outcome
-
-        if strategy == "reroll_failures":
-            new_dice = _reroll_failures(self.outcome.normal.dice)
-            rerolled.strategy = "failures"
-            descriptor = "Rerolling Failures"
-
-        elif strategy == "maximize_criticals":
-            new_dice = _maximize_criticals(self.outcome.normal.dice)
-            rerolled.strategy = "criticals"
-            descriptor = "Maximizing Criticals"
-
-        elif strategy == "avoid_messy":
-            new_dice = _avoid_messy(self.outcome.normal.dice)
-            rerolled.strategy = "messy"
-            descriptor = "Avoiding Messy Critical"
-
-        elif strategy == "risky":
-            new_dice = _risky_avoid_messy(self.outcome.normal.dice)
-            rerolled.strategy = "risky"
-            descriptor = "Avoid Messy (Risky)"
-
-        new_throw = DiceThrow(new_dice)
-        rerolled.normal = new_throw
-        rerolled.descriptor = descriptor
-
-        return rerolled
-
-
-def _reroll_failures(dice: list) -> list:
-    """Re-roll up to three failing dice."""
-    new_dice = []
-    rerolled = 0
-
-    for die in dice:
-        if die >= 6 or rerolled == __MAX_REROLL:
-            new_dice.append(die)
-        else:
-            new_dice.append(__d10())
-            rerolled += 1
-
-    return new_dice
-
-
-def _maximize_criticals(dice: list) -> list:
-    """Re-roll up to three non-critical dice."""
-
-    # If there are 3 or more failure dice, we don't need to re-roll any successes.
-    # To avoid accidentally skipping a die that needs to be re-rolled, we will
-    # convert successful dice until our total failures equals 3
-
-    # Technically, we could do this in two passes: re-roll failures, then re-
-    # roll non-criticals until we hit 3 re-rolls. It would certainly be the more
-    # elegant solution. However, that method would frequently result in the same
-    # die being re-rolled twice. This isn't technically against RAW, but it's
-    # against the spirit and furthermore increases the likelihood of bug reports
-    # due to people seeing dice frequently not being re-rolled when they expect
-    # them to be.
-
-    # Thus, we use this ugly method.
-    total_failures = len(list(filter(lambda die: die < 6, dice)))
-    if total_failures < __MAX_REROLL:
-        for index, die in enumerate(dice):
-            if 6 <= die < 10: # Non-critical success
-                dice[index] = 1
-                total_failures += 1
-
-                if total_failures == __MAX_REROLL:
-                    break
-
-    # We have as many re-rollable dice as we can
-    new_dice = []
-    rerolled = 0
-
-    for die in dice:
-        if die >= 6 or rerolled == __MAX_REROLL:
-            new_dice.append(die)
-        else:
-            new_dice.append(__d10())
-            rerolled += 1
-
-    return new_dice
-
-
-def _avoid_messy(dice: list) -> list:
-    """Re-roll up to three critical dice."""
-    new_dice = []
-    rerolled = 0
-
-    for die in dice:
-        if die != 10 or rerolled == __MAX_REROLL:
-            new_dice.append(die)
-        else:
-            new_dice.append(__d10())
-            rerolled += 1
-
-    return new_dice
-
-
-def _risky_avoid_messy(dice: list) -> list:
-    """Re-roll up to three critical dice plus one or two failing dice."""
-    new_dice = []
-    tens_remaining = dice.count(10)
-    fails_remaining = 3 - tens_remaining
-
-    for die in dice:
-        if tens_remaining > 0 and die == 10:
-            new_dice.append(__d10())
-            tens_remaining -= 1
-        elif die < 6 and fails_remaining > 0:
-            new_dice.append(__d10())
-            fails_remaining -= 1
-        else:
-            new_dice.append(die)
-
-    return new_dice
-
-
-def __d10() -> int:
-    """Roll a d10."""
-    return random.randint(1, 10)

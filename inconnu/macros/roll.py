@@ -32,7 +32,7 @@ async def roll(ctx, syntax: str, character=None):
         parameters.append(hunger)
         parameters.append(difficulty or macro.difficulty)
 
-        results = perform_roll(character, *parameters)
+        results = perform_roll(character, parameters)
 
         # We show the rouse check first, because display_outcome() is blocking
         await __rouse(ctx, character, macro)

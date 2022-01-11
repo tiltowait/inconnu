@@ -22,7 +22,6 @@ from .rolldisplay import RollDisplay
 from ..roll import Roll
 from .. import common
 from ..log import Log
-from ..constants import DAMAGE, UNIVERSAL_TRAITS
 from ..settings import Settings
 from .. import traits
 from ..vchar import errors, VChar
@@ -47,8 +46,6 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         await common.present_error(ctx, "You cannot roll traits in DMs!", help_url=__HELP_URL)
         return
 
-    args = syntax.split()
-
     # Determine the character being used, if any
     if ctx.guild is not None:
         # Only guilds have characters
@@ -69,8 +66,8 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
 
     # Attempt to parse the user's roll syntax
     try:
-        results = perform_roll(character, *args)
-        await display_outcome(ctx, owner, character, results, comment)
+        outcome = perform_roll(character, syntax)
+        await display_outcome(ctx, owner, character, outcome, comment)
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
         charid = character.id if character is not None else None
@@ -118,13 +115,13 @@ async def display_outcome(ctx, player, character: VChar, results, comment):
         await roll_display.display(True)
 
 
-def perform_roll(character: VChar, *args):
+def perform_roll(character: VChar, syntax):
     """Public interface for __evaluate_syntax() that returns a Roll."""
-    pool_str, roll_params = prepare_roll(character, *args)
+    pool_str, roll_params = prepare_roll(character, syntax)
     return Roll(roll_params.pool, roll_params.hunger, roll_params.difficulty, pool_str)
 
 
-def prepare_roll(character: VChar, *args):
+def prepare_roll(character: VChar, syntax):
     """
     Convert the user's syntax to the standardized format: pool, hunger, diff.
     Args:
@@ -136,8 +133,13 @@ def prepare_roll(character: VChar, *args):
 
     Raises ValueError if there is trouble querying the database.
     """
+    if isinstance(syntax, str):
+        args = __tokenize(syntax)
+    else:
+        args = map(str, syntax) # Came from a macro and already tokenized
+
     trait_stack, substituted_stack = __substitute_traits(character, *args)
-    evaluated_stack = __combine_operators(*substituted_stack)
+    evaluated_stack = __combine_operators(substituted_stack)
 
     # Lop off Hunger and Difficulty from the trait stack, leaving just the pool behind
     while len(trait_stack) > 1 and trait_stack[-2] not in ["+", "-"]:
@@ -147,86 +149,53 @@ def prepare_roll(character: VChar, *args):
     return pool_str, evaluated_stack
 
 
+def __tokenize(syntax) -> list:
+    """
+    Validate and tokenize the syntax.
+    Valid syntax: snake_case_words, integers, plus, minus.
+    """
+    if not re.match(r"^[\w\d\s\+-]+$", syntax):
+        raise SyntaxError("Invalid syntax.")
+
+    syntax = re.sub(r"\s*([+-])\s*", r" \g<1> ", syntax)
+
+    return syntax.split()
+
+
 def __substitute_traits(character: VChar, *args) -> tuple:
     """
     Convert the roll syntax into a stack while simultaneously replacing database
     calls with the appropriate values.
 
-    Valid syntax: snake_case_words, integers, plus, minus.
-
     Returns (tuple): A stack with expanded trait names and the substituted stack.
 
     Raises ValueError if there is trouble querying the database.
     """
-
-    # Split the syntax into words and numbers. Pool elements require math operators
-    # between them. Optional: If the final two lack operators, they are considered hunger
-    # and difficulty.
-
-    # Pass 1: Normalize
-    temp_stack = []
-
-    pattern = re.compile(r"^[\w\d\s\+-]+$")
-
-    for argument in args:
-        argument = str(argument)
-
-        if not pattern.match(argument):
-            raise SyntaxError("Invalid syntax.")
-
-        # Put spaces around the operators so that we can use split()
-        argument = re.sub(r"\s*([+-])\s*", r" \g<1> ", argument)
-
-        elements = argument.split()
-        temp_stack.extend(elements)
-
-    # Pass 2: Replace database calls with the appropriate values
     substituted_stack = []
     trait_stack = []
 
-    for item in temp_stack:
+    for item in args:
         if item in ["+", "-"] or item.isdigit():
             substituted_stack.append(item)
             trait_stack.append(item)
             continue
 
-        # User is invoking a trait
-        if character is None:
-            raise ValueError(f"You must supply a character name to use `{item}`.")
+        trait = character.find_trait(item)
 
-        try:
-            trait = character.find_trait(item)
-            substituted_stack.append(trait.rating)
-            trait_stack.append(trait.name)
-
-        except errors.TraitNotFoundError as err:
-            # We allow universal traits
-            match = __match_universal_trait(item)
-            if match:
-                if match.lower() == "surge" and character.splat == "mortal":
-                    raise ValueError("Mortals cannot perform a blood surge.") from err
-
-                rating = __get_universal_trait(character, match)
-                substituted_stack.append(rating)
-                trait_stack.append(match.title())
-            else:
-                raise err
-
-        except errors.AmbiguousTraitError as err:
-            raise err
+        substituted_stack.append(trait.rating)
+        trait_stack.append(trait.name)
 
     return trait_stack, substituted_stack
 
 
-def __combine_operators(*stack):
+def __combine_operators(stack):
     """Perform required math operations to produce a <pool> <hunger> <diff> stack."""
-    raw_stack = list(stack)
     compact_stack = []
 
     use_addition = False
     use_subtraction = False
 
-    for item in raw_stack:
+    for item in stack:
         if item == "+":
             use_addition = True
             continue
@@ -277,39 +246,6 @@ def __combine_operators(*stack):
     hunger = min(pool, hunger) # Make sure we don't roll more hunger dice than the total pool
 
     return SN(pool=pool, hunger=hunger, difficulty=difficulty)
-
-
-def __get_universal_trait(character: VChar, trait):
-    """Retrieve a universal trait (Hunger, Willpower, Humanity)."""
-    value = getattr(character, trait)
-
-    if trait == "willpower":
-        # Willpower is a string. Additionally, per RAW only undamaged Willpower
-        # may be rolled.
-        return value.count(DAMAGE.none)
-
-    # All others are ints
-    return value
-
-
-def __match_universal_trait(match: str):
-    """Match a trait to a universal trait. Raise AmbiguousTraitError if ambiguous."""
-
-    # Right now, there are only three universal traits, so this is overkill. However,
-    # that number may change in the future, so this flexibility may prove valuable
-    # in the long run.
-    matches = []
-    for trait in UNIVERSAL_TRAITS:
-        if trait.startswith(match.lower()):
-            matches.append(trait)
-
-    if len(matches) > 1:
-        raise ValueError(str(errors.AmbiguousTraitError(match, matches))) # Avoid messy try blocks
-
-    if len(matches) == 1:
-        return matches[0]
-
-    return None
 
 
 def needs_character(syntax: str):

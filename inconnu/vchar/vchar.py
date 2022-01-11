@@ -14,7 +14,7 @@ import bson
 from bson.objectid import ObjectId
 
 from . import errors
-from ..constants import DAMAGE, INCONNU_ID
+from ..constants import DAMAGE, INCONNU_ID, UNIVERSAL_TRAITS
 
 
 _digits = re.compile(r"\d")
@@ -460,7 +460,33 @@ class VChar:
         Finds the closest matching trait.
         Raises AmbiguousTraitError if more than one are found.
         """
-        matches = self.__find_items(VChar._TRAITS, trait, exact=exact)
+        trait = trait.lower()
+
+        matches = []
+
+        # We need to look up against universal traits as well as those stored
+        # in the database, or we might miss a universal (i.e. Surge vs Surgery)
+        for universal in UNIVERSAL_TRAITS:
+            if universal.startswith(trait.lower()):
+                rating = getattr(self, universal)
+
+                if isinstance(rating, str):
+                    rating = rating.count(DAMAGE.none)
+
+                universal = {
+                    "name": universal.capitalize(),
+                    "rating": rating
+                }
+
+                if hasattr(self, trait.lower()):
+                    return SimpleNamespace(**universal)
+
+                matches.append(universal)
+
+        # We didn't find an exact match; however, we did find a potential one
+
+        matches.extend(self.__find_items(VChar._TRAITS, trait, exact=exact))
+
         if len(matches) > 1:
             trait_names = [trait["name"] for trait in matches]
             raise errors.AmbiguousTraitError(trait, trait_names)

@@ -29,3 +29,12 @@ A random number between 1 and `ceiling` (default `100`) may be rolled with the `
 ## Statistics
 
 Want to see how many rolls you've made? How many successes, crits, bestial failures, and the like? How many times you've used a Willpower re-roll? The `/statistics` command will show all of this information for each of your characters on the server.
+
+Additionally, this command can show statistics for a specific trait. Currently, this is limited to showing the number of rolls made and number of successes gleaned in a given time period.
+
+| Parameter | Description                            | Notes                     |
+|-----------|----------------------------------------|---------------------------|
+| `trait`   | The trait to look up                   | Optional                  |
+| `date`    | Limit results to rolls after this date | Optional; YYYYMMDD format |
+
+If `date` is omitted, it will show all statistics for the character(s) the bot has ever recorded.

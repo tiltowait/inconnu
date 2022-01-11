@@ -8,6 +8,19 @@ Each command below is a "slash" or "application" command. As you type, Discord w
 
 The `/aggheal` command automatically heals your character by one Aggravated damage and rolls three Rouse checks, displaying the results (and any ensuing Hunger Frenzies) in a single command.
 
+## Applying Stains
+
+```
+/stain delta:DELTA character:CHARACTER:
+```
+
+A shortcut to `/character create`, this command applies or removes stains from a character.
+
+| Parameter   | Description                           | Notes                                                 |
+|-------------|---------------------------------------|-------------------------------------------------------|
+| `delta`     | The number of stains to add or remove | Can be positive or negative. Always adds or subtracts |
+| `character` | The character to stain                | Optional                                              |
+
 ## Awakening
 
 Each night a character wakes, they heal Superficial Willpower damage and make a Rouse check. **Inconnu** automates this process with the `/awaken` command. It will even tell you if you were unfortunate enough to fall into torpor!

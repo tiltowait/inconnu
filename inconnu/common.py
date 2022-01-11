@@ -160,7 +160,12 @@ async def select_character(ctx, err, help_url, tip, player=None):
         tip (tuple): A name and value for an embed field
         player: (Optional) A Discord member to query instead
     """
-    user = ctx.author if player is None else player
+    if ctx.author != player:
+        user = player
+        err = str(err).replace("You have", f"{user.display_name} has")
+    else:
+        user = ctx.author
+
     options = character_options(ctx.guild.id, user.id)
     errmsg = await present_error(
         ctx,

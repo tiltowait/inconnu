@@ -51,6 +51,8 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         failures = common.pluralize(outcome.failures, "failure")
         title = f"Rouse: {successes}, {failures}"
 
+    color = 0xc70f0f if "ailure" in title else None
+
     if outcome.frenzy:
         custom = [(
             "Roll against Hunger Frenzy",
@@ -84,7 +86,8 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         footer=footer,
         message=message,
         fields=fields,
-        custom=custom
+        custom=custom,
+        color=color
     )
 
 

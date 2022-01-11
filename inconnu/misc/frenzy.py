@@ -72,4 +72,9 @@ async def __display_embed(
     embed.set_author(name=author_field, icon_url=ctx.author.display_avatar)
     embed.set_footer(text=footer)
 
+    if title == "Failure!":
+        # pylint: disable=line-too-long
+        url = "https://cdn.discordapp.com/attachments/929802715280846848/930508611451498536/frenzy.webp"
+        embed.set_thumbnail(url=url)
+
     await ctx.respond(embed=embed)

@@ -84,7 +84,8 @@ async def display(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    traits_button: bool = False
+    traits_button: bool = False,
+    color: int = None
 ):
     """
     Display a character.
@@ -117,7 +118,8 @@ async def display(
             owner=owner,
             fields=fields,
             custom=custom,
-            traits_button=traits_button
+            traits_button=traits_button,
+            color=color
         )
 
     if traits_button:
@@ -143,7 +145,8 @@ async def __display_embed(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    traits_button: bool = False
+    traits_button: bool = False,
+    color: int = None
 ):
     if owner is None:
         owner = ctx.author
@@ -162,7 +165,8 @@ async def __display_embed(
     # Begin building the embed
     embed = discord.Embed(
         title=title or character.name,
-        description=message or ""
+        description=message or "",
+        color=color or discord.Embed.Empty
     )
 
     author_name = owner.display_name if title is None else character.name

@@ -479,6 +479,9 @@ class VChar:
                 }
 
                 if hasattr(self, trait.lower()):
+                    if trait.lower() == "surge" and self.splat != "vampire":
+                        raise errors.TraitNotFoundError("Only vampires can blood surge.")
+
                     return SimpleNamespace(**universal)
 
                 matches.append(universal)

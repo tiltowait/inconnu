@@ -85,7 +85,8 @@ async def display(
     fields: list = None,
     custom: list = None,
     traits_button: bool = False,
-    color: int = None
+    color: int = None,
+    thumbnail: str = None
 ):
     """
     Display a character.
@@ -119,7 +120,8 @@ async def display(
             fields=fields,
             custom=custom,
             traits_button=traits_button,
-            color=color
+            color=color,
+            thumbnail=thumbnail
         )
 
     if traits_button:
@@ -146,7 +148,8 @@ async def __display_embed(
     fields: list = None,
     custom: list = None,
     traits_button: bool = False,
-    color: int = None
+    color: int = None,
+    thumbnail: str = None
 ):
     if owner is None:
         owner = ctx.author
@@ -172,6 +175,9 @@ async def __display_embed(
     author_name = owner.display_name if title is None else character.name
     embed.set_author(name=author_name, icon_url=owner.display_avatar)
     embed.set_footer(text=footer or "")
+
+    if thumbnail is not None:
+        embed.set_thumbnail(url=thumbnail)
 
     for field, parameter in fields:
         if parameter == HEALTH:

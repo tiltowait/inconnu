@@ -51,12 +51,17 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         failures = common.pluralize(outcome.failures, "failure")
         title = f"Rouse: {successes}, {failures}"
 
-    color = 0xc70f0f if "ailure" in title else None
+    if "ailure" in title:
+        color = 0xc70f0f
+        thumbnail = "https://cdn.discordapp.com/attachments/929802715280846848/930516004482732132/hunger_filled.webp"
+    else:
+        color = None
+        thumbnail = "https://cdn.discordapp.com/attachments/929802715280846848/930516004243652618/hunger_unfilled.webp"
 
     if outcome.frenzy:
         custom = [(
             "Roll against Hunger Frenzy",
-            "You failed a Rouse check at Hunger 5 and should run the `/frenzy` command."
+            "You failed a Rouse check at Hunger 5 and should run the `/frenzy` command (DC 4)."
         )]
     else:
         custom = None
@@ -87,7 +92,8 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         message=message,
         fields=fields,
         custom=custom,
-        color=color
+        color=color,
+        thumbnail=thumbnail
     )
 
 

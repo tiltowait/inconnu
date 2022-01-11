@@ -74,7 +74,7 @@ async def __display_embed(
 
     if title == "Failure!":
         # pylint: disable=line-too-long
-        url = "https://cdn.discordapp.com/attachments/929802715280846848/930508611451498536/frenzy.webp"
+        url = "https://cdn.discordapp.com/attachments/929802715280846848/930516004956667935/frenzy.webp"
         embed.set_thumbnail(url=url)
 
     await ctx.respond(embed=embed)

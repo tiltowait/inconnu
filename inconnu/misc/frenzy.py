@@ -73,8 +73,7 @@ async def __display_embed(
     embed.set_footer(text=footer)
 
     if title == "Failure!":
-        # pylint: disable=line-too-long
-        url = "https://cdn.discordapp.com/attachments/929802715280846848/930516004956667935/frenzy.webp"
+        url = "https://www.inconnu-bot.com/images/assets/frenzy.webp"
         embed.set_thumbnail(url=url)
 
     await ctx.respond(embed=embed)

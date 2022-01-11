@@ -53,10 +53,10 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     if "ailure" in title:
         color = 0xc70f0f
-        thumbnail = "https://cdn.discordapp.com/attachments/929802715280846848/930516004482732132/hunger_filled.webp"
+        thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-filled.webp"
     else:
         color = None
-        thumbnail = "https://cdn.discordapp.com/attachments/929802715280846848/930516004243652618/hunger_unfilled.webp"
+        thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-unfilled.webp"
 
     if outcome.frenzy:
         custom = [(

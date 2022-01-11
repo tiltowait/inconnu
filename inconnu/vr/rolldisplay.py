@@ -149,20 +149,18 @@ class RollDisplay(Listener):
     @property
     def thumbnail_url(self) -> str:
         """The URL for the embed thumbnail."""
-        # pylint: disable=line-too-long
-
         if self.outcome.is_critical:
-            return "https://cdn.discordapp.com/attachments/929802715280846848/929810770013872188/crit.webp"
+            return "https://www.inconnu-bot.com/images/assets/dice/crit.webp"
         if self.outcome.is_messy:
-            return "https://cdn.discordapp.com/attachments/929802715280846848/929810769745440799/messy.webp"
+            return "https://www.inconnu-bot.com/images/assets/dice/messy.webp"
         if self.outcome.is_successful:
-            return "https://cdn.discordapp.com/attachments/929802715280846848/929810770177458256/success.webp"
+            return "https://www.inconnu-bot.com/images/assets/dice/success.webp"
         if self.outcome.is_failure:
-            return "https://cdn.discordapp.com/attachments/929802715280846848/929811372924088380/fail.webp"
+            return "https://www.inconnu-bot.com/images/assets/dice/fail.webp"
         if self.outcome.is_total_failure:
-            return "https://cdn.discordapp.com/attachments/929802715280846848/929811373150572574/total-fail.webp"
+            return "https://www.inconnu-bot.com/images/assets/dice/total-fail.webp"
 
-        return "https://cdn.discordapp.com/attachments/929802715280846848/929810770370379857/bestial.webp"
+        return "https://www.inconnu-bot.com/images/assets/dice/bestial.webp"
 
 
     @property

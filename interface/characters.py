@@ -3,7 +3,7 @@
 import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption
-from discord_ui.cogs import subslash_command
+from discord_ui.cogs import subslash_command, context_command
 
 import inconnu
 from . import debug
@@ -18,6 +18,16 @@ async def _spc_options(_, ctx):
 
 class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
+
+    @context_command(
+        name="Characters",
+        type='user',
+        guild_ids=debug.WHITELIST
+    )
+    async def user_characters(self, ctx, user):
+        """Display the user's character(s)."""
+        await self.display_character(ctx, None, user)
+
 
     @ext.check_failed("Characters aren't available in DMs.", hidden=True)
     @commands.guild_only()

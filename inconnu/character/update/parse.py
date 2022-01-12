@@ -138,9 +138,13 @@ async def update_help(ctx, err=None, hidden=True):
     inst = "To update a character, use `/character update` with one or more `KEY=VALUE` pairs."
     embed.add_field(name="Instructions", value=inst, inline=False)
 
-    parameters = [f"**{key}:** {val}" for key, val in __KEYS.items()]
+    parameters = [f"***{key}:*** {val}" for key, val in __KEYS.items()]
     parameters = "\n".join(parameters)
-    embed.add_field(name="Options", value=parameters, inline=False)
+    embed.add_field(name="Keys", value=parameters, inline=False)
+    embed.add_field(
+        name="Example",
+        value="Character takes 4 Superficial Health damage:```/character update parameters:sh+4```"
+    )
 
     embed.set_footer(text="You may modify more than one tracker at a time.")
 

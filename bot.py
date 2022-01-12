@@ -12,11 +12,10 @@ import interface
 
 intents = discord.Intents.default()
 intents.members = True
-print(intents)
 
 bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
 bot.remove_command("help")
-UI(bot, slash_options={"delete_unused": True})
+UI(bot)
 
 
 # General Events

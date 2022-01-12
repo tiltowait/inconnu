@@ -1,6 +1,6 @@
 # Macros
 
-Another of **Inconnu's** advanced features is macro support. A macro is a time-saving command that allows you to save a pool and optional difficulty for later use. For example, you might save a `hunt` command that uses your `Resolve + Medicine` traits, or you might make a `summon_spirit` macro that rolls `Resolve + Oblivion` at difficulty `3`. Used this way, macros speed up your play by reducing the number of times you have to crack open the book.
+Another of **Inconnu's** advanced features is macro support. A macro is a time-saving command that allows you to save a pool and optional difficulty for later use. For example, you might save a `hunt` command that uses your `Resolve + Medicine` traits, or you might make a `summon_spirit` macro that rolls `Resolve + Oblivion` at difficulty `3`, automatically performs a Rouse check, and even applies a stain if that Rouse check results in a 1 or a 10. Used this way, macros speed up your play by reducing the number of times you have to crack open the book.
 
 ?> **No Hunger?** Due to the frequency at which Hunger changes throughout normal play, macros do not track Hunger. However, when you call a macro, you can supply Hunger on the spot.
 

@@ -7,7 +7,7 @@ from discord_ui.components import LinkButton
 
 from . import paramupdate
 from ..display import display
-from ... import common
+from ... import common, constants
 from ...log import Log
 from ...vchar import VChar
 
@@ -148,11 +148,12 @@ async def update_help(ctx, err=None, hidden=True):
 
     embed.set_footer(text="You may modify more than one tracker at a time.")
 
-    button = LinkButton(
+    documentation = LinkButton(
         "http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates",
         label="Full Documentation"
     )
-    await ctx.respond(embed=embed, components=[button], hidden=hidden)
+    support = LinkButton(constants.SUPPORT_URL, "Support")
+    await ctx.respond(embed=embed, components=[documentation, support], hidden=hidden)
 
 # We do flexible matching for the keys. Many of these are the same as RoD's
 # keys, while others have been observed in syntax error logs. This should be

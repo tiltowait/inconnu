@@ -7,6 +7,7 @@ import discord
 from discord_ui import Button, SelectMenu, SelectOption
 from discord_ui.components import LinkButton
 
+from .constants import SUPPORT_URL
 from .settings import Settings
 from .vchar import errors, VChar
 
@@ -107,13 +108,15 @@ async def __error_embed(
     if help_url is not None:
         link = [LinkButton(
             help_url,
-            label="Help"
+            label="Documentation"
         )]
 
         if components is None:
             components = link
         else:
             components = [components, link]
+
+        components[-1].append(LinkButton(SUPPORT_URL, "Support"))
 
     return await ctx.respond(embed=embed, components=components, hidden=hidden)
 

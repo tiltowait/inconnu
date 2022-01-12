@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+SUPPORT_URL = "https://discord.com/invite/CPmsdWHUcZ"
+
 INCONNU_ID = int(os.environ["INCONNU_ID"])
 
 # Tracker Stress

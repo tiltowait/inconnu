@@ -7,6 +7,7 @@ from .cull import Culler as culler
 from . import macros
 from . import misc
 from . import roll
+from .settings import Guild
 from .settings import Settings as settings
 from . import traits
 from .vchar import VChar

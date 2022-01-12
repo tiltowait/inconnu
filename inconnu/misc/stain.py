@@ -3,7 +3,7 @@
 from .. import common
 from .. import character as char
 
-__HELP_URL = "https://www.inconnu-bot.com/#/"
+__HELP_URL = "https://www.inconnu-bot.com/#/shortcuts?id=applying-stains"
 
 
 async def stain(ctx, delta, character, owner):

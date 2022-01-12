@@ -426,7 +426,7 @@ class VChar:
         """The dice pool for resisting frenzy. Equal to current WP + 1/3 Humanity."""
         cur_wp = self.willpower.count(DAMAGE.none)
         third_hu = int(self.humanity / 3)
-        return cur_wp + third_hu
+        return max(cur_wp + third_hu, 1)
 
 
     @property

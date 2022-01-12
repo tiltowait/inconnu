@@ -39,7 +39,7 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
 
     try:
         args = syntax.split()
-        _, params = roll.prepare_roll(character, *args)
+        _, params = roll.prepare_roll(character, args)
         probabilities = __get_probabilities(params, strategy)
 
         if Settings.accessible(ctx.author):

@@ -117,8 +117,8 @@ async def display_outcome(ctx, player, character: VChar, results, comment):
 
 def perform_roll(character: VChar, syntax):
     """Public interface for __evaluate_syntax() that returns a Roll."""
-    pool_str, roll_params = prepare_roll(character, syntax)
-    return Roll(roll_params.pool, roll_params.hunger, roll_params.difficulty, pool_str)
+    pool_str, params = prepare_roll(character, syntax)
+    return Roll(params.pool, params.hunger, params.difficulty, pool_str, syntax)
 
 
 def prepare_roll(character: VChar, syntax):

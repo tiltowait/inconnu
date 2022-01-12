@@ -100,6 +100,7 @@ class Stats:
             "guild": guild, # We use the guild and user keys for easier lookups
             "user": user,
             "charid": char.id if char is not None else None,
+            "raw": outcome.syntax,
             "normal": outcome.normal.dice,
             "hunger": outcome.hunger.dice,
             "difficulty": outcome.difficulty,

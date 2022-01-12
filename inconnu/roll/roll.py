@@ -12,7 +12,7 @@ __MAX_REROLL = 3
 class Roll:
     """A container class that determines the result of a roll."""
 
-    def __init__(self, pool, hunger, difficulty, pool_str=None):
+    def __init__(self, pool, hunger, difficulty, pool_str=None, syntax=None):
         """
         Args:
             pool (int): The pool's total size, including hunger
@@ -31,6 +31,13 @@ class Roll:
         self.hunger = DiceThrow(hunger)
         self.difficulty = difficulty
         self.descriptor = None
+
+        if syntax is None:
+            self.syntax = None
+        elif isinstance(syntax, list):
+            self.syntax = " ".join(map(str, syntax))
+        else:
+            self.syntax = syntax
 
         if pool_str is not None and not pool_str.isdigit():
             self.pool_str = pool_str

@@ -114,18 +114,21 @@ def update_total_xp(character: VChar, delta: str) -> str:
     return __update_xp(character, "total", delta)
 
 
-def __update_track(character: VChar, tracker: str, new_len: int) -> str:
+def __update_track(character: VChar, tracker: str, new_len: str) -> str:
     """
     Update the size of a character's tracker.
     Args:
         character (VChar): The character to update
         tracker (str): "health" or "willpower"
-        new_size (int): The tracker's new size
+        new_size (str): The tracker's new size
 
     Does not catch exceptions.
     """
     if tracker not in ["health", "willpower"]:
         raise SyntaxError(f"Unknown tracker {tracker}")
+
+    if new_len[0] in ["+", "-"]:
+        raise ValueError(f"You must supply an exact value for {tracker.capitalize()}.")
 
     track = getattr(character, tracker) # Get tracker string
     cur_len = len(track)

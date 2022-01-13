@@ -39,7 +39,6 @@ async def slake(ctx, amount, character=None):
             if old_hunger >= 4:
                 try:
                     btn = await msg.wait_for("button", ctx.bot, timeout=60)
-
                     while btn.author.id != ctx.author.id:
                         await btn.respond("This button doesn't belong to you!", hidden=True)
                         btn = await msg.wait_for("button", ctx.bot, timeout=60)

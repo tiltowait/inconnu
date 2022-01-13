@@ -33,12 +33,24 @@ async def display_requested(ctx, character=None, message=None, player=None):
         tip = "`/character display` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        await display(ctx, character,
+        msg = await display(ctx, character,
             owner=player,
             message=message,
             footer=None,
-            traits_button=True
+            components=[Button("Traits")]
         )
+
+        try:
+            btn = await msg.wait_for("button", ctx.bot, timeout=60)
+            while btn.author != ctx.author:
+                await btn.respond("Sorry, you can't view these traits.", hidden=True)
+                btn = await msg.wait_for("button", ctx.bot, timeout=60)
+
+            await traits.show(btn, character.name, owner)
+            await msg.disable_components()
+
+        except asyncio.exceptions.TimeoutError:
+            await msg.disable_components()
 
     except LookupError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
@@ -84,7 +96,6 @@ async def display(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    traits_button: bool = False,
     color: int = None,
     thumbnail: str = None,
     components: list = None
@@ -103,44 +114,27 @@ async def display(
         traits_button (bool): Whether to show a traits button. Default false
     """
     if Settings.accessible(ctx.author):
-        msg = await __display_text(ctx, character,
+        return await __display_text(ctx, character,
             title=title,
             message=message,
             footer=footer,
             owner=owner,
             fields=fields,
             custom=custom,
-            traits_button=traits_button,
-            components=components
-        )
-    else:
-        msg = await __display_embed(ctx, character,
-            title=title,
-            message=message,
-            footer=footer,
-            owner=owner,
-            fields=fields,
-            custom=custom,
-            traits_button=traits_button,
-            color=color,
-            thumbnail=thumbnail,
             components=components
         )
 
-    if traits_button:
-        try:
-            btn = await msg.wait_for("button", ctx.bot, timeout=60)
-            while btn.author != ctx.author:
-                await btn.respond("Sorry, you can't view these traits.", hidden=True)
-                btn = await msg.wait_for("button", ctx.bot, timeout=60)
-
-            await traits.show(btn, character.name, owner)
-            await msg.disable_components()
-
-        except asyncio.exceptions.TimeoutError:
-            await msg.disable_components()
-    else:
-        return msg
+    return await __display_embed(ctx, character,
+        title=title,
+        message=message,
+        footer=footer,
+        owner=owner,
+        fields=fields,
+        custom=custom,
+        color=color,
+        thumbnail=thumbnail,
+        components=components
+    )
 
 
 async def __display_embed(
@@ -152,7 +146,6 @@ async def __display_embed(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    traits_button: bool = False,
     color: int = None,
     thumbnail: str = None,
     components: list = None
@@ -215,10 +208,6 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    if traits_button:
-        components = components or []
-        components.append(Button("Traits", "traits"))
-
     return await ctx.respond(embed=embed, components=components)
 
 
@@ -231,7 +220,6 @@ async def __display_text(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    traits_button: bool = False,
     components: list = None
 ):
     """Display a text representation of the character."""
@@ -291,10 +279,6 @@ async def __display_text(
     contents = "\n".join(contents)
     if footer is not None:
         contents += f"\n*{footer}*"
-
-    if traits_button:
-        components = components or []
-        components.append(Button("Traits", "traits"))
 
     return await ctx.respond(contents, components=components)
 

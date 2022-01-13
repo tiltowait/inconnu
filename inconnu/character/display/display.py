@@ -7,7 +7,7 @@ from discord_ui import Button
 from . import trackmoji
 from ... import common
 from ...constants import DAMAGE
-from ...listeners import TraitsListener
+from ... import listeners
 from ...settings import Settings
 from ...vchar import VChar
 
@@ -38,7 +38,7 @@ async def display_requested(ctx, character=None, message=None, player=None):
             components=[Button("Traits")]
         )
 
-        TraitsListener(character).attach_me_to(msg)
+        listeners.TraitsListener(character).attach_me_to(msg)
 
     except LookupError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)

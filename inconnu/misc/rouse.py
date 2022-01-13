@@ -8,7 +8,7 @@ from discord_ui.components import Button
 
 from .. import common
 from .. import character as char
-from ..listeners import FrenzyListener
+from .. import listeners
 from ..settings import Settings
 from ..vchar import VChar
 
@@ -99,7 +99,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
     )
 
     if outcome.frenzy:
-        FrenzyListener(ctx.author.id, character, 4).attach_me_to(msg)
+        listeners.FrenzyListener(ctx.author.id, character, 4).attach_me_to(msg)
 
 
 async def __damage_ghoul(ctx, ghoul):

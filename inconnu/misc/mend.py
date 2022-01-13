@@ -7,8 +7,8 @@ from discord_ui.components import Button
 
 from .. import common
 from .. import character as char
+from .. import listeners
 from ..constants import DAMAGE
-from ..listeners import FrenzyListener
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=mending-damage"
 
@@ -53,7 +53,7 @@ async def __display_outcome(ctx, character, outcome):
     )
 
     if outcome.frenzy:
-        FrenzyListener(ctx.author.id, character, 4).attach_me_to(msg)
+        listeners.FrenzyListener(ctx.author.id, character, 4).attach_me_to(msg)
 
 
 def __heal(character):

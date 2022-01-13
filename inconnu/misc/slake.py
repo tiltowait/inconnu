@@ -4,7 +4,7 @@ from discord_ui.components import Button
 
 from .. import common
 from .. import character as char
-from ..listeners import FrenzyListener
+from .. import listeners
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=slaking-hunger"
 
@@ -35,7 +35,7 @@ async def slake(ctx, amount, character=None):
             )
 
             if old_hunger >= 4:
-                FrenzyListener(ctx.author.id, character, 3).attach_me_to(msg)
+                listeners.FrenzyListener(ctx.author.id, character, 3).attach_me_to(msg)
 
     except common.FetchError:
         pass

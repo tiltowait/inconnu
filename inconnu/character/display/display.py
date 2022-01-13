@@ -86,7 +86,8 @@ async def display(
     custom: list = None,
     traits_button: bool = False,
     color: int = None,
-    thumbnail: str = None
+    thumbnail: str = None,
+    components: list = None
 ):
     """
     Display a character.
@@ -109,7 +110,8 @@ async def display(
             owner=owner,
             fields=fields,
             custom=custom,
-            traits_button=traits_button
+            traits_button=traits_button,
+            components=components
         )
     else:
         msg = await __display_embed(ctx, character,
@@ -121,7 +123,8 @@ async def display(
             custom=custom,
             traits_button=traits_button,
             color=color,
-            thumbnail=thumbnail
+            thumbnail=thumbnail,
+            components=components
         )
 
     if traits_button:
@@ -136,6 +139,8 @@ async def display(
 
         except asyncio.exceptions.TimeoutError:
             await msg.disable_components()
+    else:
+        return msg
 
 
 async def __display_embed(
@@ -149,7 +154,8 @@ async def __display_embed(
     custom: list = None,
     traits_button: bool = False,
     color: int = None,
-    thumbnail: str = None
+    thumbnail: str = None,
+    components: list = None
 ):
     if owner is None:
         owner = ctx.author
@@ -209,7 +215,10 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    components = [Button("Traits", "traits")] if traits_button else None
+    if traits_button:
+        components = components or []
+        components.append(Button("Traits", "traits"))
+
     return await ctx.respond(embed=embed, components=components)
 
 
@@ -222,7 +231,8 @@ async def __display_text(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    traits_button: bool = False
+    traits_button: bool = False,
+    components: list = None
 ):
     """Display a text representation of the character."""
     if owner is None:
@@ -282,7 +292,10 @@ async def __display_text(
     if footer is not None:
         contents += f"\n*{footer}*"
 
-    components = [Button("Traits", "traits")] if traits_button else None
+    if traits_button:
+        components = components or []
+        components.append(Button("Traits", "traits"))
+
     return await ctx.respond(contents, components=components)
 
 

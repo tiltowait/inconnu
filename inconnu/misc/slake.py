@@ -4,9 +4,9 @@ import asyncio
 
 from discord_ui.components import Button
 
-from . import frenzy
 from .. import common
 from .. import character as char
+from ..listeners import FrenzyListener
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=slaking-hunger"
 
@@ -37,19 +37,7 @@ async def slake(ctx, amount, character=None):
             )
 
             if old_hunger >= 4:
-                try:
-                    btn = await msg.wait_for("button", ctx.bot, timeout=60)
-                    while btn.author.id != ctx.author.id:
-                        await btn.respond("This button doesn't belong to you!", hidden=True)
-                        btn = await msg.wait_for("button", ctx.bot, timeout=60)
-
-                    await frenzy(btn, 3, None, character)
-
-                except asyncio.exceptions.TimeoutError:
-                    pass
-                finally:
-                    await msg.disable_components()
-
+                FrenzyListener(ctx.author.id, character, 3).attach_me_to(msg)
 
 
     except common.FetchError:

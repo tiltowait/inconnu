@@ -7,9 +7,9 @@ from types import SimpleNamespace
 
 from discord_ui.components import Button
 
-from .frenzy import frenzy
 from .. import common
 from .. import character as char
+from ..listeners import FrenzyListener
 from ..settings import Settings
 from ..vchar import VChar
 
@@ -100,18 +100,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
     )
 
     if outcome.frenzy:
-        try:
-            btn = await msg.wait_for("button", ctx.bot, timeout=60)
-            while btn.author.id != ctx.author.id:
-                await btn.respond("This button doesn't belong to you!", hidden=True)
-                btn = await msg.wait_for("button", ctx.bot, timeout=60)
-
-            await frenzy(btn, 0, None, character)
-
-        except asyncio.exceptions.TimeoutError:
-            pass
-        finally:
-            await msg.disable_components()
+        FrenzyListener(ctx.author.id, character, 4).attach_me_to(msg)
 
 
 async def __damage_ghoul(ctx, ghoul):

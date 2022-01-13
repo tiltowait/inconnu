@@ -64,7 +64,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     if outcome.frenzy:
         components = [Button("Hunger Frenzy (DC 4)", color="red")]
-        custom = [("Hunger 5 Rouse Failure", "Roll for frenzy or fall into torpor!")]
+        custom = [("Hunger 5 Rouse Failure", "If awakening: Torpor. Otherwise: Roll for frenzy!")]
     else:
         components = None
         custom = None

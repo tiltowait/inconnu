@@ -106,17 +106,15 @@ async def __error_embed(
         embed.set_footer(text=footer)
 
     if help_url is not None:
-        link = [LinkButton(
-            help_url,
-            label="Documentation"
-        )]
+        link = [
+            LinkButton(help_url, "Documentation"),
+            LinkButton(SUPPORT_URL, "Support")
+        ]
 
         if components is None:
             components = link
         else:
             components = [components, link]
-
-        components[-1].append(LinkButton(SUPPORT_URL, "Support"))
 
     return await ctx.respond(embed=embed, components=components, hidden=hidden)
 

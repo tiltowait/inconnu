@@ -11,7 +11,7 @@ from ... import common
 from ... import traits
 from ...constants import DAMAGE
 from ...settings import Settings
-from ...vchar import errors, VChar
+from ...vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
 
@@ -56,35 +56,6 @@ async def display_requested(ctx, character=None, message=None, player=None):
         await common.present_error(ctx, err, help_url=__HELP_URL)
     except common.FetchError:
         pass
-
-
-async def __list_text(ctx, owner, characters):
-    """List characters in plain text."""
-    if ctx.author == owner:
-        contents = ["Your Characters:\n"]
-    else:
-        contents = [f"{owner.display_name}'s Characters:\n"]
-
-    contents.extend(characters)
-    contents.append("```To view one: /character display character:NAME```")
-
-    await ctx.respond("\n".join(contents), hidden=False)
-
-
-async def __list_embed(ctx, owner, characters):
-    """List characters in an embed."""
-    if ctx.author == owner:
-        title = "Your Characters"
-    else:
-        title = f"{owner.display_name}'s Characters"
-
-    embed = discord.Embed(
-        title=title,
-        description="\n".join(characters)
-    )
-    embed.set_author(name=owner.display_name, icon_url=owner.display_avatar)
-    embed.set_footer(text="To view one: /character display character:NAME")
-    await ctx.respond(embed=embed, hidden=False)
 
 
 async def display(

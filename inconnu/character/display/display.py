@@ -1,15 +1,13 @@
 """character/display/display.py - Tools for displaying characters."""
 # pylint: disable=too-many-arguments
 
-import asyncio
-
 import discord
 from discord_ui import Button
 
 from . import trackmoji
 from ... import common
-from ... import traits
 from ...constants import DAMAGE
+from ...listeners import TraitsListener
 from ...settings import Settings
 from ...vchar import VChar
 
@@ -40,17 +38,7 @@ async def display_requested(ctx, character=None, message=None, player=None):
             components=[Button("Traits")]
         )
 
-        try:
-            btn = await msg.wait_for("button", ctx.bot, timeout=60)
-            while btn.author != ctx.author:
-                await btn.respond("Sorry, you can't view these traits.", hidden=True)
-                btn = await msg.wait_for("button", ctx.bot, timeout=60)
-
-            await traits.show(btn, character.name, owner)
-            await msg.disable_components()
-
-        except asyncio.exceptions.TimeoutError:
-            await msg.disable_components()
+        TraitsListener(character).attach_me_to(msg)
 
     except LookupError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)

@@ -1,13 +1,12 @@
 """listeners/frenzylistener.py - An interface for listening to frenzy roll buttons."""
 
-import asyncio
-
 from discord_ui import Listener
 
+from .disablinglistener import DisablingListener
 from ..misc.frenzy import frenzy
 
 
-class FrenzyListener(Listener):
+class FrenzyListener(DisablingListener):
     """Listen to frenzy button events."""
 
     def __init__(self, user, character, difficulty):
@@ -17,7 +16,7 @@ class FrenzyListener(Listener):
             character (VChar): The character who will roll frenzy
             difficulty (int): The difficulty of the frenzy
         """
-        super().__init__(timeout=60)
+        super().__init__()
 
         self.user = user
         self.character = character
@@ -33,9 +32,3 @@ class FrenzyListener(Listener):
 
         await frenzy(btn, self.difficulty, None, self.character)
         await self.message.disable_components()
-
-
-    def _stop(self):
-        """Stop listening to events."""
-        super()._stop()
-        asyncio.create_task(self.message.disable_components())

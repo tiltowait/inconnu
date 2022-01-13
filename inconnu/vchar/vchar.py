@@ -41,6 +41,7 @@ class VChar:
         VChar.__prepare()
         self._params = params
         self.id = params["_id"] # pylint: disable=invalid-name
+        self.user = params["user"]
 
 
     # Character creation and fetching

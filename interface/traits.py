@@ -3,7 +3,7 @@
 import discord
 from discord.ext import commands
 from discord_ui import ext, SlashOption
-from discord_ui.cogs import subslash_command
+from discord_ui.cogs import subslash_command, context_command
 
 import inconnu
 from . import debug
@@ -11,6 +11,16 @@ from . import debug
 
 class Traits(commands.Cog, name="Trait Management"):
     """Trait management commands."""
+
+    @context_command(
+        name="Traits",
+        type="user",
+        guild_ids=debug.WHITELIST
+    )
+    async def user_traits(self, ctx, user):
+        """Display character traits."""
+        await self.list_traits(ctx, player=user)
+
 
     @ext.check_failed("Characters and traits aren't available in DMs.", hidden=True)
     @commands.guild_only()

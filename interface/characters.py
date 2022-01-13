@@ -21,7 +21,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     @context_command(
         name="Characters",
-        type='user',
+        type="user",
         guild_ids=debug.WHITELIST
     )
     async def user_characters(self, ctx, user):

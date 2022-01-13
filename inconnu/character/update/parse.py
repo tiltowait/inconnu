@@ -42,7 +42,7 @@ async def update(ctx, parameters: str, character=None, update_message=None, play
     args = re.sub(r"(\w)\s*([+-])\s*(\w)", r"\g<1>=\g<2>\g<3>", args) # Stop the sh+3 madness
     args = re.sub(r"\s*([+-])\s*=\s*", r"=\g<1>", args) # Let +/-= work, for the CS nerds
     args = re.sub(r"\s*=\s*([+-])\s*", r"=\g<1>", args) # Remove gaps between keys and values
-    args = list(args.split()) # To allow element removal
+    args = args.split() # To allow element removal
 
     if len(args) == 0:
         await update_help(ctx)

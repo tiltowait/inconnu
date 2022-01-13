@@ -3,9 +3,12 @@
 import random
 from types import SimpleNamespace
 
+from discord_ui.components import Button
+
 from .. import common
-from ..constants import DAMAGE
 from .. import character as char
+from ..constants import DAMAGE
+from ..listeners import FrenzyListener
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=mending-damage"
 
@@ -30,19 +33,27 @@ async def __display_outcome(ctx, character, outcome):
     title = f"Mended {outcome.mended} damage"
     fields = [("Health", char.HEALTH)]
 
+    footer = None
+    components = None
+
     if character.splat == "vampire":
         success_text = "Success" if outcome.rouse else "Failure"
         title += f" | Rouse {success_text}"
         fields.append(("Hunger", char.HUNGER))
-        footer = "ROLL FOR HUNGER FRENZY" if outcome.frenzy else None
-    else:
-        footer = None
 
-    await char.display(ctx, character,
+        if outcome.frenzy:
+            footer = "Rouse failure at Hunger 5!"
+            components = [Button("Hunger Frenzy (DC 4)", color="red")]
+
+    msg = await char.display(ctx, character,
         title=title,
         fields=fields,
-        footer=footer
+        footer=footer,
+        components=components
     )
+
+    if outcome.frenzy:
+        FrenzyListener(ctx.author.id, character, 4).attach_me_to(msg)
 
 
 def __heal(character):

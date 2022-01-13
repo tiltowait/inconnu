@@ -60,16 +60,28 @@ async def update(ctx, parameters: str, character=None, update_message=None, play
             update_msg = __update_character(character, parameter, new_value)
             updates.append(update_msg)
 
+        Log.log("update",
+            user=ctx.author.id,
+            guild=ctx.guild.id,
+            charid=character.id,
+            syntax=" ".join(args)
+        )
+
+        # Ignore generated output if we got a custom message
         if update_message is None:
-             # We only want to set the update message if we didn't get a customized display message
             update_message = "\n".join(updates)
 
-        Log.log("update", user=ctx.author.id, guild=ctx.guild.id, charid=character.id, syntax=" ".join(args))
         await display(ctx, character, owner=player, message=update_message)
 
     except (SyntaxError, ValueError) as err:
-        Log.log("update_error", user=ctx.author.id, guild=ctx.guild.id, charid=character.id, syntax=" ".join(args))
+        Log.log("update_error",
+            user=ctx.author.id,
+            guild=ctx.guild.id,
+            charid=character.id,
+            syntax=" ".join(args)
+        )
         await update_help(ctx, err)
+
     except LookupError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
     except common.FetchError:

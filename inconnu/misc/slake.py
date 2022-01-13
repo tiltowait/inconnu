@@ -1,7 +1,5 @@
 """misc/slake.py - Slake 1 or more Hunger."""
 
-import asyncio
-
 from discord_ui.components import Button
 
 from .. import common

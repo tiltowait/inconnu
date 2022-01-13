@@ -1,9 +1,13 @@
 """misc/rouse.py - Perform rouse checks."""
 # pylint: disable=too-many-arguments
 
+import asyncio
 import random
 from types import SimpleNamespace
 
+from discord_ui.components import Button
+
+from .frenzy import frenzy
 from .. import common
 from .. import character as char
 from ..settings import Settings
@@ -59,11 +63,10 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-unfilled.webp"
 
     if outcome.frenzy:
-        custom = [(
-            "Roll against Hunger Frenzy",
-            "You failed a Rouse check at Hunger 5 and should run the `/frenzy` command (DC 4)."
-        )]
+        components = [Button("Hunger Frenzy (DC 4)", color="red")]
+        custom = [("Hunger 5 Rouse Failure", "Roll for frenzy or fall into torpor!")]
     else:
+        components = None
         custom = None
 
     footer = []
@@ -85,16 +88,30 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     footer = "\n".join(footer)
 
-
-    await char.display(ctx, character,
+    msg = await char.display(ctx, character,
         title=title,
         footer=footer,
         message=message,
         fields=fields,
         custom=custom,
         color=color,
-        thumbnail=thumbnail
+        thumbnail=thumbnail,
+        components=components
     )
+
+    if outcome.frenzy:
+        try:
+            btn = await msg.wait_for("button", ctx.bot, timeout=60)
+            while btn.author.id != ctx.author.id:
+                await btn.respond("This button doesn't belong to you!", hidden=True)
+                btn = await msg.wait_for("button", ctx.bot, timeout=60)
+
+            await frenzy(btn, 0, None, character)
+
+        except asyncio.exceptions.TimeoutError:
+            pass
+        finally:
+            await msg.disable_components()
 
 
 async def __damage_ghoul(ctx, ghoul):

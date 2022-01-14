@@ -26,6 +26,8 @@ class RollDisplay(Listener):
 
 
     def __init__(self, ctx, outcome, comment, character, owner):
+        super().__init__(timeout=6)
+
         self.ctx = ctx
         self.outcome = outcome
         self.comment = comment
@@ -45,13 +47,13 @@ class RollDisplay(Listener):
                 else:
                     self.comment = impairment
 
-        super().__init__(timeout=600)
-
 
     def _stop(self):
         """Stop the listener and disable the buttons."""
         super()._stop()
-        asyncio.create_task(self.msg.disable_components())
+
+        if len(self.message.components) > 0 :
+            asyncio.create_task(self.msg.disable_components())
 
 
     async def display(self, use_embed: bool, alt_ctx=None):

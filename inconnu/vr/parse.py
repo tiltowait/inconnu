@@ -70,8 +70,11 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         await display_outcome(ctx, owner, character, outcome, comment)
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
-        charid = character.id if character is not None else None
-        Log.log("roll_error", user=ctx.author.id, charid=charid, syntax=raw_syntax)
+        Log.log("roll_error",
+            user=ctx.author.id,
+            charid=getattr(character, "id", None),
+            syntax=raw_syntax
+        )
 
         if isinstance(err, errors.TraitError):
             components = [Button("Show Traits")]

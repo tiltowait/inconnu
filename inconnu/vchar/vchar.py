@@ -1,5 +1,5 @@
 """vchar/vchar.py - Persistent character management using MongoDB."""
-# pylint: disable=too-many-public-methods, too-many-arguments
+# pylint: disable=too-many-public-methods, too-many-arguments, c-extension-no-member
 
 import datetime
 import math

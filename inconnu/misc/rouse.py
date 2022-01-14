@@ -45,14 +45,21 @@ async def rouse(
         pass
 
 
-async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, message):
-    """Process the rouse result and display to the user."""
+def __make_title(outcome):
+    """Create the title for the output message."""
     if outcome.total == 1:
         title = "Rouse Success" if outcome.successes == 1 else "Rouse Failure"
     else:
         successes = common.pluralize(outcome.successes, "success")
         failures = common.pluralize(outcome.failures, "failure")
         title = f"Rouse: {successes}, {failures}"
+
+    return title
+
+
+async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, message):
+    """Process the rouse result and display to the user."""
+    title = __make_title(outcome)
 
     if "ailure" in title and "0 fail" not in title:
         color = 0xc70f0f

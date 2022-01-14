@@ -30,6 +30,7 @@ class Roll:
         self.normal = DiceThrow(normal_dice)
         self.hunger = DiceThrow(hunger)
         self.difficulty = difficulty
+        self.strategy = None
         self.descriptor = None
 
         if syntax is None:

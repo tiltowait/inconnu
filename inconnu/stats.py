@@ -1,4 +1,5 @@
 """stats.py - Various packages for user statistics."""
+# pylint: disable=too-many-arguments
 
 import datetime
 import os

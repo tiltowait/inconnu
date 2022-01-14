@@ -13,7 +13,7 @@ async def create(
     name: str,
     pool: str,
     hunger: bool,
-    difficulty: int,
+    diff: int,
     rouses: int,
     reroll_rouses: bool,
     staining: str,
@@ -21,7 +21,7 @@ async def create(
     character: str
 ):
     """Create a macro if the syntax is valid."""
-    if difficulty < 0:
+    if diff < 0:
         await common.present_error(ctx, "`Difficulty` cannot be less than 0.", help_url=__HELP_URL)
         return
 
@@ -45,7 +45,7 @@ async def create(
             return
 
         pool = macro_common.expand_syntax(character, pool)
-        character.add_macro(name, pool, hunger, rouses, reroll_rouses, staining, difficulty, comment)
+        character.add_macro(name, pool, hunger, rouses, reroll_rouses, staining, diff, comment)
         await ctx.respond(f"**{character.name}:** Created macro `{name}`.", hidden=True)
 
     except (

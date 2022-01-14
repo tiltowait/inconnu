@@ -1,4 +1,5 @@
 """log.py - Logging facilities."""
+# pylint: disable=too-few-public-methods
 
 import datetime
 import os

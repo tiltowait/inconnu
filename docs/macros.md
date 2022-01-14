@@ -20,6 +20,7 @@ All macro management is done through the `/macro` application command prefix. As
 | `difficulty`    | The roll's difficulty (default 0)               | Default 0
 | `rouses`        | The number of Rouse checks to make              | Default 0
 | `reroll_rouses` | Whether to re-roll the macro's Rouse checks     | Default `No`
+| `staining`      | Whether to give a stain on a 1 or 10            | Default `No`
 | `comment`       | A comment to add when rolling                   | Optional
 | `character`     | The character who owns the macro                |
 

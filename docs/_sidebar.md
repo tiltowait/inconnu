@@ -7,4 +7,5 @@
 * [Trait Management](trait-management.md "Inconnu | Trait Management")
 * [Miscellaneous](misc-commands.md "Inconnu | Miscellaneous")
 * [Accessibility Mode](accessibility.md "Inconnu | Accessibility Mode")
+* [Server Settings](settings.md "Inconnu | Server Settings")
 * [Troubleshooting](troubleshooting.md "Inconnu | Troubleshooting")

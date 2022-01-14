@@ -47,7 +47,10 @@ class Macros(commands.Cog, name="Macro Utilities"):
                     ("Yes", 1), ("No", 0)
                 ]
             ),
-            SlashOption(int, "difficulty", description="The default difficulty (default 0)"),
+            SlashOption(int, "difficulty",
+                description="The default difficulty (default 0)",
+                min_value=0
+            ),
             SlashOption(int, "rouses", description="The number of Rouse checks (default 0)",
                 choices=[(str(n), n) for n in range(4)]
             ),

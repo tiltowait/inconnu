@@ -21,10 +21,6 @@ async def create(
     character: str
 ):
     """Create a macro if the syntax is valid."""
-    if diff < 0:
-        await common.present_error(ctx, "`Difficulty` cannot be less than 0.", help_url=__HELP_URL)
-        return
-
     try:
         tip = "`/macro create` `name:NAME` `pool:POOL` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)

@@ -132,25 +132,20 @@ def __update_track(character: VChar, tracker: str, new_len: str) -> str:
 
     track = getattr(character, tracker) # Get tracker string
     cur_len = len(track)
-
     new_len = int(new_len)
 
     # Ensure the tracker is the right size
     minimum = 4 if tracker == "health" else 3 # Minimum size
-    if not minimum <= new_len <= 15:
-        raise ValueError(f"{tracker.title()} must be between {minimum} and 15.")
+    if not minimum <= new_len <= 17:
+        raise ValueError(f"{tracker.title()} must be between {minimum} and 17.")
 
     if new_len > cur_len: # Growing
         track = track.rjust(new_len, DAMAGE.none)
     elif new_len < cur_len:
         track = track[-new_len:]
 
-    if tracker == "health":
-        character.health = track
-        return f"Set Health to `{len(track)}`."
-
-    character.willpower = track
-    return f"Set Willpower to `{len(track)}`."
+    setattr(character, tracker, track)
+    return f"Set {tracker.capitalize()} to `{new_len}`."
 
 
 # pylint: disable=too-many-arguments

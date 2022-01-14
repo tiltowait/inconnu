@@ -54,7 +54,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         failures = common.pluralize(outcome.failures, "failure")
         title = f"Rouse: {successes}, {failures}"
 
-    if "ailure" in title:
+    if "ailure" in title and "0 fail" not in title:
         color = 0xc70f0f
         thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-filled.webp"
     else:

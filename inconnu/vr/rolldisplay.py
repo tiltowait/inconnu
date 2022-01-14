@@ -135,20 +135,14 @@ class RollDisplay(Listener):
 
         If disable_all is false, then only btn will be disabled.
         """
-        components = btn.message.components
+        btn.message.components[btn.custom_id].color = "gray"
 
         if disable_all:
-            components.disable()
+            btn.message.components.disable()
+        else:
+            btn.message.components[btn.custom_id].disabled = True
 
-        buttons = components.buttons
-        index = buttons.index(btn.component)
-        buttons[index].color = "gray"
-
-        if not disable_all:
-            # This will be disabled no matter what, but no need to do it twice
-            buttons[index].disabled = True
-
-        await btn.message.edit(components=buttons)
+        await btn.message.edit(components=btn.message.components)
 
 
     @property

@@ -1,4 +1,4 @@
 """Set up the package interface."""
 
-from .display import *
+from .display import display, display_requested
 from . import trackmoji

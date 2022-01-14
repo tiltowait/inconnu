@@ -258,7 +258,7 @@ def _maximize_criticals(dice: list) -> list:
     # them to be.
 
     # Thus, we use this ugly method.
-    total_failures = len(list(filter(lambda die: die < 6, dice)))
+    total_failures = len([die for die in dice if die < 6])
     if total_failures < __MAX_REROLL:
         for index, die in enumerate(dice):
             if 6 <= die < 10: # Non-critical success

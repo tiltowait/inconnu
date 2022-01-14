@@ -12,8 +12,8 @@ def update_name(character: VChar, new_name: str) -> str:
     """Update the character's name."""
     if not re.match(r"[A-z_]+", new_name):
         raise ValueError("Names may only contain letters and underscores.")
-    if len(new_name) > 30:
-        raise ValueError(f"`{new_name}` is too long by {len(new_name) - 30} characters.")
+    if (name_len := len(new_name)) > 30:
+        raise ValueError(f"`{new_name}` is too long by {name_len - 30} characters.")
 
     character.name = new_name
     return f"Set name to `{new_name}`."

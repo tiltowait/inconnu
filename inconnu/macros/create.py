@@ -30,11 +30,9 @@ async def create(
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
         # Make sure fields aren't too long
-        if len(name) > macro_common.NAME_LEN:
-            length = len(name)
+        if (length := len(name)) > macro_common.NAME_LEN:
             raise SyntaxError(f"Macro names can't be longer than 50 characters. (Yours: {length})")
-        if comment is not None and len(comment) > macro_common.COMMENT_LEN:
-            length = len(comment)
+        if comment is not None and (length := len(comment)) > macro_common.COMMENT_LEN:
             raise SyntaxError(f"Comments can't be longer than 300 characters. (Yours: {length})")
 
         if not macro_common.is_macro_name_valid(name):

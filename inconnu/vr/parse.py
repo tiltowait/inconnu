@@ -38,8 +38,8 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         syntax, comment = syntax.split("#", 1)
         comment = comment.strip()
 
-    if comment is not None and len(comment) > 300:
-        await common.present_error(ctx, f"Comment is too long by {len(comment) - 300} characters.")
+    if comment is not None and (comment_len := len(comment)) > 300:
+        await common.present_error(ctx, f"Comment is too long by {comment_len - 300} characters.")
         return
 
     if ctx.guild is None and needs_character(syntax):

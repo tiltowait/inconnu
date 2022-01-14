@@ -12,8 +12,8 @@ def validate_trait_names(*traits):
     if the syntax is bad.
     """
     for trait in traits:
-        if len(trait) > 20:
-            raise ValueError(f"`{trait}` is too long by {len(trait) - 20} characters.")
+        if (trait_len := len(trait)) > 20:
+            raise ValueError(f"`{trait}` is too long by {trait_len - 20} characters.")
 
         if trait.lower() in UNIVERSAL_TRAITS:
             raise SyntaxError(f"`{trait}` is a reserved trait and cannot be added/updated/deleted.")

@@ -10,34 +10,40 @@ import inconnu
 from . import debug
 
 
-async def _available_scopes(_, ctx):
-    """Determine the available settings scopes."""
-    if ctx.author.guild_permissions.administrator:
-        return [("Self only", "user"), ("Entire server", "guild")]
-    return [("Self only", "user")]
-
-
-async def _available_oblivion_options(_, ctx):
-    """Determine the available Oblivion stains options."""
-    if ctx.author.guild_permissions.administrator:
-        return [
-            ("1s and 10s (RAW)", "100"),
-            ("1s only", "1"),
-            ("10s only", "10"),
-            ("None", "0")
-        ]
-    return []
-
-
 class SettingsCommands(commands.Cog):
     """Settings-related commands."""
 
     @slash_command(
+        options=[
+            SlashOption(int, "enable",
+                choices=[
+                    ("Yes", 1),
+                    ("No", 0)
+                ],
+                required=True
+            )
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    async def accessibility(self, ctx, enable):
+        """Enable or disable accessibility mode for yourself."""
+        enable = bool(enable)
+        response = inconnu.settings.set_accessibility(ctx, enable, "user")
+
+        await ctx.respond(response)
+
+
+    @slash_command(
         name="set",
         options=[
-            SlashOption(str, "oblivion_stains",
-                description="(Admin) Which Rouse results should give stain warnings",
-                autocomplete=True, choice_generator=_available_oblivion_options
+            SlashOption(int, "oblivion_stains",
+                description="Which Rouse results should give Oblivion stain warnings",
+                choices=[
+                    ("1s and 10s (RAW)", 100),
+                    ("1s only", 1),
+                    ("10s only", 10),
+                    ("Never", 0)
+                ]
             ),
             SlashOption(int, "accessibility",
                 description="Whether to enable or disable accessibility",
@@ -46,15 +52,11 @@ class SettingsCommands(commands.Cog):
                     ("No", 0)
                 ]
             ),
-            SlashOption(str, "scope",
-                description="Set for yourself or the entire server",
-                autocomplete=True, choice_generator=_available_scopes
-            ),
         ],
         guild_ids=debug.WHITELIST
     )
-    async def set(self, ctx, oblivion_stains=None, accessibility=None, scope="user"):
-        """Assign various user- or server-wide settings."""
+    async def set(self, ctx, oblivion_stains=None, accessibility=None):
+        """(Admin-only) Assign server-wide settings."""
         try:
             responses = []
 
@@ -64,13 +66,13 @@ class SettingsCommands(commands.Cog):
 
             if accessibility is not None:
                 accessibility = bool(accessibility)
-                response = inconnu.settings.set_accessibility(ctx, accessibility, scope)
+                response = inconnu.settings.set_accessibility(ctx, accessibility, "guild")
                 responses.append(response)
 
             if len(responses) > 0:
                 await ctx.respond("\n".join(responses))
             else:
-                await ctx.respond("No settings supplied!", hidden=True)
+                await self.settings(ctx)
 
         except PermissionError as err:
             await ctx.respond(err, hidden=True)

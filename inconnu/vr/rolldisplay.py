@@ -26,7 +26,7 @@ class RollDisplay(Listener):
 
 
     def __init__(self, ctx, outcome, comment, character, owner):
-        super().__init__(timeout=6)
+        super().__init__(timeout=600)
 
         self.ctx = ctx
         self.outcome = outcome

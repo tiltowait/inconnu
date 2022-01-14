@@ -2,6 +2,7 @@
 
 from .. import common
 from .. import character as char
+from ..constants import DAMAGE
 
 __HELP_URL = "https://www.inconnu-bot.com/#/shortcuts?id=applying-stains"
 
@@ -25,7 +26,7 @@ async def stain(ctx, delta, character, owner):
             new_overlap = abs(10 - character.humanity - total_stains)
             overlap_delta = new_overlap - old_overlap
 
-            character.apply_damage("willpower", char.DAMAGE.aggravated, overlap_delta)
+            character.apply_damage("willpower", DAMAGE.aggravated, overlap_delta)
             fields.append(("Willpower", char.WILLPOWER))
 
             message = f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."

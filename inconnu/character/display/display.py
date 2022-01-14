@@ -121,19 +121,18 @@ async def __display_embed(
     thumbnail: str = None,
     components: list = None
 ):
-    if owner is None:
-        owner = ctx.author
+    # Set the default values
+    owner = owner or ctx.author
 
-    if fields is None:
-        fields = [
-            ("Health", HEALTH),
-            ("Willpower", WILLPOWER),
-            ("Humanity", HUMANITY),
-            ("Blood Potency", POTENCY),
-            ("Hunger", HUNGER),
-            ("Bane Severity", SEVERITY),
-            ("Experience (Unspent / Lifetime)", EXPERIENCE)
-        ]
+    fields = fields or [
+        ("Health", HEALTH),
+        ("Willpower", WILLPOWER),
+        ("Humanity", HUMANITY),
+        ("Blood Potency", POTENCY),
+        ("Hunger", HUNGER),
+        ("Bane Severity", SEVERITY),
+        ("Experience (Unspent / Lifetime)", EXPERIENCE)
+    ]
 
     # Begin building the embed
     embed = discord.Embed(
@@ -142,44 +141,54 @@ async def __display_embed(
         color=color or discord.Embed.Empty
     )
 
-    author_name = owner.display_name if title is None else character.name
-    embed.set_author(name=author_name, icon_url=owner.display_avatar)
-    embed.set_footer(text=footer or "")
-
-    if thumbnail is not None:
-        embed.set_thumbnail(url=thumbnail)
+    embed.set_author(
+        name=owner.display_name if title is None else character.name,
+        icon_url=owner.display_avatar
+    )
+    embed.set_footer(text=footer or discord.Embed.Empty)
+    embed.set_thumbnail(url=thumbnail or discord.Embed.Empty)
 
     for field, parameter in fields:
-        if parameter == HEALTH:
-            value = trackmoji.emojify_track(character.health)
-        elif parameter == WILLPOWER:
-            value = trackmoji.emojify_track(character.willpower)
-        elif parameter == HUMANITY:
-            value = trackmoji.emojify_humanity(character.humanity, character.stains)
-        elif parameter == POTENCY:
-            if character.splat != "vampire":
-                continue
-            value = trackmoji.emojify_blood_potency(character.potency)
-        elif parameter == HUNGER:
-            if character.splat != "vampire":
-                continue
-            value = trackmoji.emojify_hunger(character.hunger)
-        elif parameter == SEVERITY:
-            if character.splat != "vampire":
-                continue
-            value = f"```{character.bane_severity}```"
-        elif parameter == EXPERIENCE:
-            value = "```\n"
-            value += f"{character.current_xp} / {character.total_xp}\n"
-            value += "```"
-
-        embed.add_field(name=field, value=value, inline=False)
+        if (value := __embed_field_value(character, parameter)) is not None:
+            embed.add_field(
+                name=field,
+                value=value,
+                inline=False
+            )
 
     if custom is not None:
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
     return await ctx.respond(embed=embed, components=components)
+
+
+def __embed_field_value(character, parameter):
+    """Generates the value for a given embed field."""
+    value = None
+
+    if parameter == HEALTH:
+        value = trackmoji.emojify_track(character.health)
+
+    elif parameter == WILLPOWER:
+        value = trackmoji.emojify_track(character.willpower)
+
+    elif parameter == HUMANITY:
+        value = trackmoji.emojify_humanity(character.humanity, character.stains)
+
+    elif parameter == POTENCY and character.splat == "vampire":
+        value = trackmoji.emojify_blood_potency(character.potency)
+
+    elif parameter == HUNGER and character.splat == "vampire":
+        value = trackmoji.emojify_hunger(character.hunger)
+
+    elif parameter == SEVERITY and character.splat == "vampire":
+        value = f"```{character.bane_severity}```"
+
+    elif parameter == EXPERIENCE:
+        value = f"```{character.current_xp} / {character.total_xp}```"
+
+    return value
 
 
 async def __display_text(
@@ -194,19 +203,19 @@ async def __display_text(
     components: list = None
 ):
     """Display a text representation of the character."""
-    if owner is None:
-        owner = ctx.author
 
-    if fields is None:
-        fields = [
-            ("Health", HEALTH),
-            ("Willpower", WILLPOWER),
-            ("Humanity", HUMANITY),
-            ("Blood Potency", POTENCY),
-            ("Hunger", HUNGER),
-            ("Bane Severity", SEVERITY),
-            ("Experience (Unspent / Lifetime)", EXPERIENCE)
-        ]
+    # Set default values
+    owner = owner or ctx.author
+
+    fields = fields or [
+        ("Health", HEALTH),
+        ("Willpower", WILLPOWER),
+        ("Humanity", HUMANITY),
+        ("Blood Potency", POTENCY),
+        ("Hunger", HUNGER),
+        ("Bane Severity", SEVERITY),
+        ("Experience (Unspent / Lifetime)", EXPERIENCE)
+    ]
 
     # Begin drafting the contents
     contents = [character.name]
@@ -219,27 +228,7 @@ async def __display_text(
     contents.append("```json") # Blank line
 
     for field, parameter in fields:
-        if parameter == HEALTH:
-            contents.append(f"{field}: {__stringify_track(character.health)}")
-        elif parameter == WILLPOWER:
-            contents.append(f"{field}: {__stringify_track(character.willpower)}")
-        elif parameter == HUMANITY:
-            contents.append(f"{field}: {character.humanity}")
-            contents.append(f"Stains: {character.stains}")
-        elif parameter == POTENCY:
-            if character.splat != "vampire":
-                continue
-            contents.append(f"{field}: {character.potency}")
-        elif parameter == HUNGER:
-            if character.splat != "vampire":
-                continue
-            contents.append(f"{field}: {character.hunger}")
-        elif parameter == SEVERITY:
-            if character.splat != "vampire":
-                continue
-            contents.append(f"Bane Severity: {character.bane_severity}")
-        elif parameter == EXPERIENCE:
-            contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
+        contents.extend(__text_field_contents(character, field, parameter))
 
     if custom is not None:
         contents.append("")
@@ -252,6 +241,35 @@ async def __display_text(
         contents += f"\n*{footer}*"
 
     return await ctx.respond(contents, components=components)
+
+
+def __text_field_contents(character, field, parameter):
+    """Generate the text mode field."""
+    contents = []
+
+    if parameter == HEALTH:
+        contents.append(f"{field}: {__stringify_track(character.health)}")
+
+    elif parameter == WILLPOWER:
+        contents.append(f"{field}: {__stringify_track(character.willpower)}")
+
+    elif parameter == HUMANITY:
+        contents.append(f"{field}: {character.humanity}")
+        contents.append(f"Stains: {character.stains}")
+
+    elif parameter == POTENCY and character.splat == "vampire":
+        contents.append(f"{field}: {character.potency}")
+
+    elif parameter == HUNGER and character.splat == "vampire":
+        contents.append(f"{field}: {character.hunger}")
+
+    elif parameter == SEVERITY and character.splat == "vampire":
+        contents.append(f"Bane Severity: {character.bane_severity}")
+
+    elif parameter == EXPERIENCE:
+        contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
+
+    return contents
 
 
 def __stringify_track(track: str):

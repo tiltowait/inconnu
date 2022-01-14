@@ -10,7 +10,7 @@ from ..misc.frenzy import frenzy
 class FrenzyListener(Listener):
     """Listen to frenzy button events."""
 
-    def __init__(self, user, character, difficulty):
+    def __init__(self, character, difficulty):
         """
         Args:
             user (int): The Discord ID of the user who may press the button
@@ -19,7 +19,6 @@ class FrenzyListener(Listener):
         """
         super().__init__(timeout=60)
 
-        self.user = user
         self.character = character
         self.difficulty = difficulty
 
@@ -27,7 +26,7 @@ class FrenzyListener(Listener):
     @Listener.button()
     async def respond_to_button(self, btn):
         """Respond to the button event."""
-        if btn.author.id != self.user:
+        if btn.author.id != self.character.user:
             await btn.respond(f"You can't frenzy on {self.character.name}'s behalf.", hidden=True)
             return
 

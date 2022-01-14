@@ -99,7 +99,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
     )
 
     if outcome.frenzy:
-        FrenzyListener(ctx.author.id, character, 4).attach_me_to(msg)
+        FrenzyListener(character, 4).attach_me_to(msg)
 
 
 async def __damage_ghoul(ctx, ghoul):

@@ -53,7 +53,7 @@ async def __display_outcome(ctx, character, outcome):
     )
 
     if outcome.frenzy:
-        FrenzyListener(ctx.author.id, character, 4).attach_me_to(msg)
+        FrenzyListener(character, 4).attach_me_to(msg)
 
 
 def __heal(character):

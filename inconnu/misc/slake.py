@@ -35,7 +35,7 @@ async def slake(ctx, amount, character=None):
             )
 
             if old_hunger >= 4:
-                FrenzyListener(ctx.author.id, character, 3).attach_me_to(msg)
+                FrenzyListener(character, 3).attach_me_to(msg)
 
 
     except common.FetchError:

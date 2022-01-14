@@ -103,7 +103,7 @@ class RollDisplay(Listener):
                 owner=self.owner,
                 fields=[("New WP", char.WILLPOWER)]
             )
-            await btn.message.disable_components(index=0)
+            await self._highlight_and_disable(btn, False)
 
         elif contains_digit(btn.custom_id): # Surge buttons are just charids
             self.surged = True
@@ -122,7 +122,33 @@ class RollDisplay(Listener):
             # Determine whether to display an embed or not
             use_embed = len(btn.message.embeds) > 0
             await self.display(use_embed, btn)
-            await btn.message.disable_components()
+
+            await self._highlight_and_disable(btn, True)
+
+
+    async def _highlight_and_disable(self, btn, disable_all):
+        """
+        Disable buttons and highlight the clicked one.
+        Args:
+            btn: The button to highlight
+            disable_all (bool): Whether to disable all buttons
+
+        If disable_all is false, then only btn will be disabled.
+        """
+        components = btn.message.components
+
+        if disable_all:
+            components.disable()
+
+        buttons = components.buttons
+        index = buttons.index(btn.component)
+        buttons[index].color = "gray"
+
+        if not disable_all:
+            # This will be disabled no matter what, but no need to do it twice
+            buttons[index].disabled = True
+
+        await btn.message.edit(components=buttons)
 
 
     @property

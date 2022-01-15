@@ -50,7 +50,10 @@ class Guild:
     @admin_role.setter
     def admin_role(self, role):
         """Set the server's admin role."""
-        self._set("admin_role", role.id)
+        if not isinstance(role, int):
+            role = role.id
+
+        self._set("admin_role", role)
 
 
     def _set(self, key, value):

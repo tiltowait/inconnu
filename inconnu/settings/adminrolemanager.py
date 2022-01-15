@@ -36,6 +36,11 @@ class AdminRoleManager:
 
     async def assign_role(self, role: int, guild: int):
         """Inform all observers of an admin role change."""
+        if not isinstance(role, int):
+            role = role.id
+        if not isinstance(guild, int):
+            guild = guild.id
+
         for observer in self.observers:
             await observer.admin_role_changed(role, guild)
 

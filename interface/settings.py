@@ -3,7 +3,7 @@
 import discord
 
 from discord.ext import commands
-from discord_ui import SlashOption
+from discord_ui import SlashOption, SlashPermission
 from discord_ui.cogs import slash_command
 
 import inconnu
@@ -12,6 +12,32 @@ from . import debug
 
 class SettingsCommands(commands.Cog):
     """Settings-related commands."""
+
+    def __init__(self, bot):
+        self.bot = bot
+        inconnu.admin_role_manager.add_observer(self)
+
+
+    @slash_command(
+        options=[
+            SlashOption(discord.Role, "role",
+                description="The role responsible for admin commands",
+                required=True
+            )
+        ]
+    )
+    async def admin(self, ctx, role):
+        """(Admin only) Specify the bot administration role."""
+        if not ctx.author.guild_permissions.administrator:
+            await ctx.respond("Only the server administrator may use this command.", hidden=True)
+            return
+
+        guild = inconnu.Guild(ctx.guild.id)
+        guild.admin_role = role
+
+
+        await ctx.respond(f"Users with the {role.mention} role may now configure the bot.")
+
 
     @slash_command(
         options=[
@@ -53,6 +79,7 @@ class SettingsCommands(commands.Cog):
                 ]
             ),
         ],
+        default_permission=False,
         guild_ids=debug.WHITELIST
     )
     async def set(self, ctx, oblivion_stains=None, accessibility=None):
@@ -99,3 +126,12 @@ class SettingsCommands(commands.Cog):
         embed.set_footer(text="Modify settings with /set")
 
         await ctx.respond(embed=embed)
+
+
+    async def admin_role_changed(self, role, guild):
+        """Update the administration role for a server."""
+        print("Got the role!", guild, role)
+        await self.set.edit(
+            permissions=SlashPermission(allowed={ role: SlashPermission.ROLE }),
+            guild_id=guild
+        )

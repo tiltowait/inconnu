@@ -14,7 +14,7 @@ class Guild:
         self.guild_col = mongo.inconnu.guilds
 
         self._params = self.guild_col.find_one({ "guild": guild })
-        self.id = self._params["_id"] # pylint: disable=invalid-name
+        self.id = self._params["guild"] # pylint: disable=invalid-name
 
 
     @property
@@ -41,9 +41,21 @@ class Guild:
         self._set("oblivion_stains", stains)
 
 
+    @property
+    def admin_role(self):
+        """Retrieve server's admin role."""
+        return self._params.get("settings", {}).get("admin_role", None)
+
+
+    @admin_role.setter
+    def admin_role(self, role):
+        """Set the server's admin role."""
+        self._set("admin_role", role.id)
+
+
     def _set(self, key, value):
         """Set a given settings key to a given value."""
-        self.guild_col.update_one({ "guild": self.id}, {
+        self.guild_col.update_one({ "guild": self.id }, {
             "$set": {
                 f"settings.{key}": value
             }

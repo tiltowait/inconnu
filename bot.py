@@ -31,6 +31,7 @@ async def on_ready():
 
     await __set_presence()
     cull_inactive.start()
+    await inconnu.admin_role_manager.load_admin_roles()
 
 
 @bot.event

@@ -35,6 +35,7 @@ class SettingsCommands(commands.Cog):
         guild = inconnu.Guild(ctx.guild.id)
         guild.admin_role = role
 
+        await inconnu.admin_role_manager.assign_role(role.id, guild.id)
 
         await ctx.respond(f"Users with the {role.mention} role may now configure the bot.")
 
@@ -130,7 +131,11 @@ class SettingsCommands(commands.Cog):
 
     async def admin_role_changed(self, role, guild):
         """Update the administration role for a server."""
-        print("Got the role!", guild, role)
+        if not isinstance(role, int):
+            role = role.id
+        if not isinstance(guild, int):
+            guild = guild.id
+
         await self.set.edit(
             permissions=SlashPermission(allowed={ role: SlashPermission.ROLE }),
             guild_id=guild

@@ -8,12 +8,14 @@ import pymongo
 class Guild:
     """Various setters and getters for server-wide settings."""
 
-    def __init__(self, guild):
-        mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
-        self.client = mongo
-        self.guild_col = mongo.inconnu.guilds
+    _CLIENT = None
+    _GUILDS = None
 
-        self._params = self.guild_col.find_one({ "guild": guild })
+
+    def __init__(self, guild):
+        Guild._prepare()
+
+        self._params = Guild._GUILDS.find_one({ "guild": guild })
         self.id = self._params["guild"] # pylint: disable=invalid-name
 
 
@@ -58,8 +60,22 @@ class Guild:
 
     def _set(self, key, value):
         """Set a given settings key to a given value."""
-        self.guild_col.update_one({ "guild": self.id }, {
+        Guild._GUILDS.update_one({ "guild": self.id }, {
             "$set": {
                 f"settings.{key}": value
             }
         })
+
+
+    @classmethod
+    def _prepare(cls):
+        """Prepare the database."""
+        try:
+            Guild._CLIENT.admin.command('ismaster')
+        except (AttributeError, pymongo.errors.ConnectionFailure):
+            Guild._CLIENT = None
+        finally:
+            if Guild._CLIENT is None:
+                mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
+                Guild._CLIENT = mongo
+                Guild._GUILDS = mongo.inconnu.guilds

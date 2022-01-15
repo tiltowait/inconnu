@@ -4,7 +4,7 @@ import discord
 
 from discord.ext import commands
 from discord_ui import SlashOption, SlashPermission
-from discord_ui.cogs import slash_command
+from discord_ui.cogs import slash_command, subslash_command
 
 import inconnu
 from . import debug
@@ -18,13 +18,16 @@ class SettingsCommands(commands.Cog):
         inconnu.admin_role_manager.add_observer(self)
 
 
-    @slash_command(
+    @subslash_command(
+        base_names="set",
+        name="admin",
         options=[
             SlashOption(discord.Role, "role",
                 description="The role responsible for admin commands",
                 required=True
             )
-        ]
+        ],
+        guild_ids=debug.WHITELIST
     )
     async def admin(self, ctx, role):
         """(Admin only) Specify the bot administration role."""
@@ -35,6 +38,9 @@ class SettingsCommands(commands.Cog):
         guild = inconnu.Guild(ctx.guild.id)
         guild.admin_role = role
 
+        print(dir(self))
+        print(type(self.parameters))
+        print(self.get_commands())
         await inconnu.admin_role_manager.assign_role(role.id, guild.id)
 
         await ctx.respond(f"Users with the {role.mention} role may now configure the bot.")
@@ -60,8 +66,9 @@ class SettingsCommands(commands.Cog):
         await ctx.respond(response)
 
 
-    @slash_command(
-        name="set",
+    @subslash_command(
+        base_names="set",
+        name="parameters",
         options=[
             SlashOption(int, "oblivion_stains",
                 description="Which Rouse results should give Oblivion stain warnings",
@@ -83,7 +90,7 @@ class SettingsCommands(commands.Cog):
         default_permission=False,
         guild_ids=debug.WHITELIST
     )
-    async def set(self, ctx, oblivion_stains=None, accessibility=None):
+    async def parameters(self, ctx, oblivion_stains=None, accessibility=None):
         """(Admin-only) Assign server-wide settings."""
         try:
             responses = []
@@ -136,7 +143,7 @@ class SettingsCommands(commands.Cog):
         if not isinstance(guild, int):
             guild = guild.id
 
-        await self.set.edit(
+        await self.parameters.base.edit(
             permissions=SlashPermission(allowed={ role: SlashPermission.ROLE }),
             guild_id=guild
         )

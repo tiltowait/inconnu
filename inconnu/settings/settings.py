@@ -5,6 +5,8 @@ import os
 import discord
 import pymongo
 
+from .guild import Guild
+
 
 class Settings:
     """A class for managing individual and server-wide settings."""
@@ -18,14 +20,10 @@ class Settings:
     @classmethod
     def accessible(cls, user):
         """Determine whether we should use accessibility mode."""
-        Settings._prepare()
-
-        guildwide = Settings._GUILDS.find_one({
-            "guild": user.guild.id,
-            "settings.accessibility": True
-        })
-        if guildwide is not None:
+        if Guild(user.guild.id).accessible:
             return True
+
+        Settings._prepare()
 
         userwide = Settings._USERS.find_one({
             "user": user.id,
@@ -51,10 +49,7 @@ class Settings:
             else:
                 response = "**Accessibility mode** disabled. Note: the server may override."
         else: # Server-wide setting
-            if not ctx.author.guild_permissions.administrator:
-                raise PermissionError("Sorry, only admins can set server-wide accessibility mode.")
-
-            Settings._set_key(ctx.guild, "accessibility", enabled)
+            Guild(ctx.guild.id).accessible = enabled
 
             if enabled:
                 response = "**Accessibility mode** enabled server-wide."
@@ -67,26 +62,15 @@ class Settings:
     @classmethod
     def oblivion_stains(cls, guild) -> list:
         """Retrieve the Rouse results that grant Oblivion stains."""
-        Settings._prepare()
-
         if not isinstance(guild, int):
             guild = guild.id
 
-        guild = Settings._GUILDS.find_one({"guild": guild })
-        try:
-            oblivion = guild["settings"]["oblivion_stains"]
-        except KeyError:
-            oblivion = [1, 10]
-
-        return oblivion
+        return Guild(guild).oblivion_stains
 
 
     @classmethod
     def set_oblivion_stains(cls, ctx, stains: int):
         """Set which dice outcomes will give stains for Oblivion rouse checks."""
-        if not ctx.author.guild_permissions.administrator:
-            raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
-
         response = "**Rouse checks:** Warn for Oblivion stains when rolling "
 
         if stains == 100:
@@ -99,7 +83,7 @@ class Settings:
             response += f"`{stains}`."
             stains = [stains]
 
-        Settings._set_key(ctx.guild, "oblivion_stains", stains)
+        Guild(ctx.guild.id).oblivion_stains = stains
         return response
 
 

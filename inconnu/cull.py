@@ -1,4 +1,5 @@
 """inconnu/cull.py - Cull inactive players and guilds."""
+# pylint: disable=too-few-public-methods
 
 import os
 from datetime import datetime, timedelta

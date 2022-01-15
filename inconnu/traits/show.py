@@ -51,10 +51,10 @@ async def __list_text(ctx, character):
     pages = common.paginate(1200, *traits) # Array of strings
 
     for page_num, page in enumerate(pages):
-        if len(pages) == 1:
+        if (page_count := len(pages)) == 1:
             contents = [f"{character.name}'s Traits"]
         else:
-            contents = [f"{character.name}'s Traits: Page {page_num + 1} of {len(pages)}"]
+            contents = [f"{character.name}'s Traits: Page {page_num + 1} of {page_count}"]
         contents.append("```css")
         contents.append(page)
         contents.append("```")

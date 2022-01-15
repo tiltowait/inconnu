@@ -5,6 +5,8 @@ from discord.ext import commands
 from discord_ui.cogs import slash_command
 from discord_ui.components import LinkButton
 
+from inconnu.constants import SUPPORT_URL
+
 
 class Help(commands.Cog, name="Help"):
     """A class for housing the /help command."""
@@ -24,13 +26,8 @@ class Help(commands.Cog, name="Help"):
         embed.add_field(name="Display character", value="`/character display`", inline=False)
         embed.add_field(name="Add traits", value="`/traits add`")
 
-        help_button = LinkButton(
-            "https://www.inconnu-bot.com/#/quickstart",
-            label="New? Read the Quickstart!"
-        )
-        patreon_button = LinkButton(
-            "https://www.patreon.com/tiltowait",
-            label="Patreon"
-        )
+        help_button = LinkButton("https://www.inconnu-bot.com/#/quickstart", "New? Click here!")
+        support_button = LinkButton(SUPPORT_URL, "Support")
+        patreon_button = LinkButton("https://www.patreon.com/tiltowait", "Patreon")
 
-        await ctx.respond(embed=embed, components=[help_button, patreon_button])
+        await ctx.respond(embed=embed, components=[help_button, support_button, patreon_button])

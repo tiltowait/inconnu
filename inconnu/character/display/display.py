@@ -11,7 +11,7 @@ from ... import common
 from ... import traits
 from ...constants import DAMAGE
 from ...settings import Settings
-from ...vchar import errors, VChar
+from ...vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
 
@@ -33,46 +33,29 @@ async def display_requested(ctx, character=None, message=None, player=None):
         tip = "`/character display` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        await display(ctx, character,
+        msg = await display(ctx, character,
             owner=player,
             message=message,
             footer=None,
-            traits_button=True
+            components=[Button("Traits")]
         )
+
+        try:
+            btn = await msg.wait_for("button", ctx.bot, timeout=60)
+            while btn.author != ctx.author:
+                await btn.respond("Sorry, you can't view these traits.", hidden=True)
+                btn = await msg.wait_for("button", ctx.bot, timeout=60)
+
+            await traits.show(btn, character.name, owner)
+            await msg.disable_components()
+
+        except asyncio.exceptions.TimeoutError:
+            await msg.disable_components()
 
     except LookupError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
     except common.FetchError:
         pass
-
-
-async def __list_text(ctx, owner, characters):
-    """List characters in plain text."""
-    if ctx.author == owner:
-        contents = ["Your Characters:\n"]
-    else:
-        contents = [f"{owner.display_name}'s Characters:\n"]
-
-    contents.extend(characters)
-    contents.append("```To view one: /character display character:NAME```")
-
-    await ctx.respond("\n".join(contents), hidden=False)
-
-
-async def __list_embed(ctx, owner, characters):
-    """List characters in an embed."""
-    if ctx.author == owner:
-        title = "Your Characters"
-    else:
-        title = f"{owner.display_name}'s Characters"
-
-    embed = discord.Embed(
-        title=title,
-        description="\n".join(characters)
-    )
-    embed.set_author(name=owner.display_name, icon_url=owner.display_avatar)
-    embed.set_footer(text="To view one: /character display character:NAME")
-    await ctx.respond(embed=embed, hidden=False)
 
 
 async def display(
@@ -84,9 +67,9 @@ async def display(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    traits_button: bool = False,
     color: int = None,
-    thumbnail: str = None
+    thumbnail: str = None,
+    components: list = None
 ):
     """
     Display a character.
@@ -102,40 +85,27 @@ async def display(
         traits_button (bool): Whether to show a traits button. Default false
     """
     if Settings.accessible(ctx.author):
-        msg = await __display_text(ctx, character,
+        return await __display_text(ctx, character,
             title=title,
             message=message,
             footer=footer,
             owner=owner,
             fields=fields,
             custom=custom,
-            traits_button=traits_button
-        )
-    else:
-        msg = await __display_embed(ctx, character,
-            title=title,
-            message=message,
-            footer=footer,
-            owner=owner,
-            fields=fields,
-            custom=custom,
-            traits_button=traits_button,
-            color=color,
-            thumbnail=thumbnail
+            components=components
         )
 
-    if traits_button:
-        try:
-            btn = await msg.wait_for("button", ctx.bot, timeout=60)
-            while btn.author != ctx.author:
-                await btn.respond("Sorry, you can't view these traits.", hidden=True)
-                btn = await msg.wait_for("button", ctx.bot, timeout=60)
-
-            await traits.show(btn, character.name, owner)
-            await msg.disable_components()
-
-        except asyncio.exceptions.TimeoutError:
-            await msg.disable_components()
+    return await __display_embed(ctx, character,
+        title=title,
+        message=message,
+        footer=footer,
+        owner=owner,
+        fields=fields,
+        custom=custom,
+        color=color,
+        thumbnail=thumbnail,
+        components=components
+    )
 
 
 async def __display_embed(
@@ -147,23 +117,22 @@ async def __display_embed(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    traits_button: bool = False,
     color: int = None,
-    thumbnail: str = None
+    thumbnail: str = None,
+    components: list = None
 ):
-    if owner is None:
-        owner = ctx.author
+    # Set the default values
+    owner = owner or ctx.author
 
-    if fields is None:
-        fields = [
-            ("Health", HEALTH),
-            ("Willpower", WILLPOWER),
-            ("Humanity", HUMANITY),
-            ("Blood Potency", POTENCY),
-            ("Hunger", HUNGER),
-            ("Bane Severity", SEVERITY),
-            ("Experience (Unspent / Lifetime)", EXPERIENCE)
-        ]
+    fields = fields or [
+        ("Health", HEALTH),
+        ("Willpower", WILLPOWER),
+        ("Humanity", HUMANITY),
+        ("Blood Potency", POTENCY),
+        ("Hunger", HUNGER),
+        ("Bane Severity", SEVERITY),
+        ("Experience (Unspent / Lifetime)", EXPERIENCE)
+    ]
 
     # Begin building the embed
     embed = discord.Embed(
@@ -172,45 +141,54 @@ async def __display_embed(
         color=color or discord.Embed.Empty
     )
 
-    author_name = owner.display_name if title is None else character.name
-    embed.set_author(name=author_name, icon_url=owner.display_avatar)
-    embed.set_footer(text=footer or "")
-
-    if thumbnail is not None:
-        embed.set_thumbnail(url=thumbnail)
+    embed.set_author(
+        name=owner.display_name if title is None else character.name,
+        icon_url=owner.display_avatar
+    )
+    embed.set_footer(text=footer or discord.Embed.Empty)
+    embed.set_thumbnail(url=thumbnail or discord.Embed.Empty)
 
     for field, parameter in fields:
-        if parameter == HEALTH:
-            value = trackmoji.emojify_track(character.health)
-        elif parameter == WILLPOWER:
-            value = trackmoji.emojify_track(character.willpower)
-        elif parameter == HUMANITY:
-            value = trackmoji.emojify_humanity(character.humanity, character.stains)
-        elif parameter == POTENCY:
-            if character.splat != "vampire":
-                continue
-            value = trackmoji.emojify_blood_potency(character.potency)
-        elif parameter == HUNGER:
-            if character.splat != "vampire":
-                continue
-            value = trackmoji.emojify_hunger(character.hunger)
-        elif parameter == SEVERITY:
-            if character.splat != "vampire":
-                continue
-            value = f"```{character.bane_severity}```"
-        elif parameter == EXPERIENCE:
-            value = "```\n"
-            value += f"{character.current_xp} / {character.total_xp}\n"
-            value += "```"
-
-        embed.add_field(name=field, value=value, inline=False)
+        if (value := __embed_field_value(character, parameter)) is not None:
+            embed.add_field(
+                name=field,
+                value=value,
+                inline=False
+            )
 
     if custom is not None:
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    components = [Button("Traits", "traits")] if traits_button else None
     return await ctx.respond(embed=embed, components=components)
+
+
+def __embed_field_value(character, parameter):
+    """Generates the value for a given embed field."""
+    value = None
+
+    if parameter == HEALTH:
+        value = trackmoji.emojify_track(character.health)
+
+    elif parameter == WILLPOWER:
+        value = trackmoji.emojify_track(character.willpower)
+
+    elif parameter == HUMANITY:
+        value = trackmoji.emojify_humanity(character.humanity, character.stains)
+
+    elif parameter == POTENCY and character.splat == "vampire":
+        value = trackmoji.emojify_blood_potency(character.potency)
+
+    elif parameter == HUNGER and character.splat == "vampire":
+        value = trackmoji.emojify_hunger(character.hunger)
+
+    elif parameter == SEVERITY and character.splat == "vampire":
+        value = f"```{character.bane_severity}```"
+
+    elif parameter == EXPERIENCE:
+        value = f"```{character.current_xp} / {character.total_xp}```"
+
+    return value
 
 
 async def __display_text(
@@ -222,22 +200,22 @@ async def __display_text(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    traits_button: bool = False
+    components: list = None
 ):
     """Display a text representation of the character."""
-    if owner is None:
-        owner = ctx.author
 
-    if fields is None:
-        fields = [
-            ("Health", HEALTH),
-            ("Willpower", WILLPOWER),
-            ("Humanity", HUMANITY),
-            ("Blood Potency", POTENCY),
-            ("Hunger", HUNGER),
-            ("Bane Severity", SEVERITY),
-            ("Experience (Unspent / Lifetime)", EXPERIENCE)
-        ]
+    # Set default values
+    owner = owner or ctx.author
+
+    fields = fields or [
+        ("Health", HEALTH),
+        ("Willpower", WILLPOWER),
+        ("Humanity", HUMANITY),
+        ("Blood Potency", POTENCY),
+        ("Hunger", HUNGER),
+        ("Bane Severity", SEVERITY),
+        ("Experience (Unspent / Lifetime)", EXPERIENCE)
+    ]
 
     # Begin drafting the contents
     contents = [character.name]
@@ -250,27 +228,7 @@ async def __display_text(
     contents.append("```json") # Blank line
 
     for field, parameter in fields:
-        if parameter == HEALTH:
-            contents.append(f"{field}: {__stringify_track(character.health)}")
-        elif parameter == WILLPOWER:
-            contents.append(f"{field}: {__stringify_track(character.willpower)}")
-        elif parameter == HUMANITY:
-            contents.append(f"{field}: {character.humanity}")
-            contents.append(f"Stains: {character.stains}")
-        elif parameter == POTENCY:
-            if character.splat != "vampire":
-                continue
-            contents.append(f"{field}: {character.potency}")
-        elif parameter == HUNGER:
-            if character.splat != "vampire":
-                continue
-            contents.append(f"{field}: {character.hunger}")
-        elif parameter == SEVERITY:
-            if character.splat != "vampire":
-                continue
-            contents.append(f"Bane Severity: {character.bane_severity}")
-        elif parameter == EXPERIENCE:
-            contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
+        contents.extend(__text_field_contents(character, field, parameter))
 
     if custom is not None:
         contents.append("")
@@ -282,8 +240,36 @@ async def __display_text(
     if footer is not None:
         contents += f"\n*{footer}*"
 
-    components = [Button("Traits", "traits")] if traits_button else None
     return await ctx.respond(contents, components=components)
+
+
+def __text_field_contents(character, field, parameter):
+    """Generate the text mode field."""
+    contents = []
+
+    if parameter == HEALTH:
+        contents.append(f"{field}: {__stringify_track(character.health)}")
+
+    elif parameter == WILLPOWER:
+        contents.append(f"{field}: {__stringify_track(character.willpower)}")
+
+    elif parameter == HUMANITY:
+        contents.append(f"{field}: {character.humanity}")
+        contents.append(f"Stains: {character.stains}")
+
+    elif parameter == POTENCY and character.splat == "vampire":
+        contents.append(f"{field}: {character.potency}")
+
+    elif parameter == HUNGER and character.splat == "vampire":
+        contents.append(f"{field}: {character.hunger}")
+
+    elif parameter == SEVERITY and character.splat == "vampire":
+        contents.append(f"Bane Severity: {character.bane_severity}")
+
+    elif parameter == EXPERIENCE:
+        contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
+
+    return contents
 
 
 def __stringify_track(track: str):

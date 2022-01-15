@@ -1,5 +1,5 @@
 """vchar/vchar.py - Persistent character management using MongoDB."""
-# pylint: disable=too-many-public-methods, too-many-arguments
+# pylint: disable=too-many-public-methods, too-many-arguments, c-extension-no-member
 
 import datetime
 import math
@@ -41,6 +41,7 @@ class VChar:
         VChar.__prepare()
         self._params = params
         self.id = params["_id"] # pylint: disable=invalid-name
+        self.user = params["user"]
 
 
     # Character creation and fetching
@@ -426,7 +427,7 @@ class VChar:
         """The dice pool for resisting frenzy. Equal to current WP + 1/3 Humanity."""
         cur_wp = self.willpower.count(DAMAGE.none)
         third_hu = int(self.humanity / 3)
-        return cur_wp + third_hu
+        return max(cur_wp + third_hu, 1)
 
 
     @property
@@ -718,6 +719,8 @@ class VChar:
     @classmethod
     def mark_player_inactive(cls, player):
         """Mark all of the player's characters as inactive."""
+        VChar.__prepare()
+
         VChar._CHARS.update_many({ "guild": player.guild.id, "user": player.id }, {
             "$set": { "log.left": datetime.datetime.utcnow() }
             }
@@ -727,6 +730,8 @@ class VChar:
     @classmethod
     def reactivate_player_characters(cls, player):
         """Reactivate all of the player's characters when they rejoin the guild."""
+        VChar.__prepare()
+
         VChar._CHARS.update_many({ "guild": player.guild.id, "user": player.id }, {
             "$unset": { "log.left": 1 }
             }

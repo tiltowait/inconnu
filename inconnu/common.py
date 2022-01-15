@@ -7,6 +7,7 @@ import discord
 from discord_ui import Button, SelectMenu, SelectOption
 from discord_ui.components import LinkButton
 
+from .constants import SUPPORT_URL
 from .settings import Settings
 from .vchar import errors, VChar
 
@@ -105,10 +106,10 @@ async def __error_embed(
         embed.set_footer(text=footer)
 
     if help_url is not None:
-        link = [LinkButton(
-            help_url,
-            label="Help"
-        )]
+        link = [
+            LinkButton(help_url, "Documentation"),
+            LinkButton(SUPPORT_URL, "Support")
+        ]
 
         if components is None:
             components = link

@@ -7,7 +7,7 @@ from discord_ui.components import LinkButton
 
 from . import paramupdate
 from ..display import display
-from ... import common
+from ... import common, constants
 from ...log import Log
 from ...vchar import VChar
 
@@ -60,16 +60,28 @@ async def update(ctx, parameters: str, character=None, update_message=None, play
             update_msg = __update_character(character, parameter, new_value)
             updates.append(update_msg)
 
+        Log.log("update",
+            user=ctx.author.id,
+            guild=ctx.guild.id,
+            charid=character.id,
+            syntax=" ".join(args)
+        )
+
+        # Ignore generated output if we got a custom message
         if update_message is None:
-             # We only want to set the update message if we didn't get a customized display message
             update_message = "\n".join(updates)
 
-        Log.log("update", user=ctx.author.id, guild=ctx.guild.id, charid=character.id, syntax=" ".join(args))
         await display(ctx, character, owner=player, message=update_message)
 
     except (SyntaxError, ValueError) as err:
-        Log.log("update_error", user=ctx.author.id, guild=ctx.guild.id, charid=character.id, syntax=" ".join(args))
+        Log.log("update_error",
+            user=ctx.author.id,
+            guild=ctx.guild.id,
+            charid=character.id,
+            syntax=" ".join(args)
+        )
         await update_help(ctx, err)
+
     except LookupError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
     except common.FetchError:
@@ -148,11 +160,12 @@ async def update_help(ctx, err=None, hidden=True):
 
     embed.set_footer(text="You may modify more than one tracker at a time.")
 
-    button = LinkButton(
+    documentation = LinkButton(
         "http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates",
         label="Full Documentation"
     )
-    await ctx.respond(embed=embed, components=[button], hidden=hidden)
+    support = LinkButton(constants.SUPPORT_URL, "Support")
+    await ctx.respond(embed=embed, components=[documentation, support], hidden=hidden)
 
 # We do flexible matching for the keys. Many of these are the same as RoD's
 # keys, while others have been observed in syntax error logs. This should be

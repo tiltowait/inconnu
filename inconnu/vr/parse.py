@@ -38,8 +38,8 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         syntax, comment = syntax.split("#", 1)
         comment = comment.strip()
 
-    if comment is not None and len(comment) > 300:
-        await common.present_error(ctx, f"Comment is too long by {len(comment) - 300} characters.")
+    if comment is not None and (comment_len := len(comment)) > 300:
+        await common.present_error(ctx, f"Comment is too long by {comment_len - 300} characters.")
         return
 
     if ctx.guild is None and needs_character(syntax):
@@ -70,8 +70,11 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         await display_outcome(ctx, owner, character, outcome, comment)
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
-        charid = character.id if character is not None else None
-        Log.log("roll_error", user=ctx.author.id, charid=charid, syntax=raw_syntax)
+        Log.log("roll_error",
+            user=ctx.author.id,
+            charid=getattr(character, "id", None),
+            syntax=raw_syntax
+        )
 
         if isinstance(err, errors.TraitError):
             components = [Button("Show Traits")]
@@ -117,8 +120,8 @@ async def display_outcome(ctx, player, character: VChar, results, comment):
 
 def perform_roll(character: VChar, syntax):
     """Public interface for __evaluate_syntax() that returns a Roll."""
-    pool_str, roll_params = prepare_roll(character, syntax)
-    return Roll(roll_params.pool, roll_params.hunger, roll_params.difficulty, pool_str)
+    pool_str, params = prepare_roll(character, syntax)
+    return Roll(params.pool, params.hunger, params.difficulty, pool_str, syntax)
 
 
 def prepare_roll(character: VChar, syntax):

@@ -12,8 +12,8 @@ def update_name(character: VChar, new_name: str) -> str:
     """Update the character's name."""
     if not re.match(r"[A-z_]+", new_name):
         raise ValueError("Names may only contain letters and underscores.")
-    if len(new_name) > 30:
-        raise ValueError(f"`{new_name}` is too long by {len(new_name) - 30} characters.")
+    if (name_len := len(new_name)) > 30:
+        raise ValueError(f"`{new_name}` is too long by {name_len - 30} characters.")
 
     character.name = new_name
     return f"Set name to `{new_name}`."
@@ -132,25 +132,20 @@ def __update_track(character: VChar, tracker: str, new_len: str) -> str:
 
     track = getattr(character, tracker) # Get tracker string
     cur_len = len(track)
-
     new_len = int(new_len)
 
     # Ensure the tracker is the right size
     minimum = 4 if tracker == "health" else 3 # Minimum size
-    if not minimum <= new_len <= 15:
-        raise ValueError(f"{tracker.title()} must be between {minimum} and 15.")
+    if not minimum <= new_len <= 17:
+        raise ValueError(f"{tracker.title()} must be between {minimum} and 17.")
 
     if new_len > cur_len: # Growing
         track = track.rjust(new_len, DAMAGE.none)
     elif new_len < cur_len:
         track = track[-new_len:]
 
-    if tracker == "health":
-        character.health = track
-        return f"Set Health to `{len(track)}`."
-
-    character.willpower = track
-    return f"Set Willpower to `{len(track)}`."
+    setattr(character, tracker, track)
+    return f"Set {tracker.capitalize()} to `{new_len}`."
 
 
 # pylint: disable=too-many-arguments
@@ -175,18 +170,25 @@ def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) 
 
     try:
         delta = int(delta_str)
+
+        # delta_str can be an int if called by another command
         if isinstance(delta_str, str) and delta_str[0] in ["+", "-"]:
+            # If they are applying superficial damage, it can wrap.
+            old_agg = getattr(character, tracker).count(DAMAGE.aggravated)
             character.apply_damage(tracker, dtype, delta)
+            new_agg = getattr(character, tracker).count(DAMAGE.aggravated)
+            wrap = new_agg - old_agg
         else:
             character.set_damage(tracker, dtype, delta)
+            wrap = 0
 
-        return __damage_adjust_message(tracker, dtype, delta_str)
+        return __damage_adjust_message(tracker, dtype, delta_str, wrap)
 
     except ValueError as err:
         raise ValueError(f"Expected a number. Got `{delta_str}`.") from err
 
 
-def __damage_adjust_message(tracker, dtype, delta_str) -> str:
+def __damage_adjust_message(tracker, dtype, delta_str, wrap) -> str:
     """Generate a human-readable damage adjustment message."""
     if dtype == DAMAGE.superficial:
         severity = "Superficial"
@@ -194,7 +196,11 @@ def __damage_adjust_message(tracker, dtype, delta_str) -> str:
         severity = "Aggravated"
 
     if delta_str[0] in ["+", "-"]:
-        return f"`{delta_str}` {severity} {tracker.title()} damage."
+        msg = f"`{delta_str}` {severity} {tracker.title()} damage."
+        if wrap > 0:
+            msg += f" `{wrap}` wrapped to Aggravated."
+
+        return msg
 
     return f"Set {severity} {tracker.title()} damage to `{delta_str}`."
 

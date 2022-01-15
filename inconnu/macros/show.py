@@ -48,10 +48,10 @@ async def __macro_text(ctx, char_name, macros):
     pages = common.paginate(1200, *fields)
 
     for page_num, page in enumerate(pages):
-        if len(pages) == 1:
+        if (page_count := len(pages)) == 1:
             contents = [f"{char_name}'s Macros\n"]
         else:
-            contents = [f"{char_name}'s Macros: Page {page_num + 1} of {len(pages)}\n"]
+            contents = [f"{char_name}'s Macros: Page {page_num + 1} of {page_count}\n"]
 
         for field in page:
             contents.append(f"```{field.name}```")

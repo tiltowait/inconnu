@@ -82,14 +82,13 @@ class Settings:
 
 
     @classmethod
-    def set_oblivion_stains(cls, ctx, stains):
+    def set_oblivion_stains(cls, ctx, stains: int):
         """Set which dice outcomes will give stains for Oblivion rouse checks."""
         if not ctx.author.guild_permissions.administrator:
             raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
 
         response = "**Rouse checks:** Warn for Oblivion stains when rolling "
 
-        stains = int(stains)
         if stains == 100:
             stains = [1, 10]
             response += "`1` or `10`."

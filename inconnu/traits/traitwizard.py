@@ -64,7 +64,7 @@ class TraitWizard:
                 await self.__send_prompt(f"Set **{trait}** to **{rating}**.")
         except asyncio.exceptions.TimeoutError:
             await msg.delete()
-            err = f"Due to inactivity, **{self.character.name}'s** updates on **{self.ctx.guild.name}** have been canceled."
+            err = f"Due to inactivity, **{self.character.name}'s** updates on **{self.ctx.guild.name}** have been canceled." # pylint: disable=line-too-long
             await self.ctx.author.send(err)
 
 

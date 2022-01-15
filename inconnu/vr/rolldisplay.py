@@ -26,6 +26,8 @@ class RollDisplay(Listener):
 
 
     def __init__(self, ctx, outcome, comment, character, owner):
+        super().__init__(timeout=600)
+
         self.ctx = ctx
         self.outcome = outcome
         self.comment = comment
@@ -45,13 +47,13 @@ class RollDisplay(Listener):
                 else:
                     self.comment = impairment
 
-        super().__init__(timeout=600)
-
 
     def _stop(self):
         """Stop the listener and disable the buttons."""
         super()._stop()
-        asyncio.create_task(self.msg.disable_components())
+
+        if len(self.message.components) > 0 :
+            asyncio.create_task(self.msg.disable_components())
 
 
     async def display(self, use_embed: bool, alt_ctx=None):
@@ -101,7 +103,7 @@ class RollDisplay(Listener):
                 owner=self.owner,
                 fields=[("New WP", char.WILLPOWER)]
             )
-            await btn.message.disable_components(index=0)
+            await self._highlight_and_disable(btn, False)
 
         elif contains_digit(btn.custom_id): # Surge buttons are just charids
             self.surged = True
@@ -120,7 +122,27 @@ class RollDisplay(Listener):
             # Determine whether to display an embed or not
             use_embed = len(btn.message.embeds) > 0
             await self.display(use_embed, btn)
-            await btn.message.disable_components()
+
+            await self._highlight_and_disable(btn, True)
+
+
+    async def _highlight_and_disable(self, btn, disable_all):
+        """
+        Disable buttons and highlight the clicked one.
+        Args:
+            btn: The button to highlight
+            disable_all (bool): Whether to disable all buttons
+
+        If disable_all is false, then only btn will be disabled.
+        """
+        btn.message.components[btn.custom_id].color = "gray"
+
+        if disable_all:
+            btn.message.components.disable()
+        else:
+            btn.message.components[btn.custom_id].disabled = True
+
+        await btn.message.edit(components=btn.message.components)
 
 
     @property

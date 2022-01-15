@@ -1,4 +1,5 @@
 """stats.py - Various packages for user statistics."""
+# pylint: disable=too-many-arguments
 
 import datetime
 import os
@@ -99,7 +100,8 @@ class Stats:
             "date": datetime.datetime.utcnow(),
             "guild": guild, # We use the guild and user keys for easier lookups
             "user": user,
-            "charid": char.id if char is not None else None,
+            "charid": getattr(char, "id", None),
+            "raw": outcome.syntax,
             "normal": outcome.normal.dice,
             "hunger": outcome.hunger.dice,
             "difficulty": outcome.difficulty,

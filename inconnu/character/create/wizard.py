@@ -117,7 +117,10 @@ class Wizard:
             description=f"**{character.name}** has been created in ***{self.ctx.guild.name}***!",
             colour=discord.Color.blue()
         )
-        embed.set_author(name=f"Inconnu on {self.ctx.guild.name}", icon_url=self.ctx.guild.icon or "")
+        embed.set_author(
+            name=f"Inconnu on {self.ctx.guild.name}",
+            icon_url=self.ctx.guild.icon or ""
+        )
         embed.add_field(
             name="Make a mistake?",
             value=f"Use `/traits update` on {self.ctx.guild.name} to fix."

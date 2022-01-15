@@ -12,7 +12,7 @@ __MAX_REROLL = 3
 class Roll:
     """A container class that determines the result of a roll."""
 
-    def __init__(self, pool, hunger, difficulty, pool_str=None):
+    def __init__(self, pool, hunger, difficulty, pool_str=None, syntax=None):
         """
         Args:
             pool (int): The pool's total size, including hunger
@@ -30,7 +30,15 @@ class Roll:
         self.normal = DiceThrow(normal_dice)
         self.hunger = DiceThrow(hunger)
         self.difficulty = difficulty
+        self.strategy = None
         self.descriptor = None
+
+        if syntax is None:
+            self.syntax = None
+        elif isinstance(syntax, list):
+            self.syntax = " ".join(map(str, syntax))
+        else:
+            self.syntax = syntax
 
         if pool_str is not None and not pool_str.isdigit():
             self.pool_str = pool_str
@@ -251,7 +259,7 @@ def _maximize_criticals(dice: list) -> list:
     # them to be.
 
     # Thus, we use this ugly method.
-    total_failures = len(list(filter(lambda die: die < 6, dice)))
+    total_failures = len([die for die in dice if die < 6])
     if total_failures < __MAX_REROLL:
         for index, die in enumerate(dice):
             if 6 <= die < 10: # Non-critical success

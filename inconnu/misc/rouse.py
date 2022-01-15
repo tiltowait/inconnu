@@ -4,8 +4,11 @@
 import random
 from types import SimpleNamespace
 
+from discord_ui.components import Button
+
 from .. import common
 from .. import character as char
+from ..listeners import FrenzyListener
 from ..settings import Settings
 from ..vchar import VChar
 
@@ -42,8 +45,8 @@ async def rouse(
         pass
 
 
-async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, message):
-    """Process the rouse result and display to the user."""
+def __make_title(outcome):
+    """Create the title for the output message."""
     if outcome.total == 1:
         title = "Rouse Success" if outcome.successes == 1 else "Rouse Failure"
     else:
@@ -51,7 +54,14 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         failures = common.pluralize(outcome.failures, "failure")
         title = f"Rouse: {successes}, {failures}"
 
-    if "ailure" in title:
+    return title
+
+
+async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, message):
+    """Process the rouse result and display to the user."""
+    title = __make_title(outcome)
+
+    if "ailure" in title and "0 fail" not in title:
         color = 0xc70f0f
         thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-filled.webp"
     else:
@@ -59,11 +69,10 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-unfilled.webp"
 
     if outcome.frenzy:
-        custom = [(
-            "Roll against Hunger Frenzy",
-            "You failed a Rouse check at Hunger 5 and should run the `/frenzy` command (DC 4)."
-        )]
+        components = [Button("Hunger Frenzy (DC 4)", color="red")]
+        custom = [("Hunger 5 Rouse Failure", "If awakening: Torpor. Otherwise: Roll for frenzy!")]
     else:
+        components = None
         custom = None
 
     footer = []
@@ -85,16 +94,19 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     footer = "\n".join(footer)
 
-
-    await char.display(ctx, character,
+    msg = await char.display(ctx, character,
         title=title,
         footer=footer,
         message=message,
         fields=fields,
         custom=custom,
         color=color,
-        thumbnail=thumbnail
+        thumbnail=thumbnail,
+        components=components
     )
+
+    if outcome.frenzy:
+        FrenzyListener(character, 4).attach_me_to(msg)
 
 
 async def __damage_ghoul(ctx, ghoul):

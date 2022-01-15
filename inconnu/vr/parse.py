@@ -62,6 +62,8 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             return
         except common.FetchError:
             return
+    else:
+        owner = ctx.author
 
 
     # Attempt to parse the user's roll syntax

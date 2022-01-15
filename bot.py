@@ -41,6 +41,8 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.NoPrivateMessage):
         await ctx.send("Sorry, this command isn't available in DMs!")
         return
+    if isinstance(error, discord.errors.NotFound):
+        pass
 
     raise error
 

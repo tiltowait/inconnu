@@ -3,8 +3,8 @@
 import random
 
 from .. import common
-from .. import constants
 from ..character import update as char_update
+from ..constants import DAMAGE
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=awakening"
 
@@ -16,10 +16,12 @@ async def awaken(ctx, character=None):
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
         message = "**Awakening:**"
+        recovery = []
 
         # First, heal Superficial Willpower damage
-        swp = character.willpower.count(constants.DAMAGE.superficial)
+        swp = character.superficial_wp
         recovered = min(swp, character.willpower_recovery)
+        recovery.append(f"sw=-{recovered}")
 
         if recovered > 0:
             message += f"\nRecovered **{recovered}** Willpower."
@@ -35,8 +37,17 @@ async def awaken(ctx, character=None):
                 else:
                     character.hunger += 1
                     message += f"Increase Hunger to **{character.hunger}**."
+        else:
+            shp = character.superficial_hp
+            stamina = character.find_trait("Stamina").rating
+            recovered = min(shp, stamina)
 
-        await char_update(ctx, f"sw=-{recovered}", character.name, message)
+            if recovered > 0:
+                message += f"\nRecovered **{recovered}** Health."
+                recovery.append(f"sh=-{recovered}")
+
+
+        await char_update(ctx, " ".join(recovery), character, message)
         character.log("awaken")
         if character.splat == "vampire":
             character.log("rouse")

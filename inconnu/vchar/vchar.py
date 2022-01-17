@@ -280,6 +280,18 @@ class VChar:
 
 
     @property
+    def superficial_hp(self) -> int:
+        """The amount of Superficial Health damage sustained."""
+        return self.health.count(DAMAGE.superficial)
+
+
+    @superficial_hp.setter
+    def superficial_hp(self, new_value):
+        """Set the Superficial Health damage."""
+        self.set_damage("health", DAMAGE.superficial, new_value, wrap=True)
+
+
+    @property
     def hunger(self):
         """The character's hunger."""
         return self._params["hunger"]

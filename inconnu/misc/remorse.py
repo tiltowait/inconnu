@@ -32,10 +32,14 @@ async def __display_outcome(ctx, character: VChar, outcome):
     """Process the remorse result and display to the user."""
     title = "Remorse Success" if outcome.remorseful else "Remorse Fail"
     if outcome.remorseful:
-        footer ="You keep the Beast at bay. For now."
+        footer = "You keep the Beast at bay. For now."
+        color = 0x7777ff
     else:
-        footer ="The downward spiral continues ..."
+        footer = "The downward spiral continues ..."
+        color = 0x5c0700
+
     footer += "\nDice: " + ", ".join(map(str, outcome.dice))
+
     if outcome.overrode:
         dice = common.pluralize(outcome.minimum, 'die')
         footer += f"\nOverride: Rolled {dice} instead of {outcome.nominal}"
@@ -43,6 +47,7 @@ async def __display_outcome(ctx, character: VChar, outcome):
     await char.display(ctx, character,
         title=title,
         footer=footer,
+        color=color,
         fields=[("Humanity", char.HUMANITY)]
     )
 

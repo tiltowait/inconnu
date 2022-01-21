@@ -8,6 +8,7 @@ from discord_ui.components import Button
 
 from .. import common
 from .. import character as char
+from ..constants import ROUSE_FAIL_COLOR
 from ..listeners import FrenzyListener
 from ..settings import Settings
 from ..vchar import VChar
@@ -62,7 +63,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
     title = __make_title(outcome)
 
     if "ailure" in title and "0 fail" not in title:
-        color = 0xc70f0f
+        color = ROUSE_FAIL_COLOR
         thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-filled.webp"
     else:
         color = None

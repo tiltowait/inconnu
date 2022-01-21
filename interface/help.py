@@ -2,6 +2,7 @@
 
 import discord
 from discord.ext import commands
+from discord_ui import ext
 from discord_ui.cogs import slash_command, subslash_command
 from discord_ui.components import LinkButton
 
@@ -41,6 +42,50 @@ class Help(commands.Cog, name="Help"):
         await ctx.respond(embed=embed, components=self.buttons)
 
 
+    @ext.check_failed("Traits require characters and aren't available in DMs.", hidden=True)
+    @commands.guild_only()
+    @subslash_command(
+        base_names="traits",
+        name="help",
+        guild_ids=debug.WHITELIST
+    )
+    async def help(self, ctx):
+        """Trait management instructions."""
+        embed = discord.Embed(
+            title="Traits Management",
+            description="This command group allows you to add, remove, or update character traits."
+        )
+        embed.set_author(name=ctx.bot.user.display_name, icon_url=ctx.bot.user.avatar)
+        embed.set_footer(text="Traits may be used in rolls. See /help for more info.")
+
+        embed.add_field(
+            name="Creation",
+            value="`/traits add`\n**Example:** `/traits add traits:Oblivion=3 Auspex=2`",
+            inline=False
+        )
+
+        embed.add_field(
+            name="Deletion",
+            value="`/traits delete`\n**Example:** `/traits delete traits:Oblivion`",
+            inline=False
+        )
+
+        embed.add_field(
+            name="Modification",
+            value="`/traits update`\n**Example:** `/traits update traits:Oblivion=2`",
+            inline=False
+        )
+
+        buttons = [
+            LinkButton("https://www.inconnu-bot.com/#/trait-management", "Documentation"),
+            LinkButton(SUPPORT_URL, "Support")
+        ]
+
+        await ctx.respond(embed=embed, components=buttons)
+
+
+    @ext.check_failed("Macros require characters and aren't available in DMs.", hidden=True)
+    @commands.guild_only()
     @subslash_command(
         base_names="macro",
         name="help",

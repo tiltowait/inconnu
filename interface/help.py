@@ -2,7 +2,7 @@
 
 import discord
 from discord.ext import commands
-from discord_ui.cogs import slash_command
+from discord_ui.cogs import slash_command, subslash_command
 from discord_ui.components import LinkButton
 
 from inconnu.constants import SUPPORT_URL
@@ -25,7 +25,7 @@ class Help(commands.Cog, name="Help"):
 
     @slash_command("help", description="Help with basic functions.")
     async def help_command(self, ctx):
-        """Display a help message."""
+        """Basic usage instructions."""
         embed = discord.Embed(
             title="Inconnu Help",
             description="Basic commands listing. Click the link for detailed documentation."
@@ -39,6 +39,44 @@ class Help(commands.Cog, name="Help"):
         embed.add_field(name="Add traits", value="`/traits add`")
 
         await ctx.respond(embed=embed, components=self.buttons)
+
+
+    @subslash_command(
+        base_names="macro",
+        name="help",
+        guild_ids=debug.WHITELIST
+    )
+    async def macro_help(self, ctx):
+        """Macro usage instructions."""
+        embed = discord.Embed(
+            title="Macros",
+            description="This command group lets you define, delete, or update macros."
+        )
+        embed.set_author(name=ctx.bot.user.display_name, icon_url=ctx.bot.user.avatar)
+        embed.set_footer(text="Roll a macro with the /vm command!")
+
+        embed.add_field(
+            name="Creation",
+            value="`/macro create`\nFill out the parameters offered.",
+            inline=False
+        )
+        embed.add_field(
+            name="Deletion",
+            value="`/macro delete`\nSpecify a macro name. This is non-reversible!",
+            inline=False
+        )
+        embed.add_field(
+            name="Modification",
+            value="`/macro update`\n**Example:** `/macro update macro:hunt parameters:pool=...`",
+            inline=False
+        )
+
+        buttons = [
+            LinkButton("https://www.inconnu-bot.com/#/macros", "Documentation"),
+            LinkButton(SUPPORT_URL, "Support")
+        ]
+
+        await ctx.respond(embed=embed, components=buttons)
 
 
     @slash_command(guild_ids=debug.WHITELIST)

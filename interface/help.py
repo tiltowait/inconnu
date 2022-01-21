@@ -132,6 +132,7 @@ class Help(commands.Cog, name="Help"):
             description="A dice roller for Vampire: The Masquerade 5th Edition."
         )
         embed.set_author(name=ctx.bot.user.display_name, icon_url=ctx.bot.user.avatar)
+        embed.set_thumbnail(url="https://www.inconnu-bot.com/images/darkpack_logo2.webp")
 
         help_commands = [
             "`/help` - Basic help",
@@ -147,5 +148,9 @@ class Help(commands.Cog, name="Help"):
             inline=False
         )
         embed.add_field(name="Author", value="@tiltowait#8282", inline=False)
+
+        embed.set_footer(
+            text="Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. For more information please visit worldofdarkness.com."
+        )
 
         await ctx.respond(embed=embed, components=self.buttons)

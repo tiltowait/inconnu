@@ -309,17 +309,18 @@ class RollDisplay(Listener):
 
         # We haven't re-rolled
 
-        if self.outcome.can_reroll_failures:
-            buttons.append(Button("Re-Roll Failures", self._REROLL_FAILURES))
+        if "Willpower" not in (self.outcome.pool_str or ""):
+            if self.outcome.can_reroll_failures:
+                buttons.append(Button("Re-Roll Failures", self._REROLL_FAILURES))
 
-        if self.outcome.can_maximize_criticals:
-            buttons.append(Button("Maximize Crits", self._MAXIMIZE_CRITICALS))
+            if self.outcome.can_maximize_criticals:
+                buttons.append(Button("Maximize Crits", self._MAXIMIZE_CRITICALS))
 
-        if self.outcome.can_avoid_messy_critical:
-            buttons.append(Button("Avoid Messy", self._AVOID_MESSY))
+            if self.outcome.can_avoid_messy_critical:
+                buttons.append(Button("Avoid Messy", self._AVOID_MESSY))
 
-        if self.outcome.can_risky_messy_critical:
-            buttons.append(Button("Risky Avoid Messy", self._RISKY_AVOID_MESSY))
+            if self.outcome.can_risky_messy_critical:
+                buttons.append(Button("Risky Avoid Messy", self._RISKY_AVOID_MESSY))
 
         if self.surging:
             buttons.append(Button("Rouse", str(self.character.id), "red"))

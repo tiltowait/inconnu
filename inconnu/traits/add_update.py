@@ -3,10 +3,12 @@
 from types import SimpleNamespace
 
 import discord
+from discord_ui.components import LinkButton
 
 from .parser import parse_traits
 from .traitwizard import TraitWizard
 from .. import common
+from ..constants import SUPPORT_URL
 from ..settings import Settings
 from ..vchar import VChar
 
@@ -165,3 +167,38 @@ async def __results_text(ctx, outcome, char_name: str):
         contents.append(f"```{footer}```")
 
     await ctx.respond("\n".join(contents), hidden=True)
+
+
+async def traits_help(ctx):
+    """Display a help message for managing traits."""
+    embed = discord.Embed(
+        title="Traits Management",
+        description="This command group allows you to add, remove, or update character traits."
+    )
+    embed.set_author(name=ctx.bot.user.display_name, icon_url=ctx.bot.user.avatar)
+    embed.set_footer(text="Traits may be used in rolls. See /help for more info.")
+
+    embed.add_field(
+        name="Add Traits",
+        value="`/traits add`\n**Example:** `/traits add traits:Oblivion=3 Auspex=2`",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Delete Traits",
+        value="`/traits delete`\n**Example:** `/traits delete traits:Oblivion`",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Modify Traits",
+        value="`/traits update`\n**Example:** `/traits update traits:Oblivion=2`",
+        inline=False
+    )
+
+    buttons = [
+        LinkButton("https://www.inconnu-bot.com/#/trait-management", "Documentation"),
+        LinkButton(SUPPORT_URL, "Support")
+    ]
+
+    await ctx.respond(embed=embed, components=buttons)

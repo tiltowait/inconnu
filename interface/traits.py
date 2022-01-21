@@ -96,3 +96,13 @@ class Traits(commands.Cog, name="Trait Management"):
     async def delete_traits(self, ctx, traits: str, character=None):
         """Remove traits from a character."""
         await inconnu.traits.delete(ctx, traits, character)
+
+
+    @subslash_command(
+        base_names="traits",
+        name="help",
+        guild_ids=debug.WHITELIST
+    )
+    async def help(self, ctx):
+        """Trait management instructions."""
+        await inconnu.traits.traits_help(ctx)

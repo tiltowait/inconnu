@@ -170,6 +170,7 @@ async def update_help(ctx, err=None, hidden=True):
     support = LinkButton(constants.SUPPORT_URL, "Support")
     await ctx.respond(embed=embed, components=[documentation, support], hidden=hidden)
 
+
 # We do flexible matching for the keys. Many of these are the same as RoD's
 # keys, while others have been observed in syntax error logs. This should be
 # a little more user-friendly.

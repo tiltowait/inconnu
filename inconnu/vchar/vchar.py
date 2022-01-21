@@ -483,8 +483,9 @@ class VChar:
             if universal.startswith(trait.lower()):
                 rating = getattr(self, universal)
 
+                # Willpower is a string. We want the undamaged portion, minimum 1
                 if isinstance(rating, str):
-                    rating = rating.count(DAMAGE.none)
+                    rating = max(rating.count(DAMAGE.none), 1)
 
                 universal = {
                     "name": universal.capitalize(),

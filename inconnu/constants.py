@@ -24,3 +24,5 @@ SKILLS_AND_ATTRIBUTES = [
 ]
 
 UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity", "surge", "potency"]
+
+ROUSE_FAIL_COLOR = 0xc70f0f

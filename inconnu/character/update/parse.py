@@ -1,4 +1,5 @@
 """character/update/parse.py - Defines an interface for updating character traits."""
+# pylint: disable=too-many-arguments
 
 import re
 
@@ -33,7 +34,9 @@ __KEYS = {
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
 
 
-async def update(ctx, parameters: str, character=None, update_message=None, player=None):
+async def update(
+    ctx, parameters: str, character=None, color=None, update_message=None, player=None
+):
     """
     Process the user's arguments.
     Allow the user to omit a character if they have only one.
@@ -71,7 +74,7 @@ async def update(ctx, parameters: str, character=None, update_message=None, play
         if update_message is None:
             update_message = "\n".join(updates)
 
-        await display(ctx, character, owner=player, message=update_message)
+        await display(ctx, character, color=color, owner=player, message=update_message)
 
     except (SyntaxError, ValueError) as err:
         Log.log("update_error",

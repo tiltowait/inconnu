@@ -4,7 +4,7 @@ import random
 
 from .. import common
 from ..character import update as char_update
-from ..constants import DAMAGE
+from ..constants import ROUSE_FAIL_COLOR
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=awakening"
 
@@ -22,6 +22,7 @@ async def awaken(ctx, character=None):
         swp = character.superficial_wp
         recovered = min(swp, character.willpower_recovery)
         recovery.append(f"sw=-{recovered}")
+        color = None
 
         if recovered > 0:
             message += f"\nRecovered **{recovered}** Willpower."
@@ -32,6 +33,8 @@ async def awaken(ctx, character=None):
                 message += "\n**No** Hunger gain."
             else:
                 message += "\nRouse failure. "
+                color = ROUSE_FAIL_COLOR
+
                 if character.hunger == 5:
                     message += "**Enter torpor!**"
                 else:
@@ -47,7 +50,7 @@ async def awaken(ctx, character=None):
                 recovery.append(f"sh=-{recovered}")
 
 
-        await char_update(ctx, " ".join(recovery), character, message)
+        await char_update(ctx, " ".join(recovery), character, color, message)
         character.log("awaken")
         if character.splat == "vampire":
             character.log("rouse")

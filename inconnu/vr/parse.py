@@ -88,7 +88,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         msg = await common.present_error(
             ctx,
             err,
-            ("Input", f"/vr syntax:`{raw_syntax}`"),
+            ("Your Input", f"/vr syntax:`{raw_syntax}`"),
             author=owner,
             character=character,
             help_url=__HELP_URL,
@@ -122,7 +122,13 @@ async def display_outcome(ctx, player, character: VChar, results, comment):
 
 def perform_roll(character: VChar, syntax):
     """Public interface for __evaluate_syntax() that returns a Roll."""
-    pool_str, params = prepare_roll(character, syntax)
+    trait_stack, params = prepare_roll(character, syntax)
+
+    if "Hunger" in trait_stack:
+        errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"
+        raise SyntaxError(errmsg)
+
+    pool_str = " ".join(trait_stack)
     return Roll(params.pool, params.hunger, params.difficulty, pool_str, syntax)
 
 
@@ -150,8 +156,7 @@ def prepare_roll(character: VChar, syntax):
     while len(trait_stack) > 1 and trait_stack[-2] not in ["+", "-"]:
         trait_stack = trait_stack[:-1]
 
-    pool_str = " ".join(trait_stack)
-    return pool_str, evaluated_stack
+    return trait_stack, evaluated_stack
 
 
 def __tokenize(syntax) -> list:

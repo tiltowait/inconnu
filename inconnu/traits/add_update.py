@@ -3,12 +3,10 @@
 from types import SimpleNamespace
 
 import discord
-from discord_ui.components import LinkButton
 
 from .parser import parse_traits
 from .traitwizard import TraitWizard
 from .. import common
-from ..constants import SUPPORT_URL
 from ..settings import Settings
 from ..vchar import VChar
 

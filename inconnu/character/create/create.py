@@ -58,7 +58,7 @@ def __validate_parameters(name, humanity, health, willpower):
     if (name_len := len(name)) > 30:
         errors.append(f"`{name}` is too long by {name_len - 30} characters.")
 
-    if re.match(r"^[A-z_\s]+$", name) is None:
+    if re.match(r"^[A-z_\s\d]+$", name) is None:
         errors.append("Character names may only contain letters, spaces and underscores.")
 
     if not 0 <= humanity <= 10:

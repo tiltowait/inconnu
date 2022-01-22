@@ -5,7 +5,7 @@ import asyncio
 import os
 
 import discord
-from discord_ui import SelectMenu, SelectOption, Button
+from discord_ui import Button
 from discord_ui.components import LinkButton
 
 from ...constants import INCONNU_ID
@@ -33,7 +33,7 @@ class Wizard:
                 "Occult", "Politics", "Science", "Technology"
             ]
         self.ctx = ctx
-        self.btn = None
+        self.msg = None # We will be editing this message instead of sending new ones
         self.parameters = parameters
 
         if parameters.splat == "vampire":
@@ -103,7 +103,7 @@ class Wizard:
             label="Full Documentation"
         )
 
-        await self.ctx.author.send(contents, components=[button])
+        await self.msg.edit(content=contents, components=[button])
 
 
     async def __finalixe_embed(self, character):
@@ -132,27 +132,26 @@ class Wizard:
             label="Full Documentation"
         )
 
-        await self.ctx.author.send(embed=embed, components=[button])
+        await self.msg.edit(embed=embed, components=[button])
 
 
     async def __query_trait(self, message=None):
         """Query for the next trait."""
         if self.use_accessibility:
-            query_msg = await self.__query_text(message)
+            await self.__query_text(message)
         else:
-            query_msg = await self.__query_embed(message)
+            await self.__query_embed(message)
 
         # Await the user response
         try:
-            btn = await query_msg.wait_for("button", self.ctx.bot, timeout=120)
-            self.btn = btn
+            btn = await self.msg.wait_for("button", self.ctx.bot, timeout=120)
+            await btn.respond()
 
             rating = int(btn.component.label)
             await self.__assign_next_trait(rating)
-            await btn.message.edit(components=None)
 
         except asyncio.exceptions.TimeoutError:
-            await query_msg.edit(components=None)
+            await self.msg.edit(components=None)
             err = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
             await self.ctx.author.send(err)
         #finally:
@@ -169,8 +168,10 @@ class Wizard:
 
         contents.append(f"```Select the rating for: {self.core_traits[0]}```")
 
-        context = self.btn or self.ctx
-        return await context.author.send("\n".join(contents), components=Wizard._BUTTONS)
+        if self.msg is None:
+            self.msg = await self.ctx.author.send("\n".join(contents), components=Wizard._BUTTONS)
+        else:
+            await self.msg.edit(content="\n".join(contents))
 
 
     async def __query_embed(self, message=None):
@@ -190,5 +191,7 @@ class Wizard:
         )
         embed.set_footer(text="Your character will not be saved until you have entered all traits.")
 
-        context = self.btn or self.ctx
-        return await context.author.send(embed=embed, components=Wizard._BUTTONS)
+        if self.msg is None:
+            self.msg = await self.ctx.author.send(embed=embed, components=Wizard._BUTTONS)
+        else:
+            await self.msg.edit(embed=embed)

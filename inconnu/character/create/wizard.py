@@ -5,7 +5,7 @@ import asyncio
 import os
 
 import discord
-from discord_ui import SelectMenu, SelectOption
+from discord_ui import SelectMenu, SelectOption, Button
 from discord_ui.components import LinkButton
 
 from ...constants import INCONNU_ID
@@ -15,15 +15,9 @@ from ...vchar import VChar
 class Wizard:
     """A helper class that guides a user through the chargen process."""
 
-    # Used in the select menu. The select menu is not a class variable, because
-    # we dynamically create it based on the trait name.
-    __RATING_OPTIONS = [
-        SelectOption("0", "0 dots"),
-        SelectOption("1", "1 dot"),
-        SelectOption("2", "2 dots"),
-        SelectOption("3", "3 dots"),
-        SelectOption("4", "4 dots"),
-        SelectOption("5", "5 dots")
+    _BUTTONS = [
+        [Button(str(n)) for n in range(1,6)],
+        [Button("0", color="gray")]
     ]
 
     def __init__(self, ctx, parameters):
@@ -39,12 +33,14 @@ class Wizard:
                 "Occult", "Politics", "Science", "Technology"
             ]
         self.ctx = ctx
+        self.btn = None
         self.parameters = parameters
 
         if parameters.splat == "vampire":
             self.core_traits.append("Blood Potency")
 
         self.assigned_traits = {}
+        self.use_accessibility = Settings.accessible(ctx.author)
 
 
     async def begin_chargen(self):
@@ -90,7 +86,7 @@ class Wizard:
         for trait, rating in self.assigned_traits.items():
             character.add_trait(trait, rating)
 
-        if Settings.accessible(self.ctx.author):
+        if self.use_accessibility:
             await self.__finalixe_text(character)
         else:
             await self.__finalixe_embed(character)
@@ -141,22 +137,19 @@ class Wizard:
 
     async def __query_trait(self, message=None):
         """Query for the next trait."""
-        menu = SelectMenu(self.__RATING_OPTIONS, "rating_selector",
-            placeholder=f"Select {self.parameters.name}'s {self.core_traits[0]} rating"
-        )
-
-        if Settings.accessible(self.ctx.author):
-            query_msg = await self.__query_text(menu, message)
+        if self.use_accessibility:
+            query_msg = await self.__query_text(message)
         else:
-            query_msg = await self.__query_embed(menu, message)
+            query_msg = await self.__query_embed(message)
 
         # Await the user response
         try:
-            menu = await query_msg.wait_for("select", self.ctx.bot, timeout=120)
-            await menu.respond()
+            btn = await query_msg.wait_for("button", self.ctx.bot, timeout=120)
+            self.btn = btn
 
-            rating = int(menu.selected_values[0])
+            rating = int(btn.component.label)
             await self.__assign_next_trait(rating)
+            await btn.message.edit(components=None)
 
         except asyncio.exceptions.TimeoutError:
             await query_msg.edit(components=None)
@@ -166,7 +159,7 @@ class Wizard:
             #await query_msg.disable_components()
 
 
-    async def __query_text(self, menu, message=None):
+    async def __query_text(self, message=None):
         """Present the query in plain text."""
         if message is not None:
             contents = [message]
@@ -176,10 +169,11 @@ class Wizard:
 
         contents.append(f"```Select the rating for: {self.core_traits[0]}```")
 
-        return await self.ctx.author.send("\n".join(contents), components=[menu])
+        context = self.btn or self.ctx
+        return await context.author.send("\n".join(contents), components=Wizard._BUTTONS)
 
 
-    async def __query_embed(self, menu, message=None):
+    async def __query_embed(self, message=None):
         """Present the query in an embed."""
         description = "This wizard will guide you through the character creation process.\n\n"
         if message is not None:
@@ -196,4 +190,5 @@ class Wizard:
         )
         embed.set_footer(text="Your character will not be saved until you have entered all traits.")
 
-        return await self.ctx.author.send(embed=embed, components=[menu])
+        context = self.btn or self.ctx
+        return await context.author.send(embed=embed, components=Wizard._BUTTONS)

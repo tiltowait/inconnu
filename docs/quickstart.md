@@ -37,16 +37,16 @@ As discussed above, the basic roll syntax calls for a `pool` plus optional value
 **Example:** Nadea is performing research at the library. She's at *hunger 2*, and the information is hard to find, so the roll is against *difficulty 4*. The pool is *Resolve* plus *Academics*, and she has a research specialty that grants her a bonus die. The roll syntax is:
 
 ```
-/vr syntax:resolve + academics + 1 2 4
+/vr syntax:resolve + academics + 1 hunger 4
 ```
 
-**Inconnu** will look up her *Resolve* and *Academics* traits and add them together with *1* to produce the correct pool, wich is then rolled against *difficulty 4* with *hunger 2*.
+**Inconnu** will look up her *Resolve* and *Academics* traits and add them together with *1* to produce the correct pool, which is then rolled with the character's *hunger (2)* against *difficulty 4*.
 
-?> Notice that we didn't capitalize *Resolve* or *Academics*? That's fine. **Inconnu** doesn't care about cases. In fact, we didn't even need to write out the entire trait names! You can provide an abbreviated name so long as **Inconnu** can expand it to a *single* trait name. Thus, we could have supplied `r` for *Resolve* and `ac` for *Academics*, making our syntax a much quicker `/vr syntax:r + ac + 1 2 4`!
+?> Notice that we didn't capitalize *Resolve* or *Academics*? That's fine. **Inconnu** doesn't care about that. In fact, we didn't even need to write out the entire trait names! You can provide an abbreviated name so long as **Inconnu** can match it to a *single* trait name. Thus, we could have supplied `r` for *Resolve*, `ac` for *Academics*, and `hun` for *Hunger*, making our syntax a much quicker `/vr syntax:r + ac + 1 hun 4`!
 
 !> You'll notice we didn't provide a character name in our roll. So long as you have only **one character**, you won't need to supply a character name for most functions. As soon as you add a second, however, you will need to supply the name of the character so **Inconnu** knows which traits to look up.
 
-You may also supply a trait for `hunger` (appropriately enough, you can use *hunger*) and `difficulty`, but only the `pool` may have math operators.
+!> Only the `pool` may have math operators.
 
 ## Adding additional traits
 

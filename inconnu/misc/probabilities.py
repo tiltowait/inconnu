@@ -10,6 +10,7 @@ from .. import common
 from ..roll import Roll
 from .. import vr as roll
 from ..settings import Settings
+from ..vchar import errors
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=probability-calculation"
 __STRATEGIES = {
@@ -38,8 +39,7 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
         character = None
 
     try:
-        args = syntax.split()
-        _, params = roll.prepare_roll(character, args)
+        _, params = roll.prepare_roll(character, syntax)
         probabilities = __get_probabilities(params, strategy)
 
         if Settings.accessible(ctx.author):
@@ -47,7 +47,7 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
         else:
             await __display_embed(ctx, params, strategy, probabilities)
 
-    except (SyntaxError, ValueError) as err:
+    except (SyntaxError, ValueError, errors.TraitError) as err:
         await common.present_error(ctx, err, character=character, help_url=__HELP_URL)
 
 

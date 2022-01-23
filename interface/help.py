@@ -62,7 +62,7 @@ class Help(commands.Cog, name="Help"):
         )
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
 
-        embed.add_field(name="Roll", value="`/vr pool hunger difficulty`", inline=False)
+        embed.add_field(name="Roll", value="`/vr syntax:pool hunger difficulty`", inline=False)
         char_info = "`/character create`\nYou can use character attributes in rolls."
         embed.add_field(name="Create a character", value=char_info, inline=False)
         embed.add_field(name="Display character", value="`/character display`", inline=False)

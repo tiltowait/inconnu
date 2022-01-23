@@ -135,16 +135,3 @@ class Characters(commands.Cog, name="Character Management"):
     async def delete_character(self, ctx, character: str):
         """Delete a character."""
         await inconnu.character.delete(ctx, character)
-
-
-    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
-    @commands.guild_only()
-    @subslash_command(
-        base_names="character",
-        name="help",
-        description="Show a list of character update keys."
-        , guild_ids=debug.WHITELIST
-    )
-    async def character_updates_help(self, ctx):
-        """Display the valid character update keys."""
-        await inconnu.character.update_help(ctx, hidden=False)

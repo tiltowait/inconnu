@@ -245,7 +245,7 @@ def __combine_operators(stack):
     padding = [0 for _ in range(3 - len(compact_stack))]
     compact_stack.extend(padding)
 
-    pool = compact_stack[0]
+    pool = max(1, compact_stack[0])
     hunger = compact_stack[1]
     difficulty = compact_stack[2]
 

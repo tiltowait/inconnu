@@ -7,7 +7,7 @@ from discord_ui.components import Button
 
 from .. import common
 from .. import character as char
-from ..constants import DAMAGE
+from ..constants import DAMAGE, ROUSE_FAIL_COLOR
 from ..listeners import FrenzyListener
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=mending-damage"
@@ -35,9 +35,15 @@ async def __display_outcome(ctx, character, outcome):
 
     footer = None
     components = None
+    color = None
 
     if character.splat == "vampire":
-        success_text = "Success" if outcome.rouse else "Failure"
+        if outcome.rouse:
+            success_text = "Success" if outcome.rouse else "Failure"
+        else:
+            success_text = "Failure"
+            color = ROUSE_FAIL_COLOR
+
         title += f" | Rouse {success_text}"
         fields.append(("Hunger", char.HUNGER))
 
@@ -49,7 +55,8 @@ async def __display_outcome(ctx, character, outcome):
         title=title,
         fields=fields,
         footer=footer,
-        components=components
+        components=components,
+        color=color
     )
 
     if outcome.frenzy:

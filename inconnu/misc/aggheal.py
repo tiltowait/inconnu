@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from .. import common
 from .. import character as char
-from ..constants import DAMAGE
+from ..constants import DAMAGE, ROUSE_FAIL_COLOR
 from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/"
@@ -59,15 +59,18 @@ async def __display_outcome(ctx, character, outcome):
 
     if character.splat == "vampire":
         gain = "Max Hunger" if character.hunger == 5 else f"Gain {outcome.gain} Hunger"
+        color = ROUSE_FAIL_COLOR if outcome.gain > 0 else None
         title = f"Agg damage healed | {gain}"
         footer = "FALL INTO TORPOR!" if outcome.torpor else None
         fields.append(("Hunger", char.HUNGER))
     else:
         title = "Damage healed"
         footer = None
+        color = None
 
     await char.display(ctx, character,
         title=title,
         footer=footer,
-        fields=[("Health", char.HEALTH), ("Hunger", char.HUNGER)]
+        fields=[("Health", char.HEALTH), ("Hunger", char.HUNGER)],
+        color=color
     )

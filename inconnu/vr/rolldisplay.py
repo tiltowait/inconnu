@@ -303,7 +303,7 @@ class RollDisplay(Listener):
             return False
 
         search = f"{self.outcome.pool_str} {self.comment}"
-        match = re.match(r"^.*(\s+surge|surge\s+.*|surge)$", search, re.IGNORECASE)
+        match = re.match(r"^.*(\s+surge|surge\s+.*|surge)$", search, re.IGNORECASE | re.DOTALL)
         return match is not None
 
 

@@ -193,7 +193,7 @@ class Roll:
         if not self.is_messy:
             return False
 
-        return self.hunger.tens == 1
+        return self.hunger.tens == 1 and self.normal.tens <= 3
 
 
     @property

@@ -391,10 +391,10 @@ class VChar:
             return "You are impaired. Remember to subtract 2 dice from all pools."
 
         if physical:
-            return "You are physically impaired. Remember to subtract 2 dice from physical pools."
+            return "You are physically impaired. Subtract 2 dice from physical pools."
 
         if mental:
-            return "You are mentally impaired. Remember to subtract 2 dice from mental pools."
+            return "You are mentally impaired. Subtract 2 dice from social and mental pools."
 
         return None
 

@@ -157,6 +157,18 @@ class RollDisplay(Listener):
 
 
     @property
+    def hunger(self) -> str:
+        """
+        The Hunger for the roll. This uses the character's Hunger if possible and
+        falls back to the hunger dice count if unavailable.
+        """
+        if self.character is not None:
+            return self.character.hunger
+
+        return self.outcome.hunger.count
+
+
+    @property
     def icon(self) -> str:
         """The icon for the embed."""
         if self.character is not None:
@@ -224,7 +236,7 @@ class RollDisplay(Listener):
             if self.outcome.normal.count > 0:
                 dice = sorted(self.outcome.normal.dice, reverse=True)
                 lines.append("**Normal Dice:** " + ", ".join(map(str, dice)))
-            if self.outcome.hunger.count > 0:
+            if self.hunger > 0:
                 dice = sorted(self.outcome.hunger.dice, reverse=True)
                 lines.append("**Hunger Dice:** " + ", ".join(map(str, dice)))
 
@@ -235,7 +247,7 @@ class RollDisplay(Listener):
             )
 
         embed.add_field(name="Pool", value=str(self.outcome.pool))
-        embed.add_field(name="Hunger", value=str(self.outcome.hunger.count))
+        embed.add_field(name="Hunger", value=str(self.hunger))
         embed.add_field(name="Difficulty", value=str(self.outcome.difficulty))
 
         if self.outcome.pool_str is not None:

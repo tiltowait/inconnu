@@ -211,7 +211,7 @@ class RollDisplay(Listener):
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        if self.outcome.pool < 35:
+        if self.outcome.pool <= 30:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
             embed.add_field(

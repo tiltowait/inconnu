@@ -283,8 +283,13 @@ class RollDisplay(Listener):
 
         contents.append(takeaway)
         contents.append(f"Margin: `{self.outcome.margin}`")
-        contents.append(f"Normal: `{', '.join(map(str, self.outcome.normal.dice))}`")
-        if len(self.outcome.hunger.dice) > 0:
+
+        if self.outcome.normal.dice:
+            contents.append(f"Normal: `{', '.join(map(str, self.outcome.normal.dice))}`")
+        else:
+            contents.append("Normal: `n/a`")
+
+        if self.outcome.hunger.dice:
             contents.append(f"Hunger: `{', '.join(map(str, self.outcome.hunger.dice))}`")
 
         if self.outcome.pool_str is not None:
@@ -317,7 +322,7 @@ class RollDisplay(Listener):
                 buttons.append(Button("Mark WP", self._WILLPOWER))
                 if not self.surged and self.surging:
                     buttons.append(Button("Rouse", str(self.character.id), "red"))
-            return buttons if len(buttons) > 0 else None
+            return buttons or None
 
         # We haven't re-rolled
 
@@ -337,4 +342,4 @@ class RollDisplay(Listener):
         if self.surging:
             buttons.append(Button("Rouse", str(self.character.id), "red"))
 
-        return buttons if len(buttons) > 0 else None
+        return buttons or None

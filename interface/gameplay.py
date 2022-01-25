@@ -12,6 +12,10 @@ from . import debug
 class Gameplay(commands.Cog):
     """Gameplay-based commands."""
 
+    # This is the primary roll command. It features the fastest entry and
+    # greatest flexibility. However, it can be a stumbling block for new users;
+    # hence, the `/roll` command (below) was made.
+
     @slash_command(
         name="vr", # Called "vr" instead of "roll" for quicker command entry
         options=[
@@ -26,6 +30,65 @@ class Gameplay(commands.Cog):
     )
     async def slash_roll(self, ctx, syntax: str, comment=None, character=None, player=None):
         """Roll the dice."""
+        await inconnu.vr.parse(ctx, syntax, comment, character, player)
+
+
+    # This beginner-friendly roll command is for users who find the main `/vr`
+    # command confusing/difficult. This one is slower to use (especially on
+    # mobile) and slightly less flexible; therefore, `/vr` is recommended for
+    # most users.
+
+    @slash_command(
+        name="roll",
+        options=[
+            SlashOption(
+                str,
+                "pool",
+                description="May be Attribute+Skill or a raw number. Can surge by adding '+ Surge'",
+                required=True
+            ),
+            SlashOption(
+                str,
+                "hunger",
+                description="The character's Hunger level",
+                choices=[("Current Hunger", "hunger")] + [(str(n), str(n)) for n in range(1,6)],
+                required=True
+            ),
+            SlashOption(
+                int,
+                "difficulty",
+                description="The target number of successes required",
+                choices=[(str(n), n) for n in range(11)],
+                required=True
+            ),
+            SlashOption(
+                str,
+                "comment",
+                description="A comment to display with the roll",
+                required=False
+            ),
+            SlashOption(
+                str,
+                "character",
+                description="The character performing the roll",
+                autocomplete=False,
+                choice_generator=inconnu.available_characters
+            ),
+            SlashOption(discord.Member, "player", description="The character's owner (admin only)"),
+        ],
+        guild_ids=debug.WHITELIST
+    )
+    async def easy_roll(self,
+        ctx,
+        pool: str,
+        hunger: str,
+        difficulty: int,
+        comment: str = None,
+        character: str = None,
+        player: discord.Member = None
+    ):
+        """Roll the dice. Easier (slower) version of /vr."""
+        syntax = f"{pool} {hunger} {difficulty}"
         await inconnu.vr.parse(ctx, syntax, comment, character, player)
 
 

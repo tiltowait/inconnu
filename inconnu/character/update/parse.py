@@ -63,6 +63,9 @@ async def update(
             update_msg = __update_character(character, parameter, new_value)
             updates.append(update_msg)
 
+        if (impairment := character.impairment) is not None:
+            updates.append(impairment)
+
         Log.log("update",
             user=ctx.author.id,
             guild=ctx.guild.id,

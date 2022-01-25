@@ -43,7 +43,6 @@ def __heal(character: VChar):
         hunger_gain = 5 - character.hunger
         torpor = True
 
-
     # Update the character
     character.hunger += hunger_gain
     character.health = DAMAGE.none + character.health[:-1]
@@ -59,7 +58,7 @@ async def __display_outcome(ctx, character, outcome):
 
     if character.splat == "vampire":
         gain = "Max Hunger" if character.hunger == 5 else f"Gain {outcome.gain} Hunger"
-        color = ROUSE_FAIL_COLOR if outcome.gain > 0 else None
+        color = ROUSE_FAIL_COLOR if (outcome.torpor or outcome.gain) > 0 else None
         title = f"Agg damage healed | {gain}"
         footer = "FALL INTO TORPOR!" if outcome.torpor else None
         fields.append(("Hunger", char.HUNGER))

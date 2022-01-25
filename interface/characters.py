@@ -32,7 +32,7 @@ class Characters(commands.Cog, name="Character Management"):
     )
     async def user_characters(self, ctx, user):
         """Display the user's character(s)."""
-        await self.display_character(ctx, None, user)
+        await self.display_character(ctx, None, user, hidden=True)
 
 
     @ext.check_failed("Characters aren't available in DMs.", hidden=True)
@@ -94,9 +94,9 @@ class Characters(commands.Cog, name="Character Management"):
         ]
         , guild_ids=debug.WHITELIST
     )
-    async def display_character(self, ctx, character=None, player=None):
+    async def display_character(self, ctx, character=None, player=None, hidden=False):
         """Display a character's basic traits"""
-        await inconnu.character.display_requested(ctx, character, player=player)
+        await inconnu.character.display_requested(ctx, character, player=player, hidden=hidden)
 
 
     @ext.check_failed("Characters aren't available in DMs.", hidden=True)

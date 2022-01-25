@@ -26,7 +26,7 @@ EXPERIENCE = 5
 SEVERITY = 6
 
 
-async def display_requested(ctx, character=None, message=None, player=None):
+async def display_requested(ctx, character=None, message=None, player=None, hidden=False):
     """Display a character as directly requested by a user."""
     try:
         owner = await common.player_lookup(ctx, player)
@@ -37,7 +37,8 @@ async def display_requested(ctx, character=None, message=None, player=None):
             owner=player,
             message=message,
             footer=None,
-            components=[Button("Traits")]
+            components=[Button("Traits")],
+            hidden=hidden
         )
 
         try:
@@ -69,7 +70,8 @@ async def display(
     custom: list = None,
     color: int = None,
     thumbnail: str = None,
-    components: list = None
+    components: list = None,
+    hidden: bool =False
 ):
     """
     Display a character.
@@ -92,7 +94,8 @@ async def display(
             owner=owner,
             fields=fields,
             custom=custom,
-            components=components
+            components=components,
+            hidden=hidden
         )
 
     return await __display_embed(ctx, character,
@@ -104,7 +107,8 @@ async def display(
         custom=custom,
         color=color,
         thumbnail=thumbnail,
-        components=components
+        components=components,
+        hidden=hidden
     )
 
 
@@ -119,7 +123,8 @@ async def __display_embed(
     custom: list = None,
     color: int = None,
     thumbnail: str = None,
-    components: list = None
+    components: list = None,
+    hidden: bool =False
 ):
     # Set the default values
     owner = owner or ctx.author
@@ -160,7 +165,7 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    return await ctx.respond(embed=embed, components=components)
+    return await ctx.respond(embed=embed, components=components, hidden=hidden)
 
 
 def __embed_field_value(character, parameter):
@@ -200,7 +205,8 @@ async def __display_text(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    components: list = None
+    components: list = None,
+    hidden: bool = False
 ):
     """Display a text representation of the character."""
 
@@ -240,7 +246,7 @@ async def __display_text(
     if footer is not None:
         contents += f"\n*{footer}*"
 
-    return await ctx.respond(contents, components=components)
+    return await ctx.respond(contents, components=components, hidden=hidden)
 
 
 def __text_field_contents(character, field, parameter):

@@ -103,10 +103,6 @@ async def __display_text(ctx, params, strategy: str, probs: dict):
 
 async def __display_embed(ctx, params, strategy: str, probs: dict):
     """Display the probabilities in a nice embed."""
-    title = f"Pool {params.pool} | Hunger {params.hunger} | Diff. {params.difficulty}"
-    if strategy is not None:
-        title += " | " + __STRATEGIES[strategy]
-
     uncomplicated = probs["success"] + probs["critical"]
     description = f"**{uncomplicated:.2%}** success without complication"
     description += f"\n**{probs['total_successes']:.2f}** average successes"

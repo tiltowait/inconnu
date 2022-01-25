@@ -17,7 +17,7 @@ class _TraitListener(Listener):
     """Listen to trait selection events."""
 
     def __init__(self, callback, failback):
-        super().__init__(timeout=12)
+        super().__init__(timeout=120)
 
         self.callback = callback
         self.failback = failback

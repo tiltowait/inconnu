@@ -41,7 +41,14 @@ async def __list_embed(ctx, character, owner):
         embed.set_author(name=character.name, icon_url=owner.display_avatar)
         embed.set_footer(text="To see HP, WP, etc., use /character display")
 
-        await ctx.respond(embed=embed, ephemeral=True)
+        if isinstance(ctx, discord.Interaction):
+            if ctx.response.is_done():
+                await ctx.followup.send(embed=embed, ephemeral=True)
+            else:
+                await ctx.response.send_message(embed=embed, ephemeral=True)
+        else:
+            await ctx.respond(embed=embed, ephemeral=True)
+
         await asyncio.sleep(0.5)
 
 
@@ -60,5 +67,12 @@ async def __list_text(ctx, character):
         contents.append("```")
         contents.append("To see HP, WP, etc., use `/character display`")
 
-        await ctx.respond("\n".join(contents), ephemeral=True)
+        if isinstance(ctx, discord.Interaction):
+            if ctx.response.is_done():
+                await ctx.followup.send("\n".join(contents), ephemeral=True)
+            else:
+                await ctx.response.send_message("\n".join(contents), ephemeral=True)
+        else:
+            await ctx.respond("\n".join(contents), ephemeral=True)
+
         await asyncio.sleep(0.5)

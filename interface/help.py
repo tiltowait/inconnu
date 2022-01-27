@@ -1,51 +1,53 @@
 """interface/help.py - Help commands"""
 
 import discord
+from discord.commands import SlashCommandGroup, slash_command
 from discord.ext import commands
-from discord_ui import ext, cogs
-from discord_ui.cogs import slash_command, subslash_command
-from discord_ui.components import Button, LinkButton
+from discord.ui import Button, View
 
 import inconnu
 from inconnu.constants import SUPPORT_URL
 
-from . import debug
+
+class _HelpView(View):
+    """A view that has support buttons as well as command help buttons."""
+
+    def __init__(self, *buttons, show_support=False):
+        super().__init__()
+
+        for button in buttons:
+            self.add_item(button)
+
+        if show_support:
+            self.add_item(Button(
+                label="New? Click here!",
+                url="https://www.inconnu-bot.com/#/quickstart",
+                row=1
+            ))
+            self.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
+            self.add_item(Button(label="Patreon", url="https://www.patreon.com/tiltowait", row=1))
 
 
 class Help(commands.Cog, name="Help"):
     """A class for housing the /help command."""
 
-    def __init__(self, bot):
-        self.bot = bot
-
-        help_button = LinkButton("https://www.inconnu-bot.com/#/quickstart", "New? Click here!")
-        support_button = LinkButton(SUPPORT_URL, "Support")
-        patreon_button = LinkButton("https://www.patreon.com/tiltowait", "Patreon")
-
-        self.support_buttons = [help_button, support_button, patreon_button]
-
-
     # Button Listeners
 
-    @cogs.listening_component("show_basic_help")
     async def show_basic_help(self, ctx):
         """Run the /traits help command."""
         await self.help_command(ctx, True)
 
 
-    @cogs.listening_component("show_traits_help")
     async def show_traits_help(self, ctx):
         """Run the /traits help command."""
         await self.traits_help(ctx, True)
 
 
-    @cogs.listening_component("show_macros_help")
     async def show_macros_help(self, ctx):
         """Run the /macro help command."""
         await self.macro_help(ctx, True)
 
 
-    @cogs.listening_component("show_character_help")
     async def show_character_help(self, ctx):
         """Run the /macro help command."""
         await self.character_updates_help(ctx, True)
@@ -53,7 +55,7 @@ class Help(commands.Cog, name="Help"):
 
     # Help Commands
 
-    @slash_command("help", description="Help with basic functions.")
+    @slash_command(name="help")
     async def help_command(self, ctx, hidden=False):
         """Basic usage instructions."""
         embed = discord.Embed(
@@ -68,22 +70,24 @@ class Help(commands.Cog, name="Help"):
         embed.add_field(name="Display character", value="`/character display`", inline=False)
         embed.add_field(name="Add traits", value="`/traits add`")
 
-        buttons = [
-            Button("Character Updater", "show_character_help"),
-            Button("Traits Management", "show_traits_help"),
-            Button("Macro Management", "show_macros_help")
-        ]
+        character = Button(label="Character Updater", row=0)
+        character.callback = self.show_character_help
 
-        await ctx.respond(embed=embed, components=[buttons, self.support_buttons], hidden=hidden)
+        traits = Button(label="Traits Management", row=0)
+        traits.callback = self.show_traits_help
+
+        macros = Button(label="Macro Management", row=0)
+        macros.callback = self.show_macros_help
+
+        view = _HelpView(character, traits, macros)
+
+        await ctx.respond(embed=embed, view=view, ephemeral=hidden)
 
 
-    @ext.check_failed("Traits require characters and aren't available in DMs.", hidden=True)
+    traits = SlashCommandGroup("traits", "Character trait commands.")
+
+    @traits.command(name="help")
     @commands.guild_only()
-    @subslash_command(
-        base_names="traits",
-        name="help",
-        guild_ids=debug.WHITELIST
-    )
     async def traits_help(self, ctx, hidden=False):
         """Trait management instructions."""
         embed = discord.Embed(
@@ -112,20 +116,18 @@ class Help(commands.Cog, name="Help"):
         )
 
         buttons = [
-            LinkButton("https://www.inconnu-bot.com/#/trait-management", "Documentation"),
-            LinkButton(SUPPORT_URL, "Support")
+            Button(label="Documentation", url="https://www.inconnu-bot.com/#/trait-management", row=0),
+            Button(label="Support", url=SUPPORT_URL, row=0)
         ]
+        view = _HelpView(*buttons)
 
-        await ctx.respond(embed=embed, components=buttons, hidden=hidden)
+        await ctx.respond(embed=embed, view=view, ephemeral=hidden)
 
 
-    @ext.check_failed("Macros require characters and aren't available in DMs.", hidden=True)
+    macro = SlashCommandGroup("macro", "Macro commands.")
+
+    @macro.command(name="help")
     @commands.guild_only()
-    @subslash_command(
-        base_names="macro",
-        name="help",
-        guild_ids=debug.WHITELIST
-    )
     async def macro_help(self, ctx, hidden=False):
         """Macro usage instructions."""
         embed = discord.Embed(
@@ -152,14 +154,15 @@ class Help(commands.Cog, name="Help"):
         )
 
         buttons = [
-            LinkButton("https://www.inconnu-bot.com/#/macros", "Documentation"),
-            LinkButton(SUPPORT_URL, "Support")
+            Button(label="Documentation", url="https://www.inconnu-bot.com/#/macros", row=0),
+            Button(label="Support", url=SUPPORT_URL, row=0)
         ]
+        view = _HelpView(*buttons)
 
-        await ctx.respond(embed=embed, components=buttons, hidden=hidden)
+        await ctx.respond(embed=embed, view=view, ephemeral=hidden)
 
 
-    @slash_command(guild_ids=debug.WHITELIST)
+    @slash_command()
     async def info(self, ctx):
         """Display bot info."""
         embed = discord.Embed(
@@ -188,19 +191,18 @@ class Help(commands.Cog, name="Help"):
             text="Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. For more information please visit worldofdarkness.com."
         )
 
-        help_button = Button("Help", "show_basic_help")
+        help_button = Button(label="Help", row=0)
+        help_button.callback = self.show_basic_help
 
-        await ctx.respond(embed=embed, components=[help_button, self.support_buttons])
+        view = _HelpView(help_button, show_support=True)
+
+        await ctx.respond(embed=embed, view=view)
 
 
-    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
+    character = SlashCommandGroup("character", "Character commands.")
+
+    @character.command(name="help")
     @commands.guild_only()
-    @subslash_command(
-        base_names="character",
-        name="help",
-        description="Show a list of character update keys."
-        , guild_ids=debug.WHITELIST
-    )
     async def character_updates_help(self, ctx, hidden=False):
         """Display the valid character update keys."""
         await inconnu.character.update_help(ctx, hidden=hidden)

@@ -52,7 +52,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
     except discord.errors.Forbidden:
         await ctx.respond(
             "**Whoops!** Your DMs are closed. Please open them so I can send your trait wizard.",
-            hidden=True
+            ephemeral=True
         )
         del wizard
     except common.FetchError:
@@ -136,7 +136,7 @@ async def __results_embed(ctx, outcome, char_name: str):
             field_name = "Error! You already have these traits"
         embed.add_field(name=field_name, value=errs, inline=False)
 
-    await ctx.respond(embed=embed, hidden=True)
+    await ctx.respond(embed=embed, ephemeral=True)
 
 
 async def __results_text(ctx, outcome, char_name: str):
@@ -164,4 +164,4 @@ async def __results_text(ctx, outcome, char_name: str):
     if footer is not None:
         contents.append(f"```{footer}```")
 
-    await ctx.respond("\n".join(contents), hidden=True)
+    await ctx.respond("\n".join(contents), ephemeral=True)

@@ -31,10 +31,10 @@ async def delete(ctx, character: str):
             if character.delete_character():
                 await btn.respond(f"Deleted **{character.name}**!")
             else:
-                await btn.respond("Something went wrong. Unable to delete.", hidden=True)
+                await btn.respond("Something went wrong. Unable to delete.", ephemeral=True)
 
         else:
-            await btn.respond("Deletion canceled.", hidden=True)
+            await btn.respond("Deletion canceled.", ephemeral=True)
 
     except errors.CharacterError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
@@ -57,7 +57,7 @@ async def __prompt(ctx, char_name: str, buttons):
 async def __prompt_text(ctx, char_name: str, buttons):
     """Ask the user whether to delete the character, in plain text."""
     contents = f"Really delete {char_name}? This will delete all associated data!\n"
-    return await ctx.respond(contents, components=buttons, hidden=True)
+    return await ctx.respond(contents, components=buttons, ephemeral=True)
 
 
 async def __prompt_embed(ctx, char_name: str, buttons):
@@ -70,4 +70,4 @@ async def __prompt_embed(ctx, char_name: str, buttons):
     embed.add_field(name="Are you certain?", value="This will delete all associated data.")
     embed.set_footer(text="THIS ACTION CANNOT BE UNDONE")
 
-    return await ctx.respond(embed=embed, components=buttons, hidden=True)
+    return await ctx.respond(embed=embed, components=buttons, ephemeral=True)

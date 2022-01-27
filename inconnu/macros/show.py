@@ -57,7 +57,7 @@ async def __macro_text(ctx, char_name, macros):
             contents.append(f"```{field.name}```")
             contents.append(field.value + "\n")
 
-        await ctx.respond("\n".join(contents), hidden=True)
+        await ctx.respond("\n".join(contents), ephemeral=True)
         await asyncio.sleep(0.5)
 
 
@@ -78,7 +78,7 @@ async def __macro_embed(ctx, char_name, macros):
         for field in page:
             embed.add_field(name=field.name, value=field.value, inline=False)
 
-        await ctx.respond(embed=embed, hidden=True)
+        await ctx.respond(embed=embed, ephemeral=True)
         await asyncio.sleep(0.5)
 
 

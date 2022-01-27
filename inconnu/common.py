@@ -35,7 +35,7 @@ async def present_error(
     footer: str = None,
     help_url: str = None,
     components = None,
-    hidden=True
+    ephemeral=True
 ):
     """
     Display an error in a nice embed.
@@ -54,7 +54,7 @@ async def present_error(
             footer=footer,
             help_url=help_url,
             components=components,
-            hidden=hidden
+            ephemeral=ephemeral
         )
 
     return await __error_embed(ctx, error, *fields,
@@ -63,7 +63,7 @@ async def present_error(
         footer=footer,
         help_url=help_url,
         components=components,
-        hidden=hidden
+        ephemeral=ephemeral
     )
 
 
@@ -76,7 +76,7 @@ async def __error_embed(
     footer: str = None,
     help_url: str = None,
     components = None,
-    hidden: bool
+    ephemeral: bool
 ):
     # Figure out the author
     if author is None:
@@ -116,7 +116,7 @@ async def __error_embed(
         else:
             components = [components, link]
 
-    return await ctx.respond(embed=embed, components=components, hidden=hidden)
+    return await ctx.respond(embed=embed, components=components, ephemeral=ephemeral)
 
 
 async def __error_text(
@@ -126,7 +126,7 @@ async def __error_text(
     footer: str = None,
     help_url: str = None,
     components = None,
-    hidden: bool
+    ephemeral: bool
 ):
     """Display the error as plaintext."""
     contents = ["Error", str(error) + "\n"]
@@ -148,7 +148,7 @@ async def __error_text(
         else:
             components = [components, link]
 
-    return await ctx.respond("\n".join(contents), components=components, hidden=hidden)
+    return await ctx.respond("\n".join(contents), components=components, ephemeral=ephemeral)
 
 
 async def select_character(ctx, err, help_url, tip, player=None):

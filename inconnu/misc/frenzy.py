@@ -17,7 +17,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
         if character.splat != "vampire":
-            await ctx.respond("Only vampires need to roll frenzy!", hidden=True)
+            await ctx.respond("Only vampires need to roll frenzy!", ephemeral=True)
             return
 
         frenzy_pool = character.frenzy_resist

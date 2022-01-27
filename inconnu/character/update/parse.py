@@ -143,7 +143,7 @@ def __update_character(character: VChar, param: str, value: str) -> str:
     return getattr(paramupdate, f"update_{param}")(character, value)
 
 
-async def update_help(ctx, err=None, hidden=True):
+async def update_help(ctx, err=None, ephemeral=True):
     """Display a help message that details the available keys."""
     embed = discord.Embed(
         title="Character Tracking",
@@ -171,7 +171,7 @@ async def update_help(ctx, err=None, hidden=True):
         label="Full Documentation"
     )
     support = LinkButton(constants.SUPPORT_URL, "Support")
-    await ctx.respond(embed=embed, components=[documentation, support], hidden=hidden)
+    await ctx.respond(embed=embed, components=[documentation, support], ephemeral=ephemeral)
 
 
 # We do flexible matching for the keys. Many of these are the same as RoD's

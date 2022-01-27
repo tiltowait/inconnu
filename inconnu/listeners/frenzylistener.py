@@ -27,7 +27,7 @@ class FrenzyListener(Listener):
     async def respond_to_button(self, btn):
         """Respond to the button event."""
         if btn.author.id != self.character.user:
-            await btn.respond(f"You can't frenzy on {self.character.name}'s behalf.", hidden=True)
+            await btn.respond(f"You can't frenzy on {self.character.name}'s behalf.", ephemeral=True)
             return
 
         await frenzy(btn, self.difficulty, None, self.character)

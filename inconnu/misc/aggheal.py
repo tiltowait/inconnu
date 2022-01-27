@@ -18,7 +18,7 @@ async def aggheal(ctx, character: str):
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
         if character.health.count(DAMAGE.aggravated) == 0:
-            await ctx.respond(f"{character.name} has no aggravated damage to heal!", hidden=True)
+            await ctx.respond(f"{character.name} has no aggravated damage to heal!", ephemeral=True)
             return
 
         outcome = __heal(character)

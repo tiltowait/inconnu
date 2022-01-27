@@ -56,7 +56,7 @@ class Help(commands.Cog, name="Help"):
     # Help Commands
 
     @slash_command(name="help")
-    async def help_command(self, ctx, hidden=False):
+    async def help_command(self, ctx, ephemeral=False):
         """Basic usage instructions."""
         embed = discord.Embed(
             title="Inconnu Help",
@@ -81,14 +81,14 @@ class Help(commands.Cog, name="Help"):
 
         view = _HelpView(character, traits, macros)
 
-        await ctx.respond(embed=embed, view=view, ephemeral=hidden)
+        await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
     traits = SlashCommandGroup("traits", "Character trait commands.")
 
     @traits.command(name="help")
     @commands.guild_only()
-    async def traits_help(self, ctx, hidden=False):
+    async def traits_help(self, ctx, ephemeral=False):
         """Trait management instructions."""
         embed = discord.Embed(
             title="Traits Management",
@@ -121,14 +121,14 @@ class Help(commands.Cog, name="Help"):
         ]
         view = _HelpView(*buttons)
 
-        await ctx.respond(embed=embed, view=view, ephemeral=hidden)
+        await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
     macro = SlashCommandGroup("macro", "Macro commands.")
 
     @macro.command(name="help")
     @commands.guild_only()
-    async def macro_help(self, ctx, hidden=False):
+    async def macro_help(self, ctx, ephemeral=False):
         """Macro usage instructions."""
         embed = discord.Embed(
             title="Macros",
@@ -159,7 +159,7 @@ class Help(commands.Cog, name="Help"):
         ]
         view = _HelpView(*buttons)
 
-        await ctx.respond(embed=embed, view=view, ephemeral=hidden)
+        await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
     @slash_command()
@@ -203,6 +203,6 @@ class Help(commands.Cog, name="Help"):
 
     @character.command(name="help")
     @commands.guild_only()
-    async def character_updates_help(self, ctx, hidden=False):
+    async def character_updates_help(self, ctx, ephemeral=False):
         """Display the valid character update keys."""
-        await inconnu.character.update_help(ctx, hidden=hidden)
+        await inconnu.character.update_help(ctx, ephemeral=ephemeral)

@@ -17,7 +17,7 @@ async def slake(ctx, amount, character=None):
         slaked = min(amount, character.hunger)
 
         if slaked == 0:
-            await ctx.respond(f"**{character.name}** has no Hunger!", hidden=True)
+            await ctx.respond(f"**{character.name}** has no Hunger!", ephemeral=True)
         else:
             old_hunger = character.hunger
             character.hunger -= slaked

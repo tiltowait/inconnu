@@ -32,7 +32,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
 
         response = await ctx.respond(
             "Please check your DMs! I hope you have your character sheet ready.",
-            hidden=True
+            ephemeral=True
         )
 
         parameters = SN(name=name, hp=health, wp=willpower, humanity=humanity, splat=splat, spc=spc)

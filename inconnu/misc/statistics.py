@@ -220,7 +220,7 @@ async def __all_statistics(ctx, date):
     client.close()
 
     if len(results) == 0:
-        await ctx.respond("You haven't made any rolls on any characters.", hidden=True)
+        await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)
         return
 
     if Settings.accessible(ctx.author):

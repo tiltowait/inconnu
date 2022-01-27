@@ -42,7 +42,7 @@ async def create(
 
         pool = macro_common.expand_syntax(character, pool)
         character.add_macro(name, pool, hunger, rouses, reroll_rouses, staining, diff, comment)
-        await ctx.respond(f"**{character.name}:** Created macro `{name}`.", hidden=True)
+        await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
 
     except (
         SyntaxError, errors.AmbiguousTraitError, errors.TraitNotFoundError,

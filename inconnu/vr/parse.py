@@ -80,10 +80,10 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
 
         if isinstance(err, errors.TraitError):
             components = [Button("Show Traits")]
-            hidden = True
+            ephemeral = True
         else:
             components = None
-            hidden = False
+            ephemeral = False
 
         msg = await common.present_error(
             ctx,
@@ -93,7 +93,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             character=character,
             help_url=__HELP_URL,
             components=components,
-            hidden=hidden
+            ephemeral=ephemeral
         )
 
         # Show the traits button

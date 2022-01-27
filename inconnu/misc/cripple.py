@@ -27,7 +27,7 @@ async def cripple(ctx, damage: int, character: str):
         if damage < 1:
             await ctx.respond(
                 "You need some Aggravated damage to sustain a crippling injury!",
-                hidden=True
+                ephemeral=True
             )
             return
 

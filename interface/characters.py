@@ -35,7 +35,7 @@ class Characters(commands.Cog, name="Character Management"):
     @commands.user_command(name="Characters")
     async def user_characters(self, ctx, user):
         """Display the user's character(s)."""
-        await self.character_display(ctx, None, user, hidden=True)
+        await self.character_display(ctx, None, user, ephemeral=True)
 
 
     character = SlashCommandGroup("character", "Character commands.")
@@ -75,10 +75,10 @@ class Characters(commands.Cog, name="Character Management"):
              #"The player who owns the character (admin only)",
               #required=False
         #),
-        hidden=False
+        ephemeral=False
     ):
         """Display a character's basic traits"""
-        await inconnu.character.display_requested(ctx, character, player=player, hidden=hidden)
+        await inconnu.character.display_requested(ctx, character, player=player, ephemeral=ephemeral)
 
 
     @character.command(name="update")
@@ -169,7 +169,7 @@ class Characters(commands.Cog, name="Character Management"):
             await inconnu.character.update(ctx, parameters, character, player=player)
 
         except ValueError as err:
-            await ctx.respond(err, hidden=True)
+            await ctx.respond(err, ephemeral=True)
 
 
     @character.command(name="delete")

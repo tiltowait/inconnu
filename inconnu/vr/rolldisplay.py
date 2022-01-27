@@ -91,7 +91,7 @@ class RollDisplay(Listener):
     async def respond_to_button(self, btn):
         """Respond to the buttons."""
         if btn.author.id != self.ctx.author.id:
-            await btn.respond("This button doesn't belong to you!", hidden=True)
+            await btn.respond("This button doesn't belong to you!", ephemeral=True)
             return
 
         if btn.custom_id == self._WILLPOWER:

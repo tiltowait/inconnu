@@ -50,7 +50,7 @@ async def __outcome_text(ctx, character, outcome):
         errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
         contents.append(f"These traits don't exist: {errs}.")
 
-    await ctx.respond("\n".join(contents), hidden=True)
+    await ctx.respond("\n".join(contents), ephemeral=True)
 
 
 async def __outcome_embed(ctx, character, outcome):
@@ -69,7 +69,7 @@ async def __outcome_embed(ctx, character, outcome):
         errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
         embed.add_field(name="Do not exist", value=errs, inline=False)
 
-    await ctx.respond(embed=embed, hidden=True)
+    await ctx.respond(embed=embed, ephemeral=True)
 
 
 def __delete_traits(character: VChar, *traits) -> list:

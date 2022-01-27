@@ -26,7 +26,7 @@ EXPERIENCE = 5
 SEVERITY = 6
 
 
-async def display_requested(ctx, character=None, message=None, player=None, hidden=False):
+async def display_requested(ctx, character=None, message=None, player=None, ephemeral=False):
     """Display a character as directly requested by a user."""
     try:
         owner = await common.player_lookup(ctx, player)
@@ -38,13 +38,13 @@ async def display_requested(ctx, character=None, message=None, player=None, hidd
             message=message,
             footer=None,
             components=[Button("Traits")],
-            hidden=hidden
+            ephemeral=ephemeral
         )
 
         try:
             btn = await msg.wait_for("button", ctx.bot, timeout=60)
             while btn.author != ctx.author:
-                await btn.respond("Sorry, you can't view these traits.", hidden=True)
+                await btn.respond("Sorry, you can't view these traits.", ephemeral=True)
                 btn = await msg.wait_for("button", ctx.bot, timeout=60)
 
             await traits.show(btn, character.name, owner)
@@ -71,7 +71,7 @@ async def display(
     color: int = None,
     thumbnail: str = None,
     components: list = None,
-    hidden: bool =False
+    ephemeral: bool = False
 ):
     """
     Display a character.
@@ -95,7 +95,7 @@ async def display(
             fields=fields,
             custom=custom,
             components=components,
-            hidden=hidden
+            ephemeral=ephemeral
         )
 
     return await __display_embed(ctx, character,
@@ -108,7 +108,7 @@ async def display(
         color=color,
         thumbnail=thumbnail,
         components=components,
-        hidden=hidden
+        ephemeral=ephemeral
     )
 
 
@@ -124,7 +124,7 @@ async def __display_embed(
     color: int = None,
     thumbnail: str = None,
     components: list = None,
-    hidden: bool =False
+    ephemeral: bool =False
 ):
     # Set the default values
     owner = owner or ctx.author
@@ -165,7 +165,7 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    return await ctx.respond(embed=embed, components=components, hidden=hidden)
+    return await ctx.respond(embed=embed, components=components, ephemeral=ephemeral)
 
 
 def __embed_field_value(character, parameter):
@@ -206,7 +206,7 @@ async def __display_text(
     fields: list = None,
     custom: list = None,
     components: list = None,
-    hidden: bool = False
+    ephemeral: bool = False
 ):
     """Display a text representation of the character."""
 
@@ -246,7 +246,7 @@ async def __display_text(
     if footer is not None:
         contents += f"\n*{footer}*"
 
-    return await ctx.respond(contents, components=components, hidden=hidden)
+    return await ctx.respond(contents, components=components, ephemeral=ephemeral)
 
 
 def __text_field_contents(character, field, parameter):

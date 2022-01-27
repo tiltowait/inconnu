@@ -21,7 +21,7 @@ async def mend(ctx, character=None):
         outcome = __heal(character)
 
         if isinstance(outcome, str):
-            await ctx.respond(outcome, hidden=True)
+            await ctx.respond(outcome, ephemeral=True)
         else:
             await __display_outcome(ctx, character, outcome)
 

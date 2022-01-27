@@ -41,7 +41,7 @@ async def __list_embed(ctx, character, owner):
         embed.set_author(name=character.name, icon_url=owner.display_avatar)
         embed.set_footer(text="To see HP, WP, etc., use /character display")
 
-        await ctx.respond(embed=embed, hidden=True)
+        await ctx.respond(embed=embed, ephemeral=True)
         await asyncio.sleep(0.5)
 
 
@@ -60,5 +60,5 @@ async def __list_text(ctx, character):
         contents.append("```")
         contents.append("To see HP, WP, etc., use `/character display`")
 
-        await ctx.respond("\n".join(contents), hidden=True)
+        await ctx.respond("\n".join(contents), ephemeral=True)
         await asyncio.sleep(0.5)

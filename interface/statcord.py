@@ -16,6 +16,6 @@ class StatcordPost(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_command(self, ctx):
+    async def on_application_command(self, ctx):
         """Listen to and log command usage."""
         self.api.command_run(ctx)

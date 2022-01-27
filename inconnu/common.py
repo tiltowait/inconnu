@@ -157,17 +157,19 @@ async def select_character(ctx, err, help_url, tip, player=None):
         user = ctx.author
 
     options = character_options(ctx.guild.id, user.id)
-    errmsg = await present_error(
+    await present_error(
         ctx,
         err,
         (tip[0], tip[1]),
         author=user,
         help_url=help_url,
-        view=options.components
+        view=options.view
     )
 
-    await options.components.wait()
-    print("Gotta do something with this, yo!")
+    await options.view.wait()
+    character_id = options.view.selected_value
+
+    return character_id
 
     #try:
         #if isinstance(options.components[0], Button):

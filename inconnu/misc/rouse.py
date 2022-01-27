@@ -4,14 +4,8 @@
 import random
 from types import SimpleNamespace
 
-from discord_ui.components import Button
-
-from .. import common
-from .. import character as char
-from ..constants import ROUSE_FAIL_COLOR
-from ..listeners import FrenzyListener
-from ..settings import Settings
-from ..vchar import VChar
+import inconnu
+from inconnu.vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
 
@@ -31,7 +25,7 @@ async def rouse(
     try:
         tip = "`/rouse` `character:CHARACTER`"
         if not isinstance(character, VChar):
-            character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+            character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
         if character.splat == "mortal":
             await ctx.respond("Mortals can't make rouse checks.", ephemeral=True)
@@ -42,7 +36,7 @@ async def rouse(
             outcome = __rouse_roll(character, count, reroll)
             await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
 
-    except common.FetchError:
+    except inconnu.common.FetchError:
         pass
 
 
@@ -51,8 +45,8 @@ def __make_title(outcome):
     if outcome.total == 1:
         title = "Rouse Success" if outcome.successes == 1 else "Rouse Failure"
     else:
-        successes = common.pluralize(outcome.successes, "success")
-        failures = common.pluralize(outcome.failures, "failure")
+        successes = inconnu.common.pluralize(outcome.successes, "success")
+        failures = inconnu.common.pluralize(outcome.failures, "failure")
         title = f"Rouse: {successes}, {failures}"
 
     return title
@@ -63,39 +57,39 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
     title = __make_title(outcome)
 
     if "ailure" in title and "0 fail" not in title:
-        color = ROUSE_FAIL_COLOR
+        color = inconnu.constants.ROUSE_FAIL_COLOR
         thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-filled.webp"
     else:
         color = None
         thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-unfilled.webp"
 
     if outcome.frenzy:
-        components = [Button("Hunger Frenzy (DC 4)", color="red")]
         custom = [("Hunger 5 Rouse Failure", "If awakening: Torpor. Otherwise: Roll for frenzy!")]
     else:
-        components = None
         custom = None
 
     footer = []
-    fields = [("New Hunger" if "ailure" in title else "Hunger", char.HUNGER)]
+    fields = [("New Hunger" if "ailure" in title else "Hunger", inconnu.character.HUNGER)]
 
     if purpose is not None:
         footer.append(purpose)
     if outcome.reroll:
         footer.append("Re-rolling failures")
     if outcome.stains > 0:
-        stains_txt = common.pluralize(outcome.stains, "stain")
+        stains_txt = inconnu.common.pluralize(outcome.stains, "stain")
 
         if oblivion == "show":
             footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
         elif oblivion == "apply":
             character.stains += outcome.stains
             character.log("stains", outcome.stains)
-            fields.append((f"Gain {stains_txt}", char.HUMANITY))
+            fields.append((f"Gain {stains_txt}", inconnu.character.HUMANITY))
 
     footer = "\n".join(footer)
 
-    msg = await char.display(ctx, character,
+    view = inconnu.views.FrenzyView(character, 4) if outcome.frenzy else None
+
+    await inconnu.character.display(ctx, character,
         title=title,
         footer=footer,
         message=message,
@@ -103,20 +97,17 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         custom=custom,
         color=color,
         thumbnail=thumbnail,
-        components=components
+        view=view
     )
-
-    if outcome.frenzy:
-        FrenzyListener(character, 4).attach_me_to(msg)
 
 
 async def __damage_ghoul(ctx, ghoul):
     """Apply Aggravated damage to a ghoul and display."""
     ghoul.aggravated_hp += 1
-    await char.display(ctx, ghoul,
+    await inconnu.character.display(ctx, ghoul,
         title="Ghoul Rouse Damage",
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
-        fields=[("Health", char.HEALTH)],
+        fields=[("Health", inconnu.character.HEALTH)],
         footer="V5 Core, p.234"
     )
 
@@ -127,7 +118,7 @@ def __rouse_roll(character: VChar, rolls: int, reroll: bool):
     failures = 0
     stains = 0
 
-    oblivion = Settings.oblivion_stains(character.guild)
+    oblivion = inconnu.settings.oblivion_stains(character.guild)
 
     for _ in range(rolls):
         die = random.randint(1, 10)

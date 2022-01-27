@@ -6,7 +6,6 @@ from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_comm
 from discord.ext import commands
 
 import inconnu
-from . import debug
 
 
 class Macros(commands.Cog, name="Macro Utilities"):

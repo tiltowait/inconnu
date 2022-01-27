@@ -12,6 +12,7 @@ from . import roll
 from .settings import Settings as settings
 from . import traits
 from .vchar import VChar
+from . import views
 
 
 async def available_characters(ctx):

@@ -4,9 +4,9 @@ import asyncio
 from types import SimpleNamespace
 
 import discord
-from discord_ui import Button, SelectMenu, SelectOption
-from discord_ui.components import LinkButton
+from discord.ui import Button, View
 
+import inconnu
 from .constants import SUPPORT_URL
 from .settings import Settings
 from .vchar import errors, VChar
@@ -34,7 +34,7 @@ async def present_error(
     character: str = None,
     footer: str = None,
     help_url: str = None,
-    components = None,
+    view = None,
     ephemeral=True
 ):
     """
@@ -53,7 +53,7 @@ async def present_error(
         return await __error_text(ctx, error, *fields,
             footer=footer,
             help_url=help_url,
-            components=components,
+            view=view,
             ephemeral=ephemeral
         )
 
@@ -62,7 +62,7 @@ async def present_error(
         character=character,
         footer=footer,
         help_url=help_url,
-        components=components,
+        view=view,
         ephemeral=ephemeral
     )
 
@@ -75,7 +75,7 @@ async def __error_embed(
     character: str = None,
     footer: str = None,
     help_url: str = None,
-    components = None,
+    view = None,
     ephemeral: bool
 ):
     # Figure out the author
@@ -106,17 +106,13 @@ async def __error_embed(
         embed.set_footer(text=footer)
 
     if help_url is not None:
-        link = [
-            LinkButton(help_url, "Documentation"),
-            LinkButton(SUPPORT_URL, "Support")
-        ]
+        link_row = 1 if view is None else 0
+        view = view or View()
 
-        if components is None:
-            components = link
-        else:
-            components = [components, link]
+        view.add_item(Button(label="Documentation", url=help_url, row=link_row))
+        view.add_item(Button(label="Documentation", url=SUPPORT_URL, row=link_row))
 
-    return await ctx.respond(embed=embed, components=components, ephemeral=ephemeral)
+    return await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
 async def __error_text(
@@ -125,7 +121,7 @@ async def __error_text(
     *fields,
     footer: str = None,
     help_url: str = None,
-    components = None,
+    view = None,
     ephemeral: bool
 ):
     """Display the error as plaintext."""
@@ -138,17 +134,10 @@ async def __error_text(
         contents.append(f"```{footer}```")
 
     if help_url is not None:
-        link = [LinkButton(
-            help_url,
-            label="Help"
-        )]
+        link_row = 1 if view is None else 0
+        view = view or View(Button(label="Help", url=help_url, row=link_row))
 
-        if components is None:
-            components = link
-        else:
-            components = [components, link]
-
-    return await ctx.respond("\n".join(contents), components=components, ephemeral=ephemeral)
+    return await ctx.respond("\n".join(contents), view=view, ephemeral=ephemeral)
 
 
 async def select_character(ctx, err, help_url, tip, player=None):
@@ -174,25 +163,28 @@ async def select_character(ctx, err, help_url, tip, player=None):
         (tip[0], tip[1]),
         author=user,
         help_url=help_url,
-        components=options.components
+        view=options.components
     )
 
-    try:
-        if isinstance(options.components[0], Button):
-            btn = await errmsg.wait_for("button", ctx.bot, timeout=60)
-            character = options.characters[btn.custom_id]
-        else:
-            btn = await errmsg.wait_for("select", ctx.bot, timeout=60)
-            character = options.characters[btn.selected_values[0]]
+    await options.components.wait()
+    print("Gotta do something with this, yo!")
 
-        await btn.respond()
-        await errmsg.disable_components()
+    #try:
+        #if isinstance(options.components[0], Button):
+            #btn = await errmsg.wait_for("button", ctx.bot, timeout=60)
+            #character = options.characters[btn.custom_id]
+        #else:
+            #btn = await errmsg.wait_for("select", ctx.bot, timeout=60)
+            #character = options.characters[btn.selected_values[0]]
 
-        return character
+        #await btn.respond()
+        #await errmsg.disable_components()
 
-    except asyncio.exceptions.TimeoutError:
-        await errmsg.edit(components=None)
-        return None
+        #return character
+
+    #except asyncio.exceptions.TimeoutError:
+        #await errmsg.edit(components=None)
+        #return None
 
 
 def character_options(guild: int, user: int):
@@ -205,13 +197,13 @@ def character_options(guild: int, user: int):
     chardict = {str(char.id): char for char in characters}
 
     if len(characters) < 6:
-        components = [Button(char.name, str(char.id)) for char in characters]
+        components = [Button(label=char.name, custom_id=str(char.id)) for char in characters]
     else:
-        options = [SelectOption(str(char.id), char.name) for char in characters]
-        menu = SelectMenu(options, "character_selector", placeholder="Select a character")
-        components = [menu]
+        options = [(char.name, str(char.id)) for char in characters]
+        components = [inconnu.views.Dropdown("Select a character", *options)]
 
-    return SimpleNamespace(characters=chardict, components=components)
+    view = inconnu.views.BasicSelector(*components)
+    return SimpleNamespace(characters=chardict, view=view)
 
 
 async def player_lookup(ctx, player: discord.Member):

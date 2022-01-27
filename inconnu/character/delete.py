@@ -3,8 +3,8 @@
 import asyncio
 
 import discord
-from discord_ui import Button
 
+from inconnu import views
 from .. import common
 from ..settings import Settings
 from ..vchar import errors, VChar
@@ -16,58 +16,63 @@ async def delete(ctx, character: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
         character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
-        buttons = [
-            Button("Cancel", "_cancel", "secondary"),
-            Button(f"Delete {character.name}", "_delete", "red")
-        ]
-        msg = await __prompt(ctx, character.name, buttons)
 
-        # Await the response
-        btn = await msg.wait_for("button", ctx.bot, timeout=20)
-        await msg.disable_components()
-
-        # Process the response
-        if btn.custom_id == "_delete":
-            if character.delete_character():
-                await btn.respond(f"Deleted **{character.name}**!")
-            else:
-                await btn.respond("Something went wrong. Unable to delete.", ephemeral=True)
-
+        if Settings.accessible(ctx.author):
+            await __prompt_text(ctx, character)
         else:
-            await btn.respond("Deletion canceled.", ephemeral=True)
+            await __prompt_embed(ctx, character)
+
 
     except errors.CharacterError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
-    except asyncio.exceptions.TimeoutError:
-        await msg.edit(
-            content="**Deletion canceled due to inactivity.**",
-            components=None,
-            embed=None
-        )
+    #except asyncio.exceptions.TimeoutError:
+    #    await msg.edit(
+     #       content="**Deletion canceled due to inactivity.**",
+      #      components=None,
+       #     embed=None
+        #)
 
 
-async def __prompt(ctx, char_name: str, buttons):
-    """Send a fancy deletion embed."""
-    if Settings.accessible(ctx.author):
-        return await __prompt_text(ctx, char_name, buttons)
-
-    return await __prompt_embed(ctx, char_name, buttons)
-
-
-async def __prompt_text(ctx, char_name: str, buttons):
+async def __prompt_text(ctx, character):
     """Ask the user whether to delete the character, in plain text."""
-    contents = f"Really delete {char_name}? This will delete all associated data!\n"
-    return await ctx.respond(contents, components=buttons, ephemeral=True)
+    contents = f"Really delete {character.name}? This will delete all associated data!\n"
+    return await ctx.respond(contents, view=_DeleteView(character), ephemeral=True)
 
 
-async def __prompt_embed(ctx, char_name: str, buttons):
+async def __prompt_embed(ctx, character):
     """Ask the user whether to delete the character, using an embed."""
     embed = discord.Embed(
-        title=f"Delete {char_name}",
+        title=f"Delete {character.name}",
         color=0xFF0000
     )
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
     embed.add_field(name="Are you certain?", value="This will delete all associated data.")
     embed.set_footer(text="THIS ACTION CANNOT BE UNDONE")
 
-    return await ctx.respond(embed=embed, components=buttons, ephemeral=True)
+    return await ctx.respond(embed=embed, view=_DeleteView(character), ephemeral=True)
+
+
+class _DeleteView(views.DisablingView):
+    """A view for deleting characters."""
+
+    def __init__(self, character):
+        super().__init__(self)
+        self.character = character
+
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    async def cancel(self, interaction):
+        """Cancel the interaction."""
+        await interaction.response.send_message("Deletion canceled.", ephemeral=True)
+        await self.disable_items(interaction)
+
+
+    @discord.ui.button(label="Delete", style=discord.ButtonStyle.danger)
+    async def delete(self, interaction):
+        """Delete the character."""
+        if self.character.delete_character():
+            await interaction.response.send_message(f"Deleted **{self.character.name}**!")
+        else:
+            await interaction.response.send_message("Something went wrong. Unable to delete.", ephemeral=True)
+
+        await self.disable_items(interaction)

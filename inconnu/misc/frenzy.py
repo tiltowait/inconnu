@@ -61,7 +61,15 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
 
 async def __display_text(ctx, title: str, message: str, name: str, difficulty: str, footer: str):
     """Display the outcome in plain text."""
-    await ctx.respond(f"**{name}: Frenzy {title} (diff. {difficulty})**\n{message}\n*{footer}*")
+    msg = f"**{name}: Frenzy {title} (diff. {difficulty})**\n{message}\n*{footer}*"
+
+    if isinstance(ctx, discord.Interaction):
+        if ctx.response.is_done():
+            await ctx.followup.send(msg)
+        else:
+            await ctx.response.send_message(msg)
+    else:
+        await ctx.respond(msg)
 
 
 async def __display_embed(
@@ -81,4 +89,10 @@ async def __display_embed(
         url = "https://www.inconnu-bot.com/images/assets/frenzy.webp"
         embed.set_thumbnail(url=url)
 
-    await ctx.respond(embed=embed)
+    if isinstance(ctx, discord.Interaction):
+        if ctx.response.is_done():
+            await ctx.followup.send(embed=embed)
+        else:
+            await ctx.response.send_message(embed=embed)
+    else:
+        await ctx.respond(embed=embed)

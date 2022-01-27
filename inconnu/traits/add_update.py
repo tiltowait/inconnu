@@ -5,7 +5,6 @@ from types import SimpleNamespace
 import discord
 
 from .parser import parse_traits
-from .traitwizard import TraitWizard
 from .. import common
 from ..settings import Settings
 from ..vchar import VChar
@@ -38,10 +37,6 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
 
         await __display_results(ctx, outcome, character.name)
 
-        if len(outcome.unassigned) > 0:
-            wizard = TraitWizard(ctx, character, outcome.unassigned, allow_overwrite)
-            await wizard.begin()
-
     except (ValueError, SyntaxError) as err:
         await common.present_error(
             ctx,
@@ -49,19 +44,13 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
             character=character,
             help_url=__HELP_URL[allow_overwrite]
         )
-    except discord.errors.Forbidden:
-        await ctx.respond(
-            "**Whoops!** Your DMs are closed. Please open them so I can send your trait wizard.",
-            ephemeral=True
-        )
-        del wizard
     except common.FetchError:
         pass
 
 
 def __handle_traits(character: VChar, traits: dict, overwriting: bool):
     """
-    Add the rated traits to the character directly. Create a wizard for the rest.
+    Add the rated traits to the character directly.
     Args:
         character (VChar): The character's database ID
         traits (dict): The {str: Optional[int]} dict of traits
@@ -110,8 +99,8 @@ async def __results_embed(ctx, outcome, char_name: str):
     """Display the results of the operation in a nice embed."""
     if len(outcome.assigned) == 0 and len(outcome.unassigned) == 0 and len(outcome.errors) > 0:
         title = "Unable to Modify Traits"
-    elif len(outcome.unassigned) > 0:
-        title = "Entering Incognito Mode"
+    elif len(outcome.assigned) > 0 and len(outcome.unassigned) > 0:
+        title = f"Assigned: {outcome.assigned} | Unassigned: {outcome.unassigned}"
     else:
         title = "Traits Assigned"
 
@@ -125,8 +114,8 @@ async def __results_embed(ctx, outcome, char_name: str):
 
     if len(outcome.unassigned) > 0:
         unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
-        embed.add_field(name="Not yet assigned", value=unassigned)
-        embed.set_footer(text="Check your DMs to finish assigning the traits.")
+        embed.add_field(name="Unassigned", value=unassigned)
+        embed.set_footer(text="Run the command again to give ratings for the unassigned traits.")
 
     if len(outcome.errors) > 0:
         errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
@@ -150,8 +139,8 @@ async def __results_text(ctx, outcome, char_name: str):
     footer = None
     if len(outcome.unassigned) > 0:
         unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
-        contents.append(f"Not yet assigned: {unassigned}")
-        footer = "Check your DMs to finish assigning the traits."
+        contents.append(f"Unassigned: {unassigned}")
+        footer = "Run the command again to assign ratings to the unassigned traits."
 
     if len(outcome.errors) > 0:
         errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))

@@ -2,6 +2,8 @@
 
 import os
 
+from discord.commands import OptionChoice
+
 from . import character
 from .cull import Culler as culler
 from . import macros
@@ -12,18 +14,17 @@ from . import traits
 from .vchar import VChar
 
 
-async def available_characters(_, ctx):
+async def available_characters(ctx):
     """Generate a list of the user's available characters."""
     if ctx.guild is None:
-        return [("You have no characters", "")]
+        return [OptionChoice("You have no characters", "")]
 
     # Check if they're looking up a player and have lookup permissions
     spcs = []
 
-    if "player" in ctx.selected_options:
-        owner = ctx.selected_options["player"]
+    if (owner := ctx.options.get("player")) is not None:
         if owner != ctx.author and not ctx.author.guild_permissions.administrator:
-            return [("You do not have admin permissions", "")]
+            return [OptionChoice("You do not have admin permissions", "")]
     else:
         owner = ctx.author
 
@@ -37,6 +38,6 @@ async def available_characters(_, ctx):
     chars.extend(spcs)
 
     return [
-        (name, ident) for name, ident in chars
-            if name.lower().startswith(ctx.value_query.lower())
+        OptionChoice(name, ident) for name, ident in chars
+            if name.lower().startswith(ctx.value or "")
     ]

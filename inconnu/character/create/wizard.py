@@ -1,48 +1,17 @@
 """character/create/wizard.py - The new character wizard."""
 # pylint: disable=too-few-public-methods
 
-import asyncio
 import os
 
 import discord
-from discord_ui import Button, Listener
-from discord_ui.components import LinkButton
+from discord.ui import Button
 
-from ...constants import INCONNU_ID
-from ...settings import Settings
-from ...vchar import VChar
-
-
-class _TraitListener(Listener):
-    """Listen to trait selection events."""
-
-    def __init__(self, callback, failback):
-        super().__init__(timeout=120)
-
-        self.callback = callback
-        self.failback = failback
-
-
-    @Listener.button()
-    async def respond_to_button(self, btn):
-        """Respond to the button event and send the button's rating to the callback."""
-        await btn.respond()
-        await self.callback(int(btn.component.label))
-
-
-    def _stop(self):
-        """Stop listening for events and send the failback."""
-        super()._stop()
-        asyncio.create_task(self.failback())
+import inconnu
+from inconnu.vchar import VChar
 
 
 class Wizard:
     """A helper class that guides a user through the chargen process."""
-
-    _BUTTONS = [
-        [Button(str(n)) for n in range(1,6)],
-        [Button("0", color="gray")]
-    ]
 
 
     def __init__(self, ctx, parameters):
@@ -65,7 +34,7 @@ class Wizard:
             self.core_traits.append("Blood Potency")
 
         self.assigned_traits = {}
-        self.use_accessibility = Settings.accessible(ctx.author)
+        self.use_accessibility = inconnu.settings.accessible(ctx.author)
 
 
     async def begin_chargen(self):
@@ -73,7 +42,7 @@ class Wizard:
         await self.__query_trait()
 
 
-    async def __assign_next_trait(self, rating: int):
+    async def _assign_next_trait(self, rating: int):
         """
         Assign the next trait in the list and display the next trait or finish
         creating the character if finished.
@@ -93,7 +62,7 @@ class Wizard:
 
     async def __finalize_character(self):
         """Add the character to the database and inform the user they are done."""
-        owner = self.ctx.author.id if not self.parameters.spc else INCONNU_ID
+        owner = self.ctx.author.id if not self.parameters.spc else inconnu.constants.INCONNU_ID
 
         character = VChar.create(self.ctx.guild.id, owner, self.parameters.name)
         character.splat= self.parameters.splat
@@ -123,12 +92,12 @@ class Wizard:
         contents += f"\nMake a mistake? Use `/traits update` on {self.ctx.guild.name} to fix."
         contents += f"\nWant to add Disciplines? Use `/traits add` on {self.ctx.guild.name}."
 
-        button = LinkButton(
-            "https://www.inconnu-bot.com/#/quickstart",
-            label="Full Documentation"
+        button = Button(
+            label="Full Documentation",
+            url="https://www.inconnu-bot.com/#/quickstart"
         )
 
-        await self.msg.edit(content=contents, components=[button])
+        await self.msg.edit(content=contents, view=discord.ui.View(button))
 
 
     async def __finalize_embed(self, character):
@@ -152,12 +121,12 @@ class Wizard:
             inline=False
         )
 
-        button = LinkButton(
-            "https://www.inconnu-bot.com/#/quickstart",
-            label="Full Documentation"
+        button = Button(
+            label="Full Documentation",
+            url="https://www.inconnu-bot.com/#/quickstart"
         )
 
-        await self.msg.edit(embed=embed, components=[button])
+        await self.msg.edit(embed=embed, view=discord.ui.View(button))
 
 
     async def __query_trait(self, message=None):
@@ -166,9 +135,6 @@ class Wizard:
             await self.__query_text(message)
         else:
             await self.__query_embed(message)
-
-        if message is None:
-            _TraitListener(self.__assign_next_trait, self._timeout).attach_me_to(self.msg)
 
 
     async def __query_text(self, message=None):
@@ -182,7 +148,8 @@ class Wizard:
         contents.append(f"```Select the rating for: {self.core_traits[0]}```")
 
         if self.msg is None:
-            self.msg = await self.ctx.author.send("\n".join(contents), components=Wizard._BUTTONS)
+            view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
+            self.msg = await self.ctx.author.send("\n".join(contents), view=view)
         else:
             await self.msg.edit(content="\n".join(contents))
 
@@ -205,7 +172,8 @@ class Wizard:
         embed.set_footer(text="Your character will not be saved until you have entered all traits.")
 
         if self.msg is None:
-            self.msg = await self.ctx.author.send(embed=embed, components=Wizard._BUTTONS)
+            view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
+            self.msg = await self.ctx.author.send(embed=embed, view=view)
         else:
             await self.msg.edit(embed=embed)
 
@@ -213,4 +181,4 @@ class Wizard:
     async def _timeout(self):
         """Inform the user they took too long."""
         errmsg = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
-        await self.msg.edit(content=errmsg, embed=None, components=None)
+        await self.msg.edit(content=errmsg, embed=None, view=None)

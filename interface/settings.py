@@ -5,7 +5,6 @@ from discord.commands import Option, OptionChoice, slash_command
 from discord.ext import commands
 
 import inconnu
-from . import debug
 
 
 class SettingsCommands(commands.Cog):

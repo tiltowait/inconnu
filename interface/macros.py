@@ -1,9 +1,9 @@
 """interface/macros.py - Macro command interface."""
 # pylint: disable=too-many-arguments
 
+import discord
+from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
-from discord_ui import ext, SlashOption
-from discord_ui.cogs import slash_command, subslash_command
 
 import inconnu
 from . import debug
@@ -12,77 +12,63 @@ from . import debug
 class Macros(commands.Cog, name="Macro Utilities"):
     """Macro manaagement and rolls."""
 
-    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
-    @commands.guild_only()
-    @slash_command(
-        name="vm",
-        description="Roll a macro.",
-        options=[
-            SlashOption(str, "syntax",
-                description="The macro to roll, plus Hunger and Difficulty",
-                required=True
-            ),
-            SlashOption(str, "character", description="The character that owns the macro",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            )
-        ]
-        , guild_ids=debug.WHITELIST
+    _CHARACTER_OPTION = Option(str, "The character to use",
+        autocomplete=inconnu.available_characters,
+        required=False
     )
-    async def macro_roll(self, ctx, syntax: str, character=None):
-        """Create a macro."""
+    _PLAYER_OPTION = Option(discord.Member, "The character's owner (admin only)", required=False)
+
+
+    @slash_command()
+    @commands.guild_only()
+    async def vm(
+        self,
+        ctx,
+        syntax: Option(str, "The macro to roll, plus Hunger and Difficulty"),
+        character: _CHARACTER_OPTION
+    ):
+        """Roll a macro. You may modify the pool, hunger, and difficulty on the fly."""
         await inconnu.macros.roll(ctx, syntax, character)
 
 
-    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
+    # Macros command group
+
+    macro = SlashCommandGroup("macro", "Macro commands.")
+
+
+    @macro.command(name="create")
     @commands.guild_only()
-    @subslash_command(
-        base_names="macro",
-        name="create",
-        description="Create a macro.",
-        options=[
-            SlashOption(str, "name", description="The macro's name", required=True),
-            SlashOption(str, "pool", description="The dice pool", required=True),
-            SlashOption(int, "hunger", description="Whether the roll should use Hunger",
-                choices=[
-                    ("Yes", 1), ("No", 0)
-                ]
-            ),
-            SlashOption(int, "difficulty",
-                description="The default difficulty (default 0)",
-                min_value=0
-            ),
-            SlashOption(int, "rouses", description="The number of Rouse checks (default 0)",
-                choices=[(str(n), n) for n in range(4)]
-            ),
-            SlashOption(int, "reroll_rouses", description="Whether to re-roll Rouse checks",
-                choices=[
-                    ("Yes", 1), ("No", 0)
-                ]
-            ),
-            SlashOption(str, "staining", description="Whether the Rouse check can stain",
-                choices=[
-                    ("Yes", "apply"), ("No", "show")
-                ]
-            ),
-            SlashOption(str, "comment", description="A comment to apply to macro rolls"),
-            SlashOption(str, "character", description="The character that owns the macro",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
     async def macro_create(
         self,
         ctx,
-        name: str,
-        pool: str,
-        hunger=1,
-        difficulty=0,
-        rouses=0,
-        reroll_rouses=0,
-        staining="show",
-        comment=None,
-        character=None
+        name: Option(str, "The macro's name"),
+        pool: Option(str, "The dice pool"),
+        hunger: Option(int, "Whether the roll should use the character's current Hunger",
+            choices=[
+                OptionChoice("Yes", 1), OptionChoice("No", 0)
+            ]
+        ),
+        difficulty: Option(int, "The default difficulty (may be overridden when rolled)",
+            min_value=0
+        ),
+        rouses: Option(int, "The number of Rouse checks (default 0)",
+            choices=inconnu.gen_ratings(0, 5),
+            default=0
+        ),
+        reroll_rouses: Option(int, "Whether to re-roll Rouse checks (default no)",
+            choices=[
+                OptionChoice("Yes", 1), OptionChoice("No", 0)
+            ],
+            default=0
+        ),
+        staining: Option(str, "Whether the Rouse check can stain",
+            choices=[
+                OptionChoice("Yes", "apply"), OptionChoice("No", "show")
+            ],
+            default="show"
+        ),
+        comment: Option(str, "A comment to apply to macro rolls", required=False),
+        character: _CHARACTER_OPTION
     ):
         """Create a macro."""
         await inconnu.macros.create(
@@ -91,57 +77,33 @@ class Macros(commands.Cog, name="Macro Utilities"):
         )
 
 
-    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
+    @macro.command(name="list")
     @commands.guild_only()
-    @subslash_command(
-        base_names="macro",
-        name="list",
-        description="List your macros.",
-        options=[
-            SlashOption(str, "character", description="The character to display",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def macro_list(self, ctx, character=None):
+    async def macro_list(self, ctx, character: _CHARACTER_OPTION):
         """List a character's macros."""
         await inconnu.macros.show(ctx, character)
 
 
-    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
+    @macro.command(name="update")
     @commands.guild_only()
-    @subslash_command(
-        base_names="macro",
-        name="update",
-        options=[
-            SlashOption(str, "macro", description="The macro's name", required=True),
-            SlashOption(str, "parameters", description="The update parameters", required=True),
-            SlashOption(str, "character", description="The character to display",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def macro_update(self, ctx, macro: str, parameters: str, character=None):
+    async def macro_update(
+        self,
+        ctx: discord.ApplicationContext,
+        macro: Option(str, "The macro's name"),
+        parameters: Option(str, "The update parameters (see /macro help)"),
+        character: _CHARACTER_OPTION
+    ):
         """Update a macro using PARAMETER=VALUE pairs. Parameter names match macro creation."""
         await inconnu.macros.update(ctx, macro, parameters, character)
 
 
-    @ext.check_failed("Macros aren't available in DMs.", hidden=True)
+    @macro.command(name="delete")
     @commands.guild_only()
-    @subslash_command(
-        base_names="macro",
-        name="delete",
-        description="Delete a macro.",
-        options=[
-            SlashOption(str, "macro", description="The macro to delete", required=True),
-            SlashOption(str, "character", description="The character that owns the macro",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def macro_delete(self, ctx, macro: str, character=None):
+    async def macro_delete(
+        self,
+        ctx: discord.ApplicationContext,
+        macro: Option(str, "The macro to delete"),
+        character: _CHARACTER_OPTION
+    ):
         """Delete a macro."""
         await inconnu.macros.delete(ctx, macro, character)

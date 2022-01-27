@@ -41,3 +41,8 @@ async def available_characters(ctx):
         OptionChoice(name, ident) for name, ident in chars
             if name.lower().startswith(ctx.value or "")
     ]
+
+
+def gen_ratings(low, high):
+    """Creates a list of OptionChoices within the given range, inclusive."""
+    return [OptionChoice(str(n), n) for n in range(low, high + 1)]

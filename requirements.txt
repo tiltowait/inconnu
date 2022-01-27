@@ -1,7 +1,6 @@
 python-dotenv
 
-discord.py @ git+https://github.com/rapptz/discord.py@45d498c1b76deaf3b394d17ccf56112fa691d160
-discord-ui @ git+https://github.com/discord-py-ui/discord-ui@c4c8852c33eaca041d3925c6713f374013e25fd7
 pymongo==3.12.0
 statcord.py==3.1.0
 topggpy==1.4.0
+py-cord @ git+https://github.com/Pycord-Development/pycord

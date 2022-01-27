@@ -4,7 +4,7 @@
 import re
 
 import discord
-from discord_ui.components import LinkButton
+from discord.ui import Button
 
 from . import paramupdate
 from ..display import display
@@ -166,12 +166,14 @@ async def update_help(ctx, err=None, ephemeral=True):
 
     embed.set_footer(text="You may modify more than one tracker at a time.")
 
-    documentation = LinkButton(
-        "http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates",
-        label="Full Documentation"
+    documentation = Button(
+        label="Full Documentation",
+        url="http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
     )
-    support = LinkButton(constants.SUPPORT_URL, "Support")
-    await ctx.respond(embed=embed, components=[documentation, support], ephemeral=ephemeral)
+    support = Button(label="Support", url=constants.SUPPORT_URL)
+    view = discord.ui.View(documentation, support)
+
+    await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
 # We do flexible matching for the keys. Many of these are the same as RoD's

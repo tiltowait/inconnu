@@ -6,9 +6,10 @@ import discord
 class RatingView(discord.ui.View):
     """A View that lets the user select a rating."""
 
-    def __init__(self, callback):
+    def __init__(self, callback, failback):
         super().__init__(timeout=120)
-        self.handler = callback
+        self.callback = callback
+        self.failback = failback
 
         for rating in range(1, 6):
             button = discord.ui.Button(
@@ -33,4 +34,4 @@ class RatingView(discord.ui.View):
         await interaction.response.pong()
 
         rating = int(interaction.data["custom_id"])
-        await self.handler(rating)
+        await self.callback(rating)

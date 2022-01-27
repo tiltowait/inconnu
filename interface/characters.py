@@ -25,17 +25,11 @@ class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
 
     _SPLATS = ["vampire", "ghoul", "mortal"]
-    _CHARACTER_OPTION = Option(
-        str,
-        "A character to display",
+    _CHARACTER_OPTION = Option(str, "The character to use",
         autocomplete=inconnu.available_characters,
         required=False
     )
-    _PLAYER_OPTION = Option(
-        discord.Member,
-        "The player who owns the character (admin only)",
-        required=False
-    )
+    _PLAYER_OPTION = Option(discord.Member, "The character's owner (admin only)", required=False)
 
     def __init__(self, bot):
         self.bot = bot

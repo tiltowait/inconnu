@@ -11,19 +11,16 @@
 # this is the fact they could theoretically supply a name despite not using a
 # trait-based roll, so we need to check for the character in either case.
 
-import asyncio
 import re
 from types import SimpleNamespace as SN
 
 import discord
-from discord_ui.components import Button
 
+import inconnu
+from inconnu import common
 from .rolldisplay import RollDisplay
 from ..roll import Roll
-from .. import common
 from ..log import Log
-from ..settings import Settings
-from .. import traits
 from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
@@ -79,42 +76,29 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         )
 
         if isinstance(err, errors.TraitError):
-            components = [Button("Show Traits")]
+            view = inconnu.views.TraitsView(character, owner)
             ephemeral = True
         else:
-            components = None
+            view = None
             ephemeral = False
 
-        msg = await common.present_error(
+        await common.present_error(
             ctx,
             err,
             ("Your Input", f"/vr syntax:`{raw_syntax}`"),
             author=owner,
             character=character,
             help_url=__HELP_URL,
-            components=components,
+            view=view,
             ephemeral=ephemeral
         )
-
-        # Show the traits button
-        if components is not None:
-            try:
-                btn = await msg.wait_for("button", ctx.bot, timeout=60)
-
-                # No need to check for button ownership; this message is ephemeral
-                await traits.show(btn, character, owner)
-
-            except asyncio.exceptions.TimeoutError:
-                pass
-            finally:
-                await msg.disable_components(index=0)
 
 
 async def display_outcome(ctx, player, character: VChar, results, comment):
     """Display the roll results."""
     roll_display = RollDisplay(ctx, results, comment, character, player)
 
-    if Settings.accessible(ctx.author):
+    if inconnu.settings.accessible(ctx.author):
         await roll_display.display(False)
     else:
         await roll_display.display(True)

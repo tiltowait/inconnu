@@ -119,10 +119,10 @@ def setup():
     bot.add_cog(interface.SettingsCommands(bot))
     bot.add_cog(interface.Traits(bot))
 
-    if "STATCORD_TOKEN" in os.environ:
+    if (statcord_token := os.getenv("STATCORD_TOKEN")) is not None:
         print("Establishing statcord connection.")
-        bot.add_cog(interface.StatcordPost(bot, os.environ["STATCORD_TOKEN"]))
+        bot.add_cog(interface.StatcordPost(bot, statcord_token))
 
-    if "TOPGG_TOKEN" in os.environ:
+    if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:
         print("Establishing top.gg connection.")
-        bot.dblpy = topgg.DBLClient(bot, os.environ["TOPGG_TOKEN"], autopost=True)
+        bot.dblpy = topgg.DBLClient(bot, topgg_token, autopost=True)

@@ -5,17 +5,18 @@ import os
 import discord
 import topgg
 from discord.ext import commands, tasks
-from discord_ui import UI
 
 import inconnu
 import interface
 
 intents = discord.Intents.default()
-intents.members = True
+intents.members = True # pylint: disable=assigning-non-slot
 
-bot = commands.Bot(command_prefix="", intents=intents, case_insensitive=True)
-bot.remove_command("help")
-UI(bot)
+# Check if we're in dev mode
+if (debug_guild := os.getenv("DEBUG")) is not None:
+    debug_guild = [int(debug_guild)]
+
+bot = discord.Bot(intents=intents, debug_guilds=debug_guild)
 
 
 # General Events
@@ -34,7 +35,7 @@ async def on_ready():
 
 
 @bot.event
-async def on_command_error(ctx, error):
+async def on_application_command_error(ctx, error):
     """Handle various errors we might encounter."""
     if isinstance(error, commands.CommandNotFound):
         return

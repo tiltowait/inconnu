@@ -23,7 +23,7 @@ async def available_characters(ctx):
     spcs = []
 
     if (owner := ctx.options.get("player")) is not None:
-        if owner != ctx.author and not ctx.author.guild_permissions.administrator:
+        if owner != ctx.interaction.user and not ctx.interaction.user.guild_permissions.administrator:
             return [OptionChoice("You do not have admin permissions", "")]
     else:
         owner = ctx.author

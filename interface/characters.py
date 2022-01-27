@@ -31,9 +31,6 @@ class Characters(commands.Cog, name="Character Management"):
     )
     _PLAYER_OPTION = Option(discord.Member, "The character's owner (admin only)", required=False)
 
-    def __init__(self, bot):
-        self.bot = bot
-
 
     @commands.user_command(name="Characters")
     async def user_characters(self, ctx, user):

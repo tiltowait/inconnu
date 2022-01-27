@@ -4,8 +4,8 @@
 import asyncio
 
 import discord
-from discord_ui import Button
 
+import inconnu
 from . import trackmoji
 from ... import common
 from ... import traits
@@ -37,7 +37,7 @@ async def display_requested(ctx, character=None, message=None, player=None, ephe
             owner=player,
             message=message,
             footer=None,
-            components=[Button("Traits")],
+            view=inconnu.views.TraitsView(character, owner),
             ephemeral=ephemeral
         )
 
@@ -70,7 +70,7 @@ async def display(
     custom: list = None,
     color: int = None,
     thumbnail: str = None,
-    components: list = None,
+    view: discord.ui.View = None,
     ephemeral: bool = False
 ):
     """
@@ -94,7 +94,7 @@ async def display(
             owner=owner,
             fields=fields,
             custom=custom,
-            components=components,
+            view=view,
             ephemeral=ephemeral
         )
 
@@ -107,7 +107,7 @@ async def display(
         custom=custom,
         color=color,
         thumbnail=thumbnail,
-        components=components,
+        view=view,
         ephemeral=ephemeral
     )
 
@@ -123,7 +123,7 @@ async def __display_embed(
     custom: list = None,
     color: int = None,
     thumbnail: str = None,
-    components: list = None,
+    view: discord.ui.View = None,
     ephemeral: bool =False
 ):
     # Set the default values
@@ -165,7 +165,7 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    return await ctx.respond(embed=embed, components=components, ephemeral=ephemeral)
+    return await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
 def __embed_field_value(character, parameter):
@@ -205,7 +205,7 @@ async def __display_text(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    components: list = None,
+    view: discord.ui.View = None,
     ephemeral: bool = False
 ):
     """Display a text representation of the character."""
@@ -246,7 +246,7 @@ async def __display_text(
     if footer is not None:
         contents += f"\n*{footer}*"
 
-    return await ctx.respond(contents, components=components, ephemeral=ephemeral)
+    return await ctx.respond(contents, view=view, ephemeral=ephemeral)
 
 
 def __text_field_contents(character, field, parameter):

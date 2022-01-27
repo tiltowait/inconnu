@@ -1,98 +1,69 @@
 """interface/traits.py - Traits command interface."""
 
 import discord
+from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
-from discord_ui import ext, SlashOption
-from discord_ui.cogs import subslash_command, context_command
 
 import inconnu
-from . import debug
 
 
 class Traits(commands.Cog, name="Trait Management"):
     """Trait management commands."""
 
-    @context_command(
-        name="Traits",
-        type="user",
-        guild_ids=debug.WHITELIST
+    _CHARACTER_OPTION = Option(str, "The character to use",
+        autocomplete=inconnu.available_characters,
+        required=False
     )
+    _PLAYER_OPTION = Option(discord.Member, "The character's owner (admin only)", required=False)
+
+
+    @commands.user_command(name="Traits")
     async def user_traits(self, ctx, user):
         """Display character traits."""
-        await self.list_traits(ctx, player=user)
+        await self.traits_list(ctx, character=None, player=user)
 
 
-    @ext.check_failed("Characters and traits aren't available in DMs.", hidden=True)
+    traits = SlashCommandGroup("traits", "Character traits commands.")
+
+
+    @traits.command(name="add")
     @commands.guild_only()
-    @subslash_command(
-        base_names="traits",
-        name="add",
-        description="Add one or more traits to a character.",
-        options=[
-            SlashOption(str, "traits", description="The traits to add", required=True),
-            SlashOption(str, "character", description="The character to update",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def add_trait(self, ctx, traits: str, character=None):
-        """Add trait(s) to a character."""
+    async def traits_add(
+        self,
+        ctx: discord.ApplicationContext,
+        traits: Option(str, "The traits to add. Ex: Oblivion=4 BloodSorcery=2"),
+        character: _CHARACTER_OPTION
+    ):
+        """Add one or more traits to a character. To update, use /traits update."""
         await inconnu.traits.add(ctx, traits, character)
 
 
-    @ext.check_failed("Characters and traits aren't available in DMs.", hidden=True)
+    @traits.command(name="list")
     @commands.guild_only()
-    @subslash_command(
-        base_names="traits",
-        name="list",
-        description="List all of a character's traits.",
-        options=[
-            SlashOption(str, "character", description="The character to look up",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            ),
-            SlashOption(discord.Member, "player", description="The character's owner (admin only)")
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def list_traits(self, ctx, character=None, player=None):
+    async def traits_list(self, ctx, character: _CHARACTER_OPTION, player: _PLAYER_OPTION):
         """Display a character's traits."""
         await inconnu.traits.show(ctx, character, player)
 
 
-    @ext.check_failed("Characters and traits aren't available in DMs.", hidden=True)
+    @traits.command(name="update")
     @commands.guild_only()
-    @subslash_command(
-        base_names="traits",
-        name="update",
-        description="Update one or more traits.",
-        options=[
-            SlashOption(str, "traits", description="The traits to update", required=True),
-            SlashOption(str, "character", description="The character to update",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def update_traits(self, ctx, traits: str, character=None):
-        """Update a character's trait(s)."""
+    async def traits_update(
+        self,
+        ctx: discord.ApplicationContext,
+        traits: Option(str, "The traits to update. Ex: Oblivion=3"),
+        character: _CHARACTER_OPTION
+    ):
+        """Update one or more traits. Traits must already exist (use /traits add)."""
         await inconnu.traits.update(ctx, traits, character)
 
 
-    @ext.check_failed("Characters and traits aren't available in DMs.", hidden=True)
+    @traits.command(name="delete")
     @commands.guild_only()
-    @subslash_command(
-        base_names="traits",
-        name="delete",
-        description="Delete one or more traits.",
-        options=[
-            SlashOption(str, "traits", description="The traits to delete", required=True),
-            SlashOption(str, "character", description="The character to update",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def delete_traits(self, ctx, traits: str, character=None):
+    async def delete_traits(
+        self,
+        ctx: discord.ApplicationContext,
+        traits: Option(str, "The traits to delete"),
+        character: _CHARACTER_OPTION
+    ):
         """Remove traits from a character."""
         await inconnu.traits.delete(ctx, traits, character)

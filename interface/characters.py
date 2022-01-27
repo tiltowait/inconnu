@@ -1,188 +1,128 @@
 """interface/characters.py - Character management Cog."""
 
+from distutils.util import strtobool
+
 import discord
+from discord.commands import Option, OptionChoice, SlashCommandGroup
 from discord.ext import commands
-from discord_ui import ext, SlashOption
-from discord_ui.cogs import subslash_command, context_command
 
 import inconnu
 from . import debug
 
 # Unused due to Discord API issues
-async def _spc_options(_, ctx):
+async def _spc_options(ctx):
     """Determine whether the user can make an SPC."""
-    if ctx.author.guild_permissions.administrator:
-        return [("No", "0"), ("Yes", "1")]
-    return [("No", "0")]
+    if ctx.interaction.user.guild_permissions.administrator:
+        return [OptionChoice("No", "0"), OptionChoice("Yes", "1")]
+    return [OptionChoice("No", "0")]
+
+
+def _ratings(low, high):
+    """Creates a list of OptionChoices within the given range, inclusive."""
+    return [OptionChoice(str(n), n) for n in range(low, high + 1)]
 
 
 class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
 
-    _SPLATS = [("vampire", "vampire"), ("ghoul", "ghoul"), ("mortal", "mortal")]
+    _SPLATS = ["vampire", "ghoul", "mortal"]
+    _CHARACTER_OPTION = Option(
+        str,
+        "A character to display",
+        autocomplete=inconnu.available_characters,
+        required=False
+    )
+    _PLAYER_OPTION = Option(
+        discord.Member,
+        "The player who owns the character (admin only)",
+        required=False
+    )
 
     def __init__(self, bot):
         self.bot = bot
 
 
-    @context_command(
-        name="Characters",
-        type="user",
-        guild_ids=debug.WHITELIST
-    )
+    @commands.user_command(name="Characters")
     async def user_characters(self, ctx, user):
         """Display the user's character(s)."""
-        await self.display_character(ctx, None, user, hidden=True)
+        await self.character_display(ctx, None, user, hidden=True)
 
 
-    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
+    character = SlashCommandGroup("character", "Character commands.")
+
+    @character.command(name="create")
     @commands.guild_only()
-    @subslash_command(
-        base_names="character",
-        name="create",
-        description="Create a new character",
-        options=[
-            SlashOption(str, "name", description="The character's name", required=True),
-            SlashOption(str, "splat",
-                description="The character type",
-                choices=_SPLATS,
-                required=True
-            ),
-            SlashOption(int, "humanity",
-                description="Humanity rating (0-10)",
-                choices=[(str(n), n) for n in range(0, 11)],
-                required=True
-            ),
-            SlashOption(int, "health",
-                description="Health levels (4-15)",
-                choices=[(str(n), n) for n in range(4, 16)],
-                required=True
-            ),
-            SlashOption(int, "willpower",
-                description="Willpower levels (3-15)",
-                choices=[(str(n), n) for n in range(3, 16)],
-                required=True
-            ),
-            SlashOption(int, "spc",
-                description="(Admin only) Make an SPC",
-                #autocomplete=True, choice_generator=_spc_options
-                choices=[("No", 0), ("Yes", 1)]
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def new_character(
-        self, ctx, name: str, splat: str, humanity: int, health: int, willpower: int, spc=0
+    async def character_create(
+        self,
+        ctx: discord.ApplicationContext,
+        name: Option(str, "The character's name"),
+        splat: Option(str, "The character type", choices=_SPLATS),
+        humanity: Option(int, "Humanity rating (0-10)", choices=_ratings(0, 10)),
+        health: Option(int, "Health levels (4-15)", choices=_ratings(4, 15)),
+        willpower: Option(int, "Willpower levels (3-15)", choices=_ratings(3, 15)),
+        spc: Option(str, "(Admin only) Make an SPC", autocomplete=_spc_options)
     ):
         """Create a new character."""
-        await inconnu.character.create(ctx, name, splat, humanity, health, willpower, bool(spc))
+        spc = bool(strtobool(spc))
+        await inconnu.character.create(ctx, name, splat, humanity, health, willpower, spc)
 
 
-    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
+    @character.command(name="display")
     @commands.guild_only()
-    @subslash_command(
-        base_names="character",
-        name="display",
-        description="List all of your characters or show details about one character.",
-        options=[
-            SlashOption(str, "character", description="A character to display",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            ),
-            SlashOption(discord.Member, "player",
-                description="The player who owns the character (admin only)"
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def display_character(self, ctx, character=None, player=None, hidden=False):
+    async def character_display(
+        self,
+        ctx: discord.ApplicationContext,
+        character: _CHARACTER_OPTION,
+        player: _PLAYER_OPTION,
+        #character: Option(
+            #str,
+            #"A character to display",
+            #autocomplete=inconnu.available_characters,
+            #required=False
+        #),
+        #player: Option(
+            #discord.Member,
+             #"The player who owns the character (admin only)",
+              #required=False
+        #),
+        hidden=False
+    ):
         """Display a character's basic traits"""
         await inconnu.character.display_requested(ctx, character, player=player, hidden=hidden)
 
 
-    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
+    @character.command(name="update")
     @commands.guild_only()
-    @subslash_command(
-        base_names="character",
-        name="update",
-        description="Update a character's trackers.",
-        options=[
-            SlashOption(str, "parameters", description="KEY=VALUE parameters", required=True),
-            SlashOption(str, "character", description="The character to update",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            ),
-            SlashOption(discord.Member, "player",
-                description="The player who owns the character (admin only)"
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def update_character(self, ctx, parameters: str, character=None, player=None):
+    async def character_update(
+        self,
+        ctx: discord.ApplicationContext,
+        parameters: Option(str, "KEY=VALUE parameters (see /character help)"),
+        character: _CHARACTER_OPTION,
+        player: _PLAYER_OPTION
+    ):
         """Update a character's parameters but not the traits."""
         await inconnu.character.update(ctx, parameters, character, player=player)
 
 
-    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
+    @character.command(name="adjust")
     @commands.guild_only()
-    @subslash_command(
-        base_names="character",
-        name="adjust",
-        options=[
-            SlashOption(str, "new_name", description="The character's new name", required=False),
-            SlashOption(int, "health",
-                description="The new Health rating",
-                min_value=4, max_value=20,
-                required=False
-            ),
-            SlashOption(int, "willpower",
-                description="The new Willpower rating",
-                min_value=3, max_value=20,
-                required=False
-            ),
-            SlashOption(int, "humanity",
-                description="The new Humanity rating",
-                min_value=0, max_value=10,
-                required=False
-            ),
-            SlashOption(str, "splat",
-                description="The character's new type",
-                choices=_SPLATS,
-                required=False
-            ),
-            SlashOption(str, "sup_hp", description="Adjust Superficial Health", required=False),
-            SlashOption(str, "agg_hp", description="Adjust Aggravated Health", required=False),
-            SlashOption(str, "sup_wp", description="Adjust Superficial Willpower", required=False),
-            SlashOption(str, "agg_wp", description="Adjust Aggravated Willpower", required=False),
-            SlashOption(str, "stains", description="Adjust stains", required=False),
-            SlashOption(str, "unspent_xp", description="Adjust unspent XP", required=False),
-            SlashOption(str, "lifetime_xp", description="Adjust lifetime XP", required=False),
-            SlashOption(str, "hunger", description="Adjust Hunger", required=False),
-            SlashOption(str, "potency", description="Adjust Blood Potency", required=False),
-            SlashOption(str, "character", description="A character to display",
-                autocomplete=True, choice_generator=inconnu.available_characters
-            ),
-            SlashOption(discord.Member, "player",
-                description="The player who owns the character (admin only)"
-            )
-        ],
-        guild_ids=debug.WHITELIST
-    )
     async def adjust_character(self, ctx,
-        new_name=None,
-        health=None,
-        willpower=None,
-        humanity=None,
-        splat=None,
-        sup_hp=None,
-        agg_hp=None,
-        sup_wp=None,
-        agg_wp=None,
-        stains=None,
-        unspent_xp=None,
-        lifetime_xp=None,
-        hunger=None,
-        potency=None,
-        character=None,
-        player=None
+        new_name: Option(str, "The character's new name", required=False),
+        health: Option(int, "The new Health rating", choices=_ratings(4, 20), required=False),
+        willpower: Option(int, "The new Willpower rating", choices=_ratings(3, 20), required=False),
+        humanity: Option(int, "The new Humanity rating", choices=_ratings(0, 10), required=False),
+        splat: Option(str, "The character's new type", choices=_SPLATS, required=False),
+        sup_hp: Option(str, "Adjust Superficial Health", required=False),
+        agg_hp: Option(str, "Adjust Aggravated Health", required=False),
+        sup_wp: Option(str, "Adjust Superficial Willpower", required=False),
+        agg_wp: Option(str, "Adjust Aggravated Willpower", required=False),
+        stains: Option(str, "Adjust stains", required=False),
+        unspent_xp: Option(str, "Adjust unspent XP", required=False),
+        lifetime_xp: Option(str, "Adjust lifetime XP", required=False),
+        hunger: Option(str, "Adjust Hunger", required=False),
+        potency: Option(str, "Adjust Blood Potency", required=False),
+        character: _CHARACTER_OPTION,
+        player: _PLAYER_OPTION
     ):
         """Adjust a character's trackers. For skills and attributes, see /traits help."""
 
@@ -242,20 +182,13 @@ class Characters(commands.Cog, name="Character Management"):
             await ctx.respond(err, hidden=True)
 
 
-    @ext.check_failed("Characters aren't available in DMs.", hidden=True)
+    @character.command(name="delete")
     @commands.guild_only()
-    @subslash_command(
-        base_names="character",
-        name="delete",
-        description="Delete a character.",
-        options=[
-            SlashOption(str, "character", description="The character to delete", required=True,
-                autocomplete=True, choice_generator=inconnu.available_characters
-            )
-        ]
-        , guild_ids=debug.WHITELIST
-    )
-    async def delete_character(self, ctx, character: str):
+    async def character_delete(
+        self,
+        ctx: discord.ApplicationContext,
+        character: _CHARACTER_OPTION
+    ):
         """Delete a character."""
         await inconnu.character.delete(ctx, character)
 

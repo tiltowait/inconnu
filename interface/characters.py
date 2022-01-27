@@ -7,7 +7,6 @@ from discord.commands import Option, OptionChoice, SlashCommandGroup
 from discord.ext import commands
 
 import inconnu
-from . import debug
 
 # Unused due to Discord API issues
 async def _spc_options(ctx):

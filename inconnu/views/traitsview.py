@@ -19,3 +19,5 @@ class TraitsView(inconnu.views.DisablingView):
         """Show the traits so long as the user is valid."""
         if interaction.user == self.owner:
             await inconnu.traits.show(interaction, self.character, self.owner)
+        else:
+            await interaction.response.send_message("You can't click this button.", ephemeral=True)

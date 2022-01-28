@@ -3,9 +3,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Pycord-2.0.0-brightgreen" alt="Requires Pycord 2.0" />
+  <img src="https://img.shields.io/badge/Pycord-2.0.0-blue" alt="Requires Pycord 2.0" />
   <img src="https://img.shields.io/badge/pymongo-3.12.0-yellow" alt="Requires pymongo 3.12.0" />
-  <img src="https://img.shields.io/badge/python-3.10.1-9cf" alt="Uses Python 3.10.1" />
+  <img src="https://img.shields.io/badge/python-3.10.1-green" alt="Uses Python 3.10.1" />
 </p>
 
 **Inconnu** is a Discord dicebot for Vampire: The Masquerade 5th Edition. In addition to basic rolls, it offers a number of advanced options and quality-of-life features, such as character integration, trait-based pools, and more. [For a full rundown of **Inconnu's** features, read the documentation.](https://www.inconnu-bot.com)

@@ -25,18 +25,17 @@ async def available_characters(ctx):
     spcs = []
 
     if (owner := ctx.options.get("player")) is not None:
-        print(owner)
-        if owner != user and not user.guild_permissions.administrator:
+        if owner != user.id and not user.guild_permissions.administrator:
             return [OptionChoice("You do not have admin permissions", "")]
     else:
-        owner = user
+        owner = user.id
 
         if user.guild_permissions.administrator:
             # Add SPCs
             spcs = VChar.all_characters(guild.id, int(os.environ["INCONNU_ID"]))
             spcs = [(spc.name, str(spc.id)) for spc in spcs]
 
-    chars = VChar.all_characters(guild.id, owner.id)
+    chars = VChar.all_characters(guild.id, int(owner))
     chars = [(char.name, str(char.id)) for char in chars]
     chars.extend(spcs)
 

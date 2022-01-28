@@ -79,3 +79,13 @@ class _DeleteView(DisablingView):
             ephemeral = True
 
         await interaction.followup.send(msg, ephemeral=ephemeral)
+
+
+    async def on_timeout(self):
+        """Cancel out the message on timeout."""
+        if self.message is not None:
+            await self.message.edit_original_message(
+                content=f"Canceled deletion of **{self.character.name}** due to time elapsed.",
+                embed=None,
+                view=None
+            )

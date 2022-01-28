@@ -130,10 +130,6 @@ class RollDisplay:
             self.surged = True
             await rouse(btn, 1, self.character, "Surge", False)
 
-            # The surge button is always the last button
-            index = len(btn.message.components) - 1
-            await btn.message.disable_components(index=index)
-
         else:
             # We're rerolling
             strategy = btn.data["custom_id"]

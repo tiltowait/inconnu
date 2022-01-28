@@ -150,7 +150,13 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    return await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
+    if isinstance(ctx, discord.Interaction):
+        if ctx.response.is_done():
+            await ctx.followup.send(embed=embed, view=view, ephemeral=ephemeral)
+        else:
+            await ctx.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
+    else:
+        return await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
 def __embed_field_value(character, parameter):
@@ -231,7 +237,13 @@ async def __display_text(
     if footer is not None:
         contents += f"\n*{footer}*"
 
-    return await ctx.respond(contents, view=view, ephemeral=ephemeral)
+    if isinstance(ctx, discord.Interaction):
+        if ctx.response.is_done():
+            await ctx.followup.send(contents, view=view, ephemeral=ephemeral)
+        else:
+            await ctx.response.send_message(contents, view=view, ephemeral=ephemeral)
+    else:
+        return await ctx.respond(contents, view=view, ephemeral=ephemeral)
 
 
 def __text_field_contents(character, field, parameter):

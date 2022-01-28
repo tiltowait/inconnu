@@ -120,7 +120,7 @@ def setup():
     bot.add_cog(interface.Macros(bot))
     bot.add_cog(interface.MiscCommands(bot))
     bot.add_cog(interface.SettingsCommands(bot))
-    #bot.add_cog(interface.Traits(bot))
+    bot.add_cog(interface.Traits(bot))
 
     if (statcord_token := os.getenv("STATCORD_TOKEN")) is not None:
         print("Establishing statcord connection.")

@@ -10,21 +10,13 @@ import inconnu
 class Traits(commands.Cog, name="Trait Management"):
     """Trait management commands."""
 
-    _CHARACTER_OPTION = Option(str, "The character to use",
-        autocomplete=inconnu.available_characters,
-        required=False
-    )
-    _PLAYER_OPTION = Option(discord.Member, "The character's owner (admin only)", required=False)
-
-
     @commands.user_command(name="Traits")
-    async def user_traits(self, ctx, user):
+    async def user_traits(self, ctx, member):
         """Display character traits."""
-        await self.traits_list(ctx, character=None, player=user)
+        await inconnu.traits.show(ctx, None, member)
 
 
     traits = SlashCommandGroup("traits", "Character traits commands.")
-
 
     @traits.command(name="add")
     @commands.guild_only()
@@ -32,7 +24,7 @@ class Traits(commands.Cog, name="Trait Management"):
         self,
         ctx: discord.ApplicationContext,
         traits: Option(str, "The traits to add. Ex: Oblivion=4 BloodSorcery=2"),
-        character: _CHARACTER_OPTION
+        character: inconnu.options.character("The character to modify")
     ):
         """Add one or more traits to a character. To update, use /traits update."""
         await inconnu.traits.add(ctx, traits, character)
@@ -40,7 +32,12 @@ class Traits(commands.Cog, name="Trait Management"):
 
     @traits.command(name="list")
     @commands.guild_only()
-    async def traits_list(self, ctx, character: _CHARACTER_OPTION, player: _PLAYER_OPTION):
+    async def traits_list(
+        self,
+        ctx: discord.ApplicationContext,
+        character: inconnu.options.character(),
+        player: inconnu.options.player
+    ):
         """Display a character's traits."""
         await inconnu.traits.show(ctx, character, player)
 
@@ -51,7 +48,7 @@ class Traits(commands.Cog, name="Trait Management"):
         self,
         ctx: discord.ApplicationContext,
         traits: Option(str, "The traits to update. Ex: Oblivion=3"),
-        character: _CHARACTER_OPTION
+        character: inconnu.options.character("The character to modify")
     ):
         """Update one or more traits. Traits must already exist (use /traits add)."""
         await inconnu.traits.update(ctx, traits, character)
@@ -63,7 +60,7 @@ class Traits(commands.Cog, name="Trait Management"):
         self,
         ctx: discord.ApplicationContext,
         traits: Option(str, "The traits to delete"),
-        character: _CHARACTER_OPTION
+        character: inconnu.options.character("The character to modify")
     ):
         """Remove traits from a character."""
         await inconnu.traits.delete(ctx, traits, character)

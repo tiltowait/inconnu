@@ -7,4 +7,4 @@ from .macros import Macros
 from .misc import MiscCommands
 from .settings import SettingsCommands
 #from .statcord import StatcordPost
-#from .traits import Traits
+from .traits import Traits

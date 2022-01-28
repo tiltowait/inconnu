@@ -97,27 +97,33 @@ async def __display_results(ctx, outcome, char_name: str):
 
 async def __results_embed(ctx, outcome, char_name: str):
     """Display the results of the operation in a nice embed."""
-    if len(outcome.assigned) == 0 and len(outcome.unassigned) == 0 and len(outcome.errors) > 0:
-        title = "Unable to Modify Traits"
-    elif len(outcome.assigned) > 0 and len(outcome.unassigned) > 0:
-        title = f"Assigned: {outcome.assigned} | Unassigned: {outcome.unassigned}"
+    assigned = len(outcome.assigned)
+    unassigned = len(outcome.unassigned)
+    errors = len(outcome.errors)
+
+    if not outcome.assigned and not outcome.unassigned and outcome.errors:
+        title = "Unable to Assign Traits"
+    elif outcome.assigned and not outcome.unassigned:
+        title = f"Assigned {assigned} Traits"
+    elif outcome.assigned and outcome.unassigned:
+        title = f"Assigned: {assigned} | Unassigned: {unassigned + errors}"
     else:
-        title = "Traits Assigned"
+        title = f"Couldn't Assign {unassigned} Traits"
 
     embed = discord.Embed(
         title=title
     )
     embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
-    if len(outcome.assigned) > 0:
+    if outcome.assigned:
         assigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.assigned)))
         embed.add_field(name="Assigned", value=assigned)
 
-    if len(outcome.unassigned) > 0:
+    if outcome.unassigned:
         unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
         embed.add_field(name="Unassigned", value=unassigned)
         embed.set_footer(text="Run the command again to give ratings for the unassigned traits.")
 
-    if len(outcome.errors) > 0:
+    if outcome.errors:
         errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
         if outcome.editing:
             field_name = "Error! You don't have these traits"

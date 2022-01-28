@@ -7,19 +7,8 @@ from discord.ext import commands
 import inconnu
 
 
-def _ratings(low, high):
-    """Creates a list of OptionChoices within the given range, inclusive."""
-    return [OptionChoice(str(n), n) for n in range(low, high + 1)]
-
-
 class Gameplay(commands.Cog):
     """Gameplay-based commands."""
-
-    _CHARACTER_OPTION = Option(str, "The character to use",
-        autocomplete=inconnu.available_characters,
-        required=False
-    )
-    _PLAYER_OPTION = Option(discord.Member, "The character's owner (admin only)", required=False)
 
     # This is the primary roll command. It features the fastest entry and
     # greatest flexibility. However, it can be a stumbling block for new users;
@@ -31,8 +20,8 @@ class Gameplay(commands.Cog):
         ctx: discord.ApplicationContext,
         syntax: Option(str, "The roll syntax"),
         comment: Option(str, "A description of the roll", required=False),
-        character: _CHARACTER_OPTION,
-        player: _PLAYER_OPTION
+        character: inconnu.options.character(),
+        player: inconnu.options.player
     ):
         """Roll the dice."""
         await inconnu.vr.parse(ctx, syntax, comment, character, player)
@@ -56,8 +45,8 @@ class Gameplay(commands.Cog):
             choices=[OptionChoice(str(n), n) for n in range(11)]
         ),
         comment: Option(str, "A comment to display with the roll", required=False),
-        character: _CHARACTER_OPTION,
-        player: _PLAYER_OPTION
+        character: inconnu.options.character(),
+        player: inconnu.options.player
     ):
         """Roll the dice. Easier (slower) version of /vr."""
         syntax = f"{pool} {hunger} {difficulty}"
@@ -66,21 +55,21 @@ class Gameplay(commands.Cog):
 
     @slash_command()
     @commands.guild_only()
-    async def aggheal(self, ctx, character: _CHARACTER_OPTION):
+    async def aggheal(self, ctx, character: inconnu.options.character("The character to heal")):
         """Heal a character's aggravated damage."""
         await inconnu.misc.aggheal(ctx, character)
 
 
     @slash_command()
     @commands.guild_only()
-    async def awaken(self, ctx, character: _CHARACTER_OPTION):
+    async def awaken(self, ctx, character: inconnu.options.character("The character to wake")):
         """Perform a Rouse check and heal Superficial Willpower damage."""
         await inconnu.misc.awaken(ctx, character)
 
 
     @slash_command()
     @commands.guild_only()
-    async def bol(self, ctx, character: _CHARACTER_OPTION):
+    async def bol(self, ctx, character: inconnu.options.character("The character to Blush")):
         """Perform a Blush of Life check, taking Humanity into account."""
         await inconnu.misc.bol(ctx, character)
 
@@ -91,7 +80,7 @@ class Gameplay(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         damage: Option(int, "The Aggravated damage sustained"),
-        character: _CHARACTER_OPTION
+        character: inconnu.options.character("The character to cripple")
     ):
         """Generate a random crippling injury based on Aggravated damage."""
         await inconnu.misc.cripple(ctx, damage, character)
@@ -102,7 +91,7 @@ class Gameplay(commands.Cog):
     async def frenzy(
         self,
         ctx: discord.ApplicationContext,
-        difficulty: Option(int, "The frenzy difficulty", choices=_ratings(1, 10)),
+        difficulty: Option(int, "The frenzy difficulty", choices=inconnu.options.ratings(1, 10)),
         penalty: Option(
             str,
             "Whether there's a penalty to the roll",
@@ -112,7 +101,7 @@ class Gameplay(commands.Cog):
             ],
             required=False
         ),
-        character: _CHARACTER_OPTION
+        character: inconnu.options.character("The frenzying character")
     ):
         """Perform a Frenzy check."""
         await inconnu.misc.frenzy(ctx, difficulty, penalty, character)
@@ -120,7 +109,7 @@ class Gameplay(commands.Cog):
 
     @slash_command()
     @commands.guild_only()
-    async def mend(self, ctx, character: _CHARACTER_OPTION):
+    async def mend(self, ctx, character: inconnu.options.character("The character to heal")):
         """Mend Superficial damage."""
         await inconnu.misc.mend(ctx, character)
 
@@ -131,10 +120,10 @@ class Gameplay(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         min_override: Option(int, "Override the minimum dice to roll",
-            choices=_ratings(1, 5),
+            choices=inconnu.options.ratings(1, 5),
             default=1
         ),
-        character: _CHARACTER_OPTION,
+        character: inconnu.options.character("The character undergoing remorse"),
     ):
         """Perform a remorse check."""
         await inconnu.misc.remorse(ctx, character, min_override)
@@ -152,7 +141,9 @@ class Gameplay(commands.Cog):
     async def rouse(
         self,
         ctx,
-        count: Option(int, "The number of Rouse checks to make", choices=_ratings(1, 5)),
+        count: Option(int, "The number of Rouse checks to make",
+            choices=inconnu.options.ratings(1, 5)
+        ),
         reroll: Option(int, "Whether to re-roll failures",
             choices=[
                 OptionChoice("Yes", 1),
@@ -161,7 +152,7 @@ class Gameplay(commands.Cog):
             required=False
         ),
         purpose: Option(str, "The reason for the check", required=False),
-        character: _CHARACTER_OPTION,
+        character: inconnu.options.character("The character to Rouse"),
     ):
         """Perform a rouse check."""
         await inconnu.misc.rouse(ctx, count, character, purpose, bool(reroll))
@@ -172,8 +163,8 @@ class Gameplay(commands.Cog):
     async def slake(
         self,
         ctx: discord.ApplicationContext,
-        amount: Option(int, "amount", choices=_ratings(1, 5)),
-        character: _CHARACTER_OPTION
+        amount: Option(int, "amount", choices=inconnu.options.ratings(1, 5)),
+        character: inconnu.options.character("The character feeding")
     ):
         """Slake 1 or more Hunger."""
         await inconnu.misc.slake(ctx, amount, character)
@@ -185,8 +176,8 @@ class Gameplay(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         delta: Option(int, "How many stains to add/subtract"),
-        character: _CHARACTER_OPTION,
-        player: _PLAYER_OPTION
+        character: inconnu.options.character("The character to stain"),
+        player: inconnu.options.player
     ):
         """Apply or remove stains from a character."""
         await inconnu.misc.stain(ctx, delta, character, player)

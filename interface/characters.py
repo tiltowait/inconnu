@@ -16,20 +16,10 @@ async def _spc_options(ctx):
     return [OptionChoice("No", "0")]
 
 
-def _ratings(low, high):
-    """Creates a list of OptionChoices within the given range, inclusive."""
-    return [OptionChoice(str(n), n) for n in range(low, high + 1)]
-
-
 class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
 
     _SPLATS = ["vampire", "ghoul", "mortal"]
-    _CHARACTER_OPTION = Option(str, "The character to use",
-        autocomplete=inconnu.available_characters,
-        required=False
-    )
-    _PLAYER_OPTION = Option(discord.Member, "The character's owner (admin only)", required=False)
 
 
     @commands.user_command(name="Characters")
@@ -47,9 +37,9 @@ class Characters(commands.Cog, name="Character Management"):
         ctx: discord.ApplicationContext,
         name: Option(str, "The character's name"),
         splat: Option(str, "The character type", choices=_SPLATS),
-        humanity: Option(int, "Humanity rating (0-10)", choices=_ratings(0, 10)),
-        health: Option(int, "Health levels (4-15)", choices=_ratings(4, 15)),
-        willpower: Option(int, "Willpower levels (3-15)", choices=_ratings(3, 15)),
+        humanity: Option(int, "Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)),
+        health: Option(int, "Health levels (4-15)", choices=inconnu.options.ratings(4, 15)),
+        willpower: Option(int, "Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)),
         spc: Option(str, "(Admin only) Make an SPC", autocomplete=_spc_options, default="0")
     ):
         """Create a new character."""
@@ -62,8 +52,8 @@ class Characters(commands.Cog, name="Character Management"):
     async def character_display(
         self,
         ctx: discord.ApplicationContext,
-        character: _CHARACTER_OPTION,
-        player: _PLAYER_OPTION,
+        character: inconnu.options.character("The character to display"),
+        player: inconnu.options.player,
     ):
         """Display a character's trackers."""
         await inconnu.character.display_requested(ctx, character, player=player)
@@ -75,8 +65,8 @@ class Characters(commands.Cog, name="Character Management"):
         self,
         ctx: discord.ApplicationContext,
         parameters: Option(str, "KEY=VALUE parameters (see /character help)"),
-        character: _CHARACTER_OPTION,
-        player: _PLAYER_OPTION
+        character: inconnu.options.character("The character to update"),
+        player: inconnu.options.player
     ):
         """Update a character's parameters but not the traits."""
         await inconnu.character.update(ctx, parameters, character, player=player)
@@ -86,9 +76,18 @@ class Characters(commands.Cog, name="Character Management"):
     @commands.guild_only()
     async def adjust_character(self, ctx,
         new_name: Option(str, "The character's new name", required=False),
-        health: Option(int, "The new Health rating", choices=_ratings(4, 20), required=False),
-        willpower: Option(int, "The new Willpower rating", choices=_ratings(3, 20), required=False),
-        humanity: Option(int, "The new Humanity rating", choices=_ratings(0, 10), required=False),
+        health: Option(int, "The new Health rating",
+            choices=inconnu.options.ratings(4, 20),
+            required=False
+        ),
+        willpower: Option(int, "The new Willpower rating",
+            choices=inconnu.options.ratings(3, 20),
+            required=False
+        ),
+        humanity: Option(int, "The new Humanity rating",
+            choices=inconnu.options.ratings(0, 10),
+            required=False
+        ),
         splat: Option(str, "The character's new type", choices=_SPLATS, required=False),
         sup_hp: Option(str, "Adjust Superficial Health", required=False),
         agg_hp: Option(str, "Adjust Aggravated Health", required=False),
@@ -99,8 +98,8 @@ class Characters(commands.Cog, name="Character Management"):
         lifetime_xp: Option(str, "Adjust lifetime XP", required=False),
         hunger: Option(str, "Adjust Hunger", required=False),
         potency: Option(str, "Adjust Blood Potency", required=False),
-        character: _CHARACTER_OPTION,
-        player: _PLAYER_OPTION
+        character: inconnu.options.character("The character to adjust"),
+        player: inconnu.options.player
     ):
         """Adjust a character's trackers. For skills and attributes, see /traits help."""
 
@@ -165,7 +164,7 @@ class Characters(commands.Cog, name="Character Management"):
     async def character_delete(
         self,
         ctx: discord.ApplicationContext,
-        character: Option(str, "The character to delete", autocomplete=inconnu.available_characters)
+        character: inconnu.options.character("The character to delete", required=True)
     ):
         """Delete a character."""
         await inconnu.character.delete(ctx, character)

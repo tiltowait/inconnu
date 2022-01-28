@@ -120,23 +120,26 @@ class Help(commands.Cog):
         """Display bot info."""
         embed = discord.Embed(
             title="Bot Information",
-            description="A dice roller for Vampire: The Masquerade 5th Edition."
+            description="**Inconnu** is a dice roller for Vampire: The Masquerade 5th Edition."
         )
         embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
         embed.set_thumbnail(url="https://www.inconnu-bot.com/images/darkpack_logo2.webp")
 
         help_commands = [
-            "`/help` - Basic help",
-            "`/character help` - Character updates help",
-            "`/traits help` - Trait management help",
-            "`/macro help` - Macro creation/editing help"
+            "`/help overview` - Basic help",
+            "`/help characters` - Character updates help",
+            "`/help traits` - Trait management help",
+            "`/help macros` - Macro creation/editing help"
         ]
 
         embed.add_field(name="Help Commands", value="\n".join(help_commands), inline=False)
         embed.add_field(
-            name="Frameworks",
-            value="discord.py 2.0 alpha\ndiscord-ui 5.2.0",
-            inline=False
+            name="Framework",
+            value="[Pycord 2.0](https://pycord.dev) using Python 3.10"
+        )
+        embed.add_field(
+            name="Additional Packages",
+            value="pymongo 3.12.0\nstatcord.py 3.1.0\ntopggpy 1.4.0",
         )
         embed.add_field(name="Author", value="@tiltowait#8282", inline=False)
 

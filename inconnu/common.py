@@ -153,7 +153,7 @@ async def select_character(ctx, err, help_url, tip, player=None):
         user = ctx.user
 
     options = character_options(ctx.guild.id, user.id)
-    await present_error(
+    msg = await present_error(
         ctx,
         err,
         (tip[0], tip[1]),
@@ -161,6 +161,7 @@ async def select_character(ctx, err, help_url, tip, player=None):
         help_url=help_url,
         view=options.view
     )
+    options.view.message = msg
 
     await options.view.wait()
     character_id = options.view.selected_value

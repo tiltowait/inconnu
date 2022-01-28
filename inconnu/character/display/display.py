@@ -105,7 +105,7 @@ async def display(
     else:
         msg = await ctx.respond(**msg_contents)
 
-    if isinstance(view, discord.ui.View):
+    if isinstance(view, inconnu.views.DisablingView):
         view.message = msg
 
 

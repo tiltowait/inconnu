@@ -17,7 +17,7 @@ from ..vchar import contains_digit
 class _RollControls(inconnu.views.DisablingView):
     """A View that has a dynamic number of roll buttons."""
 
-    def __init__(self, callback, owner, *buttons):
+    def __init__(self, callback, owner, buttons):
         super().__init__(timeout=600)
         self.callback = callback
         self.owner = owner
@@ -98,12 +98,20 @@ class RollDisplay:
         if (buttons := self.buttons):
             controls = _RollControls(self.respond_to_button, self.ctx.user, buttons)
         else:
-            controls = None
+            controls = discord.utils.MISSING
 
         if use_embed:
-            await ctx.respond(embed=self.embed, view=controls)
+            msg = { "embed": self.embed, "view": controls }
         else:
-            await ctx.respond(self.text, view=controls)
+            msg = { "content": self.text, "view": controls }
+
+        if isinstance(ctx, discord.Interaction):
+            if ctx.response.is_done():
+                await ctx.followup.send(**msg)
+            else:
+                await ctx.response.send_message(**msg)
+        else:
+            await ctx.respond(**msg)
 
 
     async def respond_to_button(self, btn):
@@ -311,39 +319,55 @@ class RollDisplay:
 
         if self.rerolled:
             if self.character is not None:
-                buttons.append(Button(label="Mark WP", custom_id=self._WILLPOWER))
+                buttons.append(Button(
+                    label="Mark WP",
+                    custom_id=self._WILLPOWER,
+                    style=discord.ButtonStyle.primary
+                ))
                 if not self.surged and self.surging:
-                    buttons.append(
-                        Button(
-                            label="Rouse",
-                            custom_id=str(self.character.id),
-                            style=discord.ButtonStyle.danger
-                        )
-                    )
+                    buttons.append(Button(
+                        label="Rouse",
+                        custom_id=str(self.character.id),
+                        style=discord.ButtonStyle.danger
+                    ))
             return buttons or None
 
         # We haven't re-rolled
 
         if "Willpower" not in (self.outcome.pool_str or ""):
             if self.outcome.can_reroll_failures:
-                buttons.append(Button(label="Re-Roll Failures", custom_id=self._REROLL_FAILURES))
+                buttons.append(Button(
+                    label="Re-Roll Failures",
+                    custom_id=self._REROLL_FAILURES,
+                    style=discord.ButtonStyle.primary
+                ))
 
             if self.outcome.can_maximize_criticals:
-                buttons.append(Button(label="Maximize Crits", custom_id=self._MAXIMIZE_CRITICALS))
+                buttons.append(Button(
+                    label="Maximize Crits",
+                    custom_id=self._MAXIMIZE_CRITICALS,
+                    style=discord.ButtonStyle.primary
+                ))
 
             if self.outcome.can_avoid_messy_critical:
-                buttons.append(Button(label="Avoid Messy", custom_id=self._AVOID_MESSY))
+                buttons.append(Button(
+                    label="Avoid Messy",
+                    custom_id=self._AVOID_MESSY,
+                    style=discord.ButtonStyle.primary
+                ))
 
             if self.outcome.can_risky_messy_critical:
-                buttons.append(Button(label="Risky Avoid Messy", custom_id=self._RISKY_AVOID_MESSY))
+                buttons.append(Button(
+                    label="Risky Avoid Messy",
+                    custom_id=self._RISKY_AVOID_MESSY,
+                    style=discord.ButtonStyle.primary
+                ))
 
         if self.surging:
-            buttons.append(
-                Button(
-                    label="Rouse",
-                    custom_id=str(self.character.id),
-                    style=discord.ButtonStyle.danger
-                )
-            )
+            buttons.append(Button(
+                label="Rouse",
+                custom_id=str(self.character.id),
+                style=discord.ButtonStyle.danger
+            ))
 
         return buttons or None

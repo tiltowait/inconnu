@@ -28,7 +28,7 @@ async def on_ready():
     print(f"Playing on {len(bot.guilds)} servers.")
     print(discord.version_info)
     print("Latency:", bot.latency * 1000, "ms")
-    print("------------\n")
+    print("------------")
 
     await __set_presence()
     cull_inactive.start()

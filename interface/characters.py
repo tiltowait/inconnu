@@ -33,9 +33,9 @@ class Characters(commands.Cog, name="Character Management"):
 
 
     @commands.user_command(name="Characters")
-    async def user_characters(self, ctx, user):
+    async def user_characters(self, ctx, member):
         """Display the user's character(s)."""
-        await self.character_display(ctx, None, user, ephemeral=True)
+        await inconnu.character.display_requested(ctx, None, player=member, ephemeral=True)
 
 
     character = SlashCommandGroup("character", "Character commands.")
@@ -64,10 +64,9 @@ class Characters(commands.Cog, name="Character Management"):
         ctx: discord.ApplicationContext,
         character: _CHARACTER_OPTION,
         player: _PLAYER_OPTION,
-        ephemeral=False
     ):
         """Display a character's trackers."""
-        await inconnu.character.display_requested(ctx, character, player=player, ephemeral=ephemeral)
+        await inconnu.character.display_requested(ctx, character, player=player)
 
 
     @character.command(name="update")

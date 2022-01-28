@@ -1,6 +1,6 @@
 # Server Settings
 
-**Inconnu's** has a few customizable behaviors. These are adjustable using the `/set` command and *can only be managed by server administrators.* Anyone can use the `/settings` command to see the server's current configuration.
+**Inconnu's** has a few customizable behaviors. These are adjustable using the `/settings set` command and *can only be managed by server administrators.* Anyone can use the `/settings show` command to see the server's current configuration.
 
 ## Parameters:
 

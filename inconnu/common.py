@@ -106,7 +106,7 @@ async def __error_embed(
         embed.set_footer(text=footer)
 
     if help_url is not None:
-        link_row = 1 if view is None else 0
+        link_row = 0 if view is None else 1
         view = view or View()
 
         view.add_item(Button(label="Documentation", url=help_url, row=link_row))
@@ -199,7 +199,14 @@ def character_options(guild: int, user: int):
     chardict = {str(char.id): char for char in characters}
 
     if len(characters) < 6:
-        components = [Button(label=char.name, custom_id=str(char.id)) for char in characters]
+        components = [
+            Button(
+                label=char.name,
+                custom_id=str(char.id),
+                style=discord.ButtonStyle.primary
+            )
+            for char in characters
+        ]
     else:
         options = [(char.name, str(char.id)) for char in characters]
         components = [inconnu.views.Dropdown("Select a character", *options)]
@@ -253,7 +260,7 @@ async def fetch_character(ctx, character, tip, help_url, owner=None):
         if character is None:
             raise FetchError("No character was selected.") from err
 
-        return character
+        return VChar.fetch(ctx.guild.id, owner.id, character)
 
     except errors.CharacterError as err:
         await present_error(ctx, err, help_url=help_url, author=owner)

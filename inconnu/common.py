@@ -50,33 +50,44 @@ async def present_error(
         components (list): Buttons or selection menus to add to the message.
     """
     if Settings.accessible(ctx.user):
-        return await __error_text(ctx, error, *fields,
+        content = __error_text(ctx, error, *fields, footer=footer)
+        msg_contents ={ "content": content }
+    else:
+        embed = __error_embed(ctx, error, *fields,
+            author=author,
+            character=character,
             footer=footer,
-            help_url=help_url,
-            view=view,
-            ephemeral=ephemeral
         )
+        msg_contents = { "embed": embed }
 
-    return await __error_embed(ctx, error, *fields,
-        author=author,
-        character=character,
-        footer=footer,
-        help_url=help_url,
-        view=view,
-        ephemeral=ephemeral
-    )
+    # Finish preparing the response
+    msg_contents["ephemeral"] = ephemeral
+
+    if help_url is not None:
+        # If we have a help URL, we will add some links to the view
+        link_row = 0 if view is None else 1
+        view = view or View()
+
+        view.add_item(Button(label="Documentation", url=help_url, row=link_row))
+        view.add_item(Button(label="Support", url=SUPPORT_URL, row=link_row))
+
+    msg_contents["view"] = view
+    msg = await ctx.respond(**msg_contents)
+
+    if isinstance(view, inconnu.views.DisablingView):
+        # So it can automatically disable its buttons
+        view.message = msg
+
+    return msg
 
 
-async def __error_embed(
+def __error_embed(
     ctx,
     error,
     *fields,
     author = None,
     character: str = None,
     footer: str = None,
-    help_url: str = None,
-    view = discord.utils.MISSING,
-    ephemeral: bool
 ):
     # Figure out the author
     if author is None:
@@ -105,24 +116,13 @@ async def __error_embed(
     if footer is not None:
         embed.set_footer(text=footer)
 
-    if help_url is not None:
-        link_row = 0 if view is None else 1
-        view = view or View()
-
-        view.add_item(Button(label="Documentation", url=help_url, row=link_row))
-        view.add_item(Button(label="Documentation", url=SUPPORT_URL, row=link_row))
-
-    return await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
+    return embed
 
 
-async def __error_text(
-    ctx,
+def __error_text(
     error,
     *fields,
     footer: str = None,
-    help_url: str = None,
-    view = discord.utils.MISSING,
-    ephemeral: bool
 ):
     """Display the error as plaintext."""
     contents = ["Error", str(error) + "\n"]
@@ -133,11 +133,7 @@ async def __error_text(
     if footer is not None:
         contents.append(f"```{footer}```")
 
-    if help_url is not None:
-        link_row = 1 if view is None else 0
-        view = view or View(Button(label="Help", url=help_url, row=link_row))
-
-    return await ctx.respond("\n".join(contents), view=view, ephemeral=ephemeral)
+    return contents
 
 
 async def select_character(ctx, err, help_url, tip, player=None):

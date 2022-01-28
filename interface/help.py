@@ -34,19 +34,30 @@ class Help(commands.Cog):
     def __init__(self, bot):
         super().__init__()
         self.bot = bot
+        self.info_view = None
         self.overview_view = None
 
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
         """Attach the persistent view."""
+
+        # Create the persistent views if we haven't already
+        if self.info_view is None:
+            help_button = Button(
+                label="Help",
+                style=discord.ButtonStyle.primary,
+                custom_id="persistent-info",
+            )
+            help_button.callback = self.show_basic_help
+
+            self.info_view = _HelpView(help_button, show_support=True)
+
         if self.overview_view is None:
-            # Create the persistent view if we haven't already
             character = Button(
                 label="Character Updater",
                 style=discord.ButtonStyle.primary,
                 custom_id="persistent-character",
-                row=0
             )
             character.callback = self.show_character_help
 
@@ -54,7 +65,6 @@ class Help(commands.Cog):
                 label="Traits Management",
                 style=discord.ButtonStyle.primary,
                 custom_id="persistent-traits",
-                row=0
             )
             traits.callback = self.show_traits_help
 
@@ -62,14 +72,14 @@ class Help(commands.Cog):
                 label="Macro Management",
                 style=discord.ButtonStyle.primary,
                 custom_id="persistent-macro",
-                row=0
             )
             macros.callback = self.show_macros_help
 
             self.overview_view = _HelpView(character, traits, macros, show_support=True)
 
+        # Add the persistent views to the bot if we haven't already
         if not self.bot.persistent_views_added:
-            # Add it to the bot if we haven't already
+            self.bot.add_view(self.info_view)
             self.bot.add_view(self.overview_view)
             self.bot.persistent_views_added = True
 
@@ -134,12 +144,7 @@ class Help(commands.Cog):
             text="Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. For more information please visit worldofdarkness.com."
         )
 
-        help_button = Button(label="Help", style=discord.ButtonStyle.primary, row=0)
-        help_button.callback = self.show_basic_help
-
-        view = _HelpView(help_button, show_support=True)
-
-        await self._send(ctx, embed=embed, view=view)
+        await self._send(ctx, embed=embed, view=self.info_view)
 
 
     # Callbacks
@@ -171,7 +176,7 @@ class Help(commands.Cog):
         embed.set_footer(text="Traits may be used in rolls. See /help for more info.")
 
         embed.add_field(
-            name="Creation",
+            name="Addition",
             value="`/traits add`\n**Example:** `/traits add traits:Oblivion=3 Auspex=2`",
             inline=False
         )
@@ -189,8 +194,8 @@ class Help(commands.Cog):
         )
 
         buttons = [
-            Button(label="Documentation", url="https://www.inconnu-bot.com/#/trait-management", row=0),
-            Button(label="Support", url=SUPPORT_URL, row=0)
+            Button(label="Documentation", url="https://www.inconnu-bot.com/#/trait-management"),
+            Button(label="Support", url=SUPPORT_URL)
         ]
         view = _HelpView(*buttons)
 
@@ -223,8 +228,8 @@ class Help(commands.Cog):
         )
 
         buttons = [
-            Button(label="Documentation", url="https://www.inconnu-bot.com/#/macros", row=0),
-            Button(label="Support", url=SUPPORT_URL, row=0)
+            Button(label="Documentation", url="https://www.inconnu-bot.com/#/macros"),
+            Button(label="Support", url=SUPPORT_URL)
         ]
         view = _HelpView(*buttons)
 

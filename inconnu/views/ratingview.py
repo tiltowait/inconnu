@@ -1,13 +1,17 @@
 """views/ratingselector.py - A view for selecting trait ratings."""
 
+import os
+
 import discord
+
+TIMEOUT = 5 if "DEBUG" in os.environ else 120
 
 
 class RatingView(discord.ui.View):
     """A View that lets the user select a rating."""
 
     def __init__(self, callback, failback):
-        super().__init__(timeout=120)
+        super().__init__(timeout=TIMEOUT)
         self.callback = callback
         self.failback = failback
 
@@ -36,3 +40,8 @@ class RatingView(discord.ui.View):
 
         rating = int(interaction.data["custom_id"])
         await self.callback(rating)
+
+
+    async def on_timeout(self):
+        """Inform the caller that we timed out."""
+        await self.failback()

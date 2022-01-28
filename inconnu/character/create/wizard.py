@@ -180,4 +180,4 @@ class Wizard:
     async def _timeout(self):
         """Inform the user they took too long."""
         errmsg = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
-        await self.msg.edit(content=errmsg, embed=None, view=discord.utils.MISSING)
+        await self.msg.edit(content=errmsg, embed=None, view=None)

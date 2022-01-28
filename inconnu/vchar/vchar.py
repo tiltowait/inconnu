@@ -41,6 +41,7 @@ class VChar:
         VChar.__prepare()
         self._params = params
         self.id = params["_id"] # pylint: disable=invalid-name
+        self.guild = params["guild"]
         self.user = params["user"]
 
 
@@ -363,12 +364,6 @@ class VChar:
             { "$set": { "experience.total": new_total_xp } }
         )
         self.current_xp += delta
-
-
-    @property
-    def guild(self):
-        """The guild the character belongs to."""
-        return self._params["guild"]
 
 
     # Derived attributes

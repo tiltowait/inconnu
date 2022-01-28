@@ -10,10 +10,14 @@ VALID_SPLATS = ["vampire", "ghoul", "mortal"]
 
 def update_name(character: VChar, new_name: str) -> str:
     """Update the character's name."""
-    if not re.match(r"[A-z_]+", new_name):
-        raise ValueError("Names may only contain letters and underscores.")
+    if not re.match(r"[A-z_\d]+", new_name):
+        raise ValueError("Names may only contain letters, numbers, and underscores.")
     if (name_len := len(new_name)) > 30:
         raise ValueError(f"`{new_name}` is too long by {name_len - 30} characters.")
+
+    all_chars = VChar.all_characters(character.guild, character.user)
+    if [char for char in all_chars if char.name.lower() == new_name.lower()]:
+        raise ValueError(f"You already have a character named `{new_name}`!")
 
     character.name = new_name
     return f"Set name to `{new_name}`."

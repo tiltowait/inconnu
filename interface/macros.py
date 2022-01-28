@@ -98,3 +98,8 @@ class Macros(commands.Cog, name="Macro Utilities"):
     ):
         """Delete a macro."""
         await inconnu.macros.delete(ctx, macro, character)
+
+
+def setup(bot):
+    """Add the cog to the bot."""
+    bot.add_cog(Macros(bot))

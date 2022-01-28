@@ -56,3 +56,8 @@ class MiscCommands(commands.Cog):
     ):
         """View roll statistics for your characters."""
         await inconnu.misc.statistics(ctx, trait, date)
+
+
+def setup(bot):
+    """Add the cog to the bot."""
+    bot.add_cog(MiscCommands(bot))

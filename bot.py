@@ -7,7 +7,6 @@ import topgg
 from discord.ext import commands, tasks
 
 import inconnu
-import interface
 
 intents = discord.Intents.default()
 intents.members = True # pylint: disable=assigning-non-slot
@@ -114,17 +113,9 @@ async def __set_presence():
 
 def setup():
     """Add the cogs to the bot."""
-    bot.add_cog(interface.Characters(bot))
-    bot.add_cog(interface.Help(bot))
-    bot.add_cog(interface.Gameplay(bot))
-    bot.add_cog(interface.Macros(bot))
-    bot.add_cog(interface.MiscCommands(bot))
-    bot.add_cog(interface.SettingsCommands(bot))
-    bot.add_cog(interface.Traits(bot))
-
-    if (statcord_token := os.getenv("STATCORD_TOKEN")) is not None:
-        print("Establishing statcord connection.")
-        bot.add_cog(interface.StatcordPost(bot, statcord_token))
+    for filename in os.listdir("./interface"):
+        if filename.endswith(".py"):
+            bot.load_extension(f"interface.{filename[:-3]}")
 
     if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:
         print("Establishing top.gg connection.")

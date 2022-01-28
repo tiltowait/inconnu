@@ -180,3 +180,8 @@ def _check_number(label, value):
         return True
     except ValueError:
         raise ValueError(f"`{label}` must be a number (with or without `+/-`.") from ValueError
+
+
+def setup(bot):
+    """Add the cog to the bot."""
+    bot.add_cog(Characters(bot))

@@ -219,3 +219,8 @@ class Help(commands.Cog):
         else:
             await ctx.respond(**message_content)
 
+
+
+def setup(bot):
+    """Add the cog to the bot."""
+    bot.add_cog(Help(bot))

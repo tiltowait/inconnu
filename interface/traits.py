@@ -64,3 +64,8 @@ class Traits(commands.Cog, name="Trait Management"):
     ):
         """Remove traits from a character."""
         await inconnu.traits.delete(ctx, traits, character)
+
+
+def setup(bot):
+    """Add the cog to the bot."""
+    bot.add_cog(Traits(bot))

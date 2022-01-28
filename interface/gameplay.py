@@ -183,3 +183,8 @@ class Gameplay(commands.Cog):
     ):
         """Apply or remove stains from a character."""
         await inconnu.misc.stain(ctx, delta, character, player)
+
+
+def setup(bot):
+    """Add the cog to the bot."""
+    bot.add_cog(Gameplay(bot))

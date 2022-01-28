@@ -88,3 +88,8 @@ class SettingsCommands(commands.Cog):
         embed.set_footer(text="Modify settings with /set")
 
         await ctx.respond(embed=embed)
+
+
+def setup(bot):
+    """Add the cog to the bot."""
+    bot.add_cog(SettingsCommands(bot))

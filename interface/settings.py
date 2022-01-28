@@ -1,7 +1,7 @@
 """interface/settings.py - Settings-related commands."""
 
 import discord
-from discord.commands import Option, OptionChoice, slash_command
+from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 
 import inconnu
@@ -29,7 +29,9 @@ class SettingsCommands(commands.Cog):
         await ctx.respond(response)
 
 
-    @slash_command()
+    settings = SlashCommandGroup("settings", "Server settings commands.")
+
+    @settings.command(name="set")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def set(
@@ -70,8 +72,8 @@ class SettingsCommands(commands.Cog):
             await self.settings(ctx)
 
 
-    @slash_command()
-    async def settings(self, ctx):
+    @settings.command(name="show")
+    async def settings_show(self, ctx):
         """Display the settings in effect."""
         accessibility = "ON" if inconnu.settings.accessible(ctx.user) else "OFF"
         oblivion_stains = inconnu.settings.oblivion_stains(ctx.guild)
@@ -85,7 +87,7 @@ class SettingsCommands(commands.Cog):
             description=msg
         )
         embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon or "")
-        embed.set_footer(text="Modify settings with /set")
+        embed.set_footer(text="Modify settings with /settings set")
 
         await ctx.respond(embed=embed)
 

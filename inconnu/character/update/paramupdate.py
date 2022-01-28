@@ -235,6 +235,12 @@ def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
         current = getattr(character, f"{xp_type.lower()}_xp")
         new_xp = current + delta
 
+    # Make sure we can fit the XP. The only way this will happen is if someone
+    # is explicitly trying to break the bot, but ...
+
+    if new_xp > 9223372036854775807:
+        raise ValueError("`lifetime_xp` may not exceed 9,223,372,036,854,775,807!")
+
     # When displaying the update, we want to say whether they are doing a delta vs
     # set and, if doing a delta, the *final* amound added/subtracted, after doing
     # bounds-checking.

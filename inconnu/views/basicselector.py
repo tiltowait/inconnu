@@ -17,6 +17,6 @@ class BasicSelector(DisablingView):
 
     async def button_callback(self, interaction):
         """Set the selected value to the interaction's custom ID."""
-        self.selected_value = interaction.data["custom_id"]
         await interaction.response.pong()
         await self.disable_items(interaction)
+        self.selected_value = interaction.data["custom_id"]

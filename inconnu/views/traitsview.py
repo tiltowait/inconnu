@@ -19,6 +19,8 @@ class TraitsView(DisablingView):
     async def show_traits(self, _, interaction):
         """Show the traits so long as the user is valid."""
         if interaction.user == self.owner:
+            await self.disable_items(interaction)
             await inconnu.traits.show(interaction, self.character, player=self.owner)
         else:
             await interaction.response.send_message("You can't click this button.", ephemeral=True)
+

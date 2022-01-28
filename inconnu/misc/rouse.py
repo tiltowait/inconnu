@@ -30,7 +30,7 @@ async def rouse(
             character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
         if character.splat == "mortal":
-            await ctx.respond("Mortals can't make rouse checks.", ephemeral=True)
+            await ctx.respond("Mortals can't make Rouse checks.", ephemeral=True)
         elif character.splat == "ghoul":
             await __damage_ghoul(ctx, character)
         else:

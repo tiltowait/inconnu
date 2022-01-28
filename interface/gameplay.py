@@ -56,7 +56,7 @@ class Gameplay(commands.Cog):
     @slash_command()
     @commands.guild_only()
     async def aggheal(self, ctx, character: inconnu.options.character("The character to heal")):
-        """Heal a character's aggravated damage."""
+        """Heal a character's Aggravated damage."""
         await inconnu.misc.aggheal(ctx, character)
 
 
@@ -79,7 +79,7 @@ class Gameplay(commands.Cog):
     async def cripple(
         self,
         ctx: discord.ApplicationContext,
-        damage: Option(int, "The Aggravated damage sustained"),
+        damage: Option(int, "The Aggravated damage sustained", min_value=1),
         character: inconnu.options.character("The character to cripple")
     ):
         """Generate a random crippling injury based on Aggravated damage."""
@@ -119,13 +119,15 @@ class Gameplay(commands.Cog):
     async def remorse(
         self,
         ctx: discord.ApplicationContext,
-        min_override: Option(int, "Override the minimum dice to roll",
+        min_override: Option(
+            int,
+            "Override the minimum dice to roll (you probably don't want this)",
             choices=inconnu.options.ratings(1, 5),
             default=1
         ),
         character: inconnu.options.character("The character undergoing remorse"),
     ):
-        """Perform a remorse check."""
+        """Perform a Remorse check."""
         await inconnu.misc.remorse(ctx, character, min_override)
 
 
@@ -154,7 +156,7 @@ class Gameplay(commands.Cog):
         purpose: Option(str, "The reason for the check", required=False),
         character: inconnu.options.character("The character to Rouse"),
     ):
-        """Perform a rouse check."""
+        """Perform a Rouse check."""
         await inconnu.misc.rouse(ctx, count, character, purpose, bool(reroll))
 
 

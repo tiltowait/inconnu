@@ -33,16 +33,6 @@ class MiscCommands(commands.Cog):
 
 
     @slash_command()
-    async def random(
-        self,
-        ctx: discord.ApplicationContext,
-        ceiling: Option(int, "The roll's highest possible value", min_value=0, default=100)
-    ):
-        """Roll between 1 and a given ceiling (default 100)."""
-        await inconnu.misc.percentile(ctx, ceiling)
-
-
-    @slash_command()
     async def probability(
         self,
         ctx: discord.ApplicationContext,
@@ -60,6 +50,16 @@ class MiscCommands(commands.Cog):
     ):
         """Calculate outcome probabilities for a given roll."""
         await inconnu.misc.probability(ctx, roll, reroll, character)
+
+
+    @slash_command()
+    async def random(
+        self,
+        ctx: discord.ApplicationContext,
+        ceiling: Option(int, "The roll's highest possible value", min_value=2, default=100)
+    ):
+        """Roll between 1 and a given ceiling (default 100)."""
+        await inconnu.misc.percentile(ctx, ceiling)
 
 
     @slash_command()

@@ -118,7 +118,7 @@ def setup():
     bot.add_cog(interface.Help(bot))
     bot.add_cog(interface.Gameplay(bot))
     bot.add_cog(interface.Macros(bot))
-    #bot.add_cog(interface.MiscCommands(bot))
+    bot.add_cog(interface.MiscCommands(bot))
     #bot.add_cog(interface.SettingsCommands(bot))
     #bot.add_cog(interface.Traits(bot))
 

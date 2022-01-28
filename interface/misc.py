@@ -40,10 +40,7 @@ class MiscCommands(commands.Cog):
             ],
             required=False
         ),
-        character: Option(str, "The character if using traits",
-            autocomplete=inconnu.available_characters,
-            required=False
-        )
+        character: inconnu.options.character("The character (if using traits)")
     ):
         """Calculate outcome probabilities for a given roll."""
         await inconnu.misc.probability(ctx, roll, reroll, character)

@@ -17,6 +17,7 @@ if (debug_guild := os.getenv("DEBUG")) is not None:
     debug_guild = [int(debug_guild)]
 
 bot = discord.Bot(intents=intents, debug_guilds=debug_guild)
+setattr(bot, "persistent_views_added", False)
 
 
 # General Events

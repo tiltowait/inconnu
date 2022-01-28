@@ -13,7 +13,7 @@ class _HelpView(View):
     """A view that has support buttons as well as command help buttons."""
 
     def __init__(self, *buttons, show_support=False):
-        super().__init__()
+        super().__init__(timeout=None)
 
         for button in buttons:
             self.add_item(button)
@@ -34,6 +34,44 @@ class Help(commands.Cog):
     def __init__(self, bot):
         super().__init__()
         self.bot = bot
+        self.overview_view = None
+
+
+    @commands.Cog.listener("on_ready")
+    async def on_ready(self):
+        """Attach the persistent view."""
+        if self.overview_view is None:
+            # Create the persistent view if we haven't already
+            character = Button(
+                label="Character Updater",
+                style=discord.ButtonStyle.primary,
+                custom_id="persistent-character",
+                row=0
+            )
+            character.callback = self.show_character_help
+
+            traits = Button(
+                label="Traits Management",
+                style=discord.ButtonStyle.primary,
+                custom_id="persistent-traits",
+                row=0
+            )
+            traits.callback = self.show_traits_help
+
+            macros = Button(
+                label="Macro Management",
+                style=discord.ButtonStyle.primary,
+                custom_id="persistent-macro",
+                row=0
+            )
+            macros.callback = self.show_macros_help
+
+            self.overview_view = _HelpView(character, traits, macros, show_support=True)
+
+        if not self.bot.persistent_views_added:
+            # Add it to the bot if we haven't already
+            self.bot.add_view(self.overview_view)
+            self.bot.persistent_views_added = True
 
 
     # Help Commands
@@ -120,18 +158,7 @@ class Help(commands.Cog):
         embed.add_field(name="Display character", value="`/character display`", inline=False)
         embed.add_field(name="Add traits", value="`/traits add`")
 
-        character = Button(label="Character Updater", style=discord.ButtonStyle.primary, row=0)
-        character.callback = self.show_character_help
-
-        traits = Button(label="Traits Management", style=discord.ButtonStyle.primary, row=0)
-        traits.callback = self.show_traits_help
-
-        macros = Button(label="Macro Management", style=discord.ButtonStyle.primary, row=0)
-        macros.callback = self.show_macros_help
-
-        view = _HelpView(character, traits, macros, show_support=True)
-
-        await self._send(ctx, embed=embed, view=view, ephemeral=ephemeral)
+        await self._send(ctx, embed=embed, view=self.overview_view, ephemeral=ephemeral)
 
 
     async def show_traits_help(self, ctx, ephemeral=True):

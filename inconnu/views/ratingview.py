@@ -15,6 +15,7 @@ class RatingView(discord.ui.View):
             button = discord.ui.Button(
                 label=str(rating),
                 custom_id=str(rating),
+                style=discord.ButtonStyle.primary,
                 row=0
             )
             button.callback = self.button_pressed
@@ -23,7 +24,7 @@ class RatingView(discord.ui.View):
         button = discord.ui.Button(
             label="0",
             custom_id="0",
-            style=discord.ButtonStyle.secondary, row=1
+            row=1
         )
         button.callback = self.button_pressed
         self.add_item(button)

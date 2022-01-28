@@ -50,7 +50,7 @@ class Characters(commands.Cog, name="Character Management"):
         humanity: Option(int, "Humanity rating (0-10)", choices=_ratings(0, 10)),
         health: Option(int, "Health levels (4-15)", choices=_ratings(4, 15)),
         willpower: Option(int, "Willpower levels (3-15)", choices=_ratings(3, 15)),
-        spc: Option(str, "(Admin only) Make an SPC", autocomplete=_spc_options)
+        spc: Option(str, "(Admin only) Make an SPC", autocomplete=_spc_options, default="0")
     ):
         """Create a new character."""
         spc = bool(strtobool(spc))

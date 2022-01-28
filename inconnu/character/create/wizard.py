@@ -13,9 +13,8 @@ from inconnu.vchar import VChar
 class Wizard:
     """A helper class that guides a user through the chargen process."""
 
-
     def __init__(self, ctx, parameters):
-        if "INCONNU_DEV" in os.environ:
+        if "DEBUG" in os.environ:
             self.core_traits = ["Resolve", "Composure"]
         else:
             self.core_traits = [

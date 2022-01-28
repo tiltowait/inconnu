@@ -16,22 +16,27 @@ async def delete(ctx, character: str):
         character = VChar.fetch(ctx.guild.id, ctx.user.id, character)
 
         if inconnu.settings.accessible(ctx.user):
-            await __prompt_text(ctx, character)
+            msg_contents = __prompt_text(character)
         else:
-            await __prompt_embed(ctx, character)
+            msg_contents = __prompt_embed(ctx, character)
 
+        delete_view = _DeleteView(character)
+        msg_contents["view"] = delete_view
+
+        msg = await ctx.respond(**msg_contents)
+        delete_view.message = msg
 
     except errors.CharacterError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
 
 
-async def __prompt_text(ctx, character):
+def __prompt_text(character):
     """Ask the user whether to delete the character, in plain text."""
-    contents = f"Really delete {character.name}? This will delete all associated data!\n"
-    return await ctx.respond(contents, view=_DeleteView(character), ephemeral=True)
+    content = f"Really delete {character.name}? This will delete all associated data!\n"
+    return { "content": content, "ephemeral": True }
 
 
-async def __prompt_embed(ctx, character):
+def __prompt_embed(ctx, character):
     """Ask the user whether to delete the character, using an embed."""
     embed = discord.Embed(
         title=f"Delete {character.name}",
@@ -41,14 +46,13 @@ async def __prompt_embed(ctx, character):
     embed.add_field(name="Are you certain?", value="This will delete all associated data.")
     embed.set_footer(text="THIS ACTION CANNOT BE UNDONE")
 
-    return await ctx.respond(embed=embed, view=_DeleteView(character), ephemeral=True)
-
+    return { "embed": embed, "ephemeral": True }
 
 class _DeleteView(DisablingView):
     """A view for deleting characters."""
 
     def __init__(self, character):
-        super().__init__(timeout=25)
+        super().__init__(timeout=20)
         self.character = character
 
 

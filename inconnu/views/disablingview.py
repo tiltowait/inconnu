@@ -8,7 +8,7 @@ class DisablingView(View):
 
     def __init__(self, timeout=60):
         super().__init__(timeout=timeout)
-
+        self.message = None
 
     async def disable_items(self, interaction):
         """Disable all items."""
@@ -17,3 +17,11 @@ class DisablingView(View):
 
         await interaction.response.edit_message(view=self)
         self.stop()
+
+
+    async def on_timeout(self):
+        """Disable the components on timeout, if we have the view's message."""
+        if self.message is not None:
+            for child in self.children:
+                child.disabled = True
+            await self.message.edit_original_message(view=self)

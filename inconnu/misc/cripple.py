@@ -49,8 +49,8 @@ async def __display_injury(ctx, damage, character, injuries):
 
     embed = discord.Embed(title="Crippling Injury")
 
-    author = character.name if character is not None else ctx.author.display_name
-    embed.set_author(name=f"{author} | {damage} Agg", icon_url=ctx.author.display_avatar)
+    author = character.name if character is not None else ctx.user.display_name
+    embed.set_author(name=f"{author} | {damage} Agg", icon_url=ctx.user.display_avatar)
 
     for injury in injuries:
         embed.add_field(name=injury.injury, value=injury.effect, inline=False)

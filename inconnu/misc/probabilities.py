@@ -42,7 +42,7 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
         _, params = roll.prepare_roll(character, syntax)
         probabilities = __get_probabilities(params, strategy)
 
-        if Settings.accessible(ctx.author):
+        if Settings.accessible(ctx.user):
             await __display_text(ctx, params, strategy, probabilities)
         else:
             await __display_embed(ctx, params, strategy, probabilities)

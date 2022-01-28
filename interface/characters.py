@@ -64,20 +64,9 @@ class Characters(commands.Cog, name="Character Management"):
         ctx: discord.ApplicationContext,
         character: _CHARACTER_OPTION,
         player: _PLAYER_OPTION,
-        #character: Option(
-            #str,
-            #"A character to display",
-            #autocomplete=inconnu.available_characters,
-            #required=False
-        #),
-        #player: Option(
-            #discord.Member,
-             #"The player who owns the character (admin only)",
-              #required=False
-        #),
         ephemeral=False
     ):
-        """Display a character's basic traits"""
+        """Display a character's trackers."""
         await inconnu.character.display_requested(ctx, character, player=player, ephemeral=ephemeral)
 
 

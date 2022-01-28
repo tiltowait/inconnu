@@ -46,7 +46,7 @@ async def __trait_statistics(ctx, trait, date):
     pipeline = [
         {
             "$match": {
-                "user": ctx.author.id,
+                "user": ctx.user.id,
                 "guild": ctx.guild.id,
                 "date": { "$gte": date },
                 "pool": re.compile(regex, flags=re.I)
@@ -95,7 +95,7 @@ async def __trait_statistics(ctx, trait, date):
     stats = list(rolls.aggregate(pipeline))
     fmt_date = date.strftime("%Y-%m-%d")
     if len(stats) > 0:
-        if Settings.accessible(ctx.author):
+        if Settings.accessible(ctx.user):
             await __trait_stats_text(ctx, trait, stats, fmt_date)
         else:
             await __trait_stats_embed(ctx, trait, stats, fmt_date)
@@ -113,7 +113,7 @@ async def __trait_stats_embed(ctx, trait, stats, date):
     else:
         title = f"{trait}: Roll statistics since {date}"
     embed = discord.Embed(title=title)
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
+    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
 
     for character in stats:
         name = character["_id"]
@@ -156,7 +156,7 @@ async def __all_statistics(ctx, date):
         {
           "$match": {
             "guild": ctx.guild.id,
-            "user": ctx.author.id
+            "user": ctx.user.id
           }
         },
         {
@@ -223,7 +223,7 @@ async def __all_statistics(ctx, date):
         await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)
         return
 
-    if Settings.accessible(ctx.author):
+    if Settings.accessible(ctx.user):
         await __display_text(ctx, results)
     else:
         await __display_embed(ctx, results)
@@ -253,7 +253,7 @@ async def __display_text(ctx, results):
 async def __display_embed(ctx, results):
     """Display the statistics in an embed."""
     embed = discord.Embed(title="Roll Statistics")
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
+    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
 
     for character in results:
         outcomes = defaultdict(lambda: 0)

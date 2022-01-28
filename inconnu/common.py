@@ -49,7 +49,7 @@ async def present_error(
         help_url (str): The documentation URL for the error.
         components (list): Buttons or selection menus to add to the message.
     """
-    if Settings.accessible(ctx.author):
+    if Settings.accessible(ctx.user):
         return await __error_text(ctx, error, *fields,
             footer=footer,
             help_url=help_url,
@@ -80,8 +80,8 @@ async def __error_embed(
 ):
     # Figure out the author
     if author is None:
-        avatar = ctx.author.display_avatar
-        display_name = ctx.author.display_name
+        avatar = ctx.user.display_avatar
+        display_name = ctx.user.display_name
     else:
         avatar = author.display_avatar
         display_name = author.display_name
@@ -150,11 +150,11 @@ async def select_character(ctx, err, help_url, tip, player=None):
         tip (tuple): A name and value for an embed field
         player: (Optional) A Discord member to query instead
     """
-    if ctx.author != player:
+    if ctx.user != player:
         user = player
         err = str(err).replace("You have", f"{user.display_name} has")
     else:
-        user = ctx.author
+        user = ctx.user
 
     options = character_options(ctx.guild.id, user.id)
     await present_error(
@@ -217,10 +217,10 @@ async def player_lookup(ctx, player: discord.Member):
     Raises ValueError if player is not a valid player name.
     """
     if player is None:
-        return ctx.author
+        return ctx.user
 
     # Players are allowed to look up themselves
-    if not ctx.author.guild_permissions.administrator and ctx.author != player:
+    if not ctx.user.guild_permissions.administrator and ctx.user != player:
         raise LookupError("You don't have lookup permissions.")
 
     return player
@@ -244,7 +244,7 @@ async def fetch_character(ctx, character, tip, help_url, owner=None):
         return character
 
     try:
-        owner = owner or ctx.author
+        owner = owner or ctx.user
         return VChar.fetch(ctx.guild.id, owner.id, character)
 
     except errors.UnspecifiedCharacterError as err:

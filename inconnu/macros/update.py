@@ -39,7 +39,7 @@ async def update(ctx, macro: str, syntax: str, character: str):
         SyntaxError, ValueError
     ) as err:
         if isinstance(err, (SyntaxError, ValueError)):
-            Log.log("macro_update_error", user=ctx.author.id, charid=character.id, syntax=syntax)
+            Log.log("macro_update_error", user=ctx.user.id, charid=character.id, syntax=syntax)
 
         keys = [f"`{key}`: {value}" for key, value in __VALID_KEYS.items()]
         instructions = [

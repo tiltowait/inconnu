@@ -17,24 +17,26 @@ from . import views
 
 async def available_characters(ctx):
     """Generate a list of the user's available characters."""
-    if ctx.guild is None:
+    if (guild := ctx.interaction.guild) is None:
         return [OptionChoice("You have no characters", "")]
 
     # Check if they're looking up a player and have lookup permissions
+    user = ctx.interaction.user
     spcs = []
 
     if (owner := ctx.options.get("player")) is not None:
-        if owner != ctx.interaction.user and not ctx.interaction.user.guild_permissions.administrator:
+        print(owner)
+        if owner != user and not user.guild_permissions.administrator:
             return [OptionChoice("You do not have admin permissions", "")]
     else:
-        owner = ctx.author
+        owner = user
 
-        if ctx.author.guild_permissions.administrator:
+        if user.guild_permissions.administrator:
             # Add SPCs
-            spcs = VChar.all_characters(ctx.guild.id, int(os.environ["INCONNU_ID"]))
+            spcs = VChar.all_characters(guild.id, int(os.environ["INCONNU_ID"]))
             spcs = [(spc.name, str(spc.id)) for spc in spcs]
 
-    chars = VChar.all_characters(ctx.guild.id, owner.id)
+    chars = VChar.all_characters(guild.id, owner.id)
     chars = [(char.name, str(char.id)) for char in chars]
     chars.extend(spcs)
 

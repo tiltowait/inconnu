@@ -36,7 +36,7 @@ async def show(ctx, character=None):
 
 async def __display_macros(ctx, char_name, macros):
     """Show a user their character's macros."""
-    if Settings.accessible(ctx.author):
+    if Settings.accessible(ctx.user):
         await __macro_text(ctx, char_name, macros)
     else:
         await __macro_embed(ctx, char_name, macros)
@@ -72,7 +72,7 @@ async def __macro_embed(ctx, char_name, macros):
         embed = discord.Embed(
             title="Macros" if len(pages) == 1 else f"Macros: {page_text}"
         )
-        embed.set_author(name=char_name, icon_url=ctx.author.display_avatar)
+        embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
         embed.set_footer(text=page_text)
 
         for field in page:

@@ -112,12 +112,12 @@ async def __set_presence():
 def setup():
     """Add the cogs to the bot."""
     bot.add_cog(interface.Characters(bot))
-    bot.add_cog(interface.Help(bot))
-    bot.add_cog(interface.Gameplay(bot))
-    bot.add_cog(interface.Macros(bot))
-    bot.add_cog(interface.MiscCommands(bot))
-    bot.add_cog(interface.SettingsCommands(bot))
-    bot.add_cog(interface.Traits(bot))
+    #bot.add_cog(interface.Help(bot))
+    #bot.add_cog(interface.Gameplay(bot))
+    #bot.add_cog(interface.Macros(bot))
+    #bot.add_cog(interface.MiscCommands(bot))
+    #bot.add_cog(interface.SettingsCommands(bot))
+    #bot.add_cog(interface.Traits(bot))
 
     if (statcord_token := os.getenv("STATCORD_TOKEN")) is not None:
         print("Establishing statcord connection.")

@@ -89,7 +89,7 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
 
 async def __display_results(ctx, outcome, char_name: str):
     """Display the results of the operation."""
-    if Settings.accessible(ctx.author):
+    if Settings.accessible(ctx.user):
         await __results_text(ctx, outcome, char_name)
     else:
         await __results_embed(ctx, outcome, char_name)
@@ -107,7 +107,7 @@ async def __results_embed(ctx, outcome, char_name: str):
     embed = discord.Embed(
         title=title
     )
-    embed.set_author(name=char_name, icon_url=ctx.author.display_avatar)
+    embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
     if len(outcome.assigned) > 0:
         assigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.assigned)))
         embed.add_field(name="Assigned", value=assigned)

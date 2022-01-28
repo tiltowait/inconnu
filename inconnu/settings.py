@@ -44,14 +44,14 @@ class Settings:
             scope (str): "user" or "server"
         """
         if scope == "user":
-            Settings._set_key(ctx.author, "accessibility", enabled)
+            Settings._set_key(ctx.user, "accessibility", enabled)
 
             if enabled:
                 response = "**Accessibility mode** enabled."
             else:
                 response = "**Accessibility mode** disabled. Note: the server may override."
         else: # Server-wide setting
-            if not ctx.author.guild_permissions.administrator:
+            if not ctx.user.guild_permissions.administrator:
                 raise PermissionError("Sorry, only admins can set server-wide accessibility mode.")
 
             Settings._set_key(ctx.guild, "accessibility", enabled)
@@ -84,7 +84,7 @@ class Settings:
     @classmethod
     def set_oblivion_stains(cls, ctx, stains: int):
         """Set which dice outcomes will give stains for Oblivion rouse checks."""
-        if not ctx.author.guild_permissions.administrator:
+        if not ctx.user.guild_permissions.administrator:
             raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
 
         response = "**Rouse checks:** Warn for Oblivion stains when rolling "

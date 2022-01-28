@@ -28,7 +28,7 @@ async def resonance(ctx):
     temperament = __get_temperament()
     die, res = __get_resonance()
 
-    if Settings.accessible(ctx.author):
+    if Settings.accessible(ctx.user):
         await __display_text(ctx, temperament, res, die)
     else:
         await __display_embed(ctx, temperament, res, die)
@@ -50,7 +50,7 @@ async def __display_embed(ctx, temperament, res, die):
     embed = discord.Embed(
         title=f"{temperament} {res} Resonance"
     )
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
+    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
     embed.add_field(name="Disciplines", value=__DISCIPLINES[res])
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[res])
     embed.set_footer(text=f"Rolled {die} for the Resonance")

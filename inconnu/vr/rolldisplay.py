@@ -96,7 +96,7 @@ class RollDisplay:
         ctx = alt_ctx or self.ctx
 
         if (buttons := self.buttons):
-            controls = _RollControls(self.respond_to_button, self.ctx.author, buttons)
+            controls = _RollControls(self.respond_to_button, self.ctx.user, buttons)
         else:
             controls = None
 

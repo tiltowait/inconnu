@@ -1,12 +1,10 @@
 """delete.py - Character deletion facilities."""
 
-import asyncio
-
 import discord
 
-from inconnu import views
+import inconnu
+from ..views import DisablingView
 from .. import common
-from ..settings import Settings
 from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-deletion"
@@ -15,9 +13,9 @@ __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-dele
 async def delete(ctx, character: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.author.id, character)
+        character = VChar.fetch(ctx.guild.id, ctx.user.id, character)
 
-        if Settings.accessible(ctx.author):
+        if inconnu.settings.accessible(ctx.user):
             await __prompt_text(ctx, character)
         else:
             await __prompt_embed(ctx, character)
@@ -25,12 +23,6 @@ async def delete(ctx, character: str):
 
     except errors.CharacterError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
-    #except asyncio.exceptions.TimeoutError:
-    #    await msg.edit(
-     #       content="**Deletion canceled due to inactivity.**",
-      #      components=None,
-       #     embed=None
-        #)
 
 
 async def __prompt_text(ctx, character):
@@ -45,14 +37,14 @@ async def __prompt_embed(ctx, character):
         title=f"Delete {character.name}",
         color=0xFF0000
     )
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
+    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
     embed.add_field(name="Are you certain?", value="This will delete all associated data.")
     embed.set_footer(text="THIS ACTION CANNOT BE UNDONE")
 
     return await ctx.respond(embed=embed, view=_DeleteView(character), ephemeral=True)
 
 
-class _DeleteView(views.DisablingView):
+class _DeleteView(DisablingView):
     """A view for deleting characters."""
 
     def __init__(self, character):

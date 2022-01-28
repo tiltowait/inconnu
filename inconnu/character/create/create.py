@@ -15,7 +15,7 @@ __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-crea
 
 async def create(ctx, name: str, splat: str, humanity: int, health: int, willpower: int, spc: bool):
     """Parse and handle character creation arguments."""
-    if spc and not ctx.author.guild_permissions.administrator:
+    if spc and not ctx.user.guild_permissions.administrator:
         await common.present_error(ctx, "You need Administrator permissions to make an SPC.")
         return
 
@@ -25,7 +25,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
         # Remove extraenous spaces from the name
         name = re.sub(r"\s+", " ", name)
 
-        if VChar.character_exists(ctx.guild.id, ctx.author.id, name, spc):
+        if VChar.character_exists(ctx.guild.id, ctx.user.id, name, spc):
             if spc:
                 raise ValueError(f"Sorry, there is already an SPC named `{name}`!")
             raise ValueError(f"Sorry, you have a character named `{name}` already!")

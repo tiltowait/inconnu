@@ -36,7 +36,7 @@ async def roll(ctx, syntax: str, character=None):
 
         # We show the rouse check first, because display_outcome() is blocking
         await __rouse(ctx, character, macro)
-        await display_outcome(ctx, ctx.author, character, results, macro.comment)
+        await display_outcome(ctx, ctx.user, character, results, macro.comment)
 
 
     except (ValueError, errors.MacroNotFoundError) as err:

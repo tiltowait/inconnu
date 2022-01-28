@@ -28,7 +28,7 @@ class _HelpView(View):
             self.add_item(Button(label="Patreon", url="https://www.patreon.com/tiltowait", row=1))
 
 
-class Help(commands.Cog, name="Help"):
+class Help(commands.Cog):
     """A class for housing the /help command."""
 
     # Button Listeners
@@ -62,7 +62,7 @@ class Help(commands.Cog, name="Help"):
             title="Inconnu Help",
             description="Basic commands listing. Click the link for detailed documentation."
         )
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
+        embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
 
         embed.add_field(name="Roll", value="`/vr syntax:pool hunger difficulty`", inline=False)
         char_info = "`/character create`\nYou can use character attributes in rolls."

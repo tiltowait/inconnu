@@ -71,7 +71,7 @@ class SettingsCommands(commands.Cog):
     @slash_command()
     async def settings(self, ctx):
         """Display the settings in effect."""
-        accessibility = "ON" if inconnu.settings.accessible(ctx.author) else "OFF"
+        accessibility = "ON" if inconnu.settings.accessible(ctx.user) else "OFF"
         oblivion_stains = inconnu.settings.oblivion_stains(ctx.guild)
         oblivion_stains = map(lambda s: f"`{s}`", oblivion_stains)
 

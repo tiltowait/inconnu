@@ -67,7 +67,7 @@ async def update(
             updates.append(impairment)
 
         Log.log("update",
-            user=ctx.author.id,
+            user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
             syntax=" ".join(args)
@@ -81,7 +81,7 @@ async def update(
 
     except (SyntaxError, ValueError) as err:
         Log.log("update_error",
-            user=ctx.author.id,
+            user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
             syntax=" ".join(args)
@@ -148,7 +148,7 @@ async def update_help(ctx, err=None, ephemeral=True):
     embed = discord.Embed(
         title="Character Tracking",
     )
-    embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar)
+    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
 
     if err is not None:
         embed.add_field(name="Error", value=str(err), inline=False)

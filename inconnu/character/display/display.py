@@ -1,14 +1,11 @@
 """character/display/display.py - Tools for displaying characters."""
 # pylint: disable=too-many-arguments
 
-import asyncio
-
 import discord
 
 import inconnu
 from . import trackmoji
 from ... import common
-from ... import traits
 from ...constants import DAMAGE
 from ...settings import Settings
 from ...vchar import VChar
@@ -33,25 +30,13 @@ async def display_requested(ctx, character=None, message=None, player=None, ephe
         tip = "`/character display` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        msg = await display(ctx, character,
+        await display(ctx, character,
             owner=player,
             message=message,
             footer=None,
             view=inconnu.views.TraitsView(character, owner),
             ephemeral=ephemeral
         )
-
-        try:
-            btn = await msg.wait_for("button", ctx.bot, timeout=60)
-            while btn.author != ctx.author:
-                await btn.respond("Sorry, you can't view these traits.", ephemeral=True)
-                btn = await msg.wait_for("button", ctx.bot, timeout=60)
-
-            await traits.show(btn, character.name, owner)
-            await msg.disable_components()
-
-        except asyncio.exceptions.TimeoutError:
-            await msg.disable_components()
 
     except LookupError as err:
         await common.present_error(ctx, err, help_url=__HELP_URL)
@@ -86,7 +71,7 @@ async def display(
         custom ([tuple]): Custom fields to display, as well as their titles
         traits_button (bool): Whether to show a traits button. Default false
     """
-    if Settings.accessible(ctx.author):
+    if Settings.accessible(ctx.user):
         return await __display_text(ctx, character,
             title=title,
             message=message,
@@ -127,7 +112,7 @@ async def __display_embed(
     ephemeral: bool =False
 ):
     # Set the default values
-    owner = owner or ctx.author
+    owner = owner or ctx.user
 
     fields = fields or [
         ("Health", HEALTH),
@@ -211,7 +196,7 @@ async def __display_text(
     """Display a text representation of the character."""
 
     # Set default values
-    owner = owner or ctx.author
+    owner = owner or ctx.user
 
     fields = fields or [
         ("Health", HEALTH),

@@ -60,7 +60,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         except common.FetchError:
             return
     else:
-        owner = ctx.author
+        owner = ctx.user
 
 
     # Attempt to parse the user's roll syntax
@@ -70,7 +70,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
         Log.log("roll_error",
-            user=ctx.author.id,
+            user=ctx.user.id,
             charid=getattr(character, "id", None),
             syntax=raw_syntax
         )
@@ -98,7 +98,7 @@ async def display_outcome(ctx, player, character: VChar, results, comment):
     """Display the roll results."""
     roll_display = RollDisplay(ctx, results, comment, character, player)
 
-    if inconnu.settings.accessible(ctx.author):
+    if inconnu.settings.accessible(ctx.user):
         await roll_display.display(False)
     else:
         await roll_display.display(True)

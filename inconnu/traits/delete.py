@@ -27,7 +27,7 @@ async def delete(ctx, traits: str, character=None):
         traitcommon.validate_trait_names(*traits)
         outcome = __delete_traits(character, *traits)
 
-        if Settings.accessible(ctx.author):
+        if Settings.accessible(ctx.user):
             await __outcome_text(ctx, character, outcome)
         else:
             await __outcome_embed(ctx, character, outcome)
@@ -58,7 +58,7 @@ async def __outcome_embed(ctx, character, outcome):
     embed = discord.Embed(
         title="Trait Removal"
     )
-    embed.set_author(name=character.name, icon_url=ctx.author.display_avatar)
+    embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if len(outcome.deleted) > 0:

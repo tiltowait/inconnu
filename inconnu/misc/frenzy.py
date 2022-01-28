@@ -50,7 +50,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
         elif penalty == "malkavian":
             footer = f"Subtracting 2 dice due to Malkavian compulsion.\n{footer}"
 
-        if Settings.accessible(ctx.author):
+        if Settings.accessible(ctx.user):
             await __display_text(ctx, title, message, character.name, difficulty, footer)
         else:
             await __display_embed(ctx, title, message, character.name, difficulty, footer, color)
@@ -82,7 +82,7 @@ async def __display_embed(
         colour=color
     )
     author_field = f"{name}: Frenzy vs diff. {difficulty}"
-    embed.set_author(name=author_field, icon_url=ctx.author.display_avatar)
+    embed.set_author(name=author_field, icon_url=ctx.user.display_avatar)
     embed.set_footer(text=footer)
 
     if title == "Failure!":

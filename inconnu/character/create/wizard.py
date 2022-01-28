@@ -34,7 +34,7 @@ class Wizard:
             self.core_traits.append("Blood Potency")
 
         self.assigned_traits = {}
-        self.use_accessibility = inconnu.settings.accessible(ctx.author)
+        self.use_accessibility = inconnu.settings.accessible(ctx.user)
 
 
     async def begin_chargen(self):
@@ -62,7 +62,7 @@ class Wizard:
 
     async def __finalize_character(self):
         """Add the character to the database and inform the user they are done."""
-        owner = self.ctx.author.id if not self.parameters.spc else inconnu.constants.INCONNU_ID
+        owner = self.ctx.user.id if not self.parameters.spc else inconnu.constants.INCONNU_ID
 
         character = VChar.create(self.ctx.guild.id, owner, self.parameters.name)
         character.splat= self.parameters.splat
@@ -149,7 +149,7 @@ class Wizard:
 
         if self.msg is None:
             view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
-            self.msg = await self.ctx.author.send("\n".join(contents), view=view)
+            self.msg = await self.ctx.user.send("\n".join(contents), view=view)
         else:
             await self.msg.edit(content="\n".join(contents))
 
@@ -173,7 +173,7 @@ class Wizard:
 
         if self.msg is None:
             view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
-            self.msg = await self.ctx.author.send(embed=embed, view=view)
+            self.msg = await self.ctx.user.send(embed=embed, view=view)
         else:
             await self.msg.edit(embed=embed)
 

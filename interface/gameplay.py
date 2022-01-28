@@ -65,6 +65,7 @@ class Gameplay(commands.Cog):
 
 
     @slash_command()
+    @commands.guild_only()
     async def aggheal(self, ctx, character: _CHARACTER_OPTION):
         """Heal a character's aggravated damage."""
         await inconnu.misc.aggheal(ctx, character)
@@ -85,6 +86,7 @@ class Gameplay(commands.Cog):
 
 
     @slash_command()
+    @commands.guild_only()
     async def cripple(
         self,
         ctx: discord.ApplicationContext,
@@ -139,6 +141,7 @@ class Gameplay(commands.Cog):
 
 
     @slash_command()
+    @commands.guild_only()
     async def resonance(self, ctx):
         """Generate a random Resonance."""
         await inconnu.misc.resonance(ctx)

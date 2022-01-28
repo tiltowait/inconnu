@@ -22,7 +22,8 @@ class FrenzyView(DisablingView):
 
     async def frenzy(self, interaction):
         """Frenzy, if applicable."""
-        if interaction.user.id == self.character.id:
+        if interaction.user.id == self.character.user:
+            await self.disable_items(interaction)
             await inconnu.misc.frenzy(interaction, self.difficulty, None, self.character)
         else:
             if interaction.response.is_done():

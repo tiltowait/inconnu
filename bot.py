@@ -115,7 +115,7 @@ async def __set_presence():
 def setup():
     """Add the cogs to the bot."""
     bot.add_cog(interface.Characters(bot))
-    #bot.add_cog(interface.Help(bot))
+    bot.add_cog(interface.Help(bot))
     bot.add_cog(interface.Gameplay(bot))
     #bot.add_cog(interface.Macros(bot))
     #bot.add_cog(interface.MiscCommands(bot))

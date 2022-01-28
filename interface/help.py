@@ -35,28 +35,30 @@ class Help(commands.Cog):
 
     async def show_basic_help(self, ctx):
         """Run the /traits help command."""
-        await self.help_command(ctx, True)
+        await self.help_overview(ctx, True)
 
 
     async def show_traits_help(self, ctx):
         """Run the /traits help command."""
-        await self.traits_help(ctx, True)
+        await self.help_traits(ctx, True)
 
 
     async def show_macros_help(self, ctx):
         """Run the /macro help command."""
-        await self.macro_help(ctx, True)
+        await self.help_macros(ctx, True)
 
 
     async def show_character_help(self, ctx):
         """Run the /macro help command."""
-        await self.character_updates_help(ctx, True)
+        await self.help_character_updates(ctx, True)
 
 
     # Help Commands
 
-    @slash_command(name="help")
-    async def help_command(self, ctx, ephemeral=False):
+    help_commands = SlashCommandGroup("help", "Help commands.")
+
+    @help_commands.command(name="overview")
+    async def help_overview(self, ctx, ephemeral=False):
         """Basic usage instructions."""
         embed = discord.Embed(
             title="Inconnu Help",
@@ -84,11 +86,9 @@ class Help(commands.Cog):
         await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
-    traits = SlashCommandGroup("traits", "Character trait commands.")
-
-    @traits.command(name="help")
+    @help_commands.command(name="traits")
     @commands.guild_only()
-    async def traits_help(self, ctx, ephemeral=False):
+    async def help_traits(self, ctx, ephemeral=False):
         """Trait management instructions."""
         embed = discord.Embed(
             title="Traits Management",
@@ -124,11 +124,9 @@ class Help(commands.Cog):
         await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
-    macro = SlashCommandGroup("macro", "Macro commands.")
-
-    @macro.command(name="help")
+    @help_commands.command(name="macros")
     @commands.guild_only()
-    async def macro_help(self, ctx, ephemeral=False):
+    async def help_macros(self, ctx, ephemeral=False):
         """Macro usage instructions."""
         embed = discord.Embed(
             title="Macros",
@@ -199,10 +197,8 @@ class Help(commands.Cog):
         await ctx.respond(embed=embed, view=view)
 
 
-    character = SlashCommandGroup("character", "Character commands.")
-
-    @character.command(name="help")
+    @help_commands.command(name="characters")
     @commands.guild_only()
-    async def character_updates_help(self, ctx, ephemeral=False):
+    async def help_character_updates(self, ctx, ephemeral=False):
         """Display the valid character update keys."""
         await inconnu.character.update_help(ctx, ephemeral=ephemeral)

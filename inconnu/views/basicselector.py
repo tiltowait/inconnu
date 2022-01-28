@@ -19,4 +19,10 @@ class BasicSelector(DisablingView):
         """Set the selected value to the interaction's custom ID."""
         await interaction.response.pong()
         await self.disable_items(interaction)
-        self.selected_value = interaction.data["custom_id"]
+
+        if (selected_values := interaction.data.get("values")) is not None:
+            # Select Menu
+            self.selected_value = selected_values[0]
+        else:
+            # Button
+            self.selected_value = interaction.data["custom_id"]

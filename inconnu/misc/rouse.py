@@ -4,6 +4,8 @@
 import random
 from types import SimpleNamespace
 
+import discord
+
 import inconnu
 from inconnu.vchar import VChar
 
@@ -87,7 +89,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     footer = "\n".join(footer)
 
-    view = inconnu.views.FrenzyView(character, 4) if outcome.frenzy else None
+    view = inconnu.views.FrenzyView(character, 4) if outcome.frenzy else discord.utils.MISSING
 
     await inconnu.character.display(ctx, character,
         title=title,

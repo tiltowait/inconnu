@@ -55,7 +55,7 @@ async def display(
     custom: list = None,
     color: int = None,
     thumbnail: str = None,
-    view: discord.ui.View = None,
+    view: discord.ui.View = discord.utils.MISSING,
     ephemeral: bool = False
 ):
     """
@@ -108,7 +108,7 @@ async def __display_embed(
     custom: list = None,
     color: int = None,
     thumbnail: str = None,
-    view: discord.ui.View = None,
+    view: discord.ui.View = discord.utils.MISSING,
     ephemeral: bool =False
 ):
     # Set the default values
@@ -190,7 +190,7 @@ async def __display_text(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    view: discord.ui.View = None,
+    view: discord.ui.View = discord.utils.MISSING,
     ephemeral: bool = False
 ):
     """Display a text representation of the character."""

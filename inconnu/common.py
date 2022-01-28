@@ -34,7 +34,7 @@ async def present_error(
     character: str = None,
     footer: str = None,
     help_url: str = None,
-    view = None,
+    view = discord.utils.MISSING,
     ephemeral=True
 ):
     """
@@ -75,7 +75,7 @@ async def __error_embed(
     character: str = None,
     footer: str = None,
     help_url: str = None,
-    view = None,
+    view = discord.utils.MISSING,
     ephemeral: bool
 ):
     # Figure out the author
@@ -121,7 +121,7 @@ async def __error_text(
     *fields,
     footer: str = None,
     help_url: str = None,
-    view = None,
+    view = discord.utils.MISSING,
     ephemeral: bool
 ):
     """Display the error as plaintext."""

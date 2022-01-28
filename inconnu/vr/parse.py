@@ -79,7 +79,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             view = inconnu.views.TraitsView(character, owner)
             ephemeral = True
         else:
-            view = None
+            view = discord.utils.MISSING
             ephemeral = False
 
         await common.present_error(

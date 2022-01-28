@@ -3,6 +3,8 @@
 import random
 from types import SimpleNamespace
 
+import discord
+
 import inconnu
 from inconnu.constants import DAMAGE, ROUSE_FAIL_COLOR
 
@@ -31,7 +33,7 @@ async def __display_outcome(ctx, character, outcome):
 
     footer = None
     color = None
-    view = None
+    view = discord.utils.MISSING
 
     if character.splat == "vampire":
         if outcome.rouse:

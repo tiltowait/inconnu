@@ -1,5 +1,7 @@
 """misc/slake.py - Slake 1 or more Hunger."""
 
+import discord
+
 import inconnu
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=slaking-hunger"
@@ -22,7 +24,7 @@ async def slake(ctx, amount, character=None):
             if old_hunger >= 4:
                 view = inconnu.views.FrenzyView(character, 3)
             else:
-                view = None
+                view = discord.utils.MISSING
 
             await inconnu.character.display(ctx, character,
                 title=f"Slaked {slaked} Hunger",

@@ -149,17 +149,15 @@ class Gameplay(commands.Cog):
     async def rouse(
         self,
         ctx,
-        count: Option(int, "The number of Rouse checks to make",
-            choices=_ratings(1, 5),
-            required=False
-        ),
-        purpose: Option(str, "The reason for the check", required=True),
+        count: Option(int, "The number of Rouse checks to make", choices=_ratings(1, 5)),
         reroll: Option(int, "Whether to re-roll failures",
             choices=[
                 OptionChoice("Yes", 1),
                 OptionChoice("No", 0)
-            ]
+            ],
+            required=False
         ),
+        purpose: Option(str, "The reason for the check", required=False),
         character: _CHARACTER_OPTION,
     ):
         """Perform a rouse check."""

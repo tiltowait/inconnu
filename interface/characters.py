@@ -166,7 +166,7 @@ class Characters(commands.Cog, name="Character Management"):
     async def character_delete(
         self,
         ctx: discord.ApplicationContext,
-        character: _CHARACTER_OPTION
+        character: Option(str, "The character to delete", autocomplete=inconnu.available_characters)
     ):
         """Delete a character."""
         await inconnu.character.delete(ctx, character)

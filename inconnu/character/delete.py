@@ -48,23 +48,30 @@ class _DeleteView(DisablingView):
     """A view for deleting characters."""
 
     def __init__(self, character):
-        super().__init__(self)
+        super().__init__(timeout=25)
         self.character = character
 
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
-    async def cancel(self, interaction):
+    async def cancel(self, _, interaction):
         """Cancel the interaction."""
-        await interaction.response.send_message("Deletion canceled.", ephemeral=True)
-        await self.disable_items(interaction)
+        await interaction.response.edit_message(
+            content="Deletion canceled.",
+            embed=None,
+            view=None
+        )
 
 
     @discord.ui.button(label="Delete", style=discord.ButtonStyle.danger)
-    async def delete(self, interaction):
+    async def delete(self, _, interaction):
         """Delete the character."""
-        if self.character.delete_character():
-            await interaction.response.send_message(f"Deleted **{self.character.name}**!")
-        else:
-            await interaction.response.send_message("Something went wrong. Unable to delete.", ephemeral=True)
-
         await self.disable_items(interaction)
+
+        if self.character.delete_character():
+            msg = f"Deleted **{self.character.name}**!"
+            ephemeral = False
+        else:
+            msg = "Something went wrong. Unable to delete."
+            ephemeral = True
+
+        await interaction.followup.send(msg, ephemeral=ephemeral)

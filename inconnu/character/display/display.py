@@ -72,32 +72,44 @@ async def display(
         traits_button (bool): Whether to show a traits button. Default false
     """
     if Settings.accessible(ctx.user):
-        return await __display_text(ctx, character,
+        content = __get_text(ctx, character,
             title=title,
             message=message,
             footer=footer,
             owner=owner,
             fields=fields,
             custom=custom,
-            view=view,
-            ephemeral=ephemeral
         )
+        msg_contents = { "content": content }
+    else:
+        embed = __get_embed(ctx, character,
+            title=title,
+            message=message,
+            footer=footer,
+            owner=owner,
+            fields=fields,
+            custom=custom,
+            color=color,
+            thumbnail=thumbnail,
+        )
+        msg_contents = { "embed": embed }
 
-    return await __display_embed(ctx, character,
-        title=title,
-        message=message,
-        footer=footer,
-        owner=owner,
-        fields=fields,
-        custom=custom,
-        color=color,
-        thumbnail=thumbnail,
-        view=view,
-        ephemeral=ephemeral
-    )
+    msg_contents["ephemeral"] = ephemeral
+    msg_contents["view"] = view
+
+    if isinstance(ctx, discord.Interaction):
+        if ctx.response.is_done():
+            msg = await ctx.followup.send(**msg_contents)
+        else:
+            msg = await ctx.response.send_message(**msg_contents)
+    else:
+        msg = await ctx.respond(**msg_contents)
+
+    if isinstance(view, discord.ui.View):
+        view.message = msg
 
 
-async def __display_embed(
+def __get_embed(
     ctx,
     character: VChar,
     title: str = None,
@@ -108,8 +120,6 @@ async def __display_embed(
     custom: list = None,
     color: int = None,
     thumbnail: str = None,
-    view: discord.ui.View = discord.utils.MISSING,
-    ephemeral: bool =False
 ):
     # Set the default values
     owner = owner or ctx.user
@@ -150,13 +160,7 @@ async def __display_embed(
         for field, value in custom:
             embed.add_field(name=field, value=value, inline=False)
 
-    if isinstance(ctx, discord.Interaction):
-        if ctx.response.is_done():
-            await ctx.followup.send(embed=embed, view=view, ephemeral=ephemeral)
-        else:
-            await ctx.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
-    else:
-        return await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
+    return embed
 
 
 def __embed_field_value(character, parameter):
@@ -187,7 +191,7 @@ def __embed_field_value(character, parameter):
     return value
 
 
-async def __display_text(
+def __get_text(
     ctx,
     character: VChar,
     title: str = None,
@@ -196,8 +200,6 @@ async def __display_text(
     owner: discord.Member = None,
     fields: list = None,
     custom: list = None,
-    view: discord.ui.View = discord.utils.MISSING,
-    ephemeral: bool = False
 ):
     """Display a text representation of the character."""
 
@@ -237,13 +239,7 @@ async def __display_text(
     if footer is not None:
         contents += f"\n*{footer}*"
 
-    if isinstance(ctx, discord.Interaction):
-        if ctx.response.is_done():
-            await ctx.followup.send(contents, view=view, ephemeral=ephemeral)
-        else:
-            await ctx.response.send_message(contents, view=view, ephemeral=ephemeral)
-    else:
-        return await ctx.respond(contents, view=view, ephemeral=ephemeral)
+    return contents
 
 
 def __text_field_contents(character, field, parameter):

@@ -10,7 +10,7 @@ class TraitsView(DisablingView):
     """A view that displays character traits."""
 
     def __init__(self, character, owner):
-        super().__init__()
+        super().__init__(remove_on_timeout=True)
         self.character = character
         self.owner = owner
 
@@ -23,4 +23,3 @@ class TraitsView(DisablingView):
             await inconnu.traits.show(interaction, self.character, player=self.owner)
         else:
             await interaction.response.send_message("You can't click this button.", ephemeral=True)
-

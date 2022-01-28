@@ -10,6 +10,20 @@ The following commands have no direct gameplay effect and are provided for conve
 
 Need a quick coin toss? This will generate heads or tails.
 
+## General Information
+
+```
+/info
+```
+Displays general information and help links.
+
+## Invite
+
+```
+/invite
+```
+Displays a link to invite the bot. (Tip: You can also get a link by clicking on the bot's profile.)
+
 ## Probability Calculation
 
 You can calculate roll outcome probabilities using the `/probability` command.
@@ -24,7 +38,7 @@ The `roll` parameter can be any valid roll, such as `7 3 2` (pool 7, hunger 3, d
 
 ## Random Numbers
 
-A random number between 1 and `ceiling` (default `100`) may be rolled with the `/percentile` command.
+A random number between 1 and `ceiling` (default `100`) may be rolled with the `/random` command.
 
 ## Statistics
 

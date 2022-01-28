@@ -23,6 +23,14 @@ What follows is a complete reference on **Inconnu's** roll function. If you're n
 
 [filename](includes/admin-description.md ':include')
 
+### Alternative Command
+
+```
+/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY
+```
+
+This command functions as an alternative to `/vr`. The main difference is that it enforces the inputting of `hunger` and `difficulty`. Some users find it easier; do note, however, that due to the way Discord works, this command is a bit more cumbersome to use, especially on mobile. The `pool` parameter behaves the same as `/vr`.
+
 ## Trait Pools
 
 `pool` is a special parameter. It accepts [traits](trait-management.md) in addition to numbers, and multiple traits can be combined in a simple addition/subtraction equation.

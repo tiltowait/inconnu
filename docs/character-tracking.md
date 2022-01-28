@@ -50,9 +50,12 @@ The `character` field is only required if you have more than one character in th
 
 ## Tracker Updates
 
+?> **The following too difficult?** Try the `/character adjust` command. Its arguments behave identically to the parameters below.
+
 ```
 /character update parameters:<parameters> character:[character]
 ```
+
 This is a multi-parameter command. You may supply as many trackers as you like.
 
 | Parameter    | Description                                               |

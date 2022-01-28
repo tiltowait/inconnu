@@ -101,17 +101,20 @@ class RollDisplay:
             controls = discord.utils.MISSING
 
         if use_embed:
-            msg = { "embed": self.embed, "view": controls }
+            msg_contents = { "embed": self.embed, "view": controls }
         else:
-            msg = { "content": self.text, "view": controls }
+            msg_contents = { "content": self.text, "view": controls }
 
         if isinstance(ctx, discord.Interaction):
             if ctx.response.is_done():
-                await ctx.followup.send(**msg)
+                msg = await ctx.followup.send(**msg_contents)
             else:
-                await ctx.response.send_message(**msg)
+                msg = await ctx.response.send_message(**msg_contents)
         else:
-            await ctx.respond(**msg)
+            msg = await ctx.respond(**msg_contents)
+
+        if controls:
+            controls.message = msg
 
 
     async def respond_to_button(self, btn):

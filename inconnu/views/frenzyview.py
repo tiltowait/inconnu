@@ -11,7 +11,7 @@ class FrenzyView(DisablingView):
     """A view that rolls frenzy."""
 
     def __init__(self, character, difficulty):
-        super().__init__()
+        super().__init__(timeout=120)
         self.character = character
         self.difficulty = difficulty
 

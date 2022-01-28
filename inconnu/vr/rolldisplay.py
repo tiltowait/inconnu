@@ -1,13 +1,12 @@
 """rolldisplay.py - A class for managing the display of roll outcomes and rerolls."""
 # pylint: disable=too-many-arguments, too-many-instance-attributes
 
-import asyncio
 import re
 
 import discord
-from discord_ui import Listener
-from discord_ui.components import Button
+from discord.ui import Button
 
+import inconnu
 from . import dicemoji
 from .. import character as char
 from .. import stats
@@ -15,7 +14,43 @@ from ..misc import rouse
 from ..vchar import contains_digit
 
 
-class RollDisplay(Listener):
+class _RollControls(inconnu.views.DisablingView):
+    """A View that has a dynamic number of roll buttons."""
+
+    def __init__(self, callback, owner, *buttons):
+        super().__init__(timeout=600)
+        self.callback = callback
+        self.owner = owner
+
+        for button in buttons:
+            button.callback = self.button_pressed
+            self.add_item(button)
+
+
+    async def button_pressed(self, interaction):
+        """Handle button presses."""
+        if self.owner != interaction.user:
+            await interaction.response.send_message(
+                "This button doesn't belong to you!",
+                ephemeral=True
+            )
+        else:
+            if contains_digit(interaction.data["custom_id"]):
+                # This was the surge button, which is always last. Let's disable it
+                self.children[-1].disabled = True
+                await interaction.response.edit_message(view=self)
+            else:
+                # Find the pressed button and make it gray
+                for child in self.children:
+                    if child.custom_id == interaction.data["custom_id"]:
+                        child.style = discord.ButtonStyle.secondary
+                await self.disable_items(interaction)
+
+            await self.callback(interaction)
+
+
+
+class RollDisplay:
     """Display and manipulate roll outcomes. Provides buttons for rerolls, wp, and rouse."""
 
     _REROLL_FAILURES = "reroll_failures"
@@ -26,8 +61,6 @@ class RollDisplay(Listener):
 
 
     def __init__(self, ctx, outcome, comment, character, owner):
-        super().__init__(timeout=600)
-
         self.ctx = ctx
         self.outcome = outcome
         self.comment = comment
@@ -48,14 +81,6 @@ class RollDisplay(Listener):
                     self.comment = impairment
 
 
-    def _stop(self):
-        """Stop the listener and disable the buttons."""
-        super()._stop()
-
-        if len(self.message.components) > 0 :
-            asyncio.create_task(self.msg.disable_components())
-
-
     async def display(self, use_embed: bool, alt_ctx=None):
         """Display the roll."""
 
@@ -70,31 +95,20 @@ class RollDisplay(Listener):
         # We might be responding to a button
         ctx = alt_ctx or self.ctx
 
+        if (buttons := self.buttons):
+            controls = _RollControls(self.respond_to_button, self.ctx.author, buttons)
+        else:
+            controls = None
+
         if use_embed:
-            msg = await ctx.respond(embed=self.embed, components=self.buttons)
+            await ctx.respond(embed=self.embed, view=controls)
         else:
-            msg = await ctx.respond(self.text, components=self.buttons)
-
-        # A listener can only listen to one message at a time, so we need a second
-        # one for the new message. It won't display data, so it doesn't need any
-        # of the state variables, only the user/character data.
-        if alt_ctx:
-            alt = RollDisplay(ctx, self.outcome, self.comment, self.character, self.owner)
-            alt.attach_me_to(msg)
-            alt.msg = msg
-        else:
-            self.attach_me_to(msg)
-            self.msg = msg
+            await ctx.respond(self.text, view=controls)
 
 
-    @Listener.button()
     async def respond_to_button(self, btn):
         """Respond to the buttons."""
-        if btn.author.id != self.ctx.author.id:
-            await btn.respond("This button doesn't belong to you!", ephemeral=True)
-            return
-
-        if btn.custom_id == self._WILLPOWER:
+        if btn.data["custom_id"] == self._WILLPOWER:
             if self.character is not None:
                 self.character.superficial_wp += 1
 
@@ -103,9 +117,8 @@ class RollDisplay(Listener):
                 owner=self.owner,
                 fields=[("New WP", char.WILLPOWER)]
             )
-            await self._highlight_and_disable(btn, False)
 
-        elif contains_digit(btn.custom_id): # Surge buttons are just charids
+        elif contains_digit(btn.data["custom_id"]): # Surge buttons are just charids
             self.surged = True
             await rouse(btn, 1, self.character, "Surge", False)
 
@@ -115,34 +128,13 @@ class RollDisplay(Listener):
 
         else:
             # We're rerolling
-            strategy = btn.custom_id
+            strategy = btn.data["custom_id"]
             self.outcome.reroll(strategy)
             self.rerolled = True
 
             # Determine whether to display an embed or not
             use_embed = len(btn.message.embeds) > 0
             await self.display(use_embed, btn)
-
-            await self._highlight_and_disable(btn, True)
-
-
-    async def _highlight_and_disable(self, btn, disable_all):
-        """
-        Disable buttons and highlight the clicked one.
-        Args:
-            btn: The button to highlight
-            disable_all (bool): Whether to disable all buttons
-
-        If disable_all is false, then only btn will be disabled.
-        """
-        btn.message.components[btn.custom_id].color = "gray"
-
-        if disable_all:
-            btn.message.components.disable()
-        else:
-            btn.message.components[btn.custom_id].disabled = True
-
-        await btn.message.edit(components=btn.message.components)
 
 
     @property
@@ -319,27 +311,39 @@ class RollDisplay(Listener):
 
         if self.rerolled:
             if self.character is not None:
-                buttons.append(Button("Mark WP", self._WILLPOWER))
+                buttons.append(Button(label="Mark WP", custom_id=self._WILLPOWER))
                 if not self.surged and self.surging:
-                    buttons.append(Button("Rouse", str(self.character.id), "red"))
+                    buttons.append(
+                        Button(
+                            label="Rouse",
+                            custom_id=str(self.character.id),
+                            style=discord.ButtonStyle.danger
+                        )
+                    )
             return buttons or None
 
         # We haven't re-rolled
 
         if "Willpower" not in (self.outcome.pool_str or ""):
             if self.outcome.can_reroll_failures:
-                buttons.append(Button("Re-Roll Failures", self._REROLL_FAILURES))
+                buttons.append(Button(label="Re-Roll Failures", custom_id=self._REROLL_FAILURES))
 
             if self.outcome.can_maximize_criticals:
-                buttons.append(Button("Maximize Crits", self._MAXIMIZE_CRITICALS))
+                buttons.append(Button(label="Maximize Crits", custom_id=self._MAXIMIZE_CRITICALS))
 
             if self.outcome.can_avoid_messy_critical:
-                buttons.append(Button("Avoid Messy", self._AVOID_MESSY))
+                buttons.append(Button(label="Avoid Messy", custom_id=self._AVOID_MESSY))
 
             if self.outcome.can_risky_messy_critical:
-                buttons.append(Button("Risky Avoid Messy", self._RISKY_AVOID_MESSY))
+                buttons.append(Button(label="Risky Avoid Messy", custom_id=self._RISKY_AVOID_MESSY))
 
         if self.surging:
-            buttons.append(Button("Rouse", str(self.character.id), "red"))
+            buttons.append(
+                Button(
+                    label="Rouse",
+                    custom_id=str(self.character.id),
+                    style=discord.ButtonStyle.danger
+                )
+            )
 
         return buttons or None

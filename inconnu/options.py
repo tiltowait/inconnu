@@ -8,10 +8,28 @@ from discord.commands import Option, OptionChoice
 from .vchar import VChar
 
 
-async def available_characters(ctx):
+def ratings(low, high) -> list:
+    """Creates a list of OptionChoices within the given range, inclusive."""
+    return [OptionChoice(str(n), n) for n in range(low, high + 1)]
+
+
+def character(description = "The character to use", required=False) -> Option:
+    """Return an Option that generates a list of player characters."""
+    return Option(str, description,
+        autocomplete=_available_characters,
+        required=required
+    )
+
+
+player = Option(discord.Member, "The character's owner (admin only)", required=False)
+
+
+# Helper functions
+
+async def _available_characters(ctx):
     """Generate a list of the user's available characters."""
     if (guild := ctx.interaction.guild) is None:
-        return [OptionChoice("You have no characters", "")]
+        return []
 
     # Check if they're looking up a player and have lookup permissions
     user = ctx.interaction.user
@@ -36,19 +54,3 @@ async def available_characters(ctx):
         OptionChoice(name, ident) for name, ident in chars
             if name.lower().startswith(ctx.value or "")
     ]
-
-
-def ratings(low, high) -> list:
-    """Creates a list of OptionChoices within the given range, inclusive."""
-    return [OptionChoice(str(n), n) for n in range(low, high + 1)]
-
-
-def character(description = "The character to use", required=False) -> Option:
-    """Return an Option that generates a list of player characters."""
-    return Option(str, description,
-        autocomplete=available_characters,
-        required=required
-    )
-
-
-player = Option(discord.Member, "The character's owner (admin only)", required=False)

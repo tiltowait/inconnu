@@ -50,29 +50,32 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
         elif penalty == "malkavian":
             footer = f"Subtracting 2 dice due to Malkavian compulsion.\n{footer}"
 
+        # Display the message
         if Settings.accessible(ctx.user):
-            await __display_text(ctx, title, message, character.name, difficulty, footer)
+            # Build the text version of the message
+            name = character.name
+            content = f"**{name}: Frenzy {title} (diff. {difficulty})**\n{message}\n*{footer}*"
+            msg_content = { "content": content }
         else:
-            await __display_embed(ctx, title, message, character.name, difficulty, footer, color)
+            embed = __get_embed(ctx, title, message, character.name, difficulty, footer, color)
+            msg_content = { "embed": embed }
+
+        # We might be displaying off a button interaction, which annoyingly doesn't have a
+        # respond method, so we have to check.
+
+        if isinstance(ctx, discord.Interaction):
+            if ctx.response.is_done():
+                await ctx.followup.send(**msg_content)
+            else:
+                await ctx.response.send_message(**msg_content)
+        else:
+            await ctx.respond(**msg_content)
 
     except common.FetchError:
         pass
 
 
-async def __display_text(ctx, title: str, message: str, name: str, difficulty: str, footer: str):
-    """Display the outcome in plain text."""
-    msg = f"**{name}: Frenzy {title} (diff. {difficulty})**\n{message}\n*{footer}*"
-
-    if isinstance(ctx, discord.Interaction):
-        if ctx.response.is_done():
-            await ctx.followup.send(msg)
-        else:
-            await ctx.response.send_message(msg)
-    else:
-        await ctx.respond(msg)
-
-
-async def __display_embed(
+def __get_embed(
     ctx, title: str, message: str, name: str, difficulty: str, footer: str, color: int
 ):
     """Display the frenzy outcome in an embed."""
@@ -89,10 +92,4 @@ async def __display_embed(
         url = "https://www.inconnu-bot.com/images/assets/frenzy.webp"
         embed.set_thumbnail(url=url)
 
-    if isinstance(ctx, discord.Interaction):
-        if ctx.response.is_done():
-            await ctx.followup.send(embed=embed)
-        else:
-            await ctx.response.send_message(embed=embed)
-    else:
-        await ctx.respond(embed=embed)
+    return embed

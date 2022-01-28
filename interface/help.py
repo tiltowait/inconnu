@@ -72,16 +72,16 @@ class Help(commands.Cog):
         embed.add_field(name="Display character", value="`/character display`", inline=False)
         embed.add_field(name="Add traits", value="`/traits add`")
 
-        character = Button(label="Character Updater", row=0)
+        character = Button(label="Character Updater", style=discord.ButtonStyle.primary, row=0)
         character.callback = self.show_character_help
 
-        traits = Button(label="Traits Management", row=0)
+        traits = Button(label="Traits Management", style=discord.ButtonStyle.primary, row=0)
         traits.callback = self.show_traits_help
 
-        macros = Button(label="Macro Management", row=0)
+        macros = Button(label="Macro Management", style=discord.ButtonStyle.primary, row=0)
         macros.callback = self.show_macros_help
 
-        view = _HelpView(character, traits, macros)
+        view = _HelpView(character, traits, macros, show_support=True)
 
         await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
@@ -189,7 +189,7 @@ class Help(commands.Cog):
             text="Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. For more information please visit worldofdarkness.com."
         )
 
-        help_button = Button(label="Help", row=0)
+        help_button = Button(label="Help", style=discord.ButtonStyle.primary, row=0)
         help_button.callback = self.show_basic_help
 
         view = _HelpView(help_button, show_support=True)

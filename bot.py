@@ -14,6 +14,7 @@ intents.members = True # pylint: disable=assigning-non-slot
 
 # Check if we're in dev mode
 if (debug_guild := os.getenv("DEBUG")) is not None:
+    print("Debugging on", debug_guild)
     debug_guild = [int(debug_guild)]
 
 bot = discord.Bot(intents=intents, debug_guilds=debug_guild)
@@ -48,7 +49,7 @@ async def on_application_command_error(ctx, error):
     raise error
 
 
-# Guild Events
+# Member Events
 
 @bot.event
 async def on_member_remove(member):
@@ -61,6 +62,8 @@ async def on_member_join(member):
     """Mark all the player's characters as active when they rejoin a guild."""
     inconnu.VChar.reactivate_player_characters(member)
 
+
+# Guild Events
 
 @bot.event
 async def on_guild_join(guild):

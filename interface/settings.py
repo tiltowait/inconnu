@@ -41,13 +41,15 @@ class SettingsCommands(commands.Cog):
                 OptionChoice("1s only", 1),
                 OptionChoice("10s only", 10),
                 OptionChoice("Never", 0)
-            ]
+            ],
+            required=False
         ),
         accessibility: Option(int, "Whether to enable or disable accessibility",
             choices=[
                 OptionChoice("Yes", 1),
                 OptionChoice("No", 0)
-            ]
+            ],
+            required=False
         )
     ):
         """(Admin-only) Assign server-wide settings."""

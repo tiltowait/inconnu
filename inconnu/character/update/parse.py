@@ -173,7 +173,13 @@ async def update_help(ctx, err=None, ephemeral=True):
     support = Button(label="Support", url=constants.SUPPORT_URL)
     view = discord.ui.View(documentation, support)
 
-    await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
+    if isinstance(ctx, discord.Interaction):
+        if ctx.response.is_done():
+            await ctx.followup.send(embed=embed, view=view, ephemeral=ephemeral)
+        else:
+            await ctx.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
+    else:
+        await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
 # We do flexible matching for the keys. Many of these are the same as RoD's

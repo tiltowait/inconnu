@@ -69,7 +69,7 @@ class SettingsCommands(commands.Cog):
         if responses:
             await ctx.respond("\n".join(responses))
         else:
-            await self.settings(ctx)
+            await ctx.respond("You didn't give me anything to set!", ephemeral=True)
 
 
     @settings.command(name="show")

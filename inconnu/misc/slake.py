@@ -28,7 +28,7 @@ async def slake(ctx, amount, character=None):
 
             await inconnu.character.display(ctx, character,
                 title=f"Slaked {slaked} Hunger",
-                fields=[("New Hunger", inconnu.character.HUNGER)],
+                fields=[("New Hunger", inconnu.character.DisplayField.HUNGER)],
                 view=view
             )
 

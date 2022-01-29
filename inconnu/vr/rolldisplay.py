@@ -126,7 +126,7 @@ class RollDisplay:
             await char.display(btn, self.character,
                 title="Willpower Spent",
                 owner=self.owner,
-                fields=[("New WP", char.WILLPOWER)]
+                fields=[("New WP", char.DisplayField.WILLPOWER)]
             )
 
         elif contains_digit(btn.data["custom_id"]): # Surge buttons are just charids

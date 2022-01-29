@@ -29,7 +29,7 @@ async def mend(ctx, character=None):
 async def __display_outcome(ctx, character, outcome):
     """Display the results of the mend."""
     title = f"Mended {outcome.mended} damage"
-    fields = [("Health", inconnu.character.HEALTH)]
+    fields = [("Health", inconnu.character.DisplayField.HEALTH)]
 
     footer = None
     color = None
@@ -43,7 +43,7 @@ async def __display_outcome(ctx, character, outcome):
             color = ROUSE_FAIL_COLOR
 
         title += f" | Rouse {success_text}"
-        fields.append(("Hunger", inconnu.character.HUNGER))
+        fields.append(("Hunger", inconnu.character.DisplayField.HUNGER))
 
         if outcome.frenzy:
             footer = "Rouse failure at Hunger 5!"

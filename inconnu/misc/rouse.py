@@ -71,7 +71,9 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         custom = None
 
     footer = []
-    fields = [("New Hunger" if "ailure" in title else "Hunger", inconnu.character.HUNGER)]
+    fields = [
+        ("New Hunger" if "ailure" in title else "Hunger", inconnu.character.DisplayField.HUNGER)
+    ]
 
     if purpose is not None:
         footer.append(purpose)
@@ -85,7 +87,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         elif oblivion == "apply":
             character.stains += outcome.stains
             character.log("stains", outcome.stains)
-            fields.append((f"Gain {stains_txt}", inconnu.character.HUMANITY))
+            fields.append((f"Gain {stains_txt}", inconnu.character.DisplayField.HUMANITY))
 
     footer = "\n".join(footer)
 
@@ -109,7 +111,7 @@ async def __damage_ghoul(ctx, ghoul):
     await inconnu.character.display(ctx, ghoul,
         title="Ghoul Rouse Damage",
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
-        fields=[("Health", inconnu.character.HEALTH)],
+        fields=[("Health", inconnu.character.DisplayField.HEALTH)],
         footer="V5 Core, p.234"
     )
 

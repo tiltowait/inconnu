@@ -1,6 +1,8 @@
 """character/display/display.py - Tools for displaying characters."""
 # pylint: disable=too-many-arguments
 
+from enum import Enum
+
 import discord
 
 import inconnu
@@ -14,13 +16,21 @@ __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-disp
 
 # Display fields
 
-HEALTH = 0
-WILLPOWER = 1
-HUMANITY = 2
-POTENCY = 3
-HUNGER = 4
-EXPERIENCE = 5
-SEVERITY = 6
+class DisplayField(str, Enum):
+    """An enum for displaying character trackers."""
+
+    HEALTH = "Health"
+    WILLPOWER = "Willpower"
+    HUMANITY = "Humanity"
+    POTENCY = "Blood Potency"
+    HUNGER = "Hunger"
+    SEVERITY = "Bane Severity"
+    EXPERIENCE = "Experience (Unspent / Lifetime)"
+
+    @classmethod
+    def all(cls):
+        """Return a mapping of all (value, case) pairings."""
+        return map(lambda f: (f.value, f), list(cls))
 
 
 async def display_requested(ctx, character=None, message=None, player=None, ephemeral=False):
@@ -123,16 +133,7 @@ def __get_embed(
 ):
     # Set the default values
     owner = owner or ctx.user
-
-    fields = fields or [
-        ("Health", HEALTH),
-        ("Willpower", WILLPOWER),
-        ("Humanity", HUMANITY),
-        ("Blood Potency", POTENCY),
-        ("Hunger", HUNGER),
-        ("Bane Severity", SEVERITY),
-        ("Experience (Unspent / Lifetime)", EXPERIENCE)
-    ]
+    fields = fields or DisplayField.all()
 
     # Begin building the embed
     embed = discord.Embed(
@@ -167,25 +168,25 @@ def __embed_field_value(character, parameter):
     """Generates the value for a given embed field."""
     value = None
 
-    if parameter == HEALTH:
+    if parameter == DisplayField.HEALTH:
         value = trackmoji.emojify_track(character.health)
 
-    elif parameter == WILLPOWER:
+    elif parameter == DisplayField.WILLPOWER:
         value = trackmoji.emojify_track(character.willpower)
 
-    elif parameter == HUMANITY:
+    elif parameter == DisplayField.HUMANITY:
         value = trackmoji.emojify_humanity(character.humanity, character.stains)
 
-    elif parameter == POTENCY and character.splat == "vampire":
+    elif parameter == DisplayField.POTENCY and character.splat == "vampire":
         value = trackmoji.emojify_blood_potency(character.potency)
 
-    elif parameter == HUNGER and character.splat == "vampire":
+    elif parameter == DisplayField.HUNGER and character.splat == "vampire":
         value = trackmoji.emojify_hunger(character.hunger)
 
-    elif parameter == SEVERITY and character.splat == "vampire":
+    elif parameter == DisplayField.SEVERITY and character.splat == "vampire":
         value = f"```{character.bane_severity}```"
 
-    elif parameter == EXPERIENCE:
+    elif parameter == DisplayField.EXPERIENCE:
         value = f"```{character.current_xp} / {character.total_xp}```"
 
     return value
@@ -205,16 +206,7 @@ def __get_text(
 
     # Set default values
     owner = owner or ctx.user
-
-    fields = fields or [
-        ("Health", HEALTH),
-        ("Willpower", WILLPOWER),
-        ("Humanity", HUMANITY),
-        ("Blood Potency", POTENCY),
-        ("Hunger", HUNGER),
-        ("Bane Severity", SEVERITY),
-        ("Experience (Unspent / Lifetime)", EXPERIENCE)
-    ]
+    fields = fields or DisplayField.all()
 
     # Begin drafting the contents
     contents = [character.name]
@@ -246,26 +238,26 @@ def __text_field_contents(character, field, parameter):
     """Generate the text mode field."""
     contents = []
 
-    if parameter == HEALTH:
+    if parameter == DisplayField.HEALTH:
         contents.append(f"{field}: {__stringify_track(character.health)}")
 
-    elif parameter == WILLPOWER:
+    elif parameter == DisplayField.WILLPOWER:
         contents.append(f"{field}: {__stringify_track(character.willpower)}")
 
-    elif parameter == HUMANITY:
+    elif parameter == DisplayField.HUMANITY:
         contents.append(f"{field}: {character.humanity}")
         contents.append(f"Stains: {character.stains}")
 
-    elif parameter == POTENCY and character.splat == "vampire":
+    elif parameter == DisplayField.POTENCY and character.splat == "vampire":
         contents.append(f"{field}: {character.potency}")
 
-    elif parameter == HUNGER and character.splat == "vampire":
+    elif parameter == DisplayField.HUNGER and character.splat == "vampire":
         contents.append(f"{field}: {character.hunger}")
 
-    elif parameter == SEVERITY and character.splat == "vampire":
+    elif parameter == DisplayField.SEVERITY and character.splat == "vampire":
         contents.append(f"Bane Severity: {character.bane_severity}")
 
-    elif parameter == EXPERIENCE:
+    elif parameter == DisplayField.EXPERIENCE:
         contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
 
     return contents

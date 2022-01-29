@@ -18,7 +18,10 @@ async def remorse(ctx, character=None, minimum=1):
 
         # Character obtained
         if character.stains == 0:
-            await ctx.respond(f"{character.name} has no stains! No remorse necessary.", ephemeral=True)
+            await ctx.respond(
+                f"{character.name} has no stains! No remorse necessary.",
+                ephemeral=True
+            )
             return
 
         outcome = __remorse_roll(character, minimum)
@@ -48,7 +51,7 @@ async def __display_outcome(ctx, character: VChar, outcome):
         title=title,
         footer=footer,
         color=color,
-        fields=[("Humanity", char.HUMANITY)]
+        fields=[("Humanity", char.DisplayField.HUMANITY)]
     )
 
 

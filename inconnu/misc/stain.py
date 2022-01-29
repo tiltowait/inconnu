@@ -14,7 +14,7 @@ async def stain(ctx, delta, character, owner):
         tip = f"`/stain` `delta:{delta}` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        fields = [("Humanity", char.HUMANITY)]
+        fields = [("Humanity", char.DisplayField.HUMANITY)]
         footer = None
 
         total_stains = character.stains + delta
@@ -27,7 +27,7 @@ async def stain(ctx, delta, character, owner):
             overlap_delta = new_overlap - old_overlap
 
             character.apply_damage("willpower", DAMAGE.aggravated, overlap_delta)
-            fields.append(("Willpower", char.WILLPOWER))
+            fields.append(("Willpower", char.DisplayField.WILLPOWER))
 
             message = f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
         else:

@@ -20,12 +20,13 @@ class Settings:
         """Determine whether we should use accessibility mode."""
         Settings._prepare()
 
-        guildwide = Settings._GUILDS.find_one({
-            "guild": user.guild.id,
-            "settings.accessibility": True
-        })
-        if guildwide is not None:
-            return True
+        if isinstance(user, discord.Member):
+            guildwide = Settings._GUILDS.find_one({
+                "guild": user.guild.id,
+                "settings.accessibility": True
+            })
+            if guildwide is not None:
+                return True
 
         userwide = Settings._USERS.find_one({
             "user": user.id,

@@ -144,7 +144,8 @@ class Gameplay(commands.Cog):
         self,
         ctx,
         count: Option(int, "The number of Rouse checks to make",
-            choices=inconnu.options.ratings(1, 5)
+            choices=inconnu.options.ratings(1, 5),
+            default=1
         ),
         reroll: Option(int, "Whether to re-roll failures",
             choices=[

@@ -209,7 +209,7 @@ def __get_text(
     fields = fields or DisplayField.all()
 
     # Begin drafting the contents
-    contents = [character.name]
+    contents = [f"**{character.name}**"]
     if title is not None:
         contents.append("\n" + title)
 
@@ -228,7 +228,7 @@ def __get_text(
 
     contents.append("```")
     contents = "\n".join(contents)
-    if footer is not None:
+    if footer:
         contents += f"\n*{footer}*"
 
     return contents

@@ -1,6 +1,5 @@
 """common.py - Commonly used functions."""
 
-import asyncio
 from types import SimpleNamespace
 
 import discord
@@ -50,7 +49,7 @@ async def present_error(
         components (list): Buttons or selection menus to add to the message.
     """
     if Settings.accessible(ctx.user):
-        content = __error_text(ctx, error, *fields, footer=footer)
+        content = __error_text(error, *fields, footer=footer)
         msg_contents ={ "content": content }
     else:
         embed = __error_embed(ctx, error, *fields,
@@ -125,7 +124,7 @@ def __error_text(
     footer: str = None,
 ):
     """Display the error as plaintext."""
-    contents = ["Error", str(error) + "\n"]
+    contents = ["**Error**", str(error) + "\n"]
 
     for field in fields:
         contents.append(f"{field[0]}: {field[1]}")
@@ -133,7 +132,7 @@ def __error_text(
     if footer is not None:
         contents.append(f"```{footer}```")
 
-    return contents
+    return "\n".join(contents)
 
 
 async def select_character(ctx, err, help_url, tip, player=None):

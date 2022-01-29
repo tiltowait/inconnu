@@ -168,26 +168,27 @@ def __embed_field_value(character, parameter):
     """Generates the value for a given embed field."""
     value = None
 
-    if parameter == DisplayField.HEALTH:
-        value = trackmoji.emojify_track(character.health)
+    match parameter:
+        case DisplayField.HEALTH:
+            value = trackmoji.emojify_track(character.health)
 
-    elif parameter == DisplayField.WILLPOWER:
-        value = trackmoji.emojify_track(character.willpower)
+        case DisplayField.WILLPOWER:
+            value = trackmoji.emojify_track(character.willpower)
 
-    elif parameter == DisplayField.HUMANITY:
-        value = trackmoji.emojify_humanity(character.humanity, character.stains)
+        case DisplayField.HUMANITY:
+            value = trackmoji.emojify_humanity(character.humanity, character.stains)
 
-    elif parameter == DisplayField.POTENCY and character.splat == "vampire":
-        value = trackmoji.emojify_blood_potency(character.potency)
+        case DisplayField.POTENCY if character.splat == "vampire":
+            value = trackmoji.emojify_blood_potency(character.potency)
 
-    elif parameter == DisplayField.HUNGER and character.splat == "vampire":
-        value = trackmoji.emojify_hunger(character.hunger)
+        case DisplayField.HUNGER if character.splat == "vampire":
+            value = trackmoji.emojify_hunger(character.hunger)
 
-    elif parameter == DisplayField.SEVERITY and character.splat == "vampire":
-        value = f"```{character.bane_severity}```"
+        case DisplayField.SEVERITY if character.splat == "vampire":
+            value = f"```{character.bane_severity}```"
 
-    elif parameter == DisplayField.EXPERIENCE:
-        value = f"```{character.current_xp} / {character.total_xp}```"
+        case DisplayField.EXPERIENCE:
+            value = f"```{character.current_xp} / {character.total_xp}```"
 
     return value
 
@@ -238,27 +239,28 @@ def __text_field_contents(character, field, parameter):
     """Generate the text mode field."""
     contents = []
 
-    if parameter == DisplayField.HEALTH:
-        contents.append(f"{field}: {__stringify_track(character.health)}")
+    match parameter:
+        case DisplayField.HEALTH:
+            contents.append(f"{field}: {__stringify_track(character.health)}")
 
-    elif parameter == DisplayField.WILLPOWER:
-        contents.append(f"{field}: {__stringify_track(character.willpower)}")
+        case DisplayField.WILLPOWER:
+            contents.append(f"{field}: {__stringify_track(character.willpower)}")
 
-    elif parameter == DisplayField.HUMANITY:
-        contents.append(f"{field}: {character.humanity}")
-        contents.append(f"Stains: {character.stains}")
+        case DisplayField.HUMANITY:
+            contents.append(f"{field}: {character.humanity}")
+            contents.append(f"Stains: {character.stains}")
 
-    elif parameter == DisplayField.POTENCY and character.splat == "vampire":
-        contents.append(f"{field}: {character.potency}")
+        case DisplayField.POTENCY if character.splat == "vampire":
+            contents.append(f"{field}: {character.potency}")
 
-    elif parameter == DisplayField.HUNGER and character.splat == "vampire":
-        contents.append(f"{field}: {character.hunger}")
+        case DisplayField.HUNGER if character.splat == "vampire":
+            contents.append(f"{field}: {character.hunger}")
 
-    elif parameter == DisplayField.SEVERITY and character.splat == "vampire":
-        contents.append(f"Bane Severity: {character.bane_severity}")
+        case DisplayField.SEVERITY if character.splat == "vampire":
+            contents.append(f"Bane Severity: {character.bane_severity}")
 
-    elif parameter == DisplayField.EXPERIENCE:
-        contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
+        case DisplayField.EXPERIENCE:
+            contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
 
     return contents
 

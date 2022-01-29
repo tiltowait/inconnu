@@ -120,7 +120,7 @@ async def __results_embed(ctx, outcome, char_name: str):
 
     if outcome.unassigned:
         unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
-        embed.add_field(name="Unassigned", value=unassigned)
+        embed.add_field(name="No value given", value=unassigned)
         embed.set_footer(text="Run the command again to give ratings for the unassigned traits.")
 
     if outcome.errors:
@@ -145,7 +145,7 @@ async def __results_text(ctx, outcome, char_name: str):
     footer = None
     if outcome.unassigned:
         unassigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.unassigned))
-        contents.append(f"Unassigned: {unassigned}")
+        contents.append(f"No value given: {unassigned}")
         footer = "Run the command again to assign ratings to the unassigned traits."
 
     if outcome.errors:

@@ -66,7 +66,7 @@ class SettingsCommands(commands.Cog):
             response = inconnu.settings.set_accessibility(ctx, accessibility, "guild")
             responses.append(response)
 
-        if len(responses) > 0:
+        if responses:
             await ctx.respond("\n".join(responses))
         else:
             await self.settings(ctx)

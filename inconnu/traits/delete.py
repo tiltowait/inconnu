@@ -20,7 +20,7 @@ async def delete(ctx, traits: str, character=None):
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
         traits = traits.split()
 
-        if len(traits) == 0:
+        if not traits:
             # Shouldn't be possible to reach here, but just in case Discord messes up
             raise SyntaxError("You must supply a list of traits to delete.")
 
@@ -40,13 +40,13 @@ async def delete(ctx, traits: str, character=None):
 
 async def __outcome_text(ctx, character, outcome):
     """Display the outcome in plain text."""
-    contents = [character.name + "\n"]
+    contents = [f"**{character.name}**\n"]
 
-    if len(outcome.deleted) > 0:
+    if outcome.deleted:
         deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
         contents.append(f"Deleted {deleted}.")
 
-    if len(outcome.errors) > 0:
+    if outcome.errors:
         errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
         contents.append(f"These traits don't exist: {errs}.")
 
@@ -61,11 +61,11 @@ async def __outcome_embed(ctx, character, outcome):
     embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
     embed.set_footer(text="To see remaining traits: /traits list")
 
-    if len(outcome.deleted) > 0:
+    if outcome.deleted:
         deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
         embed.add_field(name="Deleted", value=deleted)
 
-    if len(outcome.errors) > 0:
+    if outcome.errors:
         errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
         embed.add_field(name="Do not exist", value=errs, inline=False)
 

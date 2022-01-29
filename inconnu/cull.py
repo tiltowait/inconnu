@@ -38,7 +38,7 @@ class Culler:
         for guild in guilds:
             Culler._GUILDS.delete_one({ "guild": guild })
 
-        if len(guilds) > 0:
+        if guilds:
             print(f"Culled {len(guilds)} guilds.")
 
         for character in characters:

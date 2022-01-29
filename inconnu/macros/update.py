@@ -63,7 +63,7 @@ def __parameterize(parameters):
     params = {}
 
     match = pattern.match(parameters)
-    while match is not None and len(parameters) > 0:
+    while match is not None and parameters:
         key = match.groups(0)[0]
         parameters = parameters[match.span()[1]:]
 
@@ -79,7 +79,7 @@ def __parameterize(parameters):
         params[key] = value.strip()
         match = pattern.match(parameters)
 
-    if len(parameters) > 0:
+    if parameters:
         raise SyntaxError(f"Invalid syntax: `{parameters}`.")
 
     return params

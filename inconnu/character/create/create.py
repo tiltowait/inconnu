@@ -70,6 +70,6 @@ def __validate_parameters(name, humanity, health, willpower):
     if not 3 <= willpower <= 15:
         errors.append(f"Willpower must be between 3 and 15. (Got `{willpower}`)")
 
-    if len(errors) > 0:
+    if errors:
         err = "\n".join(errors)
         raise ValueError(err)

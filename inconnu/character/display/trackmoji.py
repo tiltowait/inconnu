@@ -91,7 +91,7 @@ def emojify_humanity(humanity: int, stains: int) -> str:
 
 def __emojify_stressbox(box: str):
     """Convert a stress box value to an emoji."""
-    if len(box) == 0:
+    if not box:
         raise ValueError("Invalid stress box") # Should never happen
 
     return __EMOJIS[box]

@@ -209,7 +209,7 @@ def __combine_operators(stack):
             # Since we can't know until the end, we will just continue.
             compact_stack.append(item)
         else:
-            if len(compact_stack) == 0:
+            if not compact_stack:
                 raise SyntaxError("Invalid syntax!")
 
             operand = compact_stack.pop()

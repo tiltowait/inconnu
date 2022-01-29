@@ -94,7 +94,7 @@ async def __trait_statistics(ctx, trait, date):
     ]
     stats = list(rolls.aggregate(pipeline))
     fmt_date = date.strftime("%Y-%m-%d")
-    if len(stats) > 0:
+    if stats:
         if Settings.accessible(ctx.user):
             await __trait_stats_text(ctx, trait, stats, fmt_date)
         else:
@@ -130,7 +130,7 @@ async def __trait_stats_embed(ctx, trait, stats, date):
 
 async def __trait_stats_text(ctx, trait, stats, date):
     """Print the trait statistics in text."""
-    if len(stats) > 0:
+    if stats:
         if date == EPOCH:
             output = [f"**{trait}: Roll statistics (Lifetime)**"]
         else:
@@ -219,7 +219,7 @@ async def __all_statistics(ctx, date):
     results = list(col.aggregate(pipeline))
     client.close()
 
-    if len(results) == 0:
+    if not results:
         await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)
         return
 

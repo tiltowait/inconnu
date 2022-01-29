@@ -40,10 +40,9 @@ def expand_syntax(character: VChar, syntax: str):
                         if universal.startswith(element.lower()):
                             universals.append(universal.title())
 
-                    if len(universals) == 0:
+                    if not universals:
                         raise err
                     if len(universals) > 1:
-                        print(universals)
                         raise errors.AmbiguousTraitError(element, universals)
 
                     final_stack.append(universals[0])

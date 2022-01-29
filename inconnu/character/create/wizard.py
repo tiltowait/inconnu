@@ -52,7 +52,7 @@ class Wizard:
         trait = self.core_traits.pop(0)
         self.assigned_traits[trait] = rating
 
-        if len(self.core_traits) == 0:
+        if not self.core_traits:
             # We're finished; create the character
             await self.__finalize_character()
         else:

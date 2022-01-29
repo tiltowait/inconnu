@@ -138,18 +138,18 @@ async def __results_text(ctx, outcome, char_name: str):
     """Display the results in plain text."""
     contents = [f"{char_name}: Trait Assignment\n"]
 
-    if len(outcome.assigned) > 0:
-        assigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.assigned)))
+    if outcome.assigned:
+        assigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.assigned))
         contents.append(f"Assigned: {assigned}")
 
     footer = None
-    if len(outcome.unassigned) > 0:
-        unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
+    if outcome.unassigned:
+        unassigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.unassigned))
         contents.append(f"Unassigned: {unassigned}")
         footer = "Run the command again to assign ratings to the unassigned traits."
 
-    if len(outcome.errors) > 0:
-        errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
+    if outcome.errors:
+        errs = ", ".join(map(lambda trait: f"`{trait}`", outcome.errors))
         if outcome.editing:
             err_field = "Error! You don't have " + errs
         else:

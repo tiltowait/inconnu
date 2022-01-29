@@ -47,7 +47,7 @@ async def update(
     args = re.sub(r"\s*=\s*([+-])\s*", r"=\g<1>", args) # Remove gaps between keys and values
     args = list(args.split()) # To allow element removal
 
-    if len(args) == 0:
+    if not args:
         await update_help(ctx)
         return
 
@@ -99,7 +99,7 @@ def __parse_arguments(*arguments):
     Parse the user's arguments.
     Raises ValueErrors and KeyErrors on exceptions.
     """
-    if len(arguments) == 0:
+    if not arguments:
         raise ValueError("You must supply some parameters!")
 
     parameters = {}
@@ -123,7 +123,7 @@ def __parse_arguments(*arguments):
         key = __MATCHES[key] # Get the canonical key
 
         value = split[1]
-        if len(value) == 0:
+        if not value:
             raise ValueError(f"No value given for `{key}`.")
 
         parameters[key] = value # Don't do any validation here

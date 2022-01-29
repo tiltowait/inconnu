@@ -503,7 +503,7 @@ class VChar:
             trait_names = [trait["name"] for trait in matches]
             raise errors.AmbiguousTraitError(trait, trait_names)
 
-        if len(matches) == 0:
+        if not matches:
             raise errors.TraitNotFoundError(f"{self.name} has no trait named `{trait}`.")
 
         # We found a single match!
@@ -583,7 +583,7 @@ class VChar:
         Raises MacroNotFoundError if the macro wasn't found.
         """
         matches = self.__find_items(VChar._MACROS, macro, exact=True)
-        if len(matches) == 0:
+        if not matches:
             raise errors.MacroNotFoundError(f"{self.name} has no macro named `{macro}`.")
 
         macro = matches[0] # We do not allow multiple macros of the same name, so this is safe

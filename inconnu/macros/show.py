@@ -19,7 +19,7 @@ async def show(ctx, character=None):
 
         # We have a valid character
         macros = character.macros
-        if len(macros) == 0:
+        if not macros:
             await common.present_error(
                 ctx,
                 f"{character.name} has no macros!",

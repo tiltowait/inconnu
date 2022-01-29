@@ -772,14 +772,14 @@ class VChar:
     def __find_items(self, collection, name, exact=False):
         """Find an item in the collection. Raises no exceptions."""
         query = { "charid": self.id, "name": name }
-        exact_match = collection.find(query, { "_id": 0, "charid": 0 }).collation({
+        exact_match = list(collection.find(query, { "_id": 0, "charid": 0 }).collation({
             'locale': 'en',
             'strength': 2
             }
-        )
+        ))
 
-        if exact_match.count() == 1:
-            return list(exact_match)
+        if len(exact_match) == 1:
+            return exact_match
 
         if not exact: # Fallback; try and get closest unambiguous
             query = {

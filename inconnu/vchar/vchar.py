@@ -464,7 +464,7 @@ class VChar:
     def traits(self):
         """A dictionary of the user's traits."""
         _traits = self._params["traits"]
-        return OrderedDict(sorted(_traits.items()))
+        return OrderedDict(sorted(_traits.items(), key = lambda s: s[0].casefold()))
 
 
     def find_trait(self, trait: str, exact=False) -> SimpleNamespace:
@@ -570,21 +570,29 @@ class VChar:
     @property
     def macros(self):
         """The user's macros."""
-        raw_macros = list(
-            VChar._MACROS.find({ "charid": self.id }, { "_id": 0, "charid": 0 })
-                .collation({ "locale": "en", "strength": 2 })
-                .sort("name")
-        )
+        if (_macros := self._params.get("macros")) is not None:
+            raw_macros = []
+            for name, macro in sorted(_macros.items(), key = lambda s: s[0].casefold()):
+                macro["name"] = name
 
-        # All characters have a hunger stat in the background, but we only care
-        # about it if the character is a vampire
-        for macro in raw_macros:
-            if self.splat != "vampire":
-                macro["hunger"] = False
-            if not "staining" in macro:
-                macro["staining"] = "show"
+                if not self.is_vampire:
+                    macro["hunger"] = False
+                if not "staining" in macro:
+                    macro["staining"] = "show"
 
-        return [SimpleNamespace(**macro) for macro in raw_macros]
+                raw_macros.append(macro)
+
+            # All characters have a hunger stat in the background, but we only care
+            # about it if the character is a vampire
+            for macro in raw_macros:
+                if self.splat != "vampire":
+                    macro["hunger"] = False
+                if not "staining" in macro:
+                    macro["staining"] = "show"
+
+            return [SimpleNamespace(**macro) for macro in raw_macros]
+
+        return []
 
 
     def find_macro(self, macro):

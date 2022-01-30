@@ -585,7 +585,7 @@ class VChar:
             # All characters have a hunger stat in the background, but we only care
             # about it if the character is a vampire
             for macro in raw_macros:
-                if self.splat != "vampire":
+                if not self.is_vampire:
                     macro["hunger"] = False
                 if not "staining" in macro:
                     macro["staining"] = "show"
@@ -595,23 +595,16 @@ class VChar:
         return []
 
 
-    def find_macro(self, macro):
+    def find_macro(self, search):
         """
         Return a macro object.
         Raises MacroNotFoundError if the macro wasn't found.
         """
-        matches = self.__find_items(VChar._MACROS, macro, exact=True)
+        matches = [macro for macro in self.macros if macro.name.lower() == search.lower()]
         if not matches:
-            raise errors.MacroNotFoundError(f"{self.name} has no macro named `{macro}`.")
+            raise errors.MacroNotFoundError(f"{self.name} has no macro named `{search}`.")
 
-        macro = matches[0] # We do not allow multiple macros of the same name, so this is safe
-        if self.splat != "vampire":
-            macro["hunger"] = False
-
-        if "staining" not in macro:
-            macro["staining"] = "show"
-
-        return SimpleNamespace(**macro)
+        return matches[0]
 
 
     def add_macro(

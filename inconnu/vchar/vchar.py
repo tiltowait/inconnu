@@ -33,8 +33,9 @@ class VChar:
 
     _CLIENT = None # MongoDB client
     _CHARS = None # Characters collection
-    _TRAITS = None # Traits collection
     _MACROS = None # Macros collection
+
+    VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge"]
 
 
     def __init__(self, params: dict):
@@ -413,6 +414,12 @@ class VChar:
 
 
     @property
+    def is_vampire(self):
+        """Whether the character is a vampire."""
+        return self.splat == "vampire"
+
+
+    @property
     def surge(self):
         """The number of dice added to a Blood Surge."""
         return math.ceil(self.potency / 2) + 1
@@ -456,11 +463,8 @@ class VChar:
     @property
     def traits(self):
         """A dictionary of the user's traits."""
-        all_traits = VChar._TRAITS.find(
-            { "charid": self.id },
-            { "_id": 0, "charid": 0 }
-        ).collation({ "locale": "en", "strength": 2}).sort("name")
-        return OrderedDict(map(lambda trait: tuple(trait.values()), all_traits))
+        _traits = self._params["traits"]
+        return OrderedDict(sorted(_traits.items()))
 
 
     def find_trait(self, trait: str, exact=False) -> SimpleNamespace:
@@ -468,46 +472,47 @@ class VChar:
         Finds the closest matching trait.
         Raises AmbiguousTraitError if more than one are found.
         """
-        trait = trait.lower()
 
-        matches = []
-
-        # We need to look up against universal traits as well as those stored
-        # in the database, or we might miss a universal (i.e. Surge vs Surgery)
+        # Add universal traits
+        my_traits = self.traits
         for universal in UNIVERSAL_TRAITS:
-            if universal.startswith(trait.lower()):
-                rating = getattr(self, universal)
+            rating = getattr(self, universal)
+            my_traits[universal.capitalize()] = rating
 
-                # Willpower is a string. We want the undamaged portion, minimum 1
-                if isinstance(rating, str):
-                    rating = max(rating.count(DAMAGE.none), 1)
+        # While it would technically be more efficient to remove the vampire traits
+        # here if the character isn't a vampire, we leave them in so we can present
+        # a more helpful error message should they be attempting to invoke one.
 
-                universal = {
-                    "name": universal.capitalize(),
-                    "rating": rating
-                }
-
-                if hasattr(self, trait.lower()):
-                    if trait.lower() == "surge" and self.splat != "vampire":
-                        raise errors.TraitNotFoundError("Only vampires can blood surge.")
-
-                    return SimpleNamespace(**universal)
-
-                matches.append(universal)
-
-        # We didn't find an exact match; however, we did find a potential one
-
-        matches.extend(self.__find_items(VChar._TRAITS, trait, exact=exact))
-
-        if len(matches) > 1:
-            trait_names = [trait["name"] for trait in matches]
-            raise errors.AmbiguousTraitError(trait, trait_names)
+        VChar.VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge"]
+        matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait.lower())]
 
         if not matches:
             raise errors.TraitNotFoundError(f"{self.name} has no trait named `{trait}`.")
 
-        # We found a single match!
-        return SimpleNamespace(**matches[0]) # .name, .rating
+        if len(matches) == 1:
+            found_trait, rating = matches[0]
+            if not self.is_vampire and found_trait in VChar.VAMPIRE_TRAITS:
+                raise errors.TraitNotFoundError(f"Only vampires may use `{found_trait}`.")
+
+            if exact and trait.lower() != found_trait.lower():
+                raise errors.TraitNotFoundError(f"{self.name} has no trait named `{trait}`.")
+
+            # Convert trackers to a rating
+            if isinstance(rating, str):
+                rating = rating.count(DAMAGE.none)
+            return SimpleNamespace(name=found_trait, rating=rating)
+
+        # We found multiple matches
+
+        # We don't want to display vampire terms as an option if it isn't a vampire
+        if not self.is_vampire:
+            matches = [match for match in matches if match[0] not in VChar.VAMPIRE_TRAITS]
+            if len(matches) == 1:
+                # Removing the vampire traits may have got us down to zero
+                return SimpleNamespace(name=matches[0][0], rating=matches[0][1])
+
+        matches = map(lambda t: t[0], matches)
+        raise errors.AmbiguousTraitError(trait, matches)
 
 
     def add_trait(self, trait: str, rating: int):
@@ -515,10 +520,11 @@ class VChar:
         Add a trait to the collection.
         Raises TraitAlreadyExistsError if the trait already exists.
         """
-        if self.__item_exists(VChar._TRAITS, trait):
+        if trait.lower() in map(lambda t: t.lower(), self.traits.keys()):
             raise errors.TraitAlreadyExistsError(f"You already have a trait named `{trait}`.")
 
-        VChar._TRAITS.insert_one({ "charid": self.id, "name": trait, "rating": rating })
+        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { f"traits.{trait}": rating } })
+        self._params["traits"][trait] = rating
 
 
     def update_trait(self, trait: str, new_rating: int):
@@ -526,11 +532,13 @@ class VChar:
         Update a given trait.
         Raises TraitNotFoundError if the trait does not exist.
         """
-        trait = self.find_trait(trait, exact=True)
-        VChar._TRAITS.update_one(
-            { "charid": self.id, "name": trait.name },
-            { "$set": { "rating": new_rating } }
-        )
+        if trait.lower() in map(lambda t: t.lower(), UNIVERSAL_TRAITS):
+            err = f"`{trait}` is an automatic trait that cannot be modified."
+            raise errors.TraitAlreadyExistsError(err)
+
+        trait = self.find_trait(trait, exact=True).name
+        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { f"traits.{trait}": new_rating } })
+        self._params["traits"][trait] = new_rating
 
 
     def delete_trait(self, trait: str):
@@ -538,16 +546,18 @@ class VChar:
         Delete a trait.
         Raises TraitNotFoundError if the trait doesn't exist.
         """
-        trait = self.find_trait(trait, exact=True) # Need to get the exact name
-        VChar._TRAITS.delete_one({ "charid": self.id, "name": trait.name })
+        trait = self.find_trait(trait, exact=True).name
+        VChar._CHARS.update_one({ "_id": self.id }, { "$unset": { f"traits.{trait}": "" } })
 
 
     def owned_traits(self, **traits):
         """Partition the list of traits into owned and unowned groups."""
+        my_traits = self.traits
         owned = {}
         unowned = {}
+
         for trait, rating in traits.items():
-            if self.__item_exists(VChar._TRAITS, trait):
+            if trait.lower() in map(lambda t: t.lower(), my_traits.keys()):
                 owned[trait] = rating
             else:
                 unowned[trait] = rating
@@ -719,7 +729,6 @@ class VChar:
 
     def delete_character(self) -> bool:
         """Delete this character and all associated traits and macros."""
-        VChar._TRAITS.delete_many({ "charid": self.id })
         VChar._MACROS.delete_many({ "charid": self.id })
         return VChar._CHARS.delete_one({ "_id": self.id }).acknowledged
 
@@ -829,5 +838,4 @@ class VChar:
                 mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
                 VChar._CLIENT = mongo
                 VChar._CHARS = mongo.inconnu.characters
-                VChar._TRAITS = mongo.inconnu.traits
                 VChar._MACROS = mongo.inconnu.macros

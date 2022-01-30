@@ -33,7 +33,6 @@ class VChar:
 
     _CLIENT = None # MongoDB client
     _CHARS = None # Characters collection
-    _MACROS = None # Macros collection
 
     VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge"]
 
@@ -849,4 +848,3 @@ class VChar:
                 mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
                 VChar._CLIENT = mongo
                 VChar._CHARS = mongo.inconnu.characters
-                VChar._MACROS = mongo.inconnu.macros

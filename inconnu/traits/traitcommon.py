@@ -16,7 +16,9 @@ def validate_trait_names(*traits):
             raise ValueError(f"`{trait}` is too long by {trait_len - 20} characters.")
 
         if trait.lower() in UNIVERSAL_TRAITS:
-            raise SyntaxError(f"`{trait}` is a reserved trait and cannot be added/updated/deleted.")
+            raise SyntaxError(
+                f"`{trait.capitalize()}` is a reserved trait and cannot be added/updated/deleted."
+            )
 
         if VALID_TRAIT_PATTERN.match(trait) is None:
             raise SyntaxError(f"Traits can only have letters and underscores. Received `{trait}`.")

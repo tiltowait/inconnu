@@ -26,13 +26,12 @@ async def update(ctx, macro: str, syntax: str, character: str):
     try:
         tip = f"`/macro update` `macro:{macro}` `parameters:PARAMETERS` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
-        macro = character.find_macro(macro)
 
         parameters = __parameterize(syntax)
         macro_update = __validate_parameters(character, parameters)
-        character.update_macro(macro.name, macro_update)
+        macro_name = character.update_macro(macro, macro_update)
 
-        await ctx.respond(f"Updated **{character.name}'s** `{macro.name}` macro.")
+        await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
 
     except (
         errors.MacroNotFoundError, errors.AmbiguousTraitError, errors.TraitNotFoundError,

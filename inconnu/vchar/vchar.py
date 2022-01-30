@@ -42,6 +42,7 @@ class VChar:
         VChar.__prepare()
         self._params = params
         self.id = params["_id"] # pylint: disable=invalid-name
+        self.find_query = { "_id": self.id }
         self.guild = params["guild"]
         self.user = params["user"]
 
@@ -177,7 +178,7 @@ class VChar:
     def name(self, new_name):
         """Set the character's name."""
         self._params["name"] = new_name
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "name": new_name } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { "name": new_name } })
 
 
     @property
@@ -190,7 +191,7 @@ class VChar:
     def splat(self, new_splat):
         """Set the character's splat."""
         self._params["splat"] = new_splat
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "splat": new_splat } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { "splat": new_splat } })
 
 
     @property
@@ -204,7 +205,7 @@ class VChar:
         """Set the character's humanity."""
         new_humanity = max(0, min(10, new_humanity))
         self._params["humanity"] = new_humanity
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "humanity": new_humanity } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { "humanity": new_humanity } })
         self.stains = 0
 
 
@@ -219,7 +220,7 @@ class VChar:
         """Set the character's stains."""
         self.__update_log("stains", self.stains, new_stains)
         self._params["stains"] = new_stains
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "stains": new_stains } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { "stains": new_stains } })
 
 
     @property
@@ -232,7 +233,7 @@ class VChar:
     def health(self, new_health):
         """Set the character's health."""
         self._params["health"] = new_health
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "health": new_health } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { "health": new_health } })
 
 
     @property
@@ -257,7 +258,7 @@ class VChar:
     def willpower(self, new_willpower):
         """Set the character's willpower."""
         self._params["willpower"] = new_willpower
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "willpower": new_willpower } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { "willpower": new_willpower } })
 
 
     @property
@@ -306,7 +307,7 @@ class VChar:
 
         self.__update_log("hunger", self.hunger, new_hunger)
         self._params["hunger"] = new_hunger
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "hunger": new_hunger } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { "hunger": new_hunger } })
 
 
     @property
@@ -321,7 +322,7 @@ class VChar:
         new_potency = max(0, min(10, new_potency))
 
         self._params["potency"] = new_potency
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { "potency": new_potency } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { "potency": new_potency } })
 
 
     @property
@@ -340,7 +341,7 @@ class VChar:
 
         self._params["experience"]["current"] = new_current_xp
         VChar._CHARS.update_one(
-            { "_id": self.id },
+            self.find_query,
             { "$set": { "experience.current": new_current_xp } }
         )
 
@@ -361,7 +362,7 @@ class VChar:
 
         self._params["experience"]["total"] = new_total_xp
         VChar._CHARS.update_one(
-            { "_id": self.id },
+            self.find_query,
             { "$set": { "experience.total": new_total_xp } }
         )
         self.current_xp += delta
@@ -523,7 +524,7 @@ class VChar:
         if trait.lower() in map(lambda t: t.lower(), self.traits.keys()):
             raise errors.TraitAlreadyExistsError(f"You already have a trait named `{trait}`.")
 
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { f"traits.{trait}": rating } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { f"traits.{trait}": rating } })
         self._params["traits"][trait] = rating
 
 
@@ -537,7 +538,7 @@ class VChar:
             raise errors.TraitAlreadyExistsError(err)
 
         trait = self.find_trait(trait, exact=True).name
-        VChar._CHARS.update_one({ "_id": self.id }, { "$set": { f"traits.{trait}": new_rating } })
+        VChar._CHARS.update_one(self.find_query, { "$set": { f"traits.{trait}": new_rating } })
         self._params["traits"][trait] = new_rating
 
 
@@ -547,7 +548,7 @@ class VChar:
         Raises TraitNotFoundError if the trait doesn't exist.
         """
         trait = self.find_trait(trait, exact=True).name
-        VChar._CHARS.update_one({ "_id": self.id }, { "$unset": { f"traits.{trait}": "" } })
+        VChar._CHARS.update_one(self.find_query, { "$unset": { f"traits.{trait}": "" } })
 
 
     def owned_traits(self, **traits):
@@ -622,27 +623,37 @@ class VChar:
         Store a macro.
         Raises MacroAlreadyExistsError if the macro already exists.
         """
-        if self.__item_exists(VChar._MACROS, macro):
+        try:
+            _ = self.find_macro(macro)
             raise errors.MacroAlreadyExistsError(f"You already have a macro named `{macro}`.")
+        except errors.MacroNotFoundError:
+            pass
 
         macro_query = {
-            "charid": self.id,
-            "name": macro,
-            "pool": list(map(str, pool)),
-            "rouses": rouses,
-            "reroll_rouses": reroll_rouses,
-            "staining": staining,
-            "hunger": hunger,
-            "difficulty": difficulty,
-            "comment": comment
+            "$set": {
+                f"macros.{macro}": {
+                    "pool": list(map(str, pool)),
+                    "rouses": rouses,
+                    "reroll_rouses": reroll_rouses,
+                    "staining": staining,
+                    "hunger": hunger,
+                    "difficulty": difficulty,
+                    "comment": comment
+                }
+            }
         }
-        VChar._MACROS.insert_one(macro_query)
+        VChar._CHARS.update_one(self.find_query, macro_query)
 
 
     def update_macro(self, macro: str, update: dict):
         """Update a macro."""
-        query = { "name": { "$regex": re.compile(f"^{macro}$", re.IGNORECASE) }, "charid": self.id }
-        VChar._MACROS.update_one(query, { "$set": update })
+        macro = self.find_macro(macro) # For getting the exact name
+        for param, val in update.items():
+            VChar._CHARS.update_one(
+                self.find_query,
+                { "$set": { f"macros.{macro.name}.{param}": val } }
+            )
+        return macro.name
 
 
     def delete_macro(self, macro):
@@ -651,7 +662,7 @@ class VChar:
         Raises MacroNotFoundError if the macro doesn't exist.
         """
         macro = self.find_macro(macro) # For getting the exact name
-        VChar._MACROS.delete_one({ "charid": self.id, "name": macro.name })
+        VChar._CHARS.update_one(self.find_query, { "$unset": { f"macros.{macro.name}": "" } })
 
 
     # Specialized mutators
@@ -730,7 +741,6 @@ class VChar:
 
     def delete_character(self) -> bool:
         """Delete this character and all associated traits and macros."""
-        VChar._MACROS.delete_many({ "charid": self.id })
         return VChar._CHARS.delete_one({ "_id": self.id }).acknowledged
 
 

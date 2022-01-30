@@ -130,10 +130,10 @@ def __validate_parameters(character: VChar, parameters: dict):
                 raise ValueError("`rouses` must be a number between 0 and 3.")
             macro_update["rouses"] = int(value)
 
-        elif key in ["reroll_rouses", "reroll", "reroll_rouse"]:
+        elif key in ["reroll_rouses", "reroll", "rerolls", "reroll_rouse"]:
             try:
                 value = bool(strtobool(value))
-                macro_update[key] = value
+                macro_update["reroll_rouses"] = value
             except ValueError:
                 raise ValueError("`reroll_rouses` requires yes/no or true/false.") from ValueError
 

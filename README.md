@@ -25,9 +25,8 @@ An **Inconnu** roll uses the following syntax: `/vr syntax:<pool> [hunger] [diff
 ## Required Permissions
 
 * **Send Messages:** Should be obvious, no?
-* **Embed Links:** Used in most of the bot's replies
 * **Use External Emoji:** For displaying individual dice throws and tracker boxes
-* **Use Slash Commands**
+* **Use Slash Commands:** All of Inconnu's commands use slash commands.
 
 ## Troubleshooting
 

@@ -21,7 +21,7 @@ class MiscCommands(commands.Cog):
         """Display Inconnu's invite link."""
         embed = discord.Embed(
             title="Invite Inconnu to your server",
-            url="https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147764224&scope=applications.commands%20bot",
+            url="https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147747840&scope=applications.commands%20bot",
             description="Click the link above to invite Inconnu to your server!"
         )
         embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)

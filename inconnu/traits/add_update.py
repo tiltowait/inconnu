@@ -108,10 +108,18 @@ async def __results_embed(ctx, outcome, char_name: str):
     elif outcome.assigned and outcome.unassigned:
         title = f"Assigned: {assigned} | Unassigned: {unassigned + errors}"
     else:
-        title = f"Couldn't Assign {unassigned} Traits"
+        title = f"Couldn't Assign {unassigned + errors} Traits"
+
+    # No color if no mistakes
+    # Black if some mistakes
+    # Red if only mistakes
+    color = discord.Embed.Empty
+    if unassigned + errors:
+        color = 0x000000 if assigned else 0xff0000
 
     embed = discord.Embed(
-        title=title
+        title=title,
+        color=color
     )
     embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
     if outcome.assigned:

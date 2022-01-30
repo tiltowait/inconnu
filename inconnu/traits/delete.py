@@ -64,10 +64,13 @@ async def __outcome_embed(ctx, character, outcome):
     if outcome.deleted:
         deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
         embed.add_field(name="Deleted", value=deleted)
+        embed.color = discord.Embed.Empty
 
     if outcome.errors:
         errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
         embed.add_field(name="Do not exist", value=errs, inline=False)
+        embed.color = 0x000000 if outcome.deleted else 0xff0000
+
 
     await ctx.respond(embed=embed, ephemeral=True)
 

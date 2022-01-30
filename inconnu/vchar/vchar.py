@@ -740,7 +740,7 @@ class VChar:
 
     def delete_character(self) -> bool:
         """Delete this character and all associated traits and macros."""
-        return VChar._CHARS.delete_one({ "_id": self.id }).acknowledged
+        return VChar._CHARS.delete_one(self.find_query).acknowledged
 
 
     @classmethod
@@ -778,50 +778,12 @@ class VChar:
         if key not in valid_keys:
             raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
 
-        VChar._CHARS.update_one({ "_id": self.id }, { "$inc": { f"log.{key}": increment } })
+        VChar._CHARS.update_one(self.find_query, { "$inc": { f"log.{key}": increment } })
 
 
     def log_injury(self, injury: str):
         """Log a crippling injury."""
-        VChar._CHARS.update_one({ "_id": self.id }, { "$push": { "injuries": injury } })
-
-
-    # Helpers
-
-    def __find_items(self, collection, name, exact=False):
-        """Find an item in the collection. Raises no exceptions."""
-        query = { "charid": self.id, "name": name }
-        exact_match = list(collection.find(query, { "_id": 0, "charid": 0 }).collation({
-            'locale': 'en',
-            'strength': 2
-            }
-        ))
-
-        if len(exact_match) == 1:
-            return exact_match
-
-        if not exact: # Fallback; try and get closest unambiguous
-            query = {
-                "charid": self.id,
-                "name": {
-                    "$regex": re.compile("^" + name, re.IGNORECASE)
-                }
-            }
-            return list(collection.find(query, { "_id": 0, "charid": 0 }))
-
-        return []
-
-
-    def __item_exists(self, collection, name) -> bool:
-        """
-        Check whether an item by a given name exists in the collection.
-        The match is case-insensitive but otherwise exact.
-        """
-        query = {
-            "charid": self.id,
-            "name": { "$regex": re.compile("^" + name + "$", re.IGNORECASE) }
-        }
-        return collection.count_documents(query) > 0
+        VChar._CHARS.update_one(self.find_query, { "$push": { "injuries": injury } })
 
 
     def __update_log(self, key, old_value, new_value):
@@ -833,7 +795,7 @@ class VChar:
         """
         if new_value > old_value:
             delta = new_value - old_value
-            VChar._CHARS.update_one({ "_id": self.id }, { "$inc": { f"log.{key}": delta } })
+            VChar._CHARS.update_one(self.find_query, { "$inc": { f"log.{key}": delta } })
 
 
     @classmethod

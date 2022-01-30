@@ -463,7 +463,9 @@ class VChar:
     @property
     def traits(self):
         """A dictionary of the user's traits."""
-        _traits = self._params["traits"]
+        _traits = self._params.get("traits", {})
+        if not _traits:
+            self._params["traits"] = {}
         return OrderedDict(sorted(_traits.items(), key = lambda s: s[0].casefold()))
 
 

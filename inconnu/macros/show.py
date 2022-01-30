@@ -4,6 +4,7 @@ import asyncio
 from types import SimpleNamespace
 
 import discord
+from discord.ext import pages
 
 from .. import common
 from ..settings import Settings
@@ -45,41 +46,40 @@ async def __display_macros(ctx, char_name, macros):
 async def __macro_text(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
     fields = __generate_fields(macros, True)
-    pages = common.paginate(1200, *fields)
+    raw_pages = common.paginate(1200, *fields)
 
-    for page_num, page in enumerate(pages):
-        if (page_count := len(pages)) == 1:
-            contents = [f"{char_name}'s Macros\n"]
-        else:
-            contents = [f"{char_name}'s Macros: Page {page_num + 1} of {page_count}\n"]
+    _pages = []
+    for page in raw_pages:
+        contents = [f"**{char_name}'s Macros**\n"]
 
         for field in page:
             contents.append(f"```{field.name}```")
             contents.append(field.value + "\n")
 
-        await ctx.respond("\n".join(contents), ephemeral=True)
-        await asyncio.sleep(0.5)
+        _pages.append("\n".join(contents))
+
+    paginator = pages.Paginator(pages=_pages, show_disabled=False)
+    await paginator.respond(ctx.interaction, ephemeral=True)
 
 
 async def __macro_embed(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
     fields = __generate_fields(macros, False)
-    pages = common.paginate(1200, *fields)
+    raw_pages = common.paginate(1200, *fields)
 
-    for page_num, page in enumerate(pages):
-        page_text = f"Page {page_num + 1} of {len(pages)}"
-
-        embed = discord.Embed(
-            title="Macros" if len(pages) == 1 else f"Macros: {page_text}"
-        )
+    _pages = []
+    for page in raw_pages:
+        embed = discord.Embed(title="Macros")
         embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
-        embed.set_footer(text=page_text)
+        embed.set_footer(text="To roll a macro, use the /vm command")
 
         for field in page:
             embed.add_field(name=field.name, value=field.value, inline=False)
 
-        await ctx.respond(embed=embed, ephemeral=True)
-        await asyncio.sleep(0.5)
+        _pages.append(embed)
+
+    paginator = pages.Paginator(pages=_pages, show_disabled=False)
+    await paginator.respond(ctx.interaction, ephemeral=True)
 
 
 def __generate_fields(macros, accessible: bool):

@@ -1,8 +1,7 @@
 """traits/show.py - Display character traits."""
 
-import asyncio
-
 import discord
+from discord.ext import pages
 
 from .. import common
 from ..settings import Settings
@@ -31,48 +30,37 @@ async def show(ctx, character: str, player: discord.Member):
 async def __list_embed(ctx, character, owner):
     """Display traits in an embed."""
     traits = [f"**{trait}:** {rating}" for trait, rating in character.traits.items()]
-    pages = common.paginate(1200, *traits) # Array of strings
+    raw_pages = common.paginate(1200, *traits) # Array of strings
 
-    for page_num, page in enumerate(pages):
+    _pages = []
+    for page in raw_pages:
         embed = discord.Embed(
-            title="Traits" if len(pages) == 1 else f"Traits: Page {page_num + 1} of {len(pages)}",
+            title="Traits",
             description=page
         )
         embed.set_author(name=character.name, icon_url=owner.display_avatar)
         embed.set_footer(text="To see HP, WP, etc., use /character display")
 
-        if isinstance(ctx, discord.Interaction):
-            if ctx.response.is_done():
-                await ctx.followup.send(embed=embed, ephemeral=True)
-            else:
-                await ctx.response.send_message(embed=embed, ephemeral=True)
-        else:
-            await ctx.respond(embed=embed, ephemeral=True)
+        _pages.append(embed)
 
-        await asyncio.sleep(0.5)
+    paginator = pages.Paginator(pages=_pages, show_disabled=False)
+    await paginator.respond(ctx.interaction, ephemeral=True)
 
 
 async def __list_text(ctx, character):
     """Display traits in plain text."""
     traits = [f"{trait}: {rating}" for trait, rating in character.traits.items()]
-    pages = common.paginate(1200, *traits) # Array of strings
+    raw_pages = common.paginate(1200, *traits) # Array of strings
 
-    for page_num, page in enumerate(pages):
-        if (page_count := len(pages)) == 1:
-            contents = [f"{character.name}'s Traits"]
-        else:
-            contents = [f"{character.name}'s Traits: Page {page_num + 1} of {page_count}"]
+    _pages = []
+    for page in raw_pages:
+        contents = [f"{character.name}'s Traits"]
         contents.append("```css")
         contents.append(page)
         contents.append("```")
         contents.append("To see HP, WP, etc., use `/character display`")
 
-        if isinstance(ctx, discord.Interaction):
-            if ctx.response.is_done():
-                await ctx.followup.send("\n".join(contents), ephemeral=True)
-            else:
-                await ctx.response.send_message("\n".join(contents), ephemeral=True)
-        else:
-            await ctx.respond("\n".join(contents), ephemeral=True)
+        _pages.append("\n".join(contents))
 
-        await asyncio.sleep(0.5)
+    paginator = pages.Paginator(pages=_pages, show_disabled=False)
+    await paginator.respond(ctx.interaction, ephemeral=True)

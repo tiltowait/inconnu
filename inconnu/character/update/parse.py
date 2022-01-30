@@ -145,7 +145,7 @@ def __update_character(character: VChar, param: str, value: str) -> str:
 
 async def update_help(ctx, err=None, ephemeral=True):
     """Display a help message that details the available keys."""
-    color = None if err is None else 0xFF0000
+    color = discord.Embed.Empty if err is None else 0xFF0000
     embed = discord.Embed(
         title="Character Tracking",
         color=color

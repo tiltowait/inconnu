@@ -3,10 +3,8 @@
 **Inconnu** requires the following permissions:
 
 * **Send Messages:** Should be obvious, no?
-* **Embed Links:** Used for most interactions with the bot
-* **Read Message History:** Used for the reply feature
 * **Use External Emoji:** For displaying individual dice throws and tracker boxes
-* **Use Slash Commands**
+* **Use Slash Commands:** All of **Inconnu's** commands use slash commands
 
 ## Inconnu isn't showing emoji
 

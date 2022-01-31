@@ -167,23 +167,6 @@ async def select_character(ctx, err, help_url, tip, player=None):
 
     return character_id
 
-    #try:
-        #if isinstance(options.components[0], Button):
-            #btn = await errmsg.wait_for("button", ctx.bot, timeout=60)
-            #character = options.characters[btn.custom_id]
-        #else:
-            #btn = await errmsg.wait_for("select", ctx.bot, timeout=60)
-            #character = options.characters[btn.selected_values[0]]
-
-        #await btn.respond()
-        #await errmsg.disable_components()
-
-        #return character
-
-    #except asyncio.exceptions.TimeoutError:
-        #await errmsg.edit(components=None)
-        #return None
-
 
 def character_options(guild: int, user: int):
     """

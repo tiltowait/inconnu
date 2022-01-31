@@ -9,7 +9,7 @@ class DisablingView(View):
     def __init__(self, timeout=60, remove_on_timeout=False):
         super().__init__(timeout=timeout)
         self.remove_on_timeout = remove_on_timeout
-        self.link_filter = filter(lambda btn: btn.url is None, self.children)
+        self.link_filter = filter(lambda btn: getattr(btn, "url", None) is None, self.children)
         self.message = None
 
     async def disable_items(self, interaction):

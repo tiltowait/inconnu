@@ -43,8 +43,12 @@ async def __list_embed(ctx, character, owner):
 
         _pages.append(embed)
 
+    if isinstance(ctx, discord.Interaction):
+        interaction = ctx
+    else:
+        interaction = ctx.interaction
     paginator = pages.Paginator(pages=_pages, show_disabled=False)
-    await paginator.respond(ctx.interaction, ephemeral=True)
+    await paginator.respond(interaction, ephemeral=True)
 
 
 async def __list_text(ctx, character):

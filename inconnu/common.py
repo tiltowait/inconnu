@@ -1,6 +1,7 @@
 """common.py - Commonly used functions."""
 
 from types import SimpleNamespace
+from uuid import uuid4
 
 import discord
 from discord.ui import Button, View
@@ -163,7 +164,7 @@ async def select_character(ctx, err, help_url, tip, player=None):
     options.view.message = msg
 
     await options.view.wait()
-    character_id = options.view.selected_value
+    character_id = options.view.selected_value.split()[0] # Remove the UUID, if it exists
 
     return character_id
 
@@ -177,11 +178,17 @@ def character_options(guild: int, user: int):
     characters = VChar.all_characters(guild, user)
     chardict = {str(char.id): char for char in characters}
 
+    # We have to use an ugly hack for this. If we just use the character's ID
+    # as the button's identifier, then multiple displays of these buttons will
+    # work incorrectly: click on one, and the other instances stop responding.
+    # Therefore, we tack a UUID to the end. Later, we will split the custom ID
+    # so we can pull just the character ID.
+
     if len(characters) < 6:
         components = [
             Button(
                 label=char.name,
-                custom_id=str(char.id),
+                custom_id=f"{char.id} {uuid4()}",
                 style=discord.ButtonStyle.primary
             )
             for char in characters

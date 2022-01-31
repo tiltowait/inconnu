@@ -36,8 +36,6 @@ class RatingView(discord.ui.View):
 
     async def button_pressed(self, interaction):
         """Respond to the button."""
-        await interaction.response.pong()
-
         rating = int(interaction.data["custom_id"])
         await self.callback(rating)
 

@@ -474,6 +474,7 @@ class VChar:
         Finds the closest matching trait.
         Raises AmbiguousTraitError if more than one are found.
         """
+        trait = trait.lower()
 
         # Add universal traits
         my_traits = self.traits
@@ -485,11 +486,26 @@ class VChar:
         # here if the character isn't a vampire, we leave them in so we can present
         # a more helpful error message should they be attempting to invoke one.
 
-        VChar.VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge"]
-        matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait.lower())]
+        matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait)]
 
         if not matches:
             raise errors.TraitNotFoundError(f"{self.name} has no trait named `{trait}`.")
+
+        # A character might have a trait whose name is a subset of another trait.
+        # The canonical example: "Surge", "Surgery". Typing "Surge" should work.
+        # If we've found an exact match, then we replace our matches list with it
+        # and move on from there.
+
+        filtered = [match for match in matches if match[0].lower() == trait]
+        if len(filtered) == 1:
+            # Make sure we aren't accidentally locking them into a vampire trait
+            # unnecessarily (a mortal with Surgery should still be able to roll
+            # it, even if they wrote Surge).
+            if filtered[0][0] in VChar.VAMPIRE_TRAITS:
+                if self.is_vampire:
+                    matches = filtered
+            else:
+                matches = filtered
 
         if len(matches) == 1:
             found_trait, rating = matches[0]
@@ -504,11 +520,11 @@ class VChar:
                 rating = rating.count(DAMAGE.none)
             return SimpleNamespace(name=found_trait, rating=rating)
 
-        # We found multiple matches
-
-        # We don't want to display vampire terms as an option if it isn't a vampire
+        # We found multiple matches. However, we may have matched a vampire trait,
+        # and if we aren't a vampire, we should filter those out.
         if not self.is_vampire:
             matches = [match for match in matches if match[0] not in VChar.VAMPIRE_TRAITS]
+            print(matches)
             if len(matches) == 1:
                 # Removing the vampire traits may have got us down to zero
                 return SimpleNamespace(name=matches[0][0], rating=matches[0][1])

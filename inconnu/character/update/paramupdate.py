@@ -46,7 +46,7 @@ def update_potency(character: VChar, delta: str) -> str:
 
 def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int) -> str:
     """Update the character's hunger if they are a vampire."""
-    if character.splat != "vampire": # Not a vampire
+    if not character.is_vampire:
         raise ValueError(f"Mortals and ghouls do not have {key.title()}.")
 
     setting = not delta[0] in ["+", "-"]

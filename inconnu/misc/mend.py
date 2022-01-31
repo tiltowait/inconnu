@@ -35,7 +35,7 @@ async def __display_outcome(ctx, character, outcome):
     color = None
     view = discord.utils.MISSING
 
-    if character.splat == "vampire":
+    if character.is_vampire:
         if outcome.rouse:
             success_text = "Success" if outcome.rouse else "Failure"
         else:
@@ -79,6 +79,6 @@ def __heal(character):
     else:
         frenzy = False
 
-    if character.splat == "vampire":
+    if character.is_vampire:
         character.log("rouse")
     return SimpleNamespace(mended=mending, rouse=rouse, frenzy=frenzy)

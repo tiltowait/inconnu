@@ -27,7 +27,7 @@ async def awaken(ctx, character=None):
         if recovered > 0:
             message += f"\nRecovered **{recovered}** Willpower."
 
-        if character.splat == "vampire":
+        if character.is_vampire:
             rouse_success = random.randint(1, 10) >= 6
             if rouse_success:
                 message += "\n**No** Hunger gain."
@@ -52,7 +52,7 @@ async def awaken(ctx, character=None):
 
         await char_update(ctx, " ".join(recovery), character, color, message)
         character.log("awaken")
-        if character.splat == "vampire":
+        if character.is_vampire:
             character.log("rouse")
 
     except common.FetchError:

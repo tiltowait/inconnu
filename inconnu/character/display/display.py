@@ -178,13 +178,13 @@ def __embed_field_value(character, parameter):
         case DisplayField.HUMANITY:
             value = trackmoji.emojify_humanity(character.humanity, character.stains)
 
-        case DisplayField.POTENCY if character.splat == "vampire":
+        case DisplayField.POTENCY if character.is_vampire:
             value = trackmoji.emojify_blood_potency(character.potency)
 
-        case DisplayField.HUNGER if character.splat == "vampire":
+        case DisplayField.HUNGER if character.is_vampire:
             value = trackmoji.emojify_hunger(character.hunger)
 
-        case DisplayField.SEVERITY if character.splat == "vampire":
+        case DisplayField.SEVERITY if character.is_vampire:
             value = f"```{character.bane_severity}```"
 
         case DisplayField.EXPERIENCE:
@@ -250,13 +250,13 @@ def __text_field_contents(character, field, parameter):
             contents.append(f"{field}: {character.humanity}")
             contents.append(f"Stains: {character.stains}")
 
-        case DisplayField.POTENCY if character.splat == "vampire":
+        case DisplayField.POTENCY if character.is_vampire:
             contents.append(f"{field}: {character.potency}")
 
-        case DisplayField.HUNGER if character.splat == "vampire":
+        case DisplayField.HUNGER if character.is_vampire:
             contents.append(f"{field}: {character.hunger}")
 
-        case DisplayField.SEVERITY if character.splat == "vampire":
+        case DisplayField.SEVERITY if character.is_vampire:
             contents.append(f"Bane Severity: {character.bane_severity}")
 
         case DisplayField.EXPERIENCE:

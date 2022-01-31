@@ -47,7 +47,7 @@ def __heal(character: VChar):
     character.hunger += hunger_gain
     character.health = DAMAGE.none + character.health[:-1]
 
-    if character.splat == "vampire":
+    if character.is_vampire:
         character.log("rouse", 3)
     return SimpleNamespace(gain=hunger_gain, torpor=torpor)
 
@@ -56,7 +56,7 @@ async def __display_outcome(ctx, character, outcome):
     """Display the outcome of the healing."""
     fields = [("Health", char.DisplayField.HEALTH)]
 
-    if character.splat == "vampire":
+    if character.is_vampire:
         gain = "Max Hunger" if character.hunger == 5 else f"Gain {outcome.gain} Hunger"
         color = ROUSE_FAIL_COLOR if (outcome.torpor or outcome.gain) > 0 else None
         title = f"Agg damage healed | {gain}"

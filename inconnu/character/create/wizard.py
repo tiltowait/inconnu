@@ -70,7 +70,7 @@ class Wizard:
         character.willpower = "." * self.parameters.wp
 
         # Set blood potency when applicable
-        if character.splat == "vampire":
+        if character.is_vampire:
             blood_potency = self.assigned_traits["Blood Potency"]
             character.potency = blood_potency
             del self.assigned_traits["Blood Potency"] # Don't want to make this a trait

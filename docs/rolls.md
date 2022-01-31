@@ -49,14 +49,14 @@ Here is how a trait pool looks in the Discord textbox:
 
 **Inconnu** does not require you to type out a full trait name. All you need is the minimum number of letters for it to unambiguously match a trait. Refer to the table below for examples of good and bad shorthand.
 
-| Shorthand | OK? | Explanation                                               |
-|-----------|-----|-----------------------------------------------------------|
-| `stre`    | ❌   | Could match `strength` or `streetwise`                    |
-| `ac`      | ✅   | Matches `academics`                                       |
-| `b`       | ✅   | Matches `brawl`                                           |
-| `in`      | ❌   | Could match `intimidation`, `insight`, or `investigation` |
+| Shorthand | OK? | Explanation                                                                |
+|-----------|-----|----------------------------------------------------------------------------|
+| `stre`    | ❌   | Could match `strength` or `streetwise`                                    |
+| `ac`      | ✅   | Matches `academics`                                                       |
+| `b`       | ✅   | Matches `brawl`                                                           |
+| `in`      | ❌   | Could match `intelligence`, `intimidation`, `insight`, or `investigation` |
 
-**Example:** `/vr syntax:stren + b` `Nadea` (Rolls Nadea's *Strength + Brawl*, no *Hunger*, no *Difficulty*)
+**Example:** `/vr syntax:stren + b` `character:Nadea` (Rolls Nadea's *Strength + Brawl*, no *Hunger*, no *Difficulty*)
 
 ![Shorthand traits in a roll](images/rolls/roll-traits-short.png)
 

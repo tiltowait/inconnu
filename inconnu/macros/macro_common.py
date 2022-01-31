@@ -2,8 +2,7 @@
 
 import re
 
-from ..constants import UNIVERSAL_TRAITS
-from ..vchar import errors, VChar
+from ..vchar import VChar
 
 NAME_LEN = 50
 COMMENT_LEN = 300
@@ -31,21 +30,8 @@ def expand_syntax(character: VChar, syntax: str):
             if element.isdigit():
                 final_stack.append(element)
             else:
-                try:
-                    trait = character.find_trait(element)
-                    final_stack.append(trait.name)
-                except errors.TraitNotFoundError as err:
-                    universals = []
-                    for universal in UNIVERSAL_TRAITS:
-                        if universal.startswith(element.lower()):
-                            universals.append(universal.title())
-
-                    if not universals:
-                        raise err
-                    if len(universals) > 1:
-                        raise errors.AmbiguousTraitError(element, universals)
-
-                    final_stack.append(universals[0])
+                trait = character.find_trait(element)
+                final_stack.append(trait.name)
 
             expecting_operand = False
         else:

@@ -23,6 +23,6 @@ SKILLS_AND_ATTRIBUTES = [
     "science", "technology"
 ]
 
-UNIVERSAL_TRAITS = ["willpower", "hunger", "humanity", "surge", "potency"]
+UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency"]
 
 ROUSE_FAIL_COLOR = 0xc70f0f

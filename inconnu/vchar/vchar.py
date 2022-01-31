@@ -481,11 +481,11 @@ class VChar:
         if self.is_vampire:
             universals = UNIVERSAL_TRAITS
         else:
-            universals = filter(lambda t: t.capitalize() not in VChar.VAMPIRE_TRAITS, UNIVERSAL_TRAITS)
+            universals = filter(lambda t: t not in VChar.VAMPIRE_TRAITS, UNIVERSAL_TRAITS)
 
         for universal in universals:
-            rating = getattr(self, universal)
-            my_traits[universal.capitalize()] = rating
+            rating = getattr(self, universal.lower())
+            my_traits[universal] = rating
 
         matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait)]
 
@@ -537,8 +537,8 @@ class VChar:
         Update a given trait.
         Raises TraitNotFoundError if the trait does not exist.
         """
-        if trait.lower() in map(lambda t: t.lower(), UNIVERSAL_TRAITS):
-            err = f"`{trait}` is an automatic trait that cannot be modified."
+        if trait.title() in UNIVERSAL_TRAITS:
+            err = f"`{trait.title()}` is an automatic trait that cannot be modified."
             raise errors.TraitAlreadyExistsError(err)
 
         trait = self.find_trait(trait, exact=True).name

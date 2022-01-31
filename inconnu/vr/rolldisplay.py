@@ -222,7 +222,8 @@ class RollDisplay:
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        if self.outcome.pool <= 30:
+        can_use_external_emoji = self.ctx.channel.permissions_for(self.ctx.me).external_emojis
+        if self.outcome.pool <= 30 and can_use_external_emoji:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
             embed.add_field(
@@ -234,10 +235,10 @@ class RollDisplay:
             lines = []
             if self.outcome.normal.count > 0:
                 dice = sorted(self.outcome.normal.dice, reverse=True)
-                lines.append("**Normal Dice:** " + ", ".join(map(str, dice)))
+                lines.append("**Normal Dice:** `" + ", ".join(map(str, dice)) + "`")
             if self.hunger > 0:
                 dice = sorted(self.outcome.hunger.dice, reverse=True)
-                lines.append("**Hunger Dice:** " + ", ".join(map(str, dice)))
+                lines.append("**Hunger Dice:** `" + ", ".join(map(str, dice)) + "`")
 
             embed.add_field(
                 name=f"Margin: {self.outcome.margin}",

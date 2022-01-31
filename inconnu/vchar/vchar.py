@@ -476,15 +476,16 @@ class VChar:
         """
         trait = trait.lower()
 
-        # Add universal traits
+        # Add universal traits. Only add the vampire traits if it's a vampire.
         my_traits = self.traits
-        for universal in UNIVERSAL_TRAITS:
+        if self.is_vampire:
+            universals = UNIVERSAL_TRAITS
+        else:
+            universals = filter(lambda t: t.capitalize() not in VChar.VAMPIRE_TRAITS, UNIVERSAL_TRAITS)
+
+        for universal in universals:
             rating = getattr(self, universal)
             my_traits[universal.capitalize()] = rating
-
-        # While it would technically be more efficient to remove the vampire traits
-        # here if the character isn't a vampire, we leave them in so we can present
-        # a more helpful error message should they be attempting to invoke one.
 
         matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait)]
 
@@ -498,36 +499,22 @@ class VChar:
 
         filtered = [match for match in matches if match[0].lower() == trait]
         if len(filtered) == 1:
-            # Make sure we aren't accidentally locking them into a vampire trait
-            # unnecessarily (a mortal with Surgery should still be able to roll
-            # it, even if they wrote Surge).
-            if filtered[0][0] in VChar.VAMPIRE_TRAITS:
-                if self.is_vampire:
-                    matches = filtered
-            else:
-                matches = filtered
+            matches = filtered
+
+        # From here, we've found the most accurate match possible. If there's
+        # only one match, we're good to go. If, however, there are more than
+        # one match, we give them a list of matches so they can disambiguate.
 
         if len(matches) == 1:
             found_trait, rating = matches[0]
-            if not self.is_vampire and found_trait in VChar.VAMPIRE_TRAITS:
-                raise errors.TraitNotFoundError(f"Only vampires may use `{found_trait}`.")
 
-            if exact and trait.lower() != found_trait.lower():
+            if exact and trait != found_trait.lower():
                 raise errors.TraitNotFoundError(f"{self.name} has no trait named `{trait}`.")
 
             # Convert trackers to a rating
             if isinstance(rating, str):
                 rating = rating.count(DAMAGE.none)
             return SimpleNamespace(name=found_trait, rating=rating)
-
-        # We found multiple matches. However, we may have matched a vampire trait,
-        # and if we aren't a vampire, we should filter those out.
-        if not self.is_vampire:
-            matches = [match for match in matches if match[0] not in VChar.VAMPIRE_TRAITS]
-            print(matches)
-            if len(matches) == 1:
-                # Removing the vampire traits may have got us down to zero
-                return SimpleNamespace(name=matches[0][0], rating=matches[0][1])
 
         matches = map(lambda t: t[0], matches)
         raise errors.AmbiguousTraitError(trait, matches)

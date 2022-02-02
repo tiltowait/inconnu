@@ -67,7 +67,7 @@ async def __get_contents(ctx, character):
     date_format = "%b %d, %Y"
 
     contents = []
-    for event in events:
+    for event in reversed(events):
         date = event["date"].strftime(date_format)
         exp = event["amount"]
         reason = event["reason"]
@@ -75,18 +75,13 @@ async def __get_contents(ctx, character):
 
         # Get the admin discord.Member. Try the cache first.
         if (admin := ctx.guild.get_member(admin_id)) is None:
-            print("Couldn't find in the cache")
             admin = await ctx.guild.fetch_member(admin_id)
 
-        text = f"__**{exp:+}:** {reason}__ *({date}, @{admin.display_name})*"
-        #text = f"`{exp:+}` by @{admin.display_name}: `{reason}` *({date})*"
-        #text = f"**{date}:** `{exp:+}` by @{admin.display_name}: {reason}"
-        #if text[-1] != ".":
-        #    text += "."
+        text = f"**{exp:+}: {reason}** *({date}, @{admin.display_name})*"
 
         contents.append(text)
 
     if not contents:
-        contents.append("*No experince awards/deductions have been logged.*")
+        contents.append("*No experience awards/deductions have been logged.*")
 
     return "\n".join(contents)

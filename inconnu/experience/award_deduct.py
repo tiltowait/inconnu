@@ -45,7 +45,7 @@ def __get_embed(ctx, player, character, amount, scope, reason):
     embed.set_footer(text="To view: /experience log")
 
     embed.add_field(name="Reason", value=reason, inline=False)
-    embed.add_field(name="Staff", value=ctx.user.display_name, inline=False)
+    embed.add_field(name="Staff", value=f"@{ctx.user.display_name}", inline=False)
     embed.add_field(
         name="New Experience (Unspent / Lifetime)",
         value=f"```{character.current_xp} / {character.total_xp}```",

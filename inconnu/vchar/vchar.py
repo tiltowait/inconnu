@@ -741,6 +741,39 @@ class VChar:
         self.set_damage(tracker, severity, new_dmg, wrap=True)
 
 
+    # Experience Logging
+
+    @property
+    def experience_log(self):
+        """The list of experience log events."""
+        return self._params["experience"].get("log", [])
+
+
+    def apply_experience(self, amount: int, scope: str, reason: str, admin: int):
+        """
+        Add or remove experience from a character.
+        Args:
+            amount: The amount of XP to add/subtract
+            scope: Unspent or lifetime XP
+            reason: The reason for the application
+            admin; The Discord ID of the admin who added/deducted
+        """
+        VChar.__prepare()
+
+        event = "award_" if amount > 0 else "deduct_"
+
+        event_document = {
+            "event": f"{event}_{scope}",
+            "amount": amount,
+            "reason": reason,
+            "admin": admin,
+            "date": datetime.datetime.utcnow()
+        }
+        push_query = { "$push": { "experience.log": event_document }}
+
+        VChar._CHARS.update_one(self.find_query, push_query)
+
+
     # Misc
 
     def delete_character(self) -> bool:

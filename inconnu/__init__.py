@@ -4,6 +4,7 @@ import os
 
 from . import character
 from .cull import Culler as culler
+from . import experience
 from . import macros
 from . import misc
 from . import options

@@ -22,10 +22,11 @@ class ExperienceCommands(commands.Cog):
         player: Option(discord.Member, "The character's owner"),
         character: inconnu.options.character("The character receiving the XP", required=True),
         amount: Option(int, "The amount of XP to give", min_value=1),
+        scope: Option(str, "Unspent or lifetime XP", choices=["Lifetime", "Unspent"]),
         reason: Option(str, "The reason for the grant")
     ):
         """Give experience points to a character."""
-        await ctx.respond("Awarding XP")
+        await inconnu.experience.award_or_deduct(ctx, player, character, amount, scope, reason)
 
 
     @experience.command()
@@ -37,10 +38,11 @@ class ExperienceCommands(commands.Cog):
         player: Option(discord.Member, "The character's owner"),
         character: inconnu.options.character("The character from whom to deduct XP", required=True),
         amount: Option(int, "The amount of XP to deduct", min_value=1),
+        scope: Option(str, "Unspent or lifetime XP", choices=["Unspent", "Lifetime"]),
         reason: Option(str, "The reason for the deduction"),
     ):
         """Deduct experience points from a character."""
-        await ctx.respond("Deducting XP")
+        await inconnu.experience.award_or_deduct(ctx, player, character, amount, scope, reason)
 
 
     @experience.command()

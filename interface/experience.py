@@ -1,7 +1,7 @@
 """experience.py - Commands for tracking XP."""
 
 import discord
-from discord.commands import Option, SlashCommandGroup
+from discord.commands import Option, SlashCommandGroup, user_command
 from discord.ext import commands
 
 import inconnu
@@ -11,6 +11,12 @@ class ExperienceCommands(commands.Cog):
     """A command group for tracking character experience. Only available to server admins."""
 
     experience = SlashCommandGroup("experience", "Experience-tracking commands.")
+
+
+    @user_command(name="Experience Log")
+    async def context_experience_list(self, ctx, member: discord.Member):
+        """Display the given member's character XP logs."""
+        await inconnu.experience.list_events(ctx, None, member, True)
 
 
     @experience.command()
@@ -54,7 +60,7 @@ class ExperienceCommands(commands.Cog):
         player: inconnu.options.player,
     ):
         """Display a character's experience log."""
-        await inconnu.experience.list_events(ctx, character, player)
+        await inconnu.experience.list_events(ctx, character, player, False)
 
 
 def setup(bot):

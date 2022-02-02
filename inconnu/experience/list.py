@@ -8,7 +8,7 @@ import inconnu
 __HELP_URL = "https://www.inconnu-bot.com"
 
 
-async def list_events(ctx, character, player):
+async def list_events(ctx, character, player, ephemeral):
     """List a character's XP events."""
     try:
         owner = await inconnu.common.player_lookup(ctx, player)
@@ -17,9 +17,9 @@ async def list_events(ctx, character, player):
             ctx, character, tip, __HELP_URL, owner=owner
         )
 
-        msg = { "ephemeral": player.id == ctx.user.id }
+        msg = { "ephemeral": ephemeral }
         if inconnu.settings.accessible(ctx.user):
-            await ctx.respond("Text not yet implemented.", ephemeral=True)
+            msg["content"] = await __get_text(ctx, character)
         else:
             msg["embed"] = await __get_embed(ctx, character, player)
 
@@ -50,6 +50,15 @@ async def __get_embed(ctx, character, player):
     )
 
     return embed
+
+
+async def __get_text(ctx, character):
+    """Get the text-mode version of the XP log."""
+    contents = [f"**{character.name}'s Experience Log\n"]
+    contents.append(await __get_contents(ctx, character))
+    contents.append(f"\n**New XP:** {character.current_xp} / {character.total_xp}")
+
+    return "\n".join(contents)
 
 
 async def __get_contents(ctx, character):

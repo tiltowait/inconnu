@@ -40,10 +40,10 @@ async def list_events(ctx, character, player, ephemeral):
 async def __get_embed(ctx, character, player):
     """Make an embed in which to display the XP events."""
     embed = discord.Embed(
-        title=f"{character.name}'s Experience Log",
+        title=f"Experience Log",
         description=await __get_contents(ctx, character)
     )
-    embed.set_author(name=player.display_name, icon_url=player.display_avatar)
+    embed.set_author(name=character.name, icon_url=player.display_avatar)
     embed.add_field(
         name="Experience (Unspent / Lifetime)",
         value=f"```{character.current_xp} / {character.total_xp}```"

@@ -40,7 +40,7 @@ async def list_events(ctx, character, player, ephemeral):
 async def __get_embed(ctx, character, player):
     """Make an embed in which to display the XP events."""
     embed = discord.Embed(
-        title=f"Experience Log",
+        title="Experience Log",
         description=await __get_contents(ctx, character)
     )
     embed.set_author(name=character.name, icon_url=player.display_avatar)

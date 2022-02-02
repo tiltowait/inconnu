@@ -54,7 +54,7 @@ async def __get_embed(ctx, character, player):
 
 async def __get_text(ctx, character):
     """Get the text-mode version of the XP log."""
-    contents = [f"**{character.name}'s Experience Log\n"]
+    contents = [f"**{character.name}'s Experience Log**\n"]
     contents.append(await __get_contents(ctx, character))
     contents.append(f"\n**New XP:** {character.current_xp} / {character.total_xp}")
 

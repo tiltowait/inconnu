@@ -53,10 +53,10 @@ class ExperienceCommands(commands.Cog):
 
     @experience.command()
     @commands.guild_only()
-    async def list(
+    async def log(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to display"),
+        character: inconnu.options.character("The character whose experience log to show"),
         player: inconnu.options.player,
     ):
         """Display a character's experience log."""

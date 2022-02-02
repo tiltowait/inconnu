@@ -41,6 +41,9 @@ async def on_application_command_error(ctx, error):
     if isinstance(error.original, commands.NoPrivateMessage):
         await ctx.respond("Sorry, this command isn't available in DMs!", ephemeral=True)
         return
+    if isinstance(error.original, commands.MissingPermissions):
+        await ctx.respond("Sorry, you don't have permission to do this!", ephemeral=True)
+        return
     if isinstance(error.original, discord.errors.NotFound):
         # This just means a button tried to disable when its message no longer exists.
         # We don't care, and there's nothing we can do about it anyway.

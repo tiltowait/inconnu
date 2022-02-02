@@ -773,6 +773,11 @@ class VChar:
 
         VChar._CHARS.update_one(self.find_query, push_query)
 
+        if scope == "lifetime":
+            self.total_xp += amount
+        else:
+            self.current_xp += amount
+
 
     # Misc
 

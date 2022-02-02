@@ -1,7 +1,5 @@
 """experience/award_deduct.py - Award or deduct XP from a character."""
 
-import discord
-
 import inconnu
 
 __HELP_URL = "https://www.inconnu-bot.com"
@@ -11,7 +9,7 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
     """Award or deduct XP from a character."""
     try:
         owner = await inconnu.common.player_lookup(ctx, player)
-        tip = "`/experience " + "award" if amount > 0 else "deduct"
+        tip = "`/experience " + ("award" if amount > 0 else "deduct") + "`"
         character = await inconnu.common.fetch_character(
             ctx, character, tip, __HELP_URL, owner=owner
         )
@@ -33,6 +31,9 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
         if reason[-1] != ".":
             msg += "."
         msg += "*"
+
+        # Add the new XP
+        msg += f"\n\n**New XP:** {character.current_xp} / {character.total_xp}"
 
         await ctx.respond(msg)
 

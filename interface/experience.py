@@ -42,7 +42,7 @@ class ExperienceCommands(commands.Cog):
         reason: Option(str, "The reason for the deduction"),
     ):
         """Deduct experience points from a character."""
-        await inconnu.experience.award_or_deduct(ctx, player, character, amount, scope, reason)
+        await inconnu.experience.award_or_deduct(ctx, player, character, amount * -1, scope, reason)
 
 
     @experience.command()
@@ -54,7 +54,7 @@ class ExperienceCommands(commands.Cog):
         player: inconnu.options.player,
     ):
         """Display a character's experience log."""
-        await ctx.respond("Displaying the log")
+        await inconnu.experience.list_events(ctx, character, player)
 
 
 def setup(bot):

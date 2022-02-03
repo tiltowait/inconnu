@@ -222,7 +222,8 @@ class RollDisplay:
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        can_use_external_emoji = self.ctx.channel.permissions_for(self.ctx.me).external_emojis
+        everyone = self.ctx.guild.default_role
+        can_use_external_emoji = self.ctx.channel.permissions_for(everyone).external_emojis
         if self.outcome.pool <= 30 and can_use_external_emoji:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)

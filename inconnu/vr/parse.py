@@ -112,10 +112,19 @@ def perform_roll(character: VChar, syntax):
         errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"
         raise SyntaxError(errmsg)
 
+    # Generate the pool string
     pool_str = " ".join(trait_stack)
     if re.search(r"[a-zA-z]", pool_str) is None:
         # We only need a pool string if using traits. No letters => no traits!
         pool_str = None
+    elif len(pool_str) > 1 and pool_str[1] == " ":
+        # Massage the pool string so we don't get "+ X" or "- X" at the beginning
+        if pool_str[0] == "+":
+            pool_str = pool_str[2:] # Just lop off leading plus sign
+        else:
+            pool_str = pool_str.replace(" ", "", 1)
+
+
     return Roll(params.pool, params.hunger, params.difficulty, pool_str, syntax)
 
 

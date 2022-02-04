@@ -113,6 +113,9 @@ def perform_roll(character: VChar, syntax):
         raise SyntaxError(errmsg)
 
     pool_str = " ".join(trait_stack)
+    if re.search(r"[a-zA-z]", pool_str) is None:
+        # We only need a pool string if using traits. No letters => no traits!
+        pool_str = None
     return Roll(params.pool, params.hunger, params.difficulty, pool_str, syntax)
 
 
@@ -210,7 +213,7 @@ def __combine_operators(stack):
             compact_stack.append(item)
         else:
             if not compact_stack:
-                raise SyntaxError("Invalid syntax!")
+                compact_stack.append(0)
 
             operand = compact_stack.pop()
 

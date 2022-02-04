@@ -32,6 +32,7 @@ class Roll:
         self.difficulty = difficulty
         self.strategy = None
         self.descriptor = None
+        self.pool_str = pool_str
 
         if syntax is None:
             self.syntax = None
@@ -39,11 +40,6 @@ class Roll:
             self.syntax = " ".join(map(str, syntax))
         else:
             self.syntax = syntax
-
-        if pool_str is not None and not pool_str.isdigit():
-            self.pool_str = pool_str
-        else:
-            self.pool_str = None
 
 
     # We could technically do this with stored properties, but the math is extremely

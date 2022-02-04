@@ -63,22 +63,12 @@ class RollDisplay:
     def __init__(self, ctx, outcome, comment, character, owner):
         self.ctx = ctx
         self.outcome = outcome
-        self.comment = comment
+        self._comment = comment
         self.character = character
         self.owner = owner
         self.rerolled = False
         self.surged = False
         self.msg = None # This is used for disabling the buttons at the end of the timeout
-
-        # Add impairment to the comment, if necessary
-        if character is not None:
-            impairment = self.character.impairment
-            if impairment is not None:
-                if self.comment is not None:
-                    if impairment not in self.comment:
-                        self.comment += f"\n{impairment}"
-                else:
-                    self.comment = impairment
 
 
     async def display(self, use_embed: bool, alt_ctx=None):
@@ -165,6 +155,16 @@ class RollDisplay:
             return self.character.hunger
 
         return self.outcome.hunger.count
+
+
+    @property
+    def comment(self):
+        """The original comment, plus any impairment string."""
+        if self.character is not None:
+            if (impairment := self.character.impairment) is not None:
+                comment = (self._comment + "\n") if self._comment else ""
+                return comment + impairment
+        return self._comment
 
 
     @property

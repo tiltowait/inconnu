@@ -34,9 +34,15 @@ class RollParser:
 
 
     @property
+    def pool_stack(self):
+        """The fully qualified pool stack."""
+        return self._parameters["q_pool_stack"]
+
+
+    @property
     def pool_str(self):
         """The pool's attribute+skill string."""
-        string = " ".join(self._parameters["q_pool_stack"])
+        string = " ".join(self.pool_stack)
 
         if not re.search(r"[A-Za-z_]", string):
             return None

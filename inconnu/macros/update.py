@@ -3,8 +3,8 @@
 import re
 from distutils.util import strtobool
 
+import inconnu
 from . import macro_common
-from .. import common
 from ..log import Log
 from ..vchar import errors, VChar
 
@@ -25,7 +25,7 @@ async def update(ctx, macro: str, syntax: str, character: str):
     """Update a macro."""
     try:
         tip = f"`/macro update` `macro:{macro}` `parameters:PARAMETERS` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
         parameters = __parameterize(syntax)
         macro_update = __validate_parameters(character, parameters)
@@ -46,11 +46,11 @@ async def update(ctx, macro: str, syntax: str, character: str):
             ("Valid Keys", "\n".join(keys))
         ]
 
-        await common.present_error(ctx, err, *instructions,
+        await inconnu.common.present_error(ctx, err, *instructions,
             help_url=__HELP_URL,
             character=character.name
         )
-    except common.FetchError:
+    except inconnu.common.FetchError:
         pass
 
 
@@ -107,7 +107,7 @@ def __validate_parameters(character: VChar, parameters: dict):
             macro_update[key] = value
 
         elif key == "pool":
-            pool = macro_common.expand_syntax(character, value)
+            pool = inconnu.vr.RollParser(character, value).pool_stack
             macro_update[key] = pool
 
         elif key == "hunger":

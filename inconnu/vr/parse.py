@@ -19,6 +19,7 @@ import discord
 import inconnu
 from inconnu import common
 from .rolldisplay import RollDisplay
+from .rollparser import RollParser
 from ..roll import Roll
 from ..log import Log
 from ..vchar import errors, VChar

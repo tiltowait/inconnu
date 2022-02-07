@@ -18,10 +18,8 @@ class RollParser:
             syntax = re.sub(r"\s*([+-])\s*", r" \g<1> ", raw_syntax)
 
             self.tokens = syntax.split()
-            self.raw_syntax = raw_syntax
         else:
             self.tokens = map(str, raw_syntax)
-            self.raw_syntax = None
 
         self._create_stacks()
         self._evaluate_stacks()
@@ -90,7 +88,7 @@ class RollParser:
                 # We have a character trait
                 trait = self.character.find_trait(token)
                 current_qualified.append(trait.name)
-                current_interpolated.append(trait.rating)
+                current_interpolated.append(str(trait.rating))
 
             expecting_operand = False
 
@@ -112,8 +110,8 @@ class RollParser:
             # They only gave us a pool
             self._parameters["q_hunger_stack"] = ["0"]
             self._parameters["i_hunger_stack"] = ["0"]
-            self._parameters["q_difficulty_stack"] = [0]
-            self._parameters["i_difficulty_stack"] = [0]
+            self._parameters["q_difficulty_stack"] = ["0"]
+            self._parameters["i_difficulty_stack"] = ["0"]
             return
 
         self._parameters["q_hunger_stack"] = qualified_stacks.pop(0)
@@ -121,8 +119,8 @@ class RollParser:
 
         if not qualified_stacks:
             # They gave us a pool and Hunger
-            self._parameters["q_difficulty_stack"] = [0]
-            self._parameters["i_difficulty_stack"] = [0]
+            self._parameters["q_difficulty_stack"] = ["0"]
+            self._parameters["i_difficulty_stack"] = ["0"]
             return
 
         # They gave us all three
@@ -145,8 +143,8 @@ class RollParser:
 
         # We can just use eval for this rather than looping through
         try:
-            self._parameters["eval_pool"] = pool
-            self._parameters["eval_hunger"] = hunger
-            self._parameters["eval_difficulty"] = difficulty
+            self._parameters["eval_pool"] = eval(pool)
+            self._parameters["eval_hunger"] = eval(hunger)
+            self._parameters["eval_difficulty"] = eval(difficulty)
         except SyntaxError as err:
             raise SyntaxError("Invalid syntax!") from err

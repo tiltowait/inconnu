@@ -22,8 +22,15 @@ class Roll:
         """
         self.id = bson.objectid.ObjectId() # pylint: disable=invalid-name
 
-        if not 1 <= pool <= 100:
-            raise ValueError(f"Pool must be between 1 and 100. (Got {pool}.)")
+        if not 0 <= hunger <= 5:
+            raise ValueError(f"Hunger must be between 0 and 5. (Got `{hunger}`.)")
+
+        if difficulty < 0:
+            raise ValueError(f"Difficulty cannot be less than 0. (Got `{difficulty}`.)")
+
+        pool = max(1, pool)
+        if pool > 100:
+            raise ValueError(f"Pool cannot exceed 100. (Got `{pool}`.)")
 
         normal_dice = max(0, pool - hunger)
 

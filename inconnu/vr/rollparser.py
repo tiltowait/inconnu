@@ -35,12 +35,11 @@ class RollParser:
     def pool_str(self):
         """The pool's attribute+skill string."""
         string = " ".join(self._parameters["q_pool_stack"])
-        if len(string) > 1 and string[1] == " ":
-            # Massage the string so we don't get "+ X" or "- X" at the beginning.
-            if string[0] == "+":
-                string = string[2:] # Just lop off the leading plus sign
-            else:
-                string = string.replace(" ", "", 1)
+
+        if string[0] == "+":
+            string = string[2:] # Just lop off the leading plus sign
+        if string[0] == "-":
+            string = string.replace(" ", "", 1) # First item is negative, not subtracting
 
         return string
 

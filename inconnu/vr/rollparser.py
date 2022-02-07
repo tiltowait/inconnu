@@ -1,6 +1,8 @@
 """vr/rollparser.py - Define a class for parsing user roll input."""
 
+import ast
 import re
+import operator as op
 
 
 class RollParser:
@@ -145,8 +147,35 @@ class RollParser:
 
         # We can just use eval for this rather than looping through
         try:
-            self._parameters["eval_pool"] = eval(pool)
-            self._parameters["eval_hunger"] = eval(hunger)
-            self._parameters["eval_difficulty"] = eval(difficulty)
+            self._parameters["eval_pool"] = eval_expr(pool)
+            self._parameters["eval_hunger"] = eval_expr(hunger)
+            self._parameters["eval_difficulty"] = eval_expr(difficulty)
         except SyntaxError as err:
             raise SyntaxError("Invalid syntax!") from err
+
+
+# Math Helpers
+
+# We could use pandas for this, but this is built-in and considerably faster,
+# which makes a difference when calculating probabilities.
+
+OPERATORS = { ast.Add: op.add, ast.Sub: op.sub, ast.UAdd: op.pos, ast.USub: op.neg }
+
+
+def eval_expr(expr):
+    """Evaluate a mathematical string expression. Safer than using eval."""
+    return eval_(ast.parse(expr, mode="eval").body)
+
+
+def eval_(node):
+    """Recursively evaluate a mathematical expression. Only handles +/-."""
+    if isinstance(node, ast.Num):
+        return node.n
+
+    if isinstance(node, ast.BinOp):
+        return OPERATORS[type(node.op)](eval_(node.left), eval_(node.right))
+
+    if isinstance(node, ast.UnaryOp):
+        return OPERATORS[type(node.op)](eval_(node.operand))
+
+    raise TypeError(node)

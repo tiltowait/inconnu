@@ -89,7 +89,7 @@ def __normalize_syntax(syntax: str):
     # 2: Difficulty (None or the user's input)
 
     # We validate the pool stack later, but we will validate hunger and difficulty
-    # here. We don't modify anything; the roll parser will do that for us. Insteat,
+    # here. We don't modify anything; the roll parser will do that for us. Instead,
     # we simply check for validity.
 
     if params[1] is not None and params[1].lower() != "hunger": # "hunger" is a valid option here

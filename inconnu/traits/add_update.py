@@ -68,7 +68,7 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
                 unassigned.append(trait)
             else:
                 character.update_trait(trait, rating)
-                assigned.append(trait)
+                assigned.append(f"{trait} ({rating})")
 
     else:
         error_traits = list(partition.owned.keys())
@@ -77,7 +77,7 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
                 unassigned.append(trait)
             else:
                 character.add_trait(trait, rating)
-                assigned.append(trait)
+                assigned.append(f"{trait} ({rating})")
 
     return SimpleNamespace(
         assigned=assigned,
@@ -104,11 +104,11 @@ async def __results_embed(ctx, outcome, char_name: str):
     if not outcome.assigned and not outcome.unassigned and outcome.errors:
         title = "Unable to Assign Traits"
     elif outcome.assigned and not outcome.unassigned:
-        title = f"Assigned {assigned} Traits"
+        title = "Assigned " + common.pluralize(assigned, 'Trait')
     elif outcome.assigned and outcome.unassigned:
         title = f"Assigned: {assigned} | Unassigned: {unassigned + errors}"
     else:
-        title = f"Couldn't Assign {unassigned + errors} Traits"
+        title = "Couldn't Assign " + common.pluralize(unassigned + errors, "Trait")
 
     # No color if no mistakes
     # Black if some mistakes

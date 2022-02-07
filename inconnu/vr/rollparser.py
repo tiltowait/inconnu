@@ -36,6 +36,9 @@ class RollParser:
         """The pool's attribute+skill string."""
         string = " ".join(self._parameters["q_pool_stack"])
 
+        if not re.search(r"[A-Za-z_]", string):
+            return None
+
         if string[0] == "+":
             string = string[2:] # Just lop off the leading plus sign
         if string[0] == "-":

@@ -2,6 +2,7 @@
 
 import os
 from collections import defaultdict
+from types import SimpleNamespace as SN
 
 import discord
 import pymongo
@@ -39,7 +40,8 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
         character = None
 
     try:
-        _, params = roll.prepare_roll(character, syntax)
+        parser = roll.RollParser(character, syntax)
+        params = SN(pool=parser.pool, hunger=parser.hunger, difficulty=parser.difficulty)
         probabilities = __get_probabilities(params, strategy)
 
         if Settings.accessible(ctx.user):

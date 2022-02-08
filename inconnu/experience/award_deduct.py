@@ -17,6 +17,14 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
         )
         scope = scope.lower()
 
+        # Check that we aren't deducting more XP than they have
+        if scope == "unspent" and character.current_xp + amount < 0:
+            await inconnu.common.present_error(
+                ctx,
+                f"**{character.name}** only has `{character.current_xp}` xp to spend!"
+            )
+            return
+
         character.apply_experience(amount, scope, reason, ctx.author.id)
 
         if reason[-1] != ".":

@@ -69,8 +69,19 @@ class RollParser:
 
     def _create_stacks(self):
         """Create both the fully qualified stacks and the interpolated stacks."""
+
+        # A "fully qualified" stack has the canonical names of the character's
+        # traits. For instance, `wi` will be interpreted to Wits, and `aw` will
+        # become Awareness.
+        #
+        # An "interpolated" stack replaces the trait names with the ratings.
+
         qualified_stacks = []
         interpolated_stacks = []
+
+        # When we encounter two operands in a row, the user has switched
+        # parameter types (e.g. pool -> hunger -> difficulty). When this
+        # happens, we wrap up the current stack and start a new one.
 
         current_qualified = []
         current_interpolated = []
@@ -78,24 +89,31 @@ class RollParser:
 
         for token in self.tokens:
             if token in ["+", "-"]:
+                # We don't prevent anyone from using multiple operators in a
+                # row, so they could technically write 3 + - + - 2, and it will
+                # work despite being somewhat nonsensical.
                 current_qualified.append(token)
                 current_interpolated.append(token)
                 expecting_operand = True
                 continue
 
             if not expecting_operand:
-                # We expected +/-. Since we didn't get one, we're looking at the next parameter type
+                # We expected +/-. Since we didn't get one, we're looking at the
+                # next parameter type. Start up and begin processing the next
+                # stack.
                 qualified_stacks.append(current_qualified)
-                current_qualified = []
                 interpolated_stacks.append(current_interpolated)
+
+                current_qualified = []
                 current_interpolated = []
 
             if token.isdigit():
-                # Digits require no interpolation
+                # Digits require no interpolation, so just add it to the stacks
                 current_qualified.append(token)
                 current_interpolated.append(token)
             else:
-                # We have a character trait
+                # We have a character trait, which needs to be qualified and
+                # interpolated before adding it to the stacks
                 trait = self.character.find_trait(token)
                 current_qualified.append(trait.name)
                 current_interpolated.append(str(trait.rating))
@@ -105,16 +123,21 @@ class RollParser:
         qualified_stacks.append(current_qualified)
         interpolated_stacks.append(current_interpolated)
 
-        # Determine which stack is which
+        # Determine which stack is which. Order goes pool, hunger, difficulty.
+
         if not qualified_stacks:
+            # This shouldn't be possible to reach, but just in case ...
             raise SyntaxError("You have to supply roll syntax!")
 
         self._parameters["q_pool_stack"] = qualified_stacks.pop(0)
         self._parameters["i_pool_stack"] = interpolated_stacks.pop(0)
 
-        if "Hunger" in self._parameters["q_pool_stack"]:
+        if "Hunger" in self.pool_stack:
             errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"
             raise SyntaxError(errmsg)
+
+        # Only the pool is required, so we need to provide defaults if the other
+        # stacks aren't given
 
         if not qualified_stacks:
             # They only gave us a pool
@@ -124,11 +147,12 @@ class RollParser:
             self._parameters["i_difficulty_stack"] = ["0"]
             return
 
+        # The user provided pool and hunger
         self._parameters["q_hunger_stack"] = qualified_stacks.pop(0)
         self._parameters["i_hunger_stack"] = interpolated_stacks.pop(0)
 
         if not qualified_stacks:
-            # They gave us a pool and Hunger
+            # Difficulty was not provided
             self._parameters["q_difficulty_stack"] = ["0"]
             self._parameters["i_difficulty_stack"] = ["0"]
             return
@@ -138,7 +162,7 @@ class RollParser:
         self._parameters["i_difficulty_stack"] = interpolated_stacks.pop(0)
 
         if qualified_stacks:
-            # They gave us too much!
+            # They gave us too many stacks!
             extra = sum(qualified_stacks, [])
             extra = " ".join(extra)
             err = f"Expected pool, hunger, difficulty. Not sure what to do with `{extra}`!"

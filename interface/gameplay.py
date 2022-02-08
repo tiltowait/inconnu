@@ -39,7 +39,7 @@ class Gameplay(commands.Cog):
         pool: Option(str, "May be Attribute+Skill or a raw number. Can surge by adding '+ Surge'"),
         hunger: Option(str, "The character's Hunger level",
             choices=[OptionChoice("Current Hunger", "hunger")]
-                + [OptionChoice(str(n), str(n)) for n in range(1,6)]
+                + [OptionChoice(str(n), str(n)) for n in range(0,6)]
         ),
         difficulty: Option(int, "The target number of successes required",
             choices=[OptionChoice(str(n), n) for n in range(11)]

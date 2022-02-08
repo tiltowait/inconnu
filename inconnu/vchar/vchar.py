@@ -760,7 +760,7 @@ class VChar:
         """
         VChar.__prepare()
 
-        event = "award_" if amount > 0 else "deduct_"
+        event = "award" if amount > 0 else "deduct"
 
         event_document = {
             "event": f"{event}_{scope}",

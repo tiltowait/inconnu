@@ -151,9 +151,6 @@ class RollDisplay:
         The Hunger for the roll. This uses the character's Hunger if possible and
         falls back to the hunger dice count if unavailable.
         """
-        if self.character is not None:
-            return self.character.hunger
-
         return self.outcome.hunger.count
 
 

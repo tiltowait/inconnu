@@ -3,4 +3,4 @@ python-dotenv
 pymongo==4.0.1
 statcord.py==3.1.0
 topggpy==1.4.0
-py-cord==2.0.0b1
+py-cord==2.0.0b4

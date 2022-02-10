@@ -161,10 +161,14 @@ async def select_character(ctx, err, help_url, tip, player=None):
         help_url=help_url,
         view=options.view
     )
-    options.view.message = msg
 
+    options.view.message = msg
     await options.view.wait()
-    character_id = options.view.selected_value.split()[0] # Remove the UUID, if it exists
+
+    if (character_id := options.view.selected_value) is not None:
+        # These button IDs follow the format "character_id UUID", so we need
+        # to remove the UUID to get just the character ID
+        character_id = character_id.split()[0]
 
     return character_id
 

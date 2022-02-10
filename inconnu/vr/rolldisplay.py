@@ -333,39 +333,40 @@ class RollDisplay:
         # We haven't re-rolled
 
         if "Willpower" not in (self.outcome.pool_str or ""):
-            if self.outcome.can_reroll_failures:
-                buttons.append(Button(
-                    label="Re-Roll Failures",
-                    custom_id=self._REROLL_FAILURES,
-                    style=discord.ButtonStyle.primary
-                ))
+            buttons.append(Button(
+                label="Re-Roll Failures",
+                custom_id=self._REROLL_FAILURES,
+                style=discord.ButtonStyle.primary,
+                disabled=not self.outcome.can_reroll_failures
+            ))
 
-            if self.outcome.can_maximize_criticals:
-                buttons.append(Button(
-                    label="Maximize Crits",
-                    custom_id=self._MAXIMIZE_CRITICALS,
-                    style=discord.ButtonStyle.primary
-                ))
+            buttons.append(Button(
+                label="Max Crits",
+                custom_id=self._MAXIMIZE_CRITICALS,
+                style=discord.ButtonStyle.primary,
+                disabled=not self.outcome.can_maximize_criticals
+            ))
 
-            if self.outcome.can_avoid_messy_critical:
-                buttons.append(Button(
-                    label="Avoid Messy",
-                    custom_id=self._AVOID_MESSY,
-                    style=discord.ButtonStyle.primary
-                ))
+            buttons.append(Button(
+                label="Avoid Messy",
+                custom_id=self._AVOID_MESSY,
+                style=discord.ButtonStyle.primary,
+                disabled=not self.outcome.can_avoid_messy_critical
+            ))
 
-            if self.outcome.can_risky_messy_critical:
-                buttons.append(Button(
-                    label="Risky Avoid Messy",
-                    custom_id=self._RISKY_AVOID_MESSY,
-                    style=discord.ButtonStyle.primary
-                ))
+            buttons.append(Button(
+                label="Risky Avoid",
+                custom_id=self._RISKY_AVOID_MESSY,
+                style=discord.ButtonStyle.primary,
+                disabled=not self.outcome.can_risky_messy_critical
+            ))
 
         if self.surging:
             buttons.append(Button(
                 label="Rouse",
                 custom_id=str(self.character.id),
-                style=discord.ButtonStyle.danger
+                style=discord.ButtonStyle.danger,
+                row=1
             ))
 
         return buttons or None

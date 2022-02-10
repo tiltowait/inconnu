@@ -2,6 +2,7 @@
 # pylint: disable=too-many-arguments, too-many-instance-attributes
 
 import re
+from enum import Enum
 
 import discord
 from discord.ui import Button
@@ -12,6 +13,15 @@ from .. import character as char
 from .. import stats
 from ..misc import rouse
 from ..vchar import contains_digit
+
+
+class _ButtonID(str, Enum):
+    """Button IDs used in re-rolls."""
+    REROLL_FAILURES = "reroll_failures"
+    MAXIMIZE_CRITICALS = "maximize_criticals"
+    AVOID_MESSY = "avoid_messy"
+    RISKY_AVOID_MESSY = "risky"
+    WILLPOWER = "willpower"
 
 
 class _RollControls(inconnu.views.DisablingView):
@@ -39,6 +49,10 @@ class _RollControls(inconnu.views.DisablingView):
                 # This was the surge button, which is always last. Let's disable it
                 self.children[-1].disabled = True
                 await interaction.response.edit_message(view=self)
+            elif interaction.data["custom_id"] == _ButtonID.WILLPOWER:
+                # Mark WP is always the first button
+                self.children[0].disabled = True
+                await interaction.response.edit_message(view=self)
             else:
                 # Find the pressed button and make it gray
                 for child in self.children:
@@ -52,13 +66,6 @@ class _RollControls(inconnu.views.DisablingView):
 
 class RollDisplay:
     """Display and manipulate roll outcomes. Provides buttons for rerolls, wp, and rouse."""
-
-    _REROLL_FAILURES = "reroll_failures"
-    _MAXIMIZE_CRITICALS = "maximize_criticals"
-    _AVOID_MESSY = "avoid_messy"
-    _RISKY_AVOID_MESSY = "risky"
-    _WILLPOWER = "willpower"
-
 
     def __init__(self, ctx, outcome, comment, character, owner):
         self.ctx = ctx
@@ -109,7 +116,7 @@ class RollDisplay:
 
     async def respond_to_button(self, btn):
         """Respond to the buttons."""
-        if btn.data["custom_id"] == self._WILLPOWER:
+        if btn.data["custom_id"] == _ButtonID.WILLPOWER:
             if self.character is not None:
                 self.character.superficial_wp += 1
 
@@ -319,7 +326,7 @@ class RollDisplay:
             if self.character is not None:
                 buttons.append(Button(
                     label="Mark WP",
-                    custom_id=self._WILLPOWER,
+                    custom_id=_ButtonID.WILLPOWER,
                     style=discord.ButtonStyle.primary
                 ))
                 if not self.surged and self.surging:
@@ -335,28 +342,28 @@ class RollDisplay:
         if "Willpower" not in (self.outcome.pool_str or ""):
             buttons.append(Button(
                 label="Re-Roll Failures",
-                custom_id=self._REROLL_FAILURES,
+                custom_id=_ButtonID.REROLL_FAILURES,
                 style=discord.ButtonStyle.primary,
                 disabled=not self.outcome.can_reroll_failures
             ))
 
             buttons.append(Button(
                 label="Max Crits",
-                custom_id=self._MAXIMIZE_CRITICALS,
+                custom_id=_ButtonID.MAXIMIZE_CRITICALS,
                 style=discord.ButtonStyle.primary,
                 disabled=not self.outcome.can_maximize_criticals
             ))
 
             buttons.append(Button(
                 label="Avoid Messy",
-                custom_id=self._AVOID_MESSY,
+                custom_id=_ButtonID.AVOID_MESSY,
                 style=discord.ButtonStyle.primary,
                 disabled=not self.outcome.can_avoid_messy_critical
             ))
 
             buttons.append(Button(
                 label="Risky Avoid",
-                custom_id=self._RISKY_AVOID_MESSY,
+                custom_id=_ButtonID.RISKY_AVOID_MESSY,
                 style=discord.ButtonStyle.primary,
                 disabled=not self.outcome.can_risky_messy_critical
             ))

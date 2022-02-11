@@ -2,6 +2,7 @@
 # pylint: disable=too-many-arguments, too-many-instance-attributes
 
 import re
+import uuid
 from enum import Enum
 
 import discord
@@ -22,6 +23,11 @@ class _ButtonID(str, Enum):
     AVOID_MESSY = "avoid_messy"
     RISKY_AVOID_MESSY = "risky"
     WILLPOWER = "willpower"
+
+
+    def unique(self):
+        """Return the string value of the case, uniquely identified."""
+        return f"{self} {uuid.uuid4()}"
 
 
 class _RollControls(inconnu.views.DisablingView):
@@ -45,17 +51,20 @@ class _RollControls(inconnu.views.DisablingView):
                 ephemeral=True
             )
         else:
-            if contains_digit(interaction.data["custom_id"]):
+            button_id = interaction.data["custom_id"].split()[0] # Remove the unique ID
+
+            if contains_digit(button_id):
                 # This was the surge button, which is always last. Let's disable it
                 self.children[-1].disabled = True
                 await interaction.response.edit_message(view=self)
-            elif interaction.data["custom_id"] == _ButtonID.WILLPOWER:
+            elif button_id == _ButtonID.WILLPOWER:
                 # Mark WP is always the first button
                 self.children[0].disabled = True
                 await interaction.response.edit_message(view=self)
             else:
                 # Find the pressed button and make it gray
                 for child in self.children:
+                    # We need the full custom id here, not just the button ID
                     if child.custom_id == interaction.data["custom_id"]:
                         child.style = discord.ButtonStyle.secondary
                 await self.disable_items(interaction)
@@ -75,7 +84,7 @@ class RollDisplay:
         self.owner = owner
         self.rerolled = False
         self.surged = False
-        self.msg = None # This is used for disabling the buttons at the end of the timeout
+        self.msg = None # Used for disabling the buttons at the end of the timeout
 
 
     async def display(self, use_embed: bool, alt_ctx=None):
@@ -93,7 +102,7 @@ class RollDisplay:
         ctx = alt_ctx or self.ctx
 
         if (buttons := self.buttons):
-            controls = _RollControls(self.respond_to_button, self.ctx.user, buttons)
+            controls = _RollControls(self.respond_to_button, self.owner, buttons)
         else:
             controls = discord.utils.MISSING
 
@@ -116,7 +125,9 @@ class RollDisplay:
 
     async def respond_to_button(self, btn):
         """Respond to the buttons."""
-        if btn.data["custom_id"] == _ButtonID.WILLPOWER:
+        button_id = btn.data["custom_id"].split()[0]
+
+        if button_id == _ButtonID.WILLPOWER:
             if self.character is not None:
                 self.character.superficial_wp += 1
 
@@ -126,13 +137,13 @@ class RollDisplay:
                 fields=[("New WP", char.DisplayField.WILLPOWER)]
             )
 
-        elif contains_digit(btn.data["custom_id"]): # Surge buttons are just charids
+        elif contains_digit(button_id): # Surge buttons are just charids
             self.surged = True
             await rouse(btn, 1, self.character, "Surge", False)
 
         else:
             # We're rerolling
-            strategy = btn.data["custom_id"]
+            strategy = button_id
             self.outcome.reroll(strategy)
             self.rerolled = True
 
@@ -326,7 +337,7 @@ class RollDisplay:
             if self.character is not None:
                 buttons.append(Button(
                     label="Mark WP",
-                    custom_id=_ButtonID.WILLPOWER,
+                    custom_id=_ButtonID.WILLPOWER.unique(),
                     style=discord.ButtonStyle.primary
                 ))
                 if not self.surged and self.surging:
@@ -342,28 +353,28 @@ class RollDisplay:
         if "Willpower" not in (self.outcome.pool_str or ""):
             buttons.append(Button(
                 label="Re-Roll Failures",
-                custom_id=_ButtonID.REROLL_FAILURES,
+                custom_id=_ButtonID.REROLL_FAILURES.unique(),
                 style=discord.ButtonStyle.primary,
                 disabled=not self.outcome.can_reroll_failures
             ))
 
             buttons.append(Button(
                 label="Max Crits",
-                custom_id=_ButtonID.MAXIMIZE_CRITICALS,
+                custom_id=_ButtonID.MAXIMIZE_CRITICALS.unique(),
                 style=discord.ButtonStyle.primary,
                 disabled=not self.outcome.can_maximize_criticals
             ))
 
             buttons.append(Button(
                 label="Avoid Messy",
-                custom_id=_ButtonID.AVOID_MESSY,
+                custom_id=_ButtonID.AVOID_MESSY.unique(),
                 style=discord.ButtonStyle.primary,
                 disabled=not self.outcome.can_avoid_messy_critical
             ))
 
             buttons.append(Button(
                 label="Risky Avoid",
-                custom_id=_ButtonID.RISKY_AVOID_MESSY,
+                custom_id=_ButtonID.RISKY_AVOID_MESSY.unique(),
                 style=discord.ButtonStyle.primary,
                 disabled=not self.outcome.can_risky_messy_critical
             ))

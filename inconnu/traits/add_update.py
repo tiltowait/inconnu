@@ -1,5 +1,6 @@
 """traits/add.py - Add traits to a character."""
 
+import re
 from types import SimpleNamespace
 
 import discord
@@ -32,7 +33,10 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
         tip = f"`/traits {key}` `traits:{traits}` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL[allow_overwrite])
 
-        traits = parse_traits(*traits.split())
+        # Allow the user to input "trait rating", not only "trait=rating"
+        traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
+
+        traits = parse_traits(traits.split())
         outcome = __handle_traits(character, traits, allow_overwrite)
 
         await __display_results(ctx, outcome, character.name)

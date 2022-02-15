@@ -39,7 +39,7 @@ class MiscCommands(commands.Cog):
         roll: Option(str, "The pool, hunger, and difficulty"),
         reroll: Option(str, "The re-roll strategy to use",
             choices=[
-                OptionChoice("Re-roll Failures", "reroll_failures"),
+                OptionChoice("Re-Roll Failures", "reroll_failures"),
                 OptionChoice("Maximize Crits", "maximize_criticals"),
                 OptionChoice("Avoid Messy", "avoid_messy"),
                 OptionChoice("Risky Avoid Messy", "risky")

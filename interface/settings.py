@@ -76,7 +76,7 @@ class SettingsCommands(commands.Cog):
     async def settings_show(self, ctx):
         """Display the settings in effect."""
         accessibility = "ON" if inconnu.settings.accessible(ctx.user) else "OFF"
-        oblivion_stains = inconnu.settings.oblivion_stains(ctx.guild)
+        oblivion_stains = inconnu.settings.oblivion_stains(ctx.guild) or ["Never"]
         oblivion_stains = map(lambda s: f"`{s}`", oblivion_stains)
 
         msg = f"Accessibility mode: `{accessibility}`"

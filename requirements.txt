@@ -1,5 +1,6 @@
 python-dotenv
 
+flatdict==4.0.1
 pymongo==4.0.1
 statcord.py==3.1.0
 topggpy==1.4.0

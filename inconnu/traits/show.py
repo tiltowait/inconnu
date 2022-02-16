@@ -3,6 +3,7 @@
 import discord
 from discord.ext import pages
 
+import inconnu
 from .. import common
 from ..settings import Settings
 
@@ -29,26 +30,34 @@ async def show(ctx, character: str, player: discord.Member):
 
 async def __list_embed(ctx, character, owner):
     """Display traits in an embed."""
-    traits = [f"**{trait}:** {rating}" for trait, rating in character.traits.items()]
-    raw_pages = common.paginate(1200, *traits) # Array of strings
+    embed = discord.Embed(title="Character Traits")
+    embed.set_author(name=character.name, icon_url=owner.display_avatar)
+    embed.set_footer(text="To see HP, WP, etc., use /character display")
 
-    _pages = []
-    for page in raw_pages:
-        embed = discord.Embed(
-            title="Traits",
-            description=page
-        )
-        embed.set_author(name=character.name, icon_url=owner.display_avatar)
-        embed.set_footer(text="To see HP, WP, etc., use /character display")
+    char_traits = character.traits
 
-        _pages.append(embed)
+    for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
+        embed.add_field(name="​", value=f"**{group}**", inline=False)
+        for subgroup, traits in subgroups.items():
+            trait_list = []
+            for trait in traits:
+                rating = char_traits.pop(trait, 0)
+                trait_list.append(f"***{trait}***: {rating}")
+
+            embed.add_field(name=subgroup, value="\n".join(trait_list), inline=True)
+
+    # The remaining traits are user-defined
+    traits = [f"***{trait}:*** {rating}" for trait, rating in char_traits.items()]
+    traits = "\n".join(traits)
+    embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
 
     if isinstance(ctx, discord.Interaction):
-        interaction = ctx
+        if ctx.response.is_done():
+            await ctx.followup.send(embed=embed, ephemeral=True)
+        else:
+            await ctx.response.send_message(embed=embed, ephemeral=True)
     else:
-        interaction = ctx.interaction
-    paginator = pages.Paginator(pages=_pages, show_disabled=False)
-    await paginator.respond(interaction, ephemeral=True)
+        await ctx.respond(embed=embed, ephemeral=True)
 
 
 async def __list_text(ctx, character):

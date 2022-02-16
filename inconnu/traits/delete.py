@@ -83,7 +83,7 @@ def __delete_traits(character: VChar, *traits) -> list:
     deleted = []
     errs = []
     for trait in traits:
-        if trait.lower() in constants.SKILLS_AND_ATTRIBUTES:
+        if trait.lower() in map(lambda t: t.lower(), constants.FLAT_TRAITS):
             # Set attributes and skills to 0 for better UX
             character.update_trait(trait, 0)
         else:

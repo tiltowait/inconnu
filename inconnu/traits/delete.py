@@ -88,6 +88,7 @@ def __delete_traits(character: VChar, *traits) -> list:
         if trait.lower() in standard_traits:
             # Set attributes and skills to 0 for better UX
             character.update_trait(trait, 0)
+            deleted.append(trait)
         else:
             try:
                 character.delete_trait(trait)

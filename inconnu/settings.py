@@ -1,9 +1,19 @@
 """settings.py - User- and server-wide settings."""
 
 import os
+from enum import Enum
 
 import discord
 import pymongo
+
+
+class ExpPerms(str, Enum):
+    """An enum for experience adjustment permissions."""
+
+    UNRESTRICTED = "unrestricted"
+    UNSPENT_ONLY = "unspent_only"
+    LIFETIME_ONLY = "lifetime_only"
+    ADMIN_ONLY = "admin_only"
 
 
 class Settings:
@@ -66,15 +76,91 @@ class Settings:
 
 
     @classmethod
+    def can_adjust_current_xp(cls, ctx) -> bool:
+        """Whether the user can adjust their current XP."""
+        if ctx.user.guild_permissions.administrator:
+            return True
+
+        try:
+            guild = Settings._fetch_guild(ctx.guild)
+            permissions = guild["settings"]["experience_permissions"]
+            permissions = ExpPerms(permissions)
+
+            return permissions in [ExpPerms.UNRESTRICTED, ExpPerms.UNSPENT_ONLY]
+        except KeyError:
+            # If there are no settings, default to unrestricted
+            return True
+
+
+    @classmethod
+    def can_adjust_lifetime_xp(cls, ctx) -> bool:
+        if ctx.user.guild_permissions.administrator:
+            return True
+
+        try:
+            guild = Settings._fetch_guild(ctx.guild)
+            permissions = guild["settings"]["experience_permissions"]
+            permissions = ExpPerms(permissions)
+
+            return permissions in [ExpPerms.UNRESTRICTED, ExpPerms.LIFETIME_ONLY]
+        except KeyError:
+            # If there are no settings, default to unrestricted
+            return True
+
+
+    @classmethod
+    def xp_permissions(cls, guild):
+        """Get the XP permissions."""
+        try:
+            guild = Settings._fetch_guild(guild)
+            permissions = ExpPerms(guild["settings"]["experience_permissions"])
+        except KeyError:
+            permissions = ExpPerms.UNRESTRICTED
+
+        match permissions:
+            case ExpPerms.UNRESTRICTED:
+                return "Users may adjust unspent and lifetime XP."
+            case ExpPerms.UNSPENT_ONLY:
+                return "Users may adjust unspent XP only."
+            case ExpPerms.LIFETIME_ONLY:
+                return "Users may adjust lifetime XP only."
+            case ExpPerms.ADMIN_ONLY:
+                return "Only admins may adjust XP totals."
+
+
+    @classmethod
+    def set_xp_permissions(cls, ctx, permissions):
+        """
+        Set the XP settings:
+            • User can modify current and lifetime
+            • User can modify current
+            • User can modify lifetime
+            • User can't modify any
+        """
+        if not ctx.user.guild_permissions.administrator:
+            raise PermissionError("Sorry, only admins can set user experience permissions.")
+
+        Settings._set_key(ctx.guild, "experience_permissions", permissions)
+
+        match ExpPerms(permissions):
+            case ExpPerms.UNRESTRICTED:
+                response = "Users have unrestricted XP access."
+            case ExpPerms.UNSPENT_ONLY:
+                response = "Users may only adjust unspent XP."
+            case ExpPerms.LIFETIME_ONLY:
+                response = "Users may only adjust lifetime XP."
+            case ExpPerms.ADMIN_ONLY:
+                response = "Only admins may adjust user XP."
+
+        return response
+
+
+
+    @classmethod
     def oblivion_stains(cls, guild) -> list:
         """Retrieve the Rouse results that grant Oblivion stains."""
-        Settings._prepare()
-
-        if not isinstance(guild, int):
-            guild = guild.id
-
-        guild = Settings._GUILDS.find_one({"guild": guild })
         try:
+            guild = Settings._fetch_guild(guild)
             oblivion = guild["settings"]["oblivion_stains"]
         except KeyError:
             oblivion = [1, 10]
@@ -147,6 +233,17 @@ class Settings:
         })
         if res.matched_count == 0:
             Settings._USERS.insert_one({ "user": user.id, "settings": { key: value } })
+
+
+    @classmethod
+    def _fetch_guild(cls, guild):
+        """Fetch a guild."""
+        Settings._prepare()
+
+        if not isinstance(guild, int):
+            guild = guild.id
+
+        return Settings._GUILDS.find_one({"guild": guild })
 
 
     @classmethod

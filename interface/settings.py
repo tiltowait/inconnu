@@ -37,6 +37,17 @@ class SettingsCommands(commands.Cog):
     async def set(
         self,
         ctx: discord.ApplicationContext,
+        experience_permissions: Option(
+            str,
+            "Whether users should be allowed to edit their XP totals.",
+            choices=[
+                OptionChoice("Unrestricted", "unrestricted"),
+                OptionChoice("Unspent XP only", "unspent_only"),
+                OptionChoice("Lifetime XP only", "lifetime_only"),
+                OptionChoice("Restricted (admins only)", "admin_only")
+            ],
+            required=False
+        ),
         oblivion_stains: Option(int, "Which Rouse results should give Oblivion stain warnings",
             choices=[
                 OptionChoice("1s and 10s (RAW)", 100),
@@ -57,6 +68,10 @@ class SettingsCommands(commands.Cog):
         """(Admin-only) Assign server-wide settings."""
         responses = []
 
+        if experience_permissions is not None:
+            response = inconnu.settings.set_xp_permissions(ctx, experience_permissions)
+            responses.append(response)
+
         if oblivion_stains is not None:
             response = inconnu.settings.set_oblivion_stains(ctx, oblivion_stains)
             responses.append(response)
@@ -76,11 +91,13 @@ class SettingsCommands(commands.Cog):
     async def settings_show(self, ctx):
         """Display the settings in effect."""
         accessibility = "ON" if inconnu.settings.accessible(ctx.user) else "OFF"
+        experience_perms = inconnu.settings.xp_permissions(ctx.guild)
         oblivion_stains = inconnu.settings.oblivion_stains(ctx.guild) or ["Never"]
         oblivion_stains = map(lambda s: f"`{s}`", oblivion_stains)
 
         msg = f"Accessibility mode: `{accessibility}`"
         msg += "\nOblivion Rouse stains: " + " or ".join(oblivion_stains)
+        msg += "\n" + experience_perms
 
         embed = discord.Embed(
             title="Server Settings",

@@ -17,14 +17,8 @@ class Wizard:
         if "DEBUG" in os.environ:
             self.core_traits = ["Resolve", "Composure"]
         else:
-            self.core_traits = [
-                "Strength", "Dexterity", "Stamina", "Charisma", "Manipulation", "Composure",
-                "Intelligence", "Wits", "Resolve", "Athletics", "Brawl", "Craft", "Drive",
-                "Firearms", "Larceny", "Melee", "Stealth", "Survival", "AnimalKen", "Etiquette",
-                "Insight", "Intimidation", "Leadership", "Performance", "Persuasion", "Streetwise",
-                "Subterfuge", "Academics", "Awareness", "Finance", "Investigation", "Medicine",
-                "Occult", "Politics", "Science", "Technology"
-            ]
+            self.core_traits = inconnu.constants.FLAT_TRAITS
+
         self.ctx = ctx
         self.msg = None # We will be editing this message instead of sending new ones
         self.parameters = parameters

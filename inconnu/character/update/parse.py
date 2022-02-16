@@ -6,6 +6,7 @@ import re
 import discord
 from discord.ui import Button
 
+import inconnu
 from . import paramupdate
 from ..display import display
 from ... import common, constants
@@ -60,7 +61,7 @@ async def update(
         updates = []
 
         for parameter, new_value in parameters.items():
-            update_msg = __update_character(character, parameter, new_value)
+            update_msg = __update_character(ctx, character, parameter, new_value)
             updates.append(update_msg)
 
         if (impairment := character.impairment) is not None:
@@ -131,7 +132,7 @@ def __parse_arguments(*arguments):
     return parameters
 
 
-def __update_character(character: VChar, param: str, value: str) -> str:
+def __update_character(ctx, character: VChar, param: str, value: str) -> str:
     """
     Update one of a character's parameters.
     Args:
@@ -140,6 +141,13 @@ def __update_character(character: VChar, param: str, value: str) -> str:
         value (str): The parameter's new value
     Raises ValueError if the parameter's value is invalid.
     """
+    if param == "current_xp":
+        if not inconnu.settings.can_adjust_current_xp(ctx):
+            raise ValueError("You are not allowed to adjust your unspent XP.")
+    elif param == "total_xp":
+        if not inconnu.settings.can_adjust_lifetime_xp(ctx):
+            raise ValueError("You are not allowed to adjust your lifetime XP.")
+
     return getattr(paramupdate, f"update_{param}")(character, value)
 
 

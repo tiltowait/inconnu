@@ -33,7 +33,7 @@ async def __display_outcome(ctx, character, outcome):
 
     footer = None
     color = None
-    view = discord.utils.MISSING
+    view = None
 
     if character.is_vampire:
         if outcome.rouse:

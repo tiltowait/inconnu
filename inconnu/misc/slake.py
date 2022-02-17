@@ -24,7 +24,7 @@ async def slake(ctx, amount, character=None):
             if old_hunger >= 4:
                 view = inconnu.views.FrenzyView(character, 3)
             else:
-                view = discord.utils.MISSING
+                view = None
 
             await inconnu.character.display(ctx, character,
                 title=f"Slaked {slaked} Hunger",

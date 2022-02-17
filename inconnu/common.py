@@ -34,7 +34,7 @@ async def present_error(
     character: str = None,
     footer: str = None,
     help_url: str = None,
-    view = discord.utils.MISSING,
+    view = None,
     ephemeral=True
 ):
     """
@@ -51,7 +51,7 @@ async def present_error(
     """
     if Settings.accessible(ctx.user):
         content = __error_text(error, *fields, footer=footer)
-        msg_contents ={ "content": content }
+        msg_contents = { "content": content }
     else:
         embed = __error_embed(ctx, error, *fields,
             author=author,
@@ -65,13 +65,14 @@ async def present_error(
 
     if help_url is not None:
         # If we have a help URL, we will add some links to the view
-        link_row = 0 if view is None else 1
         view = view or View()
 
-        view.add_item(Button(label="Documentation", url=help_url, row=link_row))
-        view.add_item(Button(label="Support", url=SUPPORT_URL, row=link_row))
+        view.add_item(Button(label="Documentation", url=help_url, row=1))
+        view.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
 
-    msg_contents["view"] = view
+    if view is not None:
+        msg_contents["view"] = view
+
     msg = await ctx.respond(**msg_contents)
 
     if isinstance(view, inconnu.views.DisablingView):

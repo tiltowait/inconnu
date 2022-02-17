@@ -91,7 +91,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     footer = "\n".join(footer)
 
-    view = inconnu.views.FrenzyView(character, 4) if outcome.frenzy else discord.utils.MISSING
+    view = inconnu.views.FrenzyView(character, 4) if outcome.frenzy else None
 
     await inconnu.character.display(ctx, character,
         title=title,

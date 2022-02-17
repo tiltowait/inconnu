@@ -100,16 +100,18 @@ class RollDisplay:
 
         # We might be responding to a button
         ctx = alt_ctx or self.ctx
+        msg_contents = {}
 
         if (buttons := self.buttons):
             controls = _RollControls(self.respond_to_button, self.owner, buttons)
+            msg_contents["view"] = controls
         else:
-            controls = discord.utils.MISSING
+            controls = None
 
         if use_embed:
-            msg_contents = { "embed": self.embed, "view": controls }
+            msg_contents["embed"] = self.embed
         else:
-            msg_contents = { "content": self.text, "view": controls }
+            msg_contents["content"] = self.text
 
         if isinstance(ctx, discord.Interaction):
             if ctx.response.is_done():
@@ -119,7 +121,7 @@ class RollDisplay:
         else:
             msg = await ctx.respond(**msg_contents)
 
-        if controls:
+        if controls is not None:
             controls.message = msg
 
 

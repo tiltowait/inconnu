@@ -65,7 +65,7 @@ async def display(
     custom: list = None,
     color: int = None,
     thumbnail: str = None,
-    view: discord.ui.View = discord.utils.MISSING,
+    view: discord.ui.View = None,
     ephemeral: bool = False
 ):
     """
@@ -105,7 +105,9 @@ async def display(
         msg_contents = { "embed": embed }
 
     msg_contents["ephemeral"] = ephemeral
-    msg_contents["view"] = view
+
+    if view is not None:
+        msg_contents["view"] = view
 
     if isinstance(ctx, discord.Interaction):
         if ctx.response.is_done():

@@ -54,7 +54,7 @@ class ExperienceCommands(commands.Cog):
     @experience.command()
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def remove(
+    async def remove_entry(
         self,
         ctx: discord.ApplicationContext,
         player: Option(discord.Member, "The character's owner"),

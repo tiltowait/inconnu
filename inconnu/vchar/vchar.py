@@ -779,6 +779,17 @@ class VChar:
             self.current_xp += amount
 
 
+    def remove_experience_log_entry(self, entry):
+        """Remove an entry from the log."""
+        VChar.__prepare()
+
+        VChar._CHARS.update_one(self.find_query, {
+            "$pull": {
+                "experience.log": entry
+            }
+        })
+
+
     # Misc
 
     def delete_character(self) -> bool:

@@ -1,4 +1,5 @@
 """experience.py - Commands for tracking XP."""
+# pylint: disable=no-self-use
 
 import discord
 from discord.commands import Option, SlashCommandGroup, user_command
@@ -49,6 +50,19 @@ class ExperienceCommands(commands.Cog):
     ):
         """Deduct experience points from a character."""
         await inconnu.experience.award_or_deduct(ctx, player, character, amount * -1, scope, reason)
+
+    @experience.command()
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def remove(
+        self,
+        ctx: discord.ApplicationContext,
+        player: Option(discord.Member, "The character's owner"),
+        character: inconnu.options.character("The character whose log to modify", required=True),
+        log_index: Option(int, "The log entry number (find with /experience log)", min_value=1),
+    ):
+        """Remove an experience log entry."""
+        await inconnu.experience.remove_entry(ctx, player, character, log_index)
 
 
     @experience.command()

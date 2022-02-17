@@ -67,7 +67,7 @@ async def __get_contents(ctx, character):
     date_format = "%b %d, %Y"
 
     contents = []
-    for event in reversed(events):
+    for index, event in enumerate(reversed(events)):
         date = event["date"].strftime(date_format)
         exp = event["amount"]
         reason = event["reason"]
@@ -77,7 +77,7 @@ async def __get_contents(ctx, character):
         if (admin := ctx.guild.get_member(admin_id)) is None:
             admin = await ctx.guild.fetch_member(admin_id)
 
-        text = f"**{exp:+}: {reason}** *({date}, @{admin.display_name})*"
+        text = f"*{index + 1}.* **{exp:+}: {reason}** *({date}, @{admin.display_name})*"
 
         contents.append(text)
 

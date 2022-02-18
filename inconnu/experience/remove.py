@@ -112,7 +112,14 @@ class _ExperienceView(inconnu.views.DisablingView):
             syntax = f"lxp{self.amount:+}"
 
         await interaction.response.edit_message(view=None)
-        await inconnu.character.update(interaction, syntax, self.character)
+
+        field = inconnu.character.DisplayField.EXPERIENCE
+        await inconnu.character.update(
+            interaction,
+            syntax,
+            character=self.character,
+            fields=[(field.value, field)]
+        )
         self.stop()
 
 
@@ -123,5 +130,3 @@ class _ExperienceView(inconnu.views.DisablingView):
             return False
 
         return True
-
-

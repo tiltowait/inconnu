@@ -36,7 +36,13 @@ __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=tracker-update
 
 
 async def update(
-    ctx, parameters: str, character=None, color=None, update_message=None, player=None
+    ctx,
+    parameters: str,
+    character=None,
+    fields=None,
+    color=None,
+    update_message=None,
+    player=None
 ):
     """
     Process the user's arguments.
@@ -78,7 +84,14 @@ async def update(
         if update_message is None:
             update_message = "\n".join(updates)
 
-        await display(ctx, character, color=color, owner=player, message=update_message)
+        await display(
+            ctx,
+            character,
+            fields=fields,
+            color=color,
+            owner=player,
+            message=update_message
+        )
 
     except (SyntaxError, ValueError) as err:
         Log.log("update_error",

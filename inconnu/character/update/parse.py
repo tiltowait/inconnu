@@ -156,10 +156,10 @@ def __update_character(ctx, character: VChar, param: str, value: str) -> str:
     """
     if param == "current_xp":
         if not inconnu.settings.can_adjust_current_xp(ctx):
-            raise ValueError("You are not allowed to adjust your unspent XP.")
+            raise ValueError("You must have administrator privileges to adjust unspent XP.")
     elif param == "total_xp":
         if not inconnu.settings.can_adjust_lifetime_xp(ctx):
-            raise ValueError("You are not allowed to adjust your lifetime XP.")
+            raise ValueError("You must have administrator privileges to adjust lifetime XP.")
 
     return getattr(paramupdate, f"update_{param}")(character, value)
 

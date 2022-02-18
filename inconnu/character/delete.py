@@ -64,6 +64,7 @@ class _DeleteView(DisablingView):
             embed=None,
             view=None
         )
+        self.stop()
 
 
     @discord.ui.button(label="Delete", style=discord.ButtonStyle.danger)

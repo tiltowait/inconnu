@@ -72,12 +72,13 @@ async def __get_contents(ctx, character):
         exp = event["amount"]
         reason = event["reason"]
         admin_id = event["admin"]
+        scope = event["event"].split("_")[-1]
 
         # Get the admin discord.Member. Try the cache first.
         if (admin := ctx.guild.get_member(admin_id)) is None:
             admin = await ctx.guild.fetch_member(admin_id)
 
-        text = f"*{index + 1}.* **{exp:+}: {reason}** *({date}, @{admin.display_name})*"
+        text = f"*{index + 1}.* **{exp:+} {scope}: {reason}** *({date}, @{admin.display_name})*"
 
         contents.append(text)
 

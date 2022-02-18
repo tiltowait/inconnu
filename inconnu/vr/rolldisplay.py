@@ -113,13 +113,7 @@ class RollDisplay:
         else:
             msg_contents["content"] = self.text
 
-        if isinstance(ctx, discord.Interaction):
-            if ctx.response.is_done():
-                msg = await ctx.followup.send(**msg_contents)
-            else:
-                msg = await ctx.response.send_message(**msg_contents)
-        else:
-            msg = await ctx.respond(**msg_contents)
+        msg = await inconnu.respond(ctx)(**msg_contents)
 
         if controls is not None:
             controls.message = msg

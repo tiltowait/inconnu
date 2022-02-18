@@ -28,13 +28,7 @@ async def remove_entry(ctx, player, character, index):
 
             msg["view"] = _ExperienceView(character, entry_to_delete)
 
-            if isinstance(ctx, discord.Interaction):
-                if ctx.response.is_done():
-                    await ctx.followup.send(**msg)
-                else:
-                    await ctx.response.send_message(**msg)
-            else:
-                await ctx.respond(**msg)
+            await inconnu.respond(ctx)(**msg)
 
         except IndexError:
             err = f"{character.name} has no experience log entry at index `{index}`."

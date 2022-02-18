@@ -147,7 +147,7 @@ class Help(commands.Cog):
             text="Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. For more information please visit worldofdarkness.com."
         )
 
-        await self._send(ctx, embed=embed, view=self.info_view)
+        await inconnu.respond(ctx)(embed=embed, view=self.info_view)
 
 
     # Callbacks
@@ -166,7 +166,7 @@ class Help(commands.Cog):
         embed.add_field(name="Display character", value="`/character display`", inline=False)
         embed.add_field(name="Add traits", value="`/traits add`")
 
-        await self._send(ctx, embed=embed, view=self.overview_view, ephemeral=ephemeral)
+        await inconnu.respond(ctx)(embed=embed, view=self.overview_view, ephemeral=ephemeral)
 
 
     async def show_traits_help(self, ctx, ephemeral=True):
@@ -202,7 +202,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await self._send(ctx, embed=embed, view=view, ephemeral=ephemeral)
+        await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
 
 
     async def show_macros_help(self, ctx, ephemeral=True):
@@ -236,24 +236,12 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await self._send(ctx, embed=embed, view=view, ephemeral=ephemeral)
+        await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
 
 
     async def show_character_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""
         await inconnu.character.update_help(ctx, ephemeral=ephemeral)
-
-
-    async def _send(self, ctx, **message_content):
-        """Send the message content. Wrapper that checks for context type."""
-        if isinstance(ctx, discord.Interaction):
-            if ctx.response.is_done():
-                await ctx.followup.send(**message_content)
-            else:
-                await ctx.response.send_message(**message_content)
-        else:
-            await ctx.respond(**message_content)
-
 
 
 def setup(bot):

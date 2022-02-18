@@ -109,13 +109,7 @@ async def display(
     if view is not None:
         msg_contents["view"] = view
 
-    if isinstance(ctx, discord.Interaction):
-        if ctx.response.is_done():
-            msg = await ctx.followup.send(**msg_contents)
-        else:
-            msg = await ctx.response.send_message(**msg_contents)
-    else:
-        msg = await ctx.respond(**msg_contents)
+    msg = await inconnu.respond(ctx)(**msg_contents)
 
     if isinstance(view, inconnu.views.DisablingView):
         view.message = msg

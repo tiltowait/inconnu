@@ -3,9 +3,7 @@
 
 import discord
 
-from .. import common
-from ..roll import Roll
-from ..settings import Settings
+import inconnu
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
 
@@ -14,7 +12,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
     """Perform a frenzy check."""
     try:
         tip = "`/frenzy` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
         if not character.is_vampire:
             await ctx.respond("Only vampires need to roll frenzy!", ephemeral=True)
@@ -27,7 +25,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
         elif penalty == "malkavian":
             frenzy_pool = max(frenzy_pool - 2, 1)
 
-        outcome = Roll(frenzy_pool, 0, difficulty)
+        outcome = inconnu.Roll(frenzy_pool, 0, difficulty)
 
         if outcome.total_successes >= difficulty:
             if outcome.is_critical:
@@ -51,7 +49,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             footer = f"Subtracting 2 dice due to Malkavian compulsion.\n{footer}"
 
         # Display the message
-        if Settings.accessible(ctx.user):
+        if inconnu.settings.accessible(ctx.user):
             # Build the text version of the message
             name = character.name
             content = f"**{name}: Frenzy {title} (diff. {difficulty})**\n{message}\n*{footer}*"
@@ -60,18 +58,9 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             embed = __get_embed(ctx, title, message, character.name, difficulty, footer, color)
             msg_content = { "embed": embed }
 
-        # We might be displaying off a button interaction, which annoyingly doesn't have a
-        # respond method, so we have to check.
+        await inconnu.respond(ctx)(**msg_content)
 
-        if isinstance(ctx, discord.Interaction):
-            if ctx.response.is_done():
-                await ctx.followup.send(**msg_content)
-            else:
-                await ctx.response.send_message(**msg_content)
-        else:
-            await ctx.respond(**msg_content)
-
-    except common.FetchError:
+    except inconnu.common.FetchError:
         pass
 
 

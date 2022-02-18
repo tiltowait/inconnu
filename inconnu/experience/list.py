@@ -23,13 +23,7 @@ async def list_events(ctx, character, player, ephemeral):
         else:
             msg["embed"] = await __get_embed(ctx, character, owner)
 
-        if isinstance(ctx, discord.Interaction):
-            if ctx.response.is_done():
-                await ctx.followup.send(**msg)
-            else:
-                await ctx.response.send_message(**msg)
-        else:
-            await ctx.respond(**msg)
+        await inconnu.respond(ctx)(**msg)
 
     except LookupError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)

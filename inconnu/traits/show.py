@@ -5,7 +5,6 @@ from discord.ext import pages
 
 import inconnu
 from .. import common
-from ..settings import Settings
 
 __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=displaying-traits"
 
@@ -17,7 +16,7 @@ async def show(ctx, character: str, player: discord.Member):
         tip = "`/traits list` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        if Settings.accessible(ctx.user):
+        if inconnu.settings.accessible(ctx.user):
             await __list_text(ctx, character)
         else:
             await __list_embed(ctx, character, owner)
@@ -51,13 +50,7 @@ async def __list_embed(ctx, character, owner):
     traits = "\n".join(traits)
     embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
 
-    if isinstance(ctx, discord.Interaction):
-        if ctx.response.is_done():
-            await ctx.followup.send(embed=embed, ephemeral=True)
-        else:
-            await ctx.response.send_message(embed=embed, ephemeral=True)
-    else:
-        await ctx.respond(embed=embed, ephemeral=True)
+    await inconnu.respond(ctx)(embed=embed, ephemeral=True)
 
 
 async def __list_text(ctx, character):

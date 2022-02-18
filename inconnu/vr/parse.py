@@ -12,7 +12,6 @@
 # trait-based roll, so we need to check for the character in either case.
 
 import re
-from types import SimpleNamespace as SN
 
 import discord
 

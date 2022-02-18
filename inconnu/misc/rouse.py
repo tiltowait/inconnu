@@ -4,8 +4,6 @@
 import random
 from types import SimpleNamespace
 
-import discord
-
 import inconnu
 from inconnu.vchar import VChar
 

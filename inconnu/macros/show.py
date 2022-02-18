@@ -1,6 +1,5 @@
 """macros/show.py - Displaying character macros."""
 
-import asyncio
 from types import SimpleNamespace
 
 import discord

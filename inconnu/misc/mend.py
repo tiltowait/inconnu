@@ -3,8 +3,6 @@
 import random
 from types import SimpleNamespace
 
-import discord
-
 import inconnu
 from inconnu.constants import DAMAGE, ROUSE_FAIL_COLOR
 

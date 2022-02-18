@@ -354,9 +354,7 @@ class VChar:
     @total_xp.setter
     def total_xp(self, new_total_xp):
         """Set the character's total XP and update current accordingly."""
-        if new_total_xp < 0:
-            new_total_xp = 0
-
+        new_total_xp = max(new_total_xp, 0)
         delta = new_total_xp - self.total_xp
 
         self._params["experience"]["total"] = new_total_xp

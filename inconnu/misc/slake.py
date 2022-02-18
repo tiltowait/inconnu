@@ -1,7 +1,5 @@
 """misc/slake.py - Slake 1 or more Hunger."""
 
-import discord
-
 import inconnu
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=slaking-hunger"

@@ -94,6 +94,7 @@ class Settings:
 
     @classmethod
     def can_adjust_lifetime_xp(cls, ctx) -> bool:
+        """Whether the user has permission to adjust lifetime XP."""
         if ctx.user.guild_permissions.administrator:
             return True
 

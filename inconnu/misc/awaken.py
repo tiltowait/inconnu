@@ -2,9 +2,7 @@
 
 import random
 
-from .. import common
-from ..character import update as char_update
-from ..constants import ROUSE_FAIL_COLOR
+import inconnu
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=awakening"
 
@@ -13,7 +11,7 @@ async def awaken(ctx, character=None):
     """Perform a Rouse check and heal Superficial Willpower damage."""
     try:
         tip = "`/awaken` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
         message = "**Awakening:**"
         recovery = []
@@ -33,7 +31,7 @@ async def awaken(ctx, character=None):
                 message += "\n**No** Hunger gain."
             else:
                 message += "\nRouse failure. "
-                color = ROUSE_FAIL_COLOR
+                color = inconnu.constants.ROUSE_FAIL_COLOR
 
                 if character.hunger == 5:
                     message += "**Enter torpor!**"
@@ -50,10 +48,17 @@ async def awaken(ctx, character=None):
                 recovery.append(f"sh=-{recovered}")
 
 
-        await char_update(ctx, " ".join(recovery), character, color, message)
+        await inconnu.character.update(
+            ctx,
+            parameters=" ".join(recovery),
+            character=character,
+            color=color,
+            update_message=message
+        )
+
         character.log("awaken")
         if character.is_vampire:
             character.log("rouse")
 
-    except common.FetchError:
+    except inconnu.common.FetchError:
         pass

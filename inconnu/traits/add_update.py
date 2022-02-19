@@ -81,7 +81,7 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
                 unassigned.append(trait)
             else:
                 character.add_trait(trait, rating)
-                assigned.append(f"{trait} ({rating})")
+                assigned.append(f"{trait} `({rating})`")
 
     return SimpleNamespace(
         assigned=assigned,
@@ -127,7 +127,7 @@ async def __results_embed(ctx, outcome, char_name: str):
     )
     embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
     if outcome.assigned:
-        assigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.assigned)))
+        assigned = "\n".join(outcome.assigned)
         embed.add_field(name="Assigned", value=assigned)
 
     if outcome.unassigned:

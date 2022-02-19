@@ -41,7 +41,7 @@ async def __list_embed(ctx, character, owner):
             trait_list = []
             for trait in traits:
                 rating = char_traits.pop(trait, 0)
-                trait_list.append(f"***{trait}***: {rating}")
+                trait_list.append(f"***{trait}:*** {rating}")
 
             embed.add_field(name=subgroup, value="\n".join(trait_list), inline=True)
 

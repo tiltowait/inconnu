@@ -60,6 +60,7 @@ class _RollControls(inconnu.views.DisablingView):
             elif button_id == _ButtonID.WILLPOWER:
                 # Mark WP is always the first button
                 self.children[0].disabled = True
+                self.children[0].style = discord.ButtonStyle.secondary
                 await interaction.response.edit_message(view=self)
             else:
                 # Find the pressed button and make it gray
@@ -211,6 +212,8 @@ class RollDisplay:
     def embed(self) -> discord.Embed:
         """The graphical representation of the roll."""
         title = self.outcome.main_takeaway
+        if self.rerolled:
+            title = f"R: {title}"
         if not self.outcome.is_total_failure and not self.outcome.is_bestial:
             title += f" ({self.outcome.total_successes})"
 
@@ -220,7 +223,7 @@ class RollDisplay:
         )
 
         # Author line
-        author_field = self.character_name + ("'s Re-roll" if self.rerolled else "'s Roll")
+        author_field = self.character_name + ("'s Re-Roll" if self.rerolled else "'s Roll")
         if self.outcome.difficulty > 0:
             author_field += f" vs Diff. {self.outcome.difficulty}"
         if self.outcome.descriptor is not None:
@@ -281,7 +284,7 @@ class RollDisplay:
         else:
             title = self.owner.display_name
 
-        title += "'s reroll" if self.rerolled else "'s roll"
+        title += "'s re-roll" if self.rerolled else "'s roll"
         if self.outcome.difficulty > 0:
             title += f" vs diff. {self.outcome.difficulty}"
         if self.outcome.descriptor is not None:

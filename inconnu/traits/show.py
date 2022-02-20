@@ -46,9 +46,10 @@ async def __list_embed(ctx, character, owner):
             embed.add_field(name=subgroup, value="\n".join(trait_list), inline=True)
 
     # The remaining traits are user-defined
-    traits = [f"***{trait}:*** {rating}" for trait, rating in char_traits.items()]
-    traits = "\n".join(traits)
-    embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
+    if char_traits:
+        traits = [f"***{trait}:*** {rating}" for trait, rating in char_traits.items()]
+        traits = "\n".join(traits)
+        embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
 
     await inconnu.respond(ctx)(embed=embed, ephemeral=True)
 

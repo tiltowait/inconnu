@@ -34,6 +34,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
         character = await common.fetch_character(ctx, character, tip, __HELP_URL[allow_overwrite])
 
         # Allow the user to input "trait rating", not only "trait=rating"
+        traits = re.sub(r"\s*=\s*", r"=", traits)
         traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
 
         traits = parse_traits(*traits.split())

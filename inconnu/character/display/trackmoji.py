@@ -1,15 +1,15 @@
 """character/display/trackmoji.py - A tool for converting a stress track to emoji."""
 
-from ...constants import DAMAGE
+from ...constants import Damage
 
 # <0x200b> is a zero-width space. Its use is a hack to fix a bug with
 # Discord for Android that prints emojis giant-sized if you only have a
 # regular space between them.
 
 __EMOJIS = {
-    DAMAGE.none: "<:no_dmg:883516968777449472>​",
-    DAMAGE.superficial: "<:sup_dmg:890694337212579930>​",
-    DAMAGE.aggravated: "<:agg_dmg:883516968727089202>​",
+    Damage.NONE: "<:no_dmg:883516968777449472>​",
+    Damage.SUPERFICIAL: "<:sup_dmg:890694337212579930>​",
+    Damage.AGGRAVATED: "<:agg_dmg:883516968727089202>​",
     "hunger": "<:hunger:883527494832119858>​",
     "no_hunger": "<:no_hunger:883527495394164776>​",
     "hu_filled": "<:hu_filled:883532393946972160>​",

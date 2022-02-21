@@ -4,7 +4,7 @@ import random
 from types import SimpleNamespace
 
 import inconnu
-from inconnu.constants import DAMAGE, ROUSE_FAIL_COLOR
+from inconnu.constants import Damage, ROUSE_FAIL_COLOR
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=mending-damage"
 
@@ -58,16 +58,16 @@ async def __display_outcome(ctx, character, outcome):
 
 def __heal(character):
     """Heal the character and perform the Rouse check."""
-    superficial = character.health.count(DAMAGE.superficial)
+    superficial = character.health.count(Damage.SUPERFICIAL)
     if superficial == 0:
         return f"**{character.name}** has no Superficial damage to mend!"
 
     mending = min(character.mend_amount, superficial)
     superficial -= mending
-    aggravated = character.health.count(DAMAGE.aggravated)
+    aggravated = character.health.count(Damage.AGGRAVATED)
     unhurt = len(character.health) - superficial - aggravated
 
-    track = DAMAGE.none * unhurt + DAMAGE.superficial * superficial + DAMAGE.aggravated * aggravated
+    track = Damage.NONE * unhurt + Damage.SUPERFICIAL * superficial + Damage.AGGRAVATED * aggravated
     character.health = track
 
     rouse = random.randint(1, 10) >= 6

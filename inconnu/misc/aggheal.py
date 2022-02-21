@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from .. import common
 from .. import character as char
-from ..constants import DAMAGE, ROUSE_FAIL_COLOR
+from ..constants import Damage, ROUSE_FAIL_COLOR
 from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/"
@@ -17,7 +17,7 @@ async def aggheal(ctx, character: str):
         tip = "`/aggheal` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        if character.health.count(DAMAGE.aggravated) == 0:
+        if character.health.count(Damage.AGGRAVATED) == 0:
             await ctx.respond(f"{character.name} has no aggravated damage to heal!", ephemeral=True)
             return
 
@@ -45,7 +45,7 @@ def __heal(character: VChar):
 
     # Update the character
     character.hunger += hunger_gain
-    character.health = DAMAGE.none + character.health[:-1]
+    character.health = Damage.NONE + character.health[:-1]
 
     if character.is_vampire:
         character.log("rouse", 3)

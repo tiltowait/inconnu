@@ -1,7 +1,7 @@
 """constants.py - Define package-wide constants."""
 
 import os
-from types import SimpleNamespace
+from enum import Enum
 
 from dotenv import load_dotenv
 from flatdict import FlatDict
@@ -11,9 +11,6 @@ load_dotenv()
 SUPPORT_URL = "https://discord.com/invite/CPmsdWHUcZ"
 
 INCONNU_ID = int(os.environ["INCONNU_ID"])
-
-# Tracker Stress
-DAMAGE = SimpleNamespace(none=".", superficial="/", aggravated="x")
 
 GROUPED_TRAITS = {
     "ATTRIBUTES": {
@@ -45,3 +42,10 @@ FLAT_TRAITS = sum(FlatDict(GROUPED_TRAITS).values(), [])
 UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]
 
 ROUSE_FAIL_COLOR = 0xc70f0f
+
+class Damage(str, Enum):
+    """An enum for damage types."""
+
+    NONE = "."
+    SUPERFICIAL = "/"
+    AGGRAVATED = "x"

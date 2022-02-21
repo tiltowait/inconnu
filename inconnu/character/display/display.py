@@ -8,7 +8,7 @@ import discord
 import inconnu
 from . import trackmoji
 from ... import common
-from ...constants import DAMAGE
+from ...constants import Damage
 from ...settings import Settings
 from ...vchar import VChar
 
@@ -263,9 +263,9 @@ def __text_field_contents(character, field, parameter):
 
 def __stringify_track(track: str):
     """Convert a track into a textual representation."""
-    agg = track.count(DAMAGE.aggravated)
-    sup = track.count(DAMAGE.superficial)
-    unh = track.count(DAMAGE.none)
+    agg = track.count(Damage.AGGRAVATED)
+    sup = track.count(Damage.SUPERFICIAL)
+    unh = track.count(Damage.NONE)
 
     representation = []
     if agg > 0:

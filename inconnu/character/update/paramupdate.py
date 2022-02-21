@@ -2,7 +2,7 @@
 
 import re
 
-from ...constants import DAMAGE
+from ...constants import Damage
 from ...vchar import VChar
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal"]
@@ -90,22 +90,22 @@ def update_stains(character: VChar, delta: str) -> str:
 
 def update_sh(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    return __update_damage(character, "health", DAMAGE.superficial, delta)
+    return __update_damage(character, "health", Damage.SUPERFICIAL, delta)
 
 
 def update_ah(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
-    return __update_damage(character, "health", DAMAGE.aggravated, delta)
+    return __update_damage(character, "health", Damage.AGGRAVATED, delta)
 
 
 def update_sw(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    return __update_damage(character, "willpower", DAMAGE.superficial, delta)
+    return __update_damage(character, "willpower", Damage.SUPERFICIAL, delta)
 
 
 def update_aw(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
-    return __update_damage(character, "willpower", DAMAGE.aggravated, delta)
+    return __update_damage(character, "willpower", Damage.AGGRAVATED, delta)
 
 
 def update_current_xp(character: VChar, delta: str) -> str:
@@ -144,7 +144,7 @@ def __update_track(character: VChar, tracker: str, new_len: str) -> str:
         raise ValueError(f"{tracker.title()} must be between {minimum} and 17.")
 
     if new_len > cur_len: # Growing
-        track = track.rjust(new_len, DAMAGE.none)
+        track = track.rjust(new_len, Damage.NONE)
     elif new_len < cur_len:
         track = track[-new_len:]
 
@@ -166,7 +166,7 @@ def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) 
     """
     if tracker not in ["health", "willpower"]:
         raise SyntaxError(f"Unknown tracker {tracker}")
-    if not dtype in [DAMAGE.superficial, DAMAGE.aggravated]:
+    if not dtype in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
         raise SyntaxError(f"Unknown damage type: {dtype}")
 
     # If the user doesn't supply a sign, they are setting the XP total rather
@@ -178,9 +178,9 @@ def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) 
         # delta_str can be an int if called by another command
         if isinstance(delta_str, str) and delta_str[0] in ["+", "-"]:
             # If they are applying superficial damage, it can wrap.
-            old_agg = getattr(character, tracker).count(DAMAGE.aggravated)
+            old_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
             character.apply_damage(tracker, dtype, delta)
-            new_agg = getattr(character, tracker).count(DAMAGE.aggravated)
+            new_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
             wrap = new_agg - old_agg
         else:
             character.set_damage(tracker, dtype, delta)
@@ -194,7 +194,7 @@ def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) 
 
 def __damage_adjust_message(tracker, dtype, delta_str, wrap) -> str:
     """Generate a human-readable damage adjustment message."""
-    if dtype == DAMAGE.superficial:
+    if dtype == Damage.SUPERFICIAL:
         severity = "Superficial"
     else:
         severity = "Aggravated"
@@ -307,7 +307,7 @@ def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
         new_overlap = abs(10 - character.humanity - new_value)
         overlap_delta = new_overlap - old_overlap
 
-        character.apply_damage("willpower", DAMAGE.aggravated, overlap_delta)
+        character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta)
         message += f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
 
     character.stains = new_value

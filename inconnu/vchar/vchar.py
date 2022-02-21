@@ -14,7 +14,7 @@ import bson
 from bson.objectid import ObjectId
 
 from . import errors
-from ..constants import DAMAGE, INCONNU_ID, UNIVERSAL_TRAITS
+from ..constants import Damage, INCONNU_ID, UNIVERSAL_TRAITS
 
 
 _digits = re.compile(r"\d")
@@ -234,13 +234,13 @@ class VChar:
     @property
     def aggravated_hp(self) -> int:
         """The amount of Aggravated Health damage sustained."""
-        return self.health.count(DAMAGE.aggravated)
+        return self.health.count(Damage.AGGRAVATED)
 
 
     @aggravated_hp.setter
     def aggravated_hp(self, new_value):
         """Set the Aggravated Health damage."""
-        self.set_damage("health", DAMAGE.aggravated, new_value, wrap=False)
+        self.set_damage("health", Damage.AGGRAVATED, new_value, wrap=False)
 
 
     @property
@@ -268,25 +268,25 @@ class VChar:
     @property
     def superficial_wp(self) -> int:
         """The amount of Superficial Willpower damage sustained."""
-        return self.willpower.count(DAMAGE.superficial)
+        return self.willpower.count(Damage.SUPERFICIAL)
 
 
     @superficial_wp.setter
     def superficial_wp(self, new_value):
         """Set the Superficial Willpower damage."""
-        self.set_damage("willpower", DAMAGE.superficial, new_value, wrap=True)
+        self.set_damage("willpower", Damage.SUPERFICIAL, new_value, wrap=True)
 
 
     @property
     def superficial_hp(self) -> int:
         """The amount of Superficial Health damage sustained."""
-        return self.health.count(DAMAGE.superficial)
+        return self.health.count(Damage.SUPERFICIAL)
 
 
     @superficial_hp.setter
     def superficial_hp(self, new_value):
         """Set the Superficial Health damage."""
-        self.set_damage("health", DAMAGE.superficial, new_value, wrap=True)
+        self.set_damage("health", Damage.SUPERFICIAL, new_value, wrap=True)
 
 
     @property
@@ -375,8 +375,8 @@ class VChar:
     @property
     def impairment(self):
         """A string for describing the character's physical/mental impairment."""
-        physical = self.health.count(DAMAGE.none) == 0
-        mental = self.willpower.count(DAMAGE.none) == 0
+        physical = self.health.count(Damage.NONE) == 0
+        mental = self.willpower.count(Damage.NONE) == 0
         total = self.degeneration or (physical and mental)
 
         if total:
@@ -394,13 +394,13 @@ class VChar:
     @property
     def physically_impaired(self):
         """Whether the character is physically impaired."""
-        return self.health.count(DAMAGE.none) == 0 or self.stains > (10 - self.humanity)
+        return self.health.count(Damage.NONE) == 0 or self.stains > (10 - self.humanity)
 
 
     @property
     def mentally_impaired(self):
         """Whether the character is physically impaired."""
-        return self.willpower.count(DAMAGE.none) == 0 or self.stains > (10 - self.humanity)
+        return self.willpower.count(Damage.NONE) == 0 or self.stains > (10 - self.humanity)
 
 
     @property
@@ -435,7 +435,7 @@ class VChar:
     @property
     def frenzy_resist(self):
         """The dice pool for resisting frenzy. Equal to current WP + 1/3 Humanity."""
-        cur_wp = self.willpower.count(DAMAGE.none)
+        cur_wp = self.willpower.count(Damage.NONE)
         third_hu = int(self.humanity / 3)
         return max(cur_wp + third_hu, 1)
 
@@ -443,7 +443,7 @@ class VChar:
     @property
     def agg_health(self):
         """The number of Aggravated health damage the character has taken."""
-        return self.health.count(DAMAGE.aggravated)
+        return self.health.count(Damage.AGGRAVATED)
 
 
     @property
@@ -515,7 +515,7 @@ class VChar:
 
             # Convert trackers to a rating
             if isinstance(rating, str):
-                rating = rating.count(DAMAGE.none)
+                rating = rating.count(Damage.NONE)
             return SimpleNamespace(name=found_trait, rating=rating)
 
         matches = map(lambda t: t[0], matches)
@@ -670,19 +670,19 @@ class VChar:
         Set the current damage level.
         Args:
             tracker (str): "willpower" or "health"
-            severity (str): DAMAGE.superficial or DAMAGE.aggravated
+            severity (str): Damage.SUPERFICIAL or Damage.AGGRAVATED
             amount (int): The amount to set it to
         """
-        if not severity in [DAMAGE.superficial, DAMAGE.aggravated]:
+        if not severity in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
             raise SyntaxError("Severity must be superficial or aggravated.")
         if not tracker in ["health", "willpower"]:
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = self._params[tracker]
-        sup = cur_track.count(DAMAGE.superficial)
-        agg = cur_track.count(DAMAGE.aggravated)
+        sup = cur_track.count(Damage.SUPERFICIAL)
+        agg = cur_track.count(Damage.AGGRAVATED)
 
-        if severity == DAMAGE.superficial:
+        if severity == Damage.SUPERFICIAL:
             sup = amount
 
             if wrap:
@@ -692,9 +692,9 @@ class VChar:
         else:
             agg = amount
 
-        unhurt = (len(cur_track) - sup - agg) * DAMAGE.none
-        sup = sup * DAMAGE.superficial
-        agg = agg * DAMAGE.aggravated
+        unhurt = (len(cur_track) - sup - agg) * Damage.NONE
+        sup = sup * Damage.SUPERFICIAL
+        agg = agg * Damage.AGGRAVATED
 
         new_track = unhurt + sup + agg
         new_track = new_track[-len(cur_track):] # Shrink it if necessary
@@ -705,10 +705,10 @@ class VChar:
             self.willpower = new_track
 
         # Log it!
-        old_agg = cur_track.count(DAMAGE.aggravated)
-        old_sup = cur_track.count(DAMAGE.superficial)
-        new_agg = new_track.count(DAMAGE.aggravated)
-        new_sup = new_track.count(DAMAGE.superficial)
+        old_agg = cur_track.count(Damage.AGGRAVATED)
+        old_sup = cur_track.count(Damage.SUPERFICIAL)
+        new_agg = new_track.count(Damage.AGGRAVATED)
+        new_sup = new_track.count(Damage.SUPERFICIAL)
 
         self.__update_log(f"{tracker}_superficial", old_sup, new_sup)
         self.__update_log(f"{tracker}_aggravated", old_agg, new_agg)
@@ -719,11 +719,11 @@ class VChar:
         Apply Superficial damage.
         Args:
             tracker (str): "willpower" or "health"
-            severity (str): DAMAGE.superficial or DAMAGE.aggravated
+            severity (str): Damage.SUPERFICIAL or Damage.AGGRAVATED
             delta (int): The amount to apply
         If the damage exceeds the tracker, it will wrap around to aggravated.
         """
-        if not severity in [DAMAGE.superficial, DAMAGE.aggravated]:
+        if not severity in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
             raise SyntaxError("Severity must be superficial or aggravated.")
         if not tracker in ["health", "willpower"]:
             raise SyntaxError("Tracker must be health or willpower.")

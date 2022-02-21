@@ -28,13 +28,10 @@ def contains_digit(string: str):
 class VChar:
     """A class that maintains a character's property and automatically manages persistence."""
 
-    # We keep characters, traits, and macros all in their own collections in order to
-    # massively simplify queries and lookups.
-
     _CLIENT = None # MongoDB client
     _CHARS = None # Characters collection
 
-    VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge"]
+    VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane"]
 
 
     def __init__(self, params: dict):
@@ -54,8 +51,6 @@ class VChar:
         Create a named character with an associated guild and user.
         All other stats are default, minimum values, and no traits are assigned.
         """
-
-        # Traits and macros are stored in separate collections!
         VChar.__prepare()
 
         character = {
@@ -217,6 +212,7 @@ class VChar:
     @stains.setter
     def stains(self, new_stains):
         """Set the character's stains."""
+        new_stains = max(0, min(10, new_stains))
         self.__update_log("stains", self.stains, new_stains)
         self._params["stains"] = new_stains
         VChar._CHARS.update_one(self.find_query, { "$set": { "stains": new_stains } })
@@ -296,7 +292,9 @@ class VChar:
     @property
     def hunger(self):
         """The character's hunger."""
-        return self._params["hunger"]
+        if self.is_vampire:
+            return self._params["hunger"]
+        return 0
 
 
     @hunger.setter
@@ -456,6 +454,12 @@ class VChar:
         return math.ceil(self.potency / 2) + 1
 
 
+    @property
+    def bane(self) -> int:
+        """Shorthand for bane_severity. Used in traits."""
+        return self.bane_severity
+
+
     # Traits
 
     @property
@@ -584,14 +588,6 @@ class VChar:
                     macro["staining"] = "show"
 
                 raw_macros.append(macro)
-
-            # All characters have a hunger stat in the background, but we only care
-            # about it if the character is a vampire
-            for macro in raw_macros:
-                if not self.is_vampire:
-                    macro["hunger"] = False
-                if not "staining" in macro:
-                    macro["staining"] = "show"
 
             return [SimpleNamespace(**macro) for macro in raw_macros]
 

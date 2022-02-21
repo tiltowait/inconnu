@@ -42,6 +42,6 @@ GROUPED_TRAITS = {
 
 FLAT_TRAITS = sum(FlatDict(GROUPED_TRAITS).values(), [])
 
-UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency"]
+UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]
 
 ROUSE_FAIL_COLOR = 0xc70f0f

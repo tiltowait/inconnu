@@ -145,13 +145,13 @@ def __get_embed(
     embed.set_footer(text=footer or discord.Embed.Empty)
     embed.set_thumbnail(url=thumbnail or discord.Embed.Empty)
 
+    can_emoji = ctx.channel.permissions_for(ctx.guild.default_role).external_emojis
     for field, parameter in fields:
-        if (value := __embed_field_value(character, parameter)) is not None:
-            embed.add_field(
-                name=field,
-                value=value,
-                inline=False
-            )
+        embed.add_field(
+            name=field,
+            value=__embed_field_value(character, parameter, can_emoji),
+            inline=False
+        )
 
     if custom is not None:
         for field, value in custom:
@@ -160,31 +160,32 @@ def __get_embed(
     return embed
 
 
-def __embed_field_value(character, parameter):
+def __embed_field_value(character, parameter, can_emoji):
     """Generates the value for a given embed field."""
-    value = None
-
     match parameter:
         case DisplayField.HEALTH:
-            value = trackmoji.emojify_track(character.health)
+            value = __stat_repr(can_emoji, trackmoji.emojify_track, character.health)
 
         case DisplayField.WILLPOWER:
-            value = trackmoji.emojify_track(character.willpower)
+            value = __stat_repr(can_emoji, trackmoji.emojify_track, character.willpower)
 
         case DisplayField.HUMANITY:
-            value = trackmoji.emojify_humanity(character.humanity, character.stains)
+            value = __stat_repr(can_emoji, trackmoji.emojify_humanity, character.humanity, character.stains)
 
         case DisplayField.POTENCY if character.is_vampire:
-            value = trackmoji.emojify_blood_potency(character.potency)
+            value = __stat_repr(can_emoji, trackmoji.emojify_blood_potency, character.potency)
 
         case DisplayField.HUNGER if character.is_vampire:
-            value = trackmoji.emojify_hunger(character.hunger)
+            value = __stat_repr(can_emoji, trackmoji.emojify_hunger, character.hunger)
 
         case DisplayField.SEVERITY if character.is_vampire:
             value = f"```{character.bane_severity}```"
 
         case DisplayField.EXPERIENCE:
             value = f"```{character.current_xp} / {character.total_xp}```"
+
+        case _:
+            raise ValueError(f"Unknown parameter: `{parameter}`.")
 
     return value
 
@@ -261,6 +262,32 @@ def __text_field_contents(character, field, parameter):
     return contents
 
 
+def __stat_repr(can_emoji, function, *stats):
+    """Generate the string or emoji representation of a stat, depending on permissions."""
+    if len(stats) == 2:
+        # Humanity
+        humanity, stains = stats
+
+        if can_emoji:
+            return function(humanity, stains)
+
+        stains = inconnu.common.pluralize(stains, "Stain")
+
+        return f"{humanity} ({stains})"
+
+    # Not Humanity
+    stat = stats[0]
+
+    if can_emoji:
+        return function(stat)
+
+    if isinstance(stat, str):
+        return __stringify_track(stat)
+
+    # The stat should be an int
+    return stat
+
+
 def __stringify_track(track: str):
     """Convert a track into a textual representation."""
     agg = track.count(Damage.AGGRAVATED)
@@ -268,11 +295,11 @@ def __stringify_track(track: str):
     unh = track.count(Damage.NONE)
 
     representation = []
-    if agg > 0:
-        representation.append(f"{agg} Agg")
-    if sup > 0:
-        representation.append(f"{sup} Sup")
     if unh > 0:
         representation.append(f"{unh} Unhurt")
+    if sup > 0:
+        representation.append(f"{sup} Sup")
+    if agg > 0:
+        representation.append(f"{agg} Agg")
 
     return " / ".join(representation)

@@ -547,6 +547,8 @@ class VChar:
         VChar._CHARS.update_one(self.find_query, { "$set": { f"traits.{trait}": new_rating } })
         self._params["traits"][trait] = new_rating
 
+        return trait
+
 
     def delete_trait(self, trait: str):
         """
@@ -555,6 +557,8 @@ class VChar:
         """
         trait = self.find_trait(trait, exact=True).name
         VChar._CHARS.update_one(self.find_query, { "$unset": { f"traits.{trait}": "" } })
+
+        return trait
 
 
     def owned_traits(self, **traits):

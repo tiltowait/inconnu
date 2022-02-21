@@ -71,7 +71,7 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
             if rating is None:
                 unassigned.append(trait)
             else:
-                character.update_trait(trait, rating)
+                trait = character.update_trait(trait, rating)
                 assigned.append(f"{trait} ({rating})")
 
     else:

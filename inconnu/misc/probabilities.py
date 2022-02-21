@@ -132,30 +132,38 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     # Total Faiiure
     # Bestial (Opt)
 
+    can_emoji = ctx.channel.permissions_for(ctx.guild.default_role).external_emojis
     breakdown = []
+
     if probs["critical"] != 0:
-        crit = roll.dicemoji.emojify_die(10, False) + f"{probs['critical']:.2%} Critical Win"
+        crit = roll.dicemoji.emojify_die(10, False) if can_emoji else ""
+        crit += f"{probs['critical']:.2%} Critical Win"
         breakdown.append(crit)
 
-    success = roll.dicemoji.emojify_die(6, False) + f"{probs['success']:.2%} Success"
+    success = roll.dicemoji.emojify_die(6, False) if can_emoji else ""
+    success += f"{probs['success']:.2%} Success"
     breakdown.append(success)
 
     if probs["messy"] != 0:
-        messy = roll.dicemoji.emojify_die(10, True) + f"{probs['messy']:.2%} Messy Critical"
+        messy = roll.dicemoji.emojify_die(10, True) if can_emoji else ""
+        messy += f"{probs['messy']:.2%} Messy Critical"
         breakdown.append(messy)
 
     breakdown.append("------")
 
     if probs["fail"] != 0:
         # Only show regular failure if there's a distinction between it and total failure
-        fail = roll.dicemoji.emojify_die(3, False) + f"{probs['fail']:.2%} Failure"
+        fail = roll.dicemoji.emojify_die(3, False) if can_emoji else ""
+        fail += f"{probs['fail']:.2%} Failure"
         breakdown.append(fail)
 
-    total = roll.dicemoji.emojify_die(3, True) + f"{probs['total_fail']:.2%} Total Failure"
+    total = roll.dicemoji.emojify_die(3, True) if can_emoji else ""
+    total += f"{probs['total_fail']:.2%} Total Failure"
     breakdown.append(total)
 
     if probs["bestial"] != 0:
-        bestial = roll.dicemoji.emojify_die(1, True) + f"{probs['bestial']:.2%} Bestial Failure"
+        bestial = roll.dicemoji.emojify_die(1, True) if can_emoji else ""
+        bestial += f"{probs['bestial']:.2%} Bestial Failure"
         breakdown.append(bestial)
 
     embed.add_field(name="Breakdown", value="\n".join(breakdown))

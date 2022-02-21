@@ -471,6 +471,11 @@ class VChar:
         return OrderedDict(sorted(_traits.items(), key = lambda s: s[0].casefold()))
 
 
+    def has_trait(self, trait: str) -> bool:
+        """Determine whether a character has a given trait."""
+        return trait.lower() in map(lambda t: t.lower(), self.traits.keys())
+
+
     def find_trait(self, trait: str, exact=False) -> SimpleNamespace:
         """
         Finds the closest matching trait.
@@ -527,7 +532,7 @@ class VChar:
         Add a trait to the collection.
         Raises TraitAlreadyExistsError if the trait already exists.
         """
-        if trait.lower() in map(lambda t: t.lower(), self.traits.keys()):
+        if self.has_trait(trait):
             raise errors.TraitAlreadyExistsError(f"You already have a trait named `{trait}`.")
 
         VChar._CHARS.update_one(self.find_query, { "$set": { f"traits.{trait}": rating } })

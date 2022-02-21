@@ -8,8 +8,7 @@ from datetime import datetime
 import discord
 import pymongo
 
-from .. import common
-from ..settings import Settings
+import inconnu
 
 EPOCH = "1970-01-01"
 
@@ -35,7 +34,7 @@ async def statistics(ctx, trait: str, date):
             await __trait_statistics(ctx, trait.title(), date)
 
     except ValueError:
-        await common.present_error(ctx, f"`{date}` is not a valid date.")
+        await inconnu.common.present_error(ctx, f"`{date}` is not a valid date.")
 
 
 async def __trait_statistics(ctx, trait, date):
@@ -95,12 +94,23 @@ async def __trait_statistics(ctx, trait, date):
     stats = list(rolls.aggregate(pipeline))
     fmt_date = date.strftime("%Y-%m-%d")
     if stats:
-        if Settings.accessible(ctx.user):
+        if inconnu.settings.accessible(ctx.user):
             await __trait_stats_text(ctx, trait, stats, fmt_date)
         else:
             await __trait_stats_embed(ctx, trait, stats, fmt_date)
     else:
-        if date.year < 2021: # Bot was made in 2021; anything prior to that is lifetime statistics
+        # We didn't get any rolls
+        all_chars = inconnu.vchar.VChar.all_characters(ctx.guild.id, ctx.user.id)
+        trait_is_valid = False
+
+        for char in all_chars:
+            if char.has_trait(trait):
+                trait_is_valid = True
+                break
+
+        if not trait_is_valid:
+            await ctx.respond(f"None of your characters have a trait called `{trait}`.")
+        elif date.year < 2021: # Bot was made in 2021; anything prior to that is lifetime statistics
             await ctx.respond(f"None of your characters have ever rolled `{trait}`.")
         else:
             await ctx.respond(f"None of your characters have rolled `{trait}` since {fmt_date}.")
@@ -223,7 +233,7 @@ async def __all_statistics(ctx, date):
         await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)
         return
 
-    if Settings.accessible(ctx.user):
+    if inconnu.settings.accessible(ctx.user):
         await __display_text(ctx, results)
     else:
         await __display_embed(ctx, results)

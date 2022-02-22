@@ -17,6 +17,13 @@ from .vchar import VChar
 from . import views
 
 
+def response(ctx):
+    """Get the response or, if it's been responded to, the followup."""
+    if ctx.response.is_done():
+        return ctx.followup
+    return ctx.response
+
+
 def respond(ctx):
     """Get the proper response callable."""
     if isinstance(ctx, discord.Interaction):

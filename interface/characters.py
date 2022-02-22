@@ -177,7 +177,7 @@ class Characters(commands.Cog, name="Character Management"):
     async def character_bio_edit(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to edit")
+        character: inconnu.options.character("The character to edit", required=True)
     ):
         """Edit a character's biography."""
         await inconnu.character.edit_biography(ctx, character)

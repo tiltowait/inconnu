@@ -404,7 +404,7 @@ class VChar:
     @property
     def image_url(self):
         """The character's image."""
-        return self._params.get("image")
+        return self._params.get("image", "")
 
 
     @image_url.setter

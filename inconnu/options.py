@@ -13,7 +13,7 @@ def ratings(low, high) -> list:
     return [OptionChoice(str(n), n) for n in range(low, high + 1)]
 
 
-def character(description = "The character to use", required=False) -> Option:
+def character(description="The character to use", required=False) -> Option:
     """Return an Option that generates a list of player characters."""
     return Option(str, description,
         autocomplete=_available_characters,

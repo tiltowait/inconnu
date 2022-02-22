@@ -377,6 +377,30 @@ class VChar:
         self.current_xp += delta
 
 
+    @property
+    def biography(self):
+        """The character's biography."""
+        return self._params.get("biography", "")
+
+
+    @biography.setter
+    def biography(self, new_value):
+        """Set the character's biography."""
+        VChar._CHARS.update_one(self.find_query, { "$set": { "biography": new_value } })
+
+
+    @property
+    def description(self):
+        """The character's description."""
+        return self._params.get("description", "")
+
+
+    @description.setter
+    def description(self, new_value):
+        """Set the character's description."""
+        VChar._CHARS.update_one(self.find_query, { "$set": { "description": new_value } })
+
+
     # Derived attributes
 
 

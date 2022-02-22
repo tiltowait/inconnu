@@ -147,11 +147,13 @@ def __get_embed(
 
     can_emoji = ctx.channel.permissions_for(ctx.guild.default_role).external_emojis
     for field, parameter in fields:
-        embed.add_field(
-            name=field,
-            value=__embed_field_value(character, parameter, can_emoji),
-            inline=False
-        )
+        # We use optionals because ghouls and mortals don't have every parameter
+        if (value := __embed_field_value(character, parameter, can_emoji)) is not None:
+            embed.add_field(
+                name=field,
+                value=value,
+                inline=False
+            )
 
     if custom is not None:
         for field, value in custom:
@@ -162,6 +164,8 @@ def __get_embed(
 
 def __embed_field_value(character, parameter, can_emoji):
     """Generates the value for a given embed field."""
+    value = None
+
     match parameter:
         case DisplayField.HEALTH:
             value = __stat_repr(can_emoji, trackmoji.emojify_track, character.health)
@@ -170,7 +174,12 @@ def __embed_field_value(character, parameter, can_emoji):
             value = __stat_repr(can_emoji, trackmoji.emojify_track, character.willpower)
 
         case DisplayField.HUMANITY:
-            value = __stat_repr(can_emoji, trackmoji.emojify_humanity, character.humanity, character.stains)
+            value = __stat_repr(
+                can_emoji,
+                trackmoji.emojify_humanity,
+                character.humanity,
+                character.stains
+            )
 
         case DisplayField.POTENCY if character.is_vampire:
             value = __stat_repr(can_emoji, trackmoji.emojify_blood_potency, character.potency)
@@ -183,9 +192,6 @@ def __embed_field_value(character, parameter, can_emoji):
 
         case DisplayField.EXPERIENCE:
             value = f"```{character.current_xp} / {character.total_xp}```"
-
-        case _:
-            raise ValueError(f"Unknown parameter: `{parameter}`.")
 
     return value
 

@@ -177,7 +177,7 @@ class Characters(commands.Cog, name="Character Management"):
     async def character_bio_edit(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character(required=True)
+        character: inconnu.options.character("The character to edit")
     ):
         """Edit a character's biography."""
         await inconnu.character.edit_biography(ctx, character)
@@ -192,7 +192,7 @@ class Characters(commands.Cog, name="Character Management"):
         character: inconnu.options.character("The character to view"),
     ):
         """View a character's biography."""
-        await inconnu.character.show_bio(ctx, character, player)
+        await inconnu.character.show_biography(ctx, character, player)
 
 
     @commands.user_command(name="Character Bio")

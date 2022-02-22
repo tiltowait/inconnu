@@ -84,11 +84,6 @@ class _CharacterBio(discord.ui.Modal):
         description = self.children[1].value
         image_url = self.children[2].value
 
-        print(self.children)
-        for child in self.children:
-            print(child.value)
-        print(biography)
-
         self.character.biography = biography.strip()
         self.character.description = description.strip()
 

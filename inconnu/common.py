@@ -206,7 +206,7 @@ def character_options(guild: int, user: int):
     return SimpleNamespace(characters=chardict, view=view)
 
 
-async def player_lookup(ctx, player: discord.Member, requires_admin=True):
+async def player_lookup(ctx, player: discord.Member):
     """
     Look up a player.
     Returns the sought-after player OR the ctx author if player_str is None.
@@ -218,7 +218,7 @@ async def player_lookup(ctx, player: discord.Member, requires_admin=True):
         return ctx.user
 
     # Players are allowed to look up themselves
-    if requires_admin and (not ctx.user.guild_permissions.administrator and ctx.user != player):
+    if (not ctx.user.guild_permissions.administrator) and ctx.user != player:
         raise LookupError("You don't have lookup permissions.")
 
     return player

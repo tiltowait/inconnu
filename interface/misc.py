@@ -74,6 +74,38 @@ class MiscCommands(commands.Cog):
         await inconnu.misc.statistics(ctx, trait, date)
 
 
+    @slash_command()
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def transfer(
+        self,
+        ctx: discord.ApplicationContext,
+        current_owner: Option(discord.Member, "The character's current owner"),
+        character: inconnu.options.character("The character to transfer", required=True),
+        new_owner: Option(discord.Member, "The character's new owner"),
+    ):
+        """Reassign a character from one player to another."""
+        try:
+            character = inconnu.vchar.VChar.fetch(None, None, character)
+
+            if ctx.guild.id == character.guild and current_owner.id == character.user:
+                character.user = new_owner.id
+                current_mention = current_owner.mention
+                new_mention = new_owner.mention
+
+                msg = f"Transferred **{character.name}** from {current_mention} to {new_mention}."
+                await ctx.respond(msg)
+
+            else:
+                await inconnu.common.present_error(
+                    ctx,
+                    f"{current_owner.display_name} doesn't own {character.name}!"
+                )
+
+        except inconnu.vchar.errors.CharacterNotFoundError:
+            await inconnu.common.present_error(ctx, "Character not found.")
+
+
 def setup(bot):
     """Add the cog to the bot."""
     bot.add_cog(MiscCommands(bot))

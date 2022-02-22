@@ -40,7 +40,6 @@ class VChar:
         self.id = params["_id"] # pylint: disable=invalid-name
         self.find_query = { "_id": self.id }
         self.guild = params["guild"]
-        self.user = params["user"]
 
 
     # Character creation and fetching
@@ -159,6 +158,21 @@ class VChar:
 
 
     # Property accessors
+
+    @property
+    def user(self):
+        """The owner's Discord user ID."""
+        return self._params["user"]
+
+
+    @user.setter
+    def user(self, new_user):
+        """Set the new user."""
+        if not isinstance(new_user, int):
+            new_user = new_user.id
+
+        VChar._CHARS.update_one(self.find_query, { "$set": { "user": new_user } })
+
 
     @property
     def name(self):

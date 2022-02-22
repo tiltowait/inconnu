@@ -88,7 +88,7 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
         assigned=assigned,
         unassigned=unassigned,
         errors=error_traits,
-        editing=overwriting
+        updating=overwriting
     )
 
 
@@ -102,18 +102,21 @@ async def __display_results(ctx, outcome, char_name: str):
 
 async def __results_embed(ctx, outcome, char_name: str):
     """Display the results of the operation in a nice embed."""
+    action_present = "Update" if outcome.updating else "Assign"
+    action_past = "Updated" if outcome.updating else "Assigned"
+
     assigned = len(outcome.assigned)
     unassigned = len(outcome.unassigned)
     errors = len(outcome.errors)
 
     if not outcome.assigned and not outcome.unassigned and outcome.errors:
-        title = "Unable to Assign Traits"
+        title = f"Unable to {action_present} Traits"
     elif outcome.assigned and not outcome.unassigned:
-        title = "Assigned " + common.pluralize(assigned, 'Trait')
+        title = f"{action_past} {common.pluralize(assigned, 'Trait')}"
     elif outcome.assigned and outcome.unassigned:
-        title = f"Assigned: {assigned} | Unassigned: {unassigned + errors}"
+        title = f"{action_past}: {assigned} | Unassigned: {unassigned + errors}"
     else:
-        title = "Couldn't Assign " + common.pluralize(unassigned + errors, "Trait")
+        title = f"Couldn't {action_present} {common.pluralize(unassigned + errors, 'Trait')}"
 
     # No color if no mistakes
     # Black if some mistakes
@@ -129,7 +132,7 @@ async def __results_embed(ctx, outcome, char_name: str):
     embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
     if outcome.assigned:
         assigned = "\n".join(outcome.assigned)
-        embed.add_field(name="Assigned", value=assigned)
+        embed.add_field(name=action_past, value=assigned)
 
     if outcome.unassigned:
         unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
@@ -138,7 +141,7 @@ async def __results_embed(ctx, outcome, char_name: str):
 
     if outcome.errors:
         errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
-        if outcome.editing:
+        if outcome.updating:
             field_name = "Error! You don't have these traits"
         else:
             field_name = "Error! You already have these traits"
@@ -153,7 +156,8 @@ async def __results_text(ctx, outcome, char_name: str):
 
     if outcome.assigned:
         assigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.assigned))
-        contents.append(f"Assigned: {assigned}")
+        action = "Updated" if outcome.updating else "Assigned"
+        contents.append(f"{action}: {assigned}")
 
     footer = None
     if outcome.unassigned:
@@ -163,7 +167,7 @@ async def __results_text(ctx, outcome, char_name: str):
 
     if outcome.errors:
         errs = ", ".join(map(lambda trait: f"`{trait}`", outcome.errors))
-        if outcome.editing:
+        if outcome.updating:
             err_field = "Error! You don't have " + errs
         else:
             err_field = "Error! You already have " + errs

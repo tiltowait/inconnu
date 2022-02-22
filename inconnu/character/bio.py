@@ -20,28 +20,38 @@ async def edit_biography(ctx, character):
 async def show_biography(ctx, character, player):
     """Display a character's biography."""
     try:
+        owner = ctx.user or player
         tip = "`/character bio show` `character:CHARACTER` `player:PLAYER`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL, owner=player)
+        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        embed = discord.Embed(title=f"Biography: {character.name}")
+        embed = discord.Embed(title="Biography")
+        embed.set_author(name=character.name, icon_url=owner.display_avatar)
+
+        should_show = False
 
         if character.biography:
+            should_show = True
             embed.add_field(
-                name="Biography",
+                name="History",
                 value=character.biography or "*Not set.*",
                 inline=False
             )
         if character.description:
+            should_show = True
             embed.add_field(
-                name="Description",
+                name="Description & Personality",
                 value=character.description or "*Not set.*",
                 inline=False
             )
 
         if character.image_url.startswith("https://"):
+            should_show = True
             embed.set_image(url=character.image_url)
 
-        await ctx.respond(embed=embed)
+        if should_show:
+            await ctx.respond(embed=embed)
+        else:
+            await ctx.respond(f"**{character.name}** doesn't have a biography!", ephemeral=True)
 
     except LookupError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
@@ -61,6 +71,7 @@ class _CharacterBio(discord.ui.Modal):
             placeholder="Character biography and history.",
             value=character.biography,
             style=discord.InputTextStyle.long,
+            max_length=1024,
             required=False
         ))
         self.add_item(discord.ui.InputText(
@@ -68,6 +79,7 @@ class _CharacterBio(discord.ui.Modal):
             placeholder="The character's physical description.",
             value=character.description,
             style=discord.InputTextStyle.long,
+            max_length=1024,
             required=False
         ))
         self.add_item(discord.ui.InputText(
@@ -93,7 +105,7 @@ class _CharacterBio(discord.ui.Modal):
             self.character.image_url = ""
 
         await interaction.response.send_message(
-            f"Edited {self.character.name}'s bio!",
+            f"Edited **{self.character.name}'s** biography!",
             ephemeral=True
         )
 

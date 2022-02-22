@@ -401,6 +401,18 @@ class VChar:
         VChar._CHARS.update_one(self.find_query, { "$set": { "description": new_value } })
 
 
+    @property
+    def image_url(self):
+        """The character's image."""
+        return self._params.get("image")
+
+
+    @image_url.setter
+    def image_url(self, new_value):
+        """Set the character's image."""
+        VChar._CHARS.update_one(self.find_query, { "$set": { "image": new_value } })
+
+
     # Derived attributes
 
 

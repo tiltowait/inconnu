@@ -34,6 +34,9 @@ async def show_biography(ctx, character, player):
             inline=False
         )
 
+        if character.image_url:
+            embed.set_image(url=character.image_url)
+
         await ctx.respond(embed=embed)
 
     except LookupError as err:
@@ -61,15 +64,23 @@ class _CharacterBio(discord.ui.Modal):
             value=character.description,
             style=discord.InputTextStyle.long
         ))
+        self.add_item(discord.ui.InputText(
+            label="Image URL",
+            placeholder="The character's face claim.",
+            value=character.image_url,
+            required=False,
+        ))
 
 
     async def callback(self, interaction: discord.Interaction):
         """Finalize the modal."""
         biography = self.children[0].value
         description = self.children[1].value
+        image_url = self.children[2].value
 
         self.character.biography = biography
         self.character.description = description
+        self.character.image_url = image_url
 
         await interaction.response.send_message(
             f"Edited {self.character.name}'s bio!",

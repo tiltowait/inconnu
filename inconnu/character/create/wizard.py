@@ -17,7 +17,7 @@ class Wizard:
         if "DEBUG" in os.environ:
             self.core_traits = ["Resolve", "Composure"]
         else:
-            self.core_traits = inconnu.constants.FLAT_TRAITS
+            self.core_traits = inconnu.constants.FLAT_TRAITS()
 
         self.ctx = ctx
         self.msg = None # We will be editing this message instead of sending new ones

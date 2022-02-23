@@ -82,7 +82,7 @@ def __delete_traits(character: VChar, *traits) -> list:
     """
     deleted = []
     errs = []
-    standard_traits = map(lambda t: t.lower(), constants.FLAT_TRAITS)
+    standard_traits = map(lambda t: t.lower(), constants.FLAT_TRAITS())
 
     for trait in traits:
         if trait.lower() in standard_traits:

@@ -21,6 +21,7 @@ class Wizard:
 
         self.ctx = ctx
         self.msg = None # We will be editing this message instead of sending new ones
+        self.view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
         self.parameters = parameters
 
         if parameters.splat == "vampire":
@@ -77,6 +78,8 @@ class Wizard:
             await self.__finalize_text(character)
         else:
             await self.__finalize_embed(character)
+
+        self.view.stop()
 
 
     async def __finalize_text(self, character):
@@ -141,8 +144,7 @@ class Wizard:
         contents.append(f"```Select the rating for: {self.core_traits[0]}```")
 
         if self.msg is None:
-            view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
-            self.msg = await self.ctx.user.send("\n".join(contents), view=view)
+            self.msg = await self.ctx.user.send("\n".join(contents), view=self.view)
         else:
             await self.msg.edit(content="\n".join(contents))
 
@@ -165,8 +167,7 @@ class Wizard:
         embed.set_footer(text="Your character will not be saved until you have entered all traits.")
 
         if self.msg is None:
-            view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
-            self.msg = await self.ctx.user.send(embed=embed, view=view)
+            self.msg = await self.ctx.user.send(embed=embed, view=self.view)
         else:
             await self.msg.edit(embed=embed)
 

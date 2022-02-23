@@ -56,6 +56,7 @@ class _RollControls(inconnu.views.DisablingView):
             if contains_digit(button_id):
                 # This was the surge button, which is always last. Let's disable it
                 self.children[-1].disabled = True
+                self.children[-1].style = discord.ButtonStyle.secondary
                 await interaction.response.edit_message(view=self)
             elif button_id == _ButtonID.WILLPOWER:
                 # Mark WP is always the first button

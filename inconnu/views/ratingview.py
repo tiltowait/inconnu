@@ -30,9 +30,13 @@ class RatingView(discord.ui.View):
             button.callback = self.button_pressed
             self.add_item(button)
 
+        # Button 0 is on a separate row
+        button_id = str(uuid.uuid4())
+        self.ratings[button_id] = rating
+
         button = discord.ui.Button(
             label="0",
-            custom_id="0",
+            custom_id=button_id,
             row=1
         )
         button.callback = self.button_pressed

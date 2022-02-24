@@ -67,7 +67,6 @@ class VChar:
 
 
     def __init__(self, params: dict):
-        VChar.__prepare()
         self._params = params
         self.id = params["_id"] # pylint: disable=invalid-name
         self.find_query = { "_id": self.id }
@@ -194,6 +193,7 @@ class VChar:
 
     def _set_property(self, field, value):
         """Set a field to a given value."""
+        VChar.__prepare()
         self._params[field] = value
         VChar._CHARS.update_one(self.find_query, { "$set": { field: value } })
 

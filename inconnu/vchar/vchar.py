@@ -97,9 +97,13 @@ class VChar:
             "experience": { "current": 0, "total": 0 },
             "log": { "created": datetime.datetime.utcnow() }
         }
+
+        # The character needs an ID, so we insert, pull the ID, and re-fetch
         _id = VChar._CHARS.insert_one(character).inserted_id
         params = VChar._CHARS.find_one({ "_id": _id })
-        return VChar(params)
+
+        # Add it to the cache
+        return _CHARACTER_CACHE.setdefault(_id, VChar(params))
 
 
     @classmethod

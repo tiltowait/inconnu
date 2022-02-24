@@ -181,7 +181,7 @@ def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) 
             old_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
             character.apply_damage(tracker, dtype, delta)
             new_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
-            wrap = new_agg - old_agg
+            wrap = new_agg - old_agg if dtype == Damage.SUPERFICIAL else 0
         else:
             character.set_damage(tracker, dtype, delta)
             wrap = 0

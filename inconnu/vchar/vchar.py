@@ -16,6 +16,23 @@ from bson.objectid import ObjectId
 from . import errors
 from ..constants import Damage, INCONNU_ID, UNIVERSAL_TRAITS
 
+# This cache is not an efficiency cache. Instead, it keeps persistent character
+# references that can be passed to different bot functions. This helps prevent
+# stale data from being used. Consider the following scenario:
+#
+#   1. Player rolls, then rerolls with 2 superficial WP damage
+#   2. Player uses /character update to change his character's WP damage to 0
+#   3. Player clicks the "Mark WP" button
+#
+# Without the cache, the character will end with 3 superficial WP damage instead
+# of 1, because both the roll function and the character updater would be
+# accessing different copies of the character. With the cache, they will use the
+# same copy.
+#
+# In benchmarking, an efficiency version adds complexity without any measurable
+# performance gains.
+_CHARACTER_CACHE = {}
+
 
 _digits = re.compile(r"\d")
 def contains_digit(string: str):
@@ -74,8 +91,6 @@ class VChar:
     @classmethod
     def _id_fetch(cls, charid: str):
         """Fetch a character by ID and return its raw parameters."""
-        VChar.__prepare()
-
         try:
             params = VChar._CHARS.find_one({ "_id": ObjectId(charid) })
         except bson.errors.InvalidId:
@@ -96,22 +111,25 @@ class VChar:
             1 character: Return that character
            >1 character: Raise UnspecifiedCharacterError
         """
-        if contains_digit(name):
-            char_params = VChar._id_fetch(name)
-            if char_params is None:
-                raise errors.CharacterNotFoundError(f"`{name}` is not a valid character name.")
-            return VChar(char_params)
-
         VChar.__prepare()
 
-        count = VChar._CHARS.count_documents({ "guild": guild, "user": user })
-        if count == 0:
+        if contains_digit(name):
+            if (char := _CHARACTER_CACHE.get(name, None)) is not None:
+                return char
+            if (char_params := VChar._id_fetch(name)) is None:
+                raise errors.CharacterNotFoundError(f"`{name}` is not a valid character name.")
+
+            char = VChar(char_params)
+            return _CHARACTER_CACHE.setdefault(char.id, char)
+
+        if (count := VChar._CHARS.count_documents({ "guild": guild, "user": user })) == 0:
             raise errors.NoCharactersError("You have no characters!")
 
         if name is None:
             if count == 1:
                 character = VChar._CHARS.find_one({ "guild": guild, "user": user })
-                return VChar(character)
+                char = VChar(character)
+                return _CHARACTER_CACHE.setdefault(char.id, char)
 
             errmsg = f"You have {count} characters. Please specify which you want."
             raise errors.UnspecifiedCharacterError(errmsg)
@@ -121,12 +139,12 @@ class VChar:
             "user": user,
             "name": { "$regex": re.compile("^" + name + "$", re.IGNORECASE) }
         }
-        character = VChar._CHARS.find_one(query)
 
-        if character is None:
+        if (character := VChar._CHARS.find_one(query)) is None:
             raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
 
-        return VChar(character)
+        char = VChar(character)
+        return _CHARACTER_CACHE.setdefault(char.id, char)
 
 
     @classmethod
@@ -811,7 +829,12 @@ class VChar:
 
     def delete_character(self) -> bool:
         """Delete this character and all associated traits and macros."""
-        return VChar._CHARS.delete_one(self.find_query).acknowledged
+        try:
+            del _CHARACTER_CACHE[self.id]
+            return VChar._CHARS.delete_one(self.find_query).acknowledged
+        except KeyError:
+            # Somehow, they weren't in the cache
+            return False
 
 
     @classmethod

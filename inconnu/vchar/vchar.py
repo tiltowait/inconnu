@@ -5,6 +5,7 @@ import datetime
 import math
 import os
 import re
+from enum import Enum
 
 from collections import OrderedDict
 from types import SimpleNamespace
@@ -40,6 +41,20 @@ def contains_digit(string: str):
     if string is None:
         return False
     return bool(_digits.search(string)) # Much faster than using any()
+
+
+class _Properties(str, Enum):
+    """An enum to prevent needing to stringly type database fields."""
+
+    USER = "user"
+    NAME = "name"
+    SPLAT = "splat"
+    HUMANITY = "humanity"
+    STAINS = "stains"
+    HEALTH = "health"
+    WILLPOWER = "willpower"
+    HUNGER = "hunger"
+    POTENCY = "potency"
 
 
 class VChar:
@@ -177,10 +192,16 @@ class VChar:
 
     # Property accessors
 
+    def _set_property(self, field, value):
+        """Set a field to a given value."""
+        self._params[field] = value
+        VChar._CHARS.update_one(self.find_query, { "$set": { field: value } })
+
+
     @property
     def user(self):
         """The owner's Discord user ID."""
-        return self._params["user"]
+        return self._params[_Properties.USER]
 
 
     @user.setter
@@ -189,56 +210,53 @@ class VChar:
         if not isinstance(new_user, int):
             new_user = new_user.id
 
-        VChar._CHARS.update_one(self.find_query, { "$set": { "user": new_user } })
+        self._set_property(_Properties.USER, new_user)
 
 
     @property
     def name(self):
         """The character's name."""
         if self.is_pc:
-            return self._params["name"]
-        return self._params["name"] + " (SPC)"
+            return self._params[_Properties.NAME]
+        return self._params[_Properties.NAME] + " (SPC)"
 
 
     @name.setter
     def name(self, new_name):
         """Set the character's name."""
-        self._params["name"] = new_name
-        VChar._CHARS.update_one(self.find_query, { "$set": { "name": new_name } })
+        self._set_property(_Properties.NAME, new_name)
 
 
     @property
     def splat(self):
         """The character's splat."""
-        return self._params["splat"]
+        return self._params[_Properties.SPLAT]
 
 
     @splat.setter
     def splat(self, new_splat):
         """Set the character's splat."""
-        self._params["splat"] = new_splat
-        VChar._CHARS.update_one(self.find_query, { "$set": { "splat": new_splat } })
+        self._set_property(_Properties.SPLAT, new_splat)
 
 
     @property
     def humanity(self):
         """The character's humanity."""
-        return self._params["humanity"]
+        return self._params[_Properties.HUMANITY]
 
 
     @humanity.setter
     def humanity(self, new_humanity):
         """Set the character's humanity."""
         new_humanity = max(0, min(10, new_humanity))
-        self._params["humanity"] = new_humanity
-        VChar._CHARS.update_one(self.find_query, { "$set": { "humanity": new_humanity } })
+        self._set_property(_Properties.HUMANITY, new_humanity)
         self.stains = 0
 
 
     @property
     def stains(self):
         """The character's stains."""
-        return self._params["stains"]
+        return self._params[_Properties.STAINS]
 
 
     @stains.setter
@@ -246,21 +264,19 @@ class VChar:
         """Set the character's stains."""
         new_stains = max(0, min(10, new_stains))
         self.__update_log("stains", self.stains, new_stains)
-        self._params["stains"] = new_stains
-        VChar._CHARS.update_one(self.find_query, { "$set": { "stains": new_stains } })
+        self._set_property(_Properties.STAINS, new_stains)
 
 
     @property
     def health(self):
         """The character's health."""
-        return self._params["health"]
+        return self._params[_Properties.HEALTH]
 
 
     @health.setter
     def health(self, new_health):
         """Set the character's health."""
-        self._params["health"] = new_health
-        VChar._CHARS.update_one(self.find_query, { "$set": { "health": new_health } })
+        self._set_property(_Properties.HEALTH, new_health)
 
 
     @property
@@ -278,14 +294,13 @@ class VChar:
     @property
     def willpower(self):
         """The character's willpower."""
-        return self._params["willpower"]
+        return self._params[_Properties.WILLPOWER]
 
 
     @willpower.setter
     def willpower(self, new_willpower):
         """Set the character's willpower."""
-        self._params["willpower"] = new_willpower
-        VChar._CHARS.update_one(self.find_query, { "$set": { "willpower": new_willpower } })
+        self._set_property(_Properties.WILLPOWER, new_willpower)
 
 
     @property
@@ -324,34 +339,28 @@ class VChar:
     @property
     def hunger(self):
         """The character's hunger."""
-        if self.is_vampire:
-            return self._params["hunger"]
-        return 0
+        return self._params[_Properties.HUNGER] if self.is_vampire else 0
 
 
     @hunger.setter
     def hunger(self, new_hunger):
         """Set the character's hunger."""
         new_hunger = max(0, min(5, new_hunger)) # Clamp between 0 and 5
-
         self.__update_log("hunger", self.hunger, new_hunger)
-        self._params["hunger"] = new_hunger
-        VChar._CHARS.update_one(self.find_query, { "$set": { "hunger": new_hunger } })
+        self._set_property(_Properties.HUNGER, new_hunger)
 
 
     @property
     def potency(self):
         """The character's potency."""
-        return self._params["potency"]
+        return self._params[_Properties.POTENCY]
 
 
     @potency.setter
     def potency(self, new_potency):
         """Set the character's potency."""
         new_potency = max(0, min(10, new_potency))
-
-        self._params["potency"] = new_potency
-        VChar._CHARS.update_one(self.find_query, { "$set": { "potency": new_potency } })
+        self._set_property(_Properties.POTENCY, new_potency)
 
 
     @property

@@ -4,6 +4,14 @@
 
 ## Parameters:
 
+### `experience_permissions`
+
+?> **Default:** `Unrestricted`
+
+This parameter specifies whether users may edit their own XP totals. The options are unrestricted, unspent XP only, lifetime XP only, and full restriction (admins only).
+
+**Recommended reading:** [`/experience` commands](administration.md#experience-management).
+
 ### `accessibility`
 
 ?> **Default:** `No`

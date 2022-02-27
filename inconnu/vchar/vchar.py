@@ -108,13 +108,13 @@ class VChar:
 
     @classmethod
     def _id_fetch(cls, charid: str):
-        """Fetch a character by ID and return its raw parameters."""
+        """Fetch a character by ID."""
         try:
             params = VChar._CHARS.find_one({ "_id": ObjectId(charid) })
         except bson.errors.InvalidId:
             return None
 
-        return params
+        return VChar(params)
 
 
     @classmethod
@@ -131,14 +131,33 @@ class VChar:
         """
         VChar.__prepare()
 
+        if not isinstance(guild, int):
+            guild = guild.id
+        if not isinstance(user, int):
+            user = user.id
+
         if contains_digit(name):
+            # This is likely a character ID, so we can check the cache directly
+            # rather than fetch from the database
             if (char := _CHARACTER_CACHE.get(name, None)) is not None:
                 return char
-            if (char_params := VChar._id_fetch(name)) is None:
+
+            if (char := VChar._id_fetch(name)) is None:
+                # Character names can't have numbers. If we didn't find a
+                # character, then the user somehow input something invalid.
+                # This error message will only rarely be seen.
                 raise errors.CharacterNotFoundError(f"`{name}` is not a valid character name.")
 
-            char = VChar(char_params)
+            # Check that the user belongs to the guild and user
+            if char.guild != guild:
+                raise ValueError(f"**{char.name}** doesn't belong to this server!")
+            if char.user != user:
+                raise ValueError(f"**{char.name}** doesn't belong to this user!")
+
             return _CHARACTER_CACHE.setdefault(char.id, char)
+
+        # Fallbacks. If the user has only one character, we simply return that.
+        # Otherwise, we have to present with them with an error message.
 
         if (count := VChar._CHARS.count_documents({ "guild": guild, "user": user })) == 0:
             raise errors.NoCharactersError("You have no characters!")
@@ -169,6 +188,11 @@ class VChar:
     def character_exists(cls, guild: int, user: int, name: str, is_spc: bool):
         """Determine wheter a character exists."""
         VChar.__prepare()
+
+        if not isinstance(guild, int):
+            guild = guild.id
+        if not isinstance(user, int):
+            user = user.id
 
         query = {
             "guild": guild,

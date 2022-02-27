@@ -85,8 +85,15 @@ class MiscCommands(commands.Cog):
         new_owner: Option(discord.Member, "The character's new owner"),
     ):
         """Reassign a character from one player to another."""
+        if current_owner.id == new_owner.id:
+            await inconnu.common.present_error(
+                ctx,
+                "`current_owner` and `new_owner` can't be the same."
+            )
+            return
+
         try:
-            character = inconnu.vchar.VChar.fetch(None, None, character)
+            character = inconnu.vchar.VChar.fetch(ctx.guild, current_owner, character)
 
             if ctx.guild.id == character.guild and current_owner.id == character.user:
                 character.user = new_owner.id
@@ -104,6 +111,9 @@ class MiscCommands(commands.Cog):
 
         except inconnu.vchar.errors.CharacterNotFoundError:
             await inconnu.common.present_error(ctx, "Character not found.")
+        except ValueError as err:
+            await inconnu.common.present_error(ctx, err)
+
 
 
 def setup(bot):

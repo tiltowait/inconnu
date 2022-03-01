@@ -55,6 +55,7 @@ class _Properties(str, Enum):
     WILLPOWER = "willpower"
     HUNGER = "hunger"
     POTENCY = "potency"
+    TRAITS = "traits"
 
 
 class VChar:
@@ -531,9 +532,9 @@ class VChar:
     @property
     def traits(self):
         """A dictionary of the user's traits."""
-        _traits = self._params.get("traits", {})
+        _traits = self._params.get(_Properties.TRAITS, {})
         if not _traits:
-            self._params["traits"] = {}
+            self._params[_Properties.TRAITS] = {}
         return OrderedDict(sorted(_traits.items(), key = lambda s: s[0].casefold()))
 
 
@@ -602,7 +603,7 @@ class VChar:
             raise errors.TraitAlreadyExistsError(f"You already have a trait named `{trait}`.")
 
         VChar._CHARS.update_one(self.find_query, { "$set": { f"traits.{trait}": rating } })
-        self._params["traits"][trait] = rating
+        self._params[_Properties.TRAITS][trait] = rating
 
 
     def update_trait(self, trait: str, new_rating: int):
@@ -616,7 +617,7 @@ class VChar:
 
         trait = self.find_trait(trait, exact=True).name
         VChar._CHARS.update_one(self.find_query, { "$set": { f"traits.{trait}": new_rating } })
-        self._params["traits"][trait] = new_rating
+        self._params[_Properties.TRAITS][trait] = new_rating
 
         return trait
 
@@ -628,6 +629,7 @@ class VChar:
         """
         trait = self.find_trait(trait, exact=True).name
         VChar._CHARS.update_one(self.find_query, { "$unset": { f"traits.{trait}": "" } })
+        del self._params[_Properties.TRAITS][trait]
 
         return trait
 

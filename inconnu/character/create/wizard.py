@@ -1,7 +1,9 @@
 """character/create/wizard.py - The new character wizard."""
 # pylint: disable=too-few-public-methods
 
+import asyncio
 import os
+import threading
 
 import discord
 from discord.ui import Button
@@ -33,7 +35,7 @@ class Wizard:
 
     async def begin_chargen(self):
         """Start the chargen wizard."""
-        await self.__query_trait()
+        await asyncio.gather(_register_wizard(), self.__query_trait())
 
 
     async def _assign_next_trait(self, rating: int):
@@ -80,6 +82,7 @@ class Wizard:
             await self.__finalize_embed(character)
 
         self.view.stop()
+        await _deregister_wizard()
 
 
     async def __finalize_text(self, character):
@@ -176,3 +179,41 @@ class Wizard:
         """Inform the user they took too long."""
         errmsg = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
         await self.msg.edit(content=errmsg, embed=None, view=None)
+        await _deregister_wizard()
+
+
+# When we deploy a new build of the bot, we want to avoid doing so while someone
+# is creating a character. To prevent this, we maintain a lock file that tracks
+# the number of actively running wizards. On deployment, if the count is 0, then
+# the deployment will proceed.
+
+async def _register_wizard():
+    """Increment the chargen counter."""
+    await __modify_lock(1)
+
+
+async def _deregister_wizard():
+    """Decrement the chargen counter."""
+    await __modify_lock(-1)
+
+
+async def __modify_lock(delta):
+    """Modify the chargen counter."""
+    lockfile = ".wizard.lock"
+    lock = threading.Lock()
+
+    with lock:
+        if not os.path.exists(lockfile):
+            open(lockfile, "w", encoding="utf8").close() # pylint: disable=consider-using-with
+
+        with open(lockfile, "r+", encoding="utf8") as registration:
+            try:
+                counter = int(registration.readline())
+            except ValueError:
+                counter = 0
+
+            counter = max(0, counter + delta)
+
+            registration.seek(0)
+            registration.write(str(counter))
+            registration.truncate()

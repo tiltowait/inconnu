@@ -847,6 +847,11 @@ class VChar:
         else:
             self.current_xp += amount
 
+        # Add it to the cached experience log
+        log = self.experience_log
+        log.append(event_document)
+        self._params["experience"]["log"] = log
+
 
     def remove_experience_log_entry(self, entry):
         """Remove an entry from the log."""
@@ -857,6 +862,14 @@ class VChar:
                 "experience.log": entry
             }
         })
+
+        # Remove the entry from the cached experience log
+        log = self.experience_log
+        index = next((index for (index, d) in enumerate(log) if d == entry), None)
+
+        if index is not None:
+            del log[index]
+            self._params["experience"]["log"] = log
 
 
     # Misc

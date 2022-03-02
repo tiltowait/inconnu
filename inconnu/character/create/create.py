@@ -8,8 +8,6 @@ import discord
 
 import inconnu
 from . import wizard
-from ...vchar import VChar
-from ... import common
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-creation"
 
@@ -17,7 +15,9 @@ __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-crea
 async def create(ctx, name: str, splat: str, humanity: int, health: int, willpower: int, spc: bool):
     """Parse and handle character creation arguments."""
     if spc and not ctx.user.guild_permissions.administrator:
-        await common.present_error(ctx, "You need Administrator permissions to make an SPC.")
+        await inconnu.common.present_error(
+            ctx, "You need Administrator permissions to make an SPC."
+        )
         return
 
     try:
@@ -41,7 +41,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
         await character_wizard.begin_chargen()
 
     except ValueError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
     except discord.errors.Forbidden:
         await response.edit(
             content="**Whoops!** I can't DM your character wizard. Please enable DMs and try again."

@@ -115,26 +115,6 @@ class Stats:
             "reroll": None,
         }
 
-    @classmethod
-    async def __add_roll(cls, guild: int, user: int, char, outcome, comment):
-        """Add a new roll outcome entry to the database."""
-        await _rolls_collection().insert_one({
-            "_id": outcome.id,
-            "date": datetime.datetime.utcnow(),
-            "guild": guild, # We use the guild and user keys for easier lookups
-            "user": user,
-            "charid": getattr(char, "id", None),
-            "raw": outcome.syntax,
-            "normal": outcome.normal.dice,
-            "hunger": outcome.hunger.dice,
-            "difficulty": outcome.difficulty,
-            "margin": outcome.margin,
-            "outcome": outcome.outcome,
-            "pool": outcome.pool_str,
-            "comment": comment,
-            "reroll": None,
-        })
-
 
     @classmethod
     async def _gen_reroll(cls, outcome):
@@ -144,7 +124,6 @@ class Stats:
             ident (ObjectId): The entry's identifier
             outcome (Roll): The new outcome
         """
-        #await _rolls_collection().update_one({ "_id": outcome.id }, {
         return {
             "$set": {
                 "reroll": {
@@ -155,26 +134,6 @@ class Stats:
                 }
             }
         }
-
-
-    @classmethod
-    async def __update_roll(cls, outcome):
-        """
-        Update a roll entry.
-        Args:
-            ident (ObjectId): The entry's identifier
-            outcome (Roll): The new outcome
-        """
-        await _rolls_collection().update_one({ "_id": outcome.id }, {
-            "$set": {
-                "reroll": {
-                    "strategy": outcome.strategy,
-                    "dice": outcome.normal.dice,
-                    "margin": outcome.margin,
-                    "outcome": outcome.outcome
-                }
-            }
-        })
 
 
     @classmethod
@@ -190,9 +149,3 @@ class Stats:
                 Stats._CLIENT = mongo
                 Stats._STATS = mongo.inconnu.rolls
                 Stats._GUILDS = mongo.inconnu.guilds
-
-
-def _rolls_collection():
-    """Generate a stats collection."""
-    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-    return client.inconnu.stats

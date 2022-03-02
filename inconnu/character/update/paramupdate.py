@@ -2,28 +2,33 @@
 
 import re
 
+import inconnu
 from ...constants import Damage
 from ...vchar import VChar
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal"]
 
 
-def update_name(character: VChar, new_name: str) -> str:
+async def update_name(character: VChar, new_name: str) -> str:
     """Update the character's name."""
     if not re.match(r"[A-z_\d]+", new_name):
         raise ValueError("Names may only contain letters, numbers, and underscores.")
     if (name_len := len(new_name)) > 30:
         raise ValueError(f"`{new_name}` is too long by {name_len - 30} characters.")
 
-    all_chars = VChar.all_characters(character.guild, character.user)
-    if [char for char in all_chars if char.name.lower() == new_name.lower()]:
-        raise ValueError(f"You already have a character named `{new_name}`!")
+    all_chars = await inconnu.char_mgr.fetchall(character.guild, character.user)
+    for char in all_chars:
+        if char.name.lower() == new_name.lower():
+            raise ValueError(f"You already have a character named `{new_name}`!")
 
+    old_name = character.name
     character.name = new_name
-    return f"Set name to `{new_name}`."
+    inconnu.char_mgr.sort_user(character.guild, character.user)
+
+    return f"Rename `{old_name}` to `{new_name}`."
 
 
-def update_splat(character: VChar, new_splat: str) -> str:
+async def update_splat(character: VChar, new_splat: str) -> str:
     """Update the character's splat."""
     if new_splat not in VALID_SPLATS:
         splats = map(lambda splat: f"`{splat}`", VALID_SPLATS)
@@ -34,12 +39,12 @@ def update_splat(character: VChar, new_splat: str) -> str:
     return f"Set splat to `{new_splat}`."
 
 
-def update_hunger(character: VChar, delta: str) -> str:
+async def update_hunger(character: VChar, delta: str) -> str:
     """Update the character's Hunger."""
     return __update_hunger_potency(character, delta, "hunger", 5)
 
 
-def update_potency(character: VChar, delta: str) -> str:
+async def update_potency(character: VChar, delta: str) -> str:
     """Update the character's Blood Potency."""
     return __update_hunger_potency(character, delta, "potency", 10)
 
@@ -67,53 +72,53 @@ def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int
     return f"Set Blood Potency to `{new_value}`."
 
 
-def update_health(character: VChar, new_max: str) -> str:
+async def update_health(character: VChar, new_max: str) -> str:
     """Update the character's maximum HP. If decreasing, this truncates from the right."""
     return __update_track(character, "health", new_max)
 
 
-def update_willpower(character: VChar, new_max: str) -> str:
+async def update_willpower(character: VChar, new_max: str) -> str:
     """Update the character's maximum WP. If decreasing, this truncates from the right."""
     return __update_track(character, "willpower", new_max)
 
 
-def update_humanity(character: VChar, delta: str) -> str:
+async def update_humanity(character: VChar, delta: str) -> str:
     """Update the character's humanity rating. If decreasing, this truncates from the right."""
     __update_humanity(character, "stains", "0")
     return __update_humanity(character, "humanity", delta)
 
 
-def update_stains(character: VChar, delta: str) -> str:
+async def update_stains(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
     return __update_humanity(character, "stains", delta)
 
 
-def update_sh(character: VChar, delta: str) -> str:
+async def update_sh(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
     return __update_damage(character, "health", Damage.SUPERFICIAL, delta)
 
 
-def update_ah(character: VChar, delta: str) -> str:
+async def update_ah(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
     return __update_damage(character, "health", Damage.AGGRAVATED, delta)
 
 
-def update_sw(character: VChar, delta: str) -> str:
+async def update_sw(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
     return __update_damage(character, "willpower", Damage.SUPERFICIAL, delta)
 
 
-def update_aw(character: VChar, delta: str) -> str:
+async def update_aw(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
     return __update_damage(character, "willpower", Damage.AGGRAVATED, delta)
 
 
-def update_current_xp(character: VChar, delta: str) -> str:
+async def update_current_xp(character: VChar, delta: str) -> str:
     """Set or modify current XP."""
     return __update_xp(character, "current", delta)
 
 
-def update_total_xp(character: VChar, delta: str) -> str:
+async def update_total_xp(character: VChar, delta: str) -> str:
     """Set or modify total XP."""
     return __update_xp(character, "total", delta)
 

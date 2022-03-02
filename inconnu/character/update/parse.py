@@ -67,7 +67,7 @@ async def update(
         updates = []
 
         for parameter, new_value in parameters.items():
-            update_msg = __update_character(ctx, character, parameter, new_value)
+            update_msg = await __update_character(ctx, character, parameter, new_value)
             updates.append(update_msg)
 
         if (impairment := character.impairment) is not None:
@@ -145,7 +145,7 @@ def __parse_arguments(*arguments):
     return parameters
 
 
-def __update_character(ctx, character: VChar, param: str, value: str) -> str:
+async def __update_character(ctx, character: VChar, param: str, value: str) -> str:
     """
     Update one of a character's parameters.
     Args:
@@ -161,7 +161,8 @@ def __update_character(ctx, character: VChar, param: str, value: str) -> str:
         if not inconnu.settings.can_adjust_lifetime_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust lifetime XP.")
 
-    return getattr(paramupdate, f"update_{param}")(character, value)
+    coro = getattr(paramupdate, f"update_{param}")
+    return await coro(character, value)
 
 
 async def update_help(ctx, err=None, ephemeral=True):

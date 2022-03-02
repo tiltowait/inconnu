@@ -11,7 +11,6 @@ from collections import OrderedDict
 from types import SimpleNamespace
 
 import pymongo
-import bson
 from bson.objectid import ObjectId
 
 from . import errors
@@ -99,21 +98,6 @@ class VChar:
         }
 
         return VChar(char_params)
-
-
-    @classmethod
-    def all_characters(cls, guild: int, user: int):
-        """
-        Fetch all of the user's characters.
-        """
-        VChar.__prepare()
-
-        characters = list(
-            VChar._CHARS.find({ "guild": guild, "user": user })
-                .collation({ "locale": "en", "strength": 2 })
-                .sort("name")
-        )
-        return [VChar(params) for params in characters]
 
 
     def __eq__(self, other):

@@ -195,3 +195,15 @@ class CharacterManager:
             return True
 
         return False
+
+
+    def sort_user(self, guild: int, user: int):
+        """Sorts the user's characters alphabetically."""
+        guild, user = self.get_ids(guild, user)
+        key = f"{guild} {user}"
+
+        if not (user_chars := self.user_cache.get(key)):
+            # Characters are automatically sorted when fetched
+            return
+
+        self.user_cache[key] = list(sorted(user_chars, key=lambda c: c.name.casefold()))

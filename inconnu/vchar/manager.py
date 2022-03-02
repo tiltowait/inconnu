@@ -57,6 +57,10 @@ class CharacterManager:
         if re.search(r"\d", charid):
             if (char_params := await self.collection.find_one({ "_id": ObjectId(charid) })):
                 return VChar(char_params)
+
+            # Character names can't contain numbers
+            raise errors.CharacterNotFoundError(f"`{charid}` is not a valid character name.")
+
         return None
 
 
@@ -76,7 +80,7 @@ class CharacterManager:
         guild, user = self.get_ids(guild, user)
 
         if name is not None:
-            if (char := self.id_cache.get(name)) is not None:
+            if (char := self.id_cache.get(name)):
                 self._validate(guild, user, char)
                 return char
 
@@ -88,6 +92,7 @@ class CharacterManager:
 
             # Attempt to pull from the database
             if (char := await self._id_fetch(name)):
+                self.id_cache[char.id] = char
                 self._validate(guild, user, char)
                 return char
 

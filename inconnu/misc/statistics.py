@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 
 import discord
-import pymongo
+import motor.motor_asyncio
 
 import inconnu
 
@@ -39,7 +39,7 @@ async def statistics(ctx, trait: str, date):
 
 async def __trait_statistics(ctx, trait, date):
     """View the roll statistics for a given trait."""
-    client = pymongo.MongoClient(os.environ["MONGO_URL"])
+    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
     rolls = client.inconnu.rolls
     regex  = r"^.*(\s+" + f"{trait}|{trait}" + r"\s+.*|" + trait + ")$"
     pipeline = [
@@ -91,7 +91,9 @@ async def __trait_statistics(ctx, trait, date):
             }
         }
     ]
-    stats = list(rolls.aggregate(pipeline))
+    stats = await rolls.aggregate(pipeline).to_list(length=None)
+    client.close()
+
     fmt_date = date.strftime("%Y-%m-%d")
     if stats:
         if inconnu.settings.accessible(ctx.user):
@@ -160,7 +162,7 @@ async def __trait_stats_text(ctx, trait, stats, date):
 
 async def __all_statistics(ctx, date):
     """View the roll statistics for the user's characters."""
-    client = pymongo.MongoClient(os.environ["MONGO_URL"])
+    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
     col = client.inconnu.characters
     pipeline = [
         {
@@ -226,7 +228,7 @@ async def __all_statistics(ctx, date):
             "$sort": { "name": 1 }
         }
     ]
-    results = list(col.aggregate(pipeline))
+    results = await col.aggregate(pipeline).to_list(length=None)
     client.close()
 
     if not results:

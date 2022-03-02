@@ -4,7 +4,6 @@
 import datetime
 import math
 import os
-import re
 from enum import Enum
 
 from collections import OrderedDict
@@ -34,14 +33,6 @@ from ..constants import Damage, INCONNU_ID, UNIVERSAL_TRAITS
 _CHARACTER_CACHE = {}
 
 
-_digits = re.compile(r"\d")
-def contains_digit(string: str):
-    """Determine whether a string contains a digit."""
-    if string is None:
-        return False
-    return bool(_digits.search(string)) # Much faster than using any()
-
-
 class _Properties(str, Enum):
     """An enum to prevent needing to stringly type database fields."""
 
@@ -59,9 +50,6 @@ class _Properties(str, Enum):
 
 class VChar:
     """A class that maintains a character's property and automatically manages persistence."""
-
-    _CLIENT = None # MongoDB client
-    _CHARS = None # Characters collection
 
     VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane"]
 
@@ -107,11 +95,16 @@ class VChar:
 
     # Property accessors
 
+    @property
+    def collection(self):
+        """The database characters collection."""
+        mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
+        return mongo.inconnu.characters
+
     def _set_property(self, field, value):
         """Set a field to a given value."""
-        VChar.__prepare()
         self._params[field] = value
-        VChar._CHARS.update_one(self.find_query, { "$set": { field: value } })
+        self.collection.update_one(self.find_query, { "$set": { field: value } })
 
 
     @property
@@ -297,7 +290,7 @@ class VChar:
         new_current_xp = max(0, min(new_current_xp, self.total_xp))
 
         self._params["experience"]["current"] = new_current_xp
-        VChar._CHARS.update_one(
+        self.collection.update_one(
             self.find_query,
             { "$set": { "experience.current": new_current_xp } }
         )
@@ -316,7 +309,7 @@ class VChar:
         delta = new_total_xp - self.total_xp
 
         self._params["experience"]["total"] = new_total_xp
-        VChar._CHARS.update_one(
+        self.collection.update_one(
             self.find_query,
             { "$set": { "experience.total": new_total_xp } }
         )
@@ -495,7 +488,7 @@ class VChar:
         if self.has_trait(trait):
             raise errors.TraitAlreadyExistsError(f"You already have a trait named `{trait}`.")
 
-        VChar._CHARS.update_one(self.find_query, { "$set": { f"traits.{trait}": rating } })
+        self.collection.update_one(self.find_query, { "$set": { f"traits.{trait}": rating } })
         self._params[_Properties.TRAITS][trait] = rating
 
 
@@ -509,7 +502,7 @@ class VChar:
             raise errors.TraitAlreadyExistsError(err)
 
         trait = self.find_trait(trait, exact=True).name
-        VChar._CHARS.update_one(self.find_query, { "$set": { f"traits.{trait}": new_rating } })
+        self.collection.update_one(self.find_query, { "$set": { f"traits.{trait}": new_rating } })
         self._params[_Properties.TRAITS][trait] = new_rating
 
         return trait
@@ -521,7 +514,7 @@ class VChar:
         Raises TraitNotFoundError if the trait doesn't exist.
         """
         trait = self.find_trait(trait, exact=True).name
-        VChar._CHARS.update_one(self.find_query, { "$unset": { f"traits.{trait}": "" } })
+        self.collection.update_one(self.find_query, { "$unset": { f"traits.{trait}": "" } })
         del self._params[_Properties.TRAITS][trait]
 
         return trait
@@ -610,14 +603,14 @@ class VChar:
                 }
             }
         }
-        VChar._CHARS.update_one(self.find_query, macro_query)
+        self.collection.update_one(self.find_query, macro_query)
 
 
     def update_macro(self, macro: str, update: dict):
         """Update a macro."""
         macro = self.find_macro(macro) # For getting the exact name
         for param, val in update.items():
-            VChar._CHARS.update_one(
+            self.collection.update_one(
                 self.find_query,
                 { "$set": { f"macros.{macro.name}.{param}": val } }
             )
@@ -630,7 +623,7 @@ class VChar:
         Raises MacroNotFoundError if the macro doesn't exist.
         """
         macro = self.find_macro(macro) # For getting the exact name
-        VChar._CHARS.update_one(self.find_query, { "$unset": { f"macros.{macro.name}": "" } })
+        self.collection.update_one(self.find_query, { "$unset": { f"macros.{macro.name}": "" } })
 
 
     # Specialized mutators
@@ -722,8 +715,6 @@ class VChar:
             reason: The reason for the application
             admin; The Discord ID of the admin who added/deducted
         """
-        VChar.__prepare()
-
         event = "award" if amount > 0 else "deduct"
 
         event_document = {
@@ -735,7 +726,7 @@ class VChar:
         }
         push_query = { "$push": { "experience.log": event_document }}
 
-        VChar._CHARS.update_one(self.find_query, push_query)
+        self.collection.update_one(self.find_query, push_query)
 
         if scope == "lifetime":
             self.total_xp += amount
@@ -750,9 +741,7 @@ class VChar:
 
     def remove_experience_log_entry(self, entry):
         """Remove an entry from the log."""
-        VChar.__prepare()
-
-        VChar._CHARS.update_one(self.find_query, {
+        self.collection.update_one(self.find_query, {
             "$pull": {
                 "experience.log": entry
             }
@@ -771,8 +760,6 @@ class VChar:
 
     def log(self, key, increment=1):
         """Updates the log for a given field."""
-        VChar.__prepare()
-
         if increment < 1:
             return
 
@@ -784,13 +771,12 @@ class VChar:
         if key not in valid_keys:
             raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
 
-        VChar._CHARS.update_one(self.find_query, { "$inc": { f"log.{key}": increment } })
+        self.collection.update_one(self.find_query, { "$inc": { f"log.{key}": increment } })
 
 
     def log_injury(self, injury: str):
         """Log a crippling injury."""
-        VChar.__prepare()
-        VChar._CHARS.update_one(self.find_query, { "$push": { "injuries": injury } })
+        self.collection.update_one(self.find_query, { "$push": { "injuries": injury } })
 
 
     def __update_log(self, key, old_value, new_value):
@@ -800,21 +786,6 @@ class VChar:
             key (str): The key to be updated
             addition (int): The amount to increase it by
         """
-        VChar.__prepare()
         if new_value > old_value:
             delta = new_value - old_value
-            VChar._CHARS.update_one(self.find_query, { "$inc": { f"log.{key}": delta } })
-
-
-    @classmethod
-    def __prepare(cls):
-        """Prepare the database."""
-        try:
-            VChar._CLIENT.admin.command('ismaster')
-        except (AttributeError, pymongo.errors.ConnectionFailure):
-            VChar._CLIENT = None
-        finally:
-            if VChar._CLIENT is None:
-                mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
-                VChar._CLIENT = mongo
-                VChar._CHARS = mongo.inconnu.characters
+            self.collection.update_one(self.find_query, { "$inc": { f"log.{key}": delta } })

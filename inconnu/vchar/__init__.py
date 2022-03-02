@@ -2,4 +2,4 @@
 
 from . import errors
 from .manager import CharacterManager
-from .vchar import VChar, contains_digit
+from .vchar import VChar

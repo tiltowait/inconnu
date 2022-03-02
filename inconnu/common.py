@@ -153,7 +153,7 @@ async def select_character(ctx, err, help_url, tip, player=None):
     else:
         user = ctx.user
 
-    options = character_options(ctx.guild.id, user.id)
+    options = await character_options(ctx.guild.id, user.id)
     msg = await present_error(
         ctx,
         err,
@@ -174,13 +174,13 @@ async def select_character(ctx, err, help_url, tip, player=None):
     return character_id
 
 
-def character_options(guild: int, user: int):
+async def character_options(guild: int, user: int):
     """
     Generate a dictionary of characters keyed by ID plus components for selecting them.
     Under 6 characters: Buttons
     Six or more characters: Selections
     """
-    characters = VChar.all_characters(guild, user)
+    characters = await inconnu.char_mgr.all_characters(guild, user)
     chardict = {str(char.id): char for char in characters}
 
     # We have to use an ugly hack for this. If we just use the character's ID

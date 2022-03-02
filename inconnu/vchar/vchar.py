@@ -218,6 +218,11 @@ class VChar:
         return [VChar(params) for params in characters]
 
 
+    def __eq__(self, other):
+        """Check the IDs."""
+        return self.id == other.id
+
+
     # Property accessors
 
     def _set_property(self, field, value):

@@ -27,12 +27,18 @@ class CharacterManager:
     @staticmethod
     def get_ids(guild, user):
         """Get the guild and user IDs."""
-        if not isinstance(guild, int):
+        if guild and not isinstance(guild, int):
             guild = guild.id
-        if not isinstance(user, int):
+        if user and not isinstance(user, int):
             user = user.id
 
         return guild, user
+
+
+    @staticmethod
+    def user_key(character):
+        """Generate a key for the user cache."""
+        return f"{character.guild} {character.user}"
 
 
     async def fetch_character(self, guild: int, user: int, name: str):
@@ -45,13 +51,16 @@ class CharacterManager:
 
         If the name isn't given, return the user's sole character, if applicable.
         """
+        if isinstance(name, VChar):
+            return name
+
         guild, user = self.get_ids(guild, user)
 
         if name is not None:
             if (char := self.id_cache.get(name)) is not None:
-                if char.guild != guild:
+                if guild and char.guild != guild:
                     raise ValueError(f"**{char.name}** doesn't belong to this server!")
-                if char.user != user:
+                if user and char.user != user:
                     raise ValueError(f"**{char.name}** doesn't belong to this user!")
 
                 return char
@@ -103,3 +112,37 @@ class CharacterManager:
         self.all_fetched[key] = True
 
         return characters
+
+
+    async def add_to_cache(self, character):
+        """Add the character to the cache."""
+        self.id_cache[character.id] = character
+
+        user_chars = await self.all_characters(character.guild, character.user)
+        inserted = False
+
+        # Keep the list sorted
+        for index, char in enumerate(user_chars):
+            if character.name.lower() < char.name.lower():
+                user_chars.insert(index, character)
+                inserted = True
+                break
+
+        if not inserted:
+            user_chars.append(character)
+
+        key = self.user_key(character)
+        self.user_cache[key] = user_chars
+
+
+    async def remove(self, character):
+        """Remove a character from the database and the cache."""
+        del self.id_cache[character.id]
+
+        user_chars = await self.all_characters(character.guild, character.user)
+        user_chars.remove(character)
+
+        key = self.user_key(character)
+        self.user_cache[key] = user_chars
+
+        await self.collection.delete_one(character.find_query)

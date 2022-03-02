@@ -37,44 +37,42 @@ class Stats:
 
 
     @classmethod
-    def guild_joined(cls, guild, name):
+    async def guild_joined(cls, guild, name):
         """
         Log whenever a guild is joined.
         Args:
             guild (int): The guild's Discord ID
             name (str): The guild's name
         """
-        Stats.__prepare()
+        client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
+        guilds = client.inconnu.stats
 
-        if Stats._GUILDS.find_one({ "guild": guild }) is None:
-            Stats._GUILDS.insert_one({
-                "guild": guild,
-                "name": name,
-                "active": True,
-                "joined": datetime.datetime.utcnow(),
-                "left": None
-            })
-        else:
-            Stats._GUILDS.update_one({ "guild": guild }, {
+        await guilds.update_one(
+            { "guild": guild },
+            {
                 "$set": {
-                    "name": name, # The guild may have been renamed in the interim, so set the name
+                    "guild": guild,
+                    "name": name,
                     "active": True,
-                    "joined": datetime.datetime.utcnow(), # Re-joined date
+                    "joined": datetime.datetime.utcnow(),
                     "left": None
                 }
-            })
+            },
+            upsert=True
+        )
 
 
     @classmethod
-    def guild_left(cls, guild):
+    async def guild_left(cls, guild):
         """
         Log whenever a guild is deleted or Inconnu is kicked from a guild.
         Args:
             guild (int): The guild's Discord ID
         """
-        Stats.__prepare()
+        client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
+        guilds = client.inconnu.stats
 
-        Stats._GUILDS.update_one({ "guild": guild }, {
+        await guilds.update_one({ "guild": guild }, {
             "$set": {
                 "active": False,
                 "left": datetime.datetime.utcnow()
@@ -83,15 +81,17 @@ class Stats:
 
 
     @classmethod
-    def guild_renamed(cls, guild, new_name):
+    async def guild_renamed(cls, guild, new_name):
         """
         Log guild renames.
         Args:
             guild (int): The guild's Discord ID
             name (str): The guild's name
         """
-        Stats.__prepare()
-        Stats._GUILDS.update_one({ "guild": guild }, { "$set": { "name": new_name } })
+        client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
+        guilds = client.inconnu.stats
+
+        await guilds.update_one({ "guild": guild }, { "$set": { "name": new_name } })
 
 
     # Roll logging helpers

@@ -100,7 +100,7 @@ async def __trait_statistics(ctx, trait, date):
             await __trait_stats_embed(ctx, trait, stats, fmt_date)
     else:
         # We didn't get any rolls
-        all_chars = await inconnu.char_mgr.all_characters(ctx.guild.id, ctx.user.id)
+        all_chars = await inconnu.char_mgr.fetchall(ctx.guild.id, ctx.user.id)
         trait_is_valid = False
 
         for char in all_chars:

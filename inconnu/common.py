@@ -180,7 +180,7 @@ async def character_options(guild: int, user: int):
     Under 6 characters: Buttons
     Six or more characters: Selections
     """
-    characters = await inconnu.char_mgr.all_characters(guild, user)
+    characters = await inconnu.char_mgr.fetchall(guild, user)
     chardict = {str(char.id): char for char in characters}
 
     # We have to use an ugly hack for this. If we just use the character's ID

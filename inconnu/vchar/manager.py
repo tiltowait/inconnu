@@ -41,7 +41,7 @@ class CharacterManager:
         return f"{character.guild} {character.user}"
 
 
-    async def fetch_character(self, guild: int, user: int, name: str):
+    async def fetchone(self, guild: int, user: int, name: str):
         """
         Fetch a single character.
         Args:
@@ -65,7 +65,7 @@ class CharacterManager:
 
                 return char
 
-            user_chars = await self.all_characters(guild, user)
+            user_chars = await self.fetchall(guild, user)
             for char in user_chars:
                 if char.name.lower() == name.lower():
                     return char
@@ -75,7 +75,7 @@ class CharacterManager:
         # No character name given. If the user only has one character, then we
         # can just return it. Otherwise, send an error message.
 
-        user_chars = await self.all_characters(guild, user)
+        user_chars = await self.fetchall(guild, user)
 
         if (count := len(user_chars)) == 0:
             raise errors.NoCharactersError("You have no characters.")
@@ -87,7 +87,7 @@ class CharacterManager:
         raise errors.UnspecifiedCharacterError(errmsg)
 
 
-    async def all_characters(self, guild: int, user: int):
+    async def fetchall(self, guild: int, user: int):
         """
         Fetch all of a user's characters in a given guild. Adds them to the
         cache if necessary.
@@ -114,11 +114,11 @@ class CharacterManager:
         return characters
 
 
-    async def add_to_cache(self, character):
-        """Add the character to the cache."""
+    async def register(self, character):
+        """Add the character to the database and the cache."""
         self.id_cache[character.id] = character
 
-        user_chars = await self.all_characters(character.guild, character.user)
+        user_chars = await self.fetchall(character.guild, character.user)
         inserted = False
 
         # Keep the list sorted
@@ -139,7 +139,7 @@ class CharacterManager:
         """Remove a character from the database and the cache."""
         del self.id_cache[character.id]
 
-        user_chars = await self.all_characters(character.guild, character.user)
+        user_chars = await self.fetchall(character.guild, character.user)
         user_chars.remove(character)
 
         key = self.user_key(character)

@@ -1,6 +1,7 @@
 """character/update/parse.py - Defines an interface for updating character traits."""
 # pylint: disable=too-many-arguments
 
+import asyncio
 import re
 
 import discord
@@ -9,8 +10,6 @@ from discord.ui import Button
 import inconnu
 from . import paramupdate
 from ..display import display
-from ... import common, constants
-from ...log import Log
 from ...vchar import VChar
 
 __MATCHES = {}
@@ -59,9 +58,11 @@ async def update(
         return
 
     try:
-        owner = await common.player_lookup(ctx, player)
+        owner = await inconnu.common.player_lookup(ctx, player)
         tip = f"`/character update` `parameters:{parameters}` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
+        character = await inconnu.common.fetch_character(
+            ctx, character, tip, __HELP_URL, owner=owner
+        )
 
         parameters = __parse_arguments(*args)
         updates = []
@@ -73,7 +74,7 @@ async def update(
         if (impairment := character.impairment) is not None:
             updates.append(impairment)
 
-        Log.log("update",
+        log_task = inconnu.log.log_event("update",
             user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
@@ -84,7 +85,7 @@ async def update(
         if update_message is None:
             update_message = "\n".join(updates)
 
-        await display(
+        display_task = display(
             ctx,
             character,
             fields=fields,
@@ -93,18 +94,21 @@ async def update(
             message=update_message
         )
 
+        await asyncio.gather(log_task, display_task)
+
     except (SyntaxError, ValueError) as err:
-        Log.log("update_error",
+        log_task = inconnu.log.log_event("update_error",
             user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
             syntax=" ".join(args)
         )
-        await update_help(ctx, err)
+        help_task = update_help(ctx, err)
+        await asyncio.gather(log_task, help_task)
 
     except LookupError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-    except common.FetchError:
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+    except inconnu.common.FetchError:
         pass
 
 
@@ -194,7 +198,7 @@ async def update_help(ctx, err=None, ephemeral=True):
         label="Full Documentation",
         url="http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
     )
-    support = Button(label="Support", url=constants.SUPPORT_URL)
+    support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
     view = discord.ui.View(documentation, support)
 
     await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)

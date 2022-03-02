@@ -5,7 +5,6 @@ from distutils.util import strtobool
 
 import inconnu
 from . import macro_common
-from ..log import Log
 from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=updating"
@@ -38,7 +37,12 @@ async def update(ctx, macro: str, syntax: str, character: str):
         SyntaxError, ValueError
     ) as err:
         if isinstance(err, (SyntaxError, ValueError)):
-            Log.log("macro_update_error", user=ctx.user.id, charid=character.id, syntax=syntax)
+            await inconnu.log.log_event(
+                "macro_update_error",
+                user=ctx.user.id,
+                charid=character.id,
+                syntax=syntax
+            )
 
         keys = [f"`{key}`: {value}" for key, value in __VALID_KEYS.items()]
         instructions = [

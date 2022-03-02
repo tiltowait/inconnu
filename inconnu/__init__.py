@@ -7,6 +7,7 @@ import discord
 from . import character
 from . import cull as culler
 from . import experience
+from . import log
 from . import macros
 from . import misc
 from . import options

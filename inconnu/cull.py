@@ -1,62 +1,51 @@
 """inconnu/cull.py - Cull inactive players and guilds."""
-# pylint: disable=too-few-public-methods
 
 import os
 from datetime import datetime, timedelta
-from operator import itemgetter
 
-import pymongo
+import motor.motor_asyncio
 
-from .vchar import VChar
-
-
-class Culler:
-    """A class for culling inactive characters and guilds."""
-
-    _CLIENT = None
-    _GUILDS = None
-    _CHARACTERS = None
+import inconnu
 
 
-    @classmethod
-    def cull(cls, days=30):
-        """Cull inactive guilds, characters, and macros."""
-        Culler._prepare()
+async def cull(days=30):
+    """Cull inactive guilds, characters, and macros."""
+    print("Initiating culling run.")
 
-        past = datetime.utcnow() - timedelta(days=days)
-        guilds = Culler._GUILDS.find({ "active": False, "left": { "$lt": past } }, { "guild": 1 })
-        guilds = list(map(itemgetter("guild"), guilds))
+    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
+    char_col = client.inconnu.characters
+    guild_col = client.inconnu.guilds
 
-        characters = Culler._CHARACTERS.find({
-            "$or": [
-                { "guild": { "$in": guilds } },
-                { "log.left": { "$lt": past } }
-            ]
-        }, { "_id": 1 })
-        characters = list(map(itemgetter("_id"), characters))
+    past = datetime.utcnow() - timedelta(days=days)
 
-        for guild in guilds:
-            Culler._GUILDS.delete_one({ "guild": guild })
+    # Remove old guilds
 
-        if guilds:
-            print(f"Culled {len(guilds)} guilds.")
+    removed_guilds = []
+    guilds = guild_col.find({ "active": False, "left": { "$lt": past } }, { "guild": 1 })
 
-        for character in characters:
-            character = VChar.fetch(0, 0, str(character))
+    async for guild in guilds:
+        guild = guild["guild"]
+        removed_guilds.append(guild)
+        await guild_col.delete_one({ "guild": guild })
+
+    if guilds:
+        print(f"Culled {len(removed_guilds)} guilds.")
+
+    # We remove characters separately so as to make only one database call
+    # rather than potentially many
+
+    characters = char_col.find({
+        "$or": [
+            { "guild": { "$in": removed_guilds } },
+            { "log.left": { "$lt": past } }
+        ]
+    })
+
+    async for char_params in characters:
+        character = inconnu.VChar(char_params)
+        if await inconnu.char_mgr.remove(character):
             print(f"Culling {character.name}.")
-            character.delete_character()
+        else:
+            print(f"Unable to cull {character.name}.")
 
-
-    @classmethod
-    def _prepare(cls):
-        """Prepare the database collections."""
-        try:
-            Culler._CLIENT.admin.command('ismaster')
-        except (AttributeError, pymongo.errors.ConnectionFailure):
-            Culler._CLIENT = None
-        finally:
-            if Culler._CLIENT is None:
-                mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
-                Culler._CLIENT = mongo
-                Culler._GUILDS = mongo.inconnu.guilds
-                Culler._CHARACTERS = mongo.inconnu.characters
+    print("Done culling.")

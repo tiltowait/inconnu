@@ -99,7 +99,7 @@ async def on_guild_update(before, after):
 @tasks.loop(hours=24)
 async def cull_inactive():
     """Cull inactive characters and guilds."""
-    inconnu.culler.cull()
+    await inconnu.culler.cull()
 
 
 # Misc and helpers

@@ -1,8 +1,10 @@
 """vchar/manager.py - Character cache/in-memory database."""
 
 import os
+import re
 
 import motor.motor_asyncio
+from bson.objectid import ObjectId
 
 from . import errors
 from .vchar import VChar
@@ -41,6 +43,23 @@ class CharacterManager:
         return f"{character.guild} {character.user}"
 
 
+    @staticmethod
+    def _validate(guild, user, char):
+        """Validate that a character belongs to the user."""
+        if guild and char.guild != guild:
+            raise ValueError(f"**{char.name}** doesn't belong to this server!")
+        if user and char.user != user:
+            raise ValueError(f"**{char.name}** doesn't belong to this user!")
+
+
+    async def _id_fetch(self, charid):
+        """Attempt to fetch a character by ID."""
+        if re.search(r"\d", charid):
+            if (char_params := await self.collection.find_one({ "_id": ObjectId(charid) })):
+                return VChar(char_params)
+        return None
+
+
     async def fetchone(self, guild: int, user: int, name: str):
         """
         Fetch a single character.
@@ -58,17 +77,19 @@ class CharacterManager:
 
         if name is not None:
             if (char := self.id_cache.get(name)) is not None:
-                if guild and char.guild != guild:
-                    raise ValueError(f"**{char.name}** doesn't belong to this server!")
-                if user and char.user != user:
-                    raise ValueError(f"**{char.name}** doesn't belong to this user!")
-
+                self._validate(guild, user, char)
                 return char
 
+            # Attempt to pull from the user cache
             user_chars = await self.fetchall(guild, user)
             for char in user_chars:
                 if char.name.lower() == name.lower():
                     return char
+
+            # Attempt to pull from the database
+            if (char := await self._id_fetch(name)):
+                self._validate(guild, user, char)
+                return char
 
             raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
 
@@ -145,11 +166,14 @@ class CharacterManager:
 
         if deletion.deleted_count == 1:
             user_chars = await self.fetchall(character.guild, character.user)
-            user_chars.remove(character)
+            if character in user_chars:
+                user_chars.remove(character)
 
             key = self.user_key(character)
             self.user_cache[key] = user_chars
-            del self.id_cache[character.id]
+
+            if character.id in self.id_cache:
+                del self.id_cache[character.id]
 
             return True
 

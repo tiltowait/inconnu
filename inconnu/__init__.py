@@ -5,7 +5,7 @@ import os
 import discord
 
 from . import character
-from .cull import Culler as culler
+from . import cull as culler
 from . import experience
 from . import macros
 from . import misc

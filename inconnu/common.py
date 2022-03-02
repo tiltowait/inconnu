@@ -1,5 +1,6 @@
 """common.py - Commonly used functions."""
 
+import re
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -284,3 +285,10 @@ def paginate(page_size: int, *contents) -> list:
 
     pages.append(page)
     return pages
+
+
+def contains_digit(string: str):
+    """Determine whether a string contains a digit."""
+    if string is None:
+        return False
+    return bool(re.search(r"\d", string)) # Much faster than using any()

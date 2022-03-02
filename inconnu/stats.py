@@ -4,6 +4,7 @@
 import datetime
 import os
 
+import motor.motor_asyncio
 import pymongo
 
 
@@ -15,7 +16,7 @@ class Stats:
 
 
     @classmethod
-    def log_roll(cls, guild: int, user: int, char, outcome, comment):
+    async def log_roll(cls, guild: int, user: int, char, outcome, comment):
         """
         Log a roll and its outcome. If the roll is a reroll, simply replace it.
         Args:
@@ -24,12 +25,15 @@ class Stats:
             charid (VChar): The character that made the roll (optional)
             outcome (Roll): The roll's parameters and outcome
         """
-        Stats.__prepare()
+        client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
+        rolls = client.inconnu.stats
 
-        if Stats._STATS.find_one({ "_id": outcome.id }) is None:
-            Stats.__add_roll(guild, user, char, outcome, comment)
+        if await rolls.find_one({ "_id": outcome.id }) is None:
+            roll = Stats._gen_roll(guild, user, char, outcome, comment)
+            await rolls.insert_one(roll)
         else:
-            Stats.__update_roll(outcome)
+            reroll = Stats._gen_reroll(outcome)
+            await rolls.update_one({ "_id": outcome.id }, reroll)
 
 
     @classmethod
@@ -91,11 +95,30 @@ class Stats:
 
 
     # Roll logging helpers
+    @classmethod
+    def _gen_roll(cls, guild: int, user: int, char, outcome, comment):
+        """Add a new roll outcome entry to the database."""
+        return {
+            "_id": outcome.id,
+            "date": datetime.datetime.utcnow(),
+            "guild": guild, # We use the guild and user keys for easier lookups
+            "user": user,
+            "charid": getattr(char, "id", None),
+            "raw": outcome.syntax,
+            "normal": outcome.normal.dice,
+            "hunger": outcome.hunger.dice,
+            "difficulty": outcome.difficulty,
+            "margin": outcome.margin,
+            "outcome": outcome.outcome,
+            "pool": outcome.pool_str,
+            "comment": comment,
+            "reroll": None,
+        }
 
     @classmethod
-    def __add_roll(cls, guild: int, user: int, char, outcome, comment):
+    async def __add_roll(cls, guild: int, user: int, char, outcome, comment):
         """Add a new roll outcome entry to the database."""
-        Stats._STATS.insert_one({
+        await _rolls_collection().insert_one({
             "_id": outcome.id,
             "date": datetime.datetime.utcnow(),
             "guild": guild, # We use the guild and user keys for easier lookups
@@ -114,14 +137,35 @@ class Stats:
 
 
     @classmethod
-    def __update_roll(cls, outcome):
+    async def _gen_reroll(cls, outcome):
         """
         Update a roll entry.
         Args:
             ident (ObjectId): The entry's identifier
             outcome (Roll): The new outcome
         """
-        Stats._STATS.update_one({ "_id": outcome.id }, {
+        #await _rolls_collection().update_one({ "_id": outcome.id }, {
+        return {
+            "$set": {
+                "reroll": {
+                    "strategy": outcome.strategy,
+                    "dice": outcome.normal.dice,
+                    "margin": outcome.margin,
+                    "outcome": outcome.outcome
+                }
+            }
+        }
+
+
+    @classmethod
+    async def __update_roll(cls, outcome):
+        """
+        Update a roll entry.
+        Args:
+            ident (ObjectId): The entry's identifier
+            outcome (Roll): The new outcome
+        """
+        await _rolls_collection().update_one({ "_id": outcome.id }, {
             "$set": {
                 "reroll": {
                     "strategy": outcome.strategy,
@@ -146,3 +190,9 @@ class Stats:
                 Stats._CLIENT = mongo
                 Stats._STATS = mongo.inconnu.rolls
                 Stats._GUILDS = mongo.inconnu.guilds
+
+
+def _rolls_collection():
+    """Generate a stats collection."""
+    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
+    return client.inconnu.stats

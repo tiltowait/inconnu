@@ -1,6 +1,7 @@
 """rolldisplay.py - A class for managing the display of roll outcomes and rerolls."""
 # pylint: disable=too-many-arguments, too-many-instance-attributes
 
+import asyncio
 import re
 import uuid
 from enum import Enum
@@ -93,11 +94,13 @@ class RollDisplay:
 
         # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
         if self.ctx.guild is not None:
-            stats.Stats.log_roll(self.ctx.guild.id, self.owner.id,
-                self.character, self.outcome, self.comment
+            log_task = stats.Stats.log_roll(
+                self.ctx.guild.id, self.owner.id, self.character, self.outcome, self.comment
             )
         else:
-            stats.Stats.log_roll(None, self.owner.id, self.character, self.outcome, self.comment)
+            log_task = stats.Stats.log_roll(
+                None, self.owner.id, self.character, self.outcome, self.comment
+            )
 
         # We might be responding to a button
         ctx = alt_ctx or self.ctx
@@ -114,7 +117,8 @@ class RollDisplay:
         else:
             msg_contents["content"] = self.text
 
-        msg = await inconnu.respond(ctx)(**msg_contents)
+        respond_task = inconnu.respond(ctx)(**msg_contents)
+        _, msg = await asyncio.gather(log_task, respond_task)
 
         if controls is not None:
             controls.message = msg

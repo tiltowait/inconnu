@@ -77,12 +77,15 @@ class Wizard:
             character.add_trait(trait, rating)
 
         if self.use_accessibility:
-            await self.__finalize_text(character)
+            task1 = self.__finalize_text(character)
         else:
-            await self.__finalize_embed(character)
+            task1 = self.__finalize_embed(character)
 
+        task2 = inconnu.char_mgr.register(character)
+        task3 = _deregister_wizard()
+
+        await asyncio.gather(task1, task2, task3)
         self.view.stop()
-        await _deregister_wizard()
 
 
     async def __finalize_text(self, character):

@@ -69,8 +69,8 @@ class VChar:
 
     def __init__(self, params: dict):
         self._params = params
-        self.id = params["_id"] # pylint: disable=invalid-name
-        self.find_query = { "_id": self.id }
+        self.id = str(params["_id"]) # pylint: disable=invalid-name
+        self.find_query = { "_id": self._params["_id"] }
         self.guild = params["guild"]
 
 
@@ -82,9 +82,8 @@ class VChar:
         Create a named character with an associated guild and user.
         All other stats are default, minimum values, and no traits are assigned.
         """
-        VChar.__prepare()
-
-        character = {
+        char_params = {
+            "_id": ObjectId(),
             "guild": guild,
             "user": user,
             "name": name,
@@ -99,12 +98,7 @@ class VChar:
             "log": { "created": datetime.datetime.utcnow() }
         }
 
-        # The character needs an ID, so we insert, pull the ID, and re-fetch
-        _id = VChar._CHARS.insert_one(character).inserted_id
-        params = VChar._CHARS.find_one({ "_id": _id })
-
-        # Add it to the cache
-        return _CHARACTER_CACHE.setdefault(_id, VChar(params))
+        return VChar(char_params)
 
 
     @classmethod
@@ -230,6 +224,12 @@ class VChar:
         VChar.__prepare()
         self._params[field] = value
         VChar._CHARS.update_one(self.find_query, { "$set": { field: value } })
+
+
+    @property
+    def raw(self):
+        """The character's raw data as present in the database."""
+        return self._params
 
 
     @property

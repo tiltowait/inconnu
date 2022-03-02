@@ -96,17 +96,19 @@ class CharacterManager:
         key = f"{guild} {user}"
 
         if self.all_fetched.get(key, False):
-            print("All characters cache HIT")
             return self.user_cache.get(key, [])
 
-        print("All characters cache MISS")
         # Need to build the cache
         cursor = self.collection.find({ "guild": guild, "user": user })
         cursor.collation({ "locale": "en", "strength": 2 }).sort("name")
 
         characters = []
         async for char_params in cursor:
-            characters.append(VChar(char_params))
+            character = VChar(char_params)
+            characters.append(character)
+
+            if character.id not in self.id_cache:
+                self.id_cache[character.id] = character
 
         self.user_cache[key] = characters
         self.all_fetched[key] = True
@@ -134,15 +136,21 @@ class CharacterManager:
         key = self.user_key(character)
         self.user_cache[key] = user_chars
 
+        await self.collection.insert_one(character.raw)
+
 
     async def remove(self, character):
         """Remove a character from the database and the cache."""
-        del self.id_cache[character.id]
+        deletion = await self.collection.delete_one(character.find_query)
 
-        user_chars = await self.fetchall(character.guild, character.user)
-        user_chars.remove(character)
+        if deletion.deleted_count == 1:
+            user_chars = await self.fetchall(character.guild, character.user)
+            user_chars.remove(character)
 
-        key = self.user_key(character)
-        self.user_cache[key] = user_chars
+            key = self.user_key(character)
+            self.user_cache[key] = user_chars
+            del self.id_cache[character.id]
 
-        await self.collection.delete_one(character.find_query)
+            return True
+
+        return False

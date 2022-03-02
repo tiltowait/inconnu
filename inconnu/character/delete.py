@@ -4,8 +4,6 @@ import discord
 
 import inconnu
 from ..views import DisablingView
-from .. import common
-from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-deletion"
 
@@ -13,7 +11,7 @@ __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-dele
 async def delete(ctx, character: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.user.id, character)
+        character = await inconnu.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character)
 
         if inconnu.settings.accessible(ctx.user):
             msg_contents = __prompt_text(character)
@@ -26,8 +24,8 @@ async def delete(ctx, character: str):
         msg = await ctx.respond(**msg_contents)
         delete_view.message = msg
 
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
+    except inconnu.vchar.errors.CharacterError as err:
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
 
 
 def __prompt_text(character):
@@ -47,6 +45,7 @@ def __prompt_embed(ctx, character):
     embed.set_footer(text="THIS ACTION CANNOT BE UNDONE")
 
     return { "embed": embed, "ephemeral": True }
+
 
 class _DeleteView(DisablingView):
     """A view for deleting characters."""
@@ -72,7 +71,7 @@ class _DeleteView(DisablingView):
         """Delete the character."""
         await self.disable_items(interaction)
 
-        if self.character.delete_character():
+        if await inconnu.char_mgr.remove(self.character):
             msg = f"Deleted **{self.character.name}**!"
             ephemeral = False
         else:

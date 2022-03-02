@@ -13,7 +13,6 @@ from . import dicemoji
 from .. import character as char
 from .. import stats
 from ..misc import rouse
-from ..vchar import contains_digit
 
 
 class _ButtonID(str, Enum):
@@ -53,7 +52,7 @@ class _RollControls(inconnu.views.DisablingView):
         else:
             button_id = interaction.data["custom_id"].split()[0] # Remove the unique ID
 
-            if contains_digit(button_id):
+            if inconnu.common.contains_digit(button_id):
                 # This was the surge button, which is always last. Let's disable it
                 self.children[-1].disabled = True
                 self.children[-1].style = discord.ButtonStyle.secondary
@@ -135,7 +134,7 @@ class RollDisplay:
                 fields=[("New WP", char.DisplayField.WILLPOWER)]
             )
 
-        elif contains_digit(button_id): # Surge buttons are just charids
+        elif inconnu.common.contains_digit(button_id): # Surge buttons are just charids
             self.surged = True
             await rouse(btn, 1, self.character, "Surge", False)
 

@@ -769,18 +769,10 @@ class VChar:
 
     # Misc
 
-    def delete_character(self) -> bool:
-        """Delete this character and all associated traits and macros."""
-        try:
-            del _CHARACTER_CACHE[self.id]
-            return VChar._CHARS.delete_one(self.find_query).acknowledged
-        except KeyError:
-            # Somehow, they weren't in the cache
-            return False
-
-
     def log(self, key, increment=1):
         """Updates the log for a given field."""
+        VChar.__prepare()
+
         if increment < 1:
             return
 
@@ -797,6 +789,7 @@ class VChar:
 
     def log_injury(self, injury: str):
         """Log a crippling injury."""
+        VChar.__prepare()
         VChar._CHARS.update_one(self.find_query, { "$push": { "injuries": injury } })
 
 
@@ -807,6 +800,7 @@ class VChar:
             key (str): The key to be updated
             addition (int): The amount to increase it by
         """
+        VChar.__prepare()
         if new_value > old_value:
             delta = new_value - old_value
             VChar._CHARS.update_one(self.find_query, { "$inc": { f"log.{key}": delta } })

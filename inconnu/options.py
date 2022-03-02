@@ -5,7 +5,7 @@ import os
 import discord
 from discord.commands import Option, OptionChoice
 
-from .vchar import VChar
+import inconnu
 
 
 def ratings(low, high) -> list:
@@ -43,10 +43,10 @@ async def _available_characters(ctx):
 
         if user.guild_permissions.administrator:
             # Add SPCs
-            spcs = VChar.all_characters(guild.id, int(os.environ["INCONNU_ID"]))
+            spcs = await inconnu.char_mgr.all_characters(guild.id, int(os.environ["INCONNU_ID"]))
             spcs = [(spc.name, str(spc.id)) for spc in spcs]
 
-    chars = VChar.all_characters(guild.id, int(owner))
+    chars = await inconnu.char_mgr.all_characters(guild.id, int(owner))
     chars = [(char.name, str(char.id)) for char in chars]
     chars.extend(spcs)
 

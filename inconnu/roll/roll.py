@@ -46,7 +46,7 @@ class Roll:
         elif isinstance(syntax, list):
             self.syntax = " ".join(map(str, syntax))
         else:
-            self.syntax = syntax
+            self.syntax = " ".join(syntax.split())
 
 
     # We could technically do this with stored properties, but the math is extremely

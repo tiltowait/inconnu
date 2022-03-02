@@ -179,7 +179,7 @@ async def character_options(guild: int, user: int):
     Six or more characters: Selections
     """
     characters = await inconnu.char_mgr.fetchall(guild, user)
-    chardict = {str(char.id): char for char in characters}
+    chardict = {char.id: char for char in characters}
 
     # We have to use an ugly hack for this. If we just use the character's ID
     # as the button's identifier, then multiple displays of these buttons will
@@ -197,7 +197,7 @@ async def character_options(guild: int, user: int):
             for char in characters
         ]
     else:
-        options = [(char.name, str(char.id)) for char in characters]
+        options = [(char.name, char.id) for char in characters]
         components = [inconnu.views.Dropdown("Select a character", *options)]
 
     view = inconnu.views.BasicSelector(*components)

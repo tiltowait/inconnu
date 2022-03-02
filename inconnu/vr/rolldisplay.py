@@ -343,7 +343,7 @@ class RollDisplay:
                 if not self.surged and self.surging:
                     buttons.append(Button(
                         label="Rouse",
-                        custom_id=str(self.character.id),
+                        custom_id=self.character.id,
                         style=discord.ButtonStyle.danger
                     ))
             return buttons or None
@@ -382,7 +382,7 @@ class RollDisplay:
         if self.surging:
             buttons.append(Button(
                 label="Rouse",
-                custom_id=str(self.character.id),
+                custom_id=self.character.id,
                 style=discord.ButtonStyle.danger,
                 row=1
             ))

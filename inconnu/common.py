@@ -7,9 +7,6 @@ import discord
 from discord.ui import Button, View
 
 import inconnu
-from .constants import SUPPORT_URL
-from .settings import Settings
-from .vchar import errors, VChar
 
 
 def pluralize(value: int, noun: str) -> str:
@@ -49,7 +46,7 @@ async def present_error(
         help_url (str): The documentation URL for the error.
         components (list): Buttons or selection menus to add to the message.
     """
-    if Settings.accessible(ctx.user):
+    if inconnu.settings.accessible(ctx.user):
         content = __error_text(error, *fields, footer=footer)
         msg_contents = { "content": content }
     else:
@@ -68,7 +65,7 @@ async def present_error(
         view = view or View()
 
         view.add_item(Button(label="Documentation", url=help_url, row=1))
-        view.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
+        view.add_item(Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=1))
 
     if view is not None:
         msg_contents["view"] = view
@@ -238,22 +235,22 @@ async def fetch_character(ctx, character, tip, help_url, owner=None):
         help_url (str): The URL of the button to display on any error messages
         userid (int): The ID of the user who owns the character, if different from the ctx author
     """
-    if isinstance(character, VChar):
+    if isinstance(character, inconnu.VChar):
         return character
 
     try:
         owner = owner or ctx.user
-        return VChar.fetch(ctx.guild.id, owner.id, character)
+        return await inconnu.char_mgr.fetchone(ctx.guild.id, owner.id, character)
 
-    except errors.UnspecifiedCharacterError as err:
+    except inconnu.vchar.errors.UnspecifiedCharacterError as err:
         character = await select_character(ctx, err, help_url, ("Proper syntax", tip), player=owner)
 
         if character is None:
             raise FetchError("No character was selected.") from err
 
-        return VChar.fetch(ctx.guild.id, owner.id, character)
+        return await inconnu.char_mgr.fetchone(ctx.guild.id, owner.id, character)
 
-    except errors.CharacterError as err:
+    except inconnu.vchar.errors.CharacterError as err:
         await present_error(ctx, err, help_url=help_url, author=owner)
         raise FetchError(str(err)) from err
 

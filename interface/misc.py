@@ -93,7 +93,7 @@ class MiscCommands(commands.Cog):
             return
 
         try:
-            character = inconnu.vchar.VChar.fetch(ctx.guild, current_owner, character)
+            character = await inconnu.char_mgr.fetchone(ctx.guild, current_owner, character)
 
             if ctx.guild.id == character.guild and current_owner.id == character.user:
                 character.user = new_owner.id

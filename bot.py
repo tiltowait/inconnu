@@ -59,13 +59,13 @@ async def on_application_command_error(ctx, error):
 @bot.event
 async def on_member_remove(member):
     """Mark all of a member's characters as inactive."""
-    inconnu.VChar.mark_player_inactive(member)
+    await inconnu.char_mgr.mark_inactive(member)
 
 
 @bot.event
 async def on_member_join(member):
     """Mark all the player's characters as active when they rejoin a guild."""
-    inconnu.VChar.reactivate_player_characters(member)
+    await inconnu.char_mgr.mark_active(member)
 
 
 # Guild Events

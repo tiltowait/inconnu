@@ -1,5 +1,6 @@
 """vchar/manager.py - Character cache/in-memory database."""
 
+import datetime
 import os
 import re
 
@@ -195,6 +196,28 @@ class CharacterManager:
             return True
 
         return False
+
+
+    async def mark_inactive(self, player):
+        """
+        When a player leaves a guild, mark their characters as inactive. They
+        will then be culled after 30 days if they haven't returned before then.
+        """
+        await self.collection.update_many(
+            { "guild": player.guild.id, "user": player.id },
+            { "$set": { "log.left": datetime.datetime.utcnow() } }
+        )
+
+
+    async def mark_active(self, player):
+        """
+        When a player returns to the guild, we mark their characters as active
+        so long as they haven't already been culled.
+        """
+        await self.collection.update_many(
+            { "guild": player.guild.id, "user": player.id },
+            { "$unset": { "log.left": 1 } }
+        )
 
 
     def sort_user(self, guild: int, user: int):

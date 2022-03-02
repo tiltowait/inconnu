@@ -779,28 +779,6 @@ class VChar:
             return False
 
 
-    @classmethod
-    def mark_player_inactive(cls, player):
-        """Mark all of the player's characters as inactive."""
-        VChar.__prepare()
-
-        VChar._CHARS.update_many({ "guild": player.guild.id, "user": player.id }, {
-            "$set": { "log.left": datetime.datetime.utcnow() }
-            }
-        )
-
-
-    @classmethod
-    def reactivate_player_characters(cls, player):
-        """Reactivate all of the player's characters when they rejoin the guild."""
-        VChar.__prepare()
-
-        VChar._CHARS.update_many({ "guild": player.guild.id, "user": player.id }, {
-            "$unset": { "log.left": 1 }
-            }
-        )
-
-
     def log(self, key, increment=1):
         """Updates the log for a given field."""
         if increment < 1:

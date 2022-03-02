@@ -8,6 +8,7 @@ from bson.objectid import ObjectId
 
 from . import errors
 from .vchar import VChar
+from ..constants import INCONNU_ID
 
 
 class CharacterManager:
@@ -140,6 +141,17 @@ class CharacterManager:
         self.all_fetched[key] = True
 
         return characters
+
+
+    async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
+        """Determine whether a user already has a named character."""
+        user_chars = await self.fetchall(guild, user if not is_spc else INCONNU_ID)
+
+        for character in user_chars:
+            if character.name.lower() == name.lower():
+                return True
+
+        return False
 
 
     async def register(self, character):

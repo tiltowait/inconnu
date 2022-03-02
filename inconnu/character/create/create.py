@@ -6,6 +6,7 @@ from types import SimpleNamespace as SN
 
 import discord
 
+import inconnu
 from . import wizard
 from ...vchar import VChar
 from ... import common
@@ -25,7 +26,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
         # Remove extraenous spaces from the name
         name = re.sub(r"\s+", " ", name)
 
-        if VChar.character_exists(ctx.guild.id, ctx.user.id, name, spc):
+        if await inconnu.char_mgr.exists(ctx.guild, ctx.user, name, spc):
             if spc:
                 raise ValueError(f"Sorry, there is already an SPC named `{name}`!")
             raise ValueError(f"Sorry, you have a character named `{name}` already!")

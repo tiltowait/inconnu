@@ -12,6 +12,7 @@ from . import misc
 from . import options
 from .roll import Roll
 from .settings import Settings as settings
+from . import stats
 from . import traits
 from .vchar import CharacterManager, VChar
 from . import views

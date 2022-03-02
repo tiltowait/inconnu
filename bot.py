@@ -75,7 +75,7 @@ async def on_member_join(member):
 async def on_guild_join(guild):
     """Log whenever a guild is joined."""
     print(f"Joined {guild.name}!")
-    task1 = inconnu.stats.Stats.guild_joined(guild.id, guild.name)
+    task1 = inconnu.stats.guild_joined(guild.id, guild.name)
     task2 = __set_presence()
 
     await asyncio.gather(task1, task2)
@@ -85,7 +85,7 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     """Log guild removals."""
     print(f"Left {guild.name} :(")
-    task1 = inconnu.stats.Stats.guild_left(guild.id)
+    task1 = inconnu.stats.guild_left(guild.id)
     task2 = __set_presence()
 
     await asyncio.gather(task1, task2)
@@ -96,7 +96,7 @@ async def on_guild_update(before, after):
     """Log guild name changes."""
     if before.name != after.name:
         print(f"Renamed {before.name} => {after.name}")
-        await inconnu.stats.Stats.guild_renamed(after.id, after.name)
+        await inconnu.stats.guild_renamed(after.id, after.name)
 
 
 # Tasks

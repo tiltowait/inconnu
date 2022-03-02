@@ -11,9 +11,6 @@ from discord.ui import Button
 
 import inconnu
 from . import dicemoji
-from .. import character as char
-from .. import stats
-from ..misc import rouse
 
 
 class _ButtonID(str, Enum):
@@ -94,11 +91,11 @@ class RollDisplay:
 
         # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
         if self.ctx.guild is not None:
-            log_task = stats.Stats.log_roll(
+            log_task = inconnu.stats.log_roll(
                 self.ctx.guild.id, self.owner.id, self.character, self.outcome, self.comment
             )
         else:
-            log_task = stats.Stats.log_roll(
+            log_task = inconnu.stats.log_roll(
                 None, self.owner.id, self.character, self.outcome, self.comment
             )
 
@@ -132,15 +129,15 @@ class RollDisplay:
             if self.character is not None:
                 self.character.superficial_wp += 1
 
-            await char.display(btn, self.character,
+            await inconnu.character.display(btn, self.character,
                 title="Willpower Spent",
                 owner=self.owner,
-                fields=[("New WP", char.DisplayField.WILLPOWER)]
+                fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)]
             )
 
         elif inconnu.common.contains_digit(button_id): # Surge buttons are just charids
             self.surged = True
-            await rouse(btn, 1, self.character, "Surge", False)
+            await inconnu.misc.rouse(btn, 1, self.character, "Surge", False)
 
         else:
             # We're rerolling

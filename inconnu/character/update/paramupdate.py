@@ -153,7 +153,8 @@ async def __update_track(character: VChar, tracker: str, new_len: str) -> str:
     elif new_len < cur_len:
         track = track[-new_len:]
 
-    setattr(character, tracker, track)
+    setter = getattr(character, f"set_{tracker}")
+    await setter(track)
     return f"Set {tracker.capitalize()} to `{new_len}`."
 
 

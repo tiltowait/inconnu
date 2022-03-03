@@ -72,7 +72,6 @@ async def update(
             coro = await __update_character(ctx, character, parameter, new_value)
             coros.append(coro)
 
-        await ctx.response.defer()
         updates = await asyncio.gather(*coros)
 
         if (impairment := character.impairment) is not None:

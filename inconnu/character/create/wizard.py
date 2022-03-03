@@ -61,16 +61,18 @@ class Wizard:
         owner = self.ctx.user.id if not self.parameters.spc else inconnu.constants.INCONNU_ID
 
         character = VChar.create(self.ctx.guild.id, owner, self.parameters.name)
-        character.splat= self.parameters.splat
-        character.humanity = self.parameters.humanity
-        character.health = "." * self.parameters.hp
-        character.willpower = "." * self.parameters.wp
+
+        tasks = []
+        tasks.append(character.set_splat(self.parameters.splat))
+        tasks.append(character.set_humanity(self.parameters.humanity))
+        tasks.append(character.set_health("." * self.parameters.hp))
+        tasks.append(character.set_willpower("." * self.parameters.wp))
 
         # Set blood potency when applicable
-        if character.is_vampire:
-            blood_potency = self.assigned_traits["Blood Potency"]
-            character.potency = blood_potency
-            del self.assigned_traits["Blood Potency"] # Don't want to make this a trait
+        if (blood_potency := self.assigned_traits.pop("Blood Potency")):
+            tasks.append(character.set_potency(blood_potency))
+
+        await asyncio.gather(*tasks)
 
         # Need to add the traits one-by-one
         for trait, rating in self.assigned_traits.items():

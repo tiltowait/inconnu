@@ -1,6 +1,7 @@
 """vchar/vchar.py - Persistent character management using MongoDB."""
 # pylint: disable=too-many-public-methods, too-many-arguments, c-extension-no-member
 
+import asyncio
 import datetime
 import math
 import os
@@ -9,6 +10,7 @@ from enum import Enum
 from collections import OrderedDict
 from types import SimpleNamespace
 
+import motor.motor_asyncio
 import pymongo
 from bson.objectid import ObjectId
 
@@ -101,10 +103,24 @@ class VChar:
         mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
         return mongo.inconnu.characters
 
+
+    @property
+    def async_collection(self):
+        """The async database collection."""
+        client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
+        return client.inconnu.characters
+
+
     def _set_property(self, field, value):
         """Set a field to a given value."""
         self._params[field] = value
         self.collection.update_one(self.find_query, { "$set": { field: value } })
+
+
+    async def _async_set_property(self, field, value):
+        """Set a field's value, asynchronously."""
+        self._params[field] = value
+        await self.async_collection.update_one(self.find_query, { "$set": { field: value } })
 
 
     @property
@@ -142,6 +158,11 @@ class VChar:
         self._set_property(_Properties.NAME, new_name)
 
 
+    async def set_name(self, new_name):
+        """Set the character's name."""
+        await self._async_set_property(_Properties.NAME, new_name)
+
+
     @property
     def splat(self):
         """The character's splat."""
@@ -152,6 +173,11 @@ class VChar:
     def splat(self, new_splat):
         """Set the character's splat."""
         self._set_property(_Properties.SPLAT, new_splat)
+
+
+    async def set_splat(self, new_splat):
+        """Set the character's splat."""
+        await self._async_set_property(_Properties.SPLAT, new_splat)
 
 
     @property
@@ -168,6 +194,14 @@ class VChar:
         self.stains = 0
 
 
+    async def set_humanity(self, new_humanity):
+        """Set the character's humanity."""
+        new_humanity = max(0, min(10, new_humanity))
+        task1 = self._async_set_property(_Properties.HUMANITY, new_humanity)
+        task2 = self.set_stains(0)
+        await asyncio.gather(task1, task2)
+
+
     @property
     def stains(self):
         """The character's stains."""
@@ -182,6 +216,13 @@ class VChar:
         self._set_property(_Properties.STAINS, new_stains)
 
 
+    async def set_stains(self, new_stains):
+        """Set the character's stains."""
+        new_stains = max(0, min(10, new_stains))
+        self.__update_log("stains", self.stains, new_stains)
+        await self._async_set_property(_Properties.STAINS, new_stains)
+
+
     @property
     def health(self):
         """The character's health."""
@@ -192,6 +233,11 @@ class VChar:
     def health(self, new_health):
         """Set the character's health."""
         self._set_property(_Properties.HEALTH, new_health)
+
+
+    async def set_health(self, new_health):
+        """Set the character's health."""
+        await self._async_set_property(_Properties.HEALTH, new_health)
 
 
     @property
@@ -206,6 +252,11 @@ class VChar:
         self.set_damage("health", Damage.AGGRAVATED, new_value, wrap=False)
 
 
+    async def set_aggravated_hp(self, new_value):
+        """Set the Aggravated Health damage."""
+        self.set_damage("health", Damage.AGGRAVATED, new_value, wrap=False)
+
+
     @property
     def willpower(self):
         """The character's willpower."""
@@ -216,6 +267,11 @@ class VChar:
     def willpower(self, new_willpower):
         """Set the character's willpower."""
         self._set_property(_Properties.WILLPOWER, new_willpower)
+
+
+    async def set_willpower(self, new_willpower):
+        """Set the character's willpower."""
+        await self._async_set_property(_Properties.WILLPOWER, new_willpower)
 
 
     @property
@@ -239,6 +295,11 @@ class VChar:
         self.set_damage("willpower", Damage.SUPERFICIAL, new_value, wrap=True)
 
 
+    async def set_superficial_wp(self, new_value):
+        """Set the Superficial Willpower damage."""
+        self.set_damage("willpower", Damage.SUPERFICIAL, new_value, wrap=True)
+
+
     @property
     def superficial_hp(self) -> int:
         """The amount of Superficial Health damage sustained."""
@@ -247,6 +308,11 @@ class VChar:
 
     @superficial_hp.setter
     def superficial_hp(self, new_value):
+        """Set the Superficial Health damage."""
+        self.set_damage("health", Damage.SUPERFICIAL, new_value, wrap=True)
+
+
+    async def set_superficial_hp(self, new_value):
         """Set the Superficial Health damage."""
         self.set_damage("health", Damage.SUPERFICIAL, new_value, wrap=True)
 
@@ -265,6 +331,13 @@ class VChar:
         self._set_property(_Properties.HUNGER, new_hunger)
 
 
+    async def set_hunger(self, new_hunger):
+        """Set the character's hunger."""
+        new_hunger = max(0, min(5, new_hunger)) # Clamp between 0 and 5
+        self.__update_log("hunger", self.hunger, new_hunger)
+        await self._async_set_property(_Properties.HUNGER, new_hunger)
+
+
     @property
     def potency(self):
         """The character's potency."""
@@ -276,6 +349,12 @@ class VChar:
         """Set the character's potency."""
         new_potency = max(0, min(10, new_potency))
         self._set_property(_Properties.POTENCY, new_potency)
+
+
+    async def set_potency(self, new_potency):
+        """Set the character's potency."""
+        new_potency = max(0, min(10, new_potency))
+        await self._async_set_property(_Properties.POTENCY, new_potency)
 
 
     @property
@@ -291,6 +370,17 @@ class VChar:
 
         self._params["experience"]["current"] = new_current_xp
         self.collection.update_one(
+            self.find_query,
+            { "$set": { "experience.current": new_current_xp } }
+        )
+
+
+    async def set_current_xp(self, new_current_xp):
+        """Set the character's current xp."""
+        new_current_xp = max(0, min(new_current_xp, self.total_xp))
+
+        self._params["experience"]["current"] = new_current_xp
+        await self.async_collection.update_one(
             self.find_query,
             { "$set": { "experience.current": new_current_xp } }
         )
@@ -314,6 +404,21 @@ class VChar:
             { "$set": { "experience.total": new_total_xp } }
         )
         self.current_xp += delta
+
+
+    async def set_total_xp(self, new_total_xp):
+        """Set the character's total XP and update current accordingly."""
+        new_total_xp = max(new_total_xp, 0)
+        delta = new_total_xp - self.total_xp
+
+        self._params["experience"]["total"] = new_total_xp
+        task1 = self.async_collection.update_one(
+            self.find_query,
+            { "$set": { "experience.total": new_total_xp } }
+        )
+        task2 = self.set_current_xp(self.current_xp + delta)
+
+        await asyncio.gather(task1, task2)
 
 
     # Derived attributes

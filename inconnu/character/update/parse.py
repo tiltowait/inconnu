@@ -67,9 +67,13 @@ async def update(
         parameters = __parse_arguments(*args)
         updates = []
 
+        coros = []
         for parameter, new_value in parameters.items():
-            update_msg = await __update_character(ctx, character, parameter, new_value)
-            updates.append(update_msg)
+            coro = await __update_character(ctx, character, parameter, new_value)
+            coros.append(coro)
+
+        await ctx.response.defer()
+        updates = await asyncio.gather(*coros)
 
         if (impairment := character.impairment) is not None:
             updates.append(impairment)
@@ -166,7 +170,7 @@ async def __update_character(ctx, character: VChar, param: str, value: str) -> s
             raise ValueError("You must have administrator privileges to adjust lifetime XP.")
 
     coro = getattr(paramupdate, f"update_{param}")
-    return await coro(character, value)
+    return coro(character, value)
 
 
 async def update_help(ctx, err=None, ephemeral=True):

@@ -186,14 +186,6 @@ class VChar:
         return self._params[_Properties.HUMANITY]
 
 
-    @humanity.setter
-    def humanity(self, new_humanity):
-        """Set the character's humanity."""
-        new_humanity = max(0, min(10, new_humanity))
-        self._set_property(_Properties.HUMANITY, new_humanity)
-        self.stains = 0
-
-
     async def set_humanity(self, new_humanity):
         """Set the character's humanity."""
         new_humanity = max(0, min(10, new_humanity))

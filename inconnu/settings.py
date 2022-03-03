@@ -25,25 +25,21 @@ class Settings:
     _GUILDS = None
     _USERS = None
 
+    _GUILD_CACHE = {}
+    _USER_CACHE = {}
 
     @classmethod
     async def accessible(cls, user):
         """Determine whether we should use accessibility mode."""
         Settings._prepare()
 
-        if isinstance(user, discord.Member):
-            guildwide = await Settings._GUILDS.find_one({
-                "guild": user.guild.id,
-                "settings.accessibility": True
-            })
-            if guildwide is not None:
-                return True
+        user_settings = await Settings._fetch_user(user)
+        if user_settings.get("settings", {}).get("accessibility", False):
+            return True
 
-        userwide = await Settings._USERS.find_one({
-            "user": user.id,
-            "settings.accessibility": True
-        })
-        return userwide is not None
+        guild_settings = await Settings._fetch_guild(user.guild)
+
+        return guild_settings.get("settings", {}).get("accessibility", False)
 
 
     @classmethod
@@ -216,6 +212,8 @@ class Settings:
     @classmethod
     async def _set_guild(cls, guild: discord.Guild, key:str, value):
         """Enable or disable a guild setting."""
+        Settings._prepare()
+
         res = await Settings._GUILDS.update_one({ "guild": guild.id }, {
             "$set": {
                 f"settings.{key}": value
@@ -224,10 +222,17 @@ class Settings:
         if res.matched_count == 0:
             await Settings._GUILDS.insert_one({ "guild": guild.id, "settings": { key: value } })
 
+        # Update the cache
+        guild_settings = await Settings._fetch_guild(guild)
+        guild_settings.setdefault("settings", {})[key] = value
+        Settings._GUILD_CACHE[guild.id] = guild_settings
+
 
     @classmethod
     async def _set_user(cls, user: discord.Member, key:str, value):
         """Enable or disable a user setting."""
+        Settings._prepare()
+
         res = await Settings._USERS.update_one({ "user": user.id }, {
             "$set": {
                 f"settings.{key}": value
@@ -235,6 +240,31 @@ class Settings:
         })
         if res.matched_count == 0:
             await Settings._USERS.insert_one({ "user": user.id, "settings": { key: value } })
+
+        # Update the cache
+        user_settings = await Settings._fetch_user(user)
+        user_settings.setdefault("settings", {})[key] = value
+        Settings._USER_CACHE[user.id] = user_settings
+
+
+    @classmethod
+    async def _fetch_user(cls, user):
+        """Fetch a user."""
+        Settings._prepare()
+
+        if not isinstance(user, int):
+            user = user.id
+
+        if (user_settings := Settings._USER_CACHE.get(user)):
+            return user_settings
+
+        # See if it's in the database
+        if not (user_settings := await Settings._USERS.find_one({ "user": user })):
+            user_settings = { "user": user }
+
+        Settings._USER_CACHE[user] = user_settings
+
+        return user_settings
 
 
     @classmethod
@@ -245,7 +275,13 @@ class Settings:
         if not isinstance(guild, int):
             guild = guild.id
 
-        return await Settings._GUILDS.find_one({"guild": guild })
+        if (guild_settings := Settings._GUILD_CACHE.get(guild)):
+            return guild_settings
+
+        guild_settings = await Settings._GUILDS.find_one({"guild": guild }) or {}
+        Settings._GUILD_CACHE[guild] = guild_settings
+
+        return guild_settings
 
 
     @classmethod

@@ -492,12 +492,6 @@ class VChar:
 
 
     @property
-    def agg_health(self):
-        """The number of Aggravated health damage the character has taken."""
-        return self.health.count(Damage.AGGRAVATED)
-
-
-    @property
     def bane_severity(self) -> int:
         """The character's bane severity."""
         if self.potency == 0:

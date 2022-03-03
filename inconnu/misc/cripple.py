@@ -20,7 +20,7 @@ async def cripple(ctx, damage: int, character: str):
         if damage is None:
             tip = "/cripple `damage:DAMAGE` `character:CHARACTER`"
             character = await common.fetch_character(ctx, character, tip, __HELP_URL)
-            damage = character.agg_health
+            damage = character.aggravated_hp
         else:
             character = None # Do not allow explicit damage on a character
 

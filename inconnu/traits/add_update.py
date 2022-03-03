@@ -39,7 +39,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
         traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
 
         traits = parse_traits(*traits.split())
-        outcome = __handle_traits(character, traits, allow_overwrite)
+        outcome = await __handle_traits(character, traits, allow_overwrite)
 
         await __display_results(ctx, outcome, character.name)
 
@@ -64,29 +64,18 @@ async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
     All traits and ratings are assumed to be valid at this time.
     """
     partition = character.owned_traits(**traits)
-    assigned = []
-    unassigned = []
-    coros = []
 
     if overwriting:
         error_traits = list(partition.unowned.keys())
-        for trait, rating in partition.owned.items():
-            if rating is None:
-                unassigned.append(trait)
-            else:
-                trait = character.update_trait(trait, rating)
-                assigned.append(f"{trait} ({rating})")
-
+        unassigned = [k for k, v in partition.owned.items() if v is None]
+        to_assign = {k: v for k, v in partition.owned.items() if v is not None}
     else:
         error_traits = list(partition.owned.keys())
-        for trait, rating in partition.unowned.items():
-            if rating is None:
-                unassigned.append(trait)
-            else:
-                coros.append(character.add_trait(trait, rating))
-                assigned.append(f"{trait} `({rating})`")
+        unassigned = [k for k, v in partition.unowned.items() if v is None]
+        to_assign = {k: v for k, v in partition.unowned.items() if v is not None}
 
-        await asyncio.gather(*coros)
+    assigned = await character.assign_traits(to_assign)
+    assigned = [f"{trait}: `{rating}`" for trait, rating in assigned.items()]
 
     return SimpleNamespace(
         assigned=assigned,

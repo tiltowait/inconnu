@@ -72,9 +72,7 @@ class Wizard:
         if (blood_potency := self.assigned_traits.pop("Blood Potency")):
             tasks.append(character.set_potency(blood_potency))
 
-        # Need to add the traits one-by-one
-        for trait, rating in self.assigned_traits.items():
-            tasks.append(character.add_trait(trait, rating))
+        tasks.append(character.assign_traits(self.assigned_traits))
 
         if self.use_accessibility:
             tasks.append(self.__finalize_text(character))
@@ -84,8 +82,8 @@ class Wizard:
         tasks.append(inconnu.char_mgr.register(character))
         tasks.append(_deregister_wizard())
 
-        await asyncio.gather(*tasks)
         self.view.stop()
+        await asyncio.gather(*tasks)
 
 
     async def __finalize_text(self, character):

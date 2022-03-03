@@ -25,7 +25,7 @@ async def delete(ctx, traits: str, character=None):
             raise SyntaxError("You must supply a list of traits to delete.")
 
         traitcommon.validate_trait_names(*traits)
-        outcome = __delete_traits(character, *traits)
+        outcome = await __delete_traits(character, *traits)
 
         if await Settings.accessible(ctx.user):
             await __outcome_text(ctx, character, outcome)
@@ -75,7 +75,7 @@ async def __outcome_embed(ctx, character, outcome):
     await ctx.respond(embed=embed, ephemeral=True)
 
 
-def __delete_traits(character: VChar, *traits) -> list:
+async def __delete_traits(character: VChar, *traits) -> list:
     """
     Delete the validated traits. If the trait is a core trait, then it is set to 0.
     Returns (list): A list of traits that could not be found.
@@ -87,11 +87,11 @@ def __delete_traits(character: VChar, *traits) -> list:
     for trait in traits:
         if trait.lower() in standard_traits:
             # Set attributes and skills to 0 for better UX
-            trait = character.update_trait(trait, 0)
-            deleted.append(trait)
+            trait = await character.assign_traits({ trait: 0 })
+            deleted.extend(trait.keys())
         else:
             try:
-                trait = character.delete_trait(trait)
+                trait = await character.delete_trait(trait)
                 deleted.append(trait)
             except errors.TraitNotFoundError:
                 errs.append(trait)

@@ -83,6 +83,7 @@ class VChar:
             "willpower": "...",
             "hunger": 1,
             "potency": 0,
+            "traits": {},
             "experience": { "current": 0, "total": 0 },
             "log": { "created": datetime.datetime.utcnow() }
         }
@@ -577,44 +578,37 @@ class VChar:
         raise errors.AmbiguousTraitError(trait, matches)
 
 
-    async def add_trait(self, trait: str, rating: int):
+    async def assign_traits(self, traits: dict):
         """
-        Add a trait to the collection.
-        Raises TraitAlreadyExistsError if the trait already exists.
+        Add traits to the collection.
+        Overwrites old traits if they exist.
         """
-        if self.has_trait(trait):
-            raise errors.TraitAlreadyExistsError(f"You already have a trait named `{trait}`.")
+        finalized_traits = {}
+        canonical_traits = {}
+        current_traits = {t.lower(): t for t in self.traits.keys()}
 
-        await self.async_collection.update_one(
-            self.find_query,
-            { "$set": { f"traits.{trait}": rating } }
-        )
-        self._params[_Properties.TRAITS][trait] = rating
+        # When updating, we want to keep the old capitalization
+        for trait, rating in traits.items():
+            trait = current_traits.get(trait.lower(), trait)
+            key = f"traits.{trait}"
 
+            canonical_traits[trait] = rating
+            finalized_traits[key] = rating
+            self._params[_Properties.TRAITS][trait] = rating
 
-    def update_trait(self, trait: str, new_rating: int):
-        """
-        Update a given trait.
-        Raises TraitNotFoundError if the trait does not exist.
-        """
-        if trait.title() in UNIVERSAL_TRAITS:
-            err = f"`{trait.title()}` is an automatic trait that cannot be modified."
-            raise errors.TraitAlreadyExistsError(err)
-
-        trait = self.find_trait(trait, exact=True).name
-        self.collection.update_one(self.find_query, { "$set": { f"traits.{trait}": new_rating } })
-        self._params[_Properties.TRAITS][trait] = new_rating
-
-        return trait
+        await self.async_collection.update_one(self.find_query, { "$set": finalized_traits })
+        return canonical_traits
 
 
-    def delete_trait(self, trait: str):
+    async def delete_trait(self, trait: str):
         """
         Delete a trait.
         Raises TraitNotFoundError if the trait doesn't exist.
         """
         trait = self.find_trait(trait, exact=True).name
-        self.collection.update_one(self.find_query, { "$unset": { f"traits.{trait}": "" } })
+        await self.async_collection.update_one(self.find_query, {
+            "$unset": { f"traits.{trait}": "" }
+        })
         del self._params[_Properties.TRAITS][trait]
 
         return trait

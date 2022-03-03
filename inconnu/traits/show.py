@@ -16,7 +16,7 @@ async def show(ctx, character: str, player: discord.Member):
         tip = "`/traits list` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        if inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             await __list_text(ctx, character)
         else:
             await __list_embed(ctx, character, owner)

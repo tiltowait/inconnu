@@ -94,7 +94,7 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
 
 async def __display_results(ctx, outcome, char_name: str):
     """Display the results of the operation."""
-    if Settings.accessible(ctx.user):
+    if await Settings.accessible(ctx.user):
         await __results_text(ctx, outcome, char_name)
     else:
         await __results_embed(ctx, outcome, char_name)

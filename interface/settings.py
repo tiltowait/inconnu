@@ -24,7 +24,7 @@ class SettingsCommands(commands.Cog):
     ):
         """Enable or disable accessibility mode for yourself."""
         enable = bool(enable)
-        response = inconnu.settings.set_accessibility(ctx, enable, "user")
+        response = await inconnu.settings.set_accessibility(ctx, enable, "user")
 
         await ctx.respond(response)
 
@@ -69,16 +69,16 @@ class SettingsCommands(commands.Cog):
         responses = []
 
         if experience_permissions is not None:
-            response = inconnu.settings.set_xp_permissions(ctx, experience_permissions)
+            response = await inconnu.settings.set_xp_permissions(ctx, experience_permissions)
             responses.append(response)
 
         if oblivion_stains is not None:
-            response = inconnu.settings.set_oblivion_stains(ctx, oblivion_stains)
+            response = await inconnu.settings.set_oblivion_stains(ctx, oblivion_stains)
             responses.append(response)
 
         if accessibility is not None:
             accessibility = bool(accessibility)
-            response = inconnu.settings.set_accessibility(ctx, accessibility, "guild")
+            response = await inconnu.settings.set_accessibility(ctx, accessibility, "guild")
             responses.append(response)
 
         if responses:
@@ -90,9 +90,9 @@ class SettingsCommands(commands.Cog):
     @settings.command(name="show")
     async def settings_show(self, ctx):
         """Display the settings in effect."""
-        accessibility = "ON" if inconnu.settings.accessible(ctx.user) else "OFF"
-        experience_perms = inconnu.settings.xp_permissions(ctx.guild)
-        oblivion_stains = inconnu.settings.oblivion_stains(ctx.guild) or ["Never"]
+        accessibility = "ON" if await inconnu.settings.accessible(ctx.user) else "OFF"
+        experience_perms = await inconnu.settings.xp_permissions(ctx.guild)
+        oblivion_stains = await inconnu.settings.oblivion_stains(ctx.guild) or ["Never"]
         oblivion_stains = map(lambda s: f"`{s}`", oblivion_stains)
 
         msg = f"Accessibility mode: `{accessibility}`"

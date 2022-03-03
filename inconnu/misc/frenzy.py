@@ -49,7 +49,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             footer = f"Subtracting 2 dice due to Malkavian compulsion.\n{footer}"
 
         # Display the message
-        if inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             # Build the text version of the message
             name = character.name
             content = f"**{name}: Frenzy {title} (diff. {difficulty})**\n{message}\n*{footer}*"

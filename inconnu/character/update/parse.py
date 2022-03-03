@@ -159,10 +159,10 @@ async def __update_character(ctx, character: VChar, param: str, value: str) -> s
     Raises ValueError if the parameter's value is invalid.
     """
     if param == "current_xp":
-        if not inconnu.settings.can_adjust_current_xp(ctx):
+        if not await inconnu.settings.can_adjust_current_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust unspent XP.")
     elif param == "total_xp":
-        if not inconnu.settings.can_adjust_lifetime_xp(ctx):
+        if not await inconnu.settings.can_adjust_lifetime_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust lifetime XP.")
 
     coro = getattr(paramupdate, f"update_{param}")

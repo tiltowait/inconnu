@@ -28,7 +28,7 @@ async def resonance(ctx):
     temperament = __get_temperament()
     die, res = __get_resonance()
 
-    if Settings.accessible(ctx.user):
+    if await Settings.accessible(ctx.user):
         await __display_text(ctx, temperament, res, die)
     else:
         await __display_embed(ctx, temperament, res, die)

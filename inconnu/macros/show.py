@@ -36,7 +36,7 @@ async def show(ctx, character=None):
 
 async def __display_macros(ctx, char_name, macros):
     """Show a user their character's macros."""
-    if Settings.accessible(ctx.user):
+    if await Settings.accessible(ctx.user):
         await __macro_text(ctx, char_name, macros)
     else:
         await __macro_embed(ctx, char_name, macros)

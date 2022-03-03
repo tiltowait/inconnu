@@ -100,7 +100,7 @@ async def display_outcome(ctx, player, character: VChar, results, comment):
     """Display the roll results."""
     roll_display = RollDisplay(ctx, results, comment, character, player)
 
-    if inconnu.settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx.user):
         await roll_display.display(False)
     else:
         await roll_display.display(True)

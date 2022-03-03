@@ -18,7 +18,7 @@ async def list_events(ctx, character, player, ephemeral):
         )
 
         msg = { "ephemeral": ephemeral }
-        if inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             msg["content"] = await __get_text(ctx, character)
         else:
             msg["embed"] = await __get_embed(ctx, character, owner)

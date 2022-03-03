@@ -33,7 +33,7 @@ async def rouse(
             await __damage_ghoul(ctx, character)
         else:
             # Vampire
-            outcome = __rouse_roll(character, count, reroll)
+            outcome = await __rouse_roll(character, count, reroll)
             await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
 
     except inconnu.common.FetchError:
@@ -114,13 +114,13 @@ async def __damage_ghoul(ctx, ghoul):
     )
 
 
-def __rouse_roll(character: VChar, rolls: int, reroll: bool):
+async def __rouse_roll(character: VChar, rolls: int, reroll: bool):
     """Perform a Rouse roll."""
     successes = 0
     failures = 0
     stains = 0
 
-    oblivion = inconnu.settings.oblivion_stains(character.guild)
+    oblivion = await inconnu.settings.oblivion_stains(character.guild)
 
     for _ in range(rolls):
         die = random.randint(1, 10)

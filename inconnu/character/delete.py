@@ -13,7 +13,7 @@ async def delete(ctx, character: str):
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character)
 
-        if inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             msg_contents = __prompt_text(character)
         else:
             msg_contents = __prompt_embed(ctx, character)

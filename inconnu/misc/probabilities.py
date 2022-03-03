@@ -44,7 +44,7 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
         params = SN(pool=parser.pool, hunger=parser.hunger, difficulty=parser.difficulty)
         probabilities = await __get_probabilities(params, strategy)
 
-        if Settings.accessible(ctx.user):
+        if await Settings.accessible(ctx.user):
             await __display_text(ctx, params, strategy, probabilities)
         else:
             await __display_embed(ctx, params, strategy, probabilities)

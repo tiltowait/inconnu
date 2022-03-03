@@ -96,7 +96,7 @@ async def __trait_statistics(ctx, trait, date):
 
     fmt_date = date.strftime("%Y-%m-%d")
     if stats:
-        if inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             await __trait_stats_text(ctx, trait, stats, fmt_date)
         else:
             await __trait_stats_embed(ctx, trait, stats, fmt_date)
@@ -235,7 +235,7 @@ async def __all_statistics(ctx, date):
         await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)
         return
 
-    if inconnu.settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx.user):
         await __display_text(ctx, results)
     else:
         await __display_embed(ctx, results)

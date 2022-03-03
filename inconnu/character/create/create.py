@@ -37,7 +37,9 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
         )
 
         parameters = SN(name=name, hp=health, wp=willpower, humanity=humanity, splat=splat, spc=spc)
-        character_wizard = wizard.Wizard(ctx, parameters)
+        accessibility = await inconnu.settings.accessible(ctx.user)
+        character_wizard = wizard.Wizard(ctx, parameters, accessibility)
+
         await character_wizard.begin_chargen()
 
     except ValueError as err:

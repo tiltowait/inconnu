@@ -15,7 +15,7 @@ from inconnu.vchar import VChar
 class Wizard:
     """A helper class that guides a user through the chargen process."""
 
-    def __init__(self, ctx, parameters):
+    def __init__(self, ctx, parameters, accessible):
         if "DEBUG" in os.environ:
             self.core_traits = ["Resolve", "Composure"]
         else:
@@ -30,7 +30,7 @@ class Wizard:
             self.core_traits.append("Blood Potency")
 
         self.assigned_traits = {}
-        self.use_accessibility = inconnu.settings.accessible(ctx.user)
+        self.use_accessibility = accessible
 
 
     async def begin_chargen(self):

@@ -27,7 +27,7 @@ async def delete(ctx, traits: str, character=None):
         traitcommon.validate_trait_names(*traits)
         outcome = __delete_traits(character, *traits)
 
-        if Settings.accessible(ctx.user):
+        if await Settings.accessible(ctx.user):
             await __outcome_text(ctx, character, outcome)
         else:
             await __outcome_embed(ctx, character, outcome)

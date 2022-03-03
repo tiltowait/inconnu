@@ -74,7 +74,7 @@ class Wizard:
 
         # Need to add the traits one-by-one
         for trait, rating in self.assigned_traits.items():
-            character.add_trait(trait, rating)
+            tasks.append(character.add_trait(trait, rating))
 
         if self.use_accessibility:
             tasks.append(self.__finalize_text(character))

@@ -1,5 +1,6 @@
 """traits/add.py - Add traits to a character."""
 
+import asyncio
 import re
 from types import SimpleNamespace
 
@@ -53,7 +54,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
         pass
 
 
-def __handle_traits(character: VChar, traits: dict, overwriting: bool):
+async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
     """
     Add the rated traits to the character directly.
     Args:
@@ -65,6 +66,7 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
     partition = character.owned_traits(**traits)
     assigned = []
     unassigned = []
+    coros = []
 
     if overwriting:
         error_traits = list(partition.unowned.keys())
@@ -81,8 +83,10 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
             if rating is None:
                 unassigned.append(trait)
             else:
-                character.add_trait(trait, rating)
+                coros.append(character.add_trait(trait, rating))
                 assigned.append(f"{trait} `({rating})`")
+
+        await asyncio.gather(*coros)
 
     return SimpleNamespace(
         assigned=assigned,

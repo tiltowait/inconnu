@@ -577,7 +577,7 @@ class VChar:
         raise errors.AmbiguousTraitError(trait, matches)
 
 
-    def add_trait(self, trait: str, rating: int):
+    async def add_trait(self, trait: str, rating: int):
         """
         Add a trait to the collection.
         Raises TraitAlreadyExistsError if the trait already exists.
@@ -585,7 +585,10 @@ class VChar:
         if self.has_trait(trait):
             raise errors.TraitAlreadyExistsError(f"You already have a trait named `{trait}`.")
 
-        self.collection.update_one(self.find_query, { "$set": { f"traits.{trait}": rating } })
+        await self.async_collection.update_one(
+            self.find_query,
+            { "$set": { f"traits.{trait}": rating } }
+        )
         self._params[_Properties.TRAITS][trait] = rating
 
 

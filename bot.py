@@ -1,7 +1,9 @@
 """commands.py - Define the commands and event handlers for the bot."""
 
 import asyncio
+import datetime
 import os
+import textwrap
 
 import discord
 import pymongo.errors
@@ -53,7 +55,19 @@ async def on_application_command_error(ctx, error):
         # We don't care, and there's nothing we can do about it anyway.
         return
     if isinstance(error, pymongo.errors.PyMongoError):
-        await ctx.respond("My database is down. Please try again in a bit!", ephemeral=True)
+        errmsg = """\
+        My database is down. Some features are unavailable.
+        This error has been reported. Please try again in a bit!"""
+        await ctx.respond(textwrap.dedent(errmsg), ephemeral=True)
+
+        # Send an error message to the support server
+        if (db_error_channel := os.getenv("DB_ERROR_CHANNEL")) is not None:
+            date = datetime.datetime.now()
+            date = date.strftime("%b %d %Y %H:%M:%S")
+
+            db_error_channel = bot.get_channel(int(db_error_channel))
+            await db_error_channel.send(f"`{date}`: Database error detected.")
+
         return
 
     raise error

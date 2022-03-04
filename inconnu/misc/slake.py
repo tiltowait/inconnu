@@ -12,6 +12,11 @@ async def slake(ctx, amount, character=None):
     try:
         tip = f"`/slake` `amount:{amount}` `character:CHARACTER`"
         character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+
+        if not character.is_vampire:
+            await ctx.respond("Only vampires need to slake Hunger!", ephemeral=True)
+            return
+
         slaked = min(amount, character.hunger)
 
         if slaked == 0:

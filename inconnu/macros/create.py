@@ -1,6 +1,8 @@
 """macros/create.py - Creating user macros."""
 # pylint: disable=too-many-arguments
 
+import asyncio
+
 import inconnu
 from . import macro_common
 from ..vchar import errors
@@ -41,8 +43,11 @@ async def create(
             return
 
         pool = inconnu.vr.RollParser(character, pool).pool_stack
-        character.add_macro(name, pool, hunger, rouses, reroll_rouses, staining, diff, comment)
-        await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
+
+        await asyncio.gather(
+            character.add_macro(name, pool, hunger, rouses, reroll_rouses, staining, diff, comment),
+            ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
+        )
 
     except (
         SyntaxError, errors.AmbiguousTraitError, errors.TraitNotFoundError,

@@ -129,12 +129,6 @@ class VChar:
         return client.inconnu.characters
 
 
-    def _set_property(self, field, value):
-        """Set a field to a given value."""
-        self._params[field] = value
-        self.collection.update_one(self.find_query, { "$set": { field: value } })
-
-
     async def _async_set_property(self, field, value):
         """Set a field's value, asynchronously."""
         self._params[field] = value
@@ -588,7 +582,7 @@ class VChar:
         return matches[0]
 
 
-    def add_macro(
+    async def add_macro(
         self,
         macro: str,
         pool: list,
@@ -622,27 +616,29 @@ class VChar:
                 }
             }
         }
-        self.collection.update_one(self.find_query, macro_query)
+        await self.async_collection.update_one(self.find_query, macro_query)
 
 
-    def update_macro(self, macro: str, update: dict):
+    async def update_macro(self, macro: str, update: dict):
         """Update a macro."""
         macro = self.find_macro(macro) # For getting the exact name
         for param, val in update.items():
-            self.collection.update_one(
-                self.find_query,
-                { "$set": { f"macros.{macro.name}.{param}": val } }
-            )
+            await self.async_collection.update_one(self.find_query, {
+                "$set": { f"macros.{macro.name}.{param}": val }
+            })
         return macro.name
 
 
-    def delete_macro(self, macro):
+    async def delete_macro(self, macro):
         """
         Delete a macro.
         Raises MacroNotFoundError if the macro doesn't exist.
         """
-        macro = self.find_macro(macro) # For getting the exact name
-        self.collection.update_one(self.find_query, { "$unset": { f"macros.{macro.name}": "" } })
+        macro = self.find_macro(macro)
+
+        await self.async_collection.update_one(self.find_query, {
+            "$unset": { f"macros.{macro.name}": "" }
+        })
 
 
     # Specialized mutators
@@ -764,9 +760,9 @@ class VChar:
         self._params["experience"]["log"] = log
 
 
-    def remove_experience_log_entry(self, entry):
+    async def remove_experience_log_entry(self, entry):
         """Remove an entry from the log."""
-        self.collection.update_one(self.find_query, {
+        await self.async_collection.update_one(self.find_query, {
             "$pull": {
                 "experience.log": entry
             }

@@ -28,7 +28,8 @@ async def update(ctx, macro: str, syntax: str, character: str):
 
         parameters = __parameterize(syntax)
         macro_update = __validate_parameters(character, parameters)
-        macro_name = character.update_macro(macro, macro_update)
+
+        macro_name = await character.update_macro(macro, macro_update)
 
         await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
 

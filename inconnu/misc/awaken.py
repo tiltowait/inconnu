@@ -1,5 +1,6 @@
 """misc/wake.py - Automate the awakening bookkeeping."""
 
+import asyncio
 import random
 
 import inconnu
@@ -36,7 +37,7 @@ async def awaken(ctx, character=None):
                 if character.hunger == 5:
                     message += "**Enter torpor!**"
                 else:
-                    character.hunger += 1
+                    await character.set_hunger(character.hunger + 1)
                     message += f"Increase Hunger to **{character.hunger}**."
         else:
             shp = character.superficial_hp
@@ -56,9 +57,11 @@ async def awaken(ctx, character=None):
             update_message=message
         )
 
-        character.log("awaken")
+        tasks = [character.log("awaken")]
         if character.is_vampire:
-            character.log("rouse")
+            tasks.append(character.log("rouse"))
+
+        await asyncio.gather(*tasks)
 
     except inconnu.common.FetchError:
         pass

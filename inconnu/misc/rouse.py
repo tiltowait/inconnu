@@ -83,8 +83,10 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         if oblivion == "show":
             footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
         elif oblivion == "apply":
-            character.stains += outcome.stains
-            character.log("stains", outcome.stains)
+            await asyncio.gather(
+                character.set_stains(character.stains + outcome.stains),
+                character.log("stains", outcome.stains)
+            )
             fields.append((f"Gain {stains_txt}", inconnu.character.DisplayField.HUMANITY))
 
     footer = "\n".join(footer)
@@ -105,7 +107,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
 async def __damage_ghoul(ctx, ghoul):
     """Apply Aggravated damage to a ghoul and display."""
-    ghoul.aggravated_hp += 1
+    await ghoul.set_aggravated_hp(ghoul.aggravated_hp + 1)
     await inconnu.character.display(ctx, ghoul,
         title="Ghoul Rouse Damage",
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
@@ -137,10 +139,10 @@ async def __rouse_roll(character: VChar, rolls: int, reroll: bool):
 
     starting_hunger = character.hunger
     frenzy = starting_hunger + failures > 5
-    character.hunger += failures
+    await character.set_hunger(starting_hunger + failures)
     gain = starting_hunger - character.hunger
 
-    character.log("rouse", rolls)
+    await character.log("rouse", rolls)
 
     return SimpleNamespace(
         total=rolls,

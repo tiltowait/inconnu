@@ -1,5 +1,7 @@
 """misc/slake.py - Slake 1 or more Hunger."""
 
+import asyncio
+
 import inconnu
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=slaking-hunger"
@@ -16,18 +18,20 @@ async def slake(ctx, amount, character=None):
             await ctx.respond(f"**{character.name}** has no Hunger!", ephemeral=True)
         else:
             old_hunger = character.hunger
-            character.hunger -= slaked
-            character.log("slake", slaked)
+            await character.set_hunger(old_hunger - slaked)
 
             if old_hunger >= 4:
                 view = inconnu.views.FrenzyView(character, 3)
             else:
                 view = None
 
-            await inconnu.character.display(ctx, character,
-                title=f"Slaked {slaked} Hunger",
-                fields=[("New Hunger", inconnu.character.DisplayField.HUNGER)],
-                view=view
+            await asyncio.gather(
+                character.log("slake", slaked),
+                inconnu.character.display(ctx, character,
+                    title=f"Slaked {slaked} Hunger",
+                    fields=[("New Hunger", inconnu.character.DisplayField.HUNGER)],
+                    view=view
+                )
             )
 
     except inconnu.common.FetchError:

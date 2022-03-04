@@ -40,7 +40,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             title = "Failure!"
             message = "You succumb to the Beast."
             color = 0x5C0700
-            character.log("frenzy")
+            await character.log("frenzy")
 
         footer = "Dice: " + ", ".join(map(str, outcome.normal.dice))
         if penalty == "brujah":

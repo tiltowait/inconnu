@@ -1,5 +1,6 @@
 """character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
 
+import asyncio
 import re
 
 import inconnu
@@ -185,11 +186,11 @@ async def __update_damage(character: VChar, tracker: str, dtype: str, delta_str:
         if isinstance(delta_str, str) and delta_str[0] in ["+", "-"]:
             # If they are applying superficial damage, it can wrap.
             old_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
-            character.apply_damage(tracker, dtype, delta)
+            await character.apply_damage(tracker, dtype, delta)
             new_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
             wrap = new_agg - old_agg if dtype == Damage.SUPERFICIAL else 0
         else:
-            character.set_damage(tracker, dtype, delta)
+            await character.set_damage(tracker, dtype, delta)
             wrap = 0
 
         return await __damage_adjust_message(tracker, dtype, delta_str, wrap)
@@ -304,17 +305,21 @@ async def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
         await character.set_humanity(new_value)
         return f"Set Humanity to `{new_value}`."
 
+    tasks = []
     # If a character enters degeneration, they automatically take AW damage
     message = f"Set Stains to `{new_value}`."
     delta = new_value - character.stains
+
     if delta > 0 and new_value > (10 - character.humanity):
         # We are in degeneration; calculate the overlap
         old_overlap = abs(min(10 - character.humanity - character.stains, 0))
         new_overlap = abs(10 - character.humanity - new_value)
         overlap_delta = new_overlap - old_overlap
 
-        character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta)
+        tasks.append(character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta))
         message += f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
 
-    await character.set_stains(new_value)
+    tasks.append(character.set_stains(new_value))
+    await asyncio.gather(*tasks)
+
     return message

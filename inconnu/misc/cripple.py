@@ -1,5 +1,6 @@
 """misc/cripple.py - Roll against the crippling injury chart."""
 
+import asyncio
 import random
 from types import SimpleNamespace
 
@@ -32,12 +33,14 @@ async def cripple(ctx, damage: int, character: str):
             return
 
         injuries = __get_injury(damage)
-        await __display_injury(ctx, damage, character, injuries)
+        tasks = [__display_injury(ctx, damage, character, injuries)]
 
         if character is not None:
             # Log the injuries
             injuries = " / ".join([injury.injury for injury in injuries])
-            character.log_injury(injuries)
+            tasks.append(character.log_injury(injuries))
+
+        await asyncio.gather(*tasks)
 
     except common.FetchError:
         pass

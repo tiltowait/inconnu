@@ -1,5 +1,6 @@
 """misc/mend.py - Mend Superficial damage."""
 
+import asyncio
 import random
 from types import SimpleNamespace
 
@@ -14,7 +15,7 @@ async def mend(ctx, character=None):
     try:
         tip = "`/mend` `character:CHARACTER`"
         character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
-        outcome = __heal(character)
+        outcome = await __heal(character)
 
         if isinstance(outcome, str):
             await ctx.respond(outcome, ephemeral=True)
@@ -56,27 +57,30 @@ async def __display_outcome(ctx, character, outcome):
     )
 
 
-def __heal(character):
+async def __heal(character):
     """Heal the character and perform the Rouse check."""
-    superficial = character.health.count(Damage.SUPERFICIAL)
+    superficial = character.superficial_hp
     if superficial == 0:
         return f"**{character.name}** has no Superficial damage to mend!"
 
     mending = min(character.mend_amount, superficial)
     superficial -= mending
-    aggravated = character.health.count(Damage.AGGRAVATED)
+    aggravated = character.aggravated_hp
     unhurt = len(character.health) - superficial - aggravated
 
     track = Damage.NONE * unhurt + Damage.SUPERFICIAL * superficial + Damage.AGGRAVATED * aggravated
-    character.health = track
+
+    tasks = [character.set_health(track)]
 
     rouse = random.randint(1, 10) >= 6
     if not rouse:
         frenzy = character.hunger == 5
-        character.hunger += 1
+        tasks.append(character.set_hunger(character.hunger + 1))
     else:
         frenzy = False
 
     if character.is_vampire:
-        character.log("rouse")
+        tasks.append(character.log("rouse"))
+
+    await asyncio.gather(*tasks)
     return SimpleNamespace(mended=mending, rouse=rouse, frenzy=frenzy)

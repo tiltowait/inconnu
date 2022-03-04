@@ -26,17 +26,16 @@ async def stain(ctx, delta, character, owner):
             new_overlap = abs(10 - character.humanity - total_stains)
             overlap_delta = new_overlap - old_overlap
 
-            character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta)
+            await character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta)
             fields.append(("Willpower", char.DisplayField.WILLPOWER))
 
             message = f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
         else:
             message = None
 
-        character.stains += delta
+        await character.set_stains(character.stains + delta)
         if character.degeneration:
             footer = "Degeneration! -2 dice to all rolls. Remains until /remorse or auto-drop."
-
 
         title = "Added" if delta > 0 else "Removed"
         title = f"{title} {common.pluralize(abs(delta), 'Stain')}"

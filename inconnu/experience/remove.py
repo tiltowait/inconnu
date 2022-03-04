@@ -3,6 +3,7 @@
 import discord
 
 import inconnu
+from ..views import DisablingView
 
 __HELP_URL = "https://www.inconnu-bot.com"
 
@@ -78,7 +79,7 @@ def _entry_scope(entry):
     return entry["event"].split("_")[-1].capitalize()
 
 
-class _ExperienceView(inconnu.views.DisablingView):
+class _ExperienceView(DisablingView):
     """A View that adds or deducts the proper XP from a character when pressed."""
 
     def __init__(self, character, entry):

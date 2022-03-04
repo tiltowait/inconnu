@@ -25,7 +25,7 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
             )
             return
 
-        character.apply_experience(amount, scope, reason, ctx.author.id)
+        await character.apply_experience(amount, scope, reason, ctx.author.id)
 
         if reason[-1] != ".":
             reason += "."

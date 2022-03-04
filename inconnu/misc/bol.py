@@ -1,5 +1,7 @@
 """misc/bol.py - Blush of Life shortcut command."""
 
+import asyncio
+
 from .rouse import rouse
 from .. import common
 
@@ -17,8 +19,10 @@ async def bol(ctx, character):
         elif character.humanity == 9:
             await ctx.respond("Blush of Life is unnecessary. You look somewhat ill but not dead.")
         else:
-            await rouse(ctx, 1, character, "Blush of Life", character.humanity == 8, oblivion=False)
-            character.log("blush")
+            await asyncio.gather(
+                rouse(ctx, 1, character, "Blush of Life", character.humanity == 8, oblivion=False),
+                character.log("blush")
+            )
 
     except common.FetchError:
         pass

@@ -1,5 +1,7 @@
 """interface/misc.py - Miscellaneous commands."""
 
+import asyncio
+
 import discord
 from discord.commands import Option, OptionChoice, slash_command
 from discord.ext import commands
@@ -96,12 +98,14 @@ class MiscCommands(commands.Cog):
             character = await inconnu.char_mgr.fetchone(ctx.guild, current_owner, character)
 
             if ctx.guild.id == character.guild and current_owner.id == character.user:
-                character.user = new_owner.id
                 current_mention = current_owner.mention
                 new_mention = new_owner.mention
 
                 msg = f"Transferred **{character.name}** from {current_mention} to {new_mention}."
-                await ctx.respond(msg)
+                await asyncio.gather(
+                    character.set_user(new_owner),
+                    ctx.respond(msg)
+                )
 
             else:
                 await inconnu.common.present_error(

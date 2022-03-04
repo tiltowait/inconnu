@@ -144,25 +144,25 @@ async def __results_embed(ctx, outcome, char_name: str):
 
 async def __results_text(ctx, outcome, char_name: str):
     """Display the results in plain text."""
-    contents = [f"{char_name}: Trait Assignment\n"]
+    contents = [f"**{char_name}: Trait Assignment**\n"]
 
     if outcome.assigned:
-        assigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.assigned))
+        assigned = ", ".join(outcome.assigned)
         action = "Updated" if outcome.updating else "Assigned"
-        contents.append(f"{action}: {assigned}")
+        contents.append(f"**{action}:** {assigned}")
 
     footer = None
     if outcome.unassigned:
         unassigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.unassigned))
-        contents.append(f"No value given: {unassigned}")
+        contents.append(f"**No value given:** {unassigned}")
         footer = "Run the command again to assign ratings to the unassigned traits."
 
     if outcome.errors:
         errs = ", ".join(map(lambda trait: f"`{trait}`", outcome.errors))
         if outcome.updating:
-            err_field = "Error! You don't have " + errs
+            err_field = "**Error!** You don't have " + errs
         else:
-            err_field = "Error! You already have " + errs
+            err_field = "**Error!** You already have " + errs
         contents.append(err_field)
 
     if footer is not None:

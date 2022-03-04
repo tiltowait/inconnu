@@ -1,11 +1,8 @@
 """settings.py - User- and server-wide settings."""
 
-import os
 from enum import Enum
 
 import discord
-import pymongo
-import motor.motor_asyncio
 
 import inconnu
 
@@ -22,28 +19,21 @@ class ExpPerms(str, Enum):
 class Settings:
     """A class for managing individual and server-wide settings."""
 
-    # Collections
-    _CLIENT = None
-    _GUILDS = None
-    _USERS = None
+    _guild_cache = {}
+    _user_cache = {}
 
-    _GUILD_CACHE = {}
-    _USER_CACHE = {}
-
-    @classmethod
-    async def accessible(cls, user):
+    async def accessible(self, user):
         """Determine whether we should use accessibility mode."""
-        user_settings = await Settings._fetch_user(user)
+        user_settings = await self._fetch_user(user)
         if user_settings.get("settings", {}).get("accessibility", False):
             return True
 
-        guild_settings = await Settings._fetch_guild(user.guild)
+        guild_settings = await self._fetch_guild(user.guild)
 
         return guild_settings.get("settings", {}).get("accessibility", False)
 
 
-    @classmethod
-    async def set_accessibility(cls, ctx, enabled: bool, scope: str):
+    async def set_accessibility(self, ctx, enabled: bool, scope: str):
         """
         Set the accessibility mode.
         Args:
@@ -52,7 +42,7 @@ class Settings:
             scope (str): "user" or "server"
         """
         if scope == "user":
-            await Settings._set_key(ctx.user, "accessibility", enabled)
+            await self._set_key(ctx.user, "accessibility", enabled)
 
             if enabled:
                 response = "**Accessibility mode** enabled."
@@ -62,7 +52,7 @@ class Settings:
             if not ctx.user.guild_permissions.administrator:
                 raise PermissionError("Sorry, only admins can set server-wide accessibility mode.")
 
-            await Settings._set_key(ctx.guild, "accessibility", enabled)
+            await self._set_key(ctx.guild, "accessibility", enabled)
 
             if enabled:
                 response = "**Accessibility mode** enabled server-wide."
@@ -72,14 +62,13 @@ class Settings:
         return response
 
 
-    @classmethod
-    async def can_adjust_current_xp(cls, ctx) -> bool:
+    async def can_adjust_current_xp(self, ctx) -> bool:
         """Whether the user can adjust their current XP."""
         if ctx.user.guild_permissions.administrator:
             return True
 
         try:
-            guild = await Settings._fetch_guild(ctx.guild)
+            guild = await self._fetch_guild(ctx.guild)
             permissions = guild["settings"]["experience_permissions"]
             permissions = ExpPerms(permissions)
 
@@ -89,14 +78,13 @@ class Settings:
             return True
 
 
-    @classmethod
-    async def can_adjust_lifetime_xp(cls, ctx) -> bool:
+    async def can_adjust_lifetime_xp(self, ctx) -> bool:
         """Whether the user has permission to adjust lifetime XP."""
         if ctx.user.guild_permissions.administrator:
             return True
 
         try:
-            guild = await Settings._fetch_guild(ctx.guild)
+            guild = await self._fetch_guild(ctx.guild)
             permissions = guild["settings"]["experience_permissions"]
             permissions = ExpPerms(permissions)
 
@@ -106,11 +94,10 @@ class Settings:
             return True
 
 
-    @classmethod
-    async def xp_permissions(cls, guild):
+    async def xp_permissions(self, guild):
         """Get the XP permissions."""
         try:
-            guild = await Settings._fetch_guild(guild)
+            guild = await self._fetch_guild(guild)
             permissions = ExpPerms(guild["settings"]["experience_permissions"])
         except KeyError:
             permissions = ExpPerms.UNRESTRICTED
@@ -126,8 +113,7 @@ class Settings:
                 return "Only admins may adjust XP totals."
 
 
-    @classmethod
-    async def set_xp_permissions(cls, ctx, permissions):
+    async def set_xp_permissions(self, ctx, permissions):
         """
         Set the XP settings:
             • User can modify current and lifetime
@@ -138,7 +124,7 @@ class Settings:
         if not ctx.user.guild_permissions.administrator:
             raise PermissionError("Sorry, only admins can set user experience permissions.")
 
-        await Settings._set_key(ctx.guild, "experience_permissions", permissions)
+        await self._set_key(ctx.guild, "experience_permissions", permissions)
 
         match ExpPerms(permissions):
             case ExpPerms.UNRESTRICTED:
@@ -154,11 +140,10 @@ class Settings:
 
 
 
-    @classmethod
-    async def oblivion_stains(cls, guild) -> list:
+    async def oblivion_stains(self, guild) -> list:
         """Retrieve the Rouse results that grant Oblivion stains."""
         try:
-            guild = await Settings._fetch_guild(guild)
+            guild = await self._fetch_guild(guild)
             oblivion = guild["settings"]["oblivion_stains"]
         except KeyError:
             oblivion = [1, 10]
@@ -166,8 +151,7 @@ class Settings:
         return oblivion
 
 
-    @classmethod
-    async def set_oblivion_stains(cls, ctx, stains: int):
+    async def set_oblivion_stains(self, ctx, stains: int):
         """Set which dice outcomes will give stains for Oblivion rouse checks."""
         if not ctx.user.guild_permissions.administrator:
             raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
@@ -184,12 +168,11 @@ class Settings:
             response += f"`{stains}`."
             stains = [stains]
 
-        await Settings._set_key(ctx.guild, "oblivion_stains", stains)
+        await self._set_key(ctx.guild, "oblivion_stains", stains)
         return response
 
 
-    @classmethod
-    async def _set_key(cls, scope, key: str, value):
+    async def _set_key(self, scope, key: str, value):
         """
         Enable or disable a setting.
         Args:
@@ -198,17 +181,16 @@ class Settings:
             value: The value to set
         """
         if isinstance(scope, discord.Guild):
-            await Settings._set_guild(scope, key, value)
+            await self._set_guild(scope, key, value)
         elif isinstance(scope, discord.Member):
-            await Settings._set_user(scope, key, value)
+            await self._set_user(scope, key, value)
         else:
             return ValueError(f"Unknown scope `{scope}`.")
 
         return True
 
 
-    @classmethod
-    async def _set_guild(cls, guild: discord.Guild, key:str, value):
+    async def _set_guild(self, guild: discord.Guild, key:str, value):
         """Enable or disable a guild setting."""
         res = await inconnu.db.guilds.update_one({ "guild": guild.id }, {
             "$set": {
@@ -219,13 +201,12 @@ class Settings:
             await inconnu.db.guilds.insert_one({ "guild": guild.id, "settings": { key: value } })
 
         # Update the cache
-        guild_settings = await Settings._fetch_guild(guild)
+        guild_settings = await self._fetch_guild(guild)
         guild_settings.setdefault("settings", {})[key] = value
-        Settings._GUILD_CACHE[guild.id] = guild_settings
+        self._guild_cache[guild.id] = guild_settings
 
 
-    @classmethod
-    async def _set_user(cls, user: discord.Member, key:str, value):
+    async def _set_user(self, user: discord.Member, key:str, value):
         """Enable or disable a user setting."""
         res = await inconnu.db.users.update_one({ "user": user.id }, {
             "$set": {
@@ -236,39 +217,37 @@ class Settings:
             await inconnu.db.users.insert_one({ "user": user.id, "settings": { key: value } })
 
         # Update the cache
-        user_settings = await Settings._fetch_user(user)
+        user_settings = await self._fetch_user(user)
         user_settings.setdefault("settings", {})[key] = value
-        Settings._USER_CACHE[user.id] = user_settings
+        self._user_cache[user.id] = user_settings
 
 
-    @classmethod
-    async def _fetch_user(cls, user):
+    async def _fetch_user(self, user):
         """Fetch a user."""
         if not isinstance(user, int):
             user = user.id
 
-        if (user_settings := Settings._USER_CACHE.get(user)):
+        if (user_settings := self._user_cache.get(user)):
             return user_settings
 
         # See if it's in the database
         if not (user_settings := await inconnu.db.users.find_one({ "user": user })):
             user_settings = { "user": user }
 
-        Settings._USER_CACHE[user] = user_settings
+        self._user_cache[user] = user_settings
 
         return user_settings
 
 
-    @classmethod
-    async def _fetch_guild(cls, guild):
+    async def _fetch_guild(self, guild):
         """Fetch a guild."""
         if not isinstance(guild, int):
             guild = guild.id
 
-        if (guild_settings := Settings._GUILD_CACHE.get(guild)):
+        if (guild_settings := self._guild_cache.get(guild)):
             return guild_settings
 
         guild_settings = await inconnu.db.guilds.find_one({"guild": guild }) or {}
-        Settings._GUILD_CACHE[guild] = guild_settings
+        self._guild_cache[guild] = guild_settings
 
         return guild_settings

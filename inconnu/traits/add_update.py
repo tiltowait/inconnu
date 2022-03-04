@@ -1,14 +1,13 @@
 """traits/add.py - Add traits to a character."""
 
-import asyncio
 import re
 from types import SimpleNamespace
 
 import discord
 
+import inconnu.settings
 from .parser import parse_traits
 from .. import common
-from ..settings import Settings
 from ..vchar import VChar
 
 __HELP_URL = {
@@ -87,7 +86,7 @@ async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
 
 async def __display_results(ctx, outcome, char_name: str):
     """Display the results of the operation."""
-    if await Settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx.user):
         await __results_text(ctx, outcome, char_name)
     else:
         await __results_embed(ctx, outcome, char_name)

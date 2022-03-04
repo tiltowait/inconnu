@@ -4,10 +4,10 @@ from types import SimpleNamespace
 
 import discord
 
+import inconnu.settings
 from . import traitcommon
 from .. import common
 from .. import constants
-from ..settings import Settings
 from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=deleting-traits"
@@ -27,7 +27,7 @@ async def delete(ctx, traits: str, character=None):
         traitcommon.validate_trait_names(*traits)
         outcome = await __delete_traits(character, *traits)
 
-        if await Settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             await __outcome_text(ctx, character, outcome)
         else:
             await __outcome_embed(ctx, character, outcome)

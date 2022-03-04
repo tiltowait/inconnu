@@ -7,8 +7,6 @@ import discord
 
 import inconnu
 from .. import vr as roll
-from ..settings import Settings
-from ..vchar import errors
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=probability-calculation"
 __STRATEGIES = {
@@ -41,12 +39,12 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
         params = SN(pool=parser.pool, hunger=parser.hunger, difficulty=parser.difficulty)
         probabilities = await __get_probabilities(params, strategy)
 
-        if await Settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             await __display_text(ctx, params, strategy, probabilities)
         else:
             await __display_embed(ctx, params, strategy, probabilities)
 
-    except (SyntaxError, ValueError, errors.TraitError) as err:
+    except (SyntaxError, ValueError, inconnu.vchar.errors.TraitError) as err:
         await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
 
 

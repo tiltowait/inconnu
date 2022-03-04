@@ -13,13 +13,14 @@ from . import macros
 from . import misc
 from . import options
 from .roll import Roll
-from .settings import Settings as settings
+from . import settings
 from . import stats
 from . import traits
 from .vchar import CharacterManager, VChar
 from . import views
 
 char_mgr = CharacterManager()
+settings = settings.Settings()
 
 _mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
     os.getenv("MONGO_URL"),

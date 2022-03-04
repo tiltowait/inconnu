@@ -4,7 +4,7 @@ import random
 
 import discord
 
-from ..settings import Settings
+import inconnu.settings
 
 __DISCIPLINES = {
     "Choleric": "Celerity, Potence",
@@ -28,7 +28,7 @@ async def resonance(ctx):
     temperament = __get_temperament()
     die, res = __get_resonance()
 
-    if await Settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx.user):
         await __display_text(ctx, temperament, res, die)
     else:
         await __display_embed(ctx, temperament, res, die)

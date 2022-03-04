@@ -1,12 +1,10 @@
 """misc/statistics.py - View character roll statistics"""
 
-import os
 import re
 from collections import defaultdict
 from datetime import datetime
 
 import discord
-import motor.motor_asyncio
 
 import inconnu
 
@@ -39,8 +37,7 @@ async def statistics(ctx, trait: str, date):
 
 async def __trait_statistics(ctx, trait, date):
     """View the roll statistics for a given trait."""
-    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-    rolls = client.inconnu.rolls
+    rolls = inconnu.mongoclient.inconnu.rolls
     regex  = r"^.*(\s+" + f"{trait}|{trait}" + r"\s+.*|" + trait + ")$"
     pipeline = [
         {
@@ -92,7 +89,6 @@ async def __trait_statistics(ctx, trait, date):
         }
     ]
     stats = await rolls.aggregate(pipeline).to_list(length=None)
-    client.close()
 
     fmt_date = date.strftime("%Y-%m-%d")
     if stats:
@@ -162,8 +158,7 @@ async def __trait_stats_text(ctx, trait, stats, date):
 
 async def __all_statistics(ctx, date):
     """View the roll statistics for the user's characters."""
-    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-    col = client.inconnu.characters
+    col = inconnu.mongoclient.inconnu.characters
     pipeline = [
         {
           "$match": {
@@ -229,7 +224,6 @@ async def __all_statistics(ctx, date):
         }
     ]
     results = await col.aggregate(pipeline).to_list(length=None)
-    client.close()
 
     if not results:
         await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)

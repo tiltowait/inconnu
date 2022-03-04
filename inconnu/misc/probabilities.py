@@ -1,14 +1,11 @@
 """misc/probabilities.py - Calculate the probability of a given roll."""
 
-import os
 from collections import defaultdict
 from types import SimpleNamespace as SN
 
 import discord
-import motor.motor_asyncio
 
-from .. import common
-from ..roll import Roll
+import inconnu
 from .. import vr as roll
 from ..settings import Settings
 from ..vchar import errors
@@ -31,9 +28,9 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
 
         try:
             tip = f"`/probability` `roll:{syntax}` `character:CHARACTER`"
-            character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+            character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        except common.FetchError:
+        except inconnu.common.FetchError:
             return
 
     else:
@@ -50,7 +47,7 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
             await __display_embed(ctx, params, strategy, probabilities)
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
-        await common.present_error(ctx, err, character=character, help_url=__HELP_URL)
+        await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
 
 
 async def __display_text(ctx, params, strategy: str, probs: dict):
@@ -173,8 +170,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
 
 async def __get_probabilities(params, strategy):
     """Retrieve the probabilities from storage or, if not calculated yet, generate them."""
-    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-    col = client.inconnu.probabilities
+    col = inconnu.mongoclient.inconnu.probabilities
 
     probs = await col.find_one({
         "pool": params.pool,
@@ -199,7 +195,6 @@ async def __get_probabilities(params, strategy):
         probs = defaultdict(lambda: 0)
         probs.update(probabilities)
 
-    client.close()
     return probs
 
 
@@ -210,7 +205,7 @@ def __simulate(params, strategy):
     outcomes = defaultdict(lambda: 0)
 
     for _ in range(trials):
-        outcome = Roll(params.pool, params.hunger, params.difficulty)
+        outcome = inconnu.Roll(params.pool, params.hunger, params.difficulty)
 
         # Check reroll options
         if strategy is not None:

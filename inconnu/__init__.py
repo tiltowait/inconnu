@@ -3,6 +3,7 @@
 import os
 
 import discord
+import motor.motor_asyncio
 
 from . import character
 from . import cull as culler
@@ -19,6 +20,11 @@ from .vchar import CharacterManager, VChar
 from . import views
 
 char_mgr = CharacterManager()
+
+mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
+    os.getenv("MONGO_URL"),
+    serverSelectionTimeoutMS=1800
+)
 
 def respond(ctx):
     """Get the proper response callable."""

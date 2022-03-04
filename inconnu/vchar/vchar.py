@@ -4,15 +4,14 @@
 import asyncio
 import datetime
 import math
-import os
 from enum import Enum
 
 from collections import OrderedDict
 from types import SimpleNamespace
 
-import motor.motor_asyncio
 from bson.objectid import ObjectId
 
+import inconnu
 from . import errors
 from ..constants import Damage, INCONNU_ID, UNIVERSAL_TRAITS
 
@@ -53,7 +52,6 @@ class VChar:
     """A class that maintains a character's property and automatically manages persistence."""
 
     VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane"]
-    _CLIENT = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
 
 
     def __init__(self, params: dict):
@@ -116,16 +114,15 @@ class VChar:
     # Property accessors
 
     @property
-    def async_collection(self):
+    def _async_collection(self):
         """The async database collection."""
-        #client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-        return VChar._CLIENT.inconnu.characters
+        return inconnu.mongoclient.inconnu.characters
 
 
     async def _async_set_property(self, field, value):
         """Set a field's value, asynchronously."""
         self._params[field] = value
-        await self.async_collection.update_one(self.find_query, { "$set": { field: value } })
+        await self._async_collection.update_one(self.find_query, { "$set": { field: value } })
 
 
     @property
@@ -304,7 +301,7 @@ class VChar:
         new_current_xp = max(0, min(new_current_xp, self.total_xp))
 
         self._params["experience"]["current"] = new_current_xp
-        await self.async_collection.update_one(
+        await self._async_collection.update_one(
             self.find_query,
             { "$set": { "experience.current": new_current_xp } }
         )
@@ -323,7 +320,7 @@ class VChar:
 
         self._params["experience"]["total"] = new_total_xp
 
-        task1 = self.async_collection.update_one(
+        task1 = self._async_collection.update_one(
             self.find_query,
             { "$set": { "experience.total": new_total_xp } }
         )
@@ -508,7 +505,7 @@ class VChar:
             finalized_traits[key] = rating
             self._params[_Properties.TRAITS][trait] = rating
 
-        await self.async_collection.update_one(self.find_query, { "$set": finalized_traits })
+        await self._async_collection.update_one(self.find_query, { "$set": finalized_traits })
         return canonical_traits
 
 
@@ -518,7 +515,7 @@ class VChar:
         Raises TraitNotFoundError if the trait doesn't exist.
         """
         trait = self.find_trait(trait, exact=True).name
-        await self.async_collection.update_one(self.find_query, {
+        await self._async_collection.update_one(self.find_query, {
             "$unset": { f"traits.{trait}": "" }
         })
         del self._params[_Properties.TRAITS][trait]
@@ -604,7 +601,7 @@ class VChar:
             "difficulty": difficulty,
             "comment": comment
         }
-        await self.async_collection.update_one(self.find_query, {
+        await self._async_collection.update_one(self.find_query, {
             "$set": { f"macros.{macro}": macro_doc }
         })
         self._params.setdefault("macros", {})[macro] = macro_doc
@@ -615,7 +612,7 @@ class VChar:
         macro = self.find_macro(macro) # For getting the exact name
         for param, val in update.items():
             self._params["macros"][macro.name][param] = val # Update cache
-            await self.async_collection.update_one(self.find_query, {
+            await self._async_collection.update_one(self.find_query, {
                 "$set": { f"macros.{macro.name}.{param}": val }
             })
 
@@ -630,7 +627,7 @@ class VChar:
         macro = self.find_macro(macro)
         del self._params["macros"][macro.name]
 
-        await self.async_collection.update_one(self.find_query, {
+        await self._async_collection.update_one(self.find_query, {
             "$unset": { f"macros.{macro.name}": "" }
         })
 
@@ -739,7 +736,7 @@ class VChar:
         }
         push_query = { "$push": { "experience.log": event_document }}
 
-        tasks=[self.async_collection.update_one(self.find_query, push_query)]
+        tasks=[self._async_collection.update_one(self.find_query, push_query)]
 
         if scope == "lifetime":
             tasks.append(self.set_total_xp(self.total_xp + amount))
@@ -756,7 +753,7 @@ class VChar:
 
     async def remove_experience_log_entry(self, entry):
         """Remove an entry from the log."""
-        await self.async_collection.update_one(self.find_query, {
+        await self._async_collection.update_one(self.find_query, {
             "$pull": {
                 "experience.log": entry
             }
@@ -786,12 +783,12 @@ class VChar:
         if key not in valid_keys:
             raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
 
-        self.async_collection.update_one(self.find_query, { "$inc": { f"log.{key}": increment } })
+        self._async_collection.update_one(self.find_query, { "$inc": { f"log.{key}": increment } })
 
 
     async def log_injury(self, injury: str):
         """Log a crippling injury."""
-        self.async_collection.update_one(self.find_query, { "$push": { "injuries": injury } })
+        self._async_collection.update_one(self.find_query, { "$push": { "injuries": injury } })
 
 
     async def __update_log(self, key, old_value, new_value):
@@ -804,6 +801,6 @@ class VChar:
         if new_value > old_value:
             delta = new_value - old_value
 
-            await self.async_collection.update_one(self.find_query, {
+            await self._async_collection.update_one(self.find_query, {
                 "$inc": { f"log.{key}": delta }
             })

@@ -1,9 +1,6 @@
 """inconnu/cull.py - Cull inactive players and guilds."""
 
-import os
 from datetime import datetime, timedelta
-
-import motor.motor_asyncio
 
 import inconnu
 
@@ -12,9 +9,8 @@ async def cull(days=30):
     """Cull inactive guilds, characters, and macros."""
     print("Initiating culling run.")
 
-    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-    char_col = client.inconnu.characters
-    guild_col = client.inconnu.guilds
+    char_col = inconnu.mongoclient.inconnu.characters
+    guild_col = inconnu.mongoclient.inconnu.guilds
 
     past = datetime.utcnow() - timedelta(days=days)
 

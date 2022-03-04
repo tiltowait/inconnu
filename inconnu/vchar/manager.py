@@ -1,12 +1,11 @@
 """vchar/manager.py - Character cache/in-memory database."""
 
 import datetime
-import os
 import re
 
-import motor.motor_asyncio
 from bson.objectid import ObjectId
 
+import inconnu
 from . import errors
 from .vchar import VChar
 from ..constants import INCONNU_ID
@@ -24,8 +23,7 @@ class CharacterManager:
     @property
     def collection(self):
         """Get the database's characters collection."""
-        client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-        return client.inconnu.characters
+        return inconnu.mongoclient.inconnu.characters
 
 
     @staticmethod

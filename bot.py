@@ -4,6 +4,7 @@ import asyncio
 import os
 
 import discord
+import pymongo.errors
 import topgg
 from discord.ext import commands, tasks
 
@@ -50,7 +51,10 @@ async def on_application_command_error(ctx, error):
     if isinstance(error, discord.errors.NotFound):
         # This just means a button tried to disable when its message no longer exists.
         # We don't care, and there's nothing we can do about it anyway.
-        pass
+        return
+    if isinstance(error, pymongo.errors.PyMongoError):
+        await ctx.respond("My database is down. Please try again in a bit!", ephemeral=True)
+        return
 
     raise error
 

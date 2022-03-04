@@ -2,9 +2,8 @@
 # pylint: disable=too-many-arguments
 
 import datetime
-import os
 
-import motor.motor_asyncio
+import inconnu
 
 
 async def log_roll(guild: int, user: int, char, outcome, comment):
@@ -16,8 +15,7 @@ async def log_roll(guild: int, user: int, char, outcome, comment):
         charid (VChar): The character that made the roll (optional)
         outcome (Roll): The roll's parameters and outcome
     """
-    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-    rolls = client.inconnu.stats
+    rolls = inconnu.mongoclient.inconnu.stats
 
     if await rolls.find_one({ "_id": outcome.id }) is None:
         roll = _gen_roll(guild, user, char, outcome, comment)
@@ -34,8 +32,7 @@ async def guild_joined(guild, name):
         guild (int): The guild's Discord ID
         name (str): The guild's name
     """
-    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-    guilds = client.inconnu.stats
+    guilds = inconnu.mongoclient.inconnu.stats
 
     await guilds.update_one(
         { "guild": guild },
@@ -58,8 +55,7 @@ async def guild_left(guild):
     Args:
         guild (int): The guild's Discord ID
     """
-    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-    guilds = client.inconnu.stats
+    guilds = inconnu.mongoclient.inconnu.stats
 
     await guilds.update_one({ "guild": guild }, {
         "$set": {
@@ -76,8 +72,7 @@ async def guild_renamed(guild, new_name):
         guild (int): The guild's Discord ID
         name (str): The guild's name
     """
-    client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-    guilds = client.inconnu.stats
+    guilds = inconnu.mongoclient.inconnu.stats
 
     await guilds.update_one({ "guild": guild }, { "$set": { "name": new_name } })
 

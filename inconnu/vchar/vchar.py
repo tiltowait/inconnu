@@ -53,6 +53,7 @@ class VChar:
     """A class that maintains a character's property and automatically manages persistence."""
 
     VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane"]
+    _CLIENT = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
 
 
     def __init__(self, params: dict):
@@ -117,8 +118,8 @@ class VChar:
     @property
     def async_collection(self):
         """The async database collection."""
-        client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-        return client.inconnu.characters
+        #client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
+        return VChar._CLIENT.inconnu.characters
 
 
     async def _async_set_property(self, field, value):

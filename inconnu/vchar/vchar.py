@@ -558,10 +558,9 @@ class VChar:
             for name, macro in sorted(_macros.items(), key = lambda s: s[0].casefold()):
                 macro["name"] = name
 
+                macro.setdefault("staining", "show")
                 if not self.is_vampire:
                     macro["hunger"] = False
-                if not "staining" in macro:
-                    macro["staining"] = "show"
 
                 raw_macros.append(macro)
 
@@ -603,29 +602,30 @@ class VChar:
         except errors.MacroNotFoundError:
             pass
 
-        macro_query = {
-            "$set": {
-                f"macros.{macro}": {
-                    "pool": list(map(str, pool)),
-                    "rouses": rouses,
-                    "reroll_rouses": reroll_rouses,
-                    "staining": staining,
-                    "hunger": hunger,
-                    "difficulty": difficulty,
-                    "comment": comment
-                }
-            }
+        macro_doc = {
+            "pool": list(map(str, pool)),
+            "rouses": rouses,
+            "reroll_rouses": reroll_rouses,
+            "staining": staining,
+            "hunger": hunger,
+            "difficulty": difficulty,
+            "comment": comment
         }
-        await self.async_collection.update_one(self.find_query, macro_query)
+        await self.async_collection.update_one(self.find_query, {
+            "$set": { f"macros.{macro}": macro_doc }
+        })
+        self._params.setdefault("macros", {})[macro] = macro_doc
 
 
     async def update_macro(self, macro: str, update: dict):
         """Update a macro."""
         macro = self.find_macro(macro) # For getting the exact name
         for param, val in update.items():
+            self._params["macros"][macro.name][param] = val # Update cache
             await self.async_collection.update_one(self.find_query, {
                 "$set": { f"macros.{macro.name}.{param}": val }
             })
+
         return macro.name
 
 
@@ -635,6 +635,7 @@ class VChar:
         Raises MacroNotFoundError if the macro doesn't exist.
         """
         macro = self.find_macro(macro)
+        del self._params["macros"][macro.name]
 
         await self.async_collection.update_one(self.find_query, {
             "$unset": { f"macros.{macro.name}": "" }

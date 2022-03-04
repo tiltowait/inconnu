@@ -11,7 +11,6 @@ from collections import OrderedDict
 from types import SimpleNamespace
 
 import motor.motor_asyncio
-import pymongo
 from bson.objectid import ObjectId
 
 from . import errors
@@ -114,13 +113,6 @@ class VChar:
 
 
     # Property accessors
-
-    @property
-    def collection(self):
-        """The database characters collection."""
-        mongo = pymongo.MongoClient(os.environ["MONGO_URL"])
-        return mongo.inconnu.characters
-
 
     @property
     def async_collection(self):

@@ -1,4 +1,4 @@
-# User Privacy Policy
+# Privacy&nbsp;Policy
 
 **Inconnu** stores Discord user IDs over everyone who uses it, as well as Discord server IDs for all servers on which it is installed. None of this data is personally identifiable and is essential for the bot's basic (and advanced) functionality.
 

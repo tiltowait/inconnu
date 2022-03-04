@@ -33,6 +33,7 @@ class Roll:
             raise ValueError(f"Pool cannot exceed 100. (Got `{pool}`.)")
 
         normal_dice = max(0, pool - hunger)
+        hunger = min(pool, hunger)
 
         self.normal = DiceThrow(normal_dice)
         self.hunger = DiceThrow(hunger)

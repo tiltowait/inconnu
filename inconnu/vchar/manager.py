@@ -198,6 +198,31 @@ class CharacterManager:
         return False
 
 
+    async def transfer(self, character, current_owner, new_owner):
+        """Transfer one character to another."""
+        current_chars = await self.fetchall(character.guild, current_owner)
+        new_chars = await self.fetchall(character.guild, new_owner)
+
+        current_key = self.user_key(character)
+        await character.set_user(new_owner)
+        new_key = self.user_key(character)
+
+        current_chars.remove(character)
+        inserted = False
+
+        for (index, char) in enumerate(new_chars):
+            if char > character:
+                new_chars.insert(index, character)
+                inserted = True
+                break
+
+        if not inserted:
+            new_chars.append(character)
+
+        self.user_cache[current_key] = current_chars
+        self.user_cache[new_key] = new_chars
+
+
     async def mark_inactive(self, player):
         """
         When a player leaves a guild, mark their characters as inactive. They
@@ -229,4 +254,5 @@ class CharacterManager:
             # Characters are automatically sorted when fetched
             return
 
-        self.user_cache[key] = list(sorted(user_chars, key=lambda c: c.name.casefold()))
+        user_chars.sort()
+        self.user_cache[key] = user_chars

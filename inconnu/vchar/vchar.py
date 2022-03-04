@@ -91,9 +91,26 @@ class VChar:
         return VChar(char_params)
 
 
+    # Comparators
+
+    def __lt__(self, other):
+        return self.name.lower() < other.name.lower()
+
+    def __gt__(self, other):
+        return self.name.lower() > other.name.lower()
+
     def __eq__(self, other):
-        """Check the IDs."""
+        """Just check the IDs."""
         return self.id == other.id
+
+    def __le__(self, other):
+        return self.name.lower() <= other.name.lower()
+
+    def __ge__(self, other):
+        return self.name.lower() >= other.name.lower()
+
+    def __ne__(self, other):
+        return self.id != other.id
 
 
     # Property accessors

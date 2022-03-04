@@ -103,7 +103,7 @@ class MiscCommands(commands.Cog):
 
                 msg = f"Transferred **{character.name}** from {current_mention} to {new_mention}."
                 await asyncio.gather(
-                    character.set_user(new_owner),
+                    inconnu.char_mgr.transfer(character, current_owner, new_owner),
                     ctx.respond(msg)
                 )
 

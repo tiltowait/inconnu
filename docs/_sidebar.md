@@ -10,3 +10,5 @@
 * [Server Settings](settings.md "Inconnu | Server Settings")
 * [Administration](administration.md "Inconnu | Administration")
 * [Troubleshooting](troubleshooting.md "Inconnu | Troubleshooting")
+* [Terms of Service](terms.md "Inconnu | Terms of Service")
+* [Privacy Policy](privacy.md "Inconnu | Privacy Policy")

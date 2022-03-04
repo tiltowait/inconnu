@@ -37,7 +37,7 @@ async def statistics(ctx, trait: str, date):
 
 async def __trait_statistics(ctx, trait, date):
     """View the roll statistics for a given trait."""
-    rolls = inconnu.mongoclient.inconnu.rolls
+    rolls = inconnu.db.rolls
     regex  = r"^.*(\s+" + f"{trait}|{trait}" + r"\s+.*|" + trait + ")$"
     pipeline = [
         {
@@ -158,7 +158,7 @@ async def __trait_stats_text(ctx, trait, stats, date):
 
 async def __all_statistics(ctx, date):
     """View the roll statistics for the user's characters."""
-    col = inconnu.mongoclient.inconnu.characters
+    col = inconnu.db.characters
     pipeline = [
         {
           "$match": {

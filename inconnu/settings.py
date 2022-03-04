@@ -7,6 +7,8 @@ import discord
 import pymongo
 import motor.motor_asyncio
 
+import inconnu
+
 
 class ExpPerms(str, Enum):
     """An enum for experience adjustment permissions."""
@@ -31,8 +33,6 @@ class Settings:
     @classmethod
     async def accessible(cls, user):
         """Determine whether we should use accessibility mode."""
-        Settings._prepare()
-
         user_settings = await Settings._fetch_user(user)
         if user_settings.get("settings", {}).get("accessibility", False):
             return True
@@ -197,8 +197,6 @@ class Settings:
             key (str): The setting key
             value: The value to set
         """
-        Settings._prepare()
-
         if isinstance(scope, discord.Guild):
             await Settings._set_guild(scope, key, value)
         elif isinstance(scope, discord.Member):
@@ -212,15 +210,13 @@ class Settings:
     @classmethod
     async def _set_guild(cls, guild: discord.Guild, key:str, value):
         """Enable or disable a guild setting."""
-        Settings._prepare()
-
-        res = await Settings._GUILDS.update_one({ "guild": guild.id }, {
+        res = await inconnu.db.guilds.update_one({ "guild": guild.id }, {
             "$set": {
                 f"settings.{key}": value
             }
         })
         if res.matched_count == 0:
-            await Settings._GUILDS.insert_one({ "guild": guild.id, "settings": { key: value } })
+            await inconnu.db.guilds.insert_one({ "guild": guild.id, "settings": { key: value } })
 
         # Update the cache
         guild_settings = await Settings._fetch_guild(guild)
@@ -231,15 +227,13 @@ class Settings:
     @classmethod
     async def _set_user(cls, user: discord.Member, key:str, value):
         """Enable or disable a user setting."""
-        Settings._prepare()
-
-        res = await Settings._USERS.update_one({ "user": user.id }, {
+        res = await inconnu.db.users.update_one({ "user": user.id }, {
             "$set": {
                 f"settings.{key}": value
             }
         })
         if res.matched_count == 0:
-            await Settings._USERS.insert_one({ "user": user.id, "settings": { key: value } })
+            await inconnu.db.users.insert_one({ "user": user.id, "settings": { key: value } })
 
         # Update the cache
         user_settings = await Settings._fetch_user(user)
@@ -250,8 +244,6 @@ class Settings:
     @classmethod
     async def _fetch_user(cls, user):
         """Fetch a user."""
-        Settings._prepare()
-
         if not isinstance(user, int):
             user = user.id
 
@@ -259,7 +251,7 @@ class Settings:
             return user_settings
 
         # See if it's in the database
-        if not (user_settings := await Settings._USERS.find_one({ "user": user })):
+        if not (user_settings := await inconnu.db.users.find_one({ "user": user })):
             user_settings = { "user": user }
 
         Settings._USER_CACHE[user] = user_settings
@@ -270,30 +262,13 @@ class Settings:
     @classmethod
     async def _fetch_guild(cls, guild):
         """Fetch a guild."""
-        Settings._prepare()
-
         if not isinstance(guild, int):
             guild = guild.id
 
         if (guild_settings := Settings._GUILD_CACHE.get(guild)):
             return guild_settings
 
-        guild_settings = await Settings._GUILDS.find_one({"guild": guild }) or {}
+        guild_settings = await inconnu.db.guilds.find_one({"guild": guild }) or {}
         Settings._GUILD_CACHE[guild] = guild_settings
 
         return guild_settings
-
-
-    @classmethod
-    def _prepare(cls):
-        """Prepare the database."""
-        try:
-            Settings._CLIENT.admin.command('ismaster')
-        except (AttributeError, pymongo.errors.ConnectionFailure):
-            Settings._CLIENT = None
-        finally:
-            if Settings._CLIENT is None:
-                mongo = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-                Settings._CLIENT = mongo
-                Settings._GUILDS = mongo.inconnu.guilds
-                Settings._USERS = mongo.inconnu.users

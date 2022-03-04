@@ -170,7 +170,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
 
 async def __get_probabilities(params, strategy):
     """Retrieve the probabilities from storage or, if not calculated yet, generate them."""
-    col = inconnu.mongoclient.inconnu.probabilities
+    col = inconnu.db.probabilities
 
     probs = await col.find_one({
         "pool": params.pool,

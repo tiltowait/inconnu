@@ -116,7 +116,7 @@ class VChar:
     @property
     def _async_collection(self):
         """The async database collection."""
-        return inconnu.mongoclient.inconnu.characters
+        return inconnu.db.characters
 
 
     async def _async_set_property(self, field, value):

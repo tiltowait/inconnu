@@ -21,10 +21,11 @@ from . import views
 
 char_mgr = CharacterManager()
 
-mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
+_mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
     os.getenv("MONGO_URL"),
     serverSelectionTimeoutMS=1800
 )
+db = _mongoclient.inconnu
 
 def respond(ctx):
     """Get the proper response callable."""

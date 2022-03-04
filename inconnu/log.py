@@ -8,7 +8,7 @@ import inconnu
 
 async def log_event(event_key, **context):
     """Log a bot event."""
-    log = inconnu.mongoclient.inconnu.log
+    log = inconnu.db.log
 
     if event_key in ["update", "update_error", "roll_error", "macro_update_error"]:
         await log.insert_one({

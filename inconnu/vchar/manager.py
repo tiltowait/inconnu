@@ -23,7 +23,7 @@ class CharacterManager:
     @property
     def collection(self):
         """Get the database's characters collection."""
-        return inconnu.mongoclient.inconnu.characters
+        return inconnu.db.characters
 
 
     @staticmethod

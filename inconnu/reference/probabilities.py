@@ -1,4 +1,4 @@
-"""misc/probabilities.py - Calculate the probability of a given roll."""
+"""reference/probabilities.py - Calculate the probability of a given roll."""
 
 from collections import defaultdict
 from types import SimpleNamespace as SN

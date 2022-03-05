@@ -1,4 +1,4 @@
-"""misc/resonance.py - Display a random resonance and temperament."""
+"""reference/resonance.py - Display a random resonance and temperament."""
 
 import random
 

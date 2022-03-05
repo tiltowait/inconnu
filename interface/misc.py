@@ -35,26 +35,6 @@ class MiscCommands(commands.Cog):
 
 
     @slash_command()
-    async def probability(
-        self,
-        ctx: discord.ApplicationContext,
-        roll: Option(str, "The pool, hunger, and difficulty"),
-        reroll: Option(str, "The re-roll strategy to use",
-            choices=[
-                OptionChoice("Re-Roll Failures", "reroll_failures"),
-                OptionChoice("Maximize Crits", "maximize_criticals"),
-                OptionChoice("Avoid Messy", "avoid_messy"),
-                OptionChoice("Risky Avoid Messy", "risky")
-            ],
-            required=False
-        ),
-        character: inconnu.options.character("The character (if using traits)")
-    ):
-        """Calculate outcome probabilities for a given roll."""
-        await inconnu.misc.probability(ctx, roll, reroll, character)
-
-
-    @slash_command()
     async def random(
         self,
         ctx: discord.ApplicationContext,
@@ -62,18 +42,6 @@ class MiscCommands(commands.Cog):
     ):
         """Roll between 1 and a given ceiling (default 100)."""
         await inconnu.misc.percentile(ctx, ceiling)
-
-
-    @slash_command()
-    @commands.guild_only()
-    async def statistics(
-        self,
-        ctx: discord.ApplicationContext,
-        trait: Option(str, "(Optional) A trait to look for", required=False),
-        date: Option(str, "(Optional) YYYYMMDD date to count from", default="19700101")
-    ):
-        """View roll statistics for your characters."""
-        await inconnu.misc.statistics(ctx, trait, date)
 
 
     @slash_command()

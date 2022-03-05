@@ -12,6 +12,7 @@ from . import log
 from . import macros
 from . import misc
 from . import options
+from . import reference
 from .roll import Roll
 from . import settings
 from . import stats

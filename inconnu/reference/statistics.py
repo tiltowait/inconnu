@@ -1,4 +1,4 @@
-"""misc/statistics.py - View character roll statistics"""
+"""reference/statistics.py - View character roll statistics"""
 
 import re
 from collections import defaultdict

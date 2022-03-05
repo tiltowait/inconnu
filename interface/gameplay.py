@@ -75,15 +75,13 @@ class Gameplay(commands.Cog):
 
 
     @slash_command()
-    @commands.guild_only()
     async def cripple(
         self,
         ctx: discord.ApplicationContext,
-        damage: Option(int, "The Aggravated damage sustained", min_value=1),
-        character: inconnu.options.character("The character to cripple")
+        damage: Option(int, "The amount of Aggravated damage sustained this turn", min_value=1),
     ):
         """Generate a random crippling injury based on Aggravated damage."""
-        await inconnu.misc.cripple(ctx, damage, character)
+        await inconnu.misc.cripple(ctx, damage)
 
 
     @slash_command()

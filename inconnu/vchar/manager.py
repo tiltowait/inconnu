@@ -40,7 +40,7 @@ class CharacterManager:
         if isinstance(name, inconnu.VChar):
             return name
 
-        guild, user = self._get_ids(guild, user)
+        guild, user, _ = self._get_ids(guild, user)
 
         if name is not None:
             if (char := self.id_cache.get(name)):
@@ -81,8 +81,7 @@ class CharacterManager:
         Fetch all of a user's characters in a given guild. Adds them to the
         cache if necessary.
         """
-        guild, user = self._get_ids(guild, user)
-        key = f"{guild} {user}"
+        guild, user, key = self._get_ids(guild, user)
 
         if self.all_fetched.get(key, False):
             return self.user_cache.get(key, [])
@@ -212,8 +211,7 @@ class CharacterManager:
 
     def sort_user(self, guild: int, user: int):
         """Sorts the user's characters alphabetically."""
-        guild, user = self._get_ids(guild, user)
-        key = f"{guild} {user}"
+        guild, user, key = self._get_ids(guild, user)
 
         if not (user_chars := self.user_cache.get(key)):
             # Characters are automatically sorted when fetched
@@ -234,7 +232,9 @@ class CharacterManager:
         if user and not isinstance(user, int):
             user = user.id
 
-        return guild, user
+        key = f"{guild} {user}"
+
+        return guild, user, key
 
 
     @staticmethod

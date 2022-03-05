@@ -1,9 +1,7 @@
 """commands.py - Define the commands and event handlers for the bot."""
 
 import asyncio
-import datetime
 import os
-import textwrap
 
 import discord
 import pymongo.errors
@@ -51,7 +49,7 @@ async def finish_setup():
 @bot.event
 async def on_application_command_error(ctx, error):
     """Handle various errors we might encounter."""
-    error = getattr(error, "original", error) # Some pycord errors have `original`, but not all do
+    error = getattr(error, "original", error) # Some pycord errors have `original`, but not all
 
     if isinstance(error, commands.NoPrivateMessage):
         await ctx.respond("Sorry, this command isn't available in DMs!", ephemeral=True)
@@ -63,23 +61,14 @@ async def on_application_command_error(ctx, error):
         # This just means a button tried to disable when its message no longer exists.
         # We don't care, and there's nothing we can do about it anyway.
         return
+
+    # Unknown errors and database errors are logged to a channel
+
     if isinstance(error, pymongo.errors.PyMongoError):
-        errmsg = """\
-        My database is down. Some features are unavailable.
-        This error has been reported. Please try again in a bit!"""
-        await ctx.respond(textwrap.dedent(errmsg), ephemeral=True)
-
-        # Send an error message to the support server
-        if (db_error_channel := os.getenv("DB_ERROR_CHANNEL")) is not None:
-            date = datetime.datetime.now()
-            date = date.strftime("%b %d %Y %H:%M:%S")
-
-            db_error_channel = bot.get_channel(int(db_error_channel))
-            await db_error_channel.send(f"`{date}`: Database error detected.")
-
+        await inconnu.log.report_database_error(bot, ctx)
         return
 
-    raise error
+    await inconnu.log.report_error(bot, ctx, error)
 
 
 # Member Events

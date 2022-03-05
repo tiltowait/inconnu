@@ -28,7 +28,15 @@ setattr(bot, "persistent_views_added", False)
 
 @bot.event
 async def on_ready():
-    """Print a message letting us know the bot logged in to Discord."""
+    """Schedule a task to perform final setup."""
+    task = bot.loop.create_task(finish_setup())
+    await task
+
+
+async def finish_setup():
+    """Print login message and perform final setup."""
+    await bot.wait_until_ready()
+
     print(f"Logged on as {bot.user}!")
     print(f"Playing on {len(bot.guilds)} servers.")
     print(discord.version_info)

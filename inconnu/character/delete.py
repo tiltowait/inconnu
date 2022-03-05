@@ -47,5 +47,5 @@ class _DeletionModal(Modal):
             await asyncio.gather(task1, task2)
         else:
             await inconnu.common.present_error(
-                interaction, "You must type your character's name exactly"
+                interaction, "You must type the character's name exactly."
             )

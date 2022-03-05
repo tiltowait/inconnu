@@ -6,9 +6,7 @@ import re
 from bson.objectid import ObjectId
 
 import inconnu
-from . import errors
-from .vchar import VChar
-from ..constants import INCONNU_ID
+from inconnu.vchar import errors
 
 
 class CharacterManager:
@@ -59,7 +57,7 @@ class CharacterManager:
         """Attempt to fetch a character by ID."""
         if re.search(r"\d", charid):
             if (char_params := await self.collection.find_one({ "_id": ObjectId(charid) })):
-                return VChar(char_params)
+                return inconnu.VChar(char_params)
 
             # Character names can't contain numbers
             raise errors.CharacterNotFoundError(f"`{charid}` is not a valid character name.")
@@ -77,7 +75,7 @@ class CharacterManager:
 
         If the name isn't given, return the user's sole character, if applicable.
         """
-        if isinstance(name, VChar):
+        if isinstance(name, inconnu.VChar):
             return name
 
         guild, user = self.get_ids(guild, user)
@@ -133,7 +131,7 @@ class CharacterManager:
 
         characters = []
         async for char_params in cursor:
-            character = VChar(char_params)
+            character = inconnu.VChar(char_params)
             characters.append(character)
 
             if character.id not in self.id_cache:
@@ -147,7 +145,8 @@ class CharacterManager:
 
     async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
         """Determine whether a user already has a named character."""
-        user_chars = await self.fetchall(guild, user if not is_spc else INCONNU_ID)
+        owner_id = user if not is_spc else inconnu.constants.INCONNU_ID
+        user_chars = await self.fetchall(guild, owner_id)
 
         for character in user_chars:
             if character.name.lower() == name.lower():

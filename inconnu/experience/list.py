@@ -58,11 +58,10 @@ async def __get_text(ctx, character):
 async def __get_contents(ctx, character):
     """Get the event contents used by both embeds and text."""
     events = character.experience_log
-    date_format = "%b %d, %Y"
 
     contents = []
     for index, event in enumerate(reversed(events)):
-        date = event["date"].strftime(date_format)
+        date = f"<t:{int(event['date'].timestamp())}:d>"
         exp = event["amount"]
         reason = event["reason"]
         admin_id = event["admin"]

@@ -75,6 +75,16 @@ class Gameplay(commands.Cog):
 
 
     @slash_command()
+    async def bp(
+        self,
+        ctx,
+        rating: Option(int, "The Blood Potency rating", min_value=0, max_value=10)
+    ):
+        """Look up Blood Potency effects."""
+        await inconnu.misc.blood_potency(ctx, rating)
+
+
+    @slash_command()
     async def cripple(
         self,
         ctx: discord.ApplicationContext,

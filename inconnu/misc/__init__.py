@@ -2,6 +2,7 @@
 
 from .aggheal import aggheal
 from .awaken import awaken
+from .bloodpotency import blood_potency
 from .bol import bol
 from .coinflip import coinflip
 from .cripple import cripple

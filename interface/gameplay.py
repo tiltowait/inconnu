@@ -18,12 +18,12 @@ class Gameplay(commands.Cog):
     async def vr(
         self,
         ctx: discord.ApplicationContext,
-        syntax: Option(str, "The roll syntax"),
+        syntax: Option(str, "The roll syntax: POOL HUNGER DIFFICULTY"),
         comment: Option(str, "A description of the roll", required=False),
         character: inconnu.options.character(),
         player: inconnu.options.player
     ):
-        """Roll the dice."""
+        """Roll the dice. Syntax: POOL HUNGER DIFFICULTY."""
         await inconnu.vr.parse(ctx, syntax, comment, character, player)
 
 

@@ -27,44 +27,6 @@ class CharacterManager:
         return inconnu.db.characters
 
 
-    @staticmethod
-    def get_ids(guild, user):
-        """Get the guild and user IDs."""
-        if guild and not isinstance(guild, int):
-            guild = guild.id
-        if user and not isinstance(user, int):
-            user = user.id
-
-        return guild, user
-
-
-    @staticmethod
-    def user_key(character):
-        """Generate a key for the user cache."""
-        return f"{character.guild} {character.user}"
-
-
-    def _validate(self, guild, user, char):
-        """Validate that a character belongs to the user."""
-        if guild and char.guild != guild:
-            raise ValueError(f"**{char.name}** doesn't belong to this server!")
-        if user and char.user != user:
-            if not self._is_admin(guild, user):
-                raise ValueError(f"**{char.name}** doesn't belong to this user!")
-
-
-    async def _id_fetch(self, charid):
-        """Attempt to fetch a character by ID."""
-        if re.search(r"\d", charid):
-            if (char_params := await self.collection.find_one({ "_id": ObjectId(charid) })):
-                return inconnu.VChar(char_params)
-
-            # Character names can't contain numbers
-            raise errors.CharacterNotFoundError(f"`{charid}` is not a valid character name.")
-
-        return None
-
-
     async def fetchone(self, guild: int, user: int, name: str):
         """
         Fetch a single character.
@@ -78,7 +40,7 @@ class CharacterManager:
         if isinstance(name, inconnu.VChar):
             return name
 
-        guild, user = self.get_ids(guild, user)
+        guild, user = self._get_ids(guild, user)
 
         if name is not None:
             if (char := self.id_cache.get(name)):
@@ -119,7 +81,7 @@ class CharacterManager:
         Fetch all of a user's characters in a given guild. Adds them to the
         cache if necessary.
         """
-        guild, user = self.get_ids(guild, user)
+        guild, user = self._get_ids(guild, user)
         key = f"{guild} {user}"
 
         if self.all_fetched.get(key, False):
@@ -172,7 +134,7 @@ class CharacterManager:
         if not inserted:
             user_chars.append(character)
 
-        key = self.user_key(character)
+        key = self._user_key(character)
         self.user_cache[key] = user_chars
 
         await self.collection.insert_one(character.raw)
@@ -187,7 +149,7 @@ class CharacterManager:
             if character in user_chars:
                 user_chars.remove(character)
 
-            key = self.user_key(character)
+            key = self._user_key(character)
             self.user_cache[key] = user_chars
 
             if character.id in self.id_cache:
@@ -202,7 +164,7 @@ class CharacterManager:
         """Transfer one character to another."""
         # Remove it from the owner's cache
         current_chars = await self.fetchall(character.guild, current_owner)
-        current_key = self.user_key(character)
+        current_key = self._user_key(character)
         current_chars.remove(character)
         self.user_cache[current_key] = current_chars
 
@@ -210,7 +172,7 @@ class CharacterManager:
         await character.set_user(new_owner)
 
         # Only add it to the new owner's cache if they've already loaded
-        new_key = self.user_key(character)
+        new_key = self._user_key(character)
         if (new_chars := self.user_cache.get(new_key)) is not None:
             inserted = False
 
@@ -250,7 +212,7 @@ class CharacterManager:
 
     def sort_user(self, guild: int, user: int):
         """Sorts the user's characters alphabetically."""
-        guild, user = self.get_ids(guild, user)
+        guild, user = self._get_ids(guild, user)
         key = f"{guild} {user}"
 
         if not (user_chars := self.user_cache.get(key)):
@@ -259,6 +221,26 @@ class CharacterManager:
 
         user_chars.sort()
         self.user_cache[key] = user_chars
+
+
+    # Private Methods
+
+
+    @staticmethod
+    def _get_ids(guild, user):
+        """Get the guild and user IDs."""
+        if guild and not isinstance(guild, int):
+            guild = guild.id
+        if user and not isinstance(user, int):
+            user = user.id
+
+        return guild, user
+
+
+    @staticmethod
+    def _user_key(character):
+        """Generate a key for the user cache."""
+        return f"{character.guild} {character.user}"
 
 
     def _is_admin(self, guild: int, user: int):
@@ -275,3 +257,24 @@ class CharacterManager:
 
         user = guild.get_member(user)
         return user.guild_permissions.administrator
+
+
+    def _validate(self, guild, user, char):
+        """Validate that a character belongs to the user."""
+        if guild and char.guild != guild:
+            raise ValueError(f"**{char.name}** doesn't belong to this server!")
+        if user and char.user != user:
+            if not self._is_admin(guild, user):
+                raise ValueError(f"**{char.name}** doesn't belong to this user!")
+
+
+    async def _id_fetch(self, charid):
+        """Attempt to fetch a character by ID."""
+        if re.search(r"\d", charid):
+            if (char_params := await self.collection.find_one({ "_id": ObjectId(charid) })):
+                return inconnu.VChar(char_params)
+
+            # Character names can't contain numbers
+            raise errors.CharacterNotFoundError(f"`{charid}` is not a valid character name.")
+
+        return None

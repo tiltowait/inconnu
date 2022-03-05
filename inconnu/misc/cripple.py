@@ -5,8 +5,7 @@ from types import SimpleNamespace
 
 import discord
 
-from .. import common
-from ..character.display import trackmoji
+import inconnu.common
 
 __HELP_URL = "https://www.inconnu-bot.com"
 
@@ -15,7 +14,7 @@ async def cripple(ctx, damage: int):
     try:
         if damage is None:
             tip = "/cripple `damage:DAMAGE` `character:CHARACTER`"
-            character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+            character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
             damage = character.aggravated_hp
         else:
             character = None # Do not allow explicit damage on a character
@@ -30,7 +29,7 @@ async def cripple(ctx, damage: int):
         injuries = __get_injury(damage)
         await __display_injury(ctx, damage, injuries)
 
-    except common.FetchError:
+    except inconnu.common.FetchError:
         pass
 
 

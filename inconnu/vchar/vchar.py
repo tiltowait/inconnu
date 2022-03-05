@@ -64,27 +64,30 @@ class VChar:
     # Character creation and fetching
 
     @classmethod
-    def create(cls, guild: int, user: int, name: str):
+    def create(cls, **kwargs):
         """
         Create a named character with an associated guild and user.
         All other stats are default, minimum values, and no traits are assigned.
         """
         char_params = {
             "_id": ObjectId(),
-            "guild": guild,
-            "user": user,
-            "name": name,
-            "splat": "vampire",
-            "humanity": 7,
+            "guild": kwargs.pop("guild"),
+            "user": kwargs.pop("user"),
+            "name": kwargs.pop("name"),
+            "splat": kwargs.pop("splat"),
+            "humanity": kwargs.pop("humanity"),
             "stains": 0,
-            "health": "....",
-            "willpower": "...",
+            "health": kwargs.pop("health"),
+            "willpower": kwargs.pop("willpower"),
             "hunger": 1,
-            "potency": 0,
-            "traits": {},
+            "potency": kwargs.pop("potency"),
+            "traits": kwargs.pop("traits"),
             "experience": { "current": 0, "total": 0 },
             "log": { "created": datetime.datetime.utcnow() }
         }
+
+        if kwargs:
+            raise ValueError(f"Received unexpected values: {kwargs}")
 
         return VChar(char_params)
 

@@ -60,19 +60,19 @@ class Wizard:
         """Add the character to the database and inform the user they are done."""
         owner = self.ctx.user.id if not self.parameters.spc else inconnu.constants.INCONNU_ID
 
-        character = VChar.create(self.ctx.guild.id, owner, self.parameters.name)
+        character = VChar.create(
+            guild=self.ctx.guild.id,
+            user=owner,
+            name=self.parameters.name,
+            splat=self.parameters.splat,
+            humanity=self.parameters.humanity,
+            health=self.parameters.hp * inconnu.constants.Damage.NONE,
+            willpower=self.parameters.wp * inconnu.constants.Damage.NONE,
+            potency=self.assigned_traits.pop("Blood Potency", 0),
+            traits=self.assigned_traits
+        )
 
         tasks = []
-        tasks.append(character.set_splat(self.parameters.splat))
-        tasks.append(character.set_humanity(self.parameters.humanity))
-        tasks.append(character.set_health("." * self.parameters.hp))
-        tasks.append(character.set_willpower("." * self.parameters.wp))
-
-        # Set blood potency when applicable
-        if (blood_potency := self.assigned_traits.pop("Blood Potency")):
-            tasks.append(character.set_potency(blood_potency))
-
-        tasks.append(character.assign_traits(self.assigned_traits))
 
         if self.use_accessibility:
             tasks.append(self.__finalize_text(character))

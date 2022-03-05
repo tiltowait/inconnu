@@ -4,10 +4,8 @@ from types import SimpleNamespace
 
 import discord
 
-import inconnu.settings
+import inconnu
 from . import traitcommon
-from .. import common
-from .. import constants
 from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=deleting-traits"
@@ -17,7 +15,7 @@ async def delete(ctx, traits: str, character=None):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
         tip = f"`/traits delete` `traits:{traits}` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
         traits = traits.split()
 
         if not traits:
@@ -33,8 +31,8 @@ async def delete(ctx, traits: str, character=None):
             await __outcome_embed(ctx, character, outcome)
 
     except (ValueError, SyntaxError) as err:
-        await common.present_error(ctx, err, character=character, help_url=__HELP_URL)
-    except common.FetchError:
+        await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
+    except inconnu.common.FetchError:
         pass
 
 
@@ -50,7 +48,8 @@ async def __outcome_text(ctx, character, outcome):
         errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
         contents.append(f"These traits don't exist: {errs}.")
 
-    await ctx.respond("\n".join(contents), ephemeral=True)
+    view = inconnu.views.TraitsView(character, ctx.user)
+    await ctx.respond("\n".join(contents), view=view, ephemeral=True)
 
 
 async def __outcome_embed(ctx, character, outcome):
@@ -72,7 +71,8 @@ async def __outcome_embed(ctx, character, outcome):
         embed.color = 0x000000 if outcome.deleted else 0xff0000
 
 
-    await ctx.respond(embed=embed, ephemeral=True)
+    view = inconnu.views.TraitsView(character, ctx.user)
+    await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 
 async def __delete_traits(character: VChar, *traits) -> list:
@@ -82,7 +82,7 @@ async def __delete_traits(character: VChar, *traits) -> list:
     """
     deleted = []
     errs = []
-    standard_traits = map(lambda t: t.lower(), constants.FLAT_TRAITS())
+    standard_traits = map(lambda t: t.lower(), inconnu.constants.FLAT_TRAITS())
 
     for trait in traits:
         if trait.lower() in standard_traits:

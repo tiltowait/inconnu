@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import discord
 
 import inconnu.settings
+import inconnu.views
 from .parser import parse_traits
 from .. import common
 from ..vchar import VChar
@@ -40,7 +41,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
         traits = parse_traits(*traits.split())
         outcome = await __handle_traits(character, traits, allow_overwrite)
 
-        await __display_results(ctx, outcome, character.name)
+        await __display_results(ctx, outcome, character)
 
     except (ValueError, SyntaxError) as err:
         await common.present_error(
@@ -99,15 +100,15 @@ def __partition_traits(character, traits):
     return SimpleNamespace(owned=owned, unowned=unowned)
 
 
-async def __display_results(ctx, outcome, char_name: str):
+async def __display_results(ctx, outcome, character: VChar):
     """Display the results of the operation."""
     if await inconnu.settings.accessible(ctx.user):
-        await __results_text(ctx, outcome, char_name)
+        await __results_text(ctx, outcome, character)
     else:
-        await __results_embed(ctx, outcome, char_name)
+        await __results_embed(ctx, outcome, character)
 
 
-async def __results_embed(ctx, outcome, char_name: str):
+async def __results_embed(ctx, outcome, character: VChar):
     """Display the results of the operation in a nice embed."""
     action_present = "Update" if outcome.updating else "Assign"
     action_past = "Updated" if outcome.updating else "Assigned"
@@ -136,7 +137,7 @@ async def __results_embed(ctx, outcome, char_name: str):
         title=title,
         color=color
     )
-    embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
+    embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
     if outcome.assigned:
         assigned = "\n".join(outcome.assigned)
         embed.add_field(name=action_past, value=assigned)
@@ -154,12 +155,13 @@ async def __results_embed(ctx, outcome, char_name: str):
             field_name = "Error! You already have these traits"
         embed.add_field(name=field_name, value=errs, inline=False)
 
-    await ctx.respond(embed=embed, ephemeral=True)
+    view = inconnu.views.TraitsView(character, ctx.user)
+    await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 
-async def __results_text(ctx, outcome, char_name: str):
+async def __results_text(ctx, outcome, character: VChar):
     """Display the results in plain text."""
-    contents = [f"**{char_name}: Trait Assignment**\n"]
+    contents = [f"**{character.name}: Trait Assignment**\n"]
 
     if outcome.assigned:
         assigned = ", ".join(outcome.assigned)
@@ -183,4 +185,5 @@ async def __results_text(ctx, outcome, char_name: str):
     if footer is not None:
         contents.append(f"```{footer}```")
 
-    await ctx.respond("\n".join(contents), ephemeral=True)
+    view = inconnu.views.TraitsView(character, ctx.user)
+    await ctx.respond("\n".join(contents), view=view, ephemeral=True)

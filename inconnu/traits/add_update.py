@@ -62,7 +62,7 @@ async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
         overwriting (bool): Whether we allow overwrites
     All traits and ratings are assumed to be valid at this time.
     """
-    partition = character.owned_traits(**traits)
+    partition = __partition_traits(character, traits)
 
     if overwriting:
         error_traits = list(partition.unowned.keys())
@@ -82,6 +82,21 @@ async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
         errors=error_traits,
         updating=overwriting
     )
+
+
+def __partition_traits(character, traits):
+    """Partition the list of traits into owned and unowned groups."""
+    my_traits = character.traits
+    owned = {}
+    unowned = {}
+
+    for trait, rating in traits.items():
+        if trait.lower() in map(lambda t: t.lower(), my_traits.keys()):
+            owned[trait] = rating
+        else:
+            unowned[trait] = rating
+
+    return SimpleNamespace(owned=owned, unowned=unowned)
 
 
 async def __display_results(ctx, outcome, char_name: str):

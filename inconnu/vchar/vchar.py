@@ -523,21 +523,6 @@ class VChar:
         return trait
 
 
-    def owned_traits(self, **traits):
-        """Partition the list of traits into owned and unowned groups."""
-        my_traits = self.traits
-        owned = {}
-        unowned = {}
-
-        for trait, rating in traits.items():
-            if trait.lower() in map(lambda t: t.lower(), my_traits.keys()):
-                owned[trait] = rating
-            else:
-                unowned[trait] = rating
-
-        return SimpleNamespace(owned=owned, unowned=unowned)
-
-
     # Macros!
 
     @property

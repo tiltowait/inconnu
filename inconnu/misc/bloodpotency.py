@@ -4,25 +4,27 @@
 import discord
 
 import inconnu.common
+import inconnu.settings
 
 
 async def blood_potency(ctx, rating: int):
     """Display the Blood Potency rating."""
     potency = _RATINGS[rating]
 
-    embed = discord.Embed(title=f"Blood Potency {rating}")
+    # Build the fields for text or embed display
+    fields = []
 
     surge = "Add " + inconnu.common.pluralize(potency["surge"], "die")
-    embed.add_field(name="Blood Surge", value=surge, inline=True)
+    fields.append(("Blood Surge", surge))
 
     mend = inconnu.common.pluralize(potency["mend"], "pt")
-    embed.add_field(name="Damage Mended", value=f"{mend}. Superficial Damage", inline=True)
+    fields.append(("Damage Mended", f"{mend}. Superficial Damage"))
 
     if (bonus := potency["bonus"]) == 0:
         bonus = "None"
     else:
         bonus = f"+{bonus}"
-    embed.add_field(name="Power Bonus", value=bonus, inline=True)
+    fields.append(("Power Bonus", bonus))
 
     reroll = potency["reroll"]
     match reroll:
@@ -32,13 +34,37 @@ async def blood_potency(ctx, rating: int):
             reroll = "Level 1"
         case _:
             reroll = f"Level {reroll} and below"
-    embed.add_field(name="Discipline Re-Roll", value=reroll, inline=True)
+    fields.append(("Discipline Re-Roll", reroll))
 
-    embed.add_field(name="Bane Severity", value=potency["severity"])
-    embed.add_field(name="Feeding Penalty", value=potency["penalty"])
+    fields.append(("Bane Severity", potency["severity"]))
+    fields.append(("Feeding Penalty", potency["penalty"]))
+
+    # Display it!
+
+    if await inconnu.settings.accessible(ctx.user):
+        await __display_text(ctx, rating, fields)
+    else:
+        await __display_embed(ctx, rating, fields)
+
+
+async def __display_embed(ctx, rating, fields):
+    """Display the Blood Potency in an embed."""
+    embed = discord.Embed(title=f"Blood Potency {rating}")
     embed.set_footer(text="V5 Core p.216")
 
+    for field, value in fields:
+        embed.add_field(name=field, value=value, inline=True)
+
     await ctx.respond(embed=embed)
+
+
+async def __display_text(ctx, rating, fields):
+    """Display the Blood Potency in plain text."""
+    message = f"**Blood Potency {rating}**\n\n"
+    message += "\n".join(map(lambda f: f"**{f[0]}:** {f[1]}", fields))
+    message += "\n\n*V5 Core p.216*"
+
+    await ctx.respond(message)
 
 
 _RATINGS = {

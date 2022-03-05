@@ -37,6 +37,7 @@ async def on_ready():
 
     await __set_presence()
     cull_inactive.start()
+    inconnu.char_mgr.bot = bot
 
 
 @bot.event

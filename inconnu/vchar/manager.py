@@ -19,6 +19,9 @@ class CharacterManager:
         self.user_cache = {} # [guild: [user: [VChar]]]
         self.id_cache = {} # [char_id: VChar]
 
+        # Set after construction. Used to check whether a user is an admin
+        self.bot = None
+
 
     @property
     def collection(self):
@@ -43,13 +46,13 @@ class CharacterManager:
         return f"{character.guild} {character.user}"
 
 
-    @staticmethod
-    def _validate(guild, user, char):
+    def _validate(self, guild, user, char):
         """Validate that a character belongs to the user."""
         if guild and char.guild != guild:
             raise ValueError(f"**{char.name}** doesn't belong to this server!")
         if user and char.user != user:
-            raise ValueError(f"**{char.name}** doesn't belong to this user!")
+            if not self._is_admin(guild, user):
+                raise ValueError(f"**{char.name}** doesn't belong to this user!")
 
 
     async def _id_fetch(self, charid):
@@ -257,3 +260,19 @@ class CharacterManager:
 
         user_chars.sort()
         self.user_cache[key] = user_chars
+
+
+    def _is_admin(self, guild: int, user: int):
+        """Determine whether the user is an administrator."""
+        if not self.bot:
+            return False
+
+        if not isinstance(user, int):
+            # We've been sent a Member or User and can directly check permissions
+            return user.guild_permissions.administrator
+
+        if isinstance(guild, int):
+            guild = self.bot.get_guild(guild)
+
+        user = guild.get_member(user)
+        return user.guild_permissions.administrator

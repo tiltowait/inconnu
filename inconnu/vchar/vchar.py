@@ -771,11 +771,6 @@ class VChar:
         self._async_collection.update_one(self.find_query, { "$inc": { f"log.{key}": increment } })
 
 
-    async def log_injury(self, injury: str):
-        """Log a crippling injury."""
-        self._async_collection.update_one(self.find_query, { "$push": { "injuries": injury } })
-
-
     async def __update_log(self, key, old_value, new_value):
         """
         Updates the character log.

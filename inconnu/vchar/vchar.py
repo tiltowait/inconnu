@@ -542,28 +542,25 @@ class VChar:
             if trait in ["Resolve", "Composure"]:
                 current_rating = self._params[_Properties.TRAITS][trait]
                 delta = rating - current_rating
-                counter["Willpower"] += delta
+                counter["willpower"] += delta
             elif trait == "Stamina":
                 current_rating = self._params[_Properties.TRAITS][trait]
                 delta = rating - current_rating
-                counter["Health"] += delta
+                counter["health"] += delta
 
             canonical_traits[trait] = rating
             finalized_traits[key] = rating
             self._params[_Properties.TRAITS][trait] = rating
 
-        # Determine HP/WP gain, if any
         tasks = []
+
+        # Determine HP/WP gain, if any
         adjustments = []
 
-        if (hp_delta := counter["Health"]):
-            new_rating = len(self.health) + hp_delta
-            tasks.append(self.adjust_tracker_rating(_Properties.HEALTH, new_rating))
-            adjustments.append("Health")
-        if (wp_delta := counter["Willpower"]):
-            new_rating = len(self.willpower) + wp_delta
-            tasks.append(self.adjust_tracker_rating(_Properties.WILLPOWER, new_rating))
-            adjustments.append("Willpower")
+        for track, delta in counter.items():
+            adjustments.append(track.title())
+            new_rating = len(getattr(self, track)) + delta
+            tasks.append(self.adjust_tracker_rating(track, new_rating))
 
         if adjustments:
             adjustment = " and ".join(adjustments)

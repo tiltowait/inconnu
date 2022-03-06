@@ -75,27 +75,35 @@ async def update(
         if (impairment := character.impairment) is not None:
             updates.append(impairment)
 
-        log_task = inconnu.log.log_event("update",
+        tasks = [inconnu.log.log_event("update",
             user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
             syntax=" ".join(args)
-        )
+        )]
 
         # Ignore generated output if we got a custom message
         if update_message is None:
             update_message = "\n".join(updates)
 
-        display_task = display(
+        if update_message: # May not always be true in the future
+            tasks.append(inconnu.common.report_update(
+                ctx=ctx,
+                character=character,
+                title="Character Updated",
+                message=f"__{ctx.user.mention} updated {character.name}:__\n" + update_message
+            ))
+
+        tasks.append(display(
             ctx,
             character,
             fields=fields,
             color=color,
             owner=player,
             message=update_message
-        )
+        ))
 
-        await asyncio.gather(log_task, display_task)
+        await asyncio.gather(*tasks)
 
     except (SyntaxError, ValueError) as err:
         log_task = inconnu.log.log_event("update_error",

@@ -10,16 +10,18 @@ from discord.ext import commands, tasks
 
 import inconnu
 
-intents = discord.Intents.default()
-intents.members = True # pylint: disable=assigning-non-slot
 
 # Check if we're in dev mode
 if (debug_guild := os.getenv("DEBUG")) is not None:
     print("Debugging on", debug_guild)
     debug_guild = [int(debug_guild)]
 
+
+# Set up the bot instance
+intents = discord.Intents(guilds=True, members=True)
 bot = discord.Bot(intents=intents, debug_guilds=debug_guild)
 setattr(bot, "persistent_views_added", False)
+setattr(bot, "welcomed", False)
 
 
 # General Events
@@ -33,6 +35,9 @@ async def on_ready():
 
 async def finish_setup():
     """Print login message and perform final setup."""
+    if bot.welcomed:
+        return
+
     await bot.wait_until_ready()
 
     print(f"Logged on as {bot.user}!")
@@ -44,6 +49,7 @@ async def finish_setup():
     await __set_presence()
     cull_inactive.start()
     inconnu.char_mgr.bot = bot
+    bot.welcomed = True
 
 
 @bot.event

@@ -112,7 +112,7 @@ async def __display_results(ctx, outcome, character: VChar):
         tasks.append(__results_embed(ctx, outcome, character))
 
     # Message for the update channel
-    if outcome.updating and outcome.assigned:
+    if outcome.assigned:
         msg = f"__{ctx.user.mention} updated {character.name}'s traits:__\n"
         msg += ", ".join(outcome.assigned)
         tasks.append(inconnu.common.report_update(

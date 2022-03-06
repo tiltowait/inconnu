@@ -527,26 +527,28 @@ class VChar:
         """
         finalized_traits = {}
         canonical_traits = {}
-        current_traits = {t.lower(): t for t in self.traits.keys()}
+
+        # This semi-funky structure (example: {stamina: (Stamina, 2)}) is used
+        # to make it easy to quickly get the current rating and canonical name
+        # for a trait. We could use VChar.find_trait(), but it's slower because
+        # of how it tries to do partial matches.
+        current_traits = {t.lower(): (t, r) for t, r in self.traits.items()}
 
         # WHen the user ups Composure, Resolve, or Stamina, we want to modify
-        # HP or WP by the appropriate amount as well.
+        # HP or WP by the appropriate amount as well. We use a Counter to track
+        # the amount by which the appropriate track should change.
         counter = Counter()
 
         # When updating, we want to keep the old capitalization
         for trait, rating in traits.items():
-            trait = current_traits.get(trait.lower(), trait)
+            trait, current_rating = current_traits[trait]
             key = f"traits.{trait}"
 
             # Check for Resolve or Composure
             if trait in ["Resolve", "Composure"]:
-                current_rating = self._params[_Properties.TRAITS][trait]
-                delta = rating - current_rating
-                counter["willpower"] += delta
+                counter["willpower"] += rating - current_rating
             elif trait == "Stamina":
-                current_rating = self._params[_Properties.TRAITS][trait]
-                delta = rating - current_rating
-                counter["health"] += delta
+                counter["health"] += rating - current_rating
 
             canonical_traits[trait] = rating
             finalized_traits[key] = rating

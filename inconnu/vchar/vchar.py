@@ -559,9 +559,10 @@ class VChar:
         adjustments = []
 
         for track, delta in counter.items():
-            adjustments.append(track.title())
-            new_rating = len(getattr(self, track)) + delta
-            tasks.append(self.adjust_tracker_rating(track, new_rating))
+            if delta:
+                adjustments.append(track.title())
+                new_rating = len(getattr(self, track)) + delta
+                tasks.append(self.adjust_tracker_rating(track, new_rating))
 
         if adjustments:
             adjustment = " and ".join(adjustments)

@@ -135,6 +135,17 @@ def __error_text(
     return "\n".join(contents)
 
 
+async def report_update(*, ctx, character, title, message):
+    """Display character updates in the update channel."""
+    if (update_channel := await inconnu.settings.update_channel(ctx.guild)):
+        embed = discord.Embed(title=title, description=message)
+        embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
+
+        mentions = discord.AllowedMentions(users=False)
+
+        await update_channel.send(embed=embed, allowed_mentions=mentions)
+
+
 async def select_character(ctx, err, help_url, tip, player=None):
     """
     A prompt for the user to select a character from a list.

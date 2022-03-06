@@ -111,12 +111,16 @@ async def __display_results(ctx, outcome, character: VChar):
     else:
         tasks.append(__results_embed(ctx, outcome, character))
 
-    if outcome.updating and (update_channel := await inconnu.settings.update_channel(ctx.guild)):
-        msg = f"{ctx.user.mention} updated **{character.name}'s** traits: "
+    # Message for the update channel
+    if outcome.updating:
+        msg = f"{ctx.user.mention} updated {character.name}'s traits:\n"
         msg += ", ".join(outcome.assigned)
-        embed = discord.Embed(title="Character Update", description=msg)
-        mentions = discord.AllowedMentions(users=False)
-        tasks.append(update_channel.send(embed=embed, allowed_mentions=mentions))
+        tasks.append(inconnu.common.report_update(
+            ctx=ctx,
+            character=character,
+            title="Traits Updated",
+            message=msg
+        ))
 
     await asyncio.gather(*tasks)
 

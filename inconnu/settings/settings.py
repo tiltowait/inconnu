@@ -13,6 +13,9 @@ class Settings:
     _guild_cache = {}
     _user_cache = {}
 
+
+    # Accessibility
+
     async def accessible(self, user):
         """Determine whether we should use accessibility mode."""
         user_settings = await self._fetch_user(user)
@@ -51,6 +54,8 @@ class Settings:
 
         return response
 
+
+    # XP Permissions
 
     async def can_adjust_current_xp(self, ctx) -> bool:
         """Whether the user can adjust their current XP."""
@@ -111,6 +116,7 @@ class Settings:
         return response
 
 
+    # Oblivion stains
 
     async def oblivion_stains(self, guild) -> list:
         """Retrieve the Rouse results that grant Oblivion stains."""
@@ -137,6 +143,26 @@ class Settings:
 
         await self._set_key(ctx.guild, "oblivion_stains", stains)
         return response
+
+
+    # Update Channels
+
+    async def update_channel(self, guild: discord.Guild):
+        """Retrieve the ID of the guild's update channel, if any."""
+        guild_settings = await self._fetch_guild(guild)
+        if (update_channel := guild_settings.update_channel):
+            return guild.get_channel(update_channel)
+
+        return None
+
+
+    async def set_update_channel(self, ctx, channel: discord.TextChannel):
+        """Set the guild's update channel."""
+        if not ctx.user.guild_permissions.administrator:
+            raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
+
+        await self._set_key(ctx.guild, "update_channel", channel.id)
+        return f"Set update channel to {channel.mention}."
 
 
     async def _set_key(self, scope, key: str, value):

@@ -82,6 +82,11 @@ class Wizard:
         tasks.append(inconnu.char_mgr.register(character))
         tasks.append(_deregister_wizard())
 
+        if (update_channel := await inconnu.settings.update_channel(self.ctx.guild)):
+            msg = f"**{self.ctx.user.mention}** created **{character.name}**."
+            mentions = discord.AllowedMentions(users=False)
+            tasks.append(update_channel.send(msg, allowed_mentions=mentions))
+
         self.view.stop()
         await asyncio.gather(*tasks)
 

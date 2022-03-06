@@ -57,6 +57,10 @@ class SettingsCommands(commands.Cog):
             ],
             required=False
         ),
+        update_channel: Option(
+            discord.TextChannel,
+            "A channel where character updates will be posted",
+            required=False),
         accessibility: Option(int, "Whether to enable or disable accessibility",
             choices=[
                 OptionChoice("Yes", 1),
@@ -74,6 +78,10 @@ class SettingsCommands(commands.Cog):
 
         if oblivion_stains is not None:
             response = await inconnu.settings.set_oblivion_stains(ctx, oblivion_stains)
+            responses.append(response)
+
+        if update_channel is not None:
+            response = await inconnu.settings.set_update_channel(ctx, update_channel)
             responses.append(response)
 
         if accessibility is not None:

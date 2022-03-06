@@ -41,10 +41,18 @@ class _DeletionModal(Modal):
         user_input = self.children[0].value
 
         if user_input == self.character.name:
+            tasks = []
+
             msg = f"Deleted **{self.character.name}**!"
-            task1 = inconnu.char_mgr.remove(self.character)
-            task2 = interaction.response.send_message(msg)
-            await asyncio.gather(task1, task2)
+            tasks.append(inconnu.char_mgr.remove(self.character))
+            tasks.append(interaction.response.send_message(msg))
+
+            if (update_channel := await inconnu.settings.update_channel(interaction.guild)):
+                deletion_msg = f"**{interaction.user.mention}** deleted **{self.character.name}**."
+                mentions = discord.AllowedMentions(users=False)
+                tasks.append(update_channel.send(deletion_msg, allowed_mentions=mentions))
+
+            await asyncio.gather(*tasks)
         else:
             await inconnu.common.present_error(
                 interaction, "You must type the character's name exactly."

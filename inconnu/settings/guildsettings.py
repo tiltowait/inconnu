@@ -17,6 +17,7 @@ class GuildSettings:
         self.accessibility = settings.get("accessibility", False)
         self.experience_permissions = settings.get("experience_permissions", ExpPerms.UNRESTRICTED)
         self.oblivion_stains = settings.get("oblivion_stains", [1, 10])
+        self.update_channel = settings.get("update_channel")
 
 
 class ExpPerms(str, Enum):

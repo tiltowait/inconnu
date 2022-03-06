@@ -101,11 +101,13 @@ class SettingsCommands(commands.Cog):
         accessibility = "ON" if await inconnu.settings.accessible(ctx.user) else "OFF"
         experience_perms = await inconnu.settings.xp_permissions(ctx.guild)
         oblivion_stains = await inconnu.settings.oblivion_stains(ctx.guild) or ["Never"]
-        oblivion_stains = map(lambda s: f"`{s}`", oblivion_stains)
+        oblivion_stains = map(inconnu.fence, oblivion_stains)
+        update_channel = await inconnu.settings.update_channel(ctx.guild)
 
         msg = f"Accessibility mode: `{accessibility}`"
         msg += "\nOblivion Rouse stains: " + " or ".join(oblivion_stains)
         msg += "\n" + experience_perms
+        msg += "\nUpdate channel: " + update_channel.mention if update_channel else "`None`"
 
         embed = discord.Embed(
             title="Server Settings",

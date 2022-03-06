@@ -17,7 +17,7 @@ class Wizard:
 
     def __init__(self, ctx, parameters, accessible):
         if "DEBUG" in os.environ:
-            self.core_traits = ["Resolve", "Composure"]
+            self.core_traits = ["Stamina", "Resolve", "Composure"]
         else:
             self.core_traits = inconnu.constants.FLAT_TRAITS()
 

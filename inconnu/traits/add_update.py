@@ -74,14 +74,15 @@ async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
         unassigned = [k for k, v in partition.unowned.items() if v is None]
         to_assign = {k: v for k, v in partition.unowned.items() if v is not None}
 
-    assigned = await character.assign_traits(to_assign)
+    track_adjustment, assigned = await character.assign_traits(to_assign)
     assigned = [f"{trait}: `{rating}`" for trait, rating in assigned.items()]
 
     return SimpleNamespace(
         assigned=assigned,
         unassigned=unassigned,
         errors=error_traits,
-        updating=overwriting
+        updating=overwriting,
+        track_adjustment=track_adjustment
     )
 
 
@@ -138,6 +139,8 @@ async def __results_embed(ctx, outcome, character: VChar):
         color=color
     )
     embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
+    embed.set_footer(text=outcome.track_adjustment)
+
     if outcome.assigned:
         assigned = "\n".join(outcome.assigned)
         embed.add_field(name=action_past, value=assigned)
@@ -145,7 +148,6 @@ async def __results_embed(ctx, outcome, character: VChar):
     if outcome.unassigned:
         unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
         embed.add_field(name="No value given", value=unassigned)
-        embed.set_footer(text="Run the command again to give ratings for the unassigned traits.")
 
     if outcome.errors:
         errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
@@ -168,11 +170,9 @@ async def __results_text(ctx, outcome, character: VChar):
         action = "Updated" if outcome.updating else "Assigned"
         contents.append(f"**{action}:** {assigned}")
 
-    footer = None
     if outcome.unassigned:
         unassigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.unassigned))
         contents.append(f"**No value given:** {unassigned}")
-        footer = "Run the command again to assign ratings to the unassigned traits."
 
     if outcome.errors:
         errs = ", ".join(map(lambda trait: f"`{trait}`", outcome.errors))
@@ -182,8 +182,7 @@ async def __results_text(ctx, outcome, character: VChar):
             err_field = "**Error!** You already have " + errs
         contents.append(err_field)
 
-    if footer is not None:
-        contents.append(f"```{footer}```")
+    contents.append(f"```{outcome.track_adjustment}```")
 
     view = inconnu.views.TraitsView(character, ctx.user)
     await ctx.respond("\n".join(contents), view=view, ephemeral=True)

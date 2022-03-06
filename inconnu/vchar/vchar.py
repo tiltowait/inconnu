@@ -4,6 +4,7 @@
 import asyncio
 import datetime
 import math
+from collections import Counter
 from enum import Enum
 
 from collections import OrderedDict
@@ -211,6 +212,35 @@ class VChar:
     async def set_health(self, new_health):
         """Set the character's health."""
         await self._async_set_property(_Properties.HEALTH, new_health)
+
+
+    async def adjust_tracker_rating(self, track: str, new_rating: int) -> bool:
+        """Adjust a character's Health or Willpower rating. Returns true if changed."""
+        if track == _Properties.HEALTH:
+            current_rating = len(self.health)
+            current_track = self.health
+            method = self.set_health
+        elif track == _Properties.WILLPOWER:
+            current_rating = len(self.willpower)
+            current_track = self.willpower
+            method = self.set_willpower
+        else:
+            raise ValueError(f"Invalid tracker: {track}.")
+
+        delta = new_rating - current_rating
+        if delta > 0:
+            # Increasing the track
+            new_track = Damage.NONE * delta + current_track
+        elif delta < 0:
+            # Decreasing the track
+            reduction = abs(delta)
+            new_track = current_track[reduction:]
+        else:
+            # No change
+            return False
+
+        await method(new_track)
+        return True
 
 
     @property
@@ -490,7 +520,7 @@ class VChar:
         raise errors.AmbiguousTraitError(trait, matches)
 
 
-    async def assign_traits(self, traits: dict):
+    async def assign_traits(self, traits: dict) -> str:
         """
         Add traits to the collection.
         Overwrites old traits if they exist.
@@ -499,17 +529,54 @@ class VChar:
         canonical_traits = {}
         current_traits = {t.lower(): t for t in self.traits.keys()}
 
+        # WHen the user ups Composure, Resolve, or Stamina, we want to modify
+        # HP or WP by the appropriate amount as well.
+        counter = Counter()
+
         # When updating, we want to keep the old capitalization
         for trait, rating in traits.items():
             trait = current_traits.get(trait.lower(), trait)
             key = f"traits.{trait}"
 
+            # Check for Resolve or Composure
+            if trait in ["Resolve", "Composure"]:
+                current_rating = self._params[_Properties.TRAITS][trait]
+                delta = rating - current_rating
+                counter["Willpower"] += delta
+            elif trait == "Stamina":
+                current_rating = self._params[_Properties.TRAITS][trait]
+                delta = rating - current_rating
+                counter["Health"] += delta
+
             canonical_traits[trait] = rating
             finalized_traits[key] = rating
             self._params[_Properties.TRAITS][trait] = rating
 
-        await self._async_collection.update_one(self.find_query, { "$set": finalized_traits })
-        return canonical_traits
+        # Determine HP/WP gain, if any
+        tasks = []
+        adjustments = []
+
+        if (hp_delta := counter["Health"]):
+            new_rating = len(self.health) + hp_delta
+            tasks.append(self.adjust_tracker_rating(_Properties.HEALTH, new_rating))
+            adjustments.append("Health")
+        if (wp_delta := counter["Willpower"]):
+            new_rating = len(self.willpower) + wp_delta
+            tasks.append(self.adjust_tracker_rating(_Properties.WILLPOWER, new_rating))
+            adjustments.append("Willpower")
+
+        if adjustments:
+            adjustment = " and ".join(adjustments)
+            verb = "have" if len(adjustments) > 1 else "has"
+            adjustment_text = f"{adjustment} {verb} been adjusted accordingly."
+        else:
+            adjustment_text = ""
+
+        tasks.append(self._async_collection.update_one(self.find_query, {
+            "$set": finalized_traits
+        }))
+        await asyncio.gather(*tasks)
+        return adjustment_text, canonical_traits
 
 
     async def delete_trait(self, trait: str):

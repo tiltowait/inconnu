@@ -4,10 +4,9 @@
 import asyncio
 import datetime
 import math
-from collections import Counter
-from enum import Enum
 
-from collections import OrderedDict
+from enum import Enum
+from collections import Counter, OrderedDict
 from types import SimpleNamespace
 
 from bson.objectid import ObjectId
@@ -540,8 +539,8 @@ class VChar:
         counter = Counter()
 
         # When updating, we want to keep the old capitalization
-        for trait, rating in traits.items():
-            trait, current_rating = current_traits[trait]
+        for input_trait, rating in traits.items():
+            trait, current_rating = current_traits[input_trait.lower()]
             key = f"traits.{trait}"
 
             # Check for Resolve or Composure

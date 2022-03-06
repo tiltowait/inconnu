@@ -540,7 +540,7 @@ class VChar:
 
         # When updating, we want to keep the old capitalization
         for input_trait, rating in traits.items():
-            trait, current_rating = current_traits[input_trait.lower()]
+            trait, current_rating = current_traits.get(input_trait.lower(), (input_trait, 0))
             key = f"traits.{trait}"
 
             # Check for Resolve or Composure

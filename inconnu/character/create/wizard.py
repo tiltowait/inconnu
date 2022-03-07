@@ -87,7 +87,7 @@ class Wizard:
             ctx=self.ctx,
             character=character,
             title="Character Created",
-            message=f"{self.ctx.user.mention} created {character.name}."
+            message=f"{self.ctx.user.mention} created **{character.name}**."
         ))
 
         self.view.stop()

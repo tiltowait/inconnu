@@ -34,7 +34,7 @@ async def report_database_error(bot, ctx):
 
     # Send an error message to the support server
     if (db_error_channel := os.getenv("DB_ERROR_CHANNEL")) is not None:
-        timestamp = int(datetime.datetime.now().timestamp())
+        timestamp = int(discord.utils.utcnow().timestamp())
 
         db_error_channel = bot.get_channel(int(db_error_channel))
         await db_error_channel.send(f"<t:{timestamp}>: Database error detected.")
@@ -49,7 +49,7 @@ async def report_error(bot, ctx, error):
         title=type(error).__name__,
         description="\n".join(traceback.format_exception(error)),
         color=0xff0000,
-        timestamp=datetime.datetime.now()
+        timestamp=discord.utils.utcnow()
     )
     embed.set_author(
         name=f"{ctx.user.name} on {ctx.guild.name}",

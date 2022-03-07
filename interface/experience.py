@@ -77,6 +77,17 @@ class ExperienceCommands(commands.Cog):
         await inconnu.experience.list_events(ctx, character, player, False)
 
 
+    bulk = SlashCommandGroup("bulk", "Bulk experience awarding")
+    bulk_award = bulk.create_subgroup("award", "Bulk experience awarding")
+
+    @bulk_award.command(name="xp")
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def bulk_award_xp(self, ctx):
+        """Award experience en masse."""
+        await inconnu.experience.bulk_award_xp(ctx)
+
+
 def setup(bot):
     """Add the cog to the bot."""
     bot.add_cog(ExperienceCommands(bot))

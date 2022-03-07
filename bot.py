@@ -20,8 +20,8 @@ if (debug_guild := os.getenv("DEBUG")) is not None:
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True)
 bot = discord.Bot(intents=intents, debug_guilds=debug_guild)
-setattr(bot, "persistent_views_added", False)
-setattr(bot, "welcomed", False)
+bot.persistent_views_added = False
+bot.welcomed = False
 
 
 # General Events

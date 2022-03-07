@@ -47,10 +47,12 @@ class _DeletionModal(Modal):
             tasks.append(inconnu.char_mgr.remove(self.character))
             tasks.append(interaction.response.send_message(msg))
 
-            if (update_channel := await inconnu.settings.update_channel(interaction.guild)):
-                deletion_msg = f"**{interaction.user.mention}** deleted **{self.character.name}**."
-                mentions = discord.AllowedMentions(users=False)
-                tasks.append(update_channel.send(deletion_msg, allowed_mentions=mentions))
+            tasks.append(inconnu.common.report_update(
+                ctx=interaction,
+                character=self.character,
+                title="Character Deleted",
+                message=f"**{interaction.user.mention}** deleted **{self.character.name}**."
+            ))
 
             await asyncio.gather(*tasks)
         else:

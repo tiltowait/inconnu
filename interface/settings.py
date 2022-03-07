@@ -1,4 +1,5 @@
 """interface/settings.py - Settings-related commands."""
+# pylint: disable=no-self-use
 
 import discord
 from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
@@ -95,6 +96,15 @@ class SettingsCommands(commands.Cog):
             await ctx.respond("You didn't give me anything to set!", ephemeral=True)
 
 
+    @settings.command(name="unset_update_channel")
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def _unset_update_channel(self, ctx):
+        """Un-sets the update channel."""
+        response = await inconnu.settings.set_update_channel(ctx, None)
+        await ctx.respond(response)
+
+
     @settings.command(name="show")
     async def settings_show(self, ctx):
         """Display the settings in effect."""
@@ -107,7 +117,7 @@ class SettingsCommands(commands.Cog):
         msg = f"Accessibility mode: `{accessibility}`"
         msg += "\nOblivion Rouse stains: " + " or ".join(oblivion_stains)
         msg += "\n" + experience_perms
-        msg += "\nUpdate channel: " + update_channel.mention if update_channel else "`None`"
+        msg += "\nUpdate channel: " + (update_channel.mention if update_channel else "`None`")
 
         embed = discord.Embed(
             title="Server Settings",

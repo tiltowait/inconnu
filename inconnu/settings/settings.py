@@ -161,8 +161,13 @@ class Settings:
         if not ctx.user.guild_permissions.administrator:
             raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
 
-        await self._set_key(ctx.guild, "update_channel", channel.id)
-        return f"Set update channel to {channel.mention}."
+        if channel:
+            await self._set_key(ctx.guild, "update_channel", channel.id)
+            return f"Set update channel to {channel.mention}."
+
+        # Un-setting
+        await self._set_key(ctx.guild, "update_channel", None)
+        return "Un-set the update channel."
 
 
     async def _set_key(self, scope, key: str, value):

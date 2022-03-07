@@ -82,6 +82,14 @@ class Wizard:
         tasks.append(inconnu.char_mgr.register(character))
         tasks.append(_deregister_wizard())
 
+        # Update channel message
+        tasks.append(inconnu.common.report_update(
+            ctx=self.ctx,
+            character=character,
+            title="Character Created",
+            message=f"{self.ctx.user.mention} created **{character.name}**."
+        ))
+
         self.view.stop()
         await asyncio.gather(*tasks)
 

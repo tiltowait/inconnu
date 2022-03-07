@@ -29,6 +29,7 @@ _mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
 )
 db = _mongoclient.inconnu
 
+
 def respond(ctx):
     """Get the proper response callable."""
     if isinstance(ctx, discord.Interaction):
@@ -36,3 +37,8 @@ def respond(ctx):
             return ctx.followup.send
         return ctx.response.send_message
     return ctx.respond
+
+
+def fence(string: str) -> str:
+    """Surround the string in a code fence. Useful for map()."""
+    return f"`{string}`"

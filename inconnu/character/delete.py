@@ -41,10 +41,20 @@ class _DeletionModal(Modal):
         user_input = self.children[0].value
 
         if user_input == self.character.name:
+            tasks = []
+
             msg = f"Deleted **{self.character.name}**!"
-            task1 = inconnu.char_mgr.remove(self.character)
-            task2 = interaction.response.send_message(msg)
-            await asyncio.gather(task1, task2)
+            tasks.append(inconnu.char_mgr.remove(self.character))
+            tasks.append(interaction.response.send_message(msg))
+
+            tasks.append(inconnu.common.report_update(
+                ctx=interaction,
+                character=self.character,
+                title="Character Deleted",
+                message=f"**{interaction.user.mention}** deleted **{self.character.name}**."
+            ))
+
+            await asyncio.gather(*tasks)
         else:
             await inconnu.common.present_error(
                 interaction, "You must type the character's name exactly."

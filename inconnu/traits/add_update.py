@@ -1,5 +1,6 @@
 """traits/add.py - Add traits to a character."""
 
+import asyncio
 import re
 from types import SimpleNamespace
 
@@ -103,10 +104,25 @@ def __partition_traits(character, traits):
 
 async def __display_results(ctx, outcome, character: VChar):
     """Display the results of the operation."""
+    tasks = []
+
     if await inconnu.settings.accessible(ctx.user):
-        await __results_text(ctx, outcome, character)
+        tasks.append(__results_text(ctx, outcome, character))
     else:
-        await __results_embed(ctx, outcome, character)
+        tasks.append(__results_embed(ctx, outcome, character))
+
+    # Message for the update channel
+    if outcome.assigned:
+        msg = f"__{ctx.user.mention} updated {character.name}'s traits:__\n"
+        msg += ", ".join(outcome.assigned)
+        tasks.append(inconnu.common.report_update(
+            ctx=ctx,
+            character=character,
+            title="Traits Updated",
+            message=msg
+        ))
+
+    await asyncio.gather(*tasks)
 
 
 async def __results_embed(ctx, outcome, character: VChar):

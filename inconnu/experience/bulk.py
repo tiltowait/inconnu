@@ -58,7 +58,7 @@ class _BulkModal(Modal):
                 # Ignore empty lines
                 continue
             if (match := self.pattern.match(entry)) is None:
-                self.errors.append(f"Invalid syntax: {entry}")
+                self.errors.append(f"**Invalid syntax:** {entry}")
                 continue
 
             # We found the match
@@ -79,8 +79,12 @@ class _BulkModal(Modal):
             except inconnu.vchar.errors.CharacterNotFoundError:
                 self.errors.append(f"**Not found:** {member}: `{char_name}`")
 
-        # Finished finding characters
+        # Finished parsing input
         if self.errors:
+            # Clean up coroutines
+            for task in self.xp_tasks:
+                task.close()
+
             await self._present_errors(interaction)
         elif self.xp_tasks:
             await self._award_xp(interaction)
@@ -99,5 +103,10 @@ class _BulkModal(Modal):
 
     async def _award_xp(self, interaction):
         """Award the XP."""
-        await interaction.followup.send("**Awarding:**\n" + "\n".join(self.would_award))
-        await asyncio.gather(*self.xp_tasks)
+        embed = discord.Embed(
+            title="Bulk Awarding XP",
+            description="\n".join(self.would_award),
+            color=0x7ED321
+        )
+        send_embed = interaction.followup.send(embed=embed)
+        await asyncio.gather(*self.xp_tasks, send_embed)

@@ -5,7 +5,7 @@ import uuid
 
 import discord
 
-TIMEOUT = 5 if "DEBUG" in os.environ else 120
+TIMEOUT = 5 if "DEBUG" in os.environ else 300
 
 
 class RatingView(discord.ui.View):

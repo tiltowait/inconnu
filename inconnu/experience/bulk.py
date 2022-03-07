@@ -66,17 +66,18 @@ class _BulkModal(Modal):
             owner = int(match.group("user"))
             char_name = match.group("character")
 
+            member = interaction.guild.get_member(owner)
+            member = member.mention if member is not None else owner
+
             try:
                 character = await inconnu.char_mgr.fetchone(interaction.guild, owner, char_name)
                 self.xp_tasks.append(
                     character.apply_experience(experience, "lifetime", reason, interaction.user.id)
                 )
-                self.would_award.append(f"`{experience}xp`: `{character.name}`")
+                self.would_award.append(f"`{experience}xp`: `{character.name}` {member}")
 
             except inconnu.vchar.errors.CharacterNotFoundError:
-                member = interaction.guild.get_member(owner)
-                user = member.name if member is not None else owner
-                self.errors.append(f"**Not found:** {user}: `{char_name}`")
+                self.errors.append(f"**Not found:** {member}: `{char_name}`")
 
         # Finished finding characters
         if self.errors:

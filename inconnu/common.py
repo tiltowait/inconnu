@@ -60,6 +60,7 @@ async def present_error(
 
     # Finish preparing the response
     msg_contents["ephemeral"] = ephemeral
+    msg_contents["allowed_mentions"] = discord.AllowedMentions.none()
 
     if help_url is not None:
         # If we have a help URL, we will add some links to the view

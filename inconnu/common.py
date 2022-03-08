@@ -136,10 +136,14 @@ def __error_text(
     return "\n".join(contents)
 
 
-async def report_update(*, ctx, character, title, message):
+async def report_update(*, ctx, character, title, message, **kwargs):
     """Display character updates in the update channel."""
     if (update_channel := await inconnu.settings.update_channel(ctx.guild)):
-        embed = discord.Embed(title=title, description=message)
+        embed = discord.Embed(
+            title=title,
+            description=message,
+            color=kwargs.pop("color", discord.Embed.Empty)
+        )
         embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
 
         mentions = discord.AllowedMentions(users=False)

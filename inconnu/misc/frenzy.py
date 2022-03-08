@@ -1,6 +1,7 @@
 """misc/frenzy.py - Perform a frenzy check."""
 #pylint: disable=too-many-arguments
 
+import asyncio
 import discord
 
 import inconnu
@@ -58,7 +59,10 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             embed = __get_embed(ctx, title, message, character.name, difficulty, footer, color)
             msg_content = { "embed": embed }
 
-        await inconnu.respond(ctx)(**msg_content)
+        await asyncio.gather(
+            __generate_report_task(ctx, character,outcome),
+            inconnu.respond(ctx)(**msg_content)
+        )
 
     except inconnu.common.FetchError:
         pass
@@ -82,3 +86,16 @@ def __get_embed(
         embed.set_thumbnail(url=url)
 
     return embed
+
+
+def __generate_report_task(ctx, character, outcome):
+    """Generate a report for the update channel."""
+    verbed = "passed" if outcome.is_successful else "failed"
+
+    return inconnu.common.report_update(
+        ctx=ctx,
+        character=character,
+        title="Frenzy Success" if outcome.is_successful else "Frenzy Failure",
+        message=f"**{character.name}** {verbed} their frenzy check.",
+        color=0x880000 if outcome.is_failure else discord.Embed.Empty
+    )

@@ -101,6 +101,6 @@ def __generate_report_task(ctx, character, remorseful):
         ctx=ctx,
         character=character,
         title="Remorse Success" if remorseful else "Remorse Failure",
-        message=f"**{character.name}** {verbed} their remorse test.\n{humanity_str}",
+        message=f"**{character.name}** {verbed} their Remorse test.\n{humanity_str}",
         color=0x5e005e if not remorseful else discord.Embed.Empty
     )

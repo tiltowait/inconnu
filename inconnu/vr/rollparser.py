@@ -215,5 +215,3 @@ def eval_(node):
         return OPERATORS[type(node.op)](eval_(node.operand))
 
     raise TypeError(node)
-
-

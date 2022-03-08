@@ -35,11 +35,15 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         syntax, comment = syntax.split("#", 1)
         comment = await stringify_mentions(ctx, comment)
 
+    if RollParser.has_invalid_characters(syntax):
+        await common.present_error(ctx, f"Invalid syntax: `{syntax}`.", ephemeral=False)
+        return
+
     if comment is not None and (comment_len := len(comment)) > 300:
         await common.present_error(ctx, f"Comment is too long by {comment_len - 300} characters.")
         return
 
-    if ctx.guild is None and needs_character(syntax):
+    if ctx.guild is None and (character_needed := needs_character(syntax)):
         await common.present_error(ctx, "You cannot roll traits in DMs!", help_url=__HELP_URL)
         return
 
@@ -48,7 +52,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         # Only guilds have characters
         try:
             owner = await common.player_lookup(ctx, player)
-            if character is not None or needs_character(syntax):
+            if character is not None or character_needed:
                 tip = f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`"
                 character = await common.fetch_character(
                     ctx, character, tip, __HELP_URL, owner=owner

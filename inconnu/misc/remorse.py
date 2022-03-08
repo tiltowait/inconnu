@@ -4,6 +4,8 @@ import asyncio
 import random
 from types import SimpleNamespace as SN
 
+import discord
+
 import inconnu
 from ..vchar import VChar
 
@@ -25,7 +27,10 @@ async def remorse(ctx, character=None, minimum=1):
             return
 
         outcome = await __remorse_roll(character, minimum)
-        await __display_outcome(ctx, character, outcome)
+        await asyncio.gather(
+            __generate_report_task(ctx, character, outcome.remorseful),
+            __display_outcome(ctx, character, outcome)
+        )
 
     except inconnu.common.FetchError:
         pass
@@ -81,3 +86,21 @@ async def __remorse_roll(character: VChar, minimum: int) -> SN:
     await asyncio.gather(*tasks)
 
     return SN(remorseful=successful, minimum=minimum, dice=dice, overrode=overrode, nominal=nominal)
+
+
+def __generate_report_task(ctx, character, remorseful):
+    """Generate the task to display the remorse outcome for the update channel."""
+    if remorseful:
+        verbed = "passed"
+        humanity_str = f"Humanity remains at `{character.humanity}`."
+    else:
+        verbed = "failed"
+        humanity_str = f"Humanity drops to `{character.humanity}`."
+
+    return inconnu.common.report_update(
+        ctx=ctx,
+        character=character,
+        title="Remorse Success" if remorseful else "Remorse Failure",
+        message=f"**{character.name}** {verbed} their remorse test.\n{humanity_str}",
+        color=0x5e005e if not remorseful else discord.Embed.Empty
+    )

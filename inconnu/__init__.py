@@ -17,6 +17,7 @@ from .roll import Roll
 from . import settings
 from . import stats
 from . import traits
+from . import utils
 from .vchar import CharacterManager, VChar
 from . import views
 

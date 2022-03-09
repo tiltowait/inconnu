@@ -47,13 +47,8 @@ async def update(
     Process the user's arguments.
     Allow the user to omit a character if they have only one.
     """
-    args = re.sub(r":", r"=", parameters) # Some people think colons work ...
-    args = re.sub(r"(\w)\s*([+-])\s*(\w)", r"\g<1>=\g<2>\g<3>", args) # Stop the sh+3 madness
-    args = re.sub(r"\s*([+-])\s*=\s*", r"=\g<1>", args) # Let +/-= work, for the CS nerds
-    args = re.sub(r"\s*=\s*([+-])\s*", r"=\g<1>", args) # Remove gaps between keys and values
-    args = list(args.split()) # To allow element removal
-
-    if not args:
+    if not parameters:
+        # Might have got here through a help message
         await update_help(ctx)
         return
 
@@ -64,7 +59,9 @@ async def update(
             ctx, character, tip, __HELP_URL, owner=owner
         )
 
-        parameters = __parse_arguments(*args)
+        parameters = inconnu.utils.parse_parameters(parameters, True)
+        human_readable = " ".join([f"{k}={v}" for k, v in parameters.items()])
+        parameters = __validate_parameters(parameters)
         updates = []
 
         for parameter, new_value in parameters.items():
@@ -79,7 +76,7 @@ async def update(
             user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
-            syntax=" ".join(args)
+            syntax=human_readable
         )]
 
         # Ignore generated output if we got a custom message
@@ -110,7 +107,7 @@ async def update(
             user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
-            syntax=" ".join(args)
+            syntax=human_readable
         )
         help_task = update_help(ctx, err)
         await asyncio.gather(log_task, help_task)
@@ -119,6 +116,28 @@ async def update(
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
     except inconnu.common.FetchError:
         pass
+
+
+def __validate_parameters(parameters):
+    """Validate the user's parameters."""
+    validated = {}
+
+    for key, value in parameters.items():
+        key = key.lower()
+
+        if key in validated:
+            raise ValueError(f"You cannot use `{key}` more than once.")
+
+        if key not in __MATCHES:
+            raise ValueError(f"Unknown parameter: `{key}`.")
+
+        if not value:
+            raise ValueError(f"Missing value for key `{key}`.")
+
+        key = __MATCHES[key]
+        validated[key] = value
+
+    return validated
 
 
 def __parse_arguments(*arguments):

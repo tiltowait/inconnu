@@ -23,10 +23,10 @@ __VALID_KEYS = {
 async def update(ctx, macro: str, syntax: str, character: str):
     """Update a macro."""
     try:
-        tip = f"`/macro update` `macro:{macro}` `parameters:PARAMETERS` `character:CHARACTER`"
+        tip = f"`/macro update` `macro:{macro}` `parameters:{syntax}` `character:CHARACTER`"
         character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        parameters = __parameterize(syntax)
+        parameters = inconnu.utils.parse_parameters(syntax, False)
         macro_update = __validate_parameters(character, parameters)
 
         macro_name = await character.update_macro(macro, macro_update)

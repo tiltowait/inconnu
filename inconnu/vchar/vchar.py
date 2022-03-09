@@ -400,7 +400,7 @@ class VChar:
     @property
     def has_biography(self):
         """Whether the character has any biographical data."""
-        return all([self.biography, self.description])
+        return any([self.biography, self.description])
 
 
     # Derived attributes

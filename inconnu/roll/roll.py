@@ -33,6 +33,7 @@ class Roll:
             raise ValueError(f"Pool cannot exceed 100. (Got `{pool}`.)")
 
         normal_dice = max(0, pool - hunger)
+        hunger = min(pool, hunger)
 
         self.normal = DiceThrow(normal_dice)
         self.hunger = DiceThrow(hunger)
@@ -46,7 +47,7 @@ class Roll:
         elif isinstance(syntax, list):
             self.syntax = " ".join(map(str, syntax))
         else:
-            self.syntax = syntax
+            self.syntax = " ".join(syntax.split())
 
 
     # We could technically do this with stored properties, but the math is extremely

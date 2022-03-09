@@ -184,6 +184,12 @@ class RollParser:
             raise SyntaxError("Invalid syntax!") from err
 
 
+    @classmethod
+    def has_invalid_characters(cls, syntax) -> bool:
+        """Check whether the roll has invalid characters."""
+        return re.search(r"[^\w\+\-\s]", syntax) is not None
+
+
 # Math Helpers
 
 # We could use pandas for this, but this is built-in and considerably faster,

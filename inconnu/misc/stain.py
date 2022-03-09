@@ -1,8 +1,9 @@
 """misc/stain.py - Apply or remove stains from characters."""
 
-from .. import common
-from .. import character as char
-from ..constants import Damage
+import asyncio
+
+import inconnu
+from inconnu.constants import Damage
 
 __HELP_URL = "https://www.inconnu-bot.com/#/shortcuts?id=applying-stains"
 
@@ -10,11 +11,16 @@ __HELP_URL = "https://www.inconnu-bot.com/#/shortcuts?id=applying-stains"
 async def stain(ctx, delta, character, owner):
     """Apply or remove stains."""
     try:
-        owner = await common.player_lookup(ctx, owner)
-        tip = f"`/stain` `delta:{delta}` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
+        if delta == 0:
+            raise ValueError("Stain `delta` can't be zero!")
 
-        fields = [("Humanity", char.DisplayField.HUMANITY)]
+        owner = await inconnu.common.player_lookup(ctx, owner)
+        tip = f"`/stain` `delta:{delta}` `character:CHARACTER`"
+        character = await inconnu.common.fetch_character(
+            ctx, character, tip, __HELP_URL, owner=owner
+        )
+
+        fields = [("Humanity", inconnu.character.DisplayField.HUMANITY)]
         footer = None
 
         total_stains = character.stains + delta
@@ -26,27 +32,42 @@ async def stain(ctx, delta, character, owner):
             new_overlap = abs(10 - character.humanity - total_stains)
             overlap_delta = new_overlap - old_overlap
 
-            character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta)
-            fields.append(("Willpower", char.DisplayField.WILLPOWER))
+            await character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta)
+            fields.append(("Willpower", inconnu.character.DisplayField.WILLPOWER))
 
             message = f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
         else:
             message = None
 
-        character.stains += delta
+        await character.set_stains(character.stains + delta)
         if character.degeneration:
             footer = "Degeneration! -2 dice to all rolls. Remains until /remorse or auto-drop."
 
-
         title = "Added" if delta > 0 else "Removed"
-        title = f"{title} {common.pluralize(abs(delta), 'Stain')}"
+        title = f"{title} {inconnu.common.pluralize(abs(delta), 'Stain')}"
 
-        await char.display(
-            ctx, character, title,
-            message=message, owner=owner, fields=fields, footer=footer
+        await asyncio.gather(
+            __generate_report_task(ctx, character, delta),
+            inconnu.character.display(
+                ctx, character, title,
+                message=message, owner=owner, fields=fields, footer=footer
+            )
         )
 
-    except LookupError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-    except common.FetchError:
+    except (ValueError, LookupError) as err:
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+    except inconnu.common.FetchError:
         pass
+
+
+def __generate_report_task(ctx, character, delta):
+    verbed = "gained" if delta > 0 else "removed"
+    delta = abs(delta)
+    stains = "Stains" if delta > 1 else "Stain"
+
+    return inconnu.common.report_update(
+        ctx=ctx,
+        character=character,
+        title="Stains",
+        message=f"**{character.name}** {verbed} `{delta}` {stains}."
+    )

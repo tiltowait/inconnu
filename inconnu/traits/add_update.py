@@ -1,13 +1,15 @@
 """traits/add.py - Add traits to a character."""
 
+import asyncio
 import re
 from types import SimpleNamespace
 
 import discord
 
+import inconnu.settings
+import inconnu.views
 from .parser import parse_traits
 from .. import common
-from ..settings import Settings
 from ..vchar import VChar
 
 __HELP_URL = {
@@ -38,9 +40,9 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
         traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
 
         traits = parse_traits(*traits.split())
-        outcome = __handle_traits(character, traits, allow_overwrite)
+        outcome = await __handle_traits(character, traits, allow_overwrite)
 
-        await __display_results(ctx, outcome, character.name)
+        await __display_results(ctx, outcome, character)
 
     except (ValueError, SyntaxError) as err:
         await common.present_error(
@@ -53,7 +55,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
         pass
 
 
-def __handle_traits(character: VChar, traits: dict, overwriting: bool):
+async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
     """
     Add the rated traits to the character directly.
     Args:
@@ -62,45 +64,68 @@ def __handle_traits(character: VChar, traits: dict, overwriting: bool):
         overwriting (bool): Whether we allow overwrites
     All traits and ratings are assumed to be valid at this time.
     """
-    partition = character.owned_traits(**traits)
-    assigned = []
-    unassigned = []
+    partition = __partition_traits(character, traits)
 
     if overwriting:
         error_traits = list(partition.unowned.keys())
-        for trait, rating in partition.owned.items():
-            if rating is None:
-                unassigned.append(trait)
-            else:
-                trait = character.update_trait(trait, rating)
-                assigned.append(f"{trait} ({rating})")
-
+        unassigned = [k for k, v in partition.owned.items() if v is None]
+        to_assign = {k: v for k, v in partition.owned.items() if v is not None}
     else:
         error_traits = list(partition.owned.keys())
-        for trait, rating in partition.unowned.items():
-            if rating is None:
-                unassigned.append(trait)
-            else:
-                character.add_trait(trait, rating)
-                assigned.append(f"{trait} `({rating})`")
+        unassigned = [k for k, v in partition.unowned.items() if v is None]
+        to_assign = {k: v for k, v in partition.unowned.items() if v is not None}
+
+    track_adjustment, assigned = await character.assign_traits(to_assign)
+    assigned = [f"{trait}: `{rating}`" for trait, rating in assigned.items()]
 
     return SimpleNamespace(
         assigned=assigned,
         unassigned=unassigned,
         errors=error_traits,
-        updating=overwriting
+        updating=overwriting,
+        track_adjustment=track_adjustment
     )
 
 
-async def __display_results(ctx, outcome, char_name: str):
+def __partition_traits(character, traits):
+    """Partition the list of traits into owned and unowned groups."""
+    my_traits = character.traits
+    owned = {}
+    unowned = {}
+
+    for trait, rating in traits.items():
+        if trait.lower() in map(lambda t: t.lower(), my_traits.keys()):
+            owned[trait] = rating
+        else:
+            unowned[trait] = rating
+
+    return SimpleNamespace(owned=owned, unowned=unowned)
+
+
+async def __display_results(ctx, outcome, character: VChar):
     """Display the results of the operation."""
-    if Settings.accessible(ctx.user):
-        await __results_text(ctx, outcome, char_name)
+    tasks = []
+
+    if await inconnu.settings.accessible(ctx.user):
+        tasks.append(__results_text(ctx, outcome, character))
     else:
-        await __results_embed(ctx, outcome, char_name)
+        tasks.append(__results_embed(ctx, outcome, character))
+
+    # Message for the update channel
+    if outcome.assigned:
+        msg = f"__{ctx.user.mention} updated {character.name}'s traits:__\n"
+        msg += ", ".join(outcome.assigned)
+        tasks.append(inconnu.common.report_update(
+            ctx=ctx,
+            character=character,
+            title="Traits Updated",
+            message=msg
+        ))
+
+    await asyncio.gather(*tasks)
 
 
-async def __results_embed(ctx, outcome, char_name: str):
+async def __results_embed(ctx, outcome, character: VChar):
     """Display the results of the operation in a nice embed."""
     action_present = "Update" if outcome.updating else "Assign"
     action_past = "Updated" if outcome.updating else "Assigned"
@@ -129,7 +154,9 @@ async def __results_embed(ctx, outcome, char_name: str):
         title=title,
         color=color
     )
-    embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
+    embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
+    embed.set_footer(text=outcome.track_adjustment)
+
     if outcome.assigned:
         assigned = "\n".join(outcome.assigned)
         embed.add_field(name=action_past, value=assigned)
@@ -137,7 +164,6 @@ async def __results_embed(ctx, outcome, char_name: str):
     if outcome.unassigned:
         unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
         embed.add_field(name="No value given", value=unassigned)
-        embed.set_footer(text="Run the command again to give ratings for the unassigned traits.")
 
     if outcome.errors:
         errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
@@ -147,33 +173,32 @@ async def __results_embed(ctx, outcome, char_name: str):
             field_name = "Error! You already have these traits"
         embed.add_field(name=field_name, value=errs, inline=False)
 
-    await ctx.respond(embed=embed, ephemeral=True)
+    view = inconnu.views.TraitsView(character, ctx.user)
+    await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 
-async def __results_text(ctx, outcome, char_name: str):
+async def __results_text(ctx, outcome, character: VChar):
     """Display the results in plain text."""
-    contents = [f"{char_name}: Trait Assignment\n"]
+    contents = [f"**{character.name}: Trait Assignment**\n"]
 
     if outcome.assigned:
-        assigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.assigned))
+        assigned = ", ".join(outcome.assigned)
         action = "Updated" if outcome.updating else "Assigned"
-        contents.append(f"{action}: {assigned}")
+        contents.append(f"**{action}:** {assigned}")
 
-    footer = None
     if outcome.unassigned:
         unassigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.unassigned))
-        contents.append(f"No value given: {unassigned}")
-        footer = "Run the command again to assign ratings to the unassigned traits."
+        contents.append(f"**No value given:** {unassigned}")
 
     if outcome.errors:
         errs = ", ".join(map(lambda trait: f"`{trait}`", outcome.errors))
         if outcome.updating:
-            err_field = "Error! You don't have " + errs
+            err_field = "**Error!** You don't have " + errs
         else:
-            err_field = "Error! You already have " + errs
+            err_field = "**Error!** You already have " + errs
         contents.append(err_field)
 
-    if footer is not None:
-        contents.append(f"```{footer}```")
+    contents.append(f"```{outcome.track_adjustment}```")
 
-    await ctx.respond("\n".join(contents), ephemeral=True)
+    view = inconnu.views.TraitsView(character, ctx.user)
+    await ctx.respond("\n".join(contents), view=view, ephemeral=True)

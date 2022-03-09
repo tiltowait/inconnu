@@ -1,5 +1,7 @@
 """experience/list.py - List XP expenditures/gains."""
 
+from datetime import timezone
+
 import discord
 
 import inconnu
@@ -18,12 +20,13 @@ async def list_events(ctx, character, player, ephemeral):
         )
 
         msg = { "ephemeral": ephemeral }
-        if inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             msg["content"] = await __get_text(ctx, character)
         else:
             msg["embed"] = await __get_embed(ctx, character, owner)
 
-        await inconnu.respond(ctx)(**msg)
+        mentions = discord.AllowedMentions(users=False)
+        await inconnu.respond(ctx)(**msg, allowed_mentions=mentions)
 
     except LookupError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
@@ -58,11 +61,14 @@ async def __get_text(ctx, character):
 async def __get_contents(ctx, character):
     """Get the event contents used by both embeds and text."""
     events = character.experience_log
-    date_format = "%b %d, %Y"
 
     contents = []
     for index, event in enumerate(reversed(events)):
-        date = event["date"].strftime(date_format)
+        # We need the date/time to be TZ-aware
+        date = event["date"]
+        date = date.replace(tzinfo=timezone.utc)
+        date = f"<t:{int(date.timestamp())}:d>"
+
         exp = event["amount"]
         reason = event["reason"]
         admin_id = event["admin"]
@@ -72,7 +78,7 @@ async def __get_contents(ctx, character):
         if (admin := ctx.guild.get_member(admin_id)) is None:
             admin = await ctx.guild.fetch_member(admin_id)
 
-        text = f"*{index + 1}.* **{exp:+} {scope}: {reason}** *({date}, @{admin.display_name})*"
+        text = f"*{index + 1}.* **{exp:+} {scope}: {reason}** - {admin.mention} • {date}"
 
         contents.append(text)
 

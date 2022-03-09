@@ -1,11 +1,11 @@
 """delete.py - Character deletion facilities."""
 
+import asyncio
+
 import discord
+from discord.ui import InputText, Modal
 
 import inconnu
-from ..views import DisablingView
-from .. import common
-from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-deletion"
 
@@ -13,80 +13,49 @@ __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-dele
 async def delete(ctx, character: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        character = VChar.fetch(ctx.guild.id, ctx.user.id, character)
+        character = await inconnu.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character)
+        modal = _DeletionModal(title=f"Delete {character.name}", character=character)
+        await ctx.response.send_modal(modal)
 
-        if inconnu.settings.accessible(ctx.user):
-            msg_contents = __prompt_text(character)
-        else:
-            msg_contents = __prompt_embed(ctx, character)
-
-        delete_view = _DeleteView(character)
-        msg_contents["view"] = delete_view
-
-        msg = await ctx.respond(**msg_contents)
-        delete_view.message = msg
-
-    except errors.CharacterError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
+    except inconnu.vchar.errors.CharacterError as err:
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
 
 
-def __prompt_text(character):
-    """Ask the user whether to delete the character, in plain text."""
-    content = f"Really delete {character.name}? This will delete all associated data!\n"
-    return { "content": content, "ephemeral": True }
+class _DeletionModal(Modal):
+    """A modal that requires the user to type the character's name before deleting."""
 
+    def __init__(self, *args, **kwargs) -> None:
+        self.character = kwargs.pop("character")
+        super().__init__(*args, **kwargs)
 
-def __prompt_embed(ctx, character):
-    """Ask the user whether to delete the character, using an embed."""
-    embed = discord.Embed(
-        title=f"Delete {character.name}",
-        color=0xFF0000
-    )
-    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
-    embed.add_field(name="Are you certain?", value="This will delete all associated data.")
-    embed.set_footer(text="THIS ACTION CANNOT BE UNDONE")
-
-    return { "embed": embed, "ephemeral": True }
-
-class _DeleteView(DisablingView):
-    """A view for deleting characters."""
-
-    def __init__(self, character):
-        super().__init__(timeout=20)
-        self.character = character
-
-
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
-    async def cancel(self, _, interaction):
-        """Cancel the interaction."""
-        await interaction.response.edit_message(
-            content="Deletion canceled.",
-            embed=None,
-            view=None
+        self.add_item(
+            InputText(
+                label="Enter character name to delete",
+                placeholder=self.character.name
+            )
         )
-        self.stop()
 
 
-    @discord.ui.button(label="Delete", style=discord.ButtonStyle.danger)
-    async def delete(self, _, interaction):
-        """Delete the character."""
-        await self.disable_items(interaction)
+    async def callback(self, interaction: discord.Interaction):
+        """Delete the character if its name was typed correctly."""
+        user_input = self.children[0].value
 
-        if self.character.delete_character():
+        if user_input == self.character.name:
+            tasks = []
+
             msg = f"Deleted **{self.character.name}**!"
-            ephemeral = False
+            tasks.append(inconnu.char_mgr.remove(self.character))
+            tasks.append(interaction.response.send_message(msg))
+
+            tasks.append(inconnu.common.report_update(
+                ctx=interaction,
+                character=self.character,
+                title="Character Deleted",
+                message=f"**{interaction.user.mention}** deleted **{self.character.name}**."
+            ))
+
+            await asyncio.gather(*tasks)
         else:
-            msg = "Something went wrong. Unable to delete."
-            ephemeral = True
-
-        await interaction.followup.send(msg, ephemeral=ephemeral)
-
-
-    async def on_timeout(self):
-        """Cancel out the message on timeout."""
-        if self.message is not None:
-            await self.message.edit_original_message(
-                content=f"Canceled deletion of **{self.character.name}** due to time elapsed.",
-                embed=None,
-                view=None
+            await inconnu.common.present_error(
+                interaction, "You must type the character's name exactly."
             )

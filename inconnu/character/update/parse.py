@@ -1,6 +1,7 @@
 """character/update/parse.py - Defines an interface for updating character traits."""
 # pylint: disable=too-many-arguments
 
+import asyncio
 import re
 
 import discord
@@ -9,8 +10,6 @@ from discord.ui import Button
 import inconnu
 from . import paramupdate
 from ..display import display
-from ... import common, constants
-from ...log import Log
 from ...vchar import VChar
 
 __MATCHES = {}
@@ -48,64 +47,97 @@ async def update(
     Process the user's arguments.
     Allow the user to omit a character if they have only one.
     """
-    args = re.sub(r":", r"=", parameters) # Some people think colons work ...
-    args = re.sub(r"(\w)\s*([+-])\s*(\w)", r"\g<1>=\g<2>\g<3>", args) # Stop the sh+3 madness
-    args = re.sub(r"\s*([+-])\s*=\s*", r"=\g<1>", args) # Let +/-= work, for the CS nerds
-    args = re.sub(r"\s*=\s*([+-])\s*", r"=\g<1>", args) # Remove gaps between keys and values
-    args = list(args.split()) # To allow element removal
-
-    if not args:
+    if not parameters:
+        # Might have got here through a help message
         await update_help(ctx)
         return
 
     try:
-        owner = await common.player_lookup(ctx, player)
+        owner = await inconnu.common.player_lookup(ctx, player)
         tip = f"`/character update` `parameters:{parameters}` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
+        character = await inconnu.common.fetch_character(
+            ctx, character, tip, __HELP_URL, owner=owner
+        )
 
-        parameters = __parse_arguments(*args)
+        parameters = inconnu.utils.parse_parameters(parameters, True)
+        human_readable = " ".join([f"{k}={v}" for k, v in parameters.items()])
+        parameters = __validate_parameters(parameters)
         updates = []
 
         for parameter, new_value in parameters.items():
-            update_msg = __update_character(ctx, character, parameter, new_value)
+            update_msg = await __update_character(ctx, character, parameter, new_value)
             updates.append(update_msg)
+
 
         if (impairment := character.impairment) is not None:
             updates.append(impairment)
 
-        Log.log("update",
+        tasks = [inconnu.log.log_event("update",
             user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
-            syntax=" ".join(args)
-        )
+            syntax=human_readable
+        )]
 
         # Ignore generated output if we got a custom message
         if update_message is None:
             update_message = "\n".join(updates)
 
-        await display(
+        if update_message: # May not always be true in the future
+            tasks.append(inconnu.common.report_update(
+                ctx=ctx,
+                character=character,
+                title="Character Updated",
+                message=f"__{ctx.user.mention} updated {character.name}:__\n" + update_message
+            ))
+
+        tasks.append(display(
             ctx,
             character,
             fields=fields,
             color=color,
             owner=player,
             message=update_message
-        )
+        ))
+
+        await asyncio.gather(*tasks)
 
     except (SyntaxError, ValueError) as err:
-        Log.log("update_error",
+        log_task = inconnu.log.log_event("update_error",
             user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
-            syntax=" ".join(args)
+            syntax=human_readable
         )
-        await update_help(ctx, err)
+        help_task = update_help(ctx, err)
+        await asyncio.gather(log_task, help_task)
 
     except LookupError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-    except common.FetchError:
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+    except inconnu.common.FetchError:
         pass
+
+
+def __validate_parameters(parameters):
+    """Validate the user's parameters."""
+    validated = {}
+
+    for key, value in parameters.items():
+        key = key.lower()
+
+        if key in validated:
+            raise ValueError(f"You cannot use `{key}` more than once.")
+
+        if key not in __MATCHES:
+            raise ValueError(f"Unknown parameter: `{key}`.")
+
+        if not value:
+            raise ValueError(f"Missing value for key `{key}`.")
+
+        key = __MATCHES[key]
+        validated[key] = value
+
+    return validated
 
 
 def __parse_arguments(*arguments):
@@ -145,7 +177,7 @@ def __parse_arguments(*arguments):
     return parameters
 
 
-def __update_character(ctx, character: VChar, param: str, value: str) -> str:
+async def __update_character(ctx, character: VChar, param: str, value: str) -> str:
     """
     Update one of a character's parameters.
     Args:
@@ -155,13 +187,14 @@ def __update_character(ctx, character: VChar, param: str, value: str) -> str:
     Raises ValueError if the parameter's value is invalid.
     """
     if param == "current_xp":
-        if not inconnu.settings.can_adjust_current_xp(ctx):
+        if not await inconnu.settings.can_adjust_current_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust unspent XP.")
     elif param == "total_xp":
-        if not inconnu.settings.can_adjust_lifetime_xp(ctx):
+        if not await inconnu.settings.can_adjust_lifetime_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust lifetime XP.")
 
-    return getattr(paramupdate, f"update_{param}")(character, value)
+    coro = getattr(paramupdate, f"update_{param}")
+    return await coro(character, value)
 
 
 async def update_help(ctx, err=None, ephemeral=True):
@@ -193,7 +226,7 @@ async def update_help(ctx, err=None, ephemeral=True):
         label="Full Documentation",
         url="http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
     )
-    support = Button(label="Support", url=constants.SUPPORT_URL)
+    support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
     view = discord.ui.View(documentation, support)
 
     await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)

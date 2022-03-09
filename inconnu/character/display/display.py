@@ -9,7 +9,6 @@ import inconnu
 from . import trackmoji
 from ... import common
 from ...constants import Damage
-from ...settings import Settings
 from ...vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
@@ -81,7 +80,7 @@ async def display(
         custom ([tuple]): Custom fields to display, as well as their titles
         traits_button (bool): Whether to show a traits button. Default false
     """
-    if Settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx.user):
         content = __get_text(ctx, character,
             title=title,
             message=message,

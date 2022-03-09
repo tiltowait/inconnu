@@ -1,4 +1,5 @@
 """interface/settings.py - Settings-related commands."""
+# pylint: disable=no-self-use
 
 import discord
 from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
@@ -24,7 +25,7 @@ class SettingsCommands(commands.Cog):
     ):
         """Enable or disable accessibility mode for yourself."""
         enable = bool(enable)
-        response = inconnu.settings.set_accessibility(ctx, enable, "user")
+        response = await inconnu.settings.set_accessibility(ctx, enable, "user")
 
         await ctx.respond(response)
 
@@ -57,6 +58,10 @@ class SettingsCommands(commands.Cog):
             ],
             required=False
         ),
+        update_channel: Option(
+            discord.TextChannel,
+            "A channel where character updates will be posted",
+            required=False),
         accessibility: Option(int, "Whether to enable or disable accessibility",
             choices=[
                 OptionChoice("Yes", 1),
@@ -69,16 +74,20 @@ class SettingsCommands(commands.Cog):
         responses = []
 
         if experience_permissions is not None:
-            response = inconnu.settings.set_xp_permissions(ctx, experience_permissions)
+            response = await inconnu.settings.set_xp_permissions(ctx, experience_permissions)
             responses.append(response)
 
         if oblivion_stains is not None:
-            response = inconnu.settings.set_oblivion_stains(ctx, oblivion_stains)
+            response = await inconnu.settings.set_oblivion_stains(ctx, oblivion_stains)
+            responses.append(response)
+
+        if update_channel is not None:
+            response = await inconnu.settings.set_update_channel(ctx, update_channel)
             responses.append(response)
 
         if accessibility is not None:
             accessibility = bool(accessibility)
-            response = inconnu.settings.set_accessibility(ctx, accessibility, "guild")
+            response = await inconnu.settings.set_accessibility(ctx, accessibility, "guild")
             responses.append(response)
 
         if responses:
@@ -87,17 +96,28 @@ class SettingsCommands(commands.Cog):
             await ctx.respond("You didn't give me anything to set!", ephemeral=True)
 
 
+    @settings.command(name="unset_update_channel")
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def _unset_update_channel(self, ctx):
+        """Un-sets the update channel."""
+        response = await inconnu.settings.set_update_channel(ctx, None)
+        await ctx.respond(response)
+
+
     @settings.command(name="show")
     async def settings_show(self, ctx):
         """Display the settings in effect."""
-        accessibility = "ON" if inconnu.settings.accessible(ctx.user) else "OFF"
-        experience_perms = inconnu.settings.xp_permissions(ctx.guild)
-        oblivion_stains = inconnu.settings.oblivion_stains(ctx.guild) or ["Never"]
-        oblivion_stains = map(lambda s: f"`{s}`", oblivion_stains)
+        accessibility = "ON" if await inconnu.settings.accessible(ctx.user) else "OFF"
+        experience_perms = await inconnu.settings.xp_permissions(ctx.guild)
+        oblivion_stains = await inconnu.settings.oblivion_stains(ctx.guild) or ["Never"]
+        oblivion_stains = map(inconnu.fence, oblivion_stains)
+        update_channel = await inconnu.settings.update_channel(ctx.guild)
 
         msg = f"Accessibility mode: `{accessibility}`"
         msg += "\nOblivion Rouse stains: " + " or ".join(oblivion_stains)
         msg += "\n" + experience_perms
+        msg += "\nUpdate channel: " + (update_channel.mention if update_channel else "`None`")
 
         embed = discord.Embed(
             title="Server Settings",

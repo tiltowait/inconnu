@@ -19,18 +19,20 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
 
         # Check that we aren't deducting more XP than they have
         if scope == "unspent" and character.current_xp + amount < 0:
-            await inconnu.common.present_error(
-                ctx,
-                f"**{character.name}** only has `{character.current_xp}` xp to spend!"
-            )
+            if character.current_xp == 0:
+                errmsg = f"**{character.name}** has no XP!"
+            else:
+                errmsg = f"**{character.name}** only has `{character.current_xp}` xp to spend!"
+
+            await inconnu.common.present_error(ctx, errmsg)
             return
 
-        character.apply_experience(amount, scope, reason, ctx.author.id)
+        await character.apply_experience(amount, scope, reason, ctx.author.id)
 
         if reason[-1] != ".":
             reason += "."
 
-        if inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             msg = { "content": __get_text(character, amount, scope, reason) }
         else:
             msg = { "embed": __get_embed(ctx, player, character, amount, scope, reason) }

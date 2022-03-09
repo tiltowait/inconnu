@@ -1,6 +1,7 @@
 """rolldisplay.py - A class for managing the display of roll outcomes and rerolls."""
 # pylint: disable=too-many-arguments, too-many-instance-attributes
 
+import asyncio
 import re
 import uuid
 from enum import Enum
@@ -10,10 +11,6 @@ from discord.ui import Button
 
 import inconnu
 from . import dicemoji
-from .. import character as char
-from .. import stats
-from ..misc import rouse
-from ..vchar import contains_digit
 
 
 class _ButtonID(str, Enum):
@@ -53,9 +50,10 @@ class _RollControls(inconnu.views.DisablingView):
         else:
             button_id = interaction.data["custom_id"].split()[0] # Remove the unique ID
 
-            if contains_digit(button_id):
+            if inconnu.common.contains_digit(button_id):
                 # This was the surge button, which is always last. Let's disable it
                 self.children[-1].disabled = True
+                self.children[-1].style = discord.ButtonStyle.secondary
                 await interaction.response.edit_message(view=self)
             elif button_id == _ButtonID.WILLPOWER:
                 # Mark WP is always the first button
@@ -93,11 +91,13 @@ class RollDisplay:
 
         # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
         if self.ctx.guild is not None:
-            stats.Stats.log_roll(self.ctx.guild.id, self.owner.id,
-                self.character, self.outcome, self.comment
+            log_task = inconnu.stats.log_roll(
+                self.ctx.guild.id, self.owner.id, self.character, self.outcome, self.comment
             )
         else:
-            stats.Stats.log_roll(None, self.owner.id, self.character, self.outcome, self.comment)
+            log_task = inconnu.stats.log_roll(
+                None, self.owner.id, self.character, self.outcome, self.comment
+            )
 
         # We might be responding to a button
         ctx = alt_ctx or self.ctx
@@ -114,7 +114,8 @@ class RollDisplay:
         else:
             msg_contents["content"] = self.text
 
-        msg = await inconnu.respond(ctx)(**msg_contents)
+        respond_task = inconnu.respond(ctx)(**msg_contents)
+        _, msg = await asyncio.gather(log_task, respond_task)
 
         if controls is not None:
             controls.message = msg
@@ -126,17 +127,18 @@ class RollDisplay:
 
         if button_id == _ButtonID.WILLPOWER:
             if self.character is not None:
-                self.character.superficial_wp += 1
+                sup_wp = self.character.superficial_wp + 1
+                await self.character.set_superficial_wp(sup_wp)
 
-            await char.display(btn, self.character,
+            await inconnu.character.display(btn, self.character,
                 title="Willpower Spent",
                 owner=self.owner,
-                fields=[("New WP", char.DisplayField.WILLPOWER)]
+                fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)]
             )
 
-        elif contains_digit(button_id): # Surge buttons are just charids
+        elif inconnu.common.contains_digit(button_id): # Surge buttons are just charids
             self.surged = True
-            await rouse(btn, 1, self.character, "Surge", False)
+            await inconnu.misc.rouse(btn, 1, self.character, "Surge", False)
 
         else:
             # We're rerolling
@@ -342,7 +344,7 @@ class RollDisplay:
                 if not self.surged and self.surging:
                     buttons.append(Button(
                         label="Rouse",
-                        custom_id=str(self.character.id),
+                        custom_id=self.character.id,
                         style=discord.ButtonStyle.danger
                     ))
             return buttons or None
@@ -381,7 +383,7 @@ class RollDisplay:
         if self.surging:
             buttons.append(Button(
                 label="Rouse",
-                custom_id=str(self.character.id),
+                custom_id=self.character.id,
                 style=discord.ButtonStyle.danger,
                 row=1
             ))

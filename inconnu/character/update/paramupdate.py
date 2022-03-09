@@ -1,50 +1,56 @@
 """character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
 
+import asyncio
 import re
 
+import inconnu
 from ...constants import Damage
 from ...vchar import VChar
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal"]
 
 
-def update_name(character: VChar, new_name: str) -> str:
+async def update_name(character: VChar, new_name: str) -> str:
     """Update the character's name."""
     if not re.match(r"[A-z_\d]+", new_name):
         raise ValueError("Names may only contain letters, numbers, and underscores.")
     if (name_len := len(new_name)) > 30:
         raise ValueError(f"`{new_name}` is too long by {name_len - 30} characters.")
 
-    all_chars = VChar.all_characters(character.guild, character.user)
-    if [char for char in all_chars if char.name.lower() == new_name.lower()]:
-        raise ValueError(f"You already have a character named `{new_name}`!")
+    all_chars = await inconnu.char_mgr.fetchall(character.guild, character.user)
+    for char in all_chars:
+        if char.name.lower() == new_name.lower():
+            raise ValueError(f"You already have a character named `{new_name}`!")
 
-    character.name = new_name
-    return f"Set name to `{new_name}`."
+    old_name = character.name
+    await character.set_name(new_name)
+    inconnu.char_mgr.sort_user(character.guild, character.user)
+
+    return f"Rename `{old_name}` to `{new_name}`."
 
 
-def update_splat(character: VChar, new_splat: str) -> str:
+async def update_splat(character: VChar, new_splat: str) -> str:
     """Update the character's splat."""
     if new_splat not in VALID_SPLATS:
         splats = map(lambda splat: f"`{splat}`", VALID_SPLATS)
         splats = ", ".join(splats)
         raise ValueError(f"The `splat` must be one of: {splats}.")
 
-    character.splat = new_splat
+    await character.set_splat(new_splat)
     return f"Set splat to `{new_splat}`."
 
 
-def update_hunger(character: VChar, delta: str) -> str:
+async def update_hunger(character: VChar, delta: str) -> str:
     """Update the character's Hunger."""
-    return __update_hunger_potency(character, delta, "hunger", 5)
+    return await __update_hunger_potency(character, delta, "hunger", 5)
 
 
-def update_potency(character: VChar, delta: str) -> str:
+async def update_potency(character: VChar, delta: str) -> str:
     """Update the character's Blood Potency."""
-    return __update_hunger_potency(character, delta, "potency", 10)
+    return await __update_hunger_potency(character, delta, "potency", 10)
 
 
-def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int) -> str:
+async def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int) -> str:
     """Update the character's hunger if they are a vampire."""
     if not character.is_vampire:
         raise ValueError(f"Mortals and ghouls do not have {key.title()}.")
@@ -60,65 +66,65 @@ def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int
         raise ValueError(f"{key.title()} {new_value} is not between 0 and {maximum}.")
 
     if key == "hunger":
-        character.hunger = new_value
+        await character.set_hunger(new_value)
         return f"Set Hunger to `{new_value}`."
 
-    character.potency = new_value
+    await character.set_potency(new_value)
     return f"Set Blood Potency to `{new_value}`."
 
 
-def update_health(character: VChar, new_max: str) -> str:
+async def update_health(character: VChar, new_max: str) -> str:
     """Update the character's maximum HP. If decreasing, this truncates from the right."""
-    return __update_track(character, "health", new_max)
+    return await __update_track(character, "health", new_max)
 
 
-def update_willpower(character: VChar, new_max: str) -> str:
+async def update_willpower(character: VChar, new_max: str) -> str:
     """Update the character's maximum WP. If decreasing, this truncates from the right."""
-    return __update_track(character, "willpower", new_max)
+    return await __update_track(character, "willpower", new_max)
 
 
-def update_humanity(character: VChar, delta: str) -> str:
+async def update_humanity(character: VChar, delta: str) -> str:
     """Update the character's humanity rating. If decreasing, this truncates from the right."""
-    __update_humanity(character, "stains", "0")
-    return __update_humanity(character, "humanity", delta)
+    await __update_humanity(character, "stains", "0")
+    return await __update_humanity(character, "humanity", delta)
 
 
-def update_stains(character: VChar, delta: str) -> str:
+async def update_stains(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    return __update_humanity(character, "stains", delta)
+    return await __update_humanity(character, "stains", delta)
 
 
-def update_sh(character: VChar, delta: str) -> str:
+async def update_sh(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    return __update_damage(character, "health", Damage.SUPERFICIAL, delta)
+    return await __update_damage(character, "health", Damage.SUPERFICIAL, delta)
 
 
-def update_ah(character: VChar, delta: str) -> str:
+async def update_ah(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
-    return __update_damage(character, "health", Damage.AGGRAVATED, delta)
+    return await __update_damage(character, "health", Damage.AGGRAVATED, delta)
 
 
-def update_sw(character: VChar, delta: str) -> str:
+async def update_sw(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    return __update_damage(character, "willpower", Damage.SUPERFICIAL, delta)
+    return await __update_damage(character, "willpower", Damage.SUPERFICIAL, delta)
 
 
-def update_aw(character: VChar, delta: str) -> str:
+async def update_aw(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
-    return __update_damage(character, "willpower", Damage.AGGRAVATED, delta)
+    return await __update_damage(character, "willpower", Damage.AGGRAVATED, delta)
 
 
-def update_current_xp(character: VChar, delta: str) -> str:
+async def update_current_xp(character: VChar, delta: str) -> str:
     """Set or modify current XP."""
-    return __update_xp(character, "current", delta)
+    return await __update_xp(character, "current", delta)
 
 
-def update_total_xp(character: VChar, delta: str) -> str:
+async def update_total_xp(character: VChar, delta: str) -> str:
     """Set or modify total XP."""
-    return __update_xp(character, "total", delta)
+    return await __update_xp(character, "total", delta)
 
 
-def __update_track(character: VChar, tracker: str, new_len: str) -> str:
+async def __update_track(character: VChar, tracker: str, new_len: str) -> str:
     """
     Update the size of a character's tracker.
     Args:
@@ -148,12 +154,13 @@ def __update_track(character: VChar, tracker: str, new_len: str) -> str:
     elif new_len < cur_len:
         track = track[-new_len:]
 
-    setattr(character, tracker, track)
+    setter = getattr(character, f"set_{tracker}")
+    await setter(track)
     return f"Set {tracker.capitalize()} to `{new_len}`."
 
 
 # pylint: disable=too-many-arguments
-def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) -> str:
+async def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) -> str:
     """
     Update a character's tracker damage.
     Args:
@@ -179,20 +186,20 @@ def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) 
         if isinstance(delta_str, str) and delta_str[0] in ["+", "-"]:
             # If they are applying superficial damage, it can wrap.
             old_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
-            character.apply_damage(tracker, dtype, delta)
+            await character.apply_damage(tracker, dtype, delta)
             new_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
-            wrap = new_agg - old_agg
+            wrap = new_agg - old_agg if dtype == Damage.SUPERFICIAL else 0
         else:
-            character.set_damage(tracker, dtype, delta)
+            await character.set_damage(tracker, dtype, delta)
             wrap = 0
 
-        return __damage_adjust_message(tracker, dtype, delta_str, wrap)
+        return await __damage_adjust_message(tracker, dtype, delta_str, wrap)
 
     except ValueError as err:
         raise ValueError(f"Expected a number. Got `{delta_str}`.") from err
 
 
-def __damage_adjust_message(tracker, dtype, delta_str, wrap) -> str:
+async def __damage_adjust_message(tracker, dtype, delta_str, wrap) -> str:
     """Generate a human-readable damage adjustment message."""
     if dtype == Damage.SUPERFICIAL:
         severity = "Superficial"
@@ -209,7 +216,7 @@ def __damage_adjust_message(tracker, dtype, delta_str, wrap) -> str:
     return f"Set {severity} {tracker.title()} damage to `{delta_str}`."
 
 
-def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
+async def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
     """
     Update a character's XP.
     Args:
@@ -250,14 +257,14 @@ def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
     # bounds-checking.
     current = character.current_xp
     if xp_type == "current":
-        character.current_xp = new_xp
+        await character.set_current_xp(new_xp)
         cur_delta = character.current_xp - current
         if setting:
             return f"Set current/unspent XP to `{new_xp}`."
         return f"`{cur_delta:+}` current/unspent XP."
 
     total = character.total_xp
-    character.total_xp = new_xp
+    await character.set_total_xp(new_xp)
     tot_delta = character.total_xp - total
     cur_delta = character.current_xp - current
 
@@ -266,7 +273,7 @@ def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
     return f"`{cur_delta:+}` unspent XP.\n`{tot_delta:+}` lifetime XP."
 
 
-def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
+async def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
     """
     Update a character's humanity or stains.
     Args:
@@ -295,20 +302,24 @@ def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
         raise ValueError(f"{hu_type.title()} must be between 0 and 10.")
 
     if hu_type == "humanity":
-        character.humanity = new_value
+        await character.set_humanity(new_value)
         return f"Set Humanity to `{new_value}`."
 
+    tasks = []
     # If a character enters degeneration, they automatically take AW damage
     message = f"Set Stains to `{new_value}`."
     delta = new_value - character.stains
+
     if delta > 0 and new_value > (10 - character.humanity):
         # We are in degeneration; calculate the overlap
         old_overlap = abs(min(10 - character.humanity - character.stains, 0))
         new_overlap = abs(10 - character.humanity - new_value)
         overlap_delta = new_overlap - old_overlap
 
-        character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta)
+        tasks.append(character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta))
         message += f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
 
-    character.stains = new_value
+    tasks.append(character.set_stains(new_value))
+    await asyncio.gather(*tasks)
+
     return message

@@ -6,9 +6,8 @@ from types import SimpleNamespace as SN
 
 import discord
 
+import inconnu
 from . import wizard
-from ...vchar import VChar
-from ... import common
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-creation"
 
@@ -16,7 +15,9 @@ __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-crea
 async def create(ctx, name: str, splat: str, humanity: int, health: int, willpower: int, spc: bool):
     """Parse and handle character creation arguments."""
     if spc and not ctx.user.guild_permissions.administrator:
-        await common.present_error(ctx, "You need Administrator permissions to make an SPC.")
+        await inconnu.common.present_error(
+            ctx, "You need Administrator permissions to make an SPC."
+        )
         return
 
     try:
@@ -25,7 +26,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
         # Remove extraenous spaces from the name
         name = re.sub(r"\s+", " ", name)
 
-        if VChar.character_exists(ctx.guild.id, ctx.user.id, name, spc):
+        if await inconnu.char_mgr.exists(ctx.guild, ctx.user, name, spc):
             if spc:
                 raise ValueError(f"Sorry, there is already an SPC named `{name}`!")
             raise ValueError(f"Sorry, you have a character named `{name}` already!")
@@ -36,11 +37,13 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
         )
 
         parameters = SN(name=name, hp=health, wp=willpower, humanity=humanity, splat=splat, spc=spc)
-        character_wizard = wizard.Wizard(ctx, parameters)
+        accessibility = await inconnu.settings.accessible(ctx.user)
+        character_wizard = wizard.Wizard(ctx, parameters, accessibility)
+
         await character_wizard.begin_chargen()
 
     except ValueError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
     except discord.errors.Forbidden:
         await response.edit(
             content="**Whoops!** I can't DM your character wizard. Please enable DMs and try again."

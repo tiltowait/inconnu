@@ -1,6 +1,7 @@
 """misc/rouse.py - Perform rouse checks."""
 # pylint: disable=too-many-arguments
 
+import asyncio
 import random
 from types import SimpleNamespace
 
@@ -33,7 +34,7 @@ async def rouse(
             await __damage_ghoul(ctx, character)
         else:
             # Vampire
-            outcome = __rouse_roll(character, count, reroll)
+            outcome = await __rouse_roll(character, count, reroll)
             await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
 
     except inconnu.common.FetchError:
@@ -83,8 +84,10 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         if oblivion == "show":
             footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
         elif oblivion == "apply":
-            character.stains += outcome.stains
-            character.log("stains", outcome.stains)
+            await asyncio.gather(
+                character.set_stains(character.stains + outcome.stains),
+                character.log("stains", outcome.stains)
+            )
             fields.append((f"Gain {stains_txt}", inconnu.character.DisplayField.HUMANITY))
 
     footer = "\n".join(footer)
@@ -105,7 +108,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
 async def __damage_ghoul(ctx, ghoul):
     """Apply Aggravated damage to a ghoul and display."""
-    ghoul.aggravated_hp += 1
+    await ghoul.set_aggravated_hp(ghoul.aggravated_hp + 1)
     await inconnu.character.display(ctx, ghoul,
         title="Ghoul Rouse Damage",
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
@@ -114,13 +117,13 @@ async def __damage_ghoul(ctx, ghoul):
     )
 
 
-def __rouse_roll(character: VChar, rolls: int, reroll: bool):
+async def __rouse_roll(character: VChar, rolls: int, reroll: bool):
     """Perform a Rouse roll."""
     successes = 0
     failures = 0
     stains = 0
 
-    oblivion = inconnu.settings.oblivion_stains(character.guild)
+    oblivion = await inconnu.settings.oblivion_stains(character.guild)
 
     for _ in range(rolls):
         die = random.randint(1, 10)
@@ -137,10 +140,10 @@ def __rouse_roll(character: VChar, rolls: int, reroll: bool):
 
     starting_hunger = character.hunger
     frenzy = starting_hunger + failures > 5
-    character.hunger += failures
+    await character.set_hunger(starting_hunger + failures)
     gain = starting_hunger - character.hunger
 
-    character.log("rouse", rolls)
+    await character.log("rouse", rolls)
 
     return SimpleNamespace(
         total=rolls,

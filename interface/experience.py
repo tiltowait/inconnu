@@ -1,5 +1,5 @@
 """experience.py - Commands for tracking XP."""
-# pylint: disable=no-self-use
+# pylint: disable=no-self-use, too-many-arguments
 
 import discord
 from discord.commands import Option, SlashCommandGroup, user_command
@@ -51,7 +51,10 @@ class ExperienceCommands(commands.Cog):
         """Deduct experience points from a character."""
         await inconnu.experience.award_or_deduct(ctx, player, character, amount * -1, scope, reason)
 
-    @experience.command()
+
+    experience_remove = experience.create_subgroup("remove", "Remove log entry")
+
+    @experience_remove.command(name="entry")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def remove_entry(
@@ -75,6 +78,17 @@ class ExperienceCommands(commands.Cog):
     ):
         """Display a character's experience log."""
         await inconnu.experience.list_events(ctx, character, player, False)
+
+
+    bulk = SlashCommandGroup("bulk", "Bulk experience awarding")
+    bulk_award = bulk.create_subgroup("award", "Bulk experience awarding")
+
+    @bulk_award.command(name="xp")
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def bulk_award_xp(self, ctx):
+        """Award experience en masse."""
+        await inconnu.experience.bulk_award_xp(ctx)
 
 
 def setup(bot):

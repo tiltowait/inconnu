@@ -5,7 +5,6 @@ from distutils.util import strtobool
 
 import inconnu
 from . import macro_common
-from ..log import Log
 from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=updating"
@@ -24,12 +23,13 @@ __VALID_KEYS = {
 async def update(ctx, macro: str, syntax: str, character: str):
     """Update a macro."""
     try:
-        tip = f"`/macro update` `macro:{macro}` `parameters:PARAMETERS` `character:CHARACTER`"
+        tip = f"`/macro update` `macro:{macro}` `parameters:{syntax}` `character:CHARACTER`"
         character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        parameters = __parameterize(syntax)
+        parameters = inconnu.utils.parse_parameters(syntax, False)
         macro_update = __validate_parameters(character, parameters)
-        macro_name = character.update_macro(macro, macro_update)
+
+        macro_name = await character.update_macro(macro, macro_update)
 
         await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
 
@@ -38,7 +38,12 @@ async def update(ctx, macro: str, syntax: str, character: str):
         SyntaxError, ValueError
     ) as err:
         if isinstance(err, (SyntaxError, ValueError)):
-            Log.log("macro_update_error", user=ctx.user.id, charid=character.id, syntax=syntax)
+            await inconnu.log.log_event(
+                "macro_update_error",
+                user=ctx.user.id,
+                charid=character.id,
+                syntax=syntax
+            )
 
         keys = [f"`{key}`: {value}" for key, value in __VALID_KEYS.items()]
         instructions = [

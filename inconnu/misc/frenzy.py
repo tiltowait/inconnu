@@ -1,6 +1,7 @@
 """misc/frenzy.py - Perform a frenzy check."""
 #pylint: disable=too-many-arguments
 
+import asyncio
 import discord
 
 import inconnu
@@ -40,7 +41,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             title = "Failure!"
             message = "You succumb to the Beast."
             color = 0x5C0700
-            character.log("frenzy")
+            await character.log("frenzy")
 
         footer = "Dice: " + ", ".join(map(str, outcome.normal.dice))
         if penalty == "brujah":
@@ -49,7 +50,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             footer = f"Subtracting 2 dice due to Malkavian compulsion.\n{footer}"
 
         # Display the message
-        if inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             # Build the text version of the message
             name = character.name
             content = f"**{name}: Frenzy {title} (diff. {difficulty})**\n{message}\n*{footer}*"
@@ -58,7 +59,10 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             embed = __get_embed(ctx, title, message, character.name, difficulty, footer, color)
             msg_content = { "embed": embed }
 
-        await inconnu.respond(ctx)(**msg_content)
+        await asyncio.gather(
+            __generate_report_task(ctx, character,outcome),
+            inconnu.respond(ctx)(**msg_content)
+        )
 
     except inconnu.common.FetchError:
         pass
@@ -82,3 +86,16 @@ def __get_embed(
         embed.set_thumbnail(url=url)
 
     return embed
+
+
+def __generate_report_task(ctx, character, outcome):
+    """Generate a report for the update channel."""
+    verbed = "passed" if outcome.is_successful else "failed"
+
+    return inconnu.common.report_update(
+        ctx=ctx,
+        character=character,
+        title="Frenzy Success" if outcome.is_successful else "Frenzy Failure",
+        message=f"**{character.name}** {verbed} their frenzy check.",
+        color=0x880000 if outcome.is_failure else discord.Embed.Empty
+    )

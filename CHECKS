@@ -1,0 +1,5 @@
+WAIT=10
+TIMEOUT=600
+ATTEMPTS=60
+
+/.wizard.lock    0

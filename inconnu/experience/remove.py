@@ -3,6 +3,7 @@
 import discord
 
 import inconnu
+from ..views import DisablingView
 
 __HELP_URL = "https://www.inconnu-bot.com"
 
@@ -19,9 +20,9 @@ async def remove_entry(ctx, player, character, index):
         try:
             log = character.experience_log
             entry_to_delete = log[-index] # Log entries are presented to the user in reverse
-            character.remove_experience_log_entry(entry_to_delete)
+            await character.remove_experience_log_entry(entry_to_delete)
 
-            if inconnu.settings.accessible(ctx.user):
+            if await inconnu.settings.accessible(ctx.user):
                 msg = { "content": _get_text(character, entry_to_delete) }
             else:
                 msg = { "embed": _get_embed(owner, character, entry_to_delete) }
@@ -78,7 +79,7 @@ def _entry_scope(entry):
     return entry["event"].split("_")[-1].capitalize()
 
 
-class _ExperienceView(inconnu.views.DisablingView):
+class _ExperienceView(DisablingView):
     """A View that adds or deducts the proper XP from a character when pressed."""
 
     def __init__(self, character, entry):

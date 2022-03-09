@@ -1,5 +1,7 @@
 """interface/misc.py - Miscellaneous commands."""
 
+import asyncio
+
 import discord
 from discord.commands import Option, OptionChoice, slash_command
 from discord.ext import commands
@@ -33,26 +35,6 @@ class MiscCommands(commands.Cog):
 
 
     @slash_command()
-    async def probability(
-        self,
-        ctx: discord.ApplicationContext,
-        roll: Option(str, "The pool, hunger, and difficulty"),
-        reroll: Option(str, "The re-roll strategy to use",
-            choices=[
-                OptionChoice("Re-Roll Failures", "reroll_failures"),
-                OptionChoice("Maximize Crits", "maximize_criticals"),
-                OptionChoice("Avoid Messy", "avoid_messy"),
-                OptionChoice("Risky Avoid Messy", "risky")
-            ],
-            required=False
-        ),
-        character: inconnu.options.character("The character (if using traits)")
-    ):
-        """Calculate outcome probabilities for a given roll."""
-        await inconnu.misc.probability(ctx, roll, reroll, character)
-
-
-    @slash_command()
     async def random(
         self,
         ctx: discord.ApplicationContext,
@@ -60,18 +42,6 @@ class MiscCommands(commands.Cog):
     ):
         """Roll between 1 and a given ceiling (default 100)."""
         await inconnu.misc.percentile(ctx, ceiling)
-
-
-    @slash_command()
-    @commands.guild_only()
-    async def statistics(
-        self,
-        ctx: discord.ApplicationContext,
-        trait: Option(str, "(Optional) A trait to look for", required=False),
-        date: Option(str, "(Optional) YYYYMMDD date to count from", default="19700101")
-    ):
-        """View roll statistics for your characters."""
-        await inconnu.misc.statistics(ctx, trait, date)
 
 
     @slash_command()
@@ -85,16 +55,25 @@ class MiscCommands(commands.Cog):
         new_owner: Option(discord.Member, "The character's new owner"),
     ):
         """Reassign a character from one player to another."""
+        if current_owner.id == new_owner.id:
+            await inconnu.common.present_error(
+                ctx,
+                "`current_owner` and `new_owner` can't be the same."
+            )
+            return
+
         try:
-            character = inconnu.vchar.VChar.fetch(None, None, character)
+            character = await inconnu.char_mgr.fetchone(ctx.guild, current_owner, character)
 
             if ctx.guild.id == character.guild and current_owner.id == character.user:
-                character.user = new_owner.id
                 current_mention = current_owner.mention
                 new_mention = new_owner.mention
 
                 msg = f"Transferred **{character.name}** from {current_mention} to {new_mention}."
-                await ctx.respond(msg)
+                await asyncio.gather(
+                    inconnu.char_mgr.transfer(character, current_owner, new_owner),
+                    ctx.respond(msg)
+                )
 
             else:
                 await inconnu.common.present_error(
@@ -104,6 +83,9 @@ class MiscCommands(commands.Cog):
 
         except inconnu.vchar.errors.CharacterNotFoundError:
             await inconnu.common.present_error(ctx, "Character not found.")
+        except ValueError as err:
+            await inconnu.common.present_error(ctx, err)
+
 
 
 def setup(bot):

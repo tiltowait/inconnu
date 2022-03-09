@@ -1,5 +1,6 @@
 """common.py - Commonly used functions."""
 
+import re
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -7,9 +8,6 @@ import discord
 from discord.ui import Button, View
 
 import inconnu
-from .constants import SUPPORT_URL
-from .settings import Settings
-from .vchar import errors, VChar
 
 
 def pluralize(value: int, noun: str) -> str:
@@ -49,7 +47,7 @@ async def present_error(
         help_url (str): The documentation URL for the error.
         components (list): Buttons or selection menus to add to the message.
     """
-    if Settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx.user):
         content = __error_text(error, *fields, footer=footer)
         msg_contents = { "content": content }
     else:
@@ -62,18 +60,19 @@ async def present_error(
 
     # Finish preparing the response
     msg_contents["ephemeral"] = ephemeral
+    msg_contents["allowed_mentions"] = discord.AllowedMentions.none()
 
     if help_url is not None:
         # If we have a help URL, we will add some links to the view
         view = view or View()
 
         view.add_item(Button(label="Documentation", url=help_url, row=1))
-        view.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
+        view.add_item(Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=1))
 
     if view is not None:
         msg_contents["view"] = view
 
-    msg = await ctx.respond(**msg_contents)
+    msg = await inconnu.respond(ctx)(**msg_contents)
 
     if isinstance(view, inconnu.views.DisablingView):
         # So it can automatically disable its buttons
@@ -137,6 +136,21 @@ def __error_text(
     return "\n".join(contents)
 
 
+async def report_update(*, ctx, character, title, message, **kwargs):
+    """Display character updates in the update channel."""
+    if (update_channel := await inconnu.settings.update_channel(ctx.guild)):
+        embed = discord.Embed(
+            title=title,
+            description=message,
+            color=kwargs.pop("color", discord.Embed.Empty)
+        )
+        embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
+
+        mentions = discord.AllowedMentions(users=False)
+
+        await update_channel.send(embed=embed, allowed_mentions=mentions)
+
+
 async def select_character(ctx, err, help_url, tip, player=None):
     """
     A prompt for the user to select a character from a list.
@@ -153,7 +167,7 @@ async def select_character(ctx, err, help_url, tip, player=None):
     else:
         user = ctx.user
 
-    options = character_options(ctx.guild.id, user.id)
+    options = await character_options(ctx.guild.id, user.id)
     msg = await present_error(
         ctx,
         err,
@@ -174,14 +188,14 @@ async def select_character(ctx, err, help_url, tip, player=None):
     return character_id
 
 
-def character_options(guild: int, user: int):
+async def character_options(guild: int, user: int):
     """
     Generate a dictionary of characters keyed by ID plus components for selecting them.
     Under 6 characters: Buttons
     Six or more characters: Selections
     """
-    characters = VChar.all_characters(guild, user)
-    chardict = {str(char.id): char for char in characters}
+    characters = await inconnu.char_mgr.fetchall(guild, user)
+    chardict = {char.id: char for char in characters}
 
     # We have to use an ugly hack for this. If we just use the character's ID
     # as the button's identifier, then multiple displays of these buttons will
@@ -199,7 +213,7 @@ def character_options(guild: int, user: int):
             for char in characters
         ]
     else:
-        options = [(char.name, str(char.id)) for char in characters]
+        options = [(char.name, char.id) for char in characters]
         components = [inconnu.views.Dropdown("Select a character", *options)]
 
     view = inconnu.views.BasicSelector(*components)
@@ -238,22 +252,22 @@ async def fetch_character(ctx, character, tip, help_url, owner=None):
         help_url (str): The URL of the button to display on any error messages
         userid (int): The ID of the user who owns the character, if different from the ctx author
     """
-    if isinstance(character, VChar):
+    if isinstance(character, inconnu.VChar):
         return character
 
     try:
         owner = owner or ctx.user
-        return VChar.fetch(ctx.guild.id, owner.id, character)
+        return await inconnu.char_mgr.fetchone(ctx.guild.id, owner.id, character)
 
-    except errors.UnspecifiedCharacterError as err:
+    except inconnu.vchar.errors.UnspecifiedCharacterError as err:
         character = await select_character(ctx, err, help_url, ("Proper syntax", tip), player=owner)
 
         if character is None:
             raise FetchError("No character was selected.") from err
 
-        return VChar.fetch(ctx.guild.id, owner.id, character)
+        return await inconnu.char_mgr.fetchone(ctx.guild.id, owner.id, character)
 
-    except errors.CharacterError as err:
+    except inconnu.vchar.errors.CharacterError as err:
         await present_error(ctx, err, help_url=help_url, author=owner)
         raise FetchError(str(err)) from err
 
@@ -287,3 +301,10 @@ def paginate(page_size: int, *contents) -> list:
 
     pages.append(page)
     return pages
+
+
+def contains_digit(string: str):
+    """Determine whether a string contains a digit."""
+    if string is None:
+        return False
+    return bool(re.search(r"\d", string)) # Much faster than using any()

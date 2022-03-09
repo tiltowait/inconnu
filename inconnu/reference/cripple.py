@@ -5,22 +5,17 @@ from types import SimpleNamespace
 
 import discord
 
-from .. import common
-from ..character.display import trackmoji
+import inconnu.common
 
 __HELP_URL = "https://www.inconnu-bot.com"
 
-async def cripple(ctx, damage: int, character: str):
+async def cripple(ctx, damage: int):
     """Roll against the crippling injury chart."""
-    if ctx.guild is None and character is not None:
-        await ctx.respond("You can't look up characters in DMs!")
-        return
-
     try:
         if damage is None:
             tip = "/cripple `damage:DAMAGE` `character:CHARACTER`"
-            character = await common.fetch_character(ctx, character, tip, __HELP_URL)
-            damage = character.agg_health
+            character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+            damage = character.aggravated_hp
         else:
             character = None # Do not allow explicit damage on a character
 
@@ -32,31 +27,24 @@ async def cripple(ctx, damage: int, character: str):
             return
 
         injuries = __get_injury(damage)
-        await __display_injury(ctx, damage, character, injuries)
+        await __display_injury(ctx, damage, injuries)
 
-        if character is not None:
-            # Log the injuries
-            injuries = " / ".join([injury.injury for injury in injuries])
-            character.log_injury(injuries)
-
-    except common.FetchError:
+    except inconnu.common.FetchError:
         pass
 
 
-async def __display_injury(ctx, damage, character, injuries):
+async def __display_injury(ctx, damage, injuries):
     """Display a crippling injury."""
     # We don't use the modular display, because we don't necessarily have a character here
 
-    embed = discord.Embed(title="Crippling Injury")
-
-    author = character.name if character is not None else ctx.user.display_name
-    embed.set_author(name=f"{author} | {damage} Agg", icon_url=ctx.user.display_avatar)
+    embed = discord.Embed(
+        title="Crippling Injury",
+        description=f"`{damage}` Aggravated damage sustained this turn."
+    )
+    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
 
     for injury in injuries:
         embed.add_field(name=injury.injury, value=injury.effect, inline=False)
-
-    if character is not None:
-        embed.add_field(name="Health", value=trackmoji.emojify_track(character.health))
 
     if len(injuries) > 1:
         embed.set_footer(text="The Storyteller chooses which injury applies.")

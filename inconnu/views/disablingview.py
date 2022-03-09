@@ -1,9 +1,9 @@
 """views/disablingview.py - A view subclass that has a method to disable its items."""
 
-from discord.ui import View
+import discord
 
 
-class DisablingView(View):
+class DisablingView(discord.ui.View):
     """A view that can disable all its buttons, save for its link buttons."""
 
     def __init__(self, timeout=60, remove_on_timeout=False):
@@ -31,7 +31,11 @@ class DisablingView(View):
                 for child in self.link_filter:
                     child.disabled = True
 
-            if hasattr(self.message, "edit"):
-                await self.message.edit(view=self)
-            else:
-                await self.message.edit_original_message(view=self)
+            try:
+                if hasattr(self.message, "edit"):
+                    await self.message.edit(view=self)
+                else:
+                    await self.message.edit_original_message(view=self)
+            except discord.NotFound:
+                # The message has been deleted
+                pass

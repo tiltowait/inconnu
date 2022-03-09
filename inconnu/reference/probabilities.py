@@ -1,17 +1,12 @@
-"""misc/probabilities.py - Calculate the probability of a given roll."""
+"""reference/probabilities.py - Calculate the probability of a given roll."""
 
-import os
 from collections import defaultdict
 from types import SimpleNamespace as SN
 
 import discord
-import pymongo
 
-from .. import common
-from ..roll import Roll
+import inconnu
 from .. import vr as roll
-from ..settings import Settings
-from ..vchar import errors
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=probability-calculation"
 __STRATEGIES = {
@@ -31,9 +26,9 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
 
         try:
             tip = f"`/probability` `roll:{syntax}` `character:CHARACTER`"
-            character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+            character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        except common.FetchError:
+        except inconnu.common.FetchError:
             return
 
     else:
@@ -42,15 +37,15 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
     try:
         parser = roll.RollParser(character, syntax)
         params = SN(pool=parser.pool, hunger=parser.hunger, difficulty=parser.difficulty)
-        probabilities = __get_probabilities(params, strategy)
+        probabilities = await __get_probabilities(params, strategy)
 
-        if Settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             await __display_text(ctx, params, strategy, probabilities)
         else:
             await __display_embed(ctx, params, strategy, probabilities)
 
-    except (SyntaxError, ValueError, errors.TraitError) as err:
-        await common.present_error(ctx, err, character=character, help_url=__HELP_URL)
+    except (SyntaxError, ValueError, inconnu.vchar.errors.TraitError) as err:
+        await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
 
 
 async def __display_text(ctx, params, strategy: str, probs: dict):
@@ -171,12 +166,11 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     await ctx.respond(embed=embed)
 
 
-def __get_probabilities(params, strategy):
+async def __get_probabilities(params, strategy):
     """Retrieve the probabilities from storage or, if not calculated yet, generate them."""
-    client = pymongo.MongoClient(os.environ["MONGO_URL"])
-    col = client.inconnu.probabilities
+    col = inconnu.db.probabilities
 
-    probs = col.find_one({
+    probs = await col.find_one({
         "pool": params.pool,
         "hunger": params.hunger,
         "difficulty": params.difficulty,
@@ -187,7 +181,7 @@ def __get_probabilities(params, strategy):
         probs = __simulate(params, strategy)
 
         # Save the probabilities
-        col.insert_one({
+        await col.insert_one({
             "pool": params.pool,
             "hunger": params.hunger,
             "difficulty": params.difficulty,
@@ -199,7 +193,6 @@ def __get_probabilities(params, strategy):
         probs = defaultdict(lambda: 0)
         probs.update(probabilities)
 
-    client.close()
     return probs
 
 
@@ -210,7 +203,7 @@ def __simulate(params, strategy):
     outcomes = defaultdict(lambda: 0)
 
     for _ in range(trials):
-        outcome = Roll(params.pool, params.hunger, params.difficulty)
+        outcome = inconnu.Roll(params.pool, params.hunger, params.difficulty)
 
         # Check reroll options
         if strategy is not None:

@@ -1,5 +1,6 @@
 """misc/aggheal.py - Heal aggravated damage."""
 
+import asyncio
 import random
 from types import SimpleNamespace
 
@@ -21,14 +22,14 @@ async def aggheal(ctx, character: str):
             await ctx.respond(f"{character.name} has no aggravated damage to heal!", ephemeral=True)
             return
 
-        outcome = __heal(character)
+        outcome = await __heal(character)
         await __display_outcome(ctx, character, outcome)
 
     except common.FetchError:
         pass
 
 
-def __heal(character: VChar):
+async def __heal(character: VChar):
     """
     Heal agg damage.
     Does not check if the character has agg damage!
@@ -44,11 +45,15 @@ def __heal(character: VChar):
         torpor = True
 
     # Update the character
-    character.hunger += hunger_gain
-    character.health = Damage.NONE + character.health[:-1]
+    tasks = []
+    tasks.append(character.set_hunger(character.hunger + hunger_gain))
+    tasks.append(character.set_health(Damage.NONE + character.health[:-1]))
 
     if character.is_vampire:
-        character.log("rouse", 3)
+        tasks.append(character.log("rouse", 3))
+
+    await asyncio.gather(*tasks)
+
     return SimpleNamespace(gain=hunger_gain, torpor=torpor)
 
 

@@ -5,8 +5,7 @@ from types import SimpleNamespace
 import discord
 from discord.ext import pages
 
-from .. import common
-from ..settings import Settings
+import inconnu
 
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=retrieval"
 
@@ -15,12 +14,12 @@ async def show(ctx, character=None):
     """Show all of a character's macros."""
     try:
         tip = "`/macro list` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
         # We have a valid character
         macros = character.macros
         if not macros:
-            await common.present_error(
+            await inconnu.common.present_error(
                 ctx,
                 f"{character.name} has no macros!",
                 character=character.name,
@@ -30,13 +29,13 @@ async def show(ctx, character=None):
 
         await __display_macros(ctx, character.name, macros)
 
-    except common.FetchError:
+    except inconnu.common.FetchError:
         pass
 
 
 async def __display_macros(ctx, char_name, macros):
     """Show a user their character's macros."""
-    if Settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx.user):
         await __macro_text(ctx, char_name, macros)
     else:
         await __macro_embed(ctx, char_name, macros)
@@ -45,7 +44,7 @@ async def __display_macros(ctx, char_name, macros):
 async def __macro_text(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
     fields = __generate_fields(macros, True)
-    raw_pages = common.paginate(1200, *fields)
+    raw_pages = inconnu.common.paginate(1200, *fields)
 
     _pages = []
     for page in raw_pages:
@@ -64,7 +63,7 @@ async def __macro_text(ctx, char_name, macros):
 async def __macro_embed(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
     fields = __generate_fields(macros, False)
-    raw_pages = common.paginate(1200, *fields)
+    raw_pages = inconnu.common.paginate(1200, *fields)
 
     _pages = []
     for page in raw_pages:

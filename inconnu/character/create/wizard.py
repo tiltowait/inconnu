@@ -1,7 +1,9 @@
 """character/create/wizard.py - The new character wizard."""
 # pylint: disable=too-few-public-methods
 
+import asyncio
 import os
+import threading
 
 import discord
 from discord.ui import Button
@@ -13,26 +15,27 @@ from inconnu.vchar import VChar
 class Wizard:
     """A helper class that guides a user through the chargen process."""
 
-    def __init__(self, ctx, parameters):
+    def __init__(self, ctx, parameters, accessible):
         if "DEBUG" in os.environ:
-            self.core_traits = ["Resolve", "Composure"]
+            self.core_traits = ["Stamina", "Resolve", "Composure"]
         else:
-            self.core_traits = inconnu.constants.FLAT_TRAITS
+            self.core_traits = inconnu.constants.FLAT_TRAITS()
 
         self.ctx = ctx
         self.msg = None # We will be editing this message instead of sending new ones
+        self.view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
         self.parameters = parameters
 
         if parameters.splat == "vampire":
             self.core_traits.append("Blood Potency")
 
         self.assigned_traits = {}
-        self.use_accessibility = inconnu.settings.accessible(ctx.user)
+        self.use_accessibility = accessible
 
 
     async def begin_chargen(self):
         """Start the chargen wizard."""
-        await self.__query_trait()
+        await asyncio.gather(_register_wizard(), self.__query_trait())
 
 
     async def _assign_next_trait(self, rating: int):
@@ -57,26 +60,38 @@ class Wizard:
         """Add the character to the database and inform the user they are done."""
         owner = self.ctx.user.id if not self.parameters.spc else inconnu.constants.INCONNU_ID
 
-        character = VChar.create(self.ctx.guild.id, owner, self.parameters.name)
-        character.splat= self.parameters.splat
-        character.humanity = self.parameters.humanity
-        character.health = "." * self.parameters.hp
-        character.willpower = "." * self.parameters.wp
+        character = VChar.create(
+            guild=self.ctx.guild.id,
+            user=owner,
+            name=self.parameters.name,
+            splat=self.parameters.splat,
+            humanity=self.parameters.humanity,
+            health=self.parameters.hp * inconnu.constants.Damage.NONE,
+            willpower=self.parameters.wp * inconnu.constants.Damage.NONE,
+            potency=self.assigned_traits.pop("Blood Potency", 0),
+            traits=self.assigned_traits
+        )
 
-        # Set blood potency when applicable
-        if character.is_vampire:
-            blood_potency = self.assigned_traits["Blood Potency"]
-            character.potency = blood_potency
-            del self.assigned_traits["Blood Potency"] # Don't want to make this a trait
-
-        # Need to add the traits one-by-one
-        for trait, rating in self.assigned_traits.items():
-            character.add_trait(trait, rating)
+        tasks = []
 
         if self.use_accessibility:
-            await self.__finalize_text(character)
+            tasks.append(self.__finalize_text(character))
         else:
-            await self.__finalize_embed(character)
+            tasks.append(self.__finalize_embed(character))
+
+        tasks.append(inconnu.char_mgr.register(character))
+        tasks.append(_deregister_wizard())
+
+        # Update channel message
+        tasks.append(inconnu.common.report_update(
+            ctx=self.ctx,
+            character=character,
+            title="Character Created",
+            message=f"{self.ctx.user.mention} created **{character.name}**."
+        ))
+
+        self.view.stop()
+        await asyncio.gather(*tasks)
 
 
     async def __finalize_text(self, character):
@@ -141,8 +156,7 @@ class Wizard:
         contents.append(f"```Select the rating for: {self.core_traits[0]}```")
 
         if self.msg is None:
-            view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
-            self.msg = await self.ctx.user.send("\n".join(contents), view=view)
+            self.msg = await self.ctx.user.send("\n".join(contents), view=self.view)
         else:
             await self.msg.edit(content="\n".join(contents))
 
@@ -165,8 +179,7 @@ class Wizard:
         embed.set_footer(text="Your character will not be saved until you have entered all traits.")
 
         if self.msg is None:
-            view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
-            self.msg = await self.ctx.user.send(embed=embed, view=view)
+            self.msg = await self.ctx.user.send(embed=embed, view=self.view)
         else:
             await self.msg.edit(embed=embed)
 
@@ -175,3 +188,41 @@ class Wizard:
         """Inform the user they took too long."""
         errmsg = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
         await self.msg.edit(content=errmsg, embed=None, view=None)
+        await _deregister_wizard()
+
+
+# When we deploy a new build of the bot, we want to avoid doing so while someone
+# is creating a character. To prevent this, we maintain a lock file that tracks
+# the number of actively running wizards. On deployment, if the count is 0, then
+# the deployment will proceed.
+
+async def _register_wizard():
+    """Increment the chargen counter."""
+    await __modify_lock(1)
+
+
+async def _deregister_wizard():
+    """Decrement the chargen counter."""
+    await __modify_lock(-1)
+
+
+async def __modify_lock(delta):
+    """Modify the chargen counter."""
+    lockfile = ".wizard.lock"
+    lock = threading.Lock()
+
+    with lock:
+        if not os.path.exists(lockfile):
+            open(lockfile, "w", encoding="utf8").close() # pylint: disable=consider-using-with
+
+        with open(lockfile, "r+", encoding="utf8") as registration:
+            try:
+                counter = int(registration.readline())
+            except ValueError:
+                counter = 0
+
+            counter = max(0, counter + delta)
+
+            registration.seek(0)
+            registration.write(str(counter))
+            registration.truncate()

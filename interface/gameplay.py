@@ -18,12 +18,12 @@ class Gameplay(commands.Cog):
     async def vr(
         self,
         ctx: discord.ApplicationContext,
-        syntax: Option(str, "The roll syntax"),
+        syntax: Option(str, "The roll syntax: POOL HUNGER DIFFICULTY"),
         comment: Option(str, "A description of the roll", required=False),
         character: inconnu.options.character(),
         player: inconnu.options.player
     ):
-        """Roll the dice."""
+        """Roll the dice. Syntax: POOL HUNGER DIFFICULTY."""
         await inconnu.vr.parse(ctx, syntax, comment, character, player)
 
 
@@ -76,18 +76,6 @@ class Gameplay(commands.Cog):
 
     @slash_command()
     @commands.guild_only()
-    async def cripple(
-        self,
-        ctx: discord.ApplicationContext,
-        damage: Option(int, "The Aggravated damage sustained", min_value=1),
-        character: inconnu.options.character("The character to cripple")
-    ):
-        """Generate a random crippling injury based on Aggravated damage."""
-        await inconnu.misc.cripple(ctx, damage, character)
-
-
-    @slash_command()
-    @commands.guild_only()
     async def frenzy(
         self,
         ctx: discord.ApplicationContext,
@@ -129,12 +117,6 @@ class Gameplay(commands.Cog):
     ):
         """Perform a Remorse check."""
         await inconnu.misc.remorse(ctx, character, min_override)
-
-
-    @slash_command()
-    async def resonance(self, ctx):
-        """Generate a random Resonance."""
-        await inconnu.misc.resonance(ctx)
 
 
     @slash_command()

@@ -1,30 +1,45 @@
 """commands.py - Define the commands and event handlers for the bot."""
 
+import asyncio
 import os
 
 import discord
+import pymongo.errors
 import topgg
 from discord.ext import commands, tasks
 
 import inconnu
 
-intents = discord.Intents.default()
-intents.members = True # pylint: disable=assigning-non-slot
 
 # Check if we're in dev mode
 if (debug_guild := os.getenv("DEBUG")) is not None:
     print("Debugging on", debug_guild)
     debug_guild = [int(debug_guild)]
 
+
+# Set up the bot instance
+intents = discord.Intents(guilds=True, members=True)
 bot = discord.Bot(intents=intents, debug_guilds=debug_guild)
-setattr(bot, "persistent_views_added", False)
+bot.persistent_views_added = False
+bot.welcomed = False
 
 
 # General Events
 
 @bot.event
 async def on_ready():
-    """Print a message letting us know the bot logged in to Discord."""
+    """Schedule a task to perform final setup."""
+    task = bot.loop.create_task(finish_setup())
+    await task
+
+
+async def finish_setup():
+    """Print login message and perform final setup."""
+    if bot.welcomed:
+        return
+
+    await bot.wait_until_ready()
+
     print(f"Logged on as {bot.user}!")
     print(f"Playing on {len(bot.guilds)} servers.")
     print(discord.version_info)
@@ -33,12 +48,14 @@ async def on_ready():
 
     await __set_presence()
     cull_inactive.start()
+    inconnu.char_mgr.bot = bot
+    bot.welcomed = True
 
 
 @bot.event
 async def on_application_command_error(ctx, error):
     """Handle various errors we might encounter."""
-    error = getattr(error, "original", error) # Some pycord errors have `original`, but not all do
+    error = getattr(error, "original", error) # Some pycord errors have `original`, but not all
 
     if isinstance(error, commands.NoPrivateMessage):
         await ctx.respond("Sorry, this command isn't available in DMs!", ephemeral=True)
@@ -49,9 +66,15 @@ async def on_application_command_error(ctx, error):
     if isinstance(error, discord.errors.NotFound):
         # This just means a button tried to disable when its message no longer exists.
         # We don't care, and there's nothing we can do about it anyway.
-        pass
+        return
 
-    raise error
+    # Unknown errors and database errors are logged to a channel
+
+    if isinstance(error, pymongo.errors.PyMongoError):
+        await inconnu.log.report_database_error(bot, ctx)
+        return
+
+    await inconnu.log.report_error(bot, ctx, error)
 
 
 # Member Events
@@ -59,13 +82,13 @@ async def on_application_command_error(ctx, error):
 @bot.event
 async def on_member_remove(member):
     """Mark all of a member's characters as inactive."""
-    inconnu.VChar.mark_player_inactive(member)
+    await inconnu.char_mgr.mark_inactive(member)
 
 
 @bot.event
 async def on_member_join(member):
     """Mark all the player's characters as active when they rejoin a guild."""
-    inconnu.VChar.reactivate_player_characters(member)
+    await inconnu.char_mgr.mark_active(member)
 
 
 # Guild Events
@@ -74,16 +97,20 @@ async def on_member_join(member):
 async def on_guild_join(guild):
     """Log whenever a guild is joined."""
     print(f"Joined {guild.name}!")
-    inconnu.stats.Stats.guild_joined(guild.id, guild.name)
-    await __set_presence()
+    task1 = inconnu.stats.guild_joined(guild.id, guild.name)
+    task2 = __set_presence()
+
+    await asyncio.gather(task1, task2)
 
 
 @bot.event
 async def on_guild_remove(guild):
     """Log guild removals."""
     print(f"Left {guild.name} :(")
-    inconnu.stats.Stats.guild_left(guild.id)
-    await __set_presence()
+    task1 = inconnu.stats.guild_left(guild.id)
+    task2 = __set_presence()
+
+    await asyncio.gather(task1, task2)
 
 
 @bot.event
@@ -91,7 +118,7 @@ async def on_guild_update(before, after):
     """Log guild name changes."""
     if before.name != after.name:
         print(f"Renamed {before.name} => {after.name}")
-        inconnu.stats.Stats.guild_renamed(after.id, after.name)
+        await inconnu.stats.guild_renamed(after.id, after.name)
 
 
 # Tasks
@@ -99,7 +126,7 @@ async def on_guild_update(before, after):
 @tasks.loop(hours=24)
 async def cull_inactive():
     """Cull inactive characters and guilds."""
-    inconnu.culler.cull()
+    await inconnu.culler.cull()
 
 
 # Misc and helpers

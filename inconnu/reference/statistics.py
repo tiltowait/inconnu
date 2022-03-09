@@ -1,12 +1,10 @@
-"""misc/statistics.py - View character roll statistics"""
+"""reference/statistics.py - View character roll statistics"""
 
-import os
 import re
 from collections import defaultdict
 from datetime import datetime
 
 import discord
-import pymongo
 
 import inconnu
 
@@ -39,8 +37,7 @@ async def statistics(ctx, trait: str, date):
 
 async def __trait_statistics(ctx, trait, date):
     """View the roll statistics for a given trait."""
-    client = pymongo.MongoClient(os.environ["MONGO_URL"])
-    rolls = client.inconnu.rolls
+    rolls = inconnu.db.rolls
     regex  = r"^.*(\s+" + f"{trait}|{trait}" + r"\s+.*|" + trait + ")$"
     pipeline = [
         {
@@ -91,16 +88,17 @@ async def __trait_statistics(ctx, trait, date):
             }
         }
     ]
-    stats = list(rolls.aggregate(pipeline))
+    stats = await rolls.aggregate(pipeline).to_list(length=None)
+
     fmt_date = date.strftime("%Y-%m-%d")
     if stats:
-        if inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx.user):
             await __trait_stats_text(ctx, trait, stats, fmt_date)
         else:
             await __trait_stats_embed(ctx, trait, stats, fmt_date)
     else:
         # We didn't get any rolls
-        all_chars = inconnu.vchar.VChar.all_characters(ctx.guild.id, ctx.user.id)
+        all_chars = await inconnu.char_mgr.fetchall(ctx.guild.id, ctx.user.id)
         trait_is_valid = False
 
         for char in all_chars:
@@ -160,8 +158,7 @@ async def __trait_stats_text(ctx, trait, stats, date):
 
 async def __all_statistics(ctx, date):
     """View the roll statistics for the user's characters."""
-    client = pymongo.MongoClient(os.environ["MONGO_URL"])
-    col = client.inconnu.characters
+    col = inconnu.db.characters
     pipeline = [
         {
           "$match": {
@@ -226,14 +223,13 @@ async def __all_statistics(ctx, date):
             "$sort": { "name": 1 }
         }
     ]
-    results = list(col.aggregate(pipeline))
-    client.close()
+    results = await col.aggregate(pipeline).to_list(length=None)
 
     if not results:
         await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)
         return
 
-    if inconnu.settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx.user):
         await __display_text(ctx, results)
     else:
         await __display_embed(ctx, results)

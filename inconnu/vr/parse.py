@@ -11,6 +11,7 @@
 # this is the fact they could theoretically supply a name despite not using a
 # trait-based roll, so we need to check for the character in either case.
 
+import asyncio
 import re
 
 import discord
@@ -20,7 +21,6 @@ from inconnu import common
 from .rolldisplay import RollDisplay
 from .rollparser import RollParser
 from ..roll import Roll
-from ..log import Log
 from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
@@ -34,6 +34,10 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
     if "#" in syntax:
         syntax, comment = syntax.split("#", 1)
         comment = await stringify_mentions(ctx, comment)
+
+    if RollParser.has_invalid_characters(syntax):
+        await common.present_error(ctx, f"Invalid syntax: `{syntax}`.", ephemeral=False)
+        return
 
     if comment is not None and (comment_len := len(comment)) > 300:
         await common.present_error(ctx, f"Comment is too long by {comment_len - 300} characters.")
@@ -69,7 +73,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         await display_outcome(ctx, owner, character, outcome, comment)
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
-        Log.log("roll_error",
+        log_task = inconnu.log.log_event("roll_error",
             user=ctx.user.id,
             charid=getattr(character, "id", None),
             syntax=raw_syntax
@@ -82,7 +86,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             view = None
             ephemeral = False
 
-        await common.present_error(
+        error_task = common.present_error(
             ctx,
             err,
             ("Your Input", f"/vr syntax:`{raw_syntax}`"),
@@ -93,12 +97,14 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             ephemeral=ephemeral
         )
 
+        await asyncio.gather(log_task, error_task)
+
 
 async def display_outcome(ctx, player, character: VChar, results, comment):
     """Display the roll results."""
     roll_display = RollDisplay(ctx, results, comment, character, player)
 
-    if inconnu.settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx.user):
         await roll_display.display(False)
     else:
         await roll_display.display(True)

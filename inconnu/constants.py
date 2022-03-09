@@ -37,7 +37,7 @@ GROUPED_TRAITS = {
     }
 }
 
-FLAT_TRAITS = sum(FlatDict(GROUPED_TRAITS).values(), [])
+FLAT_TRAITS = lambda: sum(FlatDict(GROUPED_TRAITS).values(), [])
 
 UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]
 

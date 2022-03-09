@@ -4,6 +4,7 @@ import asyncio
 import re
 
 import discord
+from discord.ext.commands import Paginator
 from discord.ui import InputText, Modal
 
 import inconnu
@@ -25,8 +26,9 @@ class _BulkModal(Modal):
         self.would_award = []
         self.errors = []
 
-        instructions = "One entry per line. Format: N xp <@!USER_ID> CHAR_NAME"
-        instructions += "\n\nExample:\n\n5 xp <@!229736753676681230> Nadea"
+        instructions = "5 xp <@!495968276373733129> Nadea"
+        instructions = "3 xp <@!127623457834687236> Kimberly"
+        instructions = "4 xp <@!347563452378238487> Eric"
 
         self.add_item(
             InputText(
@@ -95,8 +97,10 @@ class _BulkModal(Modal):
     async def _present_errors(self, interaction):
         """Show the error message. No XP awarded."""
         contents = "**NO XP HAS BEEN AWARDED!** Correct the errors below and try again."
-        fields = [("Would Award", "\n".join(self.would_award))] if self.would_award else []
-        fields.append(("Errors", "\n".join(self.errors)))
+        self._chunk_fields()
+
+        fields = [("Would Award", page) for page in self.would_award] if self.would_award else []
+        fields.extend([("Errors", page) for page in self.errors])
 
         await inconnu.common.present_error(interaction, contents, *fields, ephemeral=False)
 
@@ -105,8 +109,29 @@ class _BulkModal(Modal):
         """Award the XP."""
         embed = discord.Embed(
             title="Bulk Awarding XP",
-            description="\n".join(self.would_award),
             color=0x7ED321
         )
+        for page in self.would_award:
+            embed.add_field(name="Awarding", value=page)
+
         send_embed = interaction.followup.send(embed=embed)
         await asyncio.gather(*self.xp_tasks, send_embed)
+
+
+    def _chunk_fields(self):
+        """Split the fields up into smaller chunks."""
+        size = 1024
+
+        paginator = Paginator(max_size=size, suffix="", prefix="")
+
+        for line in self.would_award:
+            paginator.add_line(line)
+
+        self.would_award = paginator.pages
+
+        paginator = Paginator(max_size=size, suffix="", prefix="")
+
+        for line in self.errors:
+            paginator.add_line(line)
+
+        self.errors = paginator.pages

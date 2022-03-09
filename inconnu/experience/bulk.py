@@ -26,9 +26,9 @@ class _BulkModal(Modal):
         self.would_award = []
         self.errors = []
 
-        instructions = "5 xp <@!495968276373733129> Nadea"
-        instructions = "3 xp <@!127623457834687236> Kimberly"
-        instructions = "4 xp <@!347563452378238487> Eric"
+        instructions = "5 xp <@!495968276373733129> Nadea\n"
+        instructions += "3 xp <@!127623457834687236> Kimberly\n"
+        instructions += "4 xp <@!347563452378238487> Eric"
 
         self.add_item(
             InputText(

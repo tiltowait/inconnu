@@ -28,7 +28,6 @@ class _BulkModal(Modal):
 
         instructions = "5 xp <@!495968276373733129> Nadea\n"
         instructions += "3 xp <@!127623457834687236> Kimberly\n"
-        instructions += "4 xp <@!347563452378238487> Eric"
 
         self.add_item(
             InputText(

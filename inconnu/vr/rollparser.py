@@ -187,7 +187,7 @@ class RollParser:
     @classmethod
     def has_invalid_characters(cls, syntax) -> bool:
         """Check whether the roll has invalid characters."""
-        return re.search(r"[^\w+-\s]", syntax) is not None
+        return re.search(r"[^\w\+\-\s]", syntax) is not None
 
 
 # Math Helpers

@@ -113,7 +113,7 @@ class _BulkModal(Modal):
             color=0x7ED321
         )
         for page in self.would_award:
-            embed.add_field(name="Awarding", value=page)
+            embed.add_field(name="Awarding", value=page, inline=False)
 
         send_embed = interaction.followup.send(embed=embed)
         await asyncio.gather(*self.xp_tasks, send_embed)

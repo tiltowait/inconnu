@@ -107,6 +107,8 @@ class _BulkModal(Modal):
 
     async def _award_xp(self, interaction):
         """Award the XP."""
+        self._chunk_fields()
+
         embed = discord.Embed(
             title="Bulk Awarding XP",
             color=0x7ED321

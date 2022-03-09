@@ -2,7 +2,6 @@
 # pylint: disable=too-many-arguments
 
 import asyncio
-import re
 
 import discord
 from discord.ui import Button
@@ -138,43 +137,6 @@ def __validate_parameters(parameters):
         validated[key] = value
 
     return validated
-
-
-def __parse_arguments(*arguments):
-    """
-    Parse the user's arguments.
-    Raises ValueErrors and KeyErrors on exceptions.
-    """
-    if not arguments:
-        raise ValueError("You must supply some parameters!")
-
-    parameters = {}
-
-    for argument in arguments:
-        split = argument.split("=")
-        key = split[0].lower()
-
-        if len(split) != 2:
-            err = "Parameters must be in `key = value` pairs."
-            if key not in __KEYS:
-                err += f" Also, `{key}` is not a valid option."
-            raise SyntaxError(err)
-
-        if key in parameters:
-            raise ValueError(f"You cannot use `{key}` more than once.")
-
-        if key not in __MATCHES:
-            raise ValueError(f"Unknown parameter: `{key}`.")
-
-        key = __MATCHES[key] # Get the canonical key
-
-        value = split[1]
-        if not value:
-            raise ValueError(f"No value given for `{key}`.")
-
-        parameters[key] = value # Don't do any validation here
-
-    return parameters
 
 
 async def __update_character(ctx, character: VChar, param: str, value: str) -> str:

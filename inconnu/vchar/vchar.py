@@ -397,6 +397,12 @@ class VChar:
         await self._async_set_property(_Properties.IMAGE, new_image_url)
 
 
+    @property
+    def has_biography(self):
+        """Whether the character has any biographical data."""
+        return all([self.biography, self.description])
+
+
     # Derived attributes
 
 

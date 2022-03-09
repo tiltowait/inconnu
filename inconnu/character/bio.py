@@ -4,6 +4,7 @@ import asyncio
 from urllib.parse import urlparse
 
 import discord
+from discord.ext.commands import Paginator
 
 import inconnu
 
@@ -22,35 +23,14 @@ async def show_biography(ctx, character, player):
     """Display a character's biography."""
     try:
         owner = ctx.user or player
-        tip = "`/character bio show` `character:CHARACTER` `player:PLAYER`"
+        tip = "`/character bio show` `[character:CHARACTER]` `[player:PLAYER]`"
         character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        embed = discord.Embed(title="Biography")
-        embed.set_author(name=character.name, icon_url=owner.display_avatar)
-
-        should_show = False
-
-        if character.biography:
-            should_show = True
-            embed.add_field(
-                name="History",
-                value=character.biography or "*Not set.*",
-                inline=False
-            )
-        if character.description:
-            should_show = True
-            embed.add_field(
-                name="Description & Personality",
-                value=character.description or "*Not set.*",
-                inline=False
-            )
-
-        if character.image_url.startswith("https://"):
-            should_show = True
-            embed.set_image(url=character.image_url)
-
-        if should_show:
-            await ctx.respond(embed=embed)
+        if character.has_biography:
+            if await inconnu.settings.accessible(ctx.user):
+                await __biography_text(ctx, character)
+            else:
+                await __biography_embed(ctx, character, owner)
         else:
             await ctx.respond(f"**{character.name}** doesn't have a biography!", ephemeral=True)
 
@@ -58,6 +38,46 @@ async def show_biography(ctx, character, player):
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
     except inconnu.common.FetchError:
         pass
+
+
+async def __biography_embed(ctx, character, owner):
+    """Display the biography in an embed."""
+    embed = discord.Embed(title="Biography")
+    embed.set_author(name=character.name, icon_url=owner.display_avatar)
+
+    if character.biography:
+        embed.add_field(
+            name="History",
+            value=character.biography or "*Not set.*",
+            inline=False
+        )
+    if character.description:
+        embed.add_field(
+            name="Description & Personality",
+            value=character.description or "*Not set.*",
+            inline=False
+        )
+
+    if character.image_url.startswith("https://"):
+        embed.set_image(url=character.image_url)
+
+    await ctx.respond(embed=embed)
+
+
+async def __biography_text(ctx, character):
+    """Display the biography in plain text."""
+    paginator = Paginator(prefix="", suffix="", linesep="\n\n")
+
+    paginator.add_line(f"**{character.name.upper()}**")
+
+    if character.biography:
+        paginator.add_line(f"**Biography:** {character.biography}")
+
+    if character.description:
+        paginator.add_line(f"**Description:** {character.description}")
+
+    for page in paginator.pages:
+        await inconnu.respond(ctx)(page)
 
 
 class _CharacterBio(discord.ui.Modal):

@@ -96,7 +96,8 @@ async def update(
             fields=fields,
             color=color,
             owner=player,
-            message=update_message
+            message=update_message,
+            thumbnail=character.image_url if not fields else None
         ))
 
         await asyncio.gather(*tasks)

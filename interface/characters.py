@@ -170,6 +170,37 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.delete(ctx, character)
 
 
+    biography = character.create_subgroup("bio", "Character biography")
+
+    @biography.command(name="edit")
+    @commands.guild_only()
+    async def character_bio_edit(
+        self,
+        ctx: discord.ApplicationContext,
+        character: inconnu.options.character("The character to edit", required=True)
+    ):
+        """Edit a character's biography."""
+        await inconnu.character.edit_biography(ctx, character)
+
+
+    @biography.command(name="show")
+    @commands.guild_only()
+    async def character_bio_show(
+        self,
+        ctx: discord.ApplicationContext,
+        player: Option(discord.Member, "The character's owner", required=False),
+        character: inconnu.options.character("The character to view"),
+    ):
+        """View a character's biography."""
+        await inconnu.character.show_biography(ctx, character, player)
+
+
+    @commands.user_command(name="Character Bio")
+    async def character_bio_context(self, ctx, player):
+        """View a character's biography."""
+        await inconnu.character.show_biography(ctx, None, player)
+
+
 def _check_number(label, value):
     """Check whether a given value is a number. Raise a ValueError if not."""
     if value is None:

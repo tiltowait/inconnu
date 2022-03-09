@@ -44,7 +44,8 @@ async def display_requested(ctx, character=None, message=None, player=None, ephe
             message=message,
             footer=None,
             view=inconnu.views.TraitsView(character, ctx.user),
-            ephemeral=ephemeral
+            ephemeral=ephemeral,
+            thumbnail=character.image_url
         )
 
     except LookupError as err:

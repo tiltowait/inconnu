@@ -232,7 +232,7 @@ async def player_lookup(ctx, player: discord.Member):
         return ctx.user
 
     # Players are allowed to look up themselves
-    if not ctx.user.guild_permissions.administrator and ctx.user != player:
+    if (not ctx.user.guild_permissions.administrator) and ctx.user != player:
         raise LookupError("You don't have lookup permissions.")
 
     return player

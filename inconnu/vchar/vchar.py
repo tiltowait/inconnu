@@ -46,6 +46,9 @@ class _Properties(str, Enum):
     HUNGER = "hunger"
     POTENCY = "potency"
     TRAITS = "traits"
+    BIOGRAPHY = "biography"
+    DESCRIPTION = "description"
+    IMAGE = "image"
 
 
 class VChar:
@@ -359,6 +362,45 @@ class VChar:
         task2 = self.set_current_xp(self.current_xp + delta)
 
         await asyncio.gather(task1, task2)
+
+
+    @property
+    def biography(self):
+        """The character's biography."""
+        return self._params.get(_Properties.BIOGRAPHY, "")
+
+
+    async def set_biography(self, new_biography):
+        """Set the character's biography."""
+        await self._async_set_property(_Properties.BIOGRAPHY, new_biography)
+
+
+    @property
+    def description(self):
+        """The character's description."""
+        return self._params.get(_Properties.DESCRIPTION, "")
+
+
+    async def set_description(self, new_description):
+        """Set the character's description."""
+        await self._async_set_property(_Properties.DESCRIPTION, new_description)
+
+
+    @property
+    def image_url(self):
+        """The character's image."""
+        return self._params.get(_Properties.IMAGE, "")
+
+
+    async def set_image_url(self, new_image_url):
+        """Set the character's image URL."""
+        await self._async_set_property(_Properties.IMAGE, new_image_url)
+
+
+    @property
+    def has_biography(self):
+        """Whether the character has any biographical data."""
+        return all([self.biography, self.description])
 
 
     # Derived attributes

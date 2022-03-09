@@ -47,22 +47,21 @@ async def update(
     Process the user's arguments.
     Allow the user to omit a character if they have only one.
     """
-    parameters = inconnu.utils.parse_parameters(parameters, True)
     if not parameters:
-        # We calculate early so we can fail early in certain circumstances
+        # Might have got here through a help message
         await update_help(ctx)
         return
 
-    parameters = __validate_parameters(parameters)
-    human_readable = " ".join([f"{k}={v}" for k, v in parameters.items()])
-
     try:
         owner = await inconnu.common.player_lookup(ctx, player)
-        tip = f"`/character update` `parameters:{human_readable}` `character:CHARACTER`"
+        tip = f"`/character update` `parameters:{parameters}` `character:CHARACTER`"
         character = await inconnu.common.fetch_character(
             ctx, character, tip, __HELP_URL, owner=owner
         )
 
+        parameters = inconnu.utils.parse_parameters(parameters, True)
+        human_readable = " ".join([f"{k}={v}" for k, v in parameters.items()])
+        parameters = __validate_parameters(parameters)
         updates = []
 
         for parameter, new_value in parameters.items():
@@ -131,6 +130,9 @@ def __validate_parameters(parameters):
 
         if key not in __MATCHES:
             raise ValueError(f"Unknown parameter: `{key}`.")
+
+        if not value:
+            raise ValueError(f"Missing value for key `{key}`.")
 
         key = __MATCHES[key]
         validated[key] = value

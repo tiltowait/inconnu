@@ -46,6 +46,9 @@ class _Properties(str, Enum):
     HUNGER = "hunger"
     POTENCY = "potency"
     TRAITS = "traits"
+    BIOGRAPHY = "biography"
+    DESCRIPTION = "description"
+    IMAGE = "image"
 
 
 class VChar:
@@ -364,37 +367,34 @@ class VChar:
     @property
     def biography(self):
         """The character's biography."""
-        return self._params.get("biography", "")
+        return self._params.get(_Properties.BIOGRAPHY, "")
 
 
-    @biography.setter
-    def biography(self, new_value):
+    async def set_biography(self, new_biography):
         """Set the character's biography."""
-        VChar._CHARS.update_one(self.find_query, { "$set": { "biography": new_value } })
+        await self._async_set_property(_Properties.BIOGRAPHY, new_biography)
 
 
     @property
     def description(self):
         """The character's description."""
-        return self._params.get("description", "")
+        return self._params.get(_Properties.DESCRIPTION, "")
 
 
-    @description.setter
-    def description(self, new_value):
+    async def set_description(self, new_description):
         """Set the character's description."""
-        VChar._CHARS.update_one(self.find_query, { "$set": { "description": new_value } })
+        await self._async_set_property(_Properties.DESCRIPTION, new_description)
 
 
     @property
     def image_url(self):
         """The character's image."""
-        return self._params.get("image", "")
+        return self._params.get(_Properties.IMAGE, "")
 
 
-    @image_url.setter
-    def image_url(self, new_value):
-        """Set the character's image."""
-        VChar._CHARS.update_one(self.find_query, { "$set": { "image": new_value } })
+    async def set_image_url(self, new_image_url):
+        """Set the character's image URL."""
+        await self._async_set_property(_Properties.IMAGE, new_image_url)
 
 
     # Derived attributes

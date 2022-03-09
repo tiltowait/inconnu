@@ -1,5 +1,6 @@
 """character/bio.py - Create/edit/view character bios."""
 
+import asyncio
 from urllib.parse import urlparse
 
 import discord
@@ -11,7 +12,7 @@ __HELP_URL = "https://www.inconnu-bot.com"
 
 async def edit_biography(ctx, character):
     """Edit a character bio."""
-    character = inconnu.vchar.VChar.fetch(ctx.guild.id, ctx.user.id, character)
+    character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
     modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
 
     await ctx.interaction.response.send_modal(modal)
@@ -68,7 +69,7 @@ class _CharacterBio(discord.ui.Modal):
 
         self.add_item(discord.ui.InputText(
             label="Biography",
-            placeholder="Character biography and history.",
+            placeholder="Character biography and history. Will be publicly shown.",
             value=character.biography,
             style=discord.InputTextStyle.long,
             max_length=1024,
@@ -76,7 +77,7 @@ class _CharacterBio(discord.ui.Modal):
         ))
         self.add_item(discord.ui.InputText(
             label="Description & Personality",
-            placeholder="The character's physical description.",
+            placeholder="The character's physical description. Will be publicly shown.",
             value=character.description,
             style=discord.InputTextStyle.long,
             max_length=1024,
@@ -84,7 +85,7 @@ class _CharacterBio(discord.ui.Modal):
         ))
         self.add_item(discord.ui.InputText(
             label="Image URL",
-            placeholder="The character's face claim.",
+            placeholder="The character's face claim. Will be publicly shown.",
             value=character.image_url,
             required=False,
         ))
@@ -96,18 +97,21 @@ class _CharacterBio(discord.ui.Modal):
         description = self.children[1].value
         image_url = self.children[2].value
 
-        self.character.biography = biography.strip()
-        self.character.description = description.strip()
+        tasks = [
+            self.character.set_biography(biography.strip()),
+            self.character.set_description(description.strip())
+        ]
 
         if _valid_url(image_url):
-            self.character.image_url = image_url
+            tasks.append(self.character.set_image_url(image_url))
         else:
-            self.character.image_url = ""
+            tasks.append(self.character.set_image_url(""))
 
-        await interaction.response.send_message(
+        tasks.append(interaction.response.send_message(
             f"Edited **{self.character.name}'s** biography!",
             ephemeral=True
-        )
+        ))
+        await asyncio.gather(*tasks)
 
 
 def _valid_url(url):

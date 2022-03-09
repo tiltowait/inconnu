@@ -16,7 +16,7 @@ async def edit_biography(ctx, character):
     character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
     modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
 
-    await ctx.interaction.response.send_modal(modal)
+    await ctx.send_modal(modal)
 
 
 async def show_biography(ctx, character, player):

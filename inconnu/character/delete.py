@@ -15,7 +15,7 @@ async def delete(ctx, character: str):
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character)
         modal = _DeletionModal(title=f"Delete {character.name}", character=character)
-        await ctx.response.send_modal(modal)
+        await ctx.send_modal(modal)
 
     except inconnu.vchar.errors.CharacterError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)

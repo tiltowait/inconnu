@@ -1,4 +1,5 @@
 """interface/characters.py - Character management Cog."""
+# pylint: disable=no-self-use
 
 from distutils.util import strtobool
 
@@ -195,7 +196,7 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.show_biography(ctx, character, player)
 
 
-    @commands.user_command(name="Character Bio")
+    @commands.user_command(name="Character Bios")
     async def character_bio_context(self, ctx, player):
         """View a character's biography."""
         await inconnu.character.show_biography(ctx, None, player)

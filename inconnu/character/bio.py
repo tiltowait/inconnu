@@ -13,10 +13,13 @@ __HELP_URL = "https://www.inconnu-bot.com"
 
 async def edit_biography(ctx, character):
     """Edit a character bio."""
-    character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
-    modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
+    try:
+        character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
+        modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
 
-    await ctx.send_modal(modal)
+        await ctx.send_modal(modal)
+    except inconnu.vchar.errors.CharacterNotFoundError as err:
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
 
 
 async def show_biography(ctx, character, player):

@@ -22,7 +22,7 @@ async def edit_biography(ctx, character):
 async def show_biography(ctx, character, player):
     """Display a character's biography."""
     try:
-        owner = ctx.user or player
+        owner = player or ctx.user # Don't need admin permissions for this
         tip = "`/character bio show` `[character:CHARACTER]` `[player:PLAYER]`"
         character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 

@@ -51,6 +51,12 @@ async def update(
         await update_help(ctx)
         return
 
+    parameters = " ".join(parameters.split())
+
+    # This will get overwritten, but we need it now in case we run into trouble
+    # trying to parse the input
+    human_readable = parameters
+
     try:
         owner = await inconnu.common.player_lookup(ctx, player)
         tip = f"`/character update` `parameters:{parameters}` `character:CHARACTER`"
@@ -123,18 +129,17 @@ def __validate_parameters(parameters):
     validated = {}
 
     for key, value in parameters.items():
-        key = key.lower()
+        if (key := __MATCHES.get(key.lower())) is None:
+            raise ValueError(f"Unknown parameter: `{key}`.")
 
         if key in validated:
+            # We already checked with the raw input, but they may have used
+            # sh and sd, for instance, which map to the same thing
             raise ValueError(f"You cannot use `{key}` more than once.")
-
-        if key not in __MATCHES:
-            raise ValueError(f"Unknown parameter: `{key}`.")
 
         if not value:
             raise ValueError(f"Missing value for key `{key}`.")
 
-        key = __MATCHES[key]
         validated[key] = value
 
     return validated

@@ -35,6 +35,9 @@ def parse_parameters(syntax, rewrite_plus_minus):
             value = parameters[:match.span()[0]]
             parameters = parameters[match.span()[0]:]
 
+        if key in params:
+            raise ValueError(f"You cannot use `{key}` more than once.")
+
         params[key] = value.strip()
         match = pattern.match(parameters)
 

@@ -38,9 +38,9 @@ class Characters(commands.Cog, name="Character Management"):
         ctx: discord.ApplicationContext,
         name: Option(str, "The character's name"),
         splat: Option(str, "The character type", choices=_SPLATS),
-        humanity: Option(int, "Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)),
         health: Option(int, "Health levels (4-15)", choices=inconnu.options.ratings(4, 15)),
         willpower: Option(int, "Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)),
+        humanity: Option(int, "Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)),
         spc: Option(str, "(Admin only) Make an SPC", autocomplete=_spc_options, default="0")
     ):
         """Create a new character."""

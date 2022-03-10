@@ -2,6 +2,7 @@
 # pylint: disable=too-many-public-methods, too-many-arguments, c-extension-no-member
 
 import asyncio
+import copy
 import datetime
 import math
 
@@ -640,7 +641,9 @@ class VChar:
     def macros(self):
         """The user's macros."""
         if (_macros := self._params.get("macros")) is not None:
+            _macros = copy.deepcopy(_macros)
             raw_macros = []
+
             for name, macro in sorted(_macros.items(), key = lambda s: s[0].casefold()):
                 macro["name"] = name
 

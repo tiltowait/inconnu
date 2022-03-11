@@ -16,6 +16,7 @@ class RatingView(discord.ui.View):
         self.callback = callback
         self.failback = failback
         self.ratings = {}
+        self.last_interaction = None
 
         for rating in range(1, 6):
             button_id = str(uuid.uuid4())
@@ -41,6 +42,7 @@ class RatingView(discord.ui.View):
         """Respond to the button."""
         button_id = interaction.data["custom_id"]
         rating = self.ratings.get(button_id, 0)
+        self.last_interaction = interaction
 
         await self.callback(rating)
 

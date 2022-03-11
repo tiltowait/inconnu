@@ -83,6 +83,9 @@ class Wizard:
         tasks.append(inconnu.char_mgr.register(character))
         tasks.append(_deregister_wizard())
 
+        modal = inconnu.views.ConvictionsModal(character, False)
+        tasks.append(self.view.last_interaction.response.send_modal(modal))
+
         # Update channel message
         tasks.append(inconnu.common.report_update(
             ctx=self.ctx,

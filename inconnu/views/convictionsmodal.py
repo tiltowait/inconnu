@@ -10,9 +10,11 @@ import inconnu
 class ConvictionsModal(Modal):
     """A modal that lets the user set their characters' Convictions."""
 
-    def __init__(self, character):
+    def __init__(self, character, report=True):
         super().__init__(title="Convictions")
         self.character = character
+        self.report = report
+
         convictions = character.convictions
 
         self.add_item(
@@ -65,19 +67,27 @@ class ConvictionsModal(Modal):
         update_message = f"__{user.mention} changed **{self.character.name}'s** Convictions__"
         update_message += f"\n\n***Old***\n{old_convictions}\n\n***New***\n{new_convictions_str}"
 
-        await asyncio.gather(
-            self.character.set_convictions(new_convictions),
-            interaction.response.send_message(
-                f"Changed **{self.character.name}'s** Convictions!",
-                ephemeral=True
-            ),
-            inconnu.common.report_update(
-                ctx=interaction,
-                character=self.character,
-                title="Changed Convictions",
-                message=update_message
+        tasks = [self.character.set_convictions(new_convictions)]
+
+        if self.report:
+            tasks.append(
+                interaction.response.send_message(
+                    f"Changed **{self.character.name}'s** Convictions!",
+                    ephemeral=True
+                )
             )
-        )
+            tasks.append(
+                inconnu.common.report_update(
+                    ctx=interaction,
+                    character=self.character,
+                    title="Changed Convictions",
+                    message=update_message
+                )
+            )
+        else:
+            tasks.append(interaction.response.send_message("Convictions set!", ephemeral=True))
+
+        await asyncio.gather(*tasks)
 
 
 def _pop_first(convictions_list) -> str:

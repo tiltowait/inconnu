@@ -4,8 +4,6 @@
 import re
 from types import SimpleNamespace as SN
 
-import discord
-
 import inconnu
 from . import wizard
 
@@ -31,11 +29,6 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
                 raise ValueError(f"Sorry, there is already an SPC named `{name}`!")
             raise ValueError(f"Sorry, you have a character named `{name}` already!")
 
-        response = await ctx.respond(
-            "Please check your DMs! I hope you have your character sheet ready.",
-            ephemeral=True
-        )
-
         parameters = SN(name=name, hp=health, wp=willpower, humanity=humanity, splat=splat, spc=spc)
         accessibility = await inconnu.settings.accessible(ctx.user)
         character_wizard = wizard.Wizard(ctx, parameters, accessibility)
@@ -44,11 +37,6 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
 
     except ValueError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-    except discord.errors.Forbidden:
-        await response.edit(
-            content="**Whoops!** I can't DM your character wizard. Please enable DMs and try again."
-        )
-        del character_wizard
 
 
 def __validate_parameters(name, humanity, health, willpower):

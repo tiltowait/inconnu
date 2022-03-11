@@ -31,6 +31,7 @@ class Wizard:
 
         self.assigned_traits = {}
         self.use_accessibility = accessible
+        self.using_dms = True
 
 
     async def begin_chargen(self):
@@ -105,7 +106,7 @@ class Wizard:
             url="https://www.inconnu-bot.com/#/quickstart"
         )
 
-        await self.msg.edit(content=contents, view=discord.ui.View(button))
+        await self.edit_message(content=contents, view=discord.ui.View(button))
 
 
     async def __finalize_embed(self, character):
@@ -134,15 +135,35 @@ class Wizard:
             url="https://www.inconnu-bot.com/#/quickstart"
         )
 
-        await self.msg.edit(embed=embed, view=discord.ui.View(button))
+        await self.edit_message(embed=embed, view=discord.ui.View(button))
 
 
     async def __query_trait(self, message=None):
         """Query for the next trait."""
         if self.use_accessibility:
-            await self.__query_text(message)
+            msg = { "content": await self.__query_text(message) }
         else:
-            await self.__query_embed(message)
+            msg = { "embed": await self.__query_embed(message) }
+
+        msg["view"] = self.view
+
+        if self.msg is None:
+            # First time we're sending the message. Try DMs first and fallback
+            # to ephemeral messages if that fails. We prefer DMs so the user
+            # always has a copy of the documentation link.
+            try:
+                self.msg = await self.ctx.author.send(**msg)
+
+                # This won't fire unless the DM was successfully sent
+                await self.ctx.respond(
+                    "Please check your DMs! I hope you have your character sheet ready.",
+                    ephemeral=True
+                )
+            except discord.errors.Forbidden:
+                self.using_dms = False
+                self.msg = await self.ctx.respond(**msg, ephemeral=True)
+        else:
+            await self.edit_message(**msg)
 
 
     async def __query_text(self, message=None):
@@ -155,10 +176,7 @@ class Wizard:
 
         contents.append(f"```Select the rating for: {self.core_traits[0]}```")
 
-        if self.msg is None:
-            self.msg = await self.ctx.user.send("\n".join(contents), view=self.view)
-        else:
-            await self.msg.edit(content="\n".join(contents))
+        return "\n".join(contents)
 
 
     async def __query_embed(self, message=None):
@@ -178,16 +196,19 @@ class Wizard:
         )
         embed.set_footer(text="Your character will not be saved until you have entered all traits.")
 
-        if self.msg is None:
-            self.msg = await self.ctx.user.send(embed=embed, view=self.view)
-        else:
-            await self.msg.edit(embed=embed)
+        return embed
+
+
+    @property
+    def edit_message(self):
+        """Get the proper edit method."""
+        return self.msg.edit if self.using_dms else self.msg.edit_original_message
 
 
     async def _timeout(self):
         """Inform the user they took too long."""
         errmsg = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
-        await self.msg.edit(content=errmsg, embed=None, view=None)
+        await self.edit_message(content=errmsg, embed=None, view=None)
         await _deregister_wizard()
 
 

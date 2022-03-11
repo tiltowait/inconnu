@@ -204,23 +204,37 @@ class Characters(commands.Cog, name="Character Management"):
 
     # Convictions
 
-    @character.command(name="convictions")
+    convictions = character.create_subgroup("convictions", "Character convictions")
+
+    @convictions.command(name="set")
     @commands.guild_only()
-    async def character_convictions(
+    async def character_convictions_set(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to look up", required=True),
-        player: inconnu.options.player
+        character: inconnu.options.character("The character to look up", required=True)
     ):
         """Change or view Convictions."""
-        await inconnu.character.convictions(ctx, character, player, False)
+        await inconnu.character.convictions_set(ctx, character)
+
+
+    @convictions.command(name="show")
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def character_convictions_show(
+        self,
+        ctx: discord.ApplicationContext,
+        character: inconnu.options.character("The character to look up", required=False),
+        player: inconnu.options.player,
+    ):
+        """Show a character's Convictions."""
+        await inconnu.character.convictions_show(ctx, character, player, False)
 
 
     @commands.user_command(name="Convictions")
     @commands.guild_only()
     async def character_convictions_context(self, ctx, member):
         """Show a character's Convictions."""
-        await inconnu.character.convictions(ctx, None, member, True)
+        await inconnu.character.convictions_show(ctx, None, member, True)
 
 
 

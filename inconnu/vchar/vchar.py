@@ -9,6 +9,7 @@ import math
 from enum import Enum
 from collections import Counter, OrderedDict
 from types import SimpleNamespace
+from typing import List
 
 from bson.objectid import ObjectId
 
@@ -50,6 +51,7 @@ class _Properties(str, Enum):
     BIOGRAPHY = "biography"
     DESCRIPTION = "description"
     IMAGE = "image"
+    CONVICTIONS = "convictions"
 
 
 class VChar:
@@ -402,6 +404,17 @@ class VChar:
     def has_biography(self):
         """Whether the character has any biographical data."""
         return any([self.biography, self.description])
+
+
+    @property
+    def convictions(self) -> List[str]:
+        """The Character's Convictions."""
+        return self._params.get(_Properties.CONVICTIONS, []).copy()
+
+
+    async def set_convictions(self, new_convictions: List[str]):
+        """Set the character's Convictions."""
+        await self._async_set_property(_Properties.CONVICTIONS, new_convictions)
 
 
     # Derived attributes

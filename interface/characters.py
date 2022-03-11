@@ -197,9 +197,31 @@ class Characters(commands.Cog, name="Character Management"):
 
 
     @commands.user_command(name="Character Bios")
-    async def character_bio_context(self, ctx, player):
+    async def character_bio_context(self, ctx, member):
         """View a character's biography."""
-        await inconnu.character.show_biography(ctx, None, player)
+        await inconnu.character.show_biography(ctx, None, member)
+
+
+    # Convictions
+
+    @character.command(name="convictions")
+    @commands.guild_only()
+    async def character_convictions(
+        self,
+        ctx: discord.ApplicationContext,
+        character: inconnu.options.character("The character to look up", required=True),
+        player: inconnu.options.player
+    ):
+        """Change or view Convictions."""
+        await inconnu.character.convictions(ctx, character, player, False)
+
+
+    @commands.user_command(name="Convictions")
+    @commands.guild_only()
+    async def character_convictions_context(self, ctx, member):
+        """Show a character's Convictions."""
+        await inconnu.character.convictions(ctx, None, member, True)
+
 
 
 def _check_number(label, value):

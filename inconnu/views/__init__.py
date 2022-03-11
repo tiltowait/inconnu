@@ -1,6 +1,7 @@
 """Set up the package."""
 
 from .basicselector import BasicSelector
+from .convictionsmodal import ConvictionsModal
 from .disablingview import DisablingView
 from .dropdown import Dropdown
 from .frenzyview import FrenzyView

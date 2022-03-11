@@ -139,7 +139,7 @@ async def __rouse_roll(character: VChar, rolls: int, reroll: bool):
             failures += 1
 
     starting_hunger = character.hunger
-    frenzy = starting_hunger + failures > 5
+    frenzy = starting_hunger == 5
     await character.set_hunger(starting_hunger + failures)
     gain = starting_hunger - character.hunger
 

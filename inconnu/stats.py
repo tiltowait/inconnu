@@ -15,7 +15,7 @@ async def log_roll(guild: int, user: int, char, outcome, comment):
         charid (VChar): The character that made the roll (optional)
         outcome (Roll): The roll's parameters and outcome
     """
-    rolls = inconnu.db.stats
+    rolls = inconnu.db.rolls
 
     if await rolls.find_one({ "_id": outcome.id }) is None:
         roll = _gen_roll(guild, user, char, outcome, comment)
@@ -32,7 +32,7 @@ async def guild_joined(guild, name):
         guild (int): The guild's Discord ID
         name (str): The guild's name
     """
-    guilds = inconnu.db.stats
+    guilds = inconnu.db.guilds
 
     await guilds.update_one(
         { "guild": guild },
@@ -55,7 +55,7 @@ async def guild_left(guild):
     Args:
         guild (int): The guild's Discord ID
     """
-    guilds = inconnu.db.stats
+    guilds = inconnu.db.guilds
 
     await guilds.update_one({ "guild": guild }, {
         "$set": {
@@ -72,7 +72,7 @@ async def guild_renamed(guild, new_name):
         guild (int): The guild's Discord ID
         name (str): The guild's name
     """
-    guilds = inconnu.db.stats
+    guilds = inconnu.db.guilds
 
     await guilds.update_one({ "guild": guild }, { "$set": { "name": new_name } })
 

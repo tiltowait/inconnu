@@ -97,20 +97,20 @@ async def on_member_join(member):
 async def on_guild_join(guild):
     """Log whenever a guild is joined."""
     print(f"Joined {guild.name}!")
-    task1 = inconnu.stats.guild_joined(guild.id, guild.name)
-    task2 = __set_presence()
-
-    await asyncio.gather(task1, task2)
+    await asyncio.gather(
+        inconnu.stats.guild_joined(guild),
+        __set_presence()
+    )
 
 
 @bot.event
 async def on_guild_remove(guild):
     """Log guild removals."""
     print(f"Left {guild.name} :(")
-    task1 = inconnu.stats.guild_left(guild.id)
-    task2 = __set_presence()
-
-    await asyncio.gather(task1, task2)
+    await asyncio.gather(
+        inconnu.stats.guild_left(guild.id),
+        __set_presence()
+    )
 
 
 @bot.event

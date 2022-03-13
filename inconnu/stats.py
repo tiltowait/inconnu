@@ -25,7 +25,7 @@ async def log_roll(guild: int, user: int, char, outcome, comment):
         await rolls.update_one({ "_id": outcome.id }, reroll)
 
 
-async def guild_joined(guild, name):
+async def guild_joined(guild):
     """
     Log whenever a guild is joined.
     Args:
@@ -35,11 +35,11 @@ async def guild_joined(guild, name):
     guilds = inconnu.db.guilds
 
     await guilds.update_one(
-        { "guild": guild },
+        { "guild": guild.id },
         {
             "$set": {
-                "guild": guild,
-                "name": name,
+                "guild": guild.id,
+                "name": guild.name,
                 "active": True,
                 "joined": datetime.datetime.utcnow(),
                 "left": None

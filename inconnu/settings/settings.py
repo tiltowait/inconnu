@@ -203,7 +203,7 @@ class Settings:
         setattr(guild, key, value)
 
 
-    async def _set_user(self, user: discord.Member, key:str, value):
+    async def _set_user(self, user: discord.Member, key: str, value):
         """Enable or disable a user setting."""
         res = await inconnu.db.users.update_one({ "user": user.id }, {
             "$set": {
@@ -219,7 +219,7 @@ class Settings:
         self._user_cache[user.id] = user_settings
 
 
-    async def _fetch_user(self, user):
+    async def _fetch_user(self, user: discord.User):
         """Fetch a user."""
         if not isinstance(user, int):
             user = user.id
@@ -236,16 +236,17 @@ class Settings:
         return user_settings
 
 
-    async def _fetch_guild(self, guild_id) -> GuildSettings:
+    async def _fetch_guild(self, guild: discord.Guild) -> GuildSettings:
         """Fetch a guild."""
-        if not isinstance(guild_id, int):
-            guild_id = guild_id.id
-
-        if (guild_settings := self._guild_cache.get(guild_id)):
+        if (guild_settings := self._guild_cache.get(guild.id)):
             return guild_settings
 
-        guild_params = await inconnu.db.guilds.find_one({"guild": guild_id }) or {}
-        guild = GuildSettings(guild_params)
-        self._guild_cache[guild_id] = guild
+        guild_params = await inconnu.db.guilds.find_one({"guild": guild.id }) or {}
+        if not guild_params:
+            # In case we missed them somehow
+            await inconnu.stats.guild_joined(guild)
 
-        return guild
+        guild_settings = GuildSettings(guild_params)
+        self._guild_cache[guild.id] = guild_settings
+
+        return guild_settings

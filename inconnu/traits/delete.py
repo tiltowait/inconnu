@@ -87,7 +87,7 @@ async def __delete_traits(character: VChar, *traits) -> list:
     for trait in traits:
         if trait.lower() in standard_traits:
             # Set attributes and skills to 0 for better UX
-            trait = await character.assign_traits({ trait: 0 })
+            _, trait = await character.assign_traits({ trait: 0 })
             deleted.extend(trait.keys())
         else:
             try:

@@ -50,3 +50,13 @@ def respond(ctx):
 def fence(string: str) -> str:
     """Surround the string in a code fence. Useful for map()."""
     return f"`{string}`"
+
+
+def gen_timestamp(date, style=None):
+    """Generate a Discord timestamp object."""
+    timestamp = int(date.timestamp())
+    if style:
+        terminator = ":" + style
+    else:
+        terminator = ""
+    return f"<t:{timestamp}{terminator}>"

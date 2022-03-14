@@ -90,7 +90,7 @@ async def __trait_statistics(ctx, trait, date):
     ]
     stats = await rolls.aggregate(pipeline).to_list(length=None)
 
-    fmt_date = date.strftime("%Y-%m-%d")
+    fmt_date = inconnu.gen_timestamp(date, "D")
     if stats:
         if await inconnu.settings.accessible(ctx.user):
             await __trait_stats_text(ctx, trait, stats, fmt_date)

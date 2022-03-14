@@ -86,7 +86,7 @@ def _gen_roll(guild: int, user: int, char, outcome, comment):
         "date": datetime.datetime.utcnow(),
         "guild": guild, # We use the guild and user keys for easier lookups
         "user": user,
-        "charid": getattr(char, "id", None),
+        "charid": getattr(char, "object_id", None),
         "raw": outcome.syntax,
         "normal": outcome.normal.dice,
         "hunger": outcome.hunger.dice,

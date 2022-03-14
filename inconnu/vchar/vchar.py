@@ -62,6 +62,7 @@ class VChar:
 
     def __init__(self, params: dict):
         self._params = params
+        self.object_id = params["_id"]
         self.id = str(params["_id"]) # pylint: disable=invalid-name
         self.find_query = { "_id": self._params["_id"] }
         self.guild = params["guild"]

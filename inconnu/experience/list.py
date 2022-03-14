@@ -67,7 +67,7 @@ async def __get_contents(ctx, character):
         # We need the date/time to be TZ-aware
         date = event["date"]
         date = date.replace(tzinfo=timezone.utc)
-        date = f"<t:{int(date.timestamp())}:d>"
+        date = inconnu.gen_timestamp(date, "d")
 
         exp = event["amount"]
         reason = event["reason"]

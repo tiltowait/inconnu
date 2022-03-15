@@ -4,6 +4,7 @@
 * [Macros](macros.md "Inconnu | Macros")
 * [Character Tracking](character-tracking.md "Inconnu | Character Tracking")
 * [Character Shortcuts](shortcuts.md "Inconnu | Character Shortcuts")
+* [Character Miscellanea](char-misc.md "Inconnu | Character Miscellanea")
 * [Trait Management](trait-management.md "Inconnu | Trait Management")
 * [Miscellaneous](misc-commands.md "Inconnu | Miscellaneous")
 * [Accessibility Mode](accessibility.md "Inconnu | Accessibility Mode")

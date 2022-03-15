@@ -237,7 +237,6 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.convictions_show(ctx, None, member, True)
 
 
-
 def _check_number(label, value):
     """Check whether a given value is a number. Raise a ValueError if not."""
     if value is None:

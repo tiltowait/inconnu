@@ -156,7 +156,7 @@ class Help(commands.Cog):
         """Run the /traits help command."""
         embed = discord.Embed(
             title="Inconnu Help",
-            description="Basic commands listing. Click the link for detailed documentation."
+            description="Basic commands listing. Click the links for detailed documentation."
         )
         embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
 

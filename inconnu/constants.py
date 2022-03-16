@@ -8,7 +8,7 @@ from flatdict import FlatDict
 
 load_dotenv()
 
-SUPPORT_URL = "https://discord.com/invite/CPmsdWHUcZ"
+SUPPORT_URL = "https://discord.gg/QHnCdSPeEE"
 
 INCONNU_ID = int(os.environ["INCONNU_ID"])
 

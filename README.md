@@ -12,8 +12,8 @@
 
 ## Getting Started
 
-* **Invite Inconnu to your server:** [Link](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147764224&scope=applications.commands%20bot)
-* **Demo/Support server:** [Link](https://discord.gg/CPmsdWHUcZ)
+* **Invite Inconnu to your server:** [Link](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147747840&scope=bot%20applications.commands)
+* **Demo/Support server:** [Link](https://discord.gg/QHnCdSPeEE)
 * **Full documentation:** [Link](https://www.inconnu-bot.com/#/)
 
 ### Basic Usage

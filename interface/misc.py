@@ -29,7 +29,7 @@ class MiscCommands(commands.Cog):
         embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
         embed.set_thumbnail(url=ctx.bot.user.display_avatar)
         site = discord.ui.Button(label="Website", url="https://www.inconnu-bot.com")
-        support = discord.ui.Button(label="Support", url="https://discord.gg/CPmsdWHUcZ")
+        support = discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL)
 
         await ctx.respond(embed=embed, view=discord.ui.View(site, support))
 

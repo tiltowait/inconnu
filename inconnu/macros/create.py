@@ -44,10 +44,10 @@ async def create(
 
         pool = inconnu.vr.RollParser(character, pool).pool_stack
 
-        await asyncio.gather(
-            character.add_macro(name, pool, hunger, rouses, reroll_rouses, staining, diff, comment),
-            ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
+        await character.add_macro(
+            name, pool, hunger, rouses, reroll_rouses, staining, diff, comment
         )
+        await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
 
     except (
         SyntaxError, errors.AmbiguousTraitError, errors.TraitNotFoundError,

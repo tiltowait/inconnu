@@ -3,6 +3,7 @@
 import datetime
 import re
 
+import bson.errors
 from bson.objectid import ObjectId
 
 import inconnu
@@ -271,10 +272,16 @@ class CharacterManager:
     async def _id_fetch(self, charid):
         """Attempt to fetch a character by ID."""
         if re.search(r"\d", charid):
-            if (char_params := await self.collection.find_one({ "_id": ObjectId(charid) })):
-                return inconnu.VChar(char_params)
+            try:
+                if (char_params := await self.collection.find_one({ "_id": ObjectId(charid) })):
+                    return inconnu.VChar(char_params)
 
-            # Character names can't contain numbers
-            raise errors.CharacterNotFoundError(f"`{charid}` is not a valid character name.")
+                # Character names can't contain numbers
+                raise errors.CharacterNotFoundError(f"`{charid}` is not a valid character name.")
 
+            except bson.errors.InvalidId as invalid_id_err:
+                err = "Select a name from the list. If that doesn't work, try updating Discord."
+                raise errors.CharacterNotFoundError(err) from invalid_id_err
+
+        # The pattern didn't match
         return None

@@ -219,7 +219,6 @@ class Characters(commands.Cog, name="Character Management"):
 
     @convictions.command(name="show")
     @commands.guild_only()
-    @commands.has_permissions(administrator=True)
     async def character_convictions_show(
         self,
         ctx: discord.ApplicationContext,

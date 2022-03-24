@@ -50,6 +50,7 @@ class _BulkModal(Modal):
         await interaction.response.defer()
         reason = self.children[0].value.strip()
         entries = self.children[1].value.split("\n")
+        seen = set() # For making sure duplicates aren't made
 
         # Set up the containers
 
@@ -72,10 +73,19 @@ class _BulkModal(Modal):
 
             try:
                 character = await inconnu.char_mgr.fetchone(interaction.guild, owner, char_name)
-                self.xp_tasks.append(
-                    character.apply_experience(experience, "lifetime", reason, interaction.user.id)
-                )
-                self.would_award.append(f"`{experience}xp`: `{character.name}` {member}")
+
+                # Make sure this isn't a duplicate award
+                match = f"{member} {character.name}"
+                if match in seen:
+                    self.errors.append(f"**Duplicate:** {member}: `{char_name}` ({experience}xp)")
+                else:
+                    seen.add(match)
+                    self.xp_tasks.append(
+                        character.apply_experience(
+                            experience, "lifetime", reason, interaction.user.id
+                        )
+                    )
+                    self.would_award.append(f"`{experience}xp`: `{character.name}` {member}")
 
             except inconnu.vchar.errors.CharacterNotFoundError:
                 self.errors.append(f"**Not found:** {member}: `{char_name}`")

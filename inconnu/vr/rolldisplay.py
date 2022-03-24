@@ -227,7 +227,7 @@ class RollDisplay:
         # Author line
         author_field = self.character_name + ("'s Re-Roll" if self.rerolled else "'s Roll")
         if self.outcome.difficulty > 0:
-            author_field += f" vs Diff. {self.outcome.difficulty}"
+            author_field += f" vs DC {self.outcome.difficulty}"
         if self.outcome.descriptor is not None:
             author_field += f" ({self.outcome.descriptor})"
 
@@ -288,7 +288,7 @@ class RollDisplay:
 
         title += "'s re-roll" if self.rerolled else "'s roll"
         if self.outcome.difficulty > 0:
-            title += f" vs diff. {self.outcome.difficulty}"
+            title += f" vs DC {self.outcome.difficulty}"
         if self.outcome.descriptor is not None:
             title += f" ({self.outcome.descriptor})"
 

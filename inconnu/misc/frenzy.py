@@ -53,7 +53,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
         if await inconnu.settings.accessible(ctx.user):
             # Build the text version of the message
             name = character.name
-            content = f"**{name}: Frenzy {title} (diff. {difficulty})**\n{message}\n*{footer}*"
+            content = f"**{name}: Frenzy {title} (DC {difficulty})**\n{message}\n*{footer}*"
             msg_content = { "content": content }
         else:
             embed = __get_embed(ctx, title, message, character.name, difficulty, footer, color)
@@ -77,7 +77,7 @@ def __get_embed(
         description=message,
         colour=color
     )
-    author_field = f"{name}: Frenzy vs diff. {difficulty}"
+    author_field = f"{name}: Frenzy vs DC {difficulty}"
     embed.set_author(name=author_field, icon_url=ctx.user.display_avatar)
     embed.set_footer(text=footer)
 

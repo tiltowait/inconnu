@@ -51,7 +51,7 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
 async def __display_text(ctx, params, strategy: str, probs: dict):
     """Display the probabilities in plain text."""
     title = "**Outcome Probabilities**\n"
-    title += f"*Pool {params.pool} | Hunger {params.hunger} | Diff. {params.difficulty}*"
+    title += f"*Pool {params.pool} | Hunger {params.hunger} | DC {params.difficulty}*"
     if strategy is not None:
         title += " | " + __STRATEGIES[strategy]
 
@@ -109,7 +109,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
         description = f"**{__STRATEGIES[strategy]}**\n\n{description}"
 
     embed = discord.Embed(
-        title=f"Pool {params.pool} | Hunger {params.hunger} | Diff. {params.difficulty}",
+        title=f"Pool {params.pool} | Hunger {params.hunger} | DC {params.difficulty}",
         description=description,
         colour=0x000000
     )

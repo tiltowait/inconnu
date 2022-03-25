@@ -188,18 +188,33 @@ async def __update_damage(character: VChar, tracker: str, dtype: str, delta_str:
             old_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
             await character.apply_damage(tracker, dtype, delta)
             new_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
-            wrap = new_agg - old_agg if dtype == Damage.SUPERFICIAL else 0
+            overflow = new_agg - old_agg if dtype == Damage.SUPERFICIAL else 0
         else:
-            await character.set_damage(tracker, dtype, delta)
-            wrap = 0
+            # Setting damage
+            # First, figure out if they're setting too much damage
+            track_len = len(getattr(character, tracker))
 
-        return await __damage_adjust_message(tracker, dtype, delta_str, wrap)
+            if dtype == Damage.SUPERFICIAL:
+                track = getattr(character, tracker)
+                available = track_len - track.count(Damage.AGGRAVATED)
+            else:
+                # Aggravated damage
+                available = track_len
+
+            if delta > available:
+                overflow = delta - available
+            else:
+                overflow = 0
+
+            await character.set_damage(tracker, dtype, delta)
+
+        return await __damage_adjust_message(tracker, dtype, delta_str, overflow)
 
     except ValueError as err:
         raise ValueError(f"Expected a number. Got `{delta_str}`.") from err
 
 
-async def __damage_adjust_message(tracker, dtype, delta_str, wrap) -> str:
+async def __damage_adjust_message(tracker, dtype, delta_str, overflow) -> str:
     """Generate a human-readable damage adjustment message."""
     if dtype == Damage.SUPERFICIAL:
         severity = "Superficial"
@@ -208,12 +223,20 @@ async def __damage_adjust_message(tracker, dtype, delta_str, wrap) -> str:
 
     if delta_str[0] in ["+", "-"]:
         msg = f"`{delta_str}` {severity} {tracker.title()} damage."
-        if wrap > 0:
-            msg += f" `{wrap}` wrapped to Aggravated."
+        if overflow > 0:
+            msg += f" `{overflow}` wrapped to Aggravated."
 
         return msg
 
-    return f"Set {severity} {tracker.title()} damage to `{delta_str}`."
+    attempted_damage = int(delta_str)
+    applied_damage = attempted_damage - overflow
+
+    msg = f"Set {severity} {tracker.title()} damage to `{applied_damage}`."
+
+    if overflow > 0:
+        msg += f" (Attempted `{attempted_damage}`, but available track exceeded by `{overflow}`.)"
+
+    return msg
 
 
 async def __update_xp(character: VChar, xp_type: str, delta: str) -> str:

@@ -86,7 +86,7 @@ async def update(
 
         # Ignore generated output if we got a custom message
         if update_message is None:
-            update_message = "\n".join(updates)
+            update_message = "\n".join(map(lambda u: f"• {u}", updates)) # Give them bullet points
 
         if update_message: # May not always be true in the future
             tasks.append(inconnu.common.report_update(

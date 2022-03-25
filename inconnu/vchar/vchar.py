@@ -17,23 +17,6 @@ import inconnu
 from . import errors
 from ..constants import Damage, INCONNU_ID, UNIVERSAL_TRAITS
 
-# This cache is not an efficiency cache. Instead, it keeps persistent character
-# references that can be passed to different bot functions. This helps prevent
-# stale data from being used. Consider the following scenario:
-#
-#   1. Player rolls, then rerolls with 2 superficial WP damage
-#   2. Player uses /character update to change his character's WP damage to 0
-#   3. Player clicks the "Mark WP" button
-#
-# Without the cache, the character will end with 3 superficial WP damage instead
-# of 1, because both the roll function and the character updater would be
-# accessing different copies of the character. With the cache, they will use the
-# same copy.
-#
-# In benchmarking, an efficiency version adds complexity without any measurable
-# performance gains.
-_CHARACTER_CACHE = {}
-
 
 class _Properties(str, Enum):
     """An enum to prevent needing to stringly type database fields."""

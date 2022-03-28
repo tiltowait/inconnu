@@ -22,8 +22,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     _SPLATS = ["vampire", "ghoul", "mortal"]
 
-
-    @commands.user_command(name="Characters")
+    @commands.user_command(name="Stats")
     async def user_characters(self, ctx, member):
         """Display the user's character(s)."""
         await inconnu.character.display_requested(ctx, None, player=member, ephemeral=True)
@@ -196,7 +195,7 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.show_biography(ctx, character, player)
 
 
-    @commands.user_command(name="Character Bios")
+    @commands.user_command(name="Biography")
     async def character_bio_context(self, ctx, member):
         """View a character's biography."""
         await inconnu.character.show_biography(ctx, None, member)

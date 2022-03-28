@@ -26,6 +26,7 @@ bot.welcomed = False
 
 # General Events
 
+
 @bot.event
 async def on_ready():
     """Schedule a task to perform final setup."""
@@ -58,7 +59,7 @@ async def on_application_command_error(ctx, error):
     error = getattr(error, "original", error) # Some pycord errors have `original`, but not all
 
     if isinstance(error, commands.NoPrivateMessage):
-        await ctx.respond("Sorry, this command isn't available in DMs!", ephemeral=True)
+        await ctx.respond("Sorry, this command can only be run in a server!", ephemeral=True)
         return
     if isinstance(error, commands.MissingPermissions):
         await ctx.respond("Sorry, you don't have permission to do this!", ephemeral=True)
@@ -79,6 +80,7 @@ async def on_application_command_error(ctx, error):
 
 # Member Events
 
+
 @bot.event
 async def on_member_remove(member):
     """Mark all of a member's characters as inactive."""
@@ -93,24 +95,19 @@ async def on_member_join(member):
 
 # Guild Events
 
+
 @bot.event
 async def on_guild_join(guild):
     """Log whenever a guild is joined."""
     print(f"Joined {guild.name}!")
-    await asyncio.gather(
-        inconnu.stats.guild_joined(guild),
-        __set_presence()
-    )
+    await asyncio.gather(inconnu.stats.guild_joined(guild), __set_presence())
 
 
 @bot.event
 async def on_guild_remove(guild):
     """Log guild removals."""
     print(f"Left {guild.name} :(")
-    await asyncio.gather(
-        inconnu.stats.guild_left(guild.id),
-        __set_presence()
-    )
+    await asyncio.gather(inconnu.stats.guild_left(guild.id), __set_presence())
 
 
 @bot.event
@@ -123,6 +120,7 @@ async def on_guild_update(before, after):
 
 # Tasks
 
+
 @tasks.loop(hours=24)
 async def cull_inactive():
     """Cull inactive characters and guilds."""
@@ -131,16 +129,14 @@ async def cull_inactive():
 
 # Misc and helpers
 
+
 async def __set_presence():
     """Set the bot's presence message."""
     servers = len(bot.guilds)
     message = f"/help | {servers} chronicles"
 
     await bot.change_presence(
-        activity=discord.Activity(
-            type=discord.ActivityType.watching,
-            name=message
-        )
+        activity=discord.Activity(type=discord.ActivityType.watching, name=message)
     )
 
 

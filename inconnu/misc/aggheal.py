@@ -4,8 +4,7 @@ import asyncio
 import random
 from types import SimpleNamespace
 
-from .. import common
-from .. import character as char
+import inconnu
 from ..constants import Damage, ROUSE_FAIL_COLOR
 from ..vchar import VChar
 
@@ -16,16 +15,31 @@ async def aggheal(ctx, character: str):
     """Heal a point of aggravated damage."""
     try:
         tip = "`/aggheal` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
 
         if character.health.count(Damage.AGGRAVATED) == 0:
             await ctx.respond(f"{character.name} has no aggravated damage to heal!", ephemeral=True)
             return
 
         outcome = await __heal(character)
-        await __display_outcome(ctx, character, outcome)
 
-    except common.FetchError:
+        # Build the update message
+        update_msg = f"`{character.aggravated_hp}` Aggravated Damage remaining."
+        if character.is_vampire:
+            update_msg += f"\nGained `{outcome.gain}` Hunger (now at `{character.hunger}`)"
+            if outcome.torpor:
+                update_msg += " and fell into torpor!"
+            else:
+                update_msg += "."
+
+        await asyncio.gather(
+            inconnu.common.report_update(
+                ctx=ctx, character=character, title="Aggravated Damage Healed", message=update_msg
+            ),
+            __display_outcome(ctx, character, outcome),
+        )
+
+    except inconnu.common.FetchError:
         pass
 
 
@@ -59,22 +73,24 @@ async def __heal(character: VChar):
 
 async def __display_outcome(ctx, character, outcome):
     """Display the outcome of the healing."""
-    fields = [("Health", char.DisplayField.HEALTH)]
+    fields = [("Health", inconnu.character.DisplayField.HEALTH)]
 
     if character.is_vampire:
         gain = "Max Hunger" if character.hunger == 5 else f"Gain {outcome.gain} Hunger"
         color = ROUSE_FAIL_COLOR if (outcome.torpor or outcome.gain) > 0 else None
         title = f"Agg damage healed | {gain}"
         footer = "FALL INTO TORPOR!" if outcome.torpor else None
-        fields.append(("Hunger", char.DisplayField.HUNGER))
+        fields.append(("Hunger", inconnu.character.DisplayField.HUNGER))
     else:
         title = "Damage healed"
         footer = None
         color = None
 
-    await char.display(ctx, character,
+    await inconnu.character.display(
+        ctx,
+        character,
         title=title,
         footer=footer,
-        fields=[("Health", char.DisplayField.HEALTH), ("Hunger", char.DisplayField.HUNGER)],
-        color=color
+        fields=fields,
+        color=color,
     )

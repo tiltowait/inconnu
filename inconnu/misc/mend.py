@@ -20,10 +20,32 @@ async def mend(ctx, character=None):
         if isinstance(outcome, str):
             await ctx.respond(outcome, ephemeral=True)
         else:
-            await __display_outcome(ctx, character, outcome)
+            # Build the update message
+            update_msg = f"Mended `{outcome.mended}` Superficial Damage.\n"
+            update_msg += f"`{character.superficial_hp}` remaining."
+
+            if character.is_vampire:
+                if outcome.rouse:
+                    update_msg += " No Hunger gain."
+                else:
+                    update_msg += f" Gained `1` Hunger (now at `{character.hunger}`)."
+
+            if outcome.frenzy:
+                update_msg += "\nMust make a frenzy check at DC 4."
+
+            await asyncio.gather(
+                inconnu.common.report_update(
+                    ctx=ctx,
+                    character=character,
+                    title="Damage Mended",
+                    message=update_msg,
+                ),
+                __display_outcome(ctx, character, outcome),
+            )
 
     except inconnu.common.FetchError:
         pass
+
 
 async def __display_outcome(ctx, character, outcome):
     """Display the results of the mend."""
@@ -48,12 +70,8 @@ async def __display_outcome(ctx, character, outcome):
             footer = "Rouse failure at Hunger 5!"
             view = inconnu.views.FrenzyView(character, 4)
 
-    await inconnu.character.display(ctx, character,
-        title=title,
-        fields=fields,
-        footer=footer,
-        view=view,
-        color=color
+    await inconnu.character.display(
+        ctx, character, title=title, fields=fields, footer=footer, view=view, color=color
     )
 
 

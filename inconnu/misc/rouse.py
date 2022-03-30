@@ -35,7 +35,18 @@ async def rouse(
         else:
             # Vampire
             outcome = await __rouse_roll(ctx.guild, character, count, reroll)
-            await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
+            update_msg = f"**{character.name}** "
+            if outcome.gain:
+                update_msg += f"__failed__ a Rouse check. Hunger is now `{character.hunger}`."
+            else:
+                update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
+
+            await asyncio.gather(
+                inconnu.common.report_update(
+                    ctx=ctx, character=character, title="Rouse Check", message=update_msg
+                ),
+                __display_outcome(ctx, character, outcome, purpose, oblivion, message),
+            )
 
     except inconnu.common.FetchError:
         pass
@@ -86,7 +97,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         elif oblivion == "apply":
             await asyncio.gather(
                 character.set_stains(character.stains + outcome.stains),
-                character.log("stains", outcome.stains)
+                character.log("stains", outcome.stains),
             )
             fields.append((f"Gain {stains_txt}", inconnu.character.DisplayField.HUMANITY))
 
@@ -94,7 +105,9 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     view = inconnu.views.FrenzyView(character, 4) if outcome.frenzy else None
 
-    await inconnu.character.display(ctx, character,
+    await inconnu.character.display(
+        ctx,
+        character,
         title=title,
         footer=footer,
         message=message,
@@ -102,18 +115,20 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         custom=custom,
         color=color,
         thumbnail=thumbnail,
-        view=view
+        view=view,
     )
 
 
 async def __damage_ghoul(ctx, ghoul):
     """Apply Aggravated damage to a ghoul and display."""
     await ghoul.set_aggravated_hp(ghoul.aggravated_hp + 1)
-    await inconnu.character.display(ctx, ghoul,
+    await inconnu.character.display(
+        ctx,
+        ghoul,
         title="Ghoul Rouse Damage",
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
         fields=[("Health", inconnu.character.DisplayField.HEALTH)],
-        footer="V5 Core, p.234"
+        footer="V5 Core, p.234",
     )
 
 
@@ -152,5 +167,5 @@ async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):
         stains=stains,
         frenzy=frenzy,
         gain=gain,
-        reroll=reroll
+        reroll=reroll,
     )

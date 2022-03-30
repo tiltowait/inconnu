@@ -14,19 +14,17 @@ class CharacterManager:
     """A class for maintaining a local copy of characters."""
 
     def __init__(self):
-        self.all_fetched = {} # [user_id: bool]
-        self.user_cache = {} # [guild: [user: [VChar]]]
-        self.id_cache = {} # [char_id: VChar]
+        self.all_fetched = {}  # [user_id: bool]
+        self.user_cache = {}  # [guild: [user: [VChar]]]
+        self.id_cache = {}  # [char_id: VChar]
 
         # Set after construction. Used to check whether a user is an admin
         self.bot = None
-
 
     @property
     def collection(self):
         """Get the database's characters collection."""
         return inconnu.db.characters
-
 
     async def fetchone(self, guild: int, user: int, name: str):
         """
@@ -44,7 +42,7 @@ class CharacterManager:
         guild, user, _ = self._get_ids(guild, user)
 
         if name is not None:
-            if (char := self.id_cache.get(name)):
+            if char := self.id_cache.get(name):
                 self._validate(guild, user, char)
                 return char
 
@@ -55,7 +53,7 @@ class CharacterManager:
                     return char
 
             # Attempt to pull from the database
-            if (char := await self._id_fetch(name)):
+            if char := await self._id_fetch(name):
                 self.id_cache[char.id] = char
                 self._validate(guild, user, char)
                 return char
@@ -76,7 +74,6 @@ class CharacterManager:
         errmsg = f"You have {count} characters. Please specify which you want."
         raise errors.UnspecifiedCharacterError(errmsg)
 
-
     async def fetchall(self, guild: int, user: int):
         """
         Fetch all of a user's characters in a given guild. Adds them to the
@@ -88,8 +85,8 @@ class CharacterManager:
             return self.user_cache.get(key, [])
 
         # Need to build the cache
-        cursor = self.collection.find({ "guild": guild, "user": user })
-        cursor.collation({ "locale": "en", "strength": 2 }).sort("name")
+        cursor = self.collection.find({"guild": guild, "user": user})
+        cursor.collation({"locale": "en", "strength": 2}).sort("name")
 
         characters = []
         async for char_params in cursor:
@@ -104,7 +101,6 @@ class CharacterManager:
 
         return characters
 
-
     async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
         """Determine whether a user already has a named character."""
         owner_id = user if not is_spc else inconnu.constants.INCONNU_ID
@@ -115,7 +111,6 @@ class CharacterManager:
                 return True
 
         return False
-
 
     async def register(self, character):
         """Add the character to the database and the cache."""
@@ -139,7 +134,6 @@ class CharacterManager:
 
         await self.collection.insert_one(character.raw)
 
-
     async def remove(self, character):
         """Remove a character from the database and the cache."""
         deletion = await self.collection.delete_one(character.find_query)
@@ -158,7 +152,6 @@ class CharacterManager:
             return True
 
         return False
-
 
     async def transfer(self, character, current_owner, new_owner):
         """Transfer one character to another."""
@@ -187,17 +180,15 @@ class CharacterManager:
 
             self.user_cache[new_key] = new_chars
 
-
     async def mark_inactive(self, player):
         """
         When a player leaves a guild, mark their characters as inactive. They
         will then be culled after 30 days if they haven't returned before then.
         """
         await self.collection.update_many(
-            { "guild": player.guild.id, "user": player.id },
-            { "$set": { "log.left": datetime.datetime.utcnow() } }
+            {"guild": player.guild.id, "user": player.id},
+            {"$set": {"log.left": datetime.datetime.utcnow()}},
         )
-
 
     async def mark_active(self, player):
         """
@@ -205,10 +196,8 @@ class CharacterManager:
         so long as they haven't already been culled.
         """
         await self.collection.update_many(
-            { "guild": player.guild.id, "user": player.id },
-            { "$unset": { "log.left": 1 } }
+            {"guild": player.guild.id, "user": player.id}, {"$unset": {"log.left": 1}}
         )
-
 
     def sort_user(self, guild: int, user: int):
         """Sorts the user's characters alphabetically."""
@@ -221,9 +210,7 @@ class CharacterManager:
         user_chars.sort()
         self.user_cache[key] = user_chars
 
-
     # Private Methods
-
 
     @staticmethod
     def _get_ids(guild, user):
@@ -237,12 +224,10 @@ class CharacterManager:
 
         return guild, user, key
 
-
     @staticmethod
     def _user_key(character):
         """Generate a key for the user cache."""
         return f"{character.guild} {character.user}"
-
 
     def _is_admin(self, guild: int, user: int):
         """Determine whether the user is an administrator."""
@@ -259,21 +244,19 @@ class CharacterManager:
         user = guild.get_member(user)
         return user.guild_permissions.administrator
 
-
     def _validate(self, guild, user, char):
         """Validate that a character belongs to the user."""
         if guild and char.guild != guild:
-            raise ValueError(f"**{char.name}** doesn't belong to this server!")
+            raise LookupError(f"**{char.name}** doesn't belong to this server!")
         if user and char.user != user:
             if not self._is_admin(guild, user):
-                raise ValueError(f"**{char.name}** doesn't belong to this user!")
-
+                raise LookupError(f"**{char.name}** doesn't belong to this user!")
 
     async def _id_fetch(self, charid):
         """Attempt to fetch a character by ID."""
         if re.search(r"\d", charid):
             try:
-                if (char_params := await self.collection.find_one({ "_id": ObjectId(charid) })):
+                if char_params := await self.collection.find_one({"_id": ObjectId(charid)}):
                     return inconnu.VChar(char_params)
 
                 # Character names can't contain numbers

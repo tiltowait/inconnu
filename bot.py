@@ -10,7 +10,6 @@ from discord.ext import commands, tasks
 
 import inconnu
 
-
 # Check if we're in dev mode
 if (debug_guild := os.getenv("DEBUG")) is not None:
     print("Debugging on", debug_guild)
@@ -56,7 +55,7 @@ async def finish_setup():
 @bot.event
 async def on_application_command_error(ctx, error):
     """Handle various errors we might encounter."""
-    error = getattr(error, "original", error) # Some pycord errors have `original`, but not all
+    error = getattr(error, "original", error)  # Some pycord errors have `original`, but not all
 
     if isinstance(error, commands.NoPrivateMessage):
         await ctx.respond("Sorry, this command can only be run in a server!", ephemeral=True)
@@ -143,7 +142,7 @@ async def __set_presence():
 def setup():
     """Add the cogs to the bot."""
     for filename in os.listdir("./interface"):
-        if filename.endswith(".py"):
+        if filename[0] != "_" and filename.endswith(".py"):
             bot.load_extension(f"interface.{filename[:-3]}")
 
     if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:

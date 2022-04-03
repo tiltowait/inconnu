@@ -7,9 +7,10 @@ import discord
 from discord.ui import Button
 
 import inconnu
-from . import paramupdate
-from ..display import display
+
 from ...vchar import VChar
+from ..display import display
+from . import paramupdate
 
 __MATCHES = {}
 
@@ -27,20 +28,14 @@ __KEYS = {
     "unspent_xp": "+/- Unspent XP",
     "lifetime_xp": "+/- Total Lifetime XP",
     "hunger": "+/- The character's Hunger",
-    "potency": "+/- The character's Blood Potency"
+    "potency": "+/- The character's Blood Potency",
 }
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
 
 
 async def update(
-    ctx,
-    parameters: str,
-    character=None,
-    fields=None,
-    color=None,
-    update_message=None,
-    player=None
+    ctx, parameters: str, character=None, fields=None, color=None, update_message=None, player=None
 ):
     """
     Process the user's arguments.
@@ -73,47 +68,54 @@ async def update(
             update_msg = await __update_character(ctx, character, parameter, new_value)
             updates.append(update_msg)
 
-
         if (impairment := character.impairment) is not None:
             updates.append(impairment)
 
-        tasks = [inconnu.log.log_event("update",
-            user=ctx.user.id,
-            guild=ctx.guild.id,
-            charid=character.id,
-            syntax=human_readable
-        )]
+        tasks = [
+            inconnu.log.log_event(
+                "update",
+                user=ctx.user.id,
+                guild=ctx.guild.id,
+                charid=character.id,
+                syntax=human_readable,
+            )
+        ]
 
         # Ignore generated output if we got a custom message
         if update_message is None:
-            update_message = "\n".join(map(lambda u: f"• {u}", updates)) # Give them bullet points
+            update_message = "\n".join(map(lambda u: f"• {u}", updates))  # Give them bullet points
 
-        if update_message: # May not always be true in the future
-            tasks.append(inconnu.common.report_update(
-                ctx=ctx,
-                character=character,
-                title="Character Updated",
-                message=f"__{ctx.user.mention} updated {character.name}:__\n" + update_message
-            ))
+        if update_message:  # May not always be true in the future
+            tasks.append(
+                inconnu.common.report_update(
+                    ctx=ctx,
+                    character=character,
+                    title="Character Updated",
+                    message=f"__{ctx.user.mention} updated {character.name}:__\n" + update_message,
+                )
+            )
 
-        tasks.append(display(
-            ctx,
-            character,
-            fields=fields,
-            color=color,
-            owner=player,
-            message=update_message,
-            thumbnail=character.image_url if not fields else None
-        ))
+        tasks.append(
+            display(
+                ctx,
+                character,
+                fields=fields,
+                color=color,
+                owner=player,
+                message=update_message,
+                thumbnail=character.image_url if not fields else None,
+            )
+        )
 
         await asyncio.gather(*tasks)
 
     except (SyntaxError, ValueError) as err:
-        log_task = inconnu.log.log_event("update_error",
+        log_task = inconnu.log.log_event(
+            "update_error",
             user=ctx.user.id,
             guild=ctx.guild.id,
             charid=character.id,
-            syntax=human_readable
+            syntax=human_readable,
         )
         help_task = update_help(ctx, err)
         await asyncio.gather(log_task, help_task)
@@ -168,11 +170,8 @@ async def __update_character(ctx, character: VChar, param: str, value: str) -> s
 async def update_help(ctx, err=None, ephemeral=True):
     """Display a help message that details the available keys."""
     color = discord.Embed.Empty if err is None else 0xFF0000
-    embed = discord.Embed(
-        title="Character Tracking",
-        color=color
-    )
-    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
+    embed = discord.Embed(title="Character Tracking", color=color)
+    embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
 
     if err is not None:
         embed.add_field(name="Error", value=str(err), inline=False)
@@ -185,14 +184,14 @@ async def update_help(ctx, err=None, ephemeral=True):
     embed.add_field(name="Keys", value=parameters, inline=False)
     embed.add_field(
         name="Example",
-        value="Character takes 4 Superficial Health damage:```/character update parameters:sh+4```"
+        value="Character takes 4 Superficial Health damage:```/character update parameters:sh+4```",
     )
 
     embed.set_footer(text="You may modify more than one tracker at a time.")
 
     documentation = Button(
         label="Full Documentation",
-        url="http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
+        url="http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates",
     )
     support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
     view = discord.ui.View(documentation, support)
@@ -204,6 +203,7 @@ async def update_help(ctx, err=None, ephemeral=True):
 # keys, while others have been observed in syntax error logs. This should be
 # a little more user-friendly.
 
+
 def __setup_matches():
     """Register all the update keys."""
     __register_keys("name")
@@ -212,23 +212,48 @@ def __setup_matches():
     __register_keys("humanity", "hm")
     __register_keys("splat", "type")
     __register_keys(
-        "sh", "sd", "shp", "suphp", "suph", "supd", "superficialhealth",
-        "superficialdamage"
+        "sh", "sd", "shp", "suphp", "suph", "supd", "superficialhealth", "superficialdamage"
     )
     __register_keys("ah", "ad", "ahp", "agghp", "aggd", "aggh", "agghealth", "aggdamage")
     __register_keys("sw", "swp", "supwp", "supw", "superficialwillpower")
     __register_keys("aw", "awp", "aggwp", "aggw", "aggwillpower")
     __register_keys("stains", "stain", "s")
     __register_keys(
-        "current_xp", "xp_current", "current_exp", "exp_current", "currentxp",
-        "currentexp", "xpcurrent", "expcurrent", "cxp",
-        "unspent_xp", "xp_unspent", "unspent_exp", "exp_unspent", "unspentxp",
-        "unspentexp", "xpunspent", "expunspent", "uxp"
+        "current_xp",
+        "xp_current",
+        "current_exp",
+        "exp_current",
+        "currentxp",
+        "currentexp",
+        "xpcurrent",
+        "expcurrent",
+        "cxp",
+        "unspent_xp",
+        "xp_unspent",
+        "unspent_exp",
+        "exp_unspent",
+        "unspentxp",
+        "unspentexp",
+        "xpunspent",
+        "expunspent",
+        "uxp",
     )
     __register_keys(
-        "total_xp", "xp_total", "total_exp", "exp_total", "totalxp",
-        "totalexp", "xptotal", "exptotal", "txp",
-        "lifetimexp", "xplifetime", "explifetime", "lxp", "lifetime_xp", "life_time_xp"
+        "total_xp",
+        "xp_total",
+        "total_exp",
+        "exp_total",
+        "totalxp",
+        "totalexp",
+        "xptotal",
+        "exptotal",
+        "txp",
+        "lifetimexp",
+        "xplifetime",
+        "explifetime",
+        "lxp",
+        "lifetime_xp",
+        "life_time_xp",
     )
     __register_keys("hunger", "h")
     __register_keys("potency", "bp", "p")

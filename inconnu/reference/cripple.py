@@ -9,6 +9,7 @@ import inconnu.common
 
 __HELP_URL = "https://www.inconnu-bot.com"
 
+
 async def cripple(ctx, damage: int):
     """Roll against the crippling injury chart."""
     try:
@@ -17,12 +18,11 @@ async def cripple(ctx, damage: int):
             character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
             damage = character.aggravated_hp
         else:
-            character = None # Do not allow explicit damage on a character
+            character = None  # Do not allow explicit damage on a character
 
         if damage < 1:
             await ctx.respond(
-                "You need some Aggravated damage to sustain a crippling injury!",
-                ephemeral=True
+                "You need some Aggravated damage to sustain a crippling injury!", ephemeral=True
             )
             return
 
@@ -38,10 +38,9 @@ async def __display_injury(ctx, damage, injuries):
     # We don't use the modular display, because we don't necessarily have a character here
 
     embed = discord.Embed(
-        title="Crippling Injury",
-        description=f"`{damage}` Aggravated damage sustained this turn."
+        title="Crippling Injury", description=f"`{damage}` Aggravated damage sustained this turn."
     )
-    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
+    embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
 
     for injury in injuries:
         embed.add_field(name=injury.injury, value=injury.effect, inline=False)
@@ -89,4 +88,4 @@ def __get_injury(damage: int):
     for injury, effect in zip(injury, effect):
         injuries.append(SimpleNamespace(injury=injury, effect=effect))
 
-    return  injuries
+    return injuries

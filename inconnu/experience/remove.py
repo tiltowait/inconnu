@@ -3,6 +3,7 @@
 import discord
 
 import inconnu
+
 from ..views import DisablingView
 
 __HELP_URL = "https://www.inconnu-bot.com"
@@ -19,13 +20,13 @@ async def remove_entry(ctx, player, character, index):
 
         try:
             log = character.experience_log
-            entry_to_delete = log[-index] # Log entries are presented to the user in reverse
+            entry_to_delete = log[-index]  # Log entries are presented to the user in reverse
             await character.remove_experience_log_entry(entry_to_delete)
 
             if await inconnu.settings.accessible(ctx.user):
-                msg = { "content": _get_text(character, entry_to_delete) }
+                msg = {"content": _get_text(character, entry_to_delete)}
             else:
-                msg = { "embed": _get_embed(owner, character, entry_to_delete) }
+                msg = {"embed": _get_embed(owner, character, entry_to_delete)}
 
             msg["view"] = _ExperienceView(character, entry_to_delete)
 
@@ -43,11 +44,8 @@ async def remove_entry(ctx, player, character, index):
 
 def _get_embed(player, character, entry):
     """Generate an embed for displaying the deletion message."""
-    embed = discord.Embed(
-        title="Deleted Experience Log Entry",
-        description=_format_entry(entry)
-    )
-    embed.set_author(name=character.name, icon_url=player.display_avatar)
+    embed = discord.Embed(title="Deleted Experience Log Entry", description=_format_entry(entry))
+    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
     embed.set_footer(text="Be sure to adjust unspent/lifetime XP accordingly!")
 
     experience = f"```{character.current_xp} / {character.total_xp}```"
@@ -98,7 +96,6 @@ class _ExperienceView(DisablingView):
         button.callback = self.apply_xp
         self.add_item(button)
 
-
     async def apply_xp(self, interaction):
         """Apply the XP to the character."""
         if self.scope == "Unspent":
@@ -110,13 +107,9 @@ class _ExperienceView(DisablingView):
 
         field = inconnu.character.DisplayField.EXPERIENCE
         await inconnu.character.update(
-            interaction,
-            syntax,
-            character=self.character,
-            fields=[(field.value, field)]
+            interaction, syntax, character=self.character, fields=[(field.value, field)]
         )
         self.stop()
-
 
     async def interaction_check(self, interaction) -> bool:
         """Check whether the user is an admin."""

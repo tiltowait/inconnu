@@ -6,14 +6,16 @@ from enum import Enum
 import discord
 
 import inconnu
-from . import trackmoji
+
 from ... import common
 from ...constants import Damage
 from ...vchar import VChar
+from . import trackmoji
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
 
 # Display fields
+
 
 class DisplayField(str, Enum):
     """An enum for displaying character trackers."""
@@ -39,13 +41,15 @@ async def display_requested(ctx, character=None, message=None, player=None, ephe
         tip = "`/character display` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
 
-        await display(ctx, character,
+        await display(
+            ctx,
+            character,
             owner=player,
             message=message,
             footer=None,
             view=inconnu.views.TraitsView(character, ctx.user),
             ephemeral=ephemeral,
-            thumbnail=character.image_url
+            thumbnail=character.image_url,
         )
 
     except LookupError as err:
@@ -66,7 +70,7 @@ async def display(
     color: int = None,
     thumbnail: str = None,
     view: discord.ui.View = None,
-    ephemeral: bool = False
+    ephemeral: bool = False,
 ):
     """
     Display a character.
@@ -82,7 +86,9 @@ async def display(
         traits_button (bool): Whether to show a traits button. Default false
     """
     if await inconnu.settings.accessible(ctx.user):
-        content = __get_text(ctx, character,
+        content = __get_text(
+            ctx,
+            character,
             title=title,
             message=message,
             footer=footer,
@@ -90,9 +96,11 @@ async def display(
             fields=fields,
             custom=custom,
         )
-        msg_contents = { "content": content }
+        msg_contents = {"content": content}
     else:
-        embed = __get_embed(ctx, character,
+        embed = __get_embed(
+            ctx,
+            character,
             title=title,
             message=message,
             footer=footer,
@@ -102,7 +110,7 @@ async def display(
             color=color,
             thumbnail=thumbnail,
         )
-        msg_contents = { "embed": embed }
+        msg_contents = {"embed": embed}
 
     msg_contents["ephemeral"] = ephemeral
 
@@ -133,14 +141,12 @@ def __get_embed(
 
     # Begin building the embed
     embed = discord.Embed(
-        title=title or character.name,
-        description=message or "",
-        color=color or discord.Embed.Empty
+        title=title or character.name, description=message or "", color=color or discord.Embed.Empty
     )
 
     embed.set_author(
         name=owner.display_name if title is None else character.name,
-        icon_url=owner.display_avatar
+        icon_url=inconnu.get_avatar(owner),
     )
     embed.set_footer(text=footer or discord.Embed.Empty)
     embed.set_thumbnail(url=thumbnail or discord.Embed.Empty)
@@ -149,11 +155,7 @@ def __get_embed(
     for field, parameter in fields:
         # We use optionals because ghouls and mortals don't have every parameter
         if (value := __embed_field_value(character, parameter, can_emoji)) is not None:
-            embed.add_field(
-                name=field,
-                value=value,
-                inline=False
-            )
+            embed.add_field(name=field, value=value, inline=False)
 
     if custom is not None:
         for field, value in custom:
@@ -175,10 +177,7 @@ def __embed_field_value(character, parameter, can_emoji):
 
         case DisplayField.HUMANITY:
             value = __stat_repr(
-                can_emoji,
-                trackmoji.emojify_humanity,
-                character.humanity,
-                character.stains
+                can_emoji, trackmoji.emojify_humanity, character.humanity, character.stains
             )
 
         case DisplayField.POTENCY if character.is_vampire:
@@ -220,7 +219,7 @@ def __get_text(
     if message is not None:
         contents.append(message)
 
-    contents.append("```json") # Blank line
+    contents.append("```json")  # Blank line
 
     for field, parameter in fields:
         contents.extend(__text_field_contents(character, field, parameter))

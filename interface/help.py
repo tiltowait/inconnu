@@ -19,11 +19,11 @@ class _HelpView(View):
             self.add_item(button)
 
         if show_support:
-            self.add_item(Button(
-                label="New? Click here!",
-                url="https://www.inconnu-bot.com/#/quickstart",
-                row=1
-            ))
+            self.add_item(
+                Button(
+                    label="New? Click here!", url="https://www.inconnu-bot.com/#/quickstart", row=1
+                )
+            )
             self.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
             self.add_item(Button(label="Patreon", url="https://www.patreon.com/tiltowait", row=1))
 
@@ -36,7 +36,6 @@ class Help(commands.Cog):
         self.bot = bot
         self.info_view = None
         self.overview_view = None
-
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
@@ -83,7 +82,6 @@ class Help(commands.Cog):
             self.bot.add_view(self.overview_view)
             self.bot.persistent_views_added = True
 
-
     # Help Commands
 
     help_commands = SlashCommandGroup("help", "Help commands.")
@@ -93,13 +91,11 @@ class Help(commands.Cog):
         """Basic usage instructions."""
         await self.show_basic_help(ctx, False)
 
-
     @help_commands.command(name="traits")
     @commands.guild_only()
     async def help_traits(self, ctx):
         """Trait management instructions."""
         await self.show_traits_help(ctx, False)
-
 
     @help_commands.command(name="macros")
     @commands.guild_only()
@@ -107,20 +103,18 @@ class Help(commands.Cog):
         """Macro usage instructions."""
         await self.show_macros_help(ctx, False)
 
-
     @help_commands.command(name="characters")
     @commands.guild_only()
     async def help_character_updates(self, ctx):
         """Display the valid character update keys."""
         await inconnu.character.update_help(ctx, ephemeral=False)
 
-
     @slash_command()
     async def info(self, ctx):
         """Display bot info."""
         embed = discord.Embed(
             title="Bot Information",
-            description="**Inconnu** is a dice roller for Vampire: The Masquerade 5th Edition."
+            description="**Inconnu** is a dice roller for Vampire: The Masquerade 5th Edition.",
         )
         embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
         embed.set_thumbnail(url="https://www.inconnu-bot.com/images/darkpack_logo2.webp")
@@ -129,13 +123,12 @@ class Help(commands.Cog):
             "`/help overview` - Basic help",
             "`/help characters` - Character updates help",
             "`/help traits` - Trait management help",
-            "`/help macros` - Macro creation/editing help"
+            "`/help macros` - Macro creation/editing help",
         ]
 
         embed.add_field(name="Help Commands", value="\n".join(help_commands), inline=False)
         embed.add_field(
-            name="Framework",
-            value="[Pycord 2.0](https://pycord.dev) using Python 3.10"
+            name="Framework", value="[Pycord 2.0](https://pycord.dev) using Python 3.10"
         )
         embed.add_field(
             name="Additional Packages",
@@ -149,16 +142,15 @@ class Help(commands.Cog):
 
         await inconnu.respond(ctx)(embed=embed, view=self.info_view)
 
-
     # Callbacks
 
     async def show_basic_help(self, ctx, ephemeral=True):
         """Run the /traits help command."""
         embed = discord.Embed(
             title="Inconnu Help",
-            description="Basic commands listing. Click the links for detailed documentation."
+            description="Basic commands listing. Click the links for detailed documentation.",
         )
-        embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
+        embed.set_author(name=ctx.user.display_name, icon_url=self.bot.user.avatar)
 
         embed.add_field(name="Roll", value="`/vr syntax:pool hunger difficulty`", inline=False)
         char_info = "`/character create`\nYou can use character attributes in rolls."
@@ -168,12 +160,11 @@ class Help(commands.Cog):
 
         await inconnu.respond(ctx)(embed=embed, view=self.overview_view, ephemeral=ephemeral)
 
-
     async def show_traits_help(self, ctx, ephemeral=True):
         """Run the /traits help command."""
         embed = discord.Embed(
             title="Traits Management",
-            description="This command group allows you to add, remove, or update character traits."
+            description="This command group allows you to add, remove, or update character traits.",
         )
         embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
         embed.set_footer(text="Traits may be used in rolls. See /help for more info.")
@@ -181,63 +172,59 @@ class Help(commands.Cog):
         embed.add_field(
             name="Addition",
             value="`/traits add`\n**Example:** `/traits add traits:Oblivion=3 Auspex=2`",
-            inline=False
+            inline=False,
         )
 
         embed.add_field(
             name="Deletion",
             value="`/traits delete`\n**Example:** `/traits delete traits:Oblivion`",
-            inline=False
+            inline=False,
         )
 
         embed.add_field(
             name="Modification",
             value="`/traits update`\n**Example:** `/traits update traits:Oblivion=2`",
-            inline=False
+            inline=False,
         )
 
         buttons = [
             Button(label="Documentation", url="https://www.inconnu-bot.com/#/trait-management"),
-            Button(label="Support", url=SUPPORT_URL)
+            Button(label="Support", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
 
         await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
-
 
     async def show_macros_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""
         embed = discord.Embed(
             title="Macros",
-            description="This command group lets you define, delete, or update macros."
+            description="This command group lets you define, delete, or update macros.",
         )
         embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
         embed.set_footer(text="Roll a macro with the /vm command!")
 
         embed.add_field(
-            name="Creation",
-            value="`/macro create`\nFill out the parameters offered.",
-            inline=False
+            name="Creation", value="`/macro create`\nFill out the parameters offered.", inline=False
         )
         embed.add_field(
             name="Deletion",
             value="`/macro delete`\nSpecify a macro name. This is non-reversible!",
-            inline=False
+            inline=False,
         )
         embed.add_field(
             name="Modification",
             value="`/macro update`\n**Example:** `/macro update macro:hunt parameters:pool=...`",
-            inline=False
+            inline=False,
         )
 
         buttons = [
             Button(label="Documentation", url="https://www.inconnu-bot.com/#/macros"),
-            Button(label="Support", url=SUPPORT_URL)
+            Button(label="Support", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
 
         await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
-
 
     async def show_character_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""

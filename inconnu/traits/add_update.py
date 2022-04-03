@@ -8,13 +8,14 @@ import discord
 
 import inconnu.settings
 import inconnu.views
-from .parser import parse_traits
+
 from .. import common
 from ..vchar import VChar
+from .parser import parse_traits
 
 __HELP_URL = {
     False: "https://www.inconnu-bot.com/#/trait-management?id=adding-traits",
-    True: "https://www.inconnu-bot.com/#/trait-management?id=updating-traits"
+    True: "https://www.inconnu-bot.com/#/trait-management?id=updating-traits",
 }
 
 
@@ -46,10 +47,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
 
     except (ValueError, SyntaxError) as err:
         await common.present_error(
-            ctx,
-            err,
-            character=character,
-            help_url=__HELP_URL[allow_overwrite]
+            ctx, err, character=character, help_url=__HELP_URL[allow_overwrite]
         )
     except common.FetchError:
         pass
@@ -83,7 +81,7 @@ async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
         unassigned=unassigned,
         errors=error_traits,
         updating=overwriting,
-        track_adjustment=track_adjustment
+        track_adjustment=track_adjustment,
     )
 
 
@@ -115,12 +113,11 @@ async def __display_results(ctx, outcome, character: VChar):
     if outcome.assigned:
         msg = f"__{ctx.user.mention} updated {character.name}'s traits:__\n"
         msg += ", ".join(outcome.assigned)
-        tasks.append(inconnu.common.report_update(
-            ctx=ctx,
-            character=character,
-            title="Traits Updated",
-            message=msg
-        ))
+        tasks.append(
+            inconnu.common.report_update(
+                ctx=ctx, character=character, title="Traits Updated", message=msg
+            )
+        )
 
     await asyncio.gather(*tasks)
 
@@ -148,13 +145,10 @@ async def __results_embed(ctx, outcome, character: VChar):
     # Red if only mistakes
     color = discord.Embed.Empty
     if unassigned + errors:
-        color = 0x000000 if assigned else 0xff0000
+        color = 0x000000 if assigned else 0xFF0000
 
-    embed = discord.Embed(
-        title=title,
-        color=color
-    )
-    embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
+    embed = discord.Embed(title=title, color=color)
+    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
     embed.set_footer(text=outcome.track_adjustment)
 
     if outcome.assigned:

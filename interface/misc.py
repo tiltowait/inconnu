@@ -17,32 +17,29 @@ class MiscCommands(commands.Cog):
         """Flip a coin."""
         await inconnu.misc.coinflip(ctx)
 
-
     @slash_command()
     async def invite(self, ctx):
         """Display Inconnu's invite link."""
         embed = discord.Embed(
             title="Invite Inconnu to your server",
             url="https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147747840&scope=applications.commands%20bot",
-            description="Click the link above to invite Inconnu to your server!"
+            description="Click the link above to invite Inconnu to your server!",
         )
-        embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
+        embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
         embed.set_thumbnail(url=ctx.bot.user.display_avatar)
         site = discord.ui.Button(label="Website", url="https://www.inconnu-bot.com")
         support = discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL)
 
         await ctx.respond(embed=embed, view=discord.ui.View(site, support))
 
-
     @slash_command()
     async def random(
         self,
         ctx: discord.ApplicationContext,
-        ceiling: Option(int, "The roll's highest possible value", min_value=2, default=100)
+        ceiling: Option(int, "The roll's highest possible value", min_value=2, default=100),
     ):
         """Roll between 1 and a given ceiling (default 100)."""
         await inconnu.misc.percentile(ctx, ceiling)
-
 
     @slash_command()
     @commands.guild_only()
@@ -57,8 +54,7 @@ class MiscCommands(commands.Cog):
         """Reassign a character from one player to another."""
         if current_owner.id == new_owner.id:
             await inconnu.common.present_error(
-                ctx,
-                "`current_owner` and `new_owner` can't be the same."
+                ctx, "`current_owner` and `new_owner` can't be the same."
             )
             return
 
@@ -71,21 +67,18 @@ class MiscCommands(commands.Cog):
 
                 msg = f"Transferred **{character.name}** from {current_mention} to {new_mention}."
                 await asyncio.gather(
-                    inconnu.char_mgr.transfer(character, current_owner, new_owner),
-                    ctx.respond(msg)
+                    inconnu.char_mgr.transfer(character, current_owner, new_owner), ctx.respond(msg)
                 )
 
             else:
                 await inconnu.common.present_error(
-                    ctx,
-                    f"{current_owner.display_name} doesn't own {character.name}!"
+                    ctx, f"{current_owner.display_name} doesn't own {character.name}!"
                 )
 
         except inconnu.vchar.errors.CharacterNotFoundError:
             await inconnu.common.present_error(ctx, "Character not found.")
         except ValueError as err:
             await inconnu.common.present_error(ctx, err)
-
 
 
 def setup(bot):

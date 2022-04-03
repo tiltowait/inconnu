@@ -5,8 +5,9 @@ from types import SimpleNamespace
 import discord
 
 import inconnu
+
+from ..vchar import VChar, errors
 from . import traitcommon
-from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=deleting-traits"
 
@@ -54,10 +55,8 @@ async def __outcome_text(ctx, character, outcome):
 
 async def __outcome_embed(ctx, character, outcome):
     """Display the operation outcome in an embed."""
-    embed = discord.Embed(
-        title="Trait Removal"
-    )
-    embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
+    embed = discord.Embed(title="Trait Removal")
+    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if outcome.deleted:
@@ -68,8 +67,7 @@ async def __outcome_embed(ctx, character, outcome):
     if outcome.errors:
         errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
         embed.add_field(name="Do not exist", value=errs, inline=False)
-        embed.color = 0x000000 if outcome.deleted else 0xff0000
-
+        embed.color = 0x000000 if outcome.deleted else 0xFF0000
 
     view = inconnu.views.TraitsView(character, ctx.user)
     await ctx.respond(embed=embed, view=view, ephemeral=True)
@@ -87,7 +85,7 @@ async def __delete_traits(character: VChar, *traits) -> list:
     for trait in traits:
         if trait.lower() in standard_traits:
             # Set attributes and skills to 0 for better UX
-            _, trait = await character.assign_traits({ trait: 0 })
+            _, trait = await character.assign_traits({trait: 0})
             deleted.extend(trait.keys())
         else:
             try:

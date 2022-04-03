@@ -23,7 +23,7 @@ async def show(ctx, character=None):
                 ctx,
                 f"{character.name} has no macros!",
                 character=character.name,
-                help_url=__HELP_URL
+                help_url=__HELP_URL,
             )
             return
 
@@ -68,7 +68,7 @@ async def __macro_embed(ctx, char_name, macros):
     _pages = []
     for page in raw_pages:
         embed = discord.Embed(title="Macros")
-        embed.set_author(name=char_name, icon_url=ctx.user.display_avatar)
+        embed.set_author(name=char_name, icon_url=inconnu.get_avatar(ctx.user))
         embed.set_footer(text="To roll a macro, use the /vm command")
 
         for field in page:

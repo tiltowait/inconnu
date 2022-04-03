@@ -6,7 +6,6 @@ import discord
 
 import inconnu
 
-
 __HELP_URL = "https://www.inconnu-bot.com"
 
 
@@ -19,7 +18,7 @@ async def list_events(ctx, character, player, ephemeral):
             ctx, character, tip, __HELP_URL, owner=owner
         )
 
-        msg = { "ephemeral": ephemeral }
+        msg = {"ephemeral": ephemeral}
         if await inconnu.settings.accessible(ctx.user):
             msg["content"] = await __get_text(ctx, character)
         else:
@@ -36,14 +35,11 @@ async def list_events(ctx, character, player, ephemeral):
 
 async def __get_embed(ctx, character, player):
     """Make an embed in which to display the XP events."""
-    embed = discord.Embed(
-        title="Experience Log",
-        description=await __get_contents(ctx, character)
-    )
-    embed.set_author(name=character.name, icon_url=player.display_avatar)
+    embed = discord.Embed(title="Experience Log", description=await __get_contents(ctx, character))
+    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
     embed.add_field(
         name="Experience (Unspent / Lifetime)",
-        value=f"```{character.current_xp} / {character.total_xp}```"
+        value=f"```{character.current_xp} / {character.total_xp}```",
     )
 
     return embed

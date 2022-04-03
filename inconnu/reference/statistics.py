@@ -38,14 +38,14 @@ async def statistics(ctx, trait: str, date):
 async def __trait_statistics(ctx, trait, date):
     """View the roll statistics for a given trait."""
     rolls = inconnu.db.rolls
-    regex  = r"^.*(\s+" + f"{trait}|{trait}" + r"\s+.*|" + trait + ")$"
+    regex = r"^.*(\s+" + f"{trait}|{trait}" + r"\s+.*|" + trait + ")$"
     pipeline = [
         {
             "$match": {
                 "user": ctx.user.id,
                 "guild": ctx.guild.id,
-                "date": { "$gte": date },
-                "pool": re.compile(regex, flags=re.I)
+                "date": {"$gte": date},
+                "pool": re.compile(regex, flags=re.I),
             }
         },
         {
@@ -53,40 +53,22 @@ async def __trait_statistics(ctx, trait, date):
                 "from": "characters",
                 "localField": "charid",
                 "foreignField": "_id",
-                "as": "character"
+                "as": "character",
             }
         },
-        {
-            "$unwind": "$character"
-        },
+        {"$unwind": "$character"},
         {
             "$project": {
                 "name": "$character.name",
                 "successes": {
                     "$add": [
-                        {
-                            "$cond": [
-                                {
-                                    "$ne": [
-                                        "$reroll", None
-                                    ]
-                                },
-                                "$reroll.margin",
-                                "$margin"
-                            ]
-                        },
-                        "$difficulty"
+                        {"$cond": [{"$ne": ["$reroll", None]}, "$reroll.margin", "$margin"]},
+                        "$difficulty",
                     ]
-                }
+                },
             }
         },
-        {
-            "$group": {
-                "_id": "$name",
-                "num_rolls": { "$sum": 1 },
-                "successes": { "$sum": "$successes" }
-            }
-        }
+        {"$group": {"_id": "$name", "num_rolls": {"$sum": 1}, "successes": {"$sum": "$successes"}}},
     ]
     stats = await rolls.aggregate(pipeline).to_list(length=None)
 
@@ -108,7 +90,9 @@ async def __trait_statistics(ctx, trait, date):
 
         if not trait_is_valid:
             await ctx.respond(f"None of your characters have a trait called `{trait}`.")
-        elif date.year < 2021: # Bot was made in 2021; anything prior to that is lifetime statistics
+        elif (
+            date.year < 2021
+        ):  # Bot was made in 2021; anything prior to that is lifetime statistics
             await ctx.respond(f"None of your characters have ever rolled `{trait}`.")
         else:
             await ctx.respond(f"None of your characters have rolled `{trait}` since {fmt_date}.")
@@ -121,7 +105,7 @@ async def __trait_stats_embed(ctx, trait, stats, date):
     else:
         title = f"{trait}: Roll statistics since {date}"
     embed = discord.Embed(title=title)
-    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
+    embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
 
     for character in stats:
         name = character["_id"]
@@ -133,7 +117,6 @@ async def __trait_stats_embed(ctx, trait, stats, date):
 
     embed.set_footer(text=f"Only characters who rolled {trait} during this period are listed.")
     await ctx.respond(embed=embed)
-
 
 
 async def __trait_stats_text(ctx, trait, stats, date):
@@ -160,68 +143,55 @@ async def __all_statistics(ctx, date):
     """View the roll statistics for the user's characters."""
     col = inconnu.db.characters
     pipeline = [
+        {"$match": {"guild": ctx.guild.id, "user": ctx.user.id}},
         {
-          "$match": {
-            "guild": ctx.guild.id,
-            "user": ctx.user.id
-          }
+            "$lookup": {
+                "from": "rolls",
+                "localField": "_id",
+                "foreignField": "charid",
+                "as": "rolls",
+            }
         },
+        {"$unwind": "$rolls"},
+        {"$match": {"rolls.date": {"$gte": date}}},
         {
-          "$lookup": {
-            "from": 'rolls',
-            "localField": '_id',
-            "foreignField": 'charid',
-            "as": 'rolls'
-          }
-        },
-        {
-          "$unwind": '$rolls'
-        },
-        {
-            "$match": {
-                "rolls.date": { "$gte": date }
+            "$project": {
+                "_id": 1,
+                "name": 1,
+                "rerolled": {"$cond": [{"$ne": ["$rolls.reroll", None]}, 1, 0]},
+                "outcome": {
+                    "$cond": [
+                        {"$ne": ["$rolls.reroll", None]},
+                        "$rolls.reroll.outcome",
+                        "$rolls.outcome",
+                    ]
+                },
             }
         },
         {
-          "$project": {
-            "_id": 1,
-            "name": 1,
-            "rerolled": { "$cond": [ { "$ne": [ "$rolls.reroll", None ] }, 1, 0 ] },
-            "outcome": {
-                "$cond": [
-                    { "$ne": [ '$rolls.reroll', None ] }, '$rolls.reroll.outcome', '$rolls.outcome'
-                ]
+            "$group": {
+                "_id": {"charid": "$_id", "character": "$name", "outcome": "$outcome"},
+                "outcome": {"$addToSet": "$outcome"},
+                "rerolls": {"$sum": "$rerolled"},
+                "count": {"$sum": 1},
             }
-          }
         },
         {
-          "$group": {
-            "_id": { "charid": '$_id', "character": '$name', "outcome": '$outcome' },
-            "outcome": { "$addToSet": '$outcome' },
-            "rerolls": { "$sum": '$rerolled' },
-            "count": { "$sum": 1 }
-          }
-        },
-        {
-          "$group": {
-            "_id": { "charid": '$_id.charid', "character": '$_id.character' },
-            "rerolls": { "$sum": "$rerolls" },
-            "outcomes": { "$push": { "k": { "$first": '$outcome' }, "v": '$count' } }
-          }
-        },
-        {
-          "$project": {
-            "_id": '$_id.charid',
-            "name": '$$ROOT._id.character',
-            "rerolls": '$rerolls',
-            "outcomes": {
-              "$arrayToObject": '$outcomes'
+            "$group": {
+                "_id": {"charid": "$_id.charid", "character": "$_id.character"},
+                "rerolls": {"$sum": "$rerolls"},
+                "outcomes": {"$push": {"k": {"$first": "$outcome"}, "v": "$count"}},
             }
-          }
         },
         {
-            "$sort": { "name": 1 }
-        }
+            "$project": {
+                "_id": "$_id.charid",
+                "name": "$$ROOT._id.character",
+                "rerolls": "$rerolls",
+                "outcomes": {"$arrayToObject": "$outcomes"},
+            }
+        },
+        {"$sort": {"name": 1}},
     ]
     results = await col.aggregate(pipeline).to_list(length=None)
 
@@ -259,7 +229,7 @@ async def __display_text(ctx, results):
 async def __display_embed(ctx, results):
     """Display the statistics in an embed."""
     embed = discord.Embed(title="Roll Statistics")
-    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
+    embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
 
     for character in results:
         outcomes = defaultdict(lambda: 0)

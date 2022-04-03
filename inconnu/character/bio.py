@@ -25,9 +25,11 @@ async def edit_biography(ctx, character):
 async def show_biography(ctx, character, player):
     """Display a character's biography."""
     try:
-        owner = player or ctx.user # Don't need admin permissions for this
+        owner = player or ctx.user  # Don't need admin permissions for this
         tip = "`/character bio show` `[character:CHARACTER]` `[player:PLAYER]`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
+        character = await inconnu.common.fetch_character(
+            ctx, character, tip, __HELP_URL, owner=owner
+        )
 
         if character.has_biography:
             if await inconnu.settings.accessible(ctx.user):
@@ -46,19 +48,15 @@ async def show_biography(ctx, character, player):
 async def __biography_embed(ctx, character, owner):
     """Display the biography in an embed."""
     embed = discord.Embed(title="Biography")
-    embed.set_author(name=character.name, icon_url=owner.display_avatar)
+    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(owner))
 
     if character.biography:
-        embed.add_field(
-            name="History",
-            value=character.biography or "*Not set.*",
-            inline=False
-        )
+        embed.add_field(name="History", value=character.biography or "*Not set.*", inline=False)
     if character.description:
         embed.add_field(
             name="Description & Personality",
             value=character.description or "*Not set.*",
-            inline=False
+            inline=False,
         )
 
     if character.image_url.startswith("https://"):
@@ -90,29 +88,34 @@ class _CharacterBio(discord.ui.Modal):
         super().__init__(*args, **kwargs)
         self.character = character
 
-        self.add_item(discord.ui.InputText(
-            label="Biography",
-            placeholder="Character biography and history. Will be publicly shown.",
-            value=character.biography,
-            style=discord.InputTextStyle.long,
-            max_length=1024,
-            required=False
-        ))
-        self.add_item(discord.ui.InputText(
-            label="Description & Personality",
-            placeholder="The character's physical description. Will be publicly shown.",
-            value=character.description,
-            style=discord.InputTextStyle.long,
-            max_length=1024,
-            required=False
-        ))
-        self.add_item(discord.ui.InputText(
-            label="Image URL",
-            placeholder="The character's face claim. Will be publicly shown.",
-            value=character.image_url,
-            required=False,
-        ))
-
+        self.add_item(
+            discord.ui.InputText(
+                label="Biography",
+                placeholder="Character biography and history. Will be publicly shown.",
+                value=character.biography,
+                style=discord.InputTextStyle.long,
+                max_length=1024,
+                required=False,
+            )
+        )
+        self.add_item(
+            discord.ui.InputText(
+                label="Description & Personality",
+                placeholder="The character's physical description. Will be publicly shown.",
+                value=character.description,
+                style=discord.InputTextStyle.long,
+                max_length=1024,
+                required=False,
+            )
+        )
+        self.add_item(
+            discord.ui.InputText(
+                label="Image URL",
+                placeholder="The character's face claim. Will be publicly shown.",
+                value=character.image_url,
+                required=False,
+            )
+        )
 
     async def callback(self, interaction: discord.Interaction):
         """Finalize the modal."""
@@ -122,7 +125,7 @@ class _CharacterBio(discord.ui.Modal):
 
         tasks = [
             self.character.set_biography(biography.strip()),
-            self.character.set_description(description.strip())
+            self.character.set_description(description.strip()),
         ]
 
         if _valid_url(image_url):
@@ -130,10 +133,11 @@ class _CharacterBio(discord.ui.Modal):
         else:
             tasks.append(self.character.set_image_url(""))
 
-        tasks.append(interaction.response.send_message(
-            f"Edited **{self.character.name}'s** biography!",
-            ephemeral=True
-        ))
+        tasks.append(
+            interaction.response.send_message(
+                f"Edited **{self.character.name}'s** biography!", ephemeral=True
+            )
+        )
         await asyncio.gather(*tasks)
 
 

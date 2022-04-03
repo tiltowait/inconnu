@@ -4,7 +4,6 @@ import discord
 from discord.ext import pages
 
 import inconnu
-from .. import common
 
 __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=displaying-traits"
 
@@ -12,9 +11,11 @@ __HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=displaying-trait
 async def show(ctx, character: str, player: discord.Member):
     """Present a character's traits to its owner."""
     try:
-        owner = await common.player_lookup(ctx, player)
+        owner = await inconnu.common.player_lookup(ctx, player)
         tip = "`/traits list` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
+        character = await inconnu.common.fetch_character(
+            ctx, character, tip, __HELP_URL, owner=owner
+        )
 
         if await inconnu.settings.accessible(ctx.user):
             await __list_text(ctx, character)
@@ -22,15 +23,15 @@ async def show(ctx, character: str, player: discord.Member):
             await __list_embed(ctx, character, owner)
 
     except LookupError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-    except common.FetchError:
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+    except inconnu.common.FetchError:
         pass
 
 
 async def __list_embed(ctx, character, owner):
     """Display traits in an embed."""
     embed = discord.Embed(title="Character Traits")
-    embed.set_author(name=character.name, icon_url=owner.display_avatar)
+    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(owner))
     embed.set_footer(text="To see HP, WP, etc., use /character display")
 
     char_traits = character.traits
@@ -57,7 +58,7 @@ async def __list_embed(ctx, character, owner):
 async def __list_text(ctx, character):
     """Display traits in plain text."""
     traits = [f"{trait}: {rating}" for trait, rating in character.traits.items()]
-    raw_pages = common.paginate(1200, *traits) # Array of strings
+    raw_pages = inconnu.common.paginate(1200, *traits)  # Array of strings
 
     _pages = []
     for page in raw_pages:

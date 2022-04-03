@@ -1,7 +1,8 @@
 """misc/frenzy.py - Perform a frenzy check."""
-#pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments
 
 import asyncio
+
 import discord
 
 import inconnu
@@ -54,31 +55,24 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             # Build the text version of the message
             name = character.name
             content = f"**{name}: Frenzy {title} (DC {difficulty})**\n{message}\n*{footer}*"
-            msg_content = { "content": content }
+            msg_content = {"content": content}
         else:
             embed = __get_embed(ctx, title, message, character.name, difficulty, footer, color)
-            msg_content = { "embed": embed }
+            msg_content = {"embed": embed}
 
         await asyncio.gather(
-            __generate_report_task(ctx, character,outcome),
-            inconnu.respond(ctx)(**msg_content)
+            __generate_report_task(ctx, character, outcome), inconnu.respond(ctx)(**msg_content)
         )
 
     except inconnu.common.FetchError:
         pass
 
 
-def __get_embed(
-    ctx, title: str, message: str, name: str, difficulty: str, footer: str, color: int
-):
+def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, footer: str, color: int):
     """Display the frenzy outcome in an embed."""
-    embed = discord.Embed(
-        title=title,
-        description=message,
-        colour=color
-    )
+    embed = discord.Embed(title=title, description=message, colour=color)
     author_field = f"{name}: Frenzy vs DC {difficulty}"
-    embed.set_author(name=author_field, icon_url=ctx.user.display_avatar)
+    embed.set_author(name=author_field, icon_url=inconnu.get_avatar(ctx.user))
     embed.set_footer(text=footer)
 
     if title == "Failure!":
@@ -97,5 +91,5 @@ def __generate_report_task(ctx, character, outcome):
         character=character,
         title="Frenzy Success" if outcome.is_successful else "Frenzy Failure",
         message=f"**{character.name}** {verbed} their frenzy check.",
-        color=0x880000 if outcome.is_failure else discord.Embed.Empty
+        color=0x880000 if outcome.is_failure else discord.Embed.Empty,
     )

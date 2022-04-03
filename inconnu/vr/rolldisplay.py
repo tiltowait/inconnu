@@ -10,17 +10,18 @@ import discord
 from discord.ui import Button
 
 import inconnu
+
 from . import dicemoji
 
 
 class _ButtonID(str, Enum):
     """Button IDs used in re-rolls."""
+
     REROLL_FAILURES = "reroll_failures"
     MAXIMIZE_CRITICALS = "maximize_criticals"
     AVOID_MESSY = "avoid_messy"
     RISKY_AVOID_MESSY = "risky"
     WILLPOWER = "willpower"
-
 
     def unique(self):
         """Return the string value of the case, uniquely identified."""
@@ -39,16 +40,14 @@ class _RollControls(inconnu.views.DisablingView):
             button.callback = self.button_pressed
             self.add_item(button)
 
-
     async def button_pressed(self, interaction):
         """Handle button presses."""
         if self.owner != interaction.user:
             await interaction.response.send_message(
-                "This button doesn't belong to you!",
-                ephemeral=True
+                "This button doesn't belong to you!", ephemeral=True
             )
         else:
-            button_id = interaction.data["custom_id"].split()[0] # Remove the unique ID
+            button_id = interaction.data["custom_id"].split()[0]  # Remove the unique ID
 
             if inconnu.common.contains_digit(button_id):
                 # This was the surge button, which is always last. Let's disable it
@@ -71,7 +70,6 @@ class _RollControls(inconnu.views.DisablingView):
             await self.callback(interaction)
 
 
-
 class RollDisplay:
     """Display and manipulate roll outcomes. Provides buttons for rerolls, wp, and rouse."""
 
@@ -83,8 +81,7 @@ class RollDisplay:
         self.owner = owner
         self.rerolled = False
         self.surged = False
-        self.msg = None # Used for disabling the buttons at the end of the timeout
-
+        self.msg = None  # Used for disabling the buttons at the end of the timeout
 
     async def display(self, use_embed: bool, alt_ctx=None):
         """Display the roll."""
@@ -103,7 +100,7 @@ class RollDisplay:
         ctx = alt_ctx or self.ctx
         msg_contents = {}
 
-        if (buttons := self.buttons):
+        if buttons := self.buttons:
             controls = _RollControls(self.respond_to_button, self.owner, buttons)
             msg_contents["view"] = controls
         else:
@@ -120,7 +117,6 @@ class RollDisplay:
         if controls is not None:
             controls.message = msg
 
-
     async def respond_to_button(self, btn):
         """Respond to the buttons."""
         button_id = btn.data["custom_id"].split()[0]
@@ -130,13 +126,15 @@ class RollDisplay:
                 sup_wp = self.character.superficial_wp + 1
                 await self.character.set_superficial_wp(sup_wp)
 
-            await inconnu.character.display(btn, self.character,
+            await inconnu.character.display(
+                btn,
+                self.character,
                 title="Willpower Spent",
                 owner=self.owner,
-                fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)]
+                fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
             )
 
-        elif inconnu.common.contains_digit(button_id): # Surge buttons are just charids
+        elif inconnu.common.contains_digit(button_id):  # Surge buttons are just charids
             self.surged = True
             await inconnu.misc.rouse(btn, 1, self.character, "Surge", False)
 
@@ -150,7 +148,6 @@ class RollDisplay:
             use_embed = len(btn.message.embeds) > 0
             await self.display(use_embed, btn)
 
-
     @property
     def character_name(self) -> str:
         """The character's display name. Either the character name or the player name."""
@@ -161,7 +158,6 @@ class RollDisplay:
 
         return character_name
 
-
     @property
     def hunger(self) -> str:
         """
@@ -169,7 +165,6 @@ class RollDisplay:
         falls back to the hunger dice count if unavailable.
         """
         return self.outcome.hunger.count
-
 
     @property
     def comment(self):
@@ -180,18 +175,16 @@ class RollDisplay:
                 return comment + impairment
         return self._comment
 
-
     @property
     def icon(self) -> str:
         """The icon for the embed."""
         if self.character is not None:
             guild_icon = self.ctx.guild.icon or ""
-            icon = self.owner.display_avatar if self.character.is_pc else guild_icon
+            icon = inconnu.get_avatar(self.owner) if self.character.is_pc else guild_icon
         else:
-            icon = self.owner.display_avatar
+            icon = inconnu.get_avatar(self.owner)
 
         return icon
-
 
     @property
     def thumbnail_url(self) -> str:
@@ -209,7 +202,6 @@ class RollDisplay:
 
         return "https://www.inconnu-bot.com/images/assets/dice/bestial.webp"
 
-
     @property
     def embed(self) -> discord.Embed:
         """The graphical representation of the roll."""
@@ -219,10 +211,7 @@ class RollDisplay:
         if not self.outcome.is_total_failure and not self.outcome.is_bestial:
             title += f" ({self.outcome.total_successes})"
 
-        embed = discord.Embed(
-            title=title,
-            colour=self.outcome.embed_color
-        )
+        embed = discord.Embed(title=title, colour=self.outcome.embed_color)
 
         # Author line
         author_field = self.character_name + ("'s Re-Roll" if self.rerolled else "'s Roll")
@@ -231,10 +220,7 @@ class RollDisplay:
         if self.outcome.descriptor is not None:
             author_field += f" ({self.outcome.descriptor})"
 
-        embed.set_author(
-            name=author_field,
-            icon_url=self.icon
-        )
+        embed.set_author(name=author_field, icon_url=self.icon)
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
@@ -246,7 +232,7 @@ class RollDisplay:
             embed.add_field(
                 name=f"Margin: {self.outcome.margin}",
                 value=f"{normalmoji} {hungermoji}",
-                inline=False
+                inline=False,
             )
         else:
             lines = []
@@ -258,9 +244,7 @@ class RollDisplay:
                 lines.append("**Hunger Dice:** `" + ", ".join(map(str, dice)) + "`")
 
             embed.add_field(
-                name=f"Margin: {self.outcome.margin}",
-                value="\n".join(lines),
-                inline=False
+                name=f"Margin: {self.outcome.margin}", value="\n".join(lines), inline=False
             )
 
         embed.add_field(name="Pool", value=str(self.outcome.pool))
@@ -274,7 +258,6 @@ class RollDisplay:
             embed.set_footer(text=self.comment)
 
         return embed
-
 
     @property
     def text(self) -> str:
@@ -317,7 +300,6 @@ class RollDisplay:
 
         return "\n".join(contents)
 
-
     @property
     def surging(self) -> bool:
         """Whether the roll uses a Blood Surge."""
@@ -328,7 +310,6 @@ class RollDisplay:
         match = re.match(r"^.*(\s+surge|surge\s+.*|surge)$", search, re.IGNORECASE | re.DOTALL)
         return match is not None
 
-
     @property
     def buttons(self) -> list:
         """Generate the buttons for Willpower re-rolls and surging."""
@@ -336,56 +317,70 @@ class RollDisplay:
 
         if self.rerolled:
             if self.character is not None:
-                buttons.append(Button(
-                    label="Mark WP",
-                    custom_id=_ButtonID.WILLPOWER.unique(),
-                    style=discord.ButtonStyle.primary
-                ))
+                buttons.append(
+                    Button(
+                        label="Mark WP",
+                        custom_id=_ButtonID.WILLPOWER.unique(),
+                        style=discord.ButtonStyle.primary,
+                    )
+                )
                 if not self.surged and self.surging:
-                    buttons.append(Button(
-                        label="Rouse",
-                        custom_id=self.character.id,
-                        style=discord.ButtonStyle.danger
-                    ))
+                    buttons.append(
+                        Button(
+                            label="Rouse",
+                            custom_id=self.character.id,
+                            style=discord.ButtonStyle.danger,
+                        )
+                    )
             return buttons or None
 
         # We haven't re-rolled
 
         if "Willpower" not in (self.outcome.pool_str or ""):
-            buttons.append(Button(
-                label="Re-Roll Failures",
-                custom_id=_ButtonID.REROLL_FAILURES.unique(),
-                style=discord.ButtonStyle.primary,
-                disabled=not self.outcome.can_reroll_failures
-            ))
+            buttons.append(
+                Button(
+                    label="Re-Roll Failures",
+                    custom_id=_ButtonID.REROLL_FAILURES.unique(),
+                    style=discord.ButtonStyle.primary,
+                    disabled=not self.outcome.can_reroll_failures,
+                )
+            )
 
-            buttons.append(Button(
-                label="Max Crits",
-                custom_id=_ButtonID.MAXIMIZE_CRITICALS.unique(),
-                style=discord.ButtonStyle.primary,
-                disabled=not self.outcome.can_maximize_criticals
-            ))
+            buttons.append(
+                Button(
+                    label="Max Crits",
+                    custom_id=_ButtonID.MAXIMIZE_CRITICALS.unique(),
+                    style=discord.ButtonStyle.primary,
+                    disabled=not self.outcome.can_maximize_criticals,
+                )
+            )
 
-            buttons.append(Button(
-                label="Avoid Messy",
-                custom_id=_ButtonID.AVOID_MESSY.unique(),
-                style=discord.ButtonStyle.primary,
-                disabled=not self.outcome.can_avoid_messy_critical
-            ))
+            buttons.append(
+                Button(
+                    label="Avoid Messy",
+                    custom_id=_ButtonID.AVOID_MESSY.unique(),
+                    style=discord.ButtonStyle.primary,
+                    disabled=not self.outcome.can_avoid_messy_critical,
+                )
+            )
 
-            buttons.append(Button(
-                label="Risky Avoid",
-                custom_id=_ButtonID.RISKY_AVOID_MESSY.unique(),
-                style=discord.ButtonStyle.primary,
-                disabled=not self.outcome.can_risky_messy_critical
-            ))
+            buttons.append(
+                Button(
+                    label="Risky Avoid",
+                    custom_id=_ButtonID.RISKY_AVOID_MESSY.unique(),
+                    style=discord.ButtonStyle.primary,
+                    disabled=not self.outcome.can_risky_messy_critical,
+                )
+            )
 
         if self.surging:
-            buttons.append(Button(
-                label="Rouse",
-                custom_id=self.character.id,
-                style=discord.ButtonStyle.danger,
-                row=1
-            ))
+            buttons.append(
+                Button(
+                    label="Rouse",
+                    custom_id=self.character.id,
+                    style=discord.ButtonStyle.danger,
+                    row=1,
+                )
+            )
 
         return buttons or None

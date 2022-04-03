@@ -28,12 +28,12 @@ async def present_error(
     ctx,
     error,
     *fields,
-    author = None,
+    author=None,
     character: str = None,
     footer: str = None,
     help_url: str = None,
-    view = None,
-    ephemeral=True
+    view=None,
+    ephemeral=True,
 ):
     """
     Display an error in a nice embed.
@@ -49,14 +49,17 @@ async def present_error(
     """
     if await inconnu.settings.accessible(ctx.user):
         content = __error_text(error, *fields, footer=footer)
-        msg_contents = { "content": content }
+        msg_contents = {"content": content}
     else:
-        embed = __error_embed(ctx, error, *fields,
+        embed = __error_embed(
+            ctx,
+            error,
+            *fields,
             author=author,
             character=character,
             footer=footer,
         )
-        msg_contents = { "embed": embed }
+        msg_contents = {"embed": embed}
 
     # Finish preparing the response
     msg_contents["ephemeral"] = ephemeral
@@ -85,16 +88,16 @@ def __error_embed(
     ctx,
     error,
     *fields,
-    author = None,
+    author=None,
     character: str = None,
     footer: str = None,
 ):
     # Figure out the author
     if author is None:
-        avatar = ctx.user.display_avatar
+        avatar = inconnu.get_avatar(ctx.user)
         display_name = ctx.user.display_name
     else:
-        avatar = author.display_avatar
+        avatar = inconnu.get_avatar(author)
         display_name = author.display_name
 
     if character is not None:
@@ -103,11 +106,7 @@ def __error_embed(
         else:
             display_name = character.name
 
-    embed = discord.Embed(
-        title="Error",
-        description=str(error),
-        color=0xFF0000
-    )
+    embed = discord.Embed(title="Error", description=str(error), color=0xFF0000)
     embed.set_author(name=display_name, icon_url=avatar)
 
     for field in fields:
@@ -138,13 +137,11 @@ def __error_text(
 
 async def report_update(*, ctx, character, title, message, **kwargs):
     """Display character updates in the update channel."""
-    if (update_channel := await inconnu.settings.update_channel(ctx.guild)):
+    if update_channel := await inconnu.settings.update_channel(ctx.guild):
         embed = discord.Embed(
-            title=title,
-            description=message,
-            color=kwargs.pop("color", discord.Embed.Empty)
+            title=title, description=message, color=kwargs.pop("color", discord.Embed.Empty)
         )
-        embed.set_author(name=character.name, icon_url=ctx.user.display_avatar)
+        embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
 
         mentions = discord.AllowedMentions(users=False)
 
@@ -169,12 +166,7 @@ async def select_character(ctx, err, help_url, tip, player=None):
 
     options = await character_options(ctx.guild.id, user.id)
     msg = await present_error(
-        ctx,
-        err,
-        (tip[0], tip[1]),
-        author=user,
-        help_url=help_url,
-        view=options.view
+        ctx, err, (tip[0], tip[1]), author=user, help_url=help_url, view=options.view
     )
 
     options.view.message = msg
@@ -206,9 +198,7 @@ async def character_options(guild: int, user: int):
     if len(characters) < 6:
         components = [
             Button(
-                label=char.name,
-                custom_id=f"{char.id} {uuid4()}",
-                style=discord.ButtonStyle.primary
+                label=char.name, custom_id=f"{char.id} {uuid4()}", style=discord.ButtonStyle.primary
             )
             for char in characters
         ]
@@ -307,4 +297,4 @@ def contains_digit(string: str):
     """Determine whether a string contains a digit."""
     if string is None:
         return False
-    return bool(re.search(r"\d", string)) # Much faster than using any()
+    return bool(re.search(r"\d", string))  # Much faster than using any()

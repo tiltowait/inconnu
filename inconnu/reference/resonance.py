@@ -12,7 +12,7 @@ __DISCIPLINES = {
     "Phlegmatic": "Auspex, Dominate",
     "Sanguine": "Blood Sorcery, Presence",
     "Animal Blood": "Animalism, Protean",
-    "Empty": "Oblivion"
+    "Empty": "Oblivion",
 }
 
 __EMOTIONS = {
@@ -47,16 +47,13 @@ async def __display_text(ctx, temperament, res, die):
 
 async def __display_embed(ctx, temperament, res, die):
     """Display the resonance in an embed."""
-    embed = discord.Embed(
-        title=f"{temperament} {res} Resonance"
-    )
-    embed.set_author(name=ctx.user.display_name, icon_url=ctx.user.display_avatar)
+    embed = discord.Embed(title=f"{temperament} {res} Resonance")
+    embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
     embed.add_field(name="Disciplines", value=__DISCIPLINES[res])
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[res])
     embed.set_footer(text=f"Rolled {die} for the Resonance")
 
     await ctx.respond(embed=embed)
-
 
 
 def __get_temperament() -> str:

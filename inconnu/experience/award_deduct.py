@@ -33,9 +33,9 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
             reason += "."
 
         if await inconnu.settings.accessible(ctx.user):
-            msg = { "content": __get_text(character, amount, scope, reason) }
+            msg = {"content": __get_text(character, amount, scope, reason)}
         else:
-            msg = { "embed": __get_embed(ctx, player, character, amount, scope, reason) }
+            msg = {"embed": __get_embed(ctx, player, character, amount, scope, reason)}
 
         await ctx.respond(**msg)
 
@@ -51,7 +51,7 @@ def __get_embed(ctx, player, character, amount, scope, reason):
     title += f"{abs(amount)} {scope.title()} XP"
 
     embed = discord.Embed(title=title)
-    embed.set_author(name=character.name, icon_url=player.display_avatar)
+    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
     embed.set_footer(text="To view: /experience log")
 
     embed.add_field(name="Reason", value=reason, inline=False)
@@ -59,7 +59,7 @@ def __get_embed(ctx, player, character, amount, scope, reason):
     embed.add_field(
         name="New Experience (Unspent / Lifetime)",
         value=f"```{character.current_xp} / {character.total_xp}```",
-        inline=False
+        inline=False,
     )
 
     return embed

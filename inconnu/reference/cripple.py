@@ -12,25 +12,8 @@ __HELP_URL = "https://www.inconnu-bot.com"
 
 async def cripple(ctx, damage: int):
     """Roll against the crippling injury chart."""
-    try:
-        if damage is None:
-            tip = "/cripple `damage:DAMAGE` `character:CHARACTER`"
-            character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
-            damage = character.aggravated_hp
-        else:
-            character = None  # Do not allow explicit damage on a character
-
-        if damage < 1:
-            await ctx.respond(
-                "You need some Aggravated damage to sustain a crippling injury!", ephemeral=True
-            )
-            return
-
-        injuries = __get_injury(damage)
-        await __display_injury(ctx, damage, injuries)
-
-    except inconnu.common.FetchError:
-        pass
+    injuries = __get_injury(damage)
+    await __display_injury(ctx, damage, injuries)
 
 
 async def __display_injury(ctx, damage, injuries):
@@ -38,15 +21,17 @@ async def __display_injury(ctx, damage, injuries):
     # We don't use the modular display, because we don't necessarily have a character here
 
     embed = discord.Embed(
-        title="Crippling Injury", description=f"`{damage}` Aggravated damage sustained this turn."
+        title="Crippling Injury", description=f"`{damage}` total Aggravated damage."
     )
     embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
 
     for injury in injuries:
         embed.add_field(name=injury.injury, value=injury.effect, inline=False)
 
+    footer = ["Crippling injuries can only occur when impaired."]
     if len(injuries) > 1:
-        embed.set_footer(text="The Storyteller chooses which injury applies.")
+        footer.insert(0, "The Storyteller chooses which injury applies.")
+    embed.set_footer(text="\n".join(footer))
 
     await ctx.respond(embed=embed)
 

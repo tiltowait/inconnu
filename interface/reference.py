@@ -14,49 +14,45 @@ class ReferenceCommands(commands.Cog):
 
     @slash_command()
     async def bp(
-        self,
-        ctx,
-        rating: Option(int, "The Blood Potency rating", min_value=0, max_value=10)
+        self, ctx, rating: Option(int, "The Blood Potency rating", min_value=0, max_value=10)
     ):
         """Look up Blood Potency effects."""
         await inconnu.reference.blood_potency(ctx, rating)
-
 
     @slash_command()
     async def cripple(
         self,
         ctx: discord.ApplicationContext,
-        damage: Option(int, "The amount of Aggravated damage sustained this turn", min_value=1),
+        damage: Option(int, "The total Aggravated damage sustained", min_value=1),
     ):
         """Generate a random crippling injury based on Aggravated damage."""
         await inconnu.reference.cripple(ctx, damage)
-
 
     @slash_command()
     async def probability(
         self,
         ctx: discord.ApplicationContext,
         roll: Option(str, "The pool, hunger, and difficulty"),
-        reroll: Option(str, "The re-roll strategy to use",
+        reroll: Option(
+            str,
+            "The re-roll strategy to use",
             choices=[
                 OptionChoice("Re-Roll Failures", "reroll_failures"),
                 OptionChoice("Maximize Crits", "maximize_criticals"),
                 OptionChoice("Avoid Messy", "avoid_messy"),
-                OptionChoice("Risky Avoid Messy", "risky")
+                OptionChoice("Risky Avoid Messy", "risky"),
             ],
-            required=False
+            required=False,
         ),
-        character: inconnu.options.character("The character (if using traits)")
+        character: inconnu.options.character("The character (if using traits)"),
     ):
         """Calculate outcome probabilities for a given roll."""
         await inconnu.reference.probability(ctx, roll, reroll, character)
-
 
     @slash_command()
     async def resonance(self, ctx):
         """Generate a random Resonance."""
         await inconnu.reference.resonance(ctx)
-
 
     @slash_command()
     @commands.guild_only()
@@ -64,7 +60,7 @@ class ReferenceCommands(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         trait: Option(str, "(Optional) A trait to look for", required=False),
-        date: Option(str, "(Optional) YYYYMMDD date to count from", default="19700101")
+        date: Option(str, "(Optional) YYYYMMDD date to count from", default="19700101"),
     ):
         """View roll statistics for your characters."""
         await inconnu.reference.statistics(ctx, trait, date)

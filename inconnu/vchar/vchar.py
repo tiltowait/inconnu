@@ -5,17 +5,17 @@ import asyncio
 import copy
 import datetime
 import math
-
-from enum import Enum
 from collections import Counter, OrderedDict
+from enum import Enum
 from types import SimpleNamespace
 from typing import List
 
 from bson.objectid import ObjectId
 
 import inconnu
+
+from ..constants import INCONNU_ID, UNIVERSAL_TRAITS, Damage
 from . import errors
-from ..constants import Damage, INCONNU_ID, UNIVERSAL_TRAITS
 
 
 class _Properties(str, Enum):
@@ -42,14 +42,12 @@ class VChar:
 
     VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane"]
 
-
     def __init__(self, params: dict):
         self._params = params
         self.object_id = params["_id"]
-        self.id = str(params["_id"]) # pylint: disable=invalid-name
-        self.find_query = { "_id": self._params["_id"] }
+        self.id = str(params["_id"])  # pylint: disable=invalid-name
+        self.find_query = {"_id": self._params["_id"]}
         self.guild = params["guild"]
-
 
     # Character creation and fetching
 
@@ -72,15 +70,14 @@ class VChar:
             "hunger": 1,
             "potency": kwargs.pop("potency"),
             "traits": kwargs.pop("traits"),
-            "experience": { "current": 0, "total": 0 },
-            "log": { "created": datetime.datetime.utcnow() }
+            "experience": {"current": 0, "total": 0},
+            "log": {"created": datetime.datetime.utcnow()},
         }
 
         if kwargs:
             raise ValueError(f"Received unexpected values: {kwargs}")
 
         return VChar(char_params)
-
 
     # Comparators
 
@@ -103,7 +100,6 @@ class VChar:
     def __ne__(self, other):
         return self.id != other.id
 
-
     # Property accessors
 
     @property
@@ -111,24 +107,20 @@ class VChar:
         """The async database collection."""
         return inconnu.db.characters
 
-
     async def _async_set_property(self, field, value):
         """Set a field's value, asynchronously."""
         self._params[field] = value
-        await self._async_collection.update_one(self.find_query, { "$set": { field: value } })
-
+        await self._async_collection.update_one(self.find_query, {"$set": {field: value}})
 
     @property
     def raw(self):
         """The character's raw data as present in the database."""
         return self._params
 
-
     @property
     def user(self):
         """The owner's Discord user ID."""
         return self._params[_Properties.USER]
-
 
     async def set_user(self, new_user):
         """Set the character's user."""
@@ -137,7 +129,6 @@ class VChar:
 
         await self._async_set_property(_Properties.USER, new_user)
 
-
     @property
     def name(self):
         """The character's name."""
@@ -145,63 +136,52 @@ class VChar:
             return self._params[_Properties.NAME]
         return self._params[_Properties.NAME] + " (SPC)"
 
-
     async def set_name(self, new_name):
         """Set the character's name."""
         await self._async_set_property(_Properties.NAME, new_name)
-
 
     @property
     def splat(self):
         """The character's splat."""
         return self._params[_Properties.SPLAT]
 
-
     async def set_splat(self, new_splat):
         """Set the character's splat."""
         await self._async_set_property(_Properties.SPLAT, new_splat)
-
 
     @property
     def humanity(self):
         """The character's humanity."""
         return self._params[_Properties.HUMANITY]
 
-
     async def set_humanity(self, new_humanity):
         """Set the character's humanity."""
         new_humanity = max(0, min(10, new_humanity))
         await asyncio.gather(
-            self._async_set_property(_Properties.HUMANITY, new_humanity),
-            self.set_stains(0)
+            self._async_set_property(_Properties.HUMANITY, new_humanity), self.set_stains(0)
         )
-
 
     @property
     def stains(self):
         """The character's stains."""
         return self._params[_Properties.STAINS]
 
-
     async def set_stains(self, new_stains):
         """Set the character's stains."""
         new_stains = max(0, min(10, new_stains))
         await asyncio.gather(
             self.__update_log("stains", self.stains, new_stains),
-            self._async_set_property(_Properties.STAINS, new_stains)
+            self._async_set_property(_Properties.STAINS, new_stains),
         )
-
 
     @property
     def health(self):
         """The character's health."""
         return self._params[_Properties.HEALTH]
 
-
     async def set_health(self, new_health):
         """Set the character's health."""
         await self._async_set_property(_Properties.HEALTH, new_health)
-
 
     async def adjust_tracker_rating(self, track: str, new_rating: int) -> bool:
         """Adjust a character's Health or Willpower rating. Returns true if changed."""
@@ -231,28 +211,23 @@ class VChar:
         await method(new_track)
         return True
 
-
     @property
     def aggravated_hp(self) -> int:
         """The amount of Aggravated Health damage sustained."""
         return self.health.count(Damage.AGGRAVATED)
 
-
     async def set_aggravated_hp(self, new_value):
         """Set the Aggravated Health damage."""
         await self.set_damage(_Properties.HEALTH, Damage.AGGRAVATED, new_value, wrap=False)
-
 
     @property
     def willpower(self):
         """The character's willpower."""
         return self._params[_Properties.WILLPOWER]
 
-
     async def set_willpower(self, new_willpower):
         """Set the character's willpower."""
         await self._async_set_property(_Properties.WILLPOWER, new_willpower)
-
 
     @property
     def willpower_recovery(self) -> int:
@@ -262,61 +237,51 @@ class VChar:
 
         return max(resolve.rating, composure.rating)
 
-
     @property
     def superficial_wp(self) -> int:
         """The amount of Superficial Willpower damage sustained."""
         return self.willpower.count(Damage.SUPERFICIAL)
 
-
     async def set_superficial_wp(self, new_value):
         """Set the Superficial Willpower damage."""
         await self.set_damage(_Properties.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)
-
 
     @property
     def superficial_hp(self) -> int:
         """The amount of Superficial Health damage sustained."""
         return self.health.count(Damage.SUPERFICIAL)
 
-
     async def set_superficial_hp(self, new_value):
         """Set the Superficial Health damage."""
         await self.set_damage(_Properties.HEALTH, Damage.SUPERFICIAL, new_value, wrap=True)
-
 
     @property
     def hunger(self):
         """The character's hunger."""
         return self._params[_Properties.HUNGER] if self.is_vampire else 0
 
-
     async def set_hunger(self, new_hunger):
         """Set the character's hunger."""
-        new_hunger = max(0, min(5, new_hunger)) # Clamp between 0 and 5
+        new_hunger = max(0, min(5, new_hunger))  # Clamp between 0 and 5
         await asyncio.gather(
             self.__update_log("hunger", self.hunger, new_hunger),
-            self._async_set_property(_Properties.HUNGER, new_hunger)
+            self._async_set_property(_Properties.HUNGER, new_hunger),
         )
-
 
     @property
     def potency(self):
         """The character's potency."""
         return self._params[_Properties.POTENCY]
 
-
     async def set_potency(self, new_potency):
         """Set the character's potency."""
         new_potency = max(0, min(10, new_potency))
         await self._async_set_property(_Properties.POTENCY, new_potency)
 
-
     @property
     def current_xp(self):
         """The character's current xp."""
         return self._params["experience"]["current"]
-
 
     async def set_current_xp(self, new_current_xp):
         """Set the character's current xp."""
@@ -324,16 +289,13 @@ class VChar:
 
         self._params["experience"]["current"] = new_current_xp
         await self._async_collection.update_one(
-            self.find_query,
-            { "$set": { "experience.current": new_current_xp } }
+            self.find_query, {"$set": {"experience.current": new_current_xp}}
         )
-
 
     @property
     def total_xp(self):
         """The character's total xp."""
         return self._params["experience"]["total"]
-
 
     async def set_total_xp(self, new_total_xp):
         """Set the character's total XP and update current accordingly."""
@@ -343,72 +305,59 @@ class VChar:
         self._params["experience"]["total"] = new_total_xp
 
         task1 = self._async_collection.update_one(
-            self.find_query,
-            { "$set": { "experience.total": new_total_xp } }
+            self.find_query, {"$set": {"experience.total": new_total_xp}}
         )
         task2 = self.set_current_xp(self.current_xp + delta)
 
         await asyncio.gather(task1, task2)
-
 
     @property
     def biography(self):
         """The character's biography."""
         return self._params.get(_Properties.BIOGRAPHY, "")
 
-
     async def set_biography(self, new_biography):
         """Set the character's biography."""
         await self._async_set_property(_Properties.BIOGRAPHY, new_biography)
-
 
     @property
     def description(self):
         """The character's description."""
         return self._params.get(_Properties.DESCRIPTION, "")
 
-
     async def set_description(self, new_description):
         """Set the character's description."""
         await self._async_set_property(_Properties.DESCRIPTION, new_description)
-
 
     @property
     def image_url(self):
         """The character's image."""
         return self._params.get(_Properties.IMAGE, "")
 
-
     async def set_image_url(self, new_image_url):
         """Set the character's image URL."""
         await self._async_set_property(_Properties.IMAGE, new_image_url)
-
 
     @property
     def has_biography(self):
         """Whether the character has any biographical data."""
         return any([self.biography, self.description])
 
-
     @property
     def convictions(self) -> List[str]:
         """The Character's Convictions."""
         return self._params.get(_Properties.CONVICTIONS, []).copy()
 
-
     async def set_convictions(self, new_convictions: List[str]):
         """Set the character's Convictions."""
         await self._async_set_property(_Properties.CONVICTIONS, new_convictions)
 
-
     # Derived attributes
-
 
     @property
     def degeneration(self) -> bool:
         """Whether the character is in degeneration."""
         return self.stains > (10 - self.humanity)
-
 
     @property
     def impairment(self):
@@ -428,47 +377,40 @@ class VChar:
 
         return None
 
-
     @property
     def physically_impaired(self):
         """Whether the character is physically impaired."""
         return self.health.count(Damage.NONE) == 0 or self.stains > (10 - self.humanity)
-
 
     @property
     def mentally_impaired(self):
         """Whether the character is physically impaired."""
         return self.willpower.count(Damage.NONE) == 0 or self.stains > (10 - self.humanity)
 
-
     @property
     def is_pc(self):
         """Whether the character is a PC."""
         return self._params["user"] != INCONNU_ID
-
 
     @property
     def is_vampire(self):
         """Whether the character is a vampire."""
         return self.splat == "vampire"
 
-
     @property
     def surge(self):
         """The number of dice added to a Blood Surge."""
         return math.ceil(self.potency / 2) + 1
 
-
     @property
     def mend_amount(self):
         """The amount of Superficial damage recovered when mending."""
         if self.is_vampire:
-            mends = { 0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 5 }
+            mends = {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 5}
             return mends[self.potency]
 
         # Mortal or ghoul
         return self.find_trait("Stamina", exact=True).rating
-
 
     @property
     def frenzy_resist(self):
@@ -477,7 +419,6 @@ class VChar:
         third_hu = int(self.humanity / 3)
         return max(cur_wp + third_hu, 1)
 
-
     @property
     def bane_severity(self) -> int:
         """The character's bane severity."""
@@ -485,12 +426,10 @@ class VChar:
             return 0
         return math.ceil(self.potency / 2) + 1
 
-
     @property
     def bane(self) -> int:
         """Shorthand for bane_severity. Used in traits."""
         return self.bane_severity
-
 
     # Traits
 
@@ -500,13 +439,11 @@ class VChar:
         _traits = self._params.get(_Properties.TRAITS, {})
         if not _traits:
             self._params[_Properties.TRAITS] = {}
-        return OrderedDict(sorted(_traits.items(), key = lambda s: s[0].casefold()))
-
+        return OrderedDict(sorted(_traits.items(), key=lambda s: s[0].casefold()))
 
     def has_trait(self, trait: str) -> bool:
         """Determine whether a character has a given trait."""
         return trait.lower() in map(lambda t: t.lower(), self.traits.keys())
-
 
     def find_trait(self, trait: str, exact=False) -> SimpleNamespace:
         """
@@ -557,7 +494,6 @@ class VChar:
 
         matches = map(lambda t: t[0], matches)
         raise errors.AmbiguousTraitError(trait, matches)
-
 
     async def assign_traits(self, traits: dict) -> str:
         """
@@ -611,12 +547,9 @@ class VChar:
         else:
             adjustment_text = ""
 
-        tasks.append(self._async_collection.update_one(self.find_query, {
-            "$set": finalized_traits
-        }))
+        tasks.append(self._async_collection.update_one(self.find_query, {"$set": finalized_traits}))
         await asyncio.gather(*tasks)
         return adjustment_text, canonical_traits
-
 
     async def delete_trait(self, trait: str):
         """
@@ -624,13 +557,12 @@ class VChar:
         Raises TraitNotFoundError if the trait doesn't exist.
         """
         trait = self.find_trait(trait, exact=True).name
-        await self._async_collection.update_one(self.find_query, {
-            "$unset": { f"traits.{trait}": "" }
-        })
+        await self._async_collection.update_one(
+            self.find_query, {"$unset": {f"traits.{trait}": ""}}
+        )
         del self._params[_Properties.TRAITS][trait]
 
         return trait
-
 
     # Macros!
 
@@ -641,7 +573,7 @@ class VChar:
             _macros = copy.deepcopy(_macros)
             raw_macros = []
 
-            for name, macro in sorted(_macros.items(), key = lambda s: s[0].casefold()):
+            for name, macro in sorted(_macros.items(), key=lambda s: s[0].casefold()):
                 macro["name"] = name
 
                 macro.setdefault("staining", "show")
@@ -654,7 +586,6 @@ class VChar:
 
         return []
 
-
     def find_macro(self, search):
         """
         Return a macro object.
@@ -666,17 +597,16 @@ class VChar:
 
         return matches[0]
 
-
     async def add_macro(
         self,
         macro: str,
         pool: list,
         hunger: bool,
-        rouses:int,
+        rouses: int,
         reroll_rouses: int,
         staining: str,
         difficulty: int,
-        comment: str
+        comment: str,
     ):
         """
         Store a macro.
@@ -695,25 +625,23 @@ class VChar:
             "staining": staining,
             "hunger": hunger,
             "difficulty": difficulty,
-            "comment": comment
+            "comment": comment,
         }
-        await self._async_collection.update_one(self.find_query, {
-            "$set": { f"macros.{macro}": macro_doc }
-        })
+        await self._async_collection.update_one(
+            self.find_query, {"$set": {f"macros.{macro}": macro_doc}}
+        )
         self._params.setdefault("macros", {})[macro] = macro_doc
-
 
     async def update_macro(self, macro: str, update: dict):
         """Update a macro."""
-        macro = self.find_macro(macro) # For getting the exact name
+        macro = self.find_macro(macro)  # For getting the exact name
         for param, val in update.items():
-            self._params["macros"][macro.name][param] = val # Update cache
-            await self._async_collection.update_one(self.find_query, {
-                "$set": { f"macros.{macro.name}.{param}": val }
-            })
+            self._params["macros"][macro.name][param] = val  # Update cache
+            await self._async_collection.update_one(
+                self.find_query, {"$set": {f"macros.{macro.name}.{param}": val}}
+            )
 
         return macro.name
-
 
     async def delete_macro(self, macro):
         """
@@ -723,10 +651,9 @@ class VChar:
         macro = self.find_macro(macro)
         del self._params["macros"][macro.name]
 
-        await self._async_collection.update_one(self.find_query, {
-            "$unset": { f"macros.{macro.name}": "" }
-        })
-
+        await self._async_collection.update_one(
+            self.find_query, {"$unset": {f"macros.{macro.name}": ""}}
+        )
 
     # Specialized mutators
 
@@ -762,7 +689,11 @@ class VChar:
         agg = agg * Damage.AGGRAVATED
 
         new_track = unhurt + sup + agg
-        new_track = new_track[-len(cur_track):] # Shrink it if necessary
+        new_track = new_track[-len(cur_track) :]  # Shrink it if necessary
+
+        if new_track == cur_track:
+            # No need to do anything if the track is unchanged
+            return
 
         tasks = []
 
@@ -782,8 +713,7 @@ class VChar:
 
         await asyncio.gather(*tasks)
 
-
-    async def apply_damage(self, tracker: str, severity: str, delta: int):
+    async def apply_damage(self, tracker: str, severity: str, delta: int) -> bool:
         """
         Apply Superficial damage.
         Args:
@@ -791,6 +721,9 @@ class VChar:
             severity (str): Damage.SUPERFICIAL or Damage.AGGRAVATED
             delta (int): The amount to apply
         If the damage exceeds the tracker, it will wrap around to aggravated.
+        Returns True if there was damage to apply. Returns False if not.
+        Damage won't be applied if delta is 0 or if we are subtracting damage when
+            there is none.
         """
         if not severity in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
             raise SyntaxError("Severity must be superficial or aggravated.")
@@ -801,8 +734,11 @@ class VChar:
         cur_dmg = cur_track.count(severity)
         new_dmg = cur_dmg + delta
 
-        await self.set_damage(tracker, severity, new_dmg, wrap=True)
+        if delta < 0 and cur_dmg == 0:
+            return False
 
+        await self.set_damage(tracker, severity, new_dmg, wrap=True)
+        return True
 
     # Experience Logging
 
@@ -810,7 +746,6 @@ class VChar:
     def experience_log(self):
         """The list of experience log events."""
         return self._params["experience"].get("log", [])
-
 
     async def apply_experience(self, amount: int, scope: str, reason: str, admin: int):
         """
@@ -828,11 +763,11 @@ class VChar:
             "amount": amount,
             "reason": reason,
             "admin": admin,
-            "date": datetime.datetime.utcnow()
+            "date": datetime.datetime.utcnow(),
         }
-        push_query = { "$push": { "experience.log": event_document }}
+        push_query = {"$push": {"experience.log": event_document}}
 
-        tasks=[self._async_collection.update_one(self.find_query, push_query)]
+        tasks = [self._async_collection.update_one(self.find_query, push_query)]
 
         if scope == "lifetime":
             tasks.append(self.set_total_xp(self.total_xp + amount))
@@ -846,14 +781,11 @@ class VChar:
         log.append(event_document)
         self._params["experience"]["log"] = log
 
-
     async def remove_experience_log_entry(self, entry):
         """Remove an entry from the log."""
-        await self._async_collection.update_one(self.find_query, {
-            "$pull": {
-                "experience.log": entry
-            }
-        })
+        await self._async_collection.update_one(
+            self.find_query, {"$pull": {"experience.log": entry}}
+        )
 
         # Remove the entry from the cached experience log
         log = self.experience_log
@@ -863,7 +795,6 @@ class VChar:
             del log[index]
             self._params["experience"]["log"] = log
 
-
     # Misc
 
     async def log(self, key, increment=1):
@@ -872,15 +803,23 @@ class VChar:
             return
 
         valid_keys = [
-            "remorse", "rouse", "slake", "awaken", "frenzy", "degen",
-            "health_superficial", "health_aggravated", "stains",
-            "willpower_superficial", "willpower_aggravated", "blush"
+            "remorse",
+            "rouse",
+            "slake",
+            "awaken",
+            "frenzy",
+            "degen",
+            "health_superficial",
+            "health_aggravated",
+            "stains",
+            "willpower_superficial",
+            "willpower_aggravated",
+            "blush",
         ]
         if key not in valid_keys:
             raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
 
-        self._async_collection.update_one(self.find_query, { "$inc": { f"log.{key}": increment } })
-
+        self._async_collection.update_one(self.find_query, {"$inc": {f"log.{key}": increment}})
 
     async def __update_log(self, key, old_value, new_value):
         """
@@ -892,6 +831,6 @@ class VChar:
         if new_value > old_value:
             delta = new_value - old_value
 
-            await self._async_collection.update_one(self.find_query, {
-                "$inc": { f"log.{key}": delta }
-            })
+            await self._async_collection.update_one(
+                self.find_query, {"$inc": {f"log.{key}": delta}}
+            )

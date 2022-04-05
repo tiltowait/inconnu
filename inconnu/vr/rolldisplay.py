@@ -319,7 +319,7 @@ class RollDisplay:
             if self.character is not None:
                 buttons.append(
                     Button(
-                        label="Mark WP",
+                        label="Mark WP Use",
                         custom_id=_ButtonID.WILLPOWER.unique(),
                         style=discord.ButtonStyle.primary,
                     )

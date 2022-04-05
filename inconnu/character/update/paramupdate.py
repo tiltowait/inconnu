@@ -4,6 +4,7 @@ import asyncio
 import re
 
 import inconnu
+
 from ...constants import Damage
 from ...vchar import VChar
 
@@ -59,7 +60,7 @@ async def __update_hunger_potency(character: VChar, delta: str, key: str, maximu
     try:
         delta = int(delta)
     except ValueError:
-        raise ValueError(f"{key.title()} must be a number.") # pylint: disable=raise-missing-from
+        raise ValueError(f"{key.title()} must be a number.")  # pylint: disable=raise-missing-from
 
     new_value = delta if setting else getattr(character, key) + delta
     if not 0 <= new_value <= maximum:
@@ -140,16 +141,16 @@ async def __update_track(character: VChar, tracker: str, new_len: str) -> str:
     if new_len[0] in ["+", "-"]:
         raise ValueError(f"You must supply an exact value for {tracker.capitalize()}.")
 
-    track = getattr(character, tracker) # Get tracker string
+    track = getattr(character, tracker)  # Get tracker string
     cur_len = len(track)
     new_len = int(new_len)
 
     # Ensure the tracker is the right size
-    minimum = 4 if tracker == "health" else 3 # Minimum size
+    minimum = 4 if tracker == "health" else 3  # Minimum size
     if not minimum <= new_len <= 17:
         raise ValueError(f"{tracker.title()} must be between {minimum} and 17.")
 
-    if new_len > cur_len: # Growing
+    if new_len > cur_len:  # Growing
         track = track.rjust(new_len, Damage.NONE)
     elif new_len < cur_len:
         track = track[-new_len:]
@@ -176,17 +177,20 @@ async def __update_damage(character: VChar, tracker: str, dtype: str, delta_str:
     if not dtype in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
         raise SyntaxError(f"Unknown damage type: {dtype}")
 
-    # If the user doesn't supply a sign, they are setting the XP total rather
+    # If the user doesn't supply a sign, they are setting the damage total rather
     # than modifying it
 
     try:
         delta = int(delta_str)
 
+        if delta == 0:
+            return "Can't adjust by 0 damage. Nothing to do."
+
         # delta_str can be an int if called by another command
         if isinstance(delta_str, str) and delta_str[0] in ["+", "-"]:
             # If they are applying superficial damage, it can wrap.
             old_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
-            await character.apply_damage(tracker, dtype, delta)
+            damaged = await character.apply_damage(tracker, dtype, delta)
             new_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
             overflow = new_agg - old_agg if dtype == Damage.SUPERFICIAL else 0
         else:
@@ -207,6 +211,10 @@ async def __update_damage(character: VChar, tracker: str, dtype: str, delta_str:
                 overflow = 0
 
             await character.set_damage(tracker, dtype, delta)
+            damaged = True
+
+        if not damaged and delta < 1:
+            return f"Trying to subtract damage that doesn't exist. (Hint: try `+{abs(delta)}`.)"
 
         return await __damage_adjust_message(tracker, dtype, delta_str, overflow)
 
@@ -258,7 +266,7 @@ async def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
             setting = True
 
     if not xp_type in ["total", "current"]:
-        raise SyntaxError(f"Unknown XP type: {xp_type}.") # Should never be seen
+        raise SyntaxError(f"Unknown XP type: {xp_type}.")  # Should never be seen
 
     delta = int(delta)
     new_xp = None

@@ -37,7 +37,7 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
         else:
             msg = {"embed": __get_embed(ctx, player, character, amount, scope, reason)}
 
-        await ctx.respond(**msg)
+        await ctx.respond(**msg, allowed_mentions=discord.AllowedMentions.none())
 
     except LookupError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
@@ -55,7 +55,7 @@ def __get_embed(ctx, player, character, amount, scope, reason):
     embed.set_footer(text="To view: /experience log")
 
     embed.add_field(name="Reason", value=reason, inline=False)
-    embed.add_field(name="Staff", value=f"@{ctx.user.display_name}", inline=False)
+    embed.add_field(name="Staff", value=ctx.user.mention, inline=False)
     embed.add_field(
         name="New Experience (Unspent / Lifetime)",
         value=f"```{character.current_xp} / {character.total_xp}```",

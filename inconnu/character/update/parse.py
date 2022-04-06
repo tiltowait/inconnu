@@ -66,7 +66,7 @@ async def update(
 
         for parameter, new_value in parameters.items():
             update_msg = await __update_character(ctx, character, parameter, new_value)
-            updates.append(update_msg)
+            updates.extend(update_msg.split("\n"))
 
         if (impairment := character.impairment) is not None:
             updates.append(impairment)

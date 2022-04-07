@@ -8,8 +8,6 @@ import discord
 
 import inconnu
 
-EPOCH = "1970-01-01"
-
 
 async def statistics(ctx, trait: str, date):
     """
@@ -72,12 +70,11 @@ async def __trait_statistics(ctx, trait, date):
     ]
     stats = await rolls.aggregate(pipeline).to_list(length=None)
 
-    fmt_date = inconnu.gen_timestamp(date, "D")
     if stats:
         if await inconnu.settings.accessible(ctx.user):
-            await __trait_stats_text(ctx, trait, stats, fmt_date)
+            await __trait_stats_text(ctx, trait, stats, date)
         else:
-            await __trait_stats_embed(ctx, trait, stats, fmt_date)
+            await __trait_stats_embed(ctx, trait, stats, date)
     else:
         # We didn't get any rolls
         all_chars = await inconnu.char_mgr.fetchall(ctx.guild.id, ctx.user.id)
@@ -90,9 +87,8 @@ async def __trait_statistics(ctx, trait, date):
 
         if not trait_is_valid:
             await ctx.respond(f"None of your characters have a trait called `{trait}`.")
-        elif (
-            date.year < 2021
-        ):  # Bot was made in 2021; anything prior to that is lifetime statistics
+        elif date.year < 2021:
+            # Bot was made in 2021; anything prior to that is lifetime statistics
             await ctx.respond(f"None of your characters have ever rolled `{trait}`.")
         else:
             await ctx.respond(f"None of your characters have rolled `{trait}` since {fmt_date}.")
@@ -100,10 +96,11 @@ async def __trait_statistics(ctx, trait, date):
 
 async def __trait_stats_embed(ctx, trait, stats, date):
     """Display the trait statistics in an embed."""
-    if date == EPOCH:
+    if date.year < 2021:
         title = f"{trait}: Roll statistics (Lifetime)"
     else:
-        title = f"{trait}: Roll statistics since {date}"
+        fmt_date = inconnu.gen_timestamp(date, "D")
+        title = f"{trait}: Roll statistics since {fmt_date}"
     embed = discord.Embed(title=title)
     embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
 
@@ -122,10 +119,11 @@ async def __trait_stats_embed(ctx, trait, stats, date):
 async def __trait_stats_text(ctx, trait, stats, date):
     """Print the trait statistics in text."""
     if stats:
-        if date == EPOCH:
+        if date.year < 2021:
             output = [f"**{trait}: Roll statistics (Lifetime)**"]
         else:
-            output = [f"**{trait}: Roll statistics since {date}**\n"]
+            fmt_date = inconnu.gen_timestamp(date, "D")
+            output = [f"**{trait}: Roll statistics since {fmt_date}**\n"]
 
         for character in stats:
             name = character["_id"]

@@ -199,14 +199,19 @@ async def __all_statistics(ctx, date):
         return
 
     if await inconnu.settings.accessible(ctx.user):
-        await __display_text(ctx, results)
+        await __display_text(ctx, results, date)
     else:
-        await __display_embed(ctx, results)
+        await __display_embed(ctx, results, date)
 
 
-async def __display_text(ctx, results):
+async def __display_text(ctx, results, date):
     """Display the results using plain text."""
-    msg = "**Roll Statistics**\n"
+    if date.year < 2021:
+        fmt_date = "(Lifetime)"
+    else:
+        fmt_date = "Since " + inconnu.gen_timestamp(date, "D")
+
+    msg = f"**Roll Statistics {fmt_date}**\n"
     for character in results:
         lines = [f"***{character['name']}***"]
         outcomes = defaultdict(lambda: 0)
@@ -225,9 +230,14 @@ async def __display_text(ctx, results):
     await ctx.respond(msg)
 
 
-async def __display_embed(ctx, results):
+async def __display_embed(ctx, results, date):
     """Display the statistics in an embed."""
-    embed = discord.Embed(title="Roll Statistics")
+    if date.year < 2021:
+        fmt_date = "(Lifetime)"
+    else:
+        fmt_date = "Since " + inconnu.gen_timestamp(date, "D")
+
+    embed = discord.Embed(title=f"Roll Statistics {fmt_date}")
     embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
 
     for character in results:

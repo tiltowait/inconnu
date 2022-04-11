@@ -91,6 +91,7 @@ async def __trait_statistics(ctx, trait, date):
             # Bot was made in 2021; anything prior to that is lifetime statistics
             await ctx.respond(f"None of your characters have ever rolled `{trait}`.")
         else:
+            fmt_date = inconnu.gen_timestamp(date, "D")
             await ctx.respond(f"None of your characters have rolled `{trait}` since {fmt_date}.")
 
 

@@ -33,7 +33,7 @@ class Settings:
             scope (str): "user" or "server"
         """
         if scope == "user":
-            await self._set_key(ctx.user, "accessibility", enabled)
+            await self._set_user(ctx.user, "accessibility", enabled)
 
             if enabled:
                 response = "**Accessibility mode** enabled."
@@ -177,35 +177,6 @@ class Settings:
         guild.settings.update_channel = None
         await guild.commit()
         return "Un-set the update channel."
-
-    async def _set_key(self, scope, key: str, value):
-        """
-        Enable or disable a setting.
-        Args:
-            scope (discord.Guild | discord.Member): user or guild
-            key (str): The setting key
-            value: The value to set
-        """
-        if isinstance(scope, discord.Guild):
-            await self._set_guild(scope, key, value)
-        elif isinstance(scope, discord.Member):
-            await self._set_user(scope, key, value)
-        else:
-            return ValueError(f"Unknown scope `{scope}`.")
-
-        return True
-
-    async def _set_guild(self, guild: discord.Guild, key: str, value):
-        """Enable or disable a guild setting."""
-        res = await inconnu.database.guilds.update_one(
-            {"guild": guild.id}, {"$set": {f"settings.{key}": value}}
-        )
-        if res.matched_count == 0:
-            await inconnu.database.guilds.insert_one({"guild": guild.id, "settings": {key: value}})
-
-        # Update the cache
-        guild = await self._fetch_guild(guild)
-        setattr(guild, key, value)
 
     async def _set_user(self, user: discord.Member, key: str, value):
         """Enable or disable a user setting."""

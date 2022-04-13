@@ -3,6 +3,8 @@
 
 import datetime
 
+import discord
+
 import inconnu
 
 
@@ -17,52 +19,40 @@ async def log_roll(guild: int, user: int, char, outcome, comment):
     """
     rolls = inconnu.db.rolls
 
-    if await rolls.find_one({ "_id": outcome.id }) is None:
+    if await rolls.find_one({"_id": outcome.id}) is None:
         roll = _gen_roll(guild, user, char, outcome, comment)
         await rolls.insert_one(roll)
     else:
         reroll = _gen_reroll(outcome)
-        await rolls.update_one({ "_id": outcome.id }, reroll)
+        await rolls.update_one({"_id": outcome.id}, reroll)
 
 
-async def guild_joined(guild):
+async def guild_joined(guild: discord.Guild):
     """
     Log whenever a guild is joined.
     Args:
         guild (int): The guild's Discord ID
         name (str): The guild's name
     """
-    guilds = inconnu.db.guilds
-
-    await guilds.update_one(
-        { "guild": guild.id },
-        {
-            "$set": {
-                "guild": guild.id,
-                "name": guild.name,
-                "active": True,
-                "joined": datetime.datetime.utcnow(),
-                "left": None
-            }
-        },
-        upsert=True
-    )
+    # We are upserting, so we don't use commit()
+    if old_guild := await inconnu.Guild.find_one({"guild": guild.id}):
+        old_guild.active = True
+        old_guild.left = None
+    else:
+        guild = inconnu.Guild(guild=guild.id, name=guild.name)
+        await guild.commit()
 
 
-async def guild_left(guild):
+async def guild_left(guild: discord.Guild):
     """
     Log whenever a guild is deleted or Inconnu is kicked from a guild.
     Args:
         guild (int): The guild's Discord ID
     """
-    guilds = inconnu.db.guilds
-
-    await guilds.update_one({ "guild": guild }, {
-        "$set": {
-            "active": False,
-            "left": datetime.datetime.utcnow()
-        }
-    })
+    guild = await inconnu.Guild.find_one({"guild": guild.id})
+    guild.active = False
+    guild.left = datetime.datetime.utcnow()
+    await guild.commit()
 
 
 async def guild_renamed(guild, new_name):
@@ -72,19 +62,20 @@ async def guild_renamed(guild, new_name):
         guild (int): The guild's Discord ID
         name (str): The guild's name
     """
-    guilds = inconnu.db.guilds
-
-    await guilds.update_one({ "guild": guild }, { "$set": { "name": new_name } })
+    guild = await inconnu.Guild.find_one({"guild": guild.id})
+    guild.name = new_name
+    await guild.commit()
 
 
 # Roll logging helpers
+
 
 def _gen_roll(guild: int, user: int, char, outcome, comment):
     """Add a new roll outcome entry to the database."""
     return {
         "_id": outcome.id,
         "date": datetime.datetime.utcnow(),
-        "guild": guild, # We use the guild and user keys for easier lookups
+        "guild": guild,  # We use the guild and user keys for easier lookups
         "user": user,
         "charid": getattr(char, "object_id", None),
         "raw": outcome.syntax,
@@ -112,7 +103,7 @@ def _gen_reroll(outcome):
                 "strategy": outcome.strategy,
                 "dice": outcome.normal.dice,
                 "margin": outcome.margin,
-                "outcome": outcome.outcome
+                "outcome": outcome.outcome,
             }
         }
     }

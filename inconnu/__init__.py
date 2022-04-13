@@ -4,12 +4,14 @@ import os
 
 import discord
 import motor.motor_asyncio
+from umongo.frameworks import MotorAsyncIOInstance
 
 from . import character
 from . import cull as culler
 from . import (experience, log, macros, misc, options, reference, settings,
                stats, traits, utils, views)
 from .roll import Roll
+from .settings.guildsettings import Guild
 from .vchar import CharacterManager, VChar
 
 char_mgr = CharacterManager()
@@ -19,6 +21,7 @@ _mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
     os.getenv("MONGO_URL"), serverSelectionTimeoutMS=1800
 )
 db = _mongoclient.inconnu
+instance = MotorAsyncIOInstance(db)
 
 
 def response(ctx):

@@ -1,4 +1,4 @@
 """Guild- and user settings facilities."""
 
-from .guildsettings import GuildSettings
+from .guildsettings import Guild
 from .settings import Settings

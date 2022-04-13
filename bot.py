@@ -81,13 +81,13 @@ async def on_application_command_error(ctx, error):
 
 
 @bot.event
-async def on_member_remove(member):
+async def on_member_remove(member: discord.Member):
     """Mark all of a member's characters as inactive."""
     await inconnu.char_mgr.mark_inactive(member)
 
 
 @bot.event
-async def on_member_join(member):
+async def on_member_join(member: discord.Member):
     """Mark all the player's characters as active when they rejoin a guild."""
     await inconnu.char_mgr.mark_active(member)
 
@@ -96,21 +96,27 @@ async def on_member_join(member):
 
 
 @bot.event
-async def on_guild_join(guild):
+async def on_guild_join(guild: discord.Guild):
     """Log whenever a guild is joined."""
     print(f"Joined {guild.name}!")
-    await asyncio.gather(inconnu.stats.guild_joined(guild), __set_presence())
+    await asyncio.gather(
+        inconnu.stats.guild_joined(guild),
+        __set_presence(),
+    )
 
 
 @bot.event
-async def on_guild_remove(guild):
+async def on_guild_remove(guild: discord.Guild):
     """Log guild removals."""
     print(f"Left {guild.name} :(")
-    await asyncio.gather(inconnu.stats.guild_left(guild.id), __set_presence())
+    await asyncio.gather(
+        inconnu.stats.guild_left(guild),
+        __set_presence(),
+    )
 
 
 @bot.event
-async def on_guild_update(before, after):
+async def on_guild_update(before: discord.Guild, after: discord.Guild):
     """Log guild name changes."""
     if before.name != after.name:
         print(f"Renamed {before.name} => {after.name}")

@@ -4,7 +4,7 @@ import discord
 
 import inconnu
 
-from .guildsettings import ExpPerms, GuildSettings
+from .guildsettings import ExpPerms, Guild
 
 
 class Settings:
@@ -13,20 +13,18 @@ class Settings:
     _guild_cache = {}
     _user_cache = {}
 
-
     # Accessibility
 
-    async def accessible(self, user):
+    async def accessible(self, user: discord.User | discord.Member):
         """Determine whether we should use accessibility mode."""
         user_settings = await self._fetch_user(user)
         if user_settings.get("settings", {}).get("accessibility", False):
             return True
 
         guild = await self._fetch_guild(user.guild)
-        return guild.accessibility
+        return guild.settings.accessibility
 
-
-    async def set_accessibility(self, ctx, enabled: bool, scope: str):
+    async def set_accessibility(self, ctx: discord.ApplicationContext, enabled: bool, scope: str):
         """
         Set the accessibility mode.
         Args:
@@ -41,11 +39,13 @@ class Settings:
                 response = "**Accessibility mode** enabled."
             else:
                 response = "**Accessibility mode** disabled. Note: the server may override."
-        else: # Server-wide setting
+        else:  # Server-wide setting
             if not ctx.user.guild_permissions.administrator:
                 raise PermissionError("Sorry, only admins can set server-wide accessibility mode.")
 
-            await self._set_key(ctx.guild, "accessibility", enabled)
+            guild = await self._fetch_guild(ctx.guild)
+            guild.settings.accessibility = enabled
+            await guild.commit()
 
             if enabled:
                 response = "**Accessibility mode** enabled server-wide."
@@ -54,32 +54,35 @@ class Settings:
 
         return response
 
-
     # XP Permissions
 
-    async def can_adjust_current_xp(self, ctx) -> bool:
+    async def can_adjust_current_xp(self, ctx: discord.ApplicationContext) -> bool:
         """Whether the user can adjust their current XP."""
         if ctx.user.guild_permissions.administrator:
             return True
 
         guild = await self._fetch_guild(ctx.guild)
-        return guild.experience_permissions in [ExpPerms.UNRESTRICTED, ExpPerms.UNSPENT_ONLY]
+        return guild.settings.experience_permissions in [
+            ExpPerms.UNRESTRICTED,
+            ExpPerms.UNSPENT_ONLY,
+        ]
 
-
-    async def can_adjust_lifetime_xp(self, ctx) -> bool:
+    async def can_adjust_lifetime_xp(self, ctx: discord.ApplicationContext) -> bool:
         """Whether the user has permission to adjust lifetime XP."""
         if ctx.user.guild_permissions.administrator:
             return True
 
         guild = await self._fetch_guild(ctx.guild)
-        return guild.experience_permissions in [ExpPerms.UNRESTRICTED, ExpPerms.LIFETIME_ONLY]
+        return guild.settings.experience_permissions in [
+            ExpPerms.UNRESTRICTED,
+            ExpPerms.LIFETIME_ONLY,
+        ]
 
-
-    async def xp_permissions(self, guild):
+    async def xp_permissions(self, guild: discord.Guild):
         """Get the XP permissions."""
         guild = await self._fetch_guild(guild)
 
-        match guild.experience_permissions:
+        match guild.settings.experience_permissions:
             case ExpPerms.UNRESTRICTED:
                 return "Users may adjust unspent and lifetime XP."
             case ExpPerms.UNSPENT_ONLY:
@@ -89,8 +92,7 @@ class Settings:
             case ExpPerms.ADMIN_ONLY:
                 return "Only admins may adjust XP totals."
 
-
-    async def set_xp_permissions(self, ctx, permissions):
+    async def set_xp_permissions(self, ctx: discord.ApplicationContext, permissions: str):
         """
         Set the XP settings:
             • User can modify current and lifetime
@@ -101,7 +103,9 @@ class Settings:
         if not ctx.user.guild_permissions.administrator:
             raise PermissionError("Sorry, only admins can set user experience permissions.")
 
-        await self._set_key(ctx.guild, "experience_permissions", permissions)
+        guild = await self._fetch_guild(ctx.guild)
+        guild.settings.experience_permissions = permissions
+        await guild.commit()
 
         match ExpPerms(permissions):
             case ExpPerms.UNRESTRICTED:
@@ -115,16 +119,14 @@ class Settings:
 
         return response
 
-
     # Oblivion stains
 
-    async def oblivion_stains(self, guild) -> list:
+    async def oblivion_stains(self, guild: discord.Guild) -> list:
         """Retrieve the Rouse results that grant Oblivion stains."""
         guild = await self._fetch_guild(guild)
-        return guild.oblivion_stains
+        return guild.settings.oblivion_stains
 
-
-    async def set_oblivion_stains(self, ctx, stains: int):
+    async def set_oblivion_stains(self, ctx: discord.ApplicationContext, stains: int):
         """Set which dice outcomes will give stains for Oblivion rouse checks."""
         if not ctx.user.guild_permissions.administrator:
             raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
@@ -141,34 +143,40 @@ class Settings:
             response += f"`{stains}`."
             stains = [stains]
 
-        await self._set_key(ctx.guild, "oblivion_stains", stains)
+        guild = await self._fetch_guild(ctx.guild)
+        guild.settings.oblivion_stains = stains
+        await guild.commit()
         return response
-
 
     # Update Channels
 
     async def update_channel(self, guild: discord.Guild):
         """Retrieve the ID of the guild's update channel, if any."""
         guild_settings = await self._fetch_guild(guild)
-        if (update_channel := guild_settings.update_channel):
+
+        if update_channel := guild_settings.settings.update_channel:
             return guild.get_channel(update_channel)
 
         return None
 
-
-    async def set_update_channel(self, ctx, channel: discord.TextChannel):
+    async def set_update_channel(
+        self, ctx: discord.ApplicationContext, channel: discord.TextChannel
+    ):
         """Set the guild's update channel."""
         if not ctx.user.guild_permissions.administrator:
             raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
 
+        guild = await self._fetch_guild(ctx.guild)
+
         if channel:
-            await self._set_key(ctx.guild, "update_channel", channel.id)
+            guild.settings.update_channel = channel.id
+            await guild.commit()
             return f"Set update channel to {channel.mention}."
 
         # Un-setting
-        await self._set_key(ctx.guild, "update_channel", None)
+        guild.settings.update_channel = None
+        await guild.commit()
         return "Un-set the update channel."
-
 
     async def _set_key(self, scope, key: str, value):
         """
@@ -187,66 +195,57 @@ class Settings:
 
         return True
 
-
     async def _set_guild(self, guild: discord.Guild, key: str, value):
         """Enable or disable a guild setting."""
-        res = await inconnu.db.guilds.update_one({ "guild": guild.id }, {
-            "$set": {
-                f"settings.{key}": value
-            }
-        })
+        res = await inconnu.database.guilds.update_one(
+            {"guild": guild.id}, {"$set": {f"settings.{key}": value}}
+        )
         if res.matched_count == 0:
-            await inconnu.db.guilds.insert_one({ "guild": guild.id, "settings": { key: value } })
+            await inconnu.database.guilds.insert_one({"guild": guild.id, "settings": {key: value}})
 
         # Update the cache
         guild = await self._fetch_guild(guild)
         setattr(guild, key, value)
 
-
     async def _set_user(self, user: discord.Member, key: str, value):
         """Enable or disable a user setting."""
-        res = await inconnu.db.users.update_one({ "user": user.id }, {
-            "$set": {
-                f"settings.{key}": value
-            }
-        })
+        res = await inconnu.database.users.update_one(
+            {"user": user.id}, {"$set": {f"settings.{key}": value}}
+        )
         if res.matched_count == 0:
-            await inconnu.db.users.insert_one({ "user": user.id, "settings": { key: value } })
+            await inconnu.database.users.insert_one({"user": user.id, "settings": {key: value}})
 
         # Update the cache
         user_settings = await self._fetch_user(user)
         user_settings.setdefault("settings", {})[key] = value
         self._user_cache[user.id] = user_settings
 
-
     async def _fetch_user(self, user: discord.User):
         """Fetch a user."""
         if not isinstance(user, int):
             user = user.id
 
-        if (user_settings := self._user_cache.get(user)):
+        if user_settings := self._user_cache.get(user):
             return user_settings
 
         # See if it's in the database
-        if not (user_settings := await inconnu.db.users.find_one({ "user": user })):
-            user_settings = { "user": user }
+        if not (user_settings := await inconnu.database.users.find_one({"user": user})):
+            user_settings = {"user": user}
 
         self._user_cache[user] = user_settings
 
         return user_settings
 
-
-    async def _fetch_guild(self, guild: discord.Guild) -> GuildSettings:
+    async def _fetch_guild(self, guild: discord.Guild) -> Guild:
         """Fetch a guild."""
-        if (guild_settings := self._guild_cache.get(guild.id)):
+        if guild_settings := self._guild_cache.get(guild.id):
             return guild_settings
 
-        guild_params = await inconnu.db.guilds.find_one({"guild": guild.id }) or {}
-        if not guild_params:
-            # In case we missed them somehow
-            await inconnu.stats.guild_joined(guild)
+        if not (guild_settings := await Guild.find_one({"guild": guild.id})):
+            # Make the guild
+            # await inconnu.stats.guild_joined(guild)
+            print("Gotta make the guild, son")
 
-        guild_settings = GuildSettings(guild_params)
         self._guild_cache[guild.id] = guild_settings
 
         return guild_settings

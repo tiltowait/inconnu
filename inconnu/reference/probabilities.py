@@ -168,7 +168,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
 
 async def __get_probabilities(params, strategy):
     """Retrieve the probabilities from storage or, if not calculated yet, generate them."""
-    col = inconnu.db.probabilities
+    col = inconnu.database.probabilities
 
     probs = await col.find_one({
         "pool": params.pool,

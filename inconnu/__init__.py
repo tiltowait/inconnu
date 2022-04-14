@@ -3,8 +3,6 @@
 import os
 
 import discord
-import motor.motor_asyncio
-from umongo.frameworks import MotorAsyncIOInstance
 
 from . import character
 from . import cull as culler
@@ -16,12 +14,6 @@ from .vchar import CharacterManager, VChar
 
 char_mgr = CharacterManager()
 settings = settings.Settings()
-
-_mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
-    os.getenv("MONGO_URL"), serverSelectionTimeoutMS=1800
-)
-db = _mongoclient.inconnu
-instance = MotorAsyncIOInstance(db)
 
 
 def response(ctx):
@@ -38,11 +30,6 @@ def respond(ctx):
             return ctx.followup.send
         return ctx.response.send_message
     return ctx.respond
-
-
-def fence(string: str) -> str:
-    """Surround the string in a code fence. Useful for map()."""
-    return f"`{string}`"
 
 
 def gen_timestamp(date, style=None):

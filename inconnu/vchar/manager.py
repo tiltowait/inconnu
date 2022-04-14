@@ -24,7 +24,7 @@ class CharacterManager:
     @property
     def collection(self):
         """Get the database's characters collection."""
-        return inconnu.db.characters
+        return inconnu.database.characters
 
     async def fetchone(self, guild: int, user: int, name: str):
         """

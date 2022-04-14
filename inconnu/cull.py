@@ -9,8 +9,8 @@ async def cull(days=30):
     """Cull inactive guilds, characters, and macros."""
     print("Initiating culling run.")
 
-    char_col = inconnu.db.characters
-    guild_col = inconnu.db.guilds
+    char_col = inconnu.database.characters
+    guild_col = inconnu.database.guilds
 
     past = datetime.utcnow() - timedelta(days=days)
 

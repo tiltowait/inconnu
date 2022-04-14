@@ -17,7 +17,7 @@ async def log_roll(guild: int, user: int, char, outcome, comment):
         charid (VChar): The character that made the roll (optional)
         outcome (Roll): The roll's parameters and outcome
     """
-    rolls = inconnu.db.rolls
+    rolls = inconnu.database.rolls
 
     if await rolls.find_one({"_id": outcome.id}) is None:
         roll = _gen_roll(guild, user, char, outcome, comment)

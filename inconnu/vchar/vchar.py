@@ -105,7 +105,7 @@ class VChar:
     @property
     def _async_collection(self):
         """The async database collection."""
-        return inconnu.db.characters
+        return inconnu.database.characters
 
     async def _async_set_property(self, field, value):
         """Set a field's value, asynchronously."""

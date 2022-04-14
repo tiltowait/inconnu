@@ -2,9 +2,8 @@
 
 import discord
 
-import inconnu
-
 from .guildsettings import ExpPerms, Guild
+from .usersettings import User
 
 
 class Settings:
@@ -18,7 +17,7 @@ class Settings:
     async def accessible(self, user: discord.User | discord.Member):
         """Determine whether we should use accessibility mode."""
         user_settings = await self._fetch_user(user)
-        if user_settings.get("settings", {}).get("accessibility", False):
+        if user_settings.settings.accessibility:
             return True
 
         guild = await self._fetch_guild(user.guild)
@@ -33,7 +32,9 @@ class Settings:
             scope (str): "user" or "server"
         """
         if scope == "user":
-            await self._set_user(ctx.user, "accessibility", enabled)
+            user = await self._fetch_user(ctx.user)
+            user.accessibility = enabled
+            await user.commit()
 
             if enabled:
                 response = "**Accessibility mode** enabled."
@@ -178,30 +179,18 @@ class Settings:
         await guild.commit()
         return "Un-set the update channel."
 
-    async def _set_user(self, user: discord.Member, key: str, value):
-        """Enable or disable a user setting."""
-        res = await inconnu.database.users.update_one(
-            {"user": user.id}, {"$set": {f"settings.{key}": value}}
-        )
-        if res.matched_count == 0:
-            await inconnu.database.users.insert_one({"user": user.id, "settings": {key: value}})
-
-        # Update the cache
-        user_settings = await self._fetch_user(user)
-        user_settings.setdefault("settings", {})[key] = value
-        self._user_cache[user.id] = user_settings
-
-    async def _fetch_user(self, user: discord.User):
+    async def _fetch_user(self, user: discord.User) -> User:
         """Fetch a user."""
-        if not isinstance(user, int):
-            user = user.id
-
-        if user_settings := self._user_cache.get(user):
+        if user_settings := self._user_cache.get(user.id):
             return user_settings
 
         # See if it's in the database
-        if not (user_settings := await inconnu.database.users.find_one({"user": user})):
-            user_settings = {"user": user}
+        if not (user_settings := await User.find_one({"user": user.id})):
+            # We don't keep a record of users with default settings, so we
+            # don't commit this one after creating it. This is a minor
+            # speedup, and the User will get saved if any settings deviate
+            # from default.
+            user_settings = User(user=user.id)
 
         self._user_cache[user] = user_settings
 
@@ -213,9 +202,11 @@ class Settings:
             return guild_settings
 
         if not (guild_settings := await Guild.find_one({"guild": guild.id})):
-            # Make the guild
-            # await inconnu.stats.guild_joined(guild)
-            print("Gotta make the guild, son")
+            # Somehow, we don't have the guild in the database. This most
+            # likely happened because the bot was down when it was added
+            # to a server.
+            guild_settings = Guild(guild=guild.id, name=guild.name)
+            await guild_settings.commit()
 
         self._guild_cache[guild.id] = guild_settings
 

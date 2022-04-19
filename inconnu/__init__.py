@@ -21,11 +21,11 @@ _mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
 db = _mongoclient.inconnu
 
 
-def response(ctx):
-    """Get the response or, if it's been responded to, the followup."""
-    if ctx.response.is_done():
-        return ctx.followup
-    return ctx.response
+async def get_message(inter):
+    """Get the message from an interaction."""
+    if isinstance(inter, discord.Message):
+        return inter
+    return await inter.original_message()
 
 
 def respond(ctx):
@@ -35,11 +35,6 @@ def respond(ctx):
             return ctx.followup.send
         return ctx.response.send_message
     return ctx.respond
-
-
-def fence(string: str) -> str:
-    """Surround the string in a code fence. Useful for map()."""
-    return f"`{string}`"
 
 
 def gen_timestamp(date, style=None):

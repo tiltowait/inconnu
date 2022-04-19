@@ -122,6 +122,8 @@ async def display(
     if isinstance(view, inconnu.views.DisablingView):
         view.message = msg
 
+    return msg
+
 
 def __get_embed(
     ctx,

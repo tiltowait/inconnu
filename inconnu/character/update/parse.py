@@ -85,16 +85,6 @@ async def update(
         if update_message is None:
             update_message = "\n".join(map(lambda u: f"• {u}", updates))  # Give them bullet points
 
-        if update_message:  # May not always be true in the future
-            tasks.append(
-                inconnu.common.report_update(
-                    ctx=ctx,
-                    character=character,
-                    title="Character Updated",
-                    message=f"__{ctx.user.mention} updated {character.name}:__\n" + update_message,
-                )
-            )
-
         tasks.append(
             display(
                 ctx,
@@ -107,7 +97,16 @@ async def update(
             )
         )
 
-        await asyncio.gather(*tasks)
+        _, inter = await asyncio.gather(*tasks)
+        if update_message:  # May not always be true in the future
+            msg = await inconnu.get_message(inter)
+            await inconnu.common.report_update(
+                ctx=ctx,
+                msg=msg,
+                character=character,
+                title="Character Updated",
+                message=f"__{ctx.user.mention} updated {character.name}:__\n" + update_message,
+            )
 
     except (SyntaxError, ValueError) as err:
         log_task = inconnu.log.log_event(

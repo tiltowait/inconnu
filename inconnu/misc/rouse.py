@@ -41,11 +41,10 @@ async def rouse(
             else:
                 update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
-            await asyncio.gather(
-                inconnu.common.report_update(
-                    ctx=ctx, character=character, title="Rouse Check", message=update_msg
-                ),
-                __display_outcome(ctx, character, outcome, purpose, oblivion, message),
+            inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
+            msg = await inconnu.get_message(inter)
+            await inconnu.common.report_update(
+                ctx=ctx, msg=msg, character=character, title="Rouse Check", message=update_msg
             )
 
     except inconnu.common.FetchError:
@@ -105,7 +104,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     view = inconnu.views.FrenzyView(character, 4) if outcome.frenzy else None
 
-    await inconnu.character.display(
+    return await inconnu.character.display(
         ctx,
         character,
         title=title,

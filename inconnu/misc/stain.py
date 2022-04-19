@@ -1,7 +1,5 @@
 """misc/stain.py - Apply or remove stains from characters."""
 
-import asyncio
-
 import inconnu
 from inconnu.constants import Damage
 
@@ -46,13 +44,10 @@ async def stain(ctx, delta, character, owner):
         title = "Added" if delta > 0 else "Removed"
         title = f"{title} {inconnu.common.pluralize(abs(delta), 'Stain')}"
 
-        await asyncio.gather(
-            __generate_report_task(ctx, character, delta),
-            inconnu.character.display(
-                ctx, character, title,
-                message=message, owner=owner, fields=fields, footer=footer
-            )
+        inter = await inconnu.character.display(
+            ctx, character, title, message=message, owner=owner, fields=fields, footer=footer
         )
+        await __report(ctx, inter, character, delta)
 
     except (ValueError, LookupError) as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
@@ -60,14 +55,17 @@ async def stain(ctx, delta, character, owner):
         pass
 
 
-def __generate_report_task(ctx, character, delta):
+async def __report(ctx, inter, character, delta):
     verbed = "gained" if delta > 0 else "removed"
     delta = abs(delta)
     stains = "Stains" if delta > 1 else "Stain"
 
-    return inconnu.common.report_update(
+    msg = await inconnu.get_message(inter)
+
+    await inconnu.common.report_update(
         ctx=ctx,
+        msg=msg,
         character=character,
         title="Stains",
-        message=f"**{character.name}** {verbed} `{delta}` {stains}."
+        message=f"**{character.name}** {verbed} `{delta}` {stains}.",
     )

@@ -60,9 +60,9 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             embed = __get_embed(ctx, title, message, character.name, difficulty, footer, color)
             msg_content = {"embed": embed}
 
-        await asyncio.gather(
-            __generate_report_task(ctx, character, outcome), inconnu.respond(ctx)(**msg_content)
-        )
+        inter = await inconnu.respond(ctx)(**msg_content)
+        msg = await inconnu.get_message(inter)
+        await __generate_report_task(ctx, msg, character, outcome)
 
     except inconnu.common.FetchError:
         pass
@@ -82,12 +82,13 @@ def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, foote
     return embed
 
 
-def __generate_report_task(ctx, character, outcome):
+async def __generate_report_task(ctx, msg, character, outcome):
     """Generate a report for the update channel."""
     verbed = "passed" if outcome.is_successful else "failed"
 
-    return inconnu.common.report_update(
+    await inconnu.common.report_update(
         ctx=ctx,
+        msg=msg,
         character=character,
         title="Frenzy Success" if outcome.is_successful else "Frenzy Failure",
         message=f"**{character.name}** {verbed} their frenzy check.",

@@ -5,7 +5,7 @@ import random
 from types import SimpleNamespace
 
 import inconnu
-from inconnu.constants import Damage, ROUSE_FAIL_COLOR
+from inconnu.constants import ROUSE_FAIL_COLOR, Damage
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=mending-damage"
 
@@ -33,14 +33,10 @@ async def mend(ctx, character=None):
             if outcome.frenzy:
                 update_msg += "\nMust make a frenzy check at DC 4."
 
-            await asyncio.gather(
-                inconnu.common.report_update(
-                    ctx=ctx,
-                    character=character,
-                    title="Damage Mended",
-                    message=update_msg,
-                ),
-                __display_outcome(ctx, character, outcome),
+            inter = await __display_outcome(ctx, character, outcome)
+            msg = await inconnu.get_message(inter)
+            await inconnu.common.report_update(
+                ctx=ctx, character=character, title="Damage Mended", message=update_msg, msg=msg
             )
 
     except inconnu.common.FetchError:
@@ -70,7 +66,7 @@ async def __display_outcome(ctx, character, outcome):
             footer = "Rouse failure at Hunger 5!"
             view = inconnu.views.FrenzyView(character, 4)
 
-    await inconnu.character.display(
+    return await inconnu.character.display(
         ctx, character, title=title, fields=fields, footer=footer, view=view, color=color
     )
 

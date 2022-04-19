@@ -5,7 +5,8 @@ import random
 from types import SimpleNamespace
 
 import inconnu
-from ..constants import Damage, ROUSE_FAIL_COLOR
+
+from ..constants import ROUSE_FAIL_COLOR, Damage
 from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/"
@@ -32,11 +33,14 @@ async def aggheal(ctx, character: str):
             else:
                 update_msg += "."
 
-        await asyncio.gather(
-            inconnu.common.report_update(
-                ctx=ctx, character=character, title="Aggravated Damage Healed", message=update_msg
-            ),
-            __display_outcome(ctx, character, outcome),
+        inter = await __display_outcome(ctx, character, outcome)
+        msg = await inconnu.get_message(inter)
+        await inconnu.common.report_update(
+            ctx=ctx,
+            msg=msg,
+            character=character,
+            title="Aggravated Damage Healed",
+            message=update_msg,
         )
 
     except inconnu.common.FetchError:
@@ -86,7 +90,7 @@ async def __display_outcome(ctx, character, outcome):
         footer = None
         color = None
 
-    await inconnu.character.display(
+    return await inconnu.character.display(
         ctx,
         character,
         title=title,

@@ -32,7 +32,7 @@ async def slake(ctx, amount, character=None):
 
             update = f"**{character.name}** slaked `{slaked}` Hunger (now at `{character.hunger}`)."
 
-            await asyncio.gather(
+            _, inter = await asyncio.gather(
                 character.log("slake", slaked),
                 inconnu.character.display(
                     ctx,
@@ -41,12 +41,14 @@ async def slake(ctx, amount, character=None):
                     fields=[("New Hunger", inconnu.character.DisplayField.HUNGER)],
                     view=view,
                 ),
-                inconnu.common.report_update(
-                    ctx=ctx,
-                    character=character,
-                    title="Hunger Slaked",
-                    message=update,
-                ),
+            )
+            msg = await inconnu.get_message(inter)
+            await inconnu.common.report_update(
+                ctx=ctx,
+                msg=msg,
+                character=character,
+                title="Hunger Slaked",
+                message=update,
             )
 
     except inconnu.common.FetchError:

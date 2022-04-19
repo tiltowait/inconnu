@@ -7,6 +7,7 @@ from types import SimpleNamespace as SN
 import discord
 
 import inconnu
+
 from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=remorse-checks"
@@ -21,16 +22,13 @@ async def remorse(ctx, character=None, minimum=1):
         # Character obtained
         if character.stains == 0:
             await ctx.respond(
-                f"{character.name} has no stains! No remorse necessary.",
-                ephemeral=True
+                f"{character.name} has no stains! No remorse necessary.", ephemeral=True
             )
             return
 
         outcome = await __remorse_roll(character, minimum)
-        await asyncio.gather(
-            __generate_report_task(ctx, character, outcome.remorseful),
-            __display_outcome(ctx, character, outcome)
-        )
+        inter = await __display_outcome(ctx, character, outcome)
+        await __report(ctx, inter, character, outcome.remorseful)
 
     except inconnu.common.FetchError:
         pass
@@ -41,22 +39,24 @@ async def __display_outcome(ctx, character: VChar, outcome):
     title = "Remorse Success" if outcome.remorseful else "Remorse Fail"
     if outcome.remorseful:
         footer = "You keep the Beast at bay. For now."
-        color = 0x7777ff
+        color = 0x7777FF
     else:
         footer = "The downward spiral continues ..."
-        color = 0x5c0700
+        color = 0x5C0700
 
     footer += "\nDice: " + ", ".join(map(str, outcome.dice))
 
     if outcome.overrode:
-        dice = inconnu.common.pluralize(outcome.minimum, 'die')
+        dice = inconnu.common.pluralize(outcome.minimum, "die")
         footer += f"\nOverride: Rolled {dice} instead of {outcome.nominal}"
 
-    await inconnu.character.display(ctx, character,
+    return await inconnu.character.display(
+        ctx,
+        character,
         title=title,
         footer=footer,
         color=color,
-        fields=[("Humanity", inconnu.character.DisplayField.HUMANITY)]
+        fields=[("Humanity", inconnu.character.DisplayField.HUMANITY)],
     )
 
 
@@ -88,7 +88,7 @@ async def __remorse_roll(character: VChar, minimum: int) -> SN:
     return SN(remorseful=successful, minimum=minimum, dice=dice, overrode=overrode, nominal=nominal)
 
 
-def __generate_report_task(ctx, character, remorseful):
+async def __report(ctx, inter, character, remorseful):
     """Generate the task to display the remorse outcome for the update channel."""
     if remorseful:
         verbed = "passed"
@@ -97,10 +97,13 @@ def __generate_report_task(ctx, character, remorseful):
         verbed = "failed"
         humanity_str = f"Humanity drops to `{character.humanity}`."
 
-    return inconnu.common.report_update(
+    msg = await inconnu.get_message(inter)
+
+    await inconnu.common.report_update(
         ctx=ctx,
+        msg=msg,
         character=character,
         title="Remorse Success" if remorseful else "Remorse Failure",
         message=f"**{character.name}** {verbed} their Remorse test.\n{humanity_str}",
-        color=0x5e005e if not remorseful else discord.Embed.Empty
+        color=0x5E005E if not remorseful else discord.Embed.Empty,
     )

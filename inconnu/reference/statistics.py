@@ -2,7 +2,7 @@
 
 import re
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import discord
 
@@ -23,6 +23,10 @@ async def statistics(ctx, trait: str, date):
     """
     try:
         date = datetime.strptime(date, "%Y%m%d")
+
+        # As Inconnu was originally made for Cape Town by Night, we will use
+        # that server's weekly reset time as the cutoff
+        date += timedelta(hours=19)
 
         if trait is None:
             await __all_statistics(ctx, date)
@@ -91,8 +95,13 @@ async def __trait_statistics(ctx, trait, date):
             # Bot was made in 2021; anything prior to that is lifetime statistics
             await ctx.respond(f"None of your characters have ever rolled `{trait}`.")
         else:
-            fmt_date = inconnu.gen_timestamp(date, "D")
+            fmt_date = __format_date(date)
             await ctx.respond(f"None of your characters have rolled `{trait}` since {fmt_date}.")
+
+
+def __format_date(date):
+    """Format the date."""
+    return date.strftime("%B") + f" {date.day}, {date.year}"
 
 
 async def __trait_stats_embed(ctx, trait, stats, date):
@@ -100,7 +109,7 @@ async def __trait_stats_embed(ctx, trait, stats, date):
     if date.year < 2021:
         title = f"{trait}: Roll statistics (Lifetime)"
     else:
-        fmt_date = inconnu.gen_timestamp(date, "D")
+        fmt_date = __format_date(date)
         title = f"{trait}: Roll statistics since {fmt_date}"
     embed = discord.Embed(title=title)
     embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
@@ -123,7 +132,7 @@ async def __trait_stats_text(ctx, trait, stats, date):
         if date.year < 2021:
             output = [f"**{trait}: Roll statistics (Lifetime)**"]
         else:
-            fmt_date = inconnu.gen_timestamp(date, "D")
+            fmt_date = __format_date(date)
             output = [f"**{trait}: Roll statistics since {fmt_date}**\n"]
 
         for character in stats:
@@ -209,7 +218,7 @@ async def __display_text(ctx, results, date):
     if date.year < 2021:
         fmt_date = "(Lifetime)"
     else:
-        fmt_date = "Since " + inconnu.gen_timestamp(date, "D")
+        fmt_date = "Since " + __format_date(date)
 
     msg = f"**Roll Statistics {fmt_date}**\n"
     for character in results:
@@ -235,7 +244,7 @@ async def __display_embed(ctx, results, date):
     if date.year < 2021:
         fmt_date = "(Lifetime)"
     else:
-        fmt_date = "Since " + inconnu.gen_timestamp(date, "D")
+        fmt_date = "Since " + __format_date(date)
 
     embed = discord.Embed(title=f"Roll Statistics {fmt_date}")
     embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))

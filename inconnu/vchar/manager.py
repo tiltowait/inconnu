@@ -53,11 +53,27 @@ class CharacterManager:
                     return char
 
             # Attempt to pull from the database
-            if char := await self._id_fetch(name):
-                self.id_cache[char.id] = char
-                self._validate(guild, user, char)
-                return char
+            try:
+                if char := await self._id_fetch(name):
+                    self.id_cache[char.id] = char
+                    self._validate(guild, user, char)
+                    return char
 
+            except bson.errors.InvalidId:
+                # They might have typed something in instead of selecting from
+                # the list, or ...
+                #
+                # We're dealing with that pernicious and frequently resurfacing
+                # Discord error: instead of character ID, the bot is getting
+                # the character name, so let's check all of the user's
+                # characters on this guild. No need for a special cache, as
+                # this bug is uncommon.
+                user_chars = await self.fetchall(guild, user)
+                for user_char in user_chars:
+                    if user_char.name == name:
+                        return user_char
+
+            # All of our fallbacks failed
             raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
 
         # No character name given. If the user only has one character, then we
@@ -255,21 +271,18 @@ class CharacterManager:
     async def _id_fetch(self, charid):
         """Attempt to fetch a character by ID."""
         if re.search(r"\d", charid):
-            try:
-                if char_params := await self.collection.find_one({"_id": ObjectId(charid)}):
-                    return inconnu.VChar(char_params)
+            # There is a bizarre Discord bug where it sometimes just ... gives
+            # garbage characters at the end of the ObjectId string. ObjectIds
+            # are always the same length, so we can try simply lopping off the
+            # trailing characters.
+            if char_params := await self.collection.find_one({"_id": ObjectId(charid[:24])}):
+                return inconnu.VChar(char_params)
 
-                # Character names can't contain numbers
-                raise errors.CharacterNotFoundError(f"`{charid}` is not a valid character name.")
+            # The ObjectId is valid, but we didn't find a character. Maybe they
+            # hit on a lucky string of random characters, or they deleted the
+            # character in a different channel, then hit enter, because they're
+            # weird like that.
+            raise errors.CharacterNotFoundError(f"Character not found!")
 
-            except bson.errors.InvalidId as invalid_id_err:
-                err = "Select a name from the list. If that doesn't work, try updating Discord."
-                err += " If it still doesn't work ... are you on mobile? Unfortunately, Discord"
-                err += " has a fun habit of breaking the way their mobile apps handle dropdowns."
-                err += " In that case, there's nothing you or I can do.\n\n"
-                err += "Luckily, for all but two commands, `character` is entirely optional, even"
-                err += " if you have more than one."
-                raise errors.CharacterNotFoundError(err) from invalid_id_err
-
-        # The pattern didn't match
+        # There are no numbers in the charid
         return None

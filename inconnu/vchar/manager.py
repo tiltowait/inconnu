@@ -264,6 +264,11 @@ class CharacterManager:
 
             except bson.errors.InvalidId as invalid_id_err:
                 err = "Select a name from the list. If that doesn't work, try updating Discord."
+                err += " If it still doesn't work ... are you on mobile? Unfortunately, Discord"
+                err += " has a fun habit of breaking the way their mobile apps handle dropdowns."
+                err += " In that case, there's nothing you or I can do.\n\n"
+                err += "Luckily, for all but two commands, `character` is entirely optional, even"
+                err += " if you have more than one."
                 raise errors.CharacterNotFoundError(err) from invalid_id_err
 
         # The pattern didn't match

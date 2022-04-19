@@ -183,7 +183,7 @@ async def __update_damage(character: VChar, tracker: str, dtype: str, delta_str:
     try:
         delta = int(delta_str)
 
-        if delta == 0:
+        if delta == 0 and delta_str[0] in ["+", "-"]:
             return "Can't adjust by 0 damage. Nothing to do."
 
         # delta_str can be an int if called by another command

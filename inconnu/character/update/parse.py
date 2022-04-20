@@ -66,6 +66,9 @@ async def update(
 
         for parameter, new_value in parameters.items():
             update_msg = await __update_character(ctx, character, parameter, new_value)
+            if "(Hint:" in update_msg:
+                # Hints only show up in errors, so let's make the embed red
+                color = discord.Color.red() if not color else color
             updates.extend(update_msg.split("\n"))
 
         if (impairment := character.impairment) is not None:

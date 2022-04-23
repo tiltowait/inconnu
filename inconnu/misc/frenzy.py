@@ -9,8 +9,11 @@ import inconnu
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
 
+__FRENZY_BONUSES = {"The Dream": 3, "Jewel in the Garden": 4, "Cold Dead Hunger": 2}
+__FRENZY_BONUSES.update({str(n): n for n in range(1, 6)})
 
-async def frenzy(ctx, difficulty: int, penalty: str, character: str):
+
+async def frenzy(ctx, difficulty: int, penalty: str, bonus: str, character: str):
     """Perform a frenzy check."""
     try:
         tip = "`/frenzy` `character:CHARACTER`"
@@ -21,11 +24,21 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             return
 
         frenzy_pool = character.frenzy_resist
+        footer = []
 
         if penalty == "brujah":
             frenzy_pool = max(frenzy_pool - character.bane_severity, 1)
+            footer.append(f"-{character.bane_severity} dice from the Brujah bane.")
         elif penalty == "malkavian":
             frenzy_pool = max(frenzy_pool - 2, 1)
+            footer.append("-2 dice from the Malkavian compulsion.")
+
+        if bonus_dice := __FRENZY_BONUSES.get(bonus):
+            frenzy_pool += bonus_dice
+            if bonus.isdigit():
+                footer.append(f"{bonus_dice:+} bonus dice.")
+            else:
+                footer.append(f"{bonus_dice:+} bonus from {bonus}.")
 
         outcome = inconnu.Roll(frenzy_pool, 0, difficulty)
 
@@ -44,11 +57,8 @@ async def frenzy(ctx, difficulty: int, penalty: str, character: str):
             color = 0x5C0700
             await character.log("frenzy")
 
-        footer = "Dice: " + ", ".join(map(str, outcome.normal.dice))
-        if penalty == "brujah":
-            footer = f"Subtracting {character.bane_severity} dice due to Brujah bane.\n{footer}"
-        elif penalty == "malkavian":
-            footer = f"Subtracting 2 dice due to Malkavian compulsion.\n{footer}"
+        footer.append("Dice: " + ", ".join(map(str, outcome.normal.dice)))
+        footer = "\n".join(footer)
 
         # Display the message
         if await inconnu.settings.accessible(ctx.user):

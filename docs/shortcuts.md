@@ -49,13 +49,15 @@ This command rolls against the "crippling injury" table foudn on p.303. If a cha
 ## Frenzy checks
 
 ```
-/frenzy difficulty:<difficulty> character:[character]
+/frenzy difficulty:<difficulty> penalty:[penalty] bonus:[bonus] character:[character]
 ```
 
-| Parameter    | Description                                |
-|--------------|--------------------------------------------|
-| `difficulty` | The difficulty of the frenzy check         |
-| `character`  | The character resisting frenzy             |
+| Parameter    | Description                        |
+|--------------|------------------------------------|
+| `difficulty` | The difficulty of the frenzy check |
+| `penalty`    | A dice penalty to apply            |
+| `bonus`      | Bonus dice to apply to the roll    |
+| `character`  | The character resisting frenzy     |
 
 Per *V5*, p.219, Inconnu will roll your current Willpower plus 1/3 of Humanity, rounded down, and tell you the results.
 

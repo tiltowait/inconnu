@@ -9,7 +9,12 @@ import inconnu
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
 
-__FRENZY_BONUSES = {"The Dream": 3, "Jewel in the Garden": 4, "Cold Dead Hunger": 2}
+__FRENZY_BONUSES = {
+    "The Dream": 3,
+    "Jewel in the Garden": 4,
+    "Cold Dead Hunger": 2,
+    "Gentle Mind": 4,
+}
 __FRENZY_BONUSES.update({str(n): n for n in range(1, 6)})
 
 
@@ -38,7 +43,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, bonus: str, character: str)
             if bonus.isdigit():
                 footer.append(f"{bonus_dice:+} bonus dice.")
             else:
-                footer.append(f"{bonus_dice:+} bonus from {bonus}.")
+                footer.append(f"{bonus_dice:+} bonus dice from {bonus}.")
 
         outcome = inconnu.Roll(frenzy_pool, 0, difficulty)
 

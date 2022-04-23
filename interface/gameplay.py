@@ -94,6 +94,7 @@ class Gameplay(commands.Cog):
             choices=[
                 "Cold Dead Hunger",
                 "The Dream",
+                "Gentle Mind",
                 "Jewel in the Garden",
                 "1",
                 "2",

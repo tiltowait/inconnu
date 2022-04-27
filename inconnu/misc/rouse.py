@@ -5,6 +5,8 @@ import asyncio
 import random
 from types import SimpleNamespace
 
+import discord
+
 import inconnu
 from inconnu.vchar import VChar
 
@@ -43,8 +45,19 @@ async def rouse(
 
             inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
             msg = await inconnu.get_message(inter)
+
+            if character.hunger >= 4:
+                color = inconnu.constants.ROUSE_FAIL_COLOR
+            else:
+                color = discord.Embed.Empty
+
             await inconnu.common.report_update(
-                ctx=ctx, msg=msg, character=character, title="Rouse Check", message=update_msg
+                ctx=ctx,
+                msg=msg,
+                character=character,
+                title="Rouse Check",
+                message=update_msg,
+                color=color,
             )
 
     except inconnu.common.FetchError:

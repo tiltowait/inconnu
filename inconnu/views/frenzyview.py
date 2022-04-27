@@ -4,6 +4,7 @@ from discord import ButtonStyle
 from discord.ui import Button
 
 import inconnu
+
 from .disablingview import DisablingView
 
 
@@ -19,17 +20,15 @@ class FrenzyView(DisablingView):
         frenzy.callback = self.frenzy
         self.add_item(frenzy)
 
-
     async def frenzy(self, interaction):
         """Frenzy, if applicable."""
         if interaction.user.id == self.character.user:
             await self.disable_items(interaction)
-            await inconnu.misc.frenzy(interaction, self.difficulty, None, self.character)
+            await inconnu.misc.frenzy(interaction, self.difficulty, None, None, self.character)
         else:
             if interaction.response.is_done():
                 await interaction.followup.send("You can't click this button.", ephemeral=True)
             else:
                 await interaction.response.send_message(
-                    "You can't click this button.",
-                    ephemeral=True
+                    "You can't click this button.", ephemeral=True
                 )

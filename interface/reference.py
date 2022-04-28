@@ -65,6 +65,15 @@ class ReferenceCommands(commands.Cog):
         """View roll statistics for your characters."""
         await inconnu.reference.statistics(ctx, trait, date)
 
+    @slash_command()
+    async def temperament(
+        self,
+        ctx: discord.ApplicationCommand,
+        resonance: Option(str, "The resonance being rolled", choices=inconnu.reference.RESONANCES),
+    ):
+        """Get a random temperament."""
+        await inconnu.reference.random_temperament(ctx, resonance)
+
 
 def setup(bot):
     """Add the cog to the bot."""

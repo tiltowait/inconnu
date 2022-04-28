@@ -111,7 +111,7 @@ class _CharacterBio(discord.ui.Modal):
         self.add_item(
             discord.ui.InputText(
                 label="Image URL",
-                placeholder="The character's face claim. Will be publicly shown.",
+                placeholder="Will be publicly shown. Must end in .jpg, .png, etc.",
                 value=character.image_url,
                 required=False,
             )

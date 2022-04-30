@@ -59,11 +59,16 @@ class ReferenceCommands(commands.Cog):
     async def statistics(
         self,
         ctx: discord.ApplicationContext,
-        trait: Option(str, "(Optional) A trait to look for", required=False),
+        style: Option(
+            str,
+            "Whether to display general success rates or trait successes",
+            choices=["Traits", "General"],
+        ),
+        character: inconnu.options.character("The character whose statistics will be looked up"),
         date: Option(str, "(Optional) YYYYMMDD date to count from", default="19700101"),
     ):
         """View roll statistics for your characters."""
-        await inconnu.reference.statistics(ctx, trait, date)
+        await inconnu.reference.statistics(ctx, style, character, date)
 
     @slash_command()
     async def temperament(

@@ -1,6 +1,5 @@
 """reference/statistics.py - View character roll statistics"""
 
-import re
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -8,8 +7,10 @@ import discord
 
 import inconnu
 
+__HELP_URL = "https://www.inconnu-bot.com"
 
-async def statistics(ctx, trait: str, date):
+
+async def statistics(ctx, style: str, character: str, date: datetime):
     """
     View the roll statistics for the user's characters.
     Args:
@@ -28,40 +29,40 @@ async def statistics(ctx, trait: str, date):
         # that server's weekly reset time as the cutoff
         date += timedelta(hours=19)
 
-        if trait is None:
-            await __all_statistics(ctx, date)
+        if style == "General":
+            await __general_statistics(ctx, date)
         else:
-            await __trait_statistics(ctx, trait.title(), date)
+            await __traits_statistics(ctx, character, date)
 
     except ValueError:
         await inconnu.common.present_error(ctx, f"`{date}` is not a valid date.")
 
 
-async def __trait_statistics(ctx, trait, date):
-    """View the roll statistics for a given trait."""
-    rolls = inconnu.db.rolls
-    regex = r"^.*(\s+" + f"{trait}|{trait}" + r"\s+.*|" + trait + ")$"
+async def __traits_statistics(ctx, char_id, date):
+    """View the statistics for all traits since a given date."""
+    try:
+        tip = "`/statistics` `traits:Full` `character:CHARACTER`"
+        character = await inconnu.common.fetch_character(ctx, char_id, tip, __HELP_URL)
+
+    except inconnu.vchar.errors.CharacterNotFoundError as err:
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+        return
+
+    # We got a character
     pipeline = [
         {
             "$match": {
-                "user": ctx.user.id,
                 "guild": ctx.guild.id,
+                "user": ctx.user.id,
+                "charid": character.object_id,
                 "date": {"$gte": date},
-                "pool": re.compile(regex, flags=re.I),
+                "pool": {"$ne": None},
             }
         },
-        {
-            "$lookup": {
-                "from": "characters",
-                "localField": "charid",
-                "foreignField": "_id",
-                "as": "character",
-            }
-        },
-        {"$unwind": "$character"},
         {
             "$project": {
-                "name": "$character.name",
+                "charid": 1,
+                "pool": {"$split": ["$pool", " "]},
                 "successes": {
                     "$add": [
                         {"$cond": [{"$ne": ["$reroll", None]}, "$reroll.margin", "$margin"]},
@@ -70,84 +71,69 @@ async def __trait_statistics(ctx, trait, date):
                 },
             }
         },
-        {"$group": {"_id": "$name", "num_rolls": {"$sum": 1}, "successes": {"$sum": "$successes"}}},
+        {"$unwind": "$pool"},
+        {
+            "$group": {
+                "_id": {"charid": "$charid", "pool": "$pool"},
+                "count": {"$sum": "$successes"},
+            }
+        },
+        {"$group": {"_id": "$_id.charid", "docs": {"$push": {"k": "$_id.pool", "v": "$count"}}}},
+        {"$replaceRoot": {"newRoot": {"_id": "$_id", "traits": {"$arrayToObject": ["$docs"]}}}},
     ]
-    stats = await rolls.aggregate(pipeline).to_list(length=None)
+    raw_stats = (await inconnu.db.rolls.aggregate(pipeline).to_list(length=1))[0]
 
-    if stats:
-        if await inconnu.settings.accessible(ctx.user):
-            await __trait_stats_text(ctx, trait, stats, date)
-        else:
-            await __trait_stats_embed(ctx, trait, stats, date)
+    if raw_stats:
+        stats = {}
+
+        for trait in character.traits:
+            # The raw_stats object has a bunch of bogus data, such as
+            # math operators and numbers, that we don't want. So we
+            # get only those traits that the character actually has.
+            # If there aren't any successes, we store a 0, because that
+            # is useful information, too.
+            stats[trait] = raw_stats["traits"].get(trait, 0)
+
+        await __display_trait_statistics(ctx, character, stats, date)
     else:
-        # We didn't get any rolls
-        all_chars = await inconnu.char_mgr.fetchall(ctx.guild.id, ctx.user.id)
-        trait_is_valid = False
-
-        for char in all_chars:
-            if char.has_trait(trait):
-                trait_is_valid = True
-                break
-
-        if not trait_is_valid:
-            await ctx.respond(f"None of your characters have a trait called `{trait}`.")
-        elif date.year < 2021:
-            # Bot was made in 2021; anything prior to that is lifetime statistics
-            await ctx.respond(f"None of your characters have ever rolled `{trait}`.")
-        else:
-            fmt_date = __format_date(date)
-            await ctx.respond(f"None of your characters have rolled `{trait}` since {fmt_date}.")
+        await ctx.respond("You haven't made any rolls on any characters or something.")
 
 
-def __format_date(date):
-    """Format the date."""
-    return date.strftime("%B") + f" {date.day}, {date.year}"
-
-
-async def __trait_stats_embed(ctx, trait, stats, date):
-    """Display the trait statistics in an embed."""
+async def __display_trait_statistics(ctx, character, stats, date):
+    """Display the character traits in a paginated embed."""
     if date.year < 2021:
-        title = f"{trait}: Roll statistics (Lifetime)"
+        title = f"{character.name}: Trait successes (Lifetime)"
     else:
-        fmt_date = __format_date(date)
-        title = f"{trait}: Roll statistics since {fmt_date}"
+        title = f"{character.name}: Trait successes since {__format_date(date)}"
+
     embed = discord.Embed(title=title)
     embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
 
-    for character in stats:
-        name = character["_id"]
-        rolls = character["num_rolls"]
-        successes = character["successes"]
+    for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
+        embed.add_field(name="​", value=f"**{group}**", inline=False)
+        for subgroup, traits in subgroups.items():
+            trait_list = []
+            for trait in traits:
+                successes = stats.pop(trait, 0)
+                trait_list.append(f"***{trait}***: `{successes}`")
 
-        field = f"Rolls: `{rolls}`\nSuccesses: `{successes}`"
-        embed.add_field(name=name, value=field)
+            embed.add_field(name=subgroup, value="\n".join(trait_list), inline=True)
 
-    embed.set_footer(text=f"Only characters who rolled {trait} during this period are listed.")
+    # User-defined traits
+    if stats:
+        traits = [f"***{trait}:*** `{successes}`" for trait, successes in stats.items()]
+        traits = "\n".join(traits)
+        embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
+
+    footer = "The numbers represent the successes rolled for each trait during the time "
+    footer += "period. All traits used in a roll are incremented equally by the number "
+    footer += "of successes gained."
+    embed.set_footer(text=footer)
+
     await ctx.respond(embed=embed)
 
 
-async def __trait_stats_text(ctx, trait, stats, date):
-    """Print the trait statistics in text."""
-    if stats:
-        if date.year < 2021:
-            output = [f"**{trait}: Roll statistics (Lifetime)**"]
-        else:
-            fmt_date = __format_date(date)
-            output = [f"**{trait}: Roll statistics since {fmt_date}**\n"]
-
-        for character in stats:
-            name = character["_id"]
-            rolls = character["num_rolls"]
-            successes = character["successes"]
-
-            output.append(f"**{name}**\nRolls: `{rolls}`\nSuccesses: `{successes}`\n")
-
-        await ctx.respond("\n".join(output))
-    else:
-        await ctx.respond(f"None of your characters have rolled `{trait}` since {date}.")
-
-
-async def __all_statistics(ctx, date):
+async def __general_statistics(ctx, date):
     """View the roll statistics for the user's characters."""
     col = inconnu.db.characters
     pipeline = [
@@ -223,7 +209,7 @@ async def __display_text(ctx, results, date):
     msg = f"**Roll Statistics {fmt_date}**\n"
     for character in results:
         lines = [f"***{character['name']}***"]
-        outcomes = defaultdict(lambda: 0)
+        outcomes = defaultdict(int)
         outcomes.update(character["outcomes"])
 
         lines.append(f"Criticals: `{outcomes['critical']}`")
@@ -250,7 +236,7 @@ async def __display_embed(ctx, results, date):
     embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
 
     for character in results:
-        outcomes = defaultdict(lambda: 0)
+        outcomes = defaultdict(int)
         outcomes.update(character["outcomes"])
 
         lines = []
@@ -265,3 +251,8 @@ async def __display_embed(ctx, results, date):
         embed.add_field(name=character["name"], value="\n".join(lines), inline=False)
 
     await ctx.respond(embed=embed)
+
+
+def __format_date(date):
+    """Format the date."""
+    return date.strftime("%B") + f" {date.day}, {date.year}"

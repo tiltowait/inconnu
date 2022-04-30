@@ -29,6 +29,12 @@ async def statistics(ctx, style: str, character: str, date: datetime):
         # that server's weekly reset time as the cutoff
         date += timedelta(hours=19)
 
+        if date > datetime.utcnow():
+            # Can't get stats from the future
+            date_fmt = __format_date(date)
+            await ctx.respond(f"{date_fmt} is in the future!", ephemeral=True)
+            return
+
         if style == "General":
             await __general_statistics(ctx, date)
         else:
@@ -97,7 +103,8 @@ async def __traits_statistics(ctx, char_id, date):
 
         await __display_trait_statistics(ctx, character, stats, date)
     else:
-        await ctx.respond(f"{character.name} hasn't made any trait rolls in this time period.")
+        date_fmt = __format_date(date)
+        await ctx.respond(f"**{character.name}** hasn't made any trait rolls since **{date_fmt}**.")
 
 
 async def __display_trait_statistics(ctx, character, stats, date):

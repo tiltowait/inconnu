@@ -85,17 +85,6 @@ class RollDisplay:
 
     async def display(self, use_embed: bool, alt_ctx=None):
         """Display the roll."""
-
-        # Log the roll. Doing it here captures normal rolls, re-rolls, and macros
-        if self.ctx.guild is not None:
-            log_task = inconnu.stats.log_roll(
-                self.ctx.guild.id, self.owner.id, self.character, self.outcome, self.comment
-            )
-        else:
-            log_task = inconnu.stats.log_roll(
-                None, self.owner.id, self.character, self.outcome, self.comment
-            )
-
         # We might be responding to a button
         ctx = alt_ctx or self.ctx
         msg_contents = {}
@@ -111,11 +100,27 @@ class RollDisplay:
         else:
             msg_contents["content"] = self.text
 
-        respond_task = inconnu.respond(ctx)(**msg_contents)
-        _, msg = await asyncio.gather(log_task, respond_task)
+        inter = await inconnu.respond(ctx)(**msg_contents)
 
         if controls is not None:
-            controls.message = msg
+            controls.message = inter
+
+        # Log the roll. Doing it here captures normal rolls, re-rolls, and
+        # macros. We get the roll's message ID so we can toggle the message
+        # for statistics purposes.
+
+        if self.ctx.guild is not None:
+            msg = await inconnu.get_message(inter)
+
+            await inconnu.stats.log_roll(
+                self.ctx.guild.id, self.owner.id, msg.id, self.character, self.outcome, self.comment
+            )
+        else:
+            # If this is a DM roll, we don't keep stats, so we don't need to
+            # get the message ID
+            await inconnu.stats.log_roll(
+                None, self.owner.id, None, self.character, self.outcome, self.comment
+            )
 
     async def respond_to_button(self, btn):
         """Respond to the buttons."""

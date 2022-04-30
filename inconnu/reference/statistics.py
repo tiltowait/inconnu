@@ -57,6 +57,7 @@ async def __traits_statistics(ctx, char_id, date):
                 "charid": character.object_id,
                 "date": {"$gte": date},
                 "pool": {"$ne": None},
+                "use_in_stats": True,
             }
         },
         {
@@ -81,7 +82,7 @@ async def __traits_statistics(ctx, char_id, date):
         {"$group": {"_id": "$_id.charid", "docs": {"$push": {"k": "$_id.pool", "v": "$count"}}}},
         {"$replaceRoot": {"newRoot": {"_id": "$_id", "traits": {"$arrayToObject": ["$docs"]}}}},
     ]
-    raw_stats = (await inconnu.db.rolls.aggregate(pipeline).to_list(length=1))[0]
+    raw_stats = await inconnu.db.rolls.aggregate(pipeline).to_list(length=1)
 
     if raw_stats:
         stats = {}
@@ -92,11 +93,11 @@ async def __traits_statistics(ctx, char_id, date):
             # get only those traits that the character actually has.
             # If there aren't any successes, we store a 0, because that
             # is useful information, too.
-            stats[trait] = raw_stats["traits"].get(trait, 0)
+            stats[trait] = raw_stats[0]["traits"].get(trait, 0)
 
         await __display_trait_statistics(ctx, character, stats, date)
     else:
-        await ctx.respond("You haven't made any rolls on any characters or something.")
+        await ctx.respond(f"{character.name} hasn't made any trait rolls in this time period.")
 
 
 async def __display_trait_statistics(ctx, character, stats, date):
@@ -137,7 +138,12 @@ async def __general_statistics(ctx, date):
     """View the roll statistics for the user's characters."""
     col = inconnu.db.characters
     pipeline = [
-        {"$match": {"guild": ctx.guild.id, "user": ctx.user.id}},
+        {
+            "$match": {
+                "guild": ctx.guild.id,
+                "user": ctx.user.id,
+            }
+        },
         {
             "$lookup": {
                 "from": "rolls",
@@ -147,7 +153,12 @@ async def __general_statistics(ctx, date):
             }
         },
         {"$unwind": "$rolls"},
-        {"$match": {"rolls.date": {"$gte": date}}},
+        {
+            "$match": {
+                "rolls.date": {"$gte": date},
+                "rolls.use_in_stats": True,
+            }
+        },
         {
             "$project": {
                 "_id": 1,

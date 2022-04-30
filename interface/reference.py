@@ -12,6 +12,10 @@ import inconnu
 class ReferenceCommands(commands.Cog):
     """A cog for reference commands."""
 
+    def __init__(self, bot):
+        super().__init__()
+        self.bot = bot
+
     @slash_command()
     async def bp(
         self, ctx, rating: Option(int, "The Blood Potency rating", min_value=0, max_value=10)
@@ -78,6 +82,34 @@ class ReferenceCommands(commands.Cog):
     ):
         """Get a random temperament."""
         await inconnu.reference.random_temperament(ctx, resonance)
+
+    # Roll statistics
+
+    @commands.message_command(name="Toggle Roll Statistics")
+    @commands.guild_only()
+    async def toggle_roll_statistics(self, ctx, message: discord.Message):
+        """Toggle whether a roll should be counted for statistical purposes."""
+        if ctx.bot.user != message.author:
+            await ctx.respond("This isn't an Inconnu roll message.", ephemeral=True)
+            return
+
+        toggled = await inconnu.stats.toggle_roll_stats(message.id)
+        if toggled is None:
+            await ctx.respond(
+                "Unable to toggle stats. Either this isn't a roll, or it predates the feature.",
+                ephemeral=True,
+            )
+        else:
+            will_or_not = "`WILL`" if toggled else "`NOT`"
+            msg = f"[This roll]({message.jump_url}) will {will_or_not} be included in statistics."
+            embed = discord.Embed(description=msg)
+            await ctx.respond(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message):
+        """Remove the roll from statistics."""
+        if message.author == self.bot.user:
+            await inconnu.stats.roll_message_deleted(message.id)
 
 
 def setup(bot):

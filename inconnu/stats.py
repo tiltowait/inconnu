@@ -2,11 +2,14 @@
 # pylint: disable=too-many-arguments
 
 import datetime
+from typing import Optional
+
+from pymongo import ReturnDocument
 
 import inconnu
 
 
-async def log_roll(guild: int, user: int, char, outcome, comment):
+async def log_roll(guild: int, user: int, message: int, char, outcome, comment):
     """
     Log a roll and its outcome. If the roll is a reroll, simply replace it.
     Args:
@@ -17,12 +20,30 @@ async def log_roll(guild: int, user: int, char, outcome, comment):
     """
     rolls = inconnu.db.rolls
 
-    if await rolls.find_one({ "_id": outcome.id }) is None:
-        roll = _gen_roll(guild, user, char, outcome, comment)
+    if await rolls.find_one({"_id": outcome.id}) is None:
+        roll = _gen_roll(guild, user, message, char, outcome, comment)
         await rolls.insert_one(roll)
     else:
-        reroll = _gen_reroll(outcome)
-        await rolls.update_one({ "_id": outcome.id }, reroll)
+        reroll = _gen_reroll(message, outcome)
+        await rolls.update_one({"_id": outcome.id}, reroll)
+
+
+async def toggle_roll_stats(message: int) -> bool:
+    """Toggle whether a roll should be used in statistics."""
+    ret = await inconnu.db.rolls.find_one_and_update(
+        {"message": message},
+        [{"$set": {"use_in_stats": {"$not": "$use_in_stats"}}}],
+        return_document=ReturnDocument.AFTER,
+    )
+
+    if ret:
+        return ret["use_in_stats"]
+    return None
+
+
+async def roll_message_deleted(message: int):
+    """Remove a roll from stats calculation."""
+    await inconnu.db.rolls.update_one({"message": message}, {"$set": {"use_in_stats": False}})
 
 
 async def guild_joined(guild):
@@ -35,17 +56,17 @@ async def guild_joined(guild):
     guilds = inconnu.db.guilds
 
     await guilds.update_one(
-        { "guild": guild.id },
+        {"guild": guild.id},
         {
             "$set": {
                 "guild": guild.id,
                 "name": guild.name,
                 "active": True,
                 "joined": datetime.datetime.utcnow(),
-                "left": None
+                "left": None,
             }
         },
-        upsert=True
+        upsert=True,
     )
 
 
@@ -57,12 +78,9 @@ async def guild_left(guild):
     """
     guilds = inconnu.db.guilds
 
-    await guilds.update_one({ "guild": guild }, {
-        "$set": {
-            "active": False,
-            "left": datetime.datetime.utcnow()
-        }
-    })
+    await guilds.update_one(
+        {"guild": guild}, {"$set": {"active": False, "left": datetime.datetime.utcnow()}}
+    )
 
 
 async def guild_renamed(guild, new_name):
@@ -74,18 +92,20 @@ async def guild_renamed(guild, new_name):
     """
     guilds = inconnu.db.guilds
 
-    await guilds.update_one({ "guild": guild }, { "$set": { "name": new_name } })
+    await guilds.update_one({"guild": guild}, {"$set": {"name": new_name}})
 
 
 # Roll logging helpers
 
-def _gen_roll(guild: int, user: int, char, outcome, comment):
+
+def _gen_roll(guild: int, user: int, message: int, char, outcome, comment: str):
     """Add a new roll outcome entry to the database."""
     return {
         "_id": outcome.id,
         "date": datetime.datetime.utcnow(),
-        "guild": guild, # We use the guild and user keys for easier lookups
+        "guild": guild,  # We use the guild and user keys for easier lookups
         "user": user,
+        "message": [message],
         "charid": getattr(char, "object_id", None),
         "raw": outcome.syntax,
         "normal": outcome.normal.dice,
@@ -96,10 +116,11 @@ def _gen_roll(guild: int, user: int, char, outcome, comment):
         "pool": outcome.pool_str,
         "comment": comment,
         "reroll": None,
+        "use_in_stats": True,
     }
 
 
-def _gen_reroll(outcome):
+def _gen_reroll(message, outcome):
     """
     Update a roll entry.
     Args:
@@ -112,7 +133,10 @@ def _gen_reroll(outcome):
                 "strategy": outcome.strategy,
                 "dice": outcome.normal.dice,
                 "margin": outcome.margin,
-                "outcome": outcome.outcome
+                "outcome": outcome.outcome,
             }
-        }
+        },
+        "$addToSet": {
+            "message": message,
+        },
     }

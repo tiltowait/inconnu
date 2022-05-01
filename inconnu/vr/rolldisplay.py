@@ -76,6 +76,7 @@ class RollDisplay:
     def __init__(self, ctx, outcome, comment, character, owner):
         self.ctx = ctx
         self.outcome = outcome
+        self.original_outcome = f"{outcome.main_takeaway} ({outcome.total_successes})"
         self._comment = comment
         self.character = character
         self.owner = owner
@@ -83,7 +84,7 @@ class RollDisplay:
         self.surged = False
         self.msg = None  # Used for disabling the buttons at the end of the timeout
 
-    async def display(self, use_embed: bool, alt_ctx=None):
+    async def display(self, alt_ctx=None):
         """Display the roll."""
         # We might be responding to a button
         ctx = alt_ctx or self.ctx
@@ -95,12 +96,12 @@ class RollDisplay:
         else:
             controls = None
 
-        if use_embed:
-            msg_contents["embed"] = self.embed
-        else:
-            msg_contents["content"] = self.text
+        msg_contents["embed"] = await self.get_embed()
 
-        inter = await inconnu.respond(ctx)(**msg_contents)
+        if not self.rerolled:
+            inter = await inconnu.respond(ctx)(**msg_contents)
+        else:
+            inter = await ctx.edit_original_message(**msg_contents)
 
         if controls is not None:
             controls.message = inter
@@ -149,9 +150,7 @@ class RollDisplay:
             self.outcome.reroll(strategy)
             self.rerolled = True
 
-            # Determine whether to display an embed or not
-            use_embed = len(btn.message.embeds) > 0
-            await self.display(use_embed, btn)
+            await self.display(btn)
 
     @property
     def character_name(self) -> str:
@@ -207,10 +206,9 @@ class RollDisplay:
 
         return "https://www.inconnu-bot.com/images/assets/dice/bestial.webp"
 
-    @property
-    def embed(self) -> discord.Embed:
+    async def get_embed(self) -> discord.Embed:
         """The graphical representation of the roll."""
-        title = self.outcome.main_takeaway
+        title = self.outcome.main_takeaway.upper() + "!"
         if self.rerolled:
             title = f"R: {title}"
         if not self.outcome.is_total_failure and not self.outcome.is_bestial:
@@ -229,9 +227,7 @@ class RollDisplay:
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        everyone = self.ctx.guild.default_role
-        can_use_external_emoji = self.ctx.channel.permissions_for(everyone).external_emojis
-        if self.outcome.pool <= 30 and can_use_external_emoji:
+        if self.outcome.pool <= 30 and await self.use_emoji():
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
             embed.add_field(
@@ -243,10 +239,10 @@ class RollDisplay:
             lines = []
             if self.outcome.normal.count > 0:
                 dice = sorted(self.outcome.normal.dice, reverse=True)
-                lines.append("**Normal Dice:** `" + ", ".join(map(str, dice)) + "`")
+                lines.append("**Normal Dice:** " + ", ".join(map(str, dice)))
             if self.hunger > 0:
                 dice = sorted(self.outcome.hunger.dice, reverse=True)
-                lines.append("**Hunger Dice:** `" + ", ".join(map(str, dice)) + "`")
+                lines.append("**Hunger Dice:** " + ", ".join(map(str, dice)))
 
             embed.add_field(
                 name=f"Margin: {self.outcome.margin}", value="\n".join(lines), inline=False
@@ -259,51 +255,22 @@ class RollDisplay:
         if self.outcome.pool_str is not None:
             embed.add_field(name="Pool", value=self.outcome.pool_str)
 
+        # Show what the roll originally was
+        if self.rerolled:
+            embed.add_field(name="Original Outcome", value=self.original_outcome, inline=False)
+
         if self.comment is not None:
             embed.set_footer(text=self.comment)
 
         return embed
 
-    @property
-    def text(self) -> str:
-        """The textual representation of the roll."""
+    async def use_emoji(self) -> bool:
+        """Whether to use emoji in the roll."""
+        everyone = self.ctx.guild.default_role
+        if not self.ctx.channel.permissions_for(everyone).external_emojis:
+            return False
 
-        # Determine the name for the "author" field
-        if self.character is not None:
-            title = self.character.name
-        else:
-            title = self.owner.display_name
-
-        title += "'s re-roll" if self.rerolled else "'s roll"
-        if self.outcome.difficulty > 0:
-            title += f" vs DC {self.outcome.difficulty}"
-        if self.outcome.descriptor is not None:
-            title += f" ({self.outcome.descriptor})"
-
-        contents = [f"```{title}```"]
-
-        takeaway = self.outcome.main_takeaway
-        if not self.outcome.is_total_failure and not self.outcome.is_bestial:
-            takeaway += f" ({self.outcome.total_successes})"
-
-        contents.append(takeaway)
-        contents.append(f"Margin: `{self.outcome.margin}`")
-
-        if self.outcome.normal.dice:
-            contents.append(f"Normal: `{', '.join(map(str, self.outcome.normal.dice))}`")
-        else:
-            contents.append("Normal: `n/a`")
-
-        if self.outcome.hunger.dice:
-            contents.append(f"Hunger: `{', '.join(map(str, self.outcome.hunger.dice))}`")
-
-        if self.outcome.pool_str is not None:
-            contents.append(f"Pool: `{self.outcome.pool_str}`")
-
-        if self.comment is not None:
-            contents.append(f"```{self.comment}```")
-
-        return "\n".join(contents)
+        return not await inconnu.settings.accessible(self.ctx.user)
 
     @property
     def surging(self) -> bool:

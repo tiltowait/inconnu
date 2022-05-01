@@ -20,7 +20,7 @@ class Roll:
             difficulty (int): The target number of successes
             pool_str (Optional[int]): The pool's attribute + skill representation
         """
-        self.id = bson.objectid.ObjectId() # pylint: disable=invalid-name
+        self.id = bson.objectid.ObjectId()  # pylint: disable=invalid-name
 
         if not 0 <= hunger <= 5:
             raise ValueError(f"Hunger must be between 0 and 5. (Got `{hunger}`.)")
@@ -49,7 +49,6 @@ class Roll:
         else:
             self.syntax = " ".join(syntax.split())
 
-
     # We could technically do this with stored properties, but the math is extremely
     # fast, so we will do it this way for legibility. This will also more easily let
     # us perform Willpower re-rolls.
@@ -60,37 +59,35 @@ class Roll:
     def embed_color(self):
         """Determine the Discord embed color based on the result of the roll."""
         if self.is_critical:
-            return 0x00FF00 # Green
+            return 0x00FF00  # Green
         if self.is_messy:
-            return 0xEA3323 # Red-orange
+            return 0xEA3323  # Red-orange
         if self.is_successful:
-            return 0x7777FF # Blurple-ish
+            return 0x7777FF  # Blurple-ish
         if self.is_failure:
-            return 0x808080 # Gray
+            return 0x808080  # Gray
         if self.is_total_failure:
-            return 0x000000 # Black
+            return 0x000000  # Black
 
         # Bestial failure
-        return 0x5C0700 # Dark red
-
+        return 0x5C0700  # Dark red
 
     @property
     def main_takeaway(self):
         """The roll's main takeaway--i.e. "SUCCESS", "FAILURE", etc."""
         if self.is_critical:
-            return "**CRITICAL!**"
+            return "Critical"
         if self.is_messy:
-            return "**MESSY CRITICAL!**"
+            return "Messy Critical"
         if self.is_successful:
-            return "**SUCCESS!**"
+            return "Success"
         if self.is_failure:
-            return "**FAILURE!**"
+            return "Failure"
         if self.is_total_failure:
-            return "**TOTAL FAILURE!**"
+            return "Total Failure"
 
         # Bestial failure
-        return "**BESTIAL FAILURE!**"
-
+        return "Bestial Failure"
 
     @property
     def outcome(self):
@@ -109,14 +106,12 @@ class Roll:
         # Bestial failure
         return "bestial"
 
-
     # Roll Reflection
 
     @property
     def pool(self):
         """The total number of dice rolled."""
         return self.normal.count + self.hunger.count
-
 
     @property
     def total_successes(self):
@@ -126,12 +121,10 @@ class Roll:
 
         return self.normal.successes + self.hunger.successes + crits
 
-
     @property
     def margin(self):
         """Return the roll's success margin."""
         return self.total_successes - self.difficulty
-
 
     @property
     def is_critical(self):
@@ -139,31 +132,26 @@ class Roll:
         critical = self.normal.tens >= 2 and self.hunger.tens == 0
         return critical and self.is_successful
 
-
     @property
     def is_messy(self):
         """Return true if the roll is a messy critical."""
         messy = (self.normal.tens + self.hunger.tens) >= 2 and self.hunger.tens > 0
         return messy and self.is_successful
 
-
     @property
     def is_successful(self):
         """Return true if the roll meets or exceeds its target."""
         return self.total_successes >= self.difficulty and self.total_successes > 0
-
 
     @property
     def is_failure(self):
         """Return true if the target successes weren't achieved, but it isn't bestial."""
         return (self.hunger.ones == 0 and self.total_successes > 0) and not self.is_successful
 
-
     @property
     def is_total_failure(self):
         """Return true if no successes were rolled, and no ones on hunger dice."""
         return self.total_successes == 0 and self.hunger.ones == 0
-
 
     @property
     def is_bestial(self):
@@ -171,14 +159,12 @@ class Roll:
         bestial = self.hunger.ones > 0
         return bestial and not self.is_successful
 
-
     # Re-roll strategies
 
     @property
     def can_reroll_failures(self):
         """Whether there are any non-Hunger failures to re-roll."""
         return self.normal.failures > 0
-
 
     @property
     def can_maximize_criticals(self):
@@ -190,7 +176,6 @@ class Roll:
 
         return self.normal.tens != self.normal.count
 
-
     @property
     def can_avoid_messy_critical(self):
         """Whether it's possible to avoid a messy critical, assuming we have one."""
@@ -199,12 +184,10 @@ class Roll:
 
         return self.hunger.tens == 1 and self.normal.tens <= 3
 
-
     @property
     def can_risky_messy_critical(self):
         """Whether a messy critical is possible *and* there are failures to re-roll."""
         return self.can_avoid_messy_critical and self.normal.failures > 0
-
 
     def reroll(self, strategy):
         """Perform a reroll based on a given strategy."""
@@ -223,7 +206,7 @@ class Roll:
             self.strategy = "messy"
             self.descriptor = "Avoiding Messy Critical"
 
-        else: # strategy == "risky":
+        else:  # strategy == "risky":
             new_dice = _risky_avoid_messy(self.normal.dice)
             self.strategy = "risky"
             self.descriptor = "Avoid Messy (Risky)"
@@ -266,7 +249,7 @@ def _maximize_criticals(dice: list) -> list:
     total_failures = len([die for die in dice if die < 6])
     if total_failures < __MAX_REROLL:
         for index, die in enumerate(dice):
-            if 6 <= die < 10: # Non-critical success
+            if 6 <= die < 10:  # Non-critical success
                 dice[index] = 1
                 total_failures += 1
 

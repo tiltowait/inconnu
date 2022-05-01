@@ -58,12 +58,10 @@ async def __traits_statistics(ctx, char_id, date):
     pipeline = [
         {
             "$match": {
-                "guild": ctx.guild.id,
-                "user": ctx.user.id,
                 "charid": character.object_id,
+                "use_in_stats": True,
                 "date": {"$gte": date},
                 "pool": {"$ne": None},
-                "use_in_stats": True,
             }
         },
         {

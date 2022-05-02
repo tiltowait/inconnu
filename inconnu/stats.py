@@ -24,7 +24,7 @@ async def log_roll(guild: int, user: int, message: int, char, outcome, comment):
         roll = _gen_roll(guild, user, message, char, outcome, comment)
         await rolls.insert_one(roll)
     else:
-        reroll = _gen_reroll(message, outcome)
+        reroll = _gen_reroll(outcome)
         await rolls.update_one({"_id": outcome.id}, reroll)
 
 
@@ -105,7 +105,7 @@ def _gen_roll(guild: int, user: int, message: int, char, outcome, comment: str):
         "date": datetime.datetime.utcnow(),
         "guild": guild,  # We use the guild and user keys for easier lookups
         "user": user,
-        "message": [message],
+        "message": message,
         "charid": getattr(char, "object_id", None),
         "raw": outcome.syntax,
         "normal": outcome.normal.dice,
@@ -120,7 +120,7 @@ def _gen_roll(guild: int, user: int, message: int, char, outcome, comment: str):
     }
 
 
-def _gen_reroll(message, outcome):
+def _gen_reroll(outcome):
     """
     Update a roll entry.
     Args:
@@ -135,8 +135,5 @@ def _gen_reroll(message, outcome):
                 "margin": outcome.margin,
                 "outcome": outcome.outcome,
             }
-        },
-        "$addToSet": {
-            "message": message,
         },
     }

@@ -31,8 +31,9 @@ class _ButtonID(str, Enum):
 class _RollControls(inconnu.views.DisablingView):
     """A View that has a dynamic number of roll buttons."""
 
-    def __init__(self, callback, owner, buttons):
+    def __init__(self, has_character, callback, owner, buttons):
         super().__init__(timeout=600)
+        self.has_character = has_character
         self.callback = callback
         self.owner = owner
 
@@ -60,12 +61,15 @@ class _RollControls(inconnu.views.DisablingView):
                 self.children[0].style = discord.ButtonStyle.secondary
                 await interaction.response.edit_message(view=self)
             else:
-                # Find the pressed button and make it gray
-                for child in self.children:
-                    # We need the full custom id here, not just the button ID
-                    if child.custom_id == interaction.data["custom_id"]:
-                        child.style = discord.ButtonStyle.secondary
-                await self.disable_items(interaction)
+                if not self.has_character:
+                    # Find the pressed button and make it gray
+                    for child in self.children:
+                        # We need the full custom id here, not just the button ID
+                        if child.custom_id == interaction.data["custom_id"]:
+                            child.style = discord.ButtonStyle.secondary
+                    await self.disable_items(interaction)
+                else:
+                    self.stop()
 
             await self.callback(interaction)
 
@@ -83,6 +87,7 @@ class RollDisplay:
         self.rerolled = False
         self.surged = False
         self.msg = None  # Used for disabling the buttons at the end of the timeout
+        self.controls = None
 
     async def display(self, alt_ctx=None):
         """Display the roll."""
@@ -91,30 +96,46 @@ class RollDisplay:
         msg_contents = {}
 
         if buttons := self.buttons:
-            controls = _RollControls(self.respond_to_button, self.owner, buttons)
-            msg_contents["view"] = controls
-        else:
-            controls = None
+            self.controls = _RollControls(
+                self.character is not None, self.respond_to_button, self.owner, buttons
+            )
+            msg_contents["view"] = self.controls
 
         msg_contents["embed"] = await self.get_embed()
 
         if not self.rerolled:
             inter = await inconnu.respond(ctx)(**msg_contents)
         else:
-            inter = await ctx.edit_original_message(**msg_contents)
+            # We need this if statement, because if there *is* a character, we
+            # don't waste time disabling the buttons, because we're just going
+            # to overwrite them with a new view. Unfortunately, we need to use
+            # a different method call in this instance, and we *also* need to
+            # acquire the inter object differently.
+            if self.character is not None:
+                # Interaction is not a followup
+                await ctx.response.edit_message(**msg_contents)
+                inter = ctx
+            else:
+                # The interaction is a followup
+                inter = await ctx.edit_original_message(**msg_contents)
 
-        if controls is not None:
-            controls.message = inter
+        if self.controls is not None:
+            # Attach the interaction so we can disable the buttons when appropriate
+            self.controls.message = inter
 
         # Log the roll. Doing it here captures normal rolls, re-rolls, and
         # macros. We get the roll's message ID so we can toggle the message
         # for statistics purposes.
 
-        if self.ctx.guild is not None:
-            msg = await inconnu.get_message(inter)
+        if ctx.guild is not None:
+            if not self.rerolled:
+                msg = await inconnu.get_message(inter)
+                msg_id = msg.id
+            else:
+                msg_id = None
 
             await inconnu.stats.log_roll(
-                self.ctx.guild.id, self.owner.id, msg.id, self.character, self.outcome, self.comment
+                ctx.guild.id, self.owner.id, msg_id, self.character, self.outcome, self.comment
             )
         else:
             # If this is a DM roll, we don't keep stats, so we don't need to
@@ -257,7 +278,11 @@ class RollDisplay:
 
         # Show what the roll originally was
         if self.rerolled:
-            embed.add_field(name="Original Outcome", value=self.original_outcome, inline=False)
+            embed.add_field(
+                name="Original Outcome",
+                value=f"```{self.original_outcome}```",
+                inline=False,
+            )
 
         if self.comment is not None:
             embed.set_footer(text=self.comment)

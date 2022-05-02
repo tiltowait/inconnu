@@ -1,6 +1,7 @@
 """interface/reference.py - A cog for reference material."""
 # pylint: disable=no-self-use
 
+import asyncio
 
 import discord
 from discord.commands import Option, OptionChoice, slash_command
@@ -87,6 +88,7 @@ class ReferenceCommands(commands.Cog):
 
     @commands.message_command(name="Toggle Roll Statistics")
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def toggle_roll_statistics(self, ctx, message: discord.Message):
         """Toggle whether a roll should be counted for statistical purposes."""
         if ctx.bot.user != message.author:
@@ -100,10 +102,16 @@ class ReferenceCommands(commands.Cog):
                 ephemeral=True,
             )
         else:
-            will_or_not = "`WILL`" if toggled else "`NOT`"
-            msg = f"[This roll]({message.jump_url}) will {will_or_not} be included in statistics."
+            will_or_not = "`WILL`" if toggled else "`WILL NOT`"
+
+            content = "" if toggled else "**This roll `WILL NOT` be included in statistics.**"
+            msg = f"[This roll]({message.jump_url}) {will_or_not} be included in statistics."
             embed = discord.Embed(description=msg)
-            await ctx.respond(embed=embed)
+
+            await asyncio.gather(
+                message.edit(content=content),
+                ctx.respond(embed=embed, ephemeral=True),
+            )
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):

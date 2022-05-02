@@ -18,17 +18,18 @@ import discord
 
 import inconnu
 from inconnu import common
+
+from ..roll import Roll
+from ..vchar import VChar, errors
 from .rolldisplay import RollDisplay
 from .rollparser import RollParser
-from ..roll import Roll
-from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/rolls"
 
 
 async def parse(ctx, raw_syntax: str, comment: str, character: str, player: discord.Member):
     """Parse the user's arguments and attempt to roll the dice."""
-    syntax = raw_syntax # Save the raw in case we get a character error
+    syntax = raw_syntax  # Save the raw in case we get a character error
 
     # Comments appear after the first # in a command
     if "#" in syntax:
@@ -66,17 +67,14 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
     else:
         owner = ctx.user
 
-
     # Attempt to parse the user's roll syntax
     try:
         outcome = perform_roll(character, syntax)
         await display_outcome(ctx, owner, character, outcome, comment)
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
-        log_task = inconnu.log.log_event("roll_error",
-            user=ctx.user.id,
-            charid=getattr(character, "id", None),
-            syntax=raw_syntax
+        log_task = inconnu.log.log_event(
+            "roll_error", user=ctx.user.id, charid=getattr(character, "id", None), syntax=raw_syntax
         )
 
         if isinstance(err, errors.TraitError):
@@ -94,7 +92,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             character=character,
             help_url=__HELP_URL,
             view=view,
-            ephemeral=ephemeral
+            ephemeral=ephemeral,
         )
 
         await asyncio.gather(log_task, error_task)
@@ -104,10 +102,7 @@ async def display_outcome(ctx, player, character: VChar, results, comment):
     """Display the roll results."""
     roll_display = RollDisplay(ctx, results, comment, character, player)
 
-    if await inconnu.settings.accessible(ctx.user):
-        await roll_display.display(False)
-    else:
-        await roll_display.display(True)
+    await roll_display.display()
 
 
 def perform_roll(character: VChar, syntax):
@@ -127,7 +122,7 @@ async def stringify_mentions(ctx, sentence):
         return None
 
     # Use a set to avoid redundant lookups
-    if (matches := set(re.findall(r"<[@#]!?\d+>", sentence))):
+    if matches := set(re.findall(r"<[@#]!?\d+>", sentence)):
         member_converter = discord.ext.commands.MemberConverter()
         channel_converter = discord.ext.commands.GuildChannelConverter()
 

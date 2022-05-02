@@ -238,11 +238,11 @@ class RollDisplay:
         embed = discord.Embed(title=title, colour=self.outcome.embed_color)
 
         # Author line
-        author_field = self.character_name + ("'s Re-Roll" if self.rerolled else "'s Roll")
+        author_field = self.character_name
         if self.outcome.difficulty > 0:
-            author_field += f" vs DC {self.outcome.difficulty}"
+            author_field += f" • DC {self.outcome.difficulty}"
         if self.outcome.descriptor is not None:
-            author_field += f" ({self.outcome.descriptor})"
+            author_field += f" • {self.outcome.descriptor}"
 
         embed.set_author(name=author_field, icon_url=self.icon)
         embed.set_thumbnail(url=self.thumbnail_url)

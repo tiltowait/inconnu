@@ -88,6 +88,7 @@ class ReferenceCommands(commands.Cog):
 
     @commands.message_command(name="Toggle Roll Statistics")
     @commands.guild_only()
+    @commands.has_permissions(administrator=True)
     async def toggle_roll_statistics(self, ctx, message: discord.Message):
         """Toggle whether a roll should be counted for statistical purposes."""
         if ctx.bot.user != message.author:

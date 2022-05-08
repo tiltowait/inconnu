@@ -5,12 +5,15 @@ import re
 from types import SimpleNamespace as SN
 
 import inconnu
+
 from . import wizard
 
 __HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-creation"
 
 
-async def create(ctx, name: str, splat: str, humanity: int, health: int, willpower: int, spc: bool):
+async def create(
+    ctx, name: str, splat: str, humanity: int, health: int, willpower: int, spc: bool, blank: bool
+):
     """Parse and handle character creation arguments."""
     if spc and not ctx.user.guild_permissions.administrator:
         await inconnu.common.present_error(
@@ -19,7 +22,7 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
         return
 
     try:
-        __validate_parameters(name, humanity, health, willpower) # splat is guaranteed correct
+        __validate_parameters(name, humanity, health, willpower)  # splat is guaranteed correct
 
         # Remove extraenous spaces from the name
         name = re.sub(r"\s+", " ", name)
@@ -29,9 +32,10 @@ async def create(ctx, name: str, splat: str, humanity: int, health: int, willpow
                 raise ValueError(f"Sorry, there is already an SPC named `{name}`!")
             raise ValueError(f"Sorry, you have a character named `{name}` already!")
 
-        parameters = SN(name=name, hp=health, wp=willpower, humanity=humanity, splat=splat, spc=spc)
-        accessibility = await inconnu.settings.accessible(ctx.user)
-        character_wizard = wizard.Wizard(ctx, parameters, accessibility)
+        parameters = SN(
+            name=name, hp=health, wp=willpower, humanity=humanity, splat=splat, spc=spc, blank=blank
+        )
+        character_wizard = wizard.Wizard(ctx, parameters)
 
         await character_wizard.begin_chargen()
 

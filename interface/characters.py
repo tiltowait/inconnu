@@ -21,7 +21,7 @@ async def _spc_options(ctx):
 class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
 
-    _SPLATS = ["vampire", "ghoul", "mortal"]
+    _TEMPLATES = ["vampire", "ghoul", "mortal"]
 
     @commands.user_command(name="Stats")
     async def user_characters(self, ctx, member):
@@ -36,7 +36,7 @@ class Characters(commands.Cog, name="Character Management"):
         self,
         ctx: discord.ApplicationContext,
         name: Option(str, "The character's name"),
-        splat: Option(str, "The character type", choices=_SPLATS),
+        template: Option(str, "The character type", choices=_TEMPLATES),
         health: Option(int, "Health levels (4-15)", choices=inconnu.options.ratings(4, 15)),
         willpower: Option(int, "Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)),
         humanity: Option(int, "Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)),
@@ -44,7 +44,22 @@ class Characters(commands.Cog, name="Character Management"):
     ):
         """Create a new character."""
         spc = bool(strtobool(spc))
-        await inconnu.character.create(ctx, name, splat, humanity, health, willpower, spc)
+        await inconnu.character.create(ctx, name, template, humanity, health, willpower, spc, False)
+
+    @commands.slash_command(name="spc")
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    async def spc_create(
+        self,
+        ctx: discord.ApplicationContext,
+        name: Option(str, "The SPC's name"),
+        template: Option(str, "The character type", choices=_TEMPLATES),
+        health: Option(int, "Health levels (4-15)", choices=inconnu.options.ratings(4, 15)),
+        willpower: Option(int, "Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)),
+        humanity: Option(int, "Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)),
+    ):
+        """Create an SPC character with no traits."""
+        await inconnu.character.create(ctx, name, template, humanity, health, willpower, True, True)
 
     @character.command(name="display")
     @commands.guild_only()
@@ -84,7 +99,7 @@ class Characters(commands.Cog, name="Character Management"):
         humanity: Option(
             int, "The new Humanity rating", choices=inconnu.options.ratings(0, 10), required=False
         ),
-        splat: Option(str, "The character's new type", choices=_SPLATS, required=False),
+        template: Option(str, "The character's new type", choices=_TEMPLATES, required=False),
         sup_hp: Option(str, "Superficial Health (Tip: Use +X/-X)", required=False),
         agg_hp: Option(str, "Aggravated Health (Tip: Use +X/-X)", required=False),
         sup_wp: Option(str, "Superficial Willpower (Tip: Use +X/-X)", required=False),
@@ -115,8 +130,8 @@ class Characters(commands.Cog, name="Character Management"):
         if humanity is not None:
             parameters.append(f"humanity={humanity}")
 
-        if splat is not None:
-            parameters.append(f"splat={splat}")
+        if template is not None:
+            parameters.append(f"template={template}")
 
         # The rest of these are adjustments, but they must be able to convert into an int
         try:

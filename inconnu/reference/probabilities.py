@@ -6,6 +6,7 @@ from types import SimpleNamespace as SN
 import discord
 
 import inconnu
+
 from .. import vr as roll
 
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=probability-calculation"
@@ -13,7 +14,7 @@ __STRATEGIES = {
     "reroll_failures": "Re-rolling Failures",
     "maximize_criticals": "Maximizing Crits",
     "avoid_messy": "Avoiding Messy Crits",
-    "risky": "Riskily Avoiding Messy Crits"
+    "risky": "Riskily Avoiding Messy Crits",
 }
 
 
@@ -111,7 +112,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     embed = discord.Embed(
         title=f"Pool {params.pool} | Hunger {params.hunger} | DC {params.difficulty}",
         description=description,
-        colour=0x000000
+        colour=0x000000,
     )
     embed.set_author(name="Outcome Probabilities")
     embed.set_footer(text="Simulated over 10,000 runs")
@@ -170,37 +171,41 @@ async def __get_probabilities(params, strategy):
     """Retrieve the probabilities from storage or, if not calculated yet, generate them."""
     col = inconnu.db.probabilities
 
-    probs = await col.find_one({
-        "pool": params.pool,
-        "hunger": params.hunger,
-        "difficulty": params.difficulty,
-        "strategy": strategy
-    })
+    probs = await col.find_one(
+        {
+            "pool": params.pool,
+            "hunger": params.hunger,
+            "difficulty": params.difficulty,
+            "strategy": strategy,
+        }
+    )
 
     if probs is None:
         probs = __simulate(params, strategy)
 
         # Save the probabilities
-        await col.insert_one({
-            "pool": params.pool,
-            "hunger": params.hunger,
-            "difficulty": params.difficulty,
-            "strategy": strategy,
-            "probabilities": probs
-        })
+        await col.insert_one(
+            {
+                "pool": params.pool,
+                "hunger": params.hunger,
+                "difficulty": params.difficulty,
+                "strategy": strategy,
+                "probabilities": probs,
+            }
+        )
     else:
         probabilities = probs["probabilities"]
-        probs = defaultdict(lambda: 0)
+        probs = defaultdict(int)
         probs.update(probabilities)
 
     return probs
 
 
 def __simulate(params, strategy):
-    """Simulate 1000 rolls and calculate the probabilities of each potential outcome."""
+    """Simulate 10,000 rolls and calculate the probabilities of each potential outcome."""
     trials = 10000
-    totals = defaultdict(lambda: 0)
-    outcomes = defaultdict(lambda: 0)
+    totals = defaultdict(int)
+    outcomes = defaultdict(int)
 
     for _ in range(trials):
         outcome = inconnu.Roll(params.pool, params.hunger, params.difficulty)
@@ -220,7 +225,7 @@ def __simulate(params, strategy):
         totals["margin"] += outcome.margin
         outcomes[outcome.outcome] += 1
 
-    probabilities = defaultdict(lambda: 0)
+    probabilities = defaultdict(int)
     probabilities["total_successes"] = totals["total_successes"] / trials
     probabilities["margin"] = totals["margin"] / trials
 

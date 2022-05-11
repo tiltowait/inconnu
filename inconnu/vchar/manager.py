@@ -42,38 +42,22 @@ class CharacterManager:
         guild, user, _ = self._get_ids(guild, user)
 
         if name is not None:
-            if char := self.id_cache.get(name):
+            if char := self.id_cache.get(name[:24]):
                 self._validate(guild, user, char)
                 return char
 
-            # Attempt to pull from the user cache
+            # Retrieve all of the user's characters on the guild, which also
+            # populates the ID cache
             user_chars = await self.fetchall(guild, user)
+
+            # We could check the ID cache again, but this is only a tiny bit
+            # slower, so let's avoid code duplication
             for char in user_chars:
                 if char.name.lower() == name.lower():
-                    return char
-
-            # Attempt to pull from the database
-            try:
-                if char := await self._id_fetch(name):
-                    self.id_cache[char.id] = char
                     self._validate(guild, user, char)
                     return char
 
-            except bson.errors.InvalidId:
-                # They might have typed something in instead of selecting from
-                # the list, or ...
-                #
-                # We're dealing with that pernicious and frequently resurfacing
-                # Discord error: instead of character ID, the bot is getting
-                # the character name, so let's check all of the user's
-                # characters on this guild. No need for a special cache, as
-                # this bug is uncommon.
-                user_chars = await self.fetchall(guild, user)
-                for user_char in user_chars:
-                    if user_char.name == name:
-                        return user_char
-
-            # All of our fallbacks failed
+            # The given name doesn't match any character ID or name
             raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
 
         # No character name given. If the user only has one character, then we
@@ -107,10 +91,14 @@ class CharacterManager:
         characters = []
         async for char_params in cursor:
             character = inconnu.VChar(char_params)
-            characters.append(character)
 
             if character.id not in self.id_cache:
+                characters.append(character)
                 self.id_cache[character.id] = character
+            else:
+                # Use the already cached character. This will probably never
+                # happen, but we'll put it here just in case
+                characters.append(self.id_cache[character.id])
 
         self.user_cache[key] = characters
         self.all_fetched[key] = True
@@ -267,22 +255,3 @@ class CharacterManager:
         if user and char.user != user:
             if not self._is_admin(guild, user):
                 raise LookupError(f"**{char.name}** doesn't belong to this user!")
-
-    async def _id_fetch(self, charid):
-        """Attempt to fetch a character by ID."""
-        if re.search(r"\d", charid):
-            # There is a bizarre Discord bug where it sometimes just ... gives
-            # garbage characters at the end of the ObjectId string. ObjectIds
-            # are always the same length, so we can try simply lopping off the
-            # trailing characters.
-            if char_params := await self.collection.find_one({"_id": ObjectId(charid[:24])}):
-                return inconnu.VChar(char_params)
-
-            # The ObjectId is valid, but we didn't find a character. Maybe they
-            # hit on a lucky string of random characters, or they deleted the
-            # character in a different channel, then hit enter, because they're
-            # weird like that.
-            raise errors.CharacterNotFoundError(f"Character not found!")
-
-        # There are no numbers in the charid
-        return None

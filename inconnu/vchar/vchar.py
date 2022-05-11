@@ -43,7 +43,7 @@ class VChar:
     VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane"]
 
     def __init__(self, params: dict):
-        self._params = params
+        self._params = copy.deepcopy(params)
         self.object_id = params["_id"]
         self.id = str(params["_id"])  # pylint: disable=invalid-name
         self.find_query = {"_id": self._params["_id"]}
@@ -460,8 +460,10 @@ class VChar:
             universals = filter(lambda t: t not in VChar.VAMPIRE_TRAITS, UNIVERSAL_TRAITS)
 
         for universal in universals:
-            rating = getattr(self, universal.lower())
-            my_traits[universal] = rating
+            # Only add universal traits if they might match the trait
+            universal = universal.lower()
+            if universal.startswith(trait):
+                my_traits[universal] = getattr(self, universal)
 
         matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait)]
 

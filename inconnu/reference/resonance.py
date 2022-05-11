@@ -23,49 +23,42 @@ __EMOTIONS = {
     "Sanguine": "Horny, happy, addicted, active, flighty, enthusiastic",
     "Animal Blood": "No emotion",
     "Empty": "No emotion",
+    None: "No notable emotions",
 }
 
-RESONANCES = list(__DISCIPLINES.keys())
+RESONANCES = list(__DISCIPLINES)
 
 
 async def random_temperament(ctx, res: str):
     """Generate a random temperament for a given resonance."""
     temperament = __get_temperament()
-
-    if await inconnu.settings.accessible(ctx.user):
-        await __display_text(ctx, temperament, res, None)
-    else:
-        await __display_embed(ctx, temperament, res, None)
+    if temperament == "Negligible":
+        res = None
+    await __display_embed(ctx, temperament, res, None)
 
 
 async def resonance(ctx):
     """Generate and display a resonance."""
     temperament = __get_temperament()
-    die, res = __get_resonance()
-
-    if await inconnu.settings.accessible(ctx.user):
-        await __display_text(ctx, temperament, res, die)
+    if temperament != "Negligible":
+        die, res = __get_resonance()
     else:
-        await __display_embed(ctx, temperament, res, die)
+        die = None
+        res = None
 
-
-async def __display_text(ctx, temperament, res, die):
-    """Display the resonance in text mode."""
-    contents = []
-    contents.append(f"{temperament} {res} Resonance\n")
-    contents.append(f"Disciplines: {__DISCIPLINES[res]}")
-    contents.append(f"Emotions & Conditions: {__EMOTIONS[res]}")
-    if die:
-        contents.append(f"```Rolled {die} on the Resonance roll.```")
-
-    await ctx.respond("\n".join(contents))
+    await __display_embed(ctx, temperament, res, die)
 
 
 async def __display_embed(ctx, temperament, res, die):
     """Display the resonance in an embed."""
-    embed = discord.Embed(title=f"{temperament} {res} Resonance")
+    if res:
+        title = f"{temperament} {res} Resonance"
+    else:
+        title = f"{temperament} Resonance"
+
+    embed = discord.Embed(title=title)
     embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
-    embed.add_field(name="Disciplines", value=__DISCIPLINES[res])
+    embed.add_field(name="Disciplines", value=__DISCIPLINES.get(res, "None"))
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[res])
     if die:
         embed.set_footer(text=f"Rolled {die} for the Resonance")

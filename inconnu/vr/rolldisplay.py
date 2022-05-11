@@ -333,7 +333,18 @@ class RollDisplay:
 
         # We haven't re-rolled
 
-        if self.outcome.can_reroll:
+        if not self.outcome.can_reroll:
+            # They don't have any Attributes in their pool. This will only show
+            # if they used a trait in the roll. If they just used numbers, then
+            # they will always get re-roll buttons.
+            buttons.append(
+                Button(
+                    label="WP Unavailable (p.158)",
+                    style=discord.ButtonStyle.secondary,
+                    disabled=True,
+                )
+            )
+        else:
             buttons.append(
                 Button(
                     label="Re-Roll Failures",

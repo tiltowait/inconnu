@@ -4,6 +4,8 @@ import random
 
 import bson
 
+from inconnu.constants import ATTRIBUTES
+
 from .dicethrow import DiceThrow
 
 __MAX_REROLL = 3
@@ -48,6 +50,14 @@ class Roll:
             self.syntax = " ".join(map(str, syntax))
         else:
             self.syntax = " ".join(syntax.split())
+
+        # We can use WP if an Attribute is used in the roll
+        self.can_reroll = True
+
+        if self.pool_str:
+            elements = set(self.pool_str.split())
+            if not elements.intersection(ATTRIBUTES):
+                self.can_reroll = False
 
     # We could technically do this with stored properties, but the math is extremely
     # fast, so we will do it this way for legibility. This will also more easily let
@@ -159,7 +169,8 @@ class Roll:
         bestial = self.hunger.ones > 0
         return bestial and not self.is_successful
 
-    # Re-roll strategies
+    # Re-roll strategies. None take into account whether you have an attribute
+    # in the pool! Use can_reroll for that.
 
     @property
     def can_reroll_failures(self):

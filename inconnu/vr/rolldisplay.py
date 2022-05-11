@@ -333,7 +333,7 @@ class RollDisplay:
 
         # We haven't re-rolled
 
-        if "Willpower" not in (self.outcome.pool_str or ""):
+        if self.outcome.can_reroll:
             buttons.append(
                 Button(
                     label="Re-Roll Failures",

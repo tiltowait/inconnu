@@ -20,28 +20,48 @@ GROUPED_TRAITS = {
     },
     "SKILLS": {
         "Physical": [
-            "Athletics", "Brawl", "Craft",
-            "Drive", "Firearms", "Larceny",
-            "Melee", "Stealth", "Survival"
+            "Athletics",
+            "Brawl",
+            "Craft",
+            "Drive",
+            "Firearms",
+            "Larceny",
+            "Melee",
+            "Stealth",
+            "Survival",
         ],
         "Social": [
-            "AnimalKen", "Etiquette", "Insight",
-            "Intimidation", "Leadership", "Performance",
-            "Persuasion", "Streetwise", "Subterfuge"
+            "AnimalKen",
+            "Etiquette",
+            "Insight",
+            "Intimidation",
+            "Leadership",
+            "Performance",
+            "Persuasion",
+            "Streetwise",
+            "Subterfuge",
         ],
         "Mental": [
-            "Academics", "Awareness", "Finance",
-            "Investigation", "Medicine", "Occult",
-            "Politics", "Science", "Technology"
+            "Academics",
+            "Awareness",
+            "Finance",
+            "Investigation",
+            "Medicine",
+            "Occult",
+            "Politics",
+            "Science",
+            "Technology",
         ],
-    }
+    },
 }
 
+ATTRIBUTES = set(sum(GROUPED_TRAITS["ATTRIBUTES"].values(), []))
 FLAT_TRAITS = lambda: sum(FlatDict(GROUPED_TRAITS).values(), [])
 
 UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]
 
-ROUSE_FAIL_COLOR = 0xc70f0f
+ROUSE_FAIL_COLOR = 0xC70F0F
+
 
 class Damage(str, Enum):
     """An enum for damage types."""

@@ -461,9 +461,8 @@ class VChar:
 
         for universal in universals:
             # Only add universal traits if they might match the trait
-            universal = universal.lower()
-            if universal.startswith(trait):
-                my_traits[universal] = getattr(self, universal)
+            if universal.lower().startswith(trait):
+                my_traits[universal] = getattr(self, universal.lower())
 
         matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait)]
 

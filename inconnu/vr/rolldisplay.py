@@ -37,9 +37,16 @@ class _RollControls(inconnu.views.DisablingView):
         self.callback = callback
         self.owner = owner
 
+        stop = True
         for button in buttons:
+            if not button.disabled:
+                stop = False
             button.callback = self.button_pressed
             self.add_item(button)
+
+        if stop:
+            # All of the buttons are disabled, so we don't need to listen
+            self.stop()
 
     async def button_pressed(self, interaction):
         """Handle button presses."""

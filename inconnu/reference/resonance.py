@@ -41,7 +41,8 @@ async def resonance(ctx):
     """Generate and display a resonance."""
     temperament = __get_temperament()
     if temperament != "Negligible":
-        die, res = __get_resonance()
+        add_empty = await inconnu.settings.add_empty_resonance(ctx.guild)
+        die, res = __get_resonance(add_empty)
     else:
         die = None
         res = None
@@ -84,9 +85,10 @@ def __get_temperament() -> str:
     return "Acute"
 
 
-def __get_resonance() -> Tuple[int, str]:
+def __get_resonance(add_empty: bool) -> Tuple[int, str]:
     """Return a random resonance plus its associated die."""
-    die = random.randint(1, 10)
+    cap = 12 if add_empty else 10
+    die = random.randint(1, cap)
 
     if 1 <= die <= 3:
         return (die, "Phlegmatic")
@@ -97,4 +99,7 @@ def __get_resonance() -> Tuple[int, str]:
     if 7 <= die <= 8:
         return (die, "Choleric")
 
-    return (die, "Sanguine")
+    if 9 <= die <= 10:
+        return (die, "Sanguine")
+
+    return (die, "Empty")

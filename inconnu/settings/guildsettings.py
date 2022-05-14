@@ -3,12 +3,12 @@
 from enum import Enum
 
 
-
 class GuildSettings:
     """
     A container class that represents guild settings.
     NOTE: It does *NOT* handle any database manipulation!
     """
+
     # pylint: disable=too-few-public-methods
 
     def __init__(self, parameters):
@@ -18,6 +18,7 @@ class GuildSettings:
         self.experience_permissions = settings.get("experience_permissions", ExpPerms.UNRESTRICTED)
         self.oblivion_stains = settings.get("oblivion_stains", [1, 10])
         self.update_channel = settings.get("update_channel")
+        self.add_empty_resonance = settings.get("add_empty_resonance", False)
 
 
 class ExpPerms(str, Enum):

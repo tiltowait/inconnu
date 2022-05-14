@@ -21,6 +21,11 @@ _mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
 db = _mongoclient.inconnu
 
 
+def fence(string: str):
+    """Add a code fence around a string."""
+    return f"`{string}`"
+
+
 async def get_message(inter):
     """Get the message from an interaction."""
     if isinstance(inter, discord.Message):

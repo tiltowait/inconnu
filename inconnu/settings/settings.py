@@ -13,7 +13,6 @@ class Settings:
     _guild_cache = {}
     _user_cache = {}
 
-
     # Accessibility
 
     async def accessible(self, user):
@@ -24,7 +23,6 @@ class Settings:
 
         guild = await self._fetch_guild(user.guild)
         return guild.accessibility
-
 
     async def set_accessibility(self, ctx, enabled: bool, scope: str):
         """
@@ -41,7 +39,7 @@ class Settings:
                 response = "**Accessibility mode** enabled."
             else:
                 response = "**Accessibility mode** disabled. Note: the server may override."
-        else: # Server-wide setting
+        else:  # Server-wide setting
             if not ctx.user.guild_permissions.administrator:
                 raise PermissionError("Sorry, only admins can set server-wide accessibility mode.")
 
@@ -54,7 +52,6 @@ class Settings:
 
         return response
 
-
     # XP Permissions
 
     async def can_adjust_current_xp(self, ctx) -> bool:
@@ -65,7 +62,6 @@ class Settings:
         guild = await self._fetch_guild(ctx.guild)
         return guild.experience_permissions in [ExpPerms.UNRESTRICTED, ExpPerms.UNSPENT_ONLY]
 
-
     async def can_adjust_lifetime_xp(self, ctx) -> bool:
         """Whether the user has permission to adjust lifetime XP."""
         if ctx.user.guild_permissions.administrator:
@@ -73,7 +69,6 @@ class Settings:
 
         guild = await self._fetch_guild(ctx.guild)
         return guild.experience_permissions in [ExpPerms.UNRESTRICTED, ExpPerms.LIFETIME_ONLY]
-
 
     async def xp_permissions(self, guild):
         """Get the XP permissions."""
@@ -88,7 +83,6 @@ class Settings:
                 return "Users may adjust lifetime XP only."
             case ExpPerms.ADMIN_ONLY:
                 return "Only admins may adjust XP totals."
-
 
     async def set_xp_permissions(self, ctx, permissions):
         """
@@ -115,14 +109,12 @@ class Settings:
 
         return response
 
-
     # Oblivion stains
 
     async def oblivion_stains(self, guild) -> list:
         """Retrieve the Rouse results that grant Oblivion stains."""
         guild = await self._fetch_guild(guild)
         return guild.oblivion_stains
-
 
     async def set_oblivion_stains(self, ctx, stains: int):
         """Set which dice outcomes will give stains for Oblivion rouse checks."""
@@ -144,17 +136,15 @@ class Settings:
         await self._set_key(ctx.guild, "oblivion_stains", stains)
         return response
 
-
     # Update Channels
 
     async def update_channel(self, guild: discord.Guild):
         """Retrieve the ID of the guild's update channel, if any."""
         guild_settings = await self._fetch_guild(guild)
-        if (update_channel := guild_settings.update_channel):
+        if update_channel := guild_settings.update_channel:
             return guild.get_channel(update_channel)
 
         return None
-
 
     async def set_update_channel(self, ctx, channel: discord.TextChannel):
         """Set the guild's update channel."""
@@ -169,6 +159,20 @@ class Settings:
         await self._set_key(ctx.guild, "update_channel", None)
         return "Un-set the update channel."
 
+    async def add_empty_resonance(self, guild: discord.Guild):
+        """Whether to add Empty Resonance to the Resonance table."""
+        guild = await self._fetch_guild(guild)
+        return guild.add_empty_resonance
+
+    async def set_empty_resonance(self, ctx, add_empty: bool) -> str:
+        """Set whether to add Empty Resonance to the Resonance table."""
+        if not ctx.user.guild_permissions.administrator:
+            raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
+
+        await self._set_key(ctx.guild, "add_empty_resonance", add_empty)
+        will_or_not = "will" if add_empty else "will not"
+
+        return f"Empty Resonance **{will_or_not}** be added to the Resonance table."
 
     async def _set_key(self, scope, key: str, value):
         """
@@ -187,61 +191,53 @@ class Settings:
 
         return True
 
-
     async def _set_guild(self, guild: discord.Guild, key: str, value):
         """Enable or disable a guild setting."""
-        res = await inconnu.db.guilds.update_one({ "guild": guild.id }, {
-            "$set": {
-                f"settings.{key}": value
-            }
-        })
+        res = await inconnu.db.guilds.update_one(
+            {"guild": guild.id}, {"$set": {f"settings.{key}": value}}
+        )
         if res.matched_count == 0:
-            await inconnu.db.guilds.insert_one({ "guild": guild.id, "settings": { key: value } })
+            await inconnu.db.guilds.insert_one({"guild": guild.id, "settings": {key: value}})
 
         # Update the cache
         guild = await self._fetch_guild(guild)
         setattr(guild, key, value)
 
-
     async def _set_user(self, user: discord.Member, key: str, value):
         """Enable or disable a user setting."""
-        res = await inconnu.db.users.update_one({ "user": user.id }, {
-            "$set": {
-                f"settings.{key}": value
-            }
-        })
+        res = await inconnu.db.users.update_one(
+            {"user": user.id}, {"$set": {f"settings.{key}": value}}
+        )
         if res.matched_count == 0:
-            await inconnu.db.users.insert_one({ "user": user.id, "settings": { key: value } })
+            await inconnu.db.users.insert_one({"user": user.id, "settings": {key: value}})
 
         # Update the cache
         user_settings = await self._fetch_user(user)
         user_settings.setdefault("settings", {})[key] = value
         self._user_cache[user.id] = user_settings
 
-
     async def _fetch_user(self, user: discord.User):
         """Fetch a user."""
         if not isinstance(user, int):
             user = user.id
 
-        if (user_settings := self._user_cache.get(user)):
+        if user_settings := self._user_cache.get(user):
             return user_settings
 
         # See if it's in the database
-        if not (user_settings := await inconnu.db.users.find_one({ "user": user })):
-            user_settings = { "user": user }
+        if not (user_settings := await inconnu.db.users.find_one({"user": user})):
+            user_settings = {"user": user}
 
         self._user_cache[user] = user_settings
 
         return user_settings
 
-
     async def _fetch_guild(self, guild: discord.Guild) -> GuildSettings:
         """Fetch a guild."""
-        if (guild_settings := self._guild_cache.get(guild.id)):
+        if guild_settings := self._guild_cache.get(guild.id):
             return guild_settings
 
-        guild_params = await inconnu.db.guilds.find_one({"guild": guild.id }) or {}
+        guild_params = await inconnu.db.guilds.find_one({"guild": guild.id}) or {}
         if not guild_params:
             # In case we missed them somehow
             await inconnu.stats.guild_joined(guild)

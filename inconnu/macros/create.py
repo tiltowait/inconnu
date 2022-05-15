@@ -1,11 +1,10 @@
 """macros/create.py - Creating user macros."""
 # pylint: disable=too-many-arguments
 
-import asyncio
-
 import inconnu
-from . import macro_common
+
 from ..vchar import errors
+from . import macro_common
 
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=creation"
 
@@ -20,7 +19,7 @@ async def create(
     reroll_rouses: bool,
     staining: str,
     comment: str,
-    character: str
+    character: str,
 ):
     """Create a macro if the syntax is valid."""
     try:
@@ -38,7 +37,7 @@ async def create(
                 ctx,
                 "Macro names can only contain letters and underscores.",
                 character=character.name,
-                help_url=__HELP_URL
+                help_url=__HELP_URL,
             )
             return
 
@@ -50,8 +49,10 @@ async def create(
         await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
 
     except (
-        SyntaxError, errors.AmbiguousTraitError, errors.TraitNotFoundError,
-        errors.MacroAlreadyExistsError
+        SyntaxError,
+        errors.AmbiguousTraitError,
+        errors.TraitNotFoundError,
+        errors.MacroAlreadyExistsError,
     ) as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL, character=character.name)
     except inconnu.common.FetchError:

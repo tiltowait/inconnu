@@ -4,8 +4,9 @@ import re
 from distutils.util import strtobool
 
 import inconnu
+
+from ..vchar import VChar, errors
 from . import macro_common
-from ..vchar import errors, VChar
 
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=updating"
 __VALID_KEYS = {
@@ -16,7 +17,7 @@ __VALID_KEYS = {
     "rouses": "The number of Rouse checks to make",
     "reroll_rouses": "Whether to re-roll the Rouse checks",
     "staining": "Whether the Rouse checks can stain (Yes/No)",
-    "comment": "The macro's comment"
+    "comment": "The macro's comment",
 }
 
 
@@ -31,30 +32,28 @@ async def update(ctx, macro: str, syntax: str, character: str):
         macro_update = __validate_parameters(character, parameters)
 
         macro_name = await character.update_macro(macro, macro_update)
-
         await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
 
     except (
-        errors.MacroNotFoundError, errors.AmbiguousTraitError, errors.TraitNotFoundError,
-        SyntaxError, ValueError
+        errors.MacroNotFoundError,
+        errors.AmbiguousTraitError,
+        errors.TraitNotFoundError,
+        SyntaxError,
+        ValueError,
     ) as err:
         if isinstance(err, (SyntaxError, ValueError)):
             await inconnu.log.log_event(
-                "macro_update_error",
-                user=ctx.user.id,
-                charid=character.id,
-                syntax=syntax
+                "macro_update_error", user=ctx.user.id, charid=character.id, syntax=syntax
             )
 
         keys = [f"`{key}`: {value}" for key, value in __VALID_KEYS.items()]
         instructions = [
             ("Instructions", "Update the macro with one or more KEY=VALUE pairs."),
-            ("Valid Keys", "\n".join(keys))
+            ("Valid Keys", "\n".join(keys)),
         ]
 
-        await inconnu.common.present_error(ctx, err, *instructions,
-            help_url=__HELP_URL,
-            character=character.name
+        await inconnu.common.present_error(
+            ctx, err, *instructions, help_url=__HELP_URL, character=character.name
         )
     except inconnu.common.FetchError:
         pass
@@ -62,7 +61,7 @@ async def update(ctx, macro: str, syntax: str, character: str):
 
 def __parameterize(parameters):
     """Convert multi-word parameter/value pairs to a dictionary."""
-    parameters = re.sub(r"\s*=\s*", r"=", parameters) # Remove gaps between keys and values
+    parameters = re.sub(r"\s*=\s*", r"=", parameters)  # Remove gaps between keys and values
     pattern = re.compile(r"([A-z]+)=")
 
     params = {}
@@ -70,7 +69,7 @@ def __parameterize(parameters):
     match = pattern.match(parameters)
     while match is not None and parameters:
         key = match.groups(0)[0]
-        parameters = parameters[match.span()[1]:]
+        parameters = parameters[match.span()[1] :]
 
         # Get the value
         match = pattern.search(parameters)
@@ -78,8 +77,8 @@ def __parameterize(parameters):
             value = parameters
             parameters = ""
         else:
-            value = parameters[:match.span()[0]]
-            parameters = parameters[match.span()[0]:]
+            value = parameters[: match.span()[0]]
+            parameters = parameters[match.span()[0] :]
 
         params[key] = value.strip()
         match = pattern.match(parameters)

@@ -8,7 +8,7 @@ import math
 from collections import Counter, OrderedDict
 from enum import Enum
 from types import SimpleNamespace
-from typing import List
+from typing import Dict, List
 
 from bson.objectid import ObjectId
 
@@ -570,33 +570,34 @@ class VChar:
     @property
     def macros(self):
         """The user's macros."""
-        if (_macros := self._params.get("macros")) is not None:
-            _macros = copy.deepcopy(_macros)
-            raw_macros = []
+        _macros = copy.deepcopy(self._params.get("macros", []))
+        _macros = sorted(_macros, key=lambda s: s["name"].casefold())
 
-            for name, macro in sorted(_macros.items(), key=lambda s: s[0].casefold()):
-                macro["name"] = name
+        for macro in _macros:
+            if not self.is_vampire:
+                macro["hunger"] = False
 
-                macro.setdefault("staining", "show")
-                if not self.is_vampire:
-                    macro["hunger"] = False
+        return [SimpleNamespace(**macro) for macro in _macros]
 
-                raw_macros.append(macro)
+    def _macro_index(self, search: str) -> Dict:
+        """Find a macro's index. Raises MacroNotFoundError if not found."""
+        lower = search.lower()
+        for index, macro in enumerate(self._params.get("macros", [])):
+            if macro["name"].lower() == lower:
+                return index
 
-            return [SimpleNamespace(**macro) for macro in raw_macros]
-
-        return []
+        raise errors.MacroNotFoundError(f"{self.name} has no macro named `{search}`.")
 
     def find_macro(self, search):
         """
         Return a macro object.
         Raises MacroNotFoundError if the macro wasn't found.
         """
-        matches = [macro for macro in self.macros if macro.name.lower() == search.lower()]
-        if not matches:
-            raise errors.MacroNotFoundError(f"{self.name} has no macro named `{search}`.")
+        index = self._macro_index(search)
 
-        return matches[0]
+        # This is faster than using self.macros
+        raw_macro = self._params["macros"][index]
+        return SimpleNamespace(**raw_macro)
 
     async def add_macro(
         self,
@@ -614,47 +615,51 @@ class VChar:
         Raises MacroAlreadyExistsError if the macro already exists.
         """
         try:
-            _ = self.find_macro(macro)
+            _ = self._macro_index(macro)
             raise errors.MacroAlreadyExistsError(f"You already have a macro named `{macro}`.")
         except errors.MacroNotFoundError:
             pass
 
         macro_doc = {
+            "name": macro,
             "pool": list(map(str, pool)),
+            "hunger": hunger,
+            "difficulty": difficulty,
             "rouses": rouses,
             "reroll_rouses": reroll_rouses,
             "staining": staining,
-            "hunger": hunger,
-            "difficulty": difficulty,
             "comment": comment,
         }
-        await self._async_collection.update_one(
-            self.find_query, {"$set": {f"macros.{macro}": macro_doc}}
-        )
-        self._params.setdefault("macros", {})[macro] = macro_doc
+        await self._async_collection.update_one(self.find_query, {"$push": {"macros": macro_doc}})
+        self._params.setdefault("macros", []).append(macro_doc)
 
-    async def update_macro(self, macro: str, update: dict):
+    async def update_macro(self, search: str, update: dict):
         """Update a macro."""
-        macro = self.find_macro(macro)  # For getting the exact name
+        index = self._macro_index(search)
+
         for param, val in update.items():
-            self._params["macros"][macro.name][param] = val  # Update cache
+            # Update the macro in the database
             await self._async_collection.update_one(
-                self.find_query, {"$set": {f"macros.{macro.name}.{param}": val}}
+                self.find_query, {"$set": {f"macros.{index}.{param}": val}}
             )
 
-        return macro.name
+            # Update the cache
+            self._params["macros"][index][param] = val
 
-    async def delete_macro(self, macro):
+        return self._params["macros"][index]["name"]
+
+    async def delete_macro(self, search):
         """
         Delete a macro.
         Raises MacroNotFoundError if the macro doesn't exist.
         """
-        macro = self.find_macro(macro)
-        del self._params["macros"][macro.name]
+        index = self._macro_index(search)
+        macro = self._params["macros"][index]
 
         await self._async_collection.update_one(
-            self.find_query, {"$unset": {f"macros.{macro.name}": ""}}
+            self.find_query, {"$pull": {"macros": {"name": macro["name"]}}}
         )
+        del self._params["macros"][index]
 
     # Specialized mutators
 

@@ -1,7 +1,5 @@
 """macros/delete.py - Deleting character macros."""
 
-import asyncio
-
 from .. import common
 from ..vchar import errors
 
@@ -14,10 +12,8 @@ async def delete(ctx, macro_name: str, character=None):
         tip = f"`/macro delete` `macro:{macro_name}` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
 
-        await asyncio.gather(
-            character.delete_macro(macro_name),
-            ctx.respond(f"Deleted **{character.name}'s** `{macro_name}` macro.", ephemeral=True)
-        )
+        await character.delete_macro(macro_name)
+        await ctx.respond(f"Deleted **{character.name}'s** `{macro_name}` macro.", ephemeral=True)
 
     except errors.MacroNotFoundError as err:
         await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)

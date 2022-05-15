@@ -571,7 +571,6 @@ class VChar:
     def macros(self):
         """The user's macros."""
         _macros = copy.deepcopy(self._params.get("macros", []))
-        _macros = sorted(_macros, key=lambda s: s["name"].casefold())
 
         for macro in _macros:
             if not self.is_vampire:
@@ -594,9 +593,7 @@ class VChar:
         Raises MacroNotFoundError if the macro wasn't found.
         """
         index = self._macro_index(search)
-
-        # This is faster than using self.macros
-        raw_macro = self._params["macros"][index]
+        raw_macro = self.macros[index]
         return SimpleNamespace(**raw_macro)
 
     async def add_macro(
@@ -630,23 +627,49 @@ class VChar:
             "staining": staining,
             "comment": comment,
         }
-        await self._async_collection.update_one(self.find_query, {"$push": {"macros": macro_doc}})
-        self._params.setdefault("macros", []).append(macro_doc)
+        await self._async_collection.update_one(
+            self.find_query,
+            {
+                "$push": {
+                    "macros": {
+                        "$each": [macro_doc],
+                        "$sort": {"name": 1},
+                    },
+                }
+            },
+            collation={"locale": "en"},
+        )
+        _macros = self._params.setdefault("macros", [])
+        _macros.append(macro_doc)
+        self._params["macros"] = sorted(_macros, key=lambda s: s["name"].casefold())
 
     async def update_macro(self, search: str, update: dict):
         """Update a macro."""
         index = self._macro_index(search)
+        update_doc = {f"macros.{index}.{k}": v for k, v in update.items()}
 
-        for param, val in update.items():
-            # Update the macro in the database
+        await self._async_collection.update_one(self.find_query, {"$set": update_doc})
+        self._params["macros"][index].update(update)
+        name = self._params["macros"][index]["name"]
+
+        if "name" in update:
+            # Sort both the db and the cache
+            _macros = self._params["macros"]
+            self._params["macros"] = sorted(_macros, key=lambda s: s["name"].casefold())
             await self._async_collection.update_one(
-                self.find_query, {"$set": {f"macros.{index}.{param}": val}}
+                self.find_query,
+                {
+                    "$push": {
+                        "macros": {
+                            "$each": [],
+                            "$sort": {"name": 1},
+                        }
+                    }
+                },
+                collation={"locale": "en"},
             )
 
-            # Update the cache
-            self._params["macros"][index][param] = val
-
-        return self._params["macros"][index]["name"]
+        return name
 
     async def delete_macro(self, search):
         """

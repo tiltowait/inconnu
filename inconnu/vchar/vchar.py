@@ -434,12 +434,9 @@ class VChar:
     # Traits
 
     @property
-    def traits(self):
+    def traits(self) -> Dict[str, int]:
         """A dictionary of the user's traits."""
-        _traits = self._params.get(_Properties.TRAITS, {})
-        if not _traits:
-            self._params[_Properties.TRAITS] = {}
-        return OrderedDict(sorted(_traits.items(), key=lambda s: s[0].casefold()))
+        return self._params.setdefault(_Properties.TRAITS, {}).copy()
 
     def has_trait(self, trait: str) -> bool:
         """Determine whether a character has a given trait."""

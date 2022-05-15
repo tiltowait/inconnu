@@ -48,7 +48,10 @@ async def __list_embed(ctx, character, owner):
 
     # The remaining traits are user-defined
     if char_traits:
-        traits = [f"***{trait}:*** {rating}" for trait, rating in char_traits.items()]
+        # Sort them first
+        user_defined = sorted(char_traits.items(), key=lambda s: s[0].casefold())
+
+        traits = [f"***{trait}:*** {rating}" for trait, rating in user_defined]
         traits = "\n".join(traits)
         embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
 

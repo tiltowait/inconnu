@@ -17,6 +17,7 @@ __VALID_KEYS = {
     "rouses": "The number of Rouse checks to make",
     "reroll_rouses": "Whether to re-roll the Rouse checks",
     "staining": "Whether the Rouse checks can stain (Yes/No)",
+    "hunt": "Provide an option to slake Hunger if the roll is successful",
     "comment": "The macro's comment",
 }
 
@@ -106,6 +107,8 @@ def __validate_parameters(character: VChar, parameters: dict):
         #   comment
         #   rouses/rouse
         #   reroll_rouses/reroll
+        #   stains/stain/staining
+        #   hunt
         if key == "name":
             if not macro_common.is_macro_name_valid(value):
                 raise ValueError(f"`{value}` is not a valid macro name.")
@@ -149,6 +152,13 @@ def __validate_parameters(character: VChar, parameters: dict):
                 macro_update["staining"] = "no"
             else:
                 raise ValueError("`stains` must be `YES` or `NO`.")
+
+        elif key == "hunt":
+            try:
+                value = bool(strtobool(value))
+                macro_update["hunt"] = value
+            except ValueError:
+                raise ValueError("`hunt` requires yes/now or true/false.") from ValueError
 
         else:
             raise ValueError(f"Unknown key `{key}`.")

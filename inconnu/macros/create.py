@@ -18,6 +18,7 @@ async def create(
     rouses: int,
     reroll_rouses: bool,
     staining: str,
+    hunt: bool,
     comment: str,
     character: str,
 ):
@@ -44,7 +45,7 @@ async def create(
         pool = inconnu.vr.RollParser(character, pool).pool_stack
 
         await character.add_macro(
-            name, pool, hunger, rouses, reroll_rouses, staining, diff, comment
+            name, pool, hunger, diff, rouses, reroll_rouses, staining, hunt, comment
         )
         await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
 

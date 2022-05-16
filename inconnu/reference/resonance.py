@@ -37,7 +37,7 @@ async def random_temperament(ctx, res: str):
     await __display_embed(ctx, temperament, res, None)
 
 
-async def resonance(ctx):
+async def resonance(ctx, **kwargs):
     """Generate and display a resonance."""
     temperament = __get_temperament()
     if temperament != "Negligible":
@@ -47,10 +47,10 @@ async def resonance(ctx):
         die = None
         res = None
 
-    await __display_embed(ctx, temperament, res, die)
+    await __display_embed(ctx, temperament, res, die, **kwargs)
 
 
-async def __display_embed(ctx, temperament, res, die):
+async def __display_embed(ctx, temperament, res, die, **kwargs):
     """Display the resonance in an embed."""
     if res:
         title = f"{temperament} {res} Resonance"
@@ -58,13 +58,16 @@ async def __display_embed(ctx, temperament, res, die):
         title = f"{temperament} Resonance"
 
     embed = discord.Embed(title=title)
-    embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
+    embed.set_author(
+        name=kwargs.get("character", ctx.user.display_name),
+        icon_url=inconnu.get_avatar(ctx.user),
+    )
     embed.add_field(name="Disciplines", value=__DISCIPLINES.get(res, "None"))
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[res])
     if die:
         embed.set_footer(text=f"Rolled {die} for the Resonance")
 
-    await ctx.respond(embed=embed)
+    await inconnu.respond(ctx)(embed=embed)
 
 
 def __get_temperament() -> str:

@@ -1,12 +1,18 @@
 """macros/roll.py - Rolling character macros."""
 
 import re
+from uuid import uuid4
 
-from ..vr import perform_roll, display_outcome
-from . import macro_common
+import discord
+from discord.ui import Button, View
+
+import inconnu
+
 from .. import common
 from ..misc import rouse
 from ..vchar import errors
+from ..vr import display_outcome, perform_roll
+from . import macro_common
 
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
 
@@ -16,7 +22,9 @@ async def roll(ctx, syntax: str, character=None):
     try:
         tip = f"`/vm` `syntax:{syntax}` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL)
-        macro_stack, hunger, difficulty = __normalize_syntax(syntax) # pylint: disable=unbalanced-tuple-unpacking
+        macro_stack, hunger, difficulty = __normalize_syntax(
+            syntax
+        )  # pylint: disable=unbalanced-tuple-unpacking
 
         if not macro_common.is_macro_name_valid(macro_stack[0]):
             raise ValueError("Macro names may only contain letters and underscores.")
@@ -32,12 +40,14 @@ async def roll(ctx, syntax: str, character=None):
         parameters.append(hunger)
         parameters.append(difficulty or macro.difficulty)
 
-        results = perform_roll(character, parameters)
+        outcome = perform_roll(character, parameters)
 
         # We show the rouse check first, because display_outcome() is blocking
         await __rouse(ctx, character, macro)
-        await display_outcome(ctx, ctx.user, character, results, macro.comment)
+        await display_outcome(ctx, ctx.user, character, outcome, macro.comment)
 
+        if macro.hunt and outcome.is_successful:
+            await __slake(ctx, character)
 
     except (ValueError, errors.MacroNotFoundError) as err:
         await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)
@@ -62,9 +72,34 @@ async def __rouse(ctx, character, macro):
 
     if macro.rouses > 0:
         await rouse(
-            ctx, macro.rouses, character.name, purpose, macro.reroll_rouses,
-            oblivion=macro.staining, message=msg
+            ctx,
+            macro.rouses,
+            character.name,
+            purpose,
+            macro.reroll_rouses,
+            oblivion=macro.staining,
+            message=msg,
         )
+
+
+async def __slake(ctx, character):
+    """Present a menu to slake Hunger."""
+    if character.hunger > 0:
+        # Show nothing if Hunger is 0
+        embed = discord.Embed(
+            title="Slake Hunger",
+            description="Click a button below to slake Hunger.",
+        )
+        embed.set_author(
+            name=ctx.author.display_name,
+            icon_url=inconnu.get_avatar(ctx.user),
+        )
+        embed.set_footer(
+            text="Red indicates harmful drinks (p.212). Slaking to 0 Hunger kills the victim."
+        )
+
+        view = _SlakeView(ctx.user, character)
+        view.message = await ctx.respond(embed=embed, view=view)
 
 
 def __normalize_syntax(syntax: str):
@@ -92,7 +127,7 @@ def __normalize_syntax(syntax: str):
     # here. We don't modify anything; the roll parser will do that for us. Instead,
     # we simply check for validity.
 
-    if params[1] is not None and params[1].lower() != "hunger": # "hunger" is a valid option here
+    if params[1] is not None and params[1].lower() != "hunger":  # "hunger" is a valid option here
         if not 0 <= int(params[1]) <= 5:
             raise ValueError("Hunger must be between 0 and 5.")
 
@@ -103,3 +138,64 @@ def __normalize_syntax(syntax: str):
             raise ValueError("Difficulty cannot be less than 0.")
 
     return params
+
+
+class _SlakeView(View):
+    """A View that allows the user to slake Hunger."""
+
+    CANCEL_SLAKE = -1
+
+    def __init__(self, owner, character):
+        super().__init__(timeout=600)
+        self.owner = owner
+        self.character = character
+        self.buttons = {}
+        self.message = None
+
+        for hunger in range(1, character.hunger + 1):
+            # Red buttons denote harmful drinks (or full drain)
+            if hunger == character.hunger:
+                label = "Drain"
+                button_style = discord.ButtonStyle.danger
+            elif hunger > 2:
+                label = str(hunger)
+                button_style = discord.ButtonStyle.danger
+            else:
+                label = str(hunger)
+                button_style = discord.ButtonStyle.primary
+
+            custom_id = str(uuid4())
+            self.buttons[custom_id] = hunger
+
+            button = Button(label=label, style=button_style, custom_id=custom_id, row=0)
+            button.callback = self.callback
+            self.add_item(button)
+
+        custom_id = str(uuid4())
+        self.buttons[custom_id] = _SlakeView.CANCEL_SLAKE
+
+        cancel = Button(
+            label="Don't Slake", style=discord.ButtonStyle.secondary, custom_id=custom_id, row=1
+        )
+        cancel.callback = self.callback
+        self.add_item(cancel)
+
+    async def callback(self, inter):
+        """Slake Hunger or cancel."""
+        if inter.user != self.owner:
+            await inter.response.send_message("This button doesn't belong to you!", ephemeral=True)
+            return
+
+        custom_id = inter.data["custom_id"]
+        slake_amount = self.buttons[custom_id]
+
+        if slake_amount == _SlakeView.CANCEL_SLAKE:
+            await inter.message.delete()
+        else:
+            await inter.message.delete()
+            await inconnu.misc.slake(inter, slake_amount, self.character)
+            await inconnu.reference.resonance(inter, character=self.character.name)
+
+    async def on_timeout(self):
+        """Delete the message."""
+        await self.message.delete()

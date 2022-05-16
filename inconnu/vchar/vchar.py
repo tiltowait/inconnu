@@ -590,18 +590,18 @@ class VChar:
         Raises MacroNotFoundError if the macro wasn't found.
         """
         index = self._macro_index(search)
-        raw_macro = self.macros[index]
-        return SimpleNamespace(**raw_macro)
+        return self.macros[index]
 
     async def add_macro(
         self,
         macro: str,
         pool: list,
         hunger: bool,
+        difficulty: int,
         rouses: int,
         reroll_rouses: int,
         staining: str,
-        difficulty: int,
+        hunt: bool,
         comment: str,
     ):
         """
@@ -622,6 +622,7 @@ class VChar:
             "rouses": rouses,
             "reroll_rouses": reroll_rouses,
             "staining": staining,
+            "hunt": hunt,
             "comment": comment,
         }
         await self._async_collection.update_one(

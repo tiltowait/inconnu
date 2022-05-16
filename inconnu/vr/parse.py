@@ -98,9 +98,11 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         await asyncio.gather(log_task, error_task)
 
 
-async def display_outcome(ctx, player, character: VChar, results, comment):
+async def display_outcome(
+    ctx, player, character: VChar, results, comment, listener=None, timeout=None
+):
     """Display the roll results."""
-    roll_display = RollDisplay(ctx, results, comment, character, player)
+    roll_display = RollDisplay(ctx, results, comment, character, player, listener, timeout)
 
     await roll_display.display()
 

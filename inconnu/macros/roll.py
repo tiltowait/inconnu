@@ -14,6 +14,7 @@ from ..vchar import errors
 from ..vr import display_outcome, perform_roll
 from . import macro_common
 
+__HUNT_LISTENERS = {}
 __HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
 
 
@@ -44,10 +45,15 @@ async def roll(ctx, syntax: str, character=None):
 
         # We show the rouse check first, because display_outcome() is blocking
         await __rouse(ctx, character, macro)
-        await display_outcome(ctx, ctx.user, character, outcome, macro.comment)
+        await display_outcome(
+            ctx, ctx.user, character, outcome, macro.comment, reroll_listener, remove_hunt_listener
+        )
 
-        if macro.hunt and outcome.is_successful:
-            await __slake(ctx, character)
+        if macro.hunt:
+            if outcome.is_successful:
+                await __slake(ctx, character, outcome)
+            else:
+                __HUNT_LISTENERS[outcome.id] = None
 
     except (ValueError, errors.MacroNotFoundError) as err:
         await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)
@@ -82,7 +88,27 @@ async def __rouse(ctx, character, macro):
         )
 
 
-async def __slake(ctx, character):
+async def reroll_listener(ctx, character, outcome):
+    """Listens to roll events."""
+    if outcome.id in __HUNT_LISTENERS:
+        old_inter = __HUNT_LISTENERS[outcome.id]
+        if old_inter is None and outcome.is_successful:
+            # They re-rolled into success
+            await __slake(ctx, character, None)
+        elif old_inter is not None and not outcome.is_successful:
+            # They re-rolled into failure
+            await old_inter.delete()
+
+        await remove_hunt_listener(outcome)
+
+
+async def remove_hunt_listener(outcome):
+    """Stop listening for reroll events."""
+    if outcome is not None and outcome.id in __HUNT_LISTENERS:
+        del __HUNT_LISTENERS[outcome.id]
+
+
+async def __slake(ctx, character, outcome):
     """Present a menu to slake Hunger."""
     if character.hunger > 0:
         # Show nothing if Hunger is 0
@@ -91,15 +117,18 @@ async def __slake(ctx, character):
             description="Click a button below to slake Hunger.",
         )
         embed.set_author(
-            name=ctx.author.display_name,
+            name=ctx.user.display_name,
             icon_url=inconnu.get_avatar(ctx.user),
         )
         embed.set_footer(
             text="Red indicates harmful drinks (p.212). Slaking to 0 Hunger kills the victim."
         )
 
-        view = _SlakeView(ctx.user, character)
-        view.message = await ctx.respond(embed=embed, view=view)
+        view = _SlakeView(ctx.user, character, outcome)
+        view.message = await inconnu.respond(ctx)(embed=embed, view=view)
+
+        if outcome is not None:
+            __HUNT_LISTENERS[outcome.id] = view.message
 
 
 def __normalize_syntax(syntax: str):
@@ -145,12 +174,13 @@ class _SlakeView(View):
 
     CANCEL_SLAKE = -1
 
-    def __init__(self, owner, character):
+    def __init__(self, owner, character, outcome):
         super().__init__(timeout=600)
         self.owner = owner
         self.character = character
         self.buttons = {}
         self.message = None
+        self.outcome = outcome
 
         for hunger in range(1, character.hunger + 1):
             # Red buttons denote harmful drinks (or full drain)
@@ -186,11 +216,13 @@ class _SlakeView(View):
             await inter.response.send_message("This button doesn't belong to you!", ephemeral=True)
             return
 
+        self.stop()
         custom_id = inter.data["custom_id"]
         slake_amount = self.buttons[custom_id]
 
         if slake_amount == _SlakeView.CANCEL_SLAKE:
             await inter.message.delete()
+            await remove_hunt_listener(self.outcome)
         else:
             await inter.message.delete()
             await inconnu.misc.slake(inter, slake_amount, self.character)
@@ -198,4 +230,6 @@ class _SlakeView(View):
 
     async def on_timeout(self):
         """Delete the message."""
+        self.stop()
         await self.message.delete()
+        await remove_hunt_listener(self.outcome)

@@ -31,10 +31,11 @@ class _ButtonID(str, Enum):
 class _RollControls(inconnu.views.DisablingView):
     """A View that has a dynamic number of roll buttons."""
 
-    def __init__(self, has_character, callback, owner, buttons):
+    def __init__(self, has_character, callback, timeout_handler, owner, buttons):
         super().__init__(timeout=600)
         self.has_character = has_character
         self.callback = callback
+        self.timeout_handler = timeout_handler
         self.owner = owner
 
         stop = True
@@ -80,11 +81,17 @@ class _RollControls(inconnu.views.DisablingView):
 
             await self.callback(interaction)
 
+    async def on_timeout(self):
+        """Inform the RollDisplay that we've timed out."""
+        await super().on_timeout()
+        if self.timeout_handler is not None:
+            await self.timeout_handler()
+
 
 class RollDisplay:
     """Display and manipulate roll outcomes. Provides buttons for rerolls, wp, and rouse."""
 
-    def __init__(self, ctx, outcome, comment, character, owner):
+    def __init__(self, ctx, outcome, comment, character, owner, listener, timeout):
         self.ctx = ctx
         self.outcome = outcome
         self.original_outcome = f"{outcome.main_takeaway} ({outcome.total_successes})"
@@ -95,6 +102,8 @@ class RollDisplay:
         self.surged = False
         self.msg = None  # Used for disabling the buttons at the end of the timeout
         self.controls = None
+        self.listener = listener
+        self.timeout_handler = timeout
 
     async def display(self, alt_ctx=None):
         """Display the roll."""
@@ -104,7 +113,11 @@ class RollDisplay:
 
         if buttons := self.buttons:
             self.controls = _RollControls(
-                self.character is not None, self.respond_to_button, self.owner, buttons
+                self.character is not None,
+                self.respond_to_button,
+                self.reroll_timeout,
+                self.owner,
+                buttons,
             )
             msg_contents["view"] = self.controls
 
@@ -179,6 +192,13 @@ class RollDisplay:
             self.rerolled = True
 
             await self.display(btn)
+            if self.listener:
+                await self.listener(btn, self.character, self.outcome)
+
+    async def reroll_timeout(self):
+        """Inform the listener we have timed out."""
+        if self.timeout_handler is not None:
+            await self.timeout_handler(self.outcome)
 
     @property
     def character_name(self) -> str:

@@ -47,7 +47,7 @@ async def present_error(
         help_url (str): The documentation URL for the error.
         components (list): Buttons or selection menus to add to the message.
     """
-    if await inconnu.settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx):
         content = __error_text(error, *fields, footer=footer)
         msg_contents = {"content": content}
     else:

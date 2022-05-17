@@ -41,7 +41,7 @@ async def blood_potency(ctx, rating: int):
 
     # Display it!
 
-    if await inconnu.settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx):
         await __display_text(ctx, rating, fields)
     else:
         await __display_embed(ctx, rating, fields)
@@ -68,29 +68,15 @@ async def __display_text(ctx, rating, fields):
 
 
 _RATINGS = {
-    0: {
-        "surge": 1,
-        "mend": 1,
-        "bonus": 0,
-        "reroll": 0,
-        "severity": 0,
-        "penalty": "None"
-    },
-    1: {
-        "surge": 2,
-        "mend": 1,
-        "bonus": 0,
-        "reroll": 1,
-        "severity": 2,
-        "penalty": "None"
-    },
+    0: {"surge": 1, "mend": 1, "bonus": 0, "reroll": 0, "severity": 0, "penalty": "None"},
+    1: {"surge": 2, "mend": 1, "bonus": 0, "reroll": 1, "severity": 2, "penalty": "None"},
     2: {
         "surge": 2,
         "mend": 2,
         "bonus": 1,
         "reroll": 1,
         "severity": 2,
-        "penalty": "Animal and bagged blood slake half Hunger"
+        "penalty": "Animal and bagged blood slake half Hunger",
     },
     3: {
         "surge": 3,
@@ -98,7 +84,7 @@ _RATINGS = {
         "bonus": 1,
         "reroll": 2,
         "severity": 3,
-        "penalty": "Animal and bagged blood slake no Hunger"
+        "penalty": "Animal and bagged blood slake no Hunger",
     },
     4: {
         "surge": 3,
@@ -106,7 +92,7 @@ _RATINGS = {
         "bonus": 2,
         "reroll": 2,
         "severity": 3,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 1 less Hunger per human"
+        "penalty": "Animal and bagged blood slake no Hunger\nSlake 1 less Hunger per human",
     },
     5: {
         "surge": 4,
@@ -114,7 +100,7 @@ _RATINGS = {
         "bonus": 2,
         "reroll": 3,
         "severity": 4,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 1 less Hunger per human\nMust drain and kill a human to reduce Hunger below 2"
+        "penalty": "Animal and bagged blood slake no Hunger\nSlake 1 less Hunger per human\nMust drain and kill a human to reduce Hunger below 2",
     },
     6: {
         "surge": 4,
@@ -122,7 +108,7 @@ _RATINGS = {
         "bonus": 3,
         "reroll": 3,
         "severity": 4,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 2"
+        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 2",
     },
     7: {
         "surge": 5,
@@ -130,7 +116,7 @@ _RATINGS = {
         "bonus": 3,
         "reroll": 4,
         "severity": 5,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 2"
+        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 2",
     },
     8: {
         "surge": 5,
@@ -138,7 +124,7 @@ _RATINGS = {
         "bonus": 4,
         "reroll": 4,
         "severity": 5,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3"
+        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3",
     },
     9: {
         "surge": 6,
@@ -146,7 +132,7 @@ _RATINGS = {
         "bonus": 4,
         "reroll": 5,
         "severity": 6,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3"
+        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3",
     },
     10: {
         "surge": 6,
@@ -154,6 +140,6 @@ _RATINGS = {
         "bonus": 5,
         "reroll": 5,
         "severity": 6,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 3 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3"
-    }
+        "penalty": "Animal and bagged blood slake no Hunger\nSlake 3 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3",
+    },
 }

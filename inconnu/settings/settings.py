@@ -15,14 +15,25 @@ class Settings:
 
     # Accessibility
 
-    async def accessible(self, user):
+    async def accessible(self, ctx: discord.ApplicationContext | discord.Interaction):
         """Determine whether we should use accessibility mode."""
-        user_settings = await self._fetch_user(user)
+        # User accessibility trumps guild accessibility
+        user_settings = await self._fetch_user(ctx.user)
         if user_settings.get("settings", {}).get("accessibility", False):
             return True
 
-        guild = await self._fetch_guild(user.guild)
-        return guild.accessibility
+        # Check guild accessibility
+        guild = await self._fetch_guild(ctx.guild)
+        if guild.accessibility:
+            return True
+
+        # Finally, make sure we have emoji permission
+        try:
+            everyone = ctx.guild.default_role
+            return not ctx.channel.permissions_for(everyone).external_emojis
+        except AttributeError:
+            # We somehow received a PartialMessageable or something else
+            return True  # Fallback
 
     async def set_accessibility(self, ctx, enabled: bool, scope: str):
         """

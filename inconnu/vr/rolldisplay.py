@@ -210,13 +210,13 @@ class RollDisplay:
         return character_name
 
     @property
-    def hunger(self) -> str:
+    def hunger(self) -> str | int:
         """
         The Hunger for the roll. This uses the character's Hunger if possible and
         falls back to the hunger dice count if unavailable.
         """
         if self.character is None or self.character.is_vampire:
-            return str(self.outcome.hunger.count)
+            return self.outcome.hunger.count
         return "Mortal"
 
     @property
@@ -276,7 +276,8 @@ class RollDisplay:
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        if self.outcome.pool <= 30 and await self.use_emoji():
+        can_emoji = not await inconnu.settings.accessible(self.ctx)
+        if self.outcome.pool <= 30 and can_emoji:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
             embed.add_field(
@@ -316,14 +317,6 @@ class RollDisplay:
             embed.set_footer(text=self.comment)
 
         return embed
-
-    async def use_emoji(self) -> bool:
-        """Whether to use emoji in the roll."""
-        everyone = self.ctx.guild.default_role
-        if not self.ctx.channel.permissions_for(everyone).external_emojis:
-            return False
-
-        return not await inconnu.settings.accessible(self.ctx.user)
 
     @property
     def surging(self) -> bool:

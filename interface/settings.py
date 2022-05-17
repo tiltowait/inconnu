@@ -119,7 +119,7 @@ class SettingsCommands(commands.Cog):
     @settings.command(name="show")
     async def settings_show(self, ctx):
         """Display the settings in effect."""
-        accessibility = "ON" if await inconnu.settings.accessible(ctx.user) else "OFF"
+        accessibility = "ON" if await inconnu.settings.accessible(ctx) else "OFF"
         experience_perms = await inconnu.settings.xp_permissions(ctx.guild)
         oblivion_stains = await inconnu.settings.oblivion_stains(ctx.guild) or ["Never"]
         update_channel = await inconnu.settings.update_channel(ctx.guild)

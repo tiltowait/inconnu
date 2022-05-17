@@ -141,10 +141,7 @@ async def __get_embed(
     embed.set_footer(text=footer or discord.Embed.Empty)
     embed.set_thumbnail(url=thumbnail or discord.Embed.Empty)
 
-    if await inconnu.settings.accessible(ctx.user):
-        can_emoji = False
-    else:
-        can_emoji = ctx.channel.permissions_for(ctx.guild.default_role).external_emojis
+    can_emoji = not await inconnu.settings.accessible(ctx)
 
     for field, parameter in fields:
         # We use optionals because ghouls and mortals don't have every parameter

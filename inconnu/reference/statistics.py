@@ -209,7 +209,7 @@ async def __general_statistics(ctx, date):
         await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)
         return
 
-    if await inconnu.settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx):
         await __display_text(ctx, results, date)
     else:
         await __display_embed(ctx, results, date)

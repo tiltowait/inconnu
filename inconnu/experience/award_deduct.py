@@ -32,7 +32,7 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
         if reason[-1] != ".":
             reason += "."
 
-        if await inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx):
             msg = {"content": __get_text(character, amount, scope, reason)}
         else:
             msg = {"embed": __get_embed(ctx, player, character, amount, scope, reason)}

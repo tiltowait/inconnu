@@ -104,7 +104,7 @@ async def __display_results(ctx, outcome, character: VChar):
     """Display the results of the operation."""
     tasks = []
 
-    if await inconnu.settings.accessible(ctx.user):
+    if await inconnu.settings.accessible(ctx):
         tasks.append(__results_text(ctx, outcome, character))
     else:
         tasks.append(__results_embed(ctx, outcome, character))

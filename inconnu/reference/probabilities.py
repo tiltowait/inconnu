@@ -40,7 +40,7 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
         params = SN(pool=parser.pool, hunger=parser.hunger, difficulty=parser.difficulty)
         probabilities = await __get_probabilities(params, strategy)
 
-        if await inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx):
             await __display_text(ctx, params, strategy, probabilities)
         else:
             await __display_embed(ctx, params, strategy, probabilities)
@@ -128,7 +128,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     # Total Faiiure
     # Bestial (Opt)
 
-    can_emoji = ctx.channel.permissions_for(ctx.guild.default_role).external_emojis
+    can_emoji = not await inconnu.settings.accessible(ctx)
     breakdown = []
 
     if probs["critical"] != 0:

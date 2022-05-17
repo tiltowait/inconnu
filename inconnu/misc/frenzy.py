@@ -66,7 +66,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, bonus: str, character: str)
         footer = "\n".join(footer)
 
         # Display the message
-        if await inconnu.settings.accessible(ctx.user):
+        if await inconnu.settings.accessible(ctx):
             # Build the text version of the message
             name = character.name
             content = f"**{name}: Frenzy {title} (DC {difficulty})**\n{message}\n*{footer}*"

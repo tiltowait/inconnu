@@ -23,7 +23,7 @@ async def remove_entry(ctx, player, character, index):
             entry_to_delete = log[-index]  # Log entries are presented to the user in reverse
             await character.remove_experience_log_entry(entry_to_delete)
 
-            if await inconnu.settings.accessible(ctx.user):
+            if await inconnu.settings.accessible(ctx):
                 msg = {"content": _get_text(character, entry_to_delete)}
             else:
                 msg = {"embed": _get_embed(owner, character, entry_to_delete)}

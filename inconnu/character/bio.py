@@ -32,7 +32,7 @@ async def show_biography(ctx, character, player):
         )
 
         if character.has_biography:
-            if await inconnu.settings.accessible(ctx.user):
+            if await inconnu.settings.accessible(ctx):
                 await __biography_text(ctx, character)
             else:
                 await __biography_embed(ctx, character, owner)

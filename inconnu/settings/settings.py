@@ -39,6 +39,10 @@ class Settings:
             # We somehow received a PartialMessageable or something else
             return True  # Fallback
 
+    async def can_emoji(self, ctx: discord.ApplicationContext | discord.Interaction) -> bool:
+        """Wrapper for accessible() that simply inverts the logic."""
+        return not await self.accessible(ctx)
+
     async def set_accessibility(self, ctx, enabled: bool, scope: str):
         """
         Set the accessibility mode.

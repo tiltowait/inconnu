@@ -128,7 +128,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     # Total Faiiure
     # Bestial (Opt)
 
-    can_emoji = not await inconnu.settings.accessible(ctx)
+    can_emoji = await inconnu.settings.can_emoji(ctx)
     breakdown = []
 
     if probs["critical"] != 0:

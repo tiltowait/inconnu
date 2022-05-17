@@ -276,7 +276,7 @@ class RollDisplay:
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        can_emoji = not await inconnu.settings.accessible(self.ctx)
+        can_emoji = await inconnu.settings.can_emoji(self.ctx)
         if self.outcome.pool <= 30 and can_emoji:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)

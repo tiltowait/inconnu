@@ -22,6 +22,10 @@ class Settings:
         if user_settings.get("settings", {}).get("accessibility", False):
             return True
 
+        if ctx.guild is None:
+            # This is in a DM, so there is no server to check
+            return False
+
         # Check guild accessibility
         guild = await self._fetch_guild(ctx.guild)
         if guild.accessibility:

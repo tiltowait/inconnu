@@ -86,39 +86,21 @@ async def display(
         custom ([tuple]): Custom fields to display, as well as their titles
         traits_button (bool): Whether to show a traits button. Default false
     """
-    # TODO: Revamp this accessibility chaff
-    if await inconnu.settings.accessible(ctx.user):
-        content = __get_text(
-            ctx,
-            character,
-            title=title,
-            message=message,
-            footer=footer,
-            owner=owner,
-            fields=fields,
-            custom=custom,
-        )
-        msg_contents = {"content": content}
-    else:
-        embed = __get_embed(
-            ctx,
-            character,
-            title=title,
-            message=message,
-            footer=footer,
-            owner=owner,
-            fields=fields,
-            custom=custom,
-            color=color,
-            thumbnail=thumbnail,
-        )
-        msg_contents = {"embed": embed}
-
-    msg_contents["view"] = view
+    embed = await __get_embed(
+        ctx,
+        character,
+        title=title,
+        message=message,
+        footer=footer,
+        owner=owner,
+        fields=fields,
+        custom=custom,
+        color=color,
+        thumbnail=thumbnail,
+    )
 
     if not kwargs.get("edit_message", False):
-        msg_contents["ephemeral"] = ephemeral
-        msg = await inconnu.respond(ctx)(**msg_contents)
+        msg = await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
 
         if isinstance(view, inconnu.views.DisablingView):
             view.message = msg
@@ -128,10 +110,10 @@ async def display(
     # We are editing the original message
     if view is not None:
         view.message = ctx.message
-    return await ctx.message.edit(**msg_contents)
+    return await ctx.message.edit(embed=embed, view=view)
 
 
-def __get_embed(
+async def __get_embed(
     ctx,
     character: VChar,
     title: str = None,
@@ -159,7 +141,11 @@ def __get_embed(
     embed.set_footer(text=footer or discord.Embed.Empty)
     embed.set_thumbnail(url=thumbnail or discord.Embed.Empty)
 
-    can_emoji = ctx.channel.permissions_for(ctx.guild.default_role).external_emojis
+    if await inconnu.settings.accessible(ctx.user):
+        can_emoji = False
+    else:
+        can_emoji = ctx.channel.permissions_for(ctx.guild.default_role).external_emojis
+
     for field, parameter in fields:
         # We use optionals because ghouls and mortals don't have every parameter
         if (value := __embed_field_value(character, parameter, can_emoji)) is not None:
@@ -201,78 +187,6 @@ def __embed_field_value(character, parameter, can_emoji):
             value = f"```{character.current_xp} / {character.total_xp}```"
 
     return value
-
-
-def __get_text(
-    ctx,
-    character: VChar,
-    title: str = None,
-    message: str = None,
-    footer: str = None,
-    owner: discord.Member = None,
-    fields: list = None,
-    custom: list = None,
-):
-    """Display a text representation of the character."""
-
-    # Set default values
-    owner = owner or ctx.user
-    fields = fields or DisplayField.all()
-
-    # Begin drafting the contents
-    contents = [f"**{character.name}**"]
-    if title is not None:
-        contents.append("\n" + title)
-
-    if message is not None:
-        contents.append(message)
-
-    contents.append("```json")  # Blank line
-
-    for field, parameter in fields:
-        contents.extend(__text_field_contents(character, field, parameter))
-
-    if custom is not None:
-        contents.append("")
-        for field, value in custom:
-            contents.append(f"{field}: {value}")
-
-    contents.append("```")
-    contents = "\n".join(contents)
-    if footer:
-        contents += f"\n*{footer}*"
-
-    return contents
-
-
-def __text_field_contents(character, field, parameter):
-    """Generate the text mode field."""
-    contents = []
-
-    match parameter:
-        case DisplayField.HEALTH:
-            contents.append(f"{field}: {__stringify_track(character.health)}")
-
-        case DisplayField.WILLPOWER:
-            contents.append(f"{field}: {__stringify_track(character.willpower)}")
-
-        case DisplayField.HUMANITY:
-            contents.append(f"{field}: {character.humanity}")
-            contents.append(f"Stains: {character.stains}")
-
-        case DisplayField.POTENCY if character.is_vampire:
-            contents.append(f"{field}: {character.potency}")
-
-        case DisplayField.HUNGER if character.is_vampire:
-            contents.append(f"{field}: {character.hunger}")
-
-        case DisplayField.SEVERITY if character.is_vampire:
-            contents.append(f"Bane Severity: {character.bane_severity}")
-
-        case DisplayField.EXPERIENCE:
-            contents.append(f"{field}: {character.current_xp} / {character.total_xp}")
-
-    return contents
 
 
 def __stat_repr(can_emoji, function, *stats):

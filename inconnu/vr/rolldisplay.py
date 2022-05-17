@@ -215,7 +215,9 @@ class RollDisplay:
         The Hunger for the roll. This uses the character's Hunger if possible and
         falls back to the hunger dice count if unavailable.
         """
-        return self.outcome.hunger.count
+        if self.character is None or self.character.is_vampire:
+            return str(self.outcome.hunger.count)
+        return "Mortal"
 
     @property
     def comment(self):
@@ -296,10 +298,10 @@ class RollDisplay:
             )
 
         embed.add_field(name="Pool", value=str(self.outcome.pool))
-        embed.add_field(name="Hunger", value=str(self.hunger))
+        embed.add_field(name="Hunger", value=self.hunger)
         embed.add_field(name="Difficulty", value=str(self.outcome.difficulty))
 
-        if self.outcome.pool_str is not None:
+        if self.outcome.pool_str:
             embed.add_field(name="Pool", value=self.outcome.pool_str)
 
         # Show what the roll originally was

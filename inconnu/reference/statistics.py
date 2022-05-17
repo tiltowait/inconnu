@@ -264,7 +264,7 @@ async def __display_embed(ctx, results, date):
         lines.append(f"Bestial Failures: `{outcomes['bestial']}`")
         lines.append(f"Rerolls: `{character['rerolls']}`")
 
-        embed.add_field(name=character["name"], value="\n".join(lines), inline=False)
+        embed.add_field(name=character["name"], value="\n".join(lines))
 
     await ctx.respond(embed=embed)
 

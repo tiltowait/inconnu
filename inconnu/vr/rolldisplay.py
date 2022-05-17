@@ -1,7 +1,6 @@
 """rolldisplay.py - A class for managing the display of roll outcomes and rerolls."""
 # pylint: disable=too-many-arguments, too-many-instance-attributes
 
-import asyncio
 import re
 import uuid
 from enum import Enum

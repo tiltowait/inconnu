@@ -7,7 +7,7 @@ import inconnu
 __HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=slaking-hunger"
 
 
-async def slake(ctx, amount, character=None):
+async def slake(ctx, amount, character=None, **kwargs):
     """Slake a character's Hunger."""
     try:
         tip = f"`/slake` `amount:{amount}` `character:CHARACTER`"
@@ -40,6 +40,7 @@ async def slake(ctx, amount, character=None):
                     title=f"Slaked {slaked} Hunger",
                     fields=[("New Hunger", inconnu.character.DisplayField.HUNGER)],
                     view=view,
+                    **kwargs,
                 ),
             )
             msg = await inconnu.get_message(inter)

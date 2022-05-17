@@ -71,6 +71,7 @@ async def display(
     thumbnail: str = None,
     view: discord.ui.View = None,
     ephemeral: bool = False,
+    **kwargs,
 ):
     """
     Display a character.
@@ -85,6 +86,7 @@ async def display(
         custom ([tuple]): Custom fields to display, as well as their titles
         traits_button (bool): Whether to show a traits button. Default false
     """
+    # TODO: Revamp this accessibility chaff
     if await inconnu.settings.accessible(ctx.user):
         content = __get_text(
             ctx,
@@ -112,17 +114,21 @@ async def display(
         )
         msg_contents = {"embed": embed}
 
-    msg_contents["ephemeral"] = ephemeral
+    msg_contents["view"] = view
 
+    if not kwargs.get("edit_message", False):
+        msg_contents["ephemeral"] = ephemeral
+        msg = await inconnu.respond(ctx)(**msg_contents)
+
+        if isinstance(view, inconnu.views.DisablingView):
+            view.message = msg
+
+        return msg
+
+    # We are editing the original message
     if view is not None:
-        msg_contents["view"] = view
-
-    msg = await inconnu.respond(ctx)(**msg_contents)
-
-    if isinstance(view, inconnu.views.DisablingView):
-        view.message = msg
-
-    return msg
+        view.message = ctx.message
+    return await ctx.message.edit(**msg_contents)
 
 
 def __get_embed(

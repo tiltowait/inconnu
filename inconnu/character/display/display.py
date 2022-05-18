@@ -98,9 +98,13 @@ async def display(
         color=color,
         thumbnail=thumbnail,
     )
+    msg_contents = {"embed": embed}
+    if view is not None:
+        msg_contents["view"] = view
 
     if not kwargs.get("edit_message", False):
-        msg = await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
+        msg_contents["ephemeral"] = ephemeral
+        msg = await inconnu.respond(ctx)(**msg_contents)
 
         if isinstance(view, inconnu.views.DisablingView):
             view.message = msg
@@ -108,9 +112,9 @@ async def display(
         return msg
 
     # We are editing the original message
-    if view is not None:
+    if isinstance(view, inconnu.views.DisablingView):
         view.message = ctx.message
-    return await ctx.message.edit(embed=embed, view=view)
+    return await ctx.message.edit(**msg_contents)
 
 
 async def __get_embed(

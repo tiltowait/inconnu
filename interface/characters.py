@@ -77,7 +77,7 @@ class Characters(commands.Cog, name="Character Management"):
     async def character_update(
         self,
         ctx: discord.ApplicationContext,
-        parameters: Option(str, "KEY=VALUE parameters (see /character help)"),
+        parameters: Option(str, "KEY=VALUE parameters (see /help characters)"),
         character: inconnu.options.character("The character to update"),
         player: inconnu.options.player,
     ):

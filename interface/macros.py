@@ -96,7 +96,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         self,
         ctx: discord.ApplicationContext,
         macro: Option(str, "The macro's name"),
-        parameters: Option(str, "The update parameters (see /macro help)"),
+        parameters: Option(str, "The update parameters (see /help macros)"),
         character: inconnu.options.character("The character who owns the macro"),
     ):
         """Update a macro using PARAMETER=VALUE pairs. Parameter names match macro creation."""

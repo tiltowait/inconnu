@@ -112,7 +112,10 @@ async def display(
         return msg
 
     # We are editing the original message
-    if isinstance(view, inconnu.views.DisablingView):
+    if view is None:
+        # We need to remove the view
+        msg_contents["view"] = None
+    elif isinstance(view, inconnu.views.DisablingView):
         view.message = ctx.message
     return await ctx.message.edit(**msg_contents)
 

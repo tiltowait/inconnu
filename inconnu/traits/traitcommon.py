@@ -6,6 +6,7 @@ from ..constants import UNIVERSAL_TRAITS
 
 VALID_TRAIT_PATTERN = re.compile(r"^[A-z_]+$")
 
+
 def validate_trait_names(*traits):
     """
     Raises a ValueError if a trait doesn't exist and a SyntaxError
@@ -17,7 +18,7 @@ def validate_trait_names(*traits):
 
         if trait.title() in UNIVERSAL_TRAITS:
             raise SyntaxError(
-                f"`{trait.title()}` is a reserved trait and cannot be added/updated/deleted."
+                f"`{trait.title()}` is a reserved trait. Use `/character adjust` to set."
             )
 
         if VALID_TRAIT_PATTERN.match(trait) is None:

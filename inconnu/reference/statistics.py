@@ -101,8 +101,15 @@ async def __traits_statistics(ctx, char_id, date):
 
         await __display_trait_statistics(ctx, character, stats, date)
     else:
-        date_fmt = __format_date(date)
-        await ctx.respond(f"**{character.name}** hasn't made any trait rolls since **{date_fmt}**.")
+        if date.year < 2021:
+            # Lifetime rolls
+            await ctx.respond(f"**{character.name}** has never made any trait rolls.")
+        else:
+            # Rolls since a given date
+            date_fmt = __format_date(date)
+            await ctx.respond(
+                f"**{character.name}** hasn't made any trait rolls since **{date_fmt}**."
+            )
 
 
 async def __display_trait_statistics(ctx, character, stats, date):

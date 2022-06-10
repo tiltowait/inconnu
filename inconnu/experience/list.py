@@ -3,6 +3,8 @@
 from datetime import timezone
 
 import discord
+from discord.ext.commands import Paginator as Chunker
+from discord.ext.pages import Paginator
 
 import inconnu
 
@@ -18,14 +20,13 @@ async def list_events(ctx, character, player, ephemeral):
             ctx, character, tip, __HELP_URL, owner=owner
         )
 
-        msg = {"ephemeral": ephemeral}
-        if await inconnu.settings.accessible(ctx):
-            msg["content"] = await __get_text(ctx, character)
-        else:
-            msg["embed"] = await __get_embed(ctx, character, owner)
+        embeds = await __get_embeds(ctx, character, owner)
+        paginator = Paginator(embeds, show_disabled=False)
 
-        mentions = discord.AllowedMentions(users=False)
-        await inconnu.respond(ctx)(**msg, allowed_mentions=mentions)
+        if isinstance(ctx, discord.ApplicationContext):
+            await paginator.respond(ctx.interaction, ephemeral=ephemeral)
+        else:
+            await paginator.respond(ctx, ephemeral=ephemeral)
 
     except LookupError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
@@ -33,32 +34,28 @@ async def list_events(ctx, character, player, ephemeral):
         pass
 
 
-async def __get_embed(ctx, character, player):
+async def __get_embeds(ctx, character, player):
     """Make an embed in which to display the XP events."""
-    embed = discord.Embed(title="Experience Log", description=await __get_contents(ctx, character))
-    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
-    embed.add_field(
-        name="Experience (Unspent / Lifetime)",
-        value=f"```{character.current_xp} / {character.total_xp}```",
-    )
+    chunks = await __get_chunks(ctx, character)
 
-    return embed
+    embeds = []
+    for page in chunks.pages:
+        embed = discord.Embed(title="Experience Log", description=page)
+        embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
+        embed.add_field(
+            name="Experience (Unspent / Lifetime)",
+            value=f"```{character.current_xp} / {character.total_xp}```",
+        )
+        embeds.append(embed)
 
-
-async def __get_text(ctx, character):
-    """Get the text-mode version of the XP log."""
-    contents = [f"**{character.name}'s Experience Log**\n"]
-    contents.append(await __get_contents(ctx, character))
-    contents.append(f"\n**New XP:** {character.current_xp} / {character.total_xp}")
-
-    return "\n".join(contents)
+    return embeds
 
 
-async def __get_contents(ctx, character):
+async def __get_chunks(ctx, character):
     """Get the event contents used by both embeds and text."""
     events = character.experience_log
+    chunker = Chunker(prefix="", suffix="")
 
-    contents = []
     for index, event in enumerate(reversed(events)):
         # We need the date/time to be TZ-aware
         date = event["date"]
@@ -76,9 +73,9 @@ async def __get_contents(ctx, character):
 
         text = f"*{index + 1}.* **{exp:+} {scope}: {reason}** - {admin.mention} • {date}"
 
-        contents.append(text)
+        chunker.add_line(text)
 
-    if not contents:
-        contents.append("*No experience awards/deductions have been logged.*")
+    if not chunker:
+        chunker.add_line("*No experience awards/deductions have been logged.*")
 
-    return "\n".join(contents)
+    return chunker

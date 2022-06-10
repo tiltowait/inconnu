@@ -31,29 +31,39 @@ async def roll(ctx, syntax: str, character=None):
             raise ValueError("Macro names may only contain letters and underscores.")
 
         macro = character.find_macro(macro_stack.pop(0))
-        parameters = macro.pool
-        parameters.extend(macro_stack)
+        if macro.pool:
+            # Only roll if the macro has a pool
+            parameters = macro.pool
+            parameters.extend(macro_stack)
 
-        # Macros can contain hunger by default, but the user can override
-        if hunger is None:
-            hunger = "hunger" if macro.hunger else "0"
+            # Macros can contain hunger by default, but the user can override
+            if hunger is None:
+                hunger = "hunger" if macro.hunger else "0"
 
-        parameters.append(hunger)
-        parameters.append(difficulty or macro.difficulty)
+            parameters.append(hunger)
+            parameters.append(difficulty or macro.difficulty)
 
-        outcome = perform_roll(character, parameters)
+            outcome = perform_roll(character, parameters)
 
         # We show the rouse check first, because display_outcome() is blocking
         await __rouse(ctx, character, macro)
-        await display_outcome(
-            ctx, ctx.user, character, outcome, macro.comment, reroll_listener, remove_hunt_listener
-        )
 
-        if macro.hunt:
-            if outcome.is_successful:
-                await __slake(ctx, character, outcome)
-            else:
-                __HUNT_LISTENERS[outcome.id] = None
+        if macro.pool:
+            await display_outcome(
+                ctx,
+                ctx.user,
+                character,
+                outcome,
+                macro.comment,
+                reroll_listener,
+                remove_hunt_listener,
+            )
+
+            if macro.hunt:
+                if outcome.is_successful:
+                    await __slake(ctx, character, outcome)
+                else:
+                    __HUNT_LISTENERS[outcome.id] = None
 
     except (ValueError, errors.MacroNotFoundError) as err:
         await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)
@@ -74,7 +84,7 @@ async def __rouse(ctx, character, macro):
         purpose = macro.comment
     else:
         purpose = f"{macro.name} macro"
-    msg = "Hunger gained does not apply to the roll."
+    msg = "Hunger gained does not apply to the roll." if macro.pool else None
 
     if macro.rouses > 0:
         await rouse(

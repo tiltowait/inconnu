@@ -42,7 +42,10 @@ async def create(
             )
             return
 
-        pool = inconnu.vr.RollParser(character, pool).pool_stack
+        if pool != "0":
+            pool = inconnu.vr.RollParser(character, pool).pool_stack
+        else:
+            pool = []
 
         await character.add_macro(
             name, pool, hunger, diff, rouses, reroll_rouses, staining, hunt, comment

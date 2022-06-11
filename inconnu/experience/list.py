@@ -75,7 +75,7 @@ async def __get_chunks(ctx, character):
 
         chunker.add_line(text)
 
-    if not chunker:
+    if not chunker.pages:
         chunker.add_line("*No experience awards/deductions have been logged.*")
 
     return chunker

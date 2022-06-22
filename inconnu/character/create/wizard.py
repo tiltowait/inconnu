@@ -123,7 +123,7 @@ class Wizard:
             name="Make a mistake?", value=f"Use `/traits update` on {self.ctx.guild.name} to fix."
         )
         embed.add_field(
-            name="Want to add Discipline ratings?",
+            name="Want to add Discipline ratings or specialties?",
             value=f"Use `/traits add` on {self.ctx.guild.name}.",
             inline=False,
         )

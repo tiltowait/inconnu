@@ -20,9 +20,7 @@ class _HelpView(View):
 
         if show_support:
             self.add_item(
-                Button(
-                    label="New? Click here!", url="https://www.inconnu.app/#/quickstart", row=1
-                )
+                Button(label="New? Click here!", url="https://www.inconnu.app/#/quickstart", row=1)
             )
             self.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
             self.add_item(Button(label="Patreon", url="https://www.patreon.com/tiltowait", row=1))
@@ -171,7 +169,7 @@ class Help(commands.Cog):
 
         embed.add_field(
             name="Addition",
-            value="`/traits add`\n**Example:** `/traits add traits:Oblivion=3 Auspex=2`",
+            value="`/traits add`\n**Example:** `/traits add traits:Oblivion=3 Chemistry=1`",
             inline=False,
         )
 

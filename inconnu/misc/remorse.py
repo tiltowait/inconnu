@@ -10,7 +10,7 @@ import inconnu
 
 from ..vchar import VChar
 
-__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=remorse-checks"
+__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=remorse-checks"
 
 
 async def remorse(ctx, character=None, minimum=1):

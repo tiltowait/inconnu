@@ -7,7 +7,7 @@ import discord
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=frenzy-checks"
+__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=frenzy-checks"
 
 __FRENZY_BONUSES = {
     "The Dream": 3,
@@ -91,7 +91,7 @@ def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, foote
     embed.set_footer(text=footer)
 
     if title == "Failure!":
-        url = "https://www.inconnu-bot.com/images/assets/frenzy.webp"
+        url = "https://www.inconnu.app/images/assets/frenzy.webp"
         embed.set_thumbnail(url=url)
 
     return embed

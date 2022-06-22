@@ -12,7 +12,7 @@ from ...constants import Damage
 from ...vchar import VChar
 from . import trackmoji
 
-__HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-display"
+__HELP_URL = "https://www.inconnu.app/#/character-tracking?id=character-display"
 
 # Display fields
 

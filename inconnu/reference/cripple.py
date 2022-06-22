@@ -7,7 +7,7 @@ import discord
 
 import inconnu.common
 
-__HELP_URL = "https://www.inconnu-bot.com"
+__HELP_URL = "https://www.inconnu.app"
 
 
 async def cripple(ctx, damage: int):

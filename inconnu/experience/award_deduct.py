@@ -4,7 +4,7 @@ import discord
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu-bot.com"
+__HELP_URL = "https://www.inconnu.app"
 
 
 async def award_or_deduct(ctx, player, character, amount, scope, reason):

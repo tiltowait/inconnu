@@ -4,7 +4,7 @@ import asyncio
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=slaking-hunger"
+__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=slaking-hunger"
 
 
 async def slake(ctx, amount, character=None, **kwargs):

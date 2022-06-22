@@ -128,7 +128,7 @@ class Wizard:
             inline=False,
         )
 
-        button = Button(label="Full Documentation", url="https://www.inconnu-bot.com/#/quickstart")
+        button = Button(label="Full Documentation", url="https://www.inconnu.app/#/quickstart")
 
         await self.edit_message(embed=embed, view=discord.ui.View(button))
 

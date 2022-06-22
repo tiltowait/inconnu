@@ -9,7 +9,7 @@ import inconnu
 from ..vchar import VChar, errors
 from . import traitcommon
 
-__HELP_URL = "https://www.inconnu-bot.com/#/trait-management?id=deleting-traits"
+__HELP_URL = "https://www.inconnu.app/#/trait-management?id=deleting-traits"
 
 
 async def delete(ctx, traits: str, character=None):

@@ -2,7 +2,7 @@
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu-bot.com/"
+__HELP_URL = "https://www.inconnu.app/"
 
 
 async def convictions_set(ctx, character):

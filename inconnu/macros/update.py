@@ -8,7 +8,7 @@ import inconnu
 from ..vchar import VChar, errors
 from . import macro_common
 
-__HELP_URL = "https://www.inconnu-bot.com/#/macros?id=updating"
+__HELP_URL = "https://www.inconnu.app/#/macros?id=updating"
 __VALID_KEYS = {
     "name": "The macro's name (letters and underscores only)",
     "pool": "The macro's pool",

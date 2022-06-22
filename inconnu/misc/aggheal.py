@@ -9,7 +9,7 @@ import inconnu
 from ..constants import ROUSE_FAIL_COLOR, Damage
 from ..vchar import VChar
 
-__HELP_URL = "https://www.inconnu-bot.com/#/"
+__HELP_URL = "https://www.inconnu.app/#/"
 
 
 async def aggheal(ctx, character: str):

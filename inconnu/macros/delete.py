@@ -3,7 +3,7 @@
 from .. import common
 from ..vchar import errors
 
-__HELP_URL = "https://www.inconnu-bot.com/#/macros?id=deletion"
+__HELP_URL = "https://www.inconnu.app/#/macros?id=deletion"
 
 
 async def delete(ctx, macro_name: str, character=None):

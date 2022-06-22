@@ -7,7 +7,7 @@ from discord.ui import InputText, Modal
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-deletion"
+__HELP_URL = "https://www.inconnu.app/#/character-tracking?id=character-deletion"
 
 
 async def delete(ctx, character: str):

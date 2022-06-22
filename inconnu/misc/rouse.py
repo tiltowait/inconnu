@@ -10,7 +10,7 @@ import discord
 import inconnu
 from inconnu.vchar import VChar
 
-__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=rouse-checks"
+__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=rouse-checks"
 
 
 async def rouse(
@@ -82,10 +82,10 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     if "ailure" in title and "0 fail" not in title:
         color = inconnu.constants.ROUSE_FAIL_COLOR
-        thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-filled.webp"
+        thumbnail = "https://www.inconnu.app/images/assets/hunger-filled.webp"
     else:
         color = None
-        thumbnail = "https://www.inconnu-bot.com/images/assets/hunger-unfilled.webp"
+        thumbnail = "https://www.inconnu.app/images/assets/hunger-unfilled.webp"
 
     if outcome.frenzy:
         custom = [("Hunger 5 Rouse Failure", "If awakening: Torpor. Otherwise: Roll for frenzy!")]

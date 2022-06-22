@@ -15,7 +15,7 @@ from ..vr import display_outcome, perform_roll
 from . import macro_common
 
 __HUNT_LISTENERS = {}
-__HELP_URL = "https://www.inconnu-bot.com/#/macros?id=rolling"
+__HELP_URL = "https://www.inconnu.app/#/macros?id=rolling"
 
 
 async def roll(ctx, syntax: str, character=None):

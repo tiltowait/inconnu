@@ -31,7 +31,7 @@ __KEYS = {
     "potency": "+/- The character's Blood Potency",
 }
 
-__HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=tracker-updates"
+__HELP_URL = "https://www.inconnu.app/#/character-tracking?id=tracker-updates"
 
 
 async def update(
@@ -193,7 +193,7 @@ async def update_help(ctx, err=None, ephemeral=True):
 
     documentation = Button(
         label="Full Documentation",
-        url="http://www.inconnu-bot.com/#/character-tracking?id=tracker-updates",
+        url="http://www.inconnu.app/#/character-tracking?id=tracker-updates",
     )
     support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
     view = discord.ui.View(documentation, support)

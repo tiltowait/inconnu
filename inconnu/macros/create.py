@@ -6,7 +6,7 @@ import inconnu
 from ..vchar import errors
 from . import macro_common
 
-__HELP_URL = "https://www.inconnu-bot.com/#/macros?id=creation"
+__HELP_URL = "https://www.inconnu.app/#/macros?id=creation"
 
 
 async def create(

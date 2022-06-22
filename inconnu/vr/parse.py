@@ -24,7 +24,7 @@ from ..vchar import VChar, errors
 from .rolldisplay import RollDisplay
 from .rollparser import RollParser
 
-__HELP_URL = "https://www.inconnu-bot.com/#/rolls"
+__HELP_URL = "https://www.inconnu.app/#/rolls"
 
 
 async def parse(ctx, raw_syntax: str, comment: str, character: str, player: discord.Member):

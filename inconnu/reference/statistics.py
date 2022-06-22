@@ -7,7 +7,7 @@ import discord
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu-bot.com"
+__HELP_URL = "https://www.inconnu.app"
 
 
 async def statistics(ctx, style: str, character: str, date: datetime):

@@ -5,7 +5,7 @@ import random
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=awakening"
+__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=awakening"
 
 
 async def awaken(ctx, character=None):

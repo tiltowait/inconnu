@@ -9,7 +9,7 @@ import inconnu
 
 from .. import vr as roll
 
-__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=probability-calculation"
+__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=probability-calculation"
 __STRATEGIES = {
     "reroll_failures": "Re-rolling Failures",
     "maximize_criticals": "Maximizing Crits",

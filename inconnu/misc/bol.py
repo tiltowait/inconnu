@@ -5,7 +5,7 @@ import asyncio
 from .rouse import rouse
 from .. import common
 
-__HELP_URL = "https://www.inconnu-bot.com/#/additional-commands?id=blush-of-life"
+__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=blush-of-life"
 
 
 async def bol(ctx, character):

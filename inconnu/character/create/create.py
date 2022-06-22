@@ -8,7 +8,7 @@ import inconnu
 
 from . import wizard
 
-__HELP_URL = "https://www.inconnu-bot.com/#/character-tracking?id=character-creation"
+__HELP_URL = "https://www.inconnu.app/#/character-tracking?id=character-creation"
 
 
 async def create(

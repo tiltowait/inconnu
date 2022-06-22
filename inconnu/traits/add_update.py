@@ -14,8 +14,8 @@ from ..vchar import VChar
 from .parser import parse_traits
 
 __HELP_URL = {
-    False: "https://www.inconnu-bot.com/#/trait-management?id=adding-traits",
-    True: "https://www.inconnu-bot.com/#/trait-management?id=updating-traits",
+    False: "https://www.inconnu.app/#/trait-management?id=adding-traits",
+    True: "https://www.inconnu.app/#/trait-management?id=updating-traits",
 }
 
 

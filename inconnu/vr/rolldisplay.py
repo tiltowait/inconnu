@@ -243,17 +243,17 @@ class RollDisplay:
     def thumbnail_url(self) -> str:
         """The URL for the embed thumbnail."""
         if self.outcome.is_critical:
-            return "https://www.inconnu-bot.com/images/assets/dice/crit.webp"
+            return "https://www.inconnu.app/images/assets/dice/crit.webp"
         if self.outcome.is_messy:
-            return "https://www.inconnu-bot.com/images/assets/dice/messy.webp"
+            return "https://www.inconnu.app/images/assets/dice/messy.webp"
         if self.outcome.is_successful:
-            return "https://www.inconnu-bot.com/images/assets/dice/success.webp"
+            return "https://www.inconnu.app/images/assets/dice/success.webp"
         if self.outcome.is_failure:
-            return "https://www.inconnu-bot.com/images/assets/dice/fail.webp"
+            return "https://www.inconnu.app/images/assets/dice/fail.webp"
         if self.outcome.is_total_failure:
-            return "https://www.inconnu-bot.com/images/assets/dice/total-fail.webp"
+            return "https://www.inconnu.app/images/assets/dice/total-fail.webp"
 
-        return "https://www.inconnu-bot.com/images/assets/dice/bestial.webp"
+        return "https://www.inconnu.app/images/assets/dice/bestial.webp"
 
     async def get_embed(self) -> discord.Embed:
         """The graphical representation of the roll."""

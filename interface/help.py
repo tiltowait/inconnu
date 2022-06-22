@@ -21,7 +21,7 @@ class _HelpView(View):
         if show_support:
             self.add_item(
                 Button(
-                    label="New? Click here!", url="https://www.inconnu-bot.com/#/quickstart", row=1
+                    label="New? Click here!", url="https://www.inconnu.app/#/quickstart", row=1
                 )
             )
             self.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
@@ -117,7 +117,7 @@ class Help(commands.Cog):
             description="**Inconnu** is a dice roller for Vampire: The Masquerade 5th Edition.",
         )
         embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
-        embed.set_thumbnail(url="https://www.inconnu-bot.com/images/darkpack_logo2.webp")
+        embed.set_thumbnail(url="https://www.inconnu.app/images/darkpack_logo2.webp")
 
         help_commands = [
             "`/help overview` - Basic help",
@@ -188,7 +188,7 @@ class Help(commands.Cog):
         )
 
         buttons = [
-            Button(label="Documentation", url="https://www.inconnu-bot.com/#/trait-management"),
+            Button(label="Documentation", url="https://www.inconnu.app/#/trait-management"),
             Button(label="Support", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
@@ -219,7 +219,7 @@ class Help(commands.Cog):
         )
 
         buttons = [
-            Button(label="Documentation", url="https://www.inconnu-bot.com/#/macros"),
+            Button(label="Documentation", url="https://www.inconnu.app/#/macros"),
             Button(label="Support", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)

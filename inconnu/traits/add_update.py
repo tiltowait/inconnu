@@ -163,8 +163,10 @@ async def __results_embed(ctx, outcome, character: VChar):
         errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
         if outcome.updating:
             field_name = "Error! You don't have these traits"
+            embed.set_footer(text="To add a trait, use /traits add")
         else:
             field_name = "Error! You already have these traits"
+            embed.set_footer(text="To update a trait, use /traits update")
         embed.add_field(name=field_name, value=errs, inline=False)
 
     view = inconnu.views.TraitsView(character, ctx.user)

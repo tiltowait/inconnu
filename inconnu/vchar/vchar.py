@@ -464,7 +464,7 @@ class VChar:
         matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait)]
 
         if not matches:
-            raise errors.TraitNotFoundError(f"{self.name} has no trait named `{trait}`.")
+            raise errors.TraitNotFoundError(self, trait)
 
         # A character might have a trait whose name is a subset of another trait.
         # The canonical example: "Surge", "Surgery". Typing "Surge" should work.
@@ -483,7 +483,7 @@ class VChar:
             found_trait, rating = matches[0]
 
             if exact and trait != found_trait.lower():
-                raise errors.TraitNotFoundError(f"{self.name} has no trait named `{trait}`.")
+                raise errors.TraitNotFoundError(self, trait)
 
             # Convert trackers to a rating
             if isinstance(rating, str):

@@ -43,7 +43,12 @@ async def roll(ctx, syntax: str, character=None):
             parameters.append(hunger)
             parameters.append(difficulty or macro.difficulty)
 
-            outcome = perform_roll(character, parameters)
+            try:
+                outcome = perform_roll(character, parameters)
+            except errors.TraitNotFoundError as err:
+                msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
+                await common.present_error(ctx, msg, character=character.name)
+                return
 
         # We show the rouse check first, because display_outcome() is blocking
         await __rouse(ctx, character, macro)

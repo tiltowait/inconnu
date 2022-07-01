@@ -4,7 +4,6 @@ import asyncio
 from urllib.parse import urlparse
 
 import discord
-from discord.ext.commands import Paginator
 
 import inconnu
 
@@ -22,7 +21,7 @@ async def edit_biography(ctx, character):
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
 
 
-async def show_biography(ctx, character, player):
+async def show_biography(ctx, character, player, ephemeral=False):
     """Display a character's biography."""
     try:
         owner = player or ctx.user  # Don't need admin permissions for this
@@ -32,10 +31,8 @@ async def show_biography(ctx, character, player):
         )
 
         if character.has_biography:
-            if await inconnu.settings.accessible(ctx):
-                await __biography_text(ctx, character)
-            else:
-                await __biography_embed(ctx, character, owner)
+            embed = __biography_embed(character, owner)
+            await ctx.respond(embed=embed, ephemeral=ephemeral)
         else:
             await ctx.respond(f"**{character.name}** doesn't have a biography!", ephemeral=True)
 
@@ -45,7 +42,7 @@ async def show_biography(ctx, character, player):
         pass
 
 
-async def __biography_embed(ctx, character, owner):
+def __biography_embed(character, owner):
     """Display the biography in an embed."""
     embed = discord.Embed(title="Biography")
     embed.set_author(name=character.name, icon_url=inconnu.get_avatar(owner))
@@ -62,23 +59,7 @@ async def __biography_embed(ctx, character, owner):
     if character.image_url.startswith("https://"):
         embed.set_image(url=character.image_url)
 
-    await ctx.respond(embed=embed)
-
-
-async def __biography_text(ctx, character):
-    """Display the biography in plain text."""
-    paginator = Paginator(prefix="", suffix="", linesep="\n\n")
-
-    paginator.add_line(f"**{character.name.upper()}**")
-
-    if character.biography:
-        paginator.add_line(f"**Biography:** {character.biography}")
-
-    if character.description:
-        paginator.add_line(f"**Description:** {character.description}")
-
-    for page in paginator.pages:
-        await inconnu.respond(ctx)(page)
+    return embed
 
 
 class _CharacterBio(discord.ui.Modal):

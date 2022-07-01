@@ -205,7 +205,7 @@ class Characters(commands.Cog, name="Character Management"):
     @commands.user_command(name="Biography")
     async def character_bio_context(self, ctx, member):
         """View a character's biography."""
-        await inconnu.character.show_biography(ctx, None, member)
+        await inconnu.character.show_biography(ctx, None, member, True)
 
     # Convictions
 

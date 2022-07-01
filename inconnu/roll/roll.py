@@ -1,9 +1,8 @@
 """rollresult.py - Class for calculating the results of a roll."""
 
-import random
-
 import bson
 
+import inconnu
 from inconnu.constants import ATTRIBUTES
 
 from .dicethrow import DiceThrow
@@ -235,7 +234,7 @@ def _reroll_failures(dice: list) -> list:
         if die >= 6 or rerolled == __MAX_REROLL:
             new_dice.append(die)
         else:
-            new_dice.append(__d10())
+            new_dice.append(inconnu.d10())
             rerolled += 1
 
     return new_dice
@@ -275,7 +274,7 @@ def _maximize_criticals(dice: list) -> list:
         if die >= 6 or rerolled == __MAX_REROLL:
             new_dice.append(die)
         else:
-            new_dice.append(__d10())
+            new_dice.append(inconnu.d10())
             rerolled += 1
 
     return new_dice
@@ -290,7 +289,7 @@ def _avoid_messy(dice: list) -> list:
         if die != 10 or rerolled == __MAX_REROLL:
             new_dice.append(die)
         else:
-            new_dice.append(__d10())
+            new_dice.append(inconnu.d10())
             rerolled += 1
 
     return new_dice
@@ -304,17 +303,12 @@ def _risky_avoid_messy(dice: list) -> list:
 
     for die in dice:
         if tens_remaining > 0 and die == 10:
-            new_dice.append(__d10())
+            new_dice.append(inconnu.d10())
             tens_remaining -= 1
         elif die < 6 and fails_remaining > 0:
-            new_dice.append(__d10())
+            new_dice.append(inconnu.d10())
             fails_remaining -= 1
         else:
             new_dice.append(die)
 
     return new_dice
-
-
-def __d10() -> int:
-    """Roll a d10."""
-    return random.randint(1, 10)

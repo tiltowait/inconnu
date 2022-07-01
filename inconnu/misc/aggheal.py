@@ -1,7 +1,6 @@
 """misc/aggheal.py - Heal aggravated damage."""
 
 import asyncio
-import random
 from types import SimpleNamespace
 
 import inconnu
@@ -54,7 +53,7 @@ async def __heal(character: VChar):
     """
     hunger_gain = 0
     for _ in range(3):
-        if random.randint(1, 10) < 6:
+        if inconnu.d10() < 6:
             hunger_gain += 1
 
     torpor = False

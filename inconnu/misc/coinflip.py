@@ -2,6 +2,7 @@
 
 import random
 
+
 async def coinflip(ctx):
     """Flip a coin."""
     coin = random.choice(["Heads", "Tails"])

@@ -1,6 +1,7 @@
 """misc/percentile.py - Roll a percentaile."""
 
-import random
+import inconnu
+
 
 async def percentile(ctx, ceiling: int):
     """Roll between 1 and the ceiling."""
@@ -8,5 +9,5 @@ async def percentile(ctx, ceiling: int):
         await ctx.respond("The ceiling must be greater than 0!", ephemeral=True)
         return
 
-    result = random.randint(1, ceiling)
+    result = inconnu.random(ceiling)
     await ctx.respond(f"Rolling 1-{ceiling}: **{result}**")

@@ -1,7 +1,6 @@
 """misc/remorse.py - Perform a remorse check."""
 
 import asyncio
-import random
 from types import SimpleNamespace as SN
 
 import discord
@@ -70,7 +69,7 @@ async def __remorse_roll(character: VChar, minimum: int) -> SN:
 
     dice = []
     for _ in range(rolls):
-        throw = random.randint(1, 10)
+        throw = inconnu.d10()
         dice.append(throw)
         if throw >= 6:
             successful = True

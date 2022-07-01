@@ -1,11 +1,10 @@
 """misc/cripple.py - Roll against the crippling injury chart."""
 
-import random
 from types import SimpleNamespace
 
 import discord
 
-import inconnu.common
+import inconnu
 
 __HELP_URL = "https://www.inconnu.app"
 
@@ -38,7 +37,7 @@ async def __display_injury(ctx, damage, injuries):
 
 def __get_injury(damage: int):
     """Get a random injury from the chart."""
-    roll = damage + random.randint(1, 10)
+    roll = damage + inconnu.d10()
 
     injury = []
     effect = []

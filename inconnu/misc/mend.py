@@ -1,7 +1,6 @@
 """misc/mend.py - Mend Superficial damage."""
 
 import asyncio
-import random
 from types import SimpleNamespace
 
 import inconnu
@@ -86,7 +85,7 @@ async def __heal(character):
 
     tasks = [character.set_health(track)]
 
-    rouse = random.randint(1, 10) >= 6
+    rouse = inconnu.d10() >= 6
     if not rouse:
         frenzy = character.hunger == 5
         tasks.append(character.set_hunger(character.hunger + 1))

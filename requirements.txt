@@ -2,6 +2,7 @@ python-dotenv
 
 flatdict==4.0.1
 motor==2.5.1
+numpy==1.23.0
 statcord.py==3.1.0
 topggpy==1.4.0
 py-cord==2.0.0rc1

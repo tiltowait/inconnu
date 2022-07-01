@@ -1,11 +1,10 @@
 """reference/resonance.py - Display a random resonance and temperament."""
 
-import random
 from typing import Tuple
 
 import discord
 
-import inconnu.settings
+import inconnu
 
 __DISCIPLINES = {
     "Choleric": "Celerity, Potence",
@@ -72,7 +71,7 @@ async def __display_embed(ctx, temperament, res, die, **kwargs):
 
 def __get_temperament() -> str:
     """Randomgly generate a temperament."""
-    die = random.randint(1, 10)
+    die = inconnu.d10()
 
     if 1 <= die <= 5:
         return "Negligible"
@@ -82,7 +81,7 @@ def __get_temperament() -> str:
 
     # 9-10 requires a re-roll
 
-    if 1 <= random.randint(1, 10) <= 8:
+    if 1 <= inconnu.d10() <= 8:
         return "Intense"
 
     return "Acute"
@@ -91,7 +90,7 @@ def __get_temperament() -> str:
 def __get_resonance(add_empty: bool) -> Tuple[int, str]:
     """Return a random resonance plus its associated die."""
     cap = 12 if add_empty else 10
-    die = random.randint(1, cap)
+    die = inconnu.random(cap)
 
     if 1 <= die <= 3:
         return (die, "Phlegmatic")

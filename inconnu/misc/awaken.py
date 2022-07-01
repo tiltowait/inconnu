@@ -1,7 +1,6 @@
 """misc/wake.py - Automate the awakening bookkeeping."""
 
 import asyncio
-import random
 
 import inconnu
 
@@ -27,7 +26,7 @@ async def awaken(ctx, character=None):
             message += f"\nRecovered **{recovered}** Willpower."
 
         if character.is_vampire:
-            rouse_success = random.randint(1, 10) >= 6
+            rouse_success = inconnu.d10() >= 6
             if rouse_success:
                 message += "\n**No** Hunger gain."
             else:
@@ -48,13 +47,12 @@ async def awaken(ctx, character=None):
                 message += f"\nRecovered **{recovered}** Health."
                 recovery.append(f"sh=-{recovered}")
 
-
         await inconnu.character.update(
             ctx,
             parameters=" ".join(recovery),
             character=character,
             color=color,
-            update_message=message
+            update_message=message,
         )
 
         tasks = [character.log("awaken")]

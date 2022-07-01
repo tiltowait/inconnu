@@ -2,7 +2,6 @@
 # pylint: disable=too-many-arguments
 
 import asyncio
-import random
 from types import SimpleNamespace
 
 import discord
@@ -153,9 +152,9 @@ async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):
     oblivion = await inconnu.settings.oblivion_stains(guild)
 
     for _ in range(rolls):
-        die = random.randint(1, 10)
+        die = inconnu.d10()
         if reroll and die < 6:
-            die = random.randint(1, 10)
+            die = inconnu.d10()
 
         if die in oblivion:
             stains += 1

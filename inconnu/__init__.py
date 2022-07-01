@@ -1,9 +1,11 @@
-"""Set up the package interface."""
+"""Primary Inconnu import."""
 
 import os
+from typing import List
 
 import discord
 import motor.motor_asyncio
+from numpy.random import default_rng
 
 from . import character
 from . import cull as culler
@@ -19,6 +21,20 @@ _mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
     os.getenv("MONGO_URL"), serverSelectionTimeoutMS=1800
 )
 db = _mongoclient.inconnu
+
+_rng = default_rng()
+
+
+def d10(count=1) -> List[int] | int:
+    """Generate one or a list of d10s."""
+    if count == 1:
+        return _rng.integers(1, 11)
+    return list(map(int, _rng.integers(1, 11, count)))
+
+
+def random(ceiling=100):
+    """Get a random number between 1 and ceiling."""
+    return _rng.integers(1, ceiling + 1)
 
 
 def fence(string: str):

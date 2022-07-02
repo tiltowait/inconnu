@@ -25,10 +25,10 @@ db = _mongoclient.inconnu
 _rng = default_rng()
 
 
-def d10(count=1) -> List[int] | int:
+def d10(count: int = None) -> List[int] | int:
     """Generate one or a list of d10s."""
-    if count == 1:
-        return _rng.integers(1, 11)
+    if count is None:
+        return int(_rng.integers(1, 11))
     return list(map(int, _rng.integers(1, 11, count)))
 
 

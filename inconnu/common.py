@@ -12,12 +12,14 @@ import inconnu
 
 def pluralize(value: int, noun: str) -> str:
     """Pluralize a noun."""
-    nouns = {"success": "successes", "die": "dice"}
+    nouns = {"success": "successes", "die": "dice", "specialty": "specialties"}
 
     pluralized = f"{value} {noun}"
     if value != 1:
-        if noun in nouns:
-            pluralized = f"{value} {nouns[noun]}"
+        if (plural := nouns.get(noun.lower())) is not None:
+            if noun[0].isupper():
+                plural = plural.capitalize()
+            pluralized = f"{value} {plural}"
         else:
             pluralized += "s"
 

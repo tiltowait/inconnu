@@ -19,9 +19,9 @@ __HELP_URL = {
 }
 
 
-async def add(ctx, traits: str, character: str):
+async def add(ctx, traits: str, character: str, specialties=False):
     """Add traits to a character. Wrapper for add_update."""
-    await __parse(ctx, False, traits, character)
+    await __parse(ctx, False, traits, character, specialties)
 
 
 async def update(ctx, traits: str, character: str):
@@ -29,21 +29,32 @@ async def update(ctx, traits: str, character: str):
     await __parse(ctx, True, traits, character)
 
 
-async def __parse(ctx, allow_overwrite: bool, traits: str, character: str):
+async def __parse(ctx, allow_overwrite: bool, traits: str, character: str, specialties=False):
     """Add traits to a character."""
     try:
         key = "update" if allow_overwrite else "add"
-        tip = f"`/traits {key}` `traits:{traits}` `character:CHARACTER`"
+        term = "traits" if not specialties else "specialties"
+        tip = f"`/{term} {key}` `{term}:{traits}` `character:CHARACTER`"
         character = await common.fetch_character(ctx, character, tip, __HELP_URL[allow_overwrite])
 
-        # Allow the user to input "trait rating", not only "trait=rating"
-        traits = re.sub(r"\s*=\s*", r"=", traits)
-        traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
+        # Specialties are just 1-point traits, but when entered, they don't
+        # have an assigned value. Let's do that now.
+        if specialties:
+            if "=" in traits:
+                # They did a regular trait assignment
+                raise ValueError("Specialties can't have assigned values. Use `/traits` instead.")
 
-        traits = parse_traits(*traits.split())
+            traits = map(lambda s: f"{s}=1", traits.split())
+        else:
+            # Allow the user to input "trait rating", not only "trait=rating"
+            traits = re.sub(r"\s*=\s*", r"=", traits)
+            traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
+            traits = traits.split()
+
+        traits = parse_traits(*traits, specialties=specialties)
         outcome = await __handle_traits(character, traits, allow_overwrite)
 
-        await __display_results(ctx, outcome, character)
+        await __display_results(ctx, outcome, character, specialties)
 
     except (ValueError, SyntaxError) as err:
         await common.present_error(
@@ -100,45 +111,45 @@ def __partition_traits(character, traits):
     return SimpleNamespace(owned=owned, unowned=unowned)
 
 
-async def __display_results(ctx, outcome, character: VChar):
+async def __display_results(ctx, outcome, character: VChar, specialties: bool):
     """Display the results of the operation."""
-    tasks = []
-
-    if await inconnu.settings.accessible(ctx):
-        tasks.append(__results_text(ctx, outcome, character))
-    else:
-        tasks.append(__results_embed(ctx, outcome, character))
+    tasks = [__results_embed(ctx, outcome, character, specialties)]
 
     # Message for the update channel
     if outcome.assigned:
+        term = "Traits" if not specialties else "Specialties"
         msg = f"__{ctx.user.mention} updated {character.name}'s traits:__\n"
         msg += ", ".join(outcome.assigned)
+
         tasks.append(
             inconnu.common.report_update(
-                ctx=ctx, character=character, title="Traits Updated", message=msg
+                ctx=ctx, character=character, title=f"{term} Updated", message=msg
             )
         )
 
     await asyncio.gather(*tasks)
 
 
-async def __results_embed(ctx, outcome, character: VChar):
+async def __results_embed(ctx, outcome, character: VChar, specialties: bool):
     """Display the results of the operation in a nice embed."""
     action_present = "Update" if outcome.updating else "Assign"
     action_past = "Updated" if outcome.updating else "Assigned"
+
+    term_singular = "Trait" if not specialties else "Specialty"
+    term_plural = "Traits" if not specialties else "Specialties"
 
     assigned = len(outcome.assigned)
     unassigned = len(outcome.unassigned)
     errors = len(outcome.errors)
 
     if not outcome.assigned and not outcome.unassigned and outcome.errors:
-        title = f"Unable to {action_present} Traits"
+        title = f"Unable to {action_present} {term_plural}"
     elif outcome.assigned and not outcome.unassigned:
-        title = f"{action_past} {common.pluralize(assigned, 'Trait')}"
+        title = f"{action_past} " + common.pluralize(assigned, term_singular)
     elif outcome.assigned and outcome.unassigned:
         title = f"{action_past}: {assigned} | Unassigned: {unassigned + errors}"
     else:
-        title = f"Couldn't {action_present} {common.pluralize(unassigned + errors, 'Trait')}"
+        title = f"Couldn't {action_present} " + common.pluralize(unassigned + errors, term_singular)
 
     # No color if no mistakes
     # Black if some mistakes

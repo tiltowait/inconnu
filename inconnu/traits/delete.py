@@ -12,24 +12,22 @@ from . import traitcommon
 __HELP_URL = "https://www.inconnu.app/#/trait-management?id=deleting-traits"
 
 
-async def delete(ctx, traits: str, character=None):
+async def delete(ctx, traits: str, character=None, specialties=False):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
-        tip = f"`/traits delete` `traits:{traits}` `character:CHARACTER`"
+        term = "traits" if not specialties else "specialties"
+        command = "traits delete" if not specialties else "specialties remove"
+        tip = f"`/{command}` `{term}:{traits}` `character:CHARACTER`"
         character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
         traits = traits.split()
 
         if not traits:
             # Shouldn't be possible to reach here, but just in case Discord messes up
-            raise SyntaxError("You must supply a list of traits to delete.")
+            raise SyntaxError(f"You must supply a list of {term} to delete.")
 
-        traitcommon.validate_trait_names(*traits)
+        traitcommon.validate_trait_names(*traits, specialties=specialties)
         outcome = await __delete_traits(character, *traits)
-
-        if await inconnu.settings.accessible(ctx):
-            await __outcome_text(ctx, character, outcome)
-        else:
-            await __outcome_embed(ctx, character, outcome)
+        await __outcome_embed(ctx, character, outcome, specialties)
 
     except (ValueError, SyntaxError) as err:
         await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
@@ -37,25 +35,11 @@ async def delete(ctx, traits: str, character=None):
         pass
 
 
-async def __outcome_text(ctx, character, outcome):
-    """Display the outcome in plain text."""
-    contents = [f"**{character.name}**\n"]
-
-    if outcome.deleted:
-        deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
-        contents.append(f"Deleted {deleted}.")
-
-    if outcome.errors:
-        errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
-        contents.append(f"These traits don't exist: {errs}.")
-
-    view = inconnu.views.TraitsView(character, ctx.user)
-    await ctx.respond("\n".join(contents), view=view, ephemeral=True)
-
-
-async def __outcome_embed(ctx, character, outcome):
+async def __outcome_embed(ctx, character, outcome, specialties: bool):
     """Display the operation outcome in an embed."""
-    embed = discord.Embed(title="Trait Removal")
+    term = "Trait" if not specialties else "Specialty"
+
+    embed = discord.Embed(title=f"{term} Removal")
     embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
     embed.set_footer(text="To see remaining traits: /traits list")
 

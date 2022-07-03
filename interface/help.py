@@ -145,7 +145,7 @@ class Help(commands.Cog):
     async def show_basic_help(self, ctx, ephemeral=True):
         """Run the /traits help command."""
         embed = discord.Embed(
-            title="Inconnu Help",
+            title="Commands Help",
             description=(
                 "Basic commands listing. Click the links for detailed documentation!"
                 " Items such as `pool:` or `hunger:` are Discord command parameters."
@@ -155,7 +155,8 @@ class Help(commands.Cog):
                 " interface after selecting 3 Hunger."
             ),
         )
-        embed.set_author(name=ctx.user.display_name, icon_url=self.bot.user.avatar)
+        embed.set_author(name=self.bot.user.display_name)
+        embed.set_thumbnail(url=self.bot.user.avatar)
 
         embed.add_field(
             name="Roll",
@@ -163,7 +164,7 @@ class Help(commands.Cog):
                 "`/vr syntax:POOL HUNGER DIFFICULTY`\n\n"
                 "Your `POOL` can be numbers or words. `HUNGER` can be a number 0-5 *or* "
                 "the word `hunger`, which will use your character's current Hunger rating. "
-                "`DIFFICULTY` can be any number 0 or higer. If omitted, it will be 0.\n\n"
+                "`DIFFICULTY` can be any number 0 or higer. Defaults to 0 if omitted.\n\n"
                 "You need to create a character to use traits. "
                 "If you only supply `POOL`, then `HUNGER` and `DIFFICULTY` will both be 0.\n\n"
                 "**Example:** `/vr syntax:manip+sub hunger 3` will roll Manipulation + "
@@ -215,7 +216,8 @@ class Help(commands.Cog):
             title="Traits Management",
             description="This command group allows you to add, remove, or update character traits.",
         )
-        embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
+        embed.set_author(name=self.bot.user.display_name)
+        embed.set_thumbnail(url=self.bot.user.avatar)
         embed.set_footer(text="Traits may be used in rolls. See /help overview for more info.")
 
         embed.add_field(
@@ -256,7 +258,8 @@ class Help(commands.Cog):
             title="Macros",
             description="This command group lets you define, delete, or update macros.",
         )
-        embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
+        embed.set_author(name=self.bot.user.display_name)
+        embed.set_thumbnail(url=self.bot.user.avatar)
         embed.set_footer(text="Roll a macro with the /vm command!")
 
         embed.add_field(

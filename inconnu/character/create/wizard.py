@@ -123,10 +123,14 @@ class Wizard:
             name="Make a mistake?", value=f"Use `/traits update` on {self.ctx.guild.name} to fix."
         )
         embed.add_field(
-            name="Want to add Discipline ratings or specialties?",
-            value=f"Use `/traits add` on {self.ctx.guild.name}.",
+            name="Want to add Discipline ratings or custom traits?",
+            value=(
+                f"Use `/traits add` on {self.ctx.guild.name}. "
+                "Add specialties with `/specialties add`."
+            ),
             inline=False,
         )
+        embed.set_footer(text="See /help overview for further details.")
 
         button = Button(label="Full Documentation", url="https://www.inconnu.app/#/quickstart")
 

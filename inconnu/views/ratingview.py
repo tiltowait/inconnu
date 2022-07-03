@@ -23,10 +23,7 @@ class RatingView(discord.ui.View):
             self.ratings[button_id] = rating
 
             button = discord.ui.Button(
-                label=str(rating),
-                custom_id=button_id,
-                style=discord.ButtonStyle.primary,
-                row=0
+                label=str(rating), custom_id=button_id, style=discord.ButtonStyle.primary, row=0
             )
             button.callback = self.button_pressed
             self.add_item(button)
@@ -37,15 +34,13 @@ class RatingView(discord.ui.View):
         zero_button.callback = self.button_pressed
         self.add_item(zero_button)
 
-
     async def button_pressed(self, interaction):
         """Respond to the button."""
         button_id = interaction.data["custom_id"]
         rating = self.ratings.get(button_id, 0)
         self.last_interaction = interaction
 
-        await self.callback(rating)
-
+        await self.callback(rating, interaction)
 
     async def on_timeout(self):
         """Inform the caller that we timed out."""

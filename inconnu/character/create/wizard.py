@@ -46,7 +46,7 @@ class Wizard:
         else:
             await self.__finalize_character()
 
-    async def _assign_next_trait(self, rating: int):
+    async def _assign_next_trait(self, rating: int, interaction: discord.Interaction):
         """
         Assign the next trait in the list and display the next trait or finish
         creating the character if finished.
@@ -61,7 +61,7 @@ class Wizard:
             # We're finished; create the character
             await self.__finalize_character()
         else:
-            await self.__query_trait(f"{trait} set to {rating}.")
+            await self.__query_trait(message=f"{trait} set to {rating}.", interaction=interaction)
 
     async def __finalize_character(self):
         """Add the character to the database and inform the user they are done."""
@@ -136,7 +136,7 @@ class Wizard:
 
         await self.edit_message(embed=embed, view=discord.ui.View(button))
 
-    async def __query_trait(self, message=None):
+    async def __query_trait(self, *, interaction: discord.Interaction = None, message: str = None):
         """Query for the next trait."""
         embed = self.__query_embed(message)
 
@@ -159,7 +159,8 @@ class Wizard:
                 self.msg = await self.ctx.respond(embed=embed, view=self.view, ephemeral=True)
 
         else:
-            await self.edit_message(embed=embed, view=self.view)
+            # Message is being edited
+            await interaction.response.edit_message(embed=embed, view=self.view)
 
     def __query_embed(self, message=None):
         """Present the query in an embed."""
@@ -182,7 +183,7 @@ class Wizard:
 
     @property
     def edit_message(self):
-        """Get the proper edit method."""
+        """Get the proper edit method for editing our message outside of an interaction."""
         if self.msg:
             return self.msg.edit if self.using_dms else self.msg.edit_original_message
         return self.ctx.respond

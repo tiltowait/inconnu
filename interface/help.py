@@ -146,15 +146,66 @@ class Help(commands.Cog):
         """Run the /traits help command."""
         embed = discord.Embed(
             title="Inconnu Help",
-            description="Basic commands listing. Click the links for detailed documentation.",
+            description=(
+                "Basic commands listing. Click the links for detailed documentation!"
+                " Items such as `pool:` or `hunger:` are Discord command parameters."
+                " They don't need to be typed, as Discord adds them automatically."
+                "\n\nA word in `CAPS` indicates where you enter your input. For,"
+                " instance, `hunger:HUNGER` would look like `hunger:3` in the Discord"
+                " interface after selecting 3 Hunger."
+            ),
         )
         embed.set_author(name=ctx.user.display_name, icon_url=self.bot.user.avatar)
 
-        embed.add_field(name="Roll", value="`/vr syntax:pool hunger difficulty`", inline=False)
+        embed.add_field(
+            name="Roll",
+            value=(
+                "`/vr syntax:POOL HUNGER DIFFICULTY`\n\n"
+                "Your `POOL` can be numbers or words. `HUNGER` can be a number 0-5 *or* "
+                "the word `hunger`, which will use your character's current Hunger rating. "
+                "`DIFFICULTY` can be any number 0 or higer. If omitted, it will be 0.\n\n"
+                "You need to create a character to use traits. "
+                "If you only supply `POOL`, then `HUNGER` and `DIFFICULTY` will both be 0.\n\n"
+                "**Example:** `/vr syntax:manip+sub hunger 3` will roll Manipulation + "
+                "Subterfuge, using current Hunger, at Difficulty 3."
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="Simplified roll syntax",
+            value=(
+                "`/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`\n\n"
+                "The same as `/vr`, only easier for new users. All parameters required."
+            ),
+            inline=False,
+        )
         char_info = "`/character create`\nYou can use character attributes in rolls."
         embed.add_field(name="Create a character", value=char_info, inline=False)
         embed.add_field(name="Display character", value="`/character display`", inline=False)
         embed.add_field(name="Add traits", value="`/traits add`")
+        embed.add_field(name="Add specialties", value="`/specialties add`")
+        embed.add_field(
+            name="Common commands",
+            value=(
+                "The following commands are commonly used:\n\n"
+                "`/rouse` — Perform a Rouse check, automatically increasing Hunger if failed\n"
+                "`/slake` — Reduce Hunger"
+                "`/awaken` — Perform a Rouse check (if a vampire) and heal Willpower\n"
+                "`/bol` — Rouse for Blush of Life, taking Humanity into account\n"
+                "`/mend` — Mend Superficial Health damage based on BP, performing a Rouse check\n"
+                "`/aggheal` — Perform three Rouse checks to mend one Aggravated Health damage\n"
+                "`/stain` — Add or remove Stains\n"
+                "`/remorse` — Run a Remorse check based on your current Stains"
+            ),
+            inline=False,
+        )
+        embed.set_footer(
+            text=(
+                "Many commands have a character: parameter. If you only have one character, "
+                "it is usually optional. In commands where it is required, Discord makes it "
+                "obvious."
+            )
+        )
 
         await inconnu.respond(ctx)(embed=embed, view=self.overview_view, ephemeral=ephemeral)
 
@@ -165,7 +216,7 @@ class Help(commands.Cog):
             description="This command group allows you to add, remove, or update character traits.",
         )
         embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
-        embed.set_footer(text="Traits may be used in rolls. See /help for more info.")
+        embed.set_footer(text="Traits may be used in rolls. See /help overview for more info.")
 
         embed.add_field(
             name="Addition",
@@ -182,6 +233,12 @@ class Help(commands.Cog):
         embed.add_field(
             name="Modification",
             value="`/traits update`\n**Example:** `/traits update traits:Oblivion=2`",
+            inline=False,
+        )
+
+        embed.add_field(
+            name="Specialties",
+            value="`/specialties add`\n**Example:** `/specialties add specialties:Grappling`",
             inline=False,
         )
 

@@ -35,7 +35,7 @@ async def show(ctx, character=None):
 
 async def __display_macros(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
-    fields = __generate_fields(macros, False)
+    fields = __generate_fields(macros)
     raw_pages = inconnu.common.paginate(1200, *fields)
 
     _pages = []
@@ -53,13 +53,13 @@ async def __display_macros(ctx, char_name, macros):
     await paginator.respond(ctx.interaction, ephemeral=True)
 
 
-def __generate_fields(macros, accessible: bool):
+def __generate_fields(macros):
     """Convert macro records into human-readable fields."""
     fields = []
 
     for macro in macros:
-        pool = " ".join(macro.pool)
-        value = f"**Pool:** `{pool}`\n**Hunger:** " + ("`Yes`" if macro.hunger else "`No`")
+        pool = f"`{' '.join(macro.pool)}`" if macro.pool else "*None*"
+        value = f"**Pool:** {pool}\n**Hunger:** " + ("`Yes`" if macro.hunger else "`No`")
         value += f"\n**Difficulty:** `{macro.difficulty}`"
         value += f"\n**Rouse checks:** `{macro.rouses}`"
         if macro.rouses > 0:

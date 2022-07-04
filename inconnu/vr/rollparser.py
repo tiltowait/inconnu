@@ -156,11 +156,23 @@ class RollParser:
         self._parameters["i_difficulty_stack"] = interpolated_stacks.pop(0)
 
         if qualified_stacks:
-            # They gave us too many stacks!
-            extra = sum(qualified_stacks, [])
-            extra = " ".join(extra)
-            err = f"Expected pool, hunger, difficulty. Not sure what to do with `{extra}`!"
-            raise SyntaxError(err)
+            # They gave us too many stacks! Show our interpretation as well as the extra
+            # First, get human-readable representations of the stacks
+            _pool = self.pool_str or self._parameters["q_pool_stack"]
+            if (_hunger := " ".join(self._parameters["q_hunger_stack"])) == "Hunger":
+                _hunger = "Current Hunger "
+            _difficulty = " ".join(self._parameters["q_difficulty_stack"])
+
+            interpretation = (
+                f"***Pool:*** `{_pool}`\n"
+                f"***Hunger:*** `{_hunger}`\n"
+                f"***Difficulty:*** `{_difficulty}`"
+            )
+            extra = " ".join(sum(qualified_stacks, []))
+            extra = f"**Unexpected parameter(s):** `{extra}`"
+
+            err = "Too many roll parameters given. Interpretation based on input:"
+            raise SyntaxError(f"{err}\n\n{interpretation}\n\n{extra}")
 
     def _evaluate_stacks(self):
         """Convert the pool, hunger, and difficulty into values."""

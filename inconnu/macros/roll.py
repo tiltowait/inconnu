@@ -30,9 +30,14 @@ async def roll(ctx, syntax: str, character=None):
         if not macro_common.is_macro_name_valid(macro_stack[0]):
             raise ValueError("Macro names may only contain letters and underscores.")
 
+        # It is possible for the user to make a macro that does nothing. If so,
+        # we will display an error message rather than let the bot time out.
+        empty_macro = True
+
         macro = character.find_macro(macro_stack.pop(0))
         if macro.pool:
             # Only roll if the macro has a pool
+            empty_macro = False
             parameters = macro.pool
             parameters.extend(macro_stack)
 
@@ -51,7 +56,8 @@ async def roll(ctx, syntax: str, character=None):
                 return
 
         # We show the rouse check first, because display_outcome() is blocking
-        await __rouse(ctx, character, macro)
+        if await __rouse(ctx, character, macro):
+            empty_macro = False
 
         if macro.pool:
             await display_outcome(
@@ -70,6 +76,11 @@ async def roll(ctx, syntax: str, character=None):
                 else:
                     __HUNT_LISTENERS[outcome.id] = None
 
+        if empty_macro:
+            await common.present_error(
+                ctx, f"Your `{macro.name}` macro is empty!", character=character.name
+            )
+
     except (ValueError, errors.MacroNotFoundError) as err:
         await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)
     except SyntaxError:
@@ -83,15 +94,15 @@ async def roll(ctx, syntax: str, character=None):
         pass
 
 
-async def __rouse(ctx, character, macro):
+async def __rouse(ctx, character, macro) -> bool:
     """Perform a rouse check."""
-    if macro.comment is not None:
-        purpose = macro.comment
-    else:
-        purpose = f"{macro.name} macro"
-    msg = "Hunger gained does not apply to the roll." if macro.pool else None
-
     if macro.rouses > 0:
+        if macro.comment is not None:
+            purpose = macro.comment
+        else:
+            purpose = f"{macro.name} macro"
+        msg = "Hunger gained does not apply to the roll." if macro.pool else None
+
         await rouse(
             ctx,
             macro.rouses,
@@ -101,6 +112,10 @@ async def __rouse(ctx, character, macro):
             oblivion=macro.staining,
             message=msg,
         )
+        return True
+
+    # No Rouse checks made
+    return False
 
 
 async def reroll_listener(ctx, character, outcome):

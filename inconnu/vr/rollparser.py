@@ -158,7 +158,7 @@ class RollParser:
         if qualified_stacks:
             # They gave us too many stacks! Show our interpretation as well as the extra
             # First, get human-readable representations of the stacks
-            _pool = self.pool_str or self._parameters["q_pool_stack"]
+            _pool = self.pool_str or " ".join(self._parameters["q_pool_stack"])
             if (_hunger := " ".join(self._parameters["q_hunger_stack"])) == "Hunger":
                 _hunger = "Current Hunger "
             _difficulty = " ".join(self._parameters["q_difficulty_stack"])

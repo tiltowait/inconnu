@@ -4,7 +4,7 @@ import re
 
 from ..constants import UNIVERSAL_TRAITS
 
-VALID_TRAIT_PATTERN = re.compile(r"^[A-z_]+$")
+VALID_TRAIT_PATTERN = re.compile(r"^[A-z_\']+$")
 
 
 def validate_trait_names(*traits, specialties=False):

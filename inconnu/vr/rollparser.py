@@ -1,8 +1,8 @@
 """vr/rollparser.py - Define a class for parsing user roll input."""
 
 import ast
-import re
 import operator as op
+import re
 
 
 class RollParser:
@@ -26,18 +26,15 @@ class RollParser:
         self._create_stacks()
         self._evaluate_stacks()
 
-
     @property
     def pool(self):
         """The int value of the roll's pool."""
         return self._parameters["eval_pool"]
 
-
     @property
     def pool_stack(self):
         """The fully qualified pool stack."""
         return self._parameters["q_pool_stack"]
-
 
     @property
     def pool_str(self):
@@ -48,24 +45,21 @@ class RollParser:
             return None
 
         if string[0] == "+":
-            string = string[2:] # Just lop off the leading plus sign
+            string = string[2:]  # Just lop off the leading plus sign
         if string[0] == "-":
-            string = string.replace(" ", "", 1) # First item is negative, not subtracting
+            string = string.replace(" ", "", 1)  # First item is negative, not subtracting
 
         return string
-
 
     @property
     def hunger(self):
         """The int value of the roll's hunger."""
         return self._parameters["eval_hunger"]
 
-
     @property
     def difficulty(self):
         """The int value of the roll's difficulty."""
         return self._parameters["eval_difficulty"]
-
 
     def _create_stacks(self):
         """Create both the fully qualified stacks and the interpolated stacks."""
@@ -168,7 +162,6 @@ class RollParser:
             err = f"Expected pool, hunger, difficulty. Not sure what to do with `{extra}`!"
             raise SyntaxError(err)
 
-
     def _evaluate_stacks(self):
         """Convert the pool, hunger, and difficulty into values."""
         pool = " ".join(self._parameters["i_pool_stack"])
@@ -183,7 +176,6 @@ class RollParser:
         except SyntaxError as err:
             raise SyntaxError("Invalid syntax!") from err
 
-
     @classmethod
     def has_invalid_characters(cls, syntax) -> bool:
         """Check whether the roll has invalid characters."""
@@ -195,7 +187,7 @@ class RollParser:
 # We could use pandas for this, but this is built-in and considerably faster,
 # which makes a difference when calculating probabilities.
 
-OPERATORS = { ast.Add: op.add, ast.Sub: op.sub, ast.UAdd: op.pos, ast.USub: op.neg }
+OPERATORS = {ast.Add: op.add, ast.Sub: op.sub, ast.UAdd: op.pos, ast.USub: op.neg}
 
 
 def eval_expr(expr):

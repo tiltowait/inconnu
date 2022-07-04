@@ -25,7 +25,7 @@ class MiscCommands(commands.Cog):
             url="https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147747840&scope=applications.commands%20bot",
             description="Click the link above to invite Inconnu to your server!",
         )
-        embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
+        embed.set_author(name=ctx.bot.user.display_name)
         embed.set_thumbnail(url=ctx.bot.user.display_avatar)
         site = discord.ui.Button(label="Website", url="https://www.inconnu.app")
         support = discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL)

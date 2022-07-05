@@ -56,6 +56,8 @@ GROUPED_TRAITS = {
 }
 
 ATTRIBUTES = set(sum(GROUPED_TRAITS["ATTRIBUTES"].values(), []))
+SKILLS = set(sum(GROUPED_TRAITS["SKILLS"].values(), []))
+ATTRIBUTES_AND_SKILLS = ATTRIBUTES.union(SKILLS)
 FLAT_TRAITS = lambda: sum(FlatDict(GROUPED_TRAITS).values(), [])
 
 UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]

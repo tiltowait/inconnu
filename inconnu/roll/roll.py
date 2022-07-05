@@ -3,7 +3,7 @@
 import bson
 
 import inconnu
-from inconnu.constants import ATTRIBUTES
+from inconnu.constants import ATTRIBUTES_AND_SKILLS
 
 from .dicethrow import DiceThrow
 
@@ -55,7 +55,7 @@ class Roll:
 
         if self.pool_str:
             elements = set(self.pool_str.split())
-            if not elements.intersection(ATTRIBUTES):
+            if not elements.intersection(ATTRIBUTES_AND_SKILLS):
                 self.can_reroll = False
 
     # We could technically do this with stored properties, but the math is extremely

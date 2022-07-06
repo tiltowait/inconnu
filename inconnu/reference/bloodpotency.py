@@ -138,7 +138,7 @@ _RATINGS = {
         "reroll": 5,
         "severity": 6,
         "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3",
-        "genertations": [4, 5],
+        "generations": [4, 5],
     },
     10: {
         "surge": 6,

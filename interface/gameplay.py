@@ -2,7 +2,8 @@
 # pycord: disable=no-self-use
 
 import discord
-from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
+from discord.commands import (Option, OptionChoice, SlashCommandGroup,
+                              slash_command)
 from discord.ext import commands
 
 import inconnu
@@ -207,7 +208,7 @@ class Gameplay(commands.Cog):
     header_update = SlashCommandGroup("update", "Update commands")
 
     @header_update.command(name="header", debug_guilds=HEADER_DEBUG_GUILDS)
-    @discord.default_permissions(administrator=True)
+    @commands.has_permissions(administrator=True)
     async def update_header(
         self,
         ctx: discord.ApplicationContext,

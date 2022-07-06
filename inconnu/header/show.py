@@ -28,18 +28,22 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         if header.location:
             title.append(header.location)
 
+        # Merits, flaws, and trackers
+        description_ = []
+        if header.merits:
+            description_.append(header.merits)
+        if header.flaws:
+            description_.append(header.flaws)
+
         # Tracker damage
         hp_damage = track_damage(character.superficial_hp, character.aggravated_hp)
         wp_damage = track_damage(character.superficial_wp, character.aggravated_wp)
 
-        embed = discord.Embed(
-            title=" • ".join(title),
-            description=(
-                f"{header.merits}\n"
-                f"{header.flaws}\n"
-                f"**Hunger** `{character.hunger}` • **HP:** `{hp_damage}` • **WP:** `{wp_damage}`\n"
-            ),
+        description_.append(
+            f"**Hunger** `{character.hunger}` • **HP** `{hp_damage}` • **WP** `{wp_damage}`\n"
         )
+
+        embed = discord.Embed(title=" • ".join(title), description="\n".join(description_))
         embed.set_thumbnail(url=character.image_url)
 
         await ctx.respond(embed=embed)

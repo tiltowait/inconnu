@@ -20,11 +20,12 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         header.merits = kwargs["merits"] or header.merits
         header.flaws = kwargs["flaws"] or header.flaws
 
-        # Blush string
-        blush = "Blushed" if header.blush else "Not Blushed"
-
         # Title should not have a trailing "•" if location is empty
-        title = [character.name, blush]
+        title = [character.name]
+        if character.is_vampire:
+            # Only vampires can blush
+            title.append("Blushed" if header.blush else "Not Blushed")
+
         if header.location:
             title.append(header.location)
 
@@ -36,12 +37,17 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
             description_.append(header.flaws)
 
         # Tracker damage
-        hp_damage = track_damage(character.superficial_hp, character.aggravated_hp)
-        wp_damage = track_damage(character.superficial_wp, character.aggravated_wp)
+        trackers = []
+        if character.is_vampire:
+            trackers.append(f"**Hunger** `{character.hunger}`")
 
-        description_.append(
-            f"**Hunger** `{character.hunger}` • **HP** `{hp_damage}` • **WP** `{wp_damage}`\n"
-        )
+        hp_damage = track_damage(character.superficial_hp, character.aggravated_hp)
+        trackers.append(f"**HP** `{hp_damage}`")
+
+        wp_damage = track_damage(character.superficial_wp, character.aggravated_wp)
+        trackers.append(f"**WP** `{wp_damage}`")
+
+        description_.append(" • ".join(trackers))
 
         embed = discord.Embed(title=" • ".join(title), description="\n".join(description_))
         embed.set_thumbnail(url=character.image_url)

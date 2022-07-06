@@ -1,7 +1,8 @@
 """interface/gameplay.py - Command interface directly related to gameplay."""
+# pycord: disable=no-self-use
 
 import discord
-from discord.commands import Option, OptionChoice, slash_command
+from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 
 import inconnu
@@ -176,6 +177,49 @@ class Gameplay(commands.Cog):
     ):
         """Apply or remove stains from a character."""
         await inconnu.misc.stain(ctx, delta, character, player)
+
+    # "Headers" are used in PbP RP. For now, they are just in testing on a
+    # single server (plus dev server) for admin users.
+
+    HEADER_DEBUG_GUILDS = [826628660450689074, 676333549720174605]
+
+    @slash_command(debug_guilds=HEADER_DEBUG_GUILDS)
+    @discord.default_permissions(administrator=True)
+    async def header(
+        self,
+        ctx: discord.ApplicationContext,
+        blush: Option(
+            int,
+            "OVERRIDE: Is Blush of Life active?",
+            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0)],
+            required=False,
+        ),
+        location: Option(str, "OVERRIDE: Where the scene is taking place", required=False),
+        merits: Option(str, "OVERRIDE: Obvious/important merits", required=False),
+        flaws: Option(str, "OVERRIDE: Obvious/important flaws", required=False),
+        character: inconnu.options.character("The character whose header to post"),
+    ):
+        """Display you character's RP header."""
+        await inconnu.header.show_header(
+            ctx, character, blush=blush, location=location, merits=merits, flaws=flaws
+        )
+
+    header_update = SlashCommandGroup("update", "Update commands")
+
+    @header_update.command(name="header", debug_guilds=HEADER_DEBUG_GUILDS)
+    @discord.default_permissions(administrator=True)
+    async def update_header(
+        self,
+        ctx: discord.ApplicationContext,
+        character: inconnu.options.character("The character whose header to update", required=True),
+        blush: Option(
+            int,
+            "Is Blush of Life active?",
+            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0)],
+        ),
+    ):
+        """Update your character's RP header."""
+        await inconnu.header.update_header(ctx, character, bool(blush))
 
 
 def setup(bot):

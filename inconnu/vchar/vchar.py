@@ -5,7 +5,7 @@ import asyncio
 import copy
 import datetime
 import math
-from collections import Counter, OrderedDict
+from collections import Counter, OrderedDict, defaultdict
 from enum import Enum
 from types import SimpleNamespace
 from typing import Dict, List
@@ -35,6 +35,7 @@ class _Properties(str, Enum):
     DESCRIPTION = "description"
     IMAGE = "image"
     CONVICTIONS = "convictions"
+    RP_HEADER = "header"
 
 
 class VChar:
@@ -221,6 +222,11 @@ class VChar:
         await self.set_damage(_Properties.HEALTH, Damage.AGGRAVATED, new_value, wrap=False)
 
     @property
+    def aggravated_wp(self) -> int:
+        """The amount of Aggravated Willpower damage sustained."""
+        return self.willpower.count(Damage.AGGRAVATED)
+
+    @property
     def willpower(self):
         """The character's willpower."""
         return self._params[_Properties.WILLPOWER]
@@ -351,6 +357,24 @@ class VChar:
     async def set_convictions(self, new_convictions: List[str]):
         """Set the character's Convictions."""
         await self._async_set_property(_Properties.CONVICTIONS, new_convictions)
+
+    # RP header stuff
+
+    @property
+    def rp_header(self) -> SimpleNamespace:
+        """Get the character's RP header."""
+        header_ = defaultdict(str, self._params.get(_Properties.RP_HEADER, {}).copy())
+
+        return SimpleNamespace(
+            blush=header_["blush"],
+            location=header_["location"],
+            merits=header_["merits"],
+            flaws=header_["flaws"],
+        )
+
+    async def set_rp_header(self, new_header: Dict[str, str]):
+        """Set the character's RP header."""
+        await self._async_set_property(_Properties.RP_HEADER, new_header)
 
     # Derived attributes
 

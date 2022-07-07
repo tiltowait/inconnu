@@ -2,8 +2,7 @@
 # pycord: disable=no-self-use
 
 import discord
-from discord.commands import (Option, OptionChoice, SlashCommandGroup,
-                              slash_command)
+from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 
 import inconnu
@@ -29,6 +28,9 @@ async def _header_bol_options(ctx):
 
 class Gameplay(commands.Cog):
     """Gameplay-based commands."""
+
+    def __init__(self, bot):
+        self.bot = bot
 
     # This is the primary roll command. It features the fastest entry and
     # greatest flexibility. However, it can be a stumbling block for new users;
@@ -244,6 +246,13 @@ class Gameplay(commands.Cog):
     ):
         """Update your character's RP header."""
         await inconnu.header.update_header(ctx, character, bool(blush))
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message):
+        """Remove the roll from statistics."""
+        if message.author == self.bot.user:
+            # Delete the header record if it exists
+            await inconnu.header_col.delete_one({"message": message.id})
 
 
 def setup(bot):

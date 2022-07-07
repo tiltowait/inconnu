@@ -36,8 +36,6 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
             description_.append(header.merits)
         if header.flaws:
             description_.append(header.flaws)
-        if header.temp:
-            description_.append(f"*{header.temp}*")
 
         # Tracker damage
         trackers = []
@@ -54,6 +52,9 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
 
         embed = discord.Embed(title=" • ".join(title), description="\n".join(description_))
         embed.set_thumbnail(url=character.image_url)
+
+        if header.temp:
+            embed.set_footer(text=header.temp)
 
         resp = await ctx.respond(embed=embed)
         if isinstance(resp, discord.Interaction):

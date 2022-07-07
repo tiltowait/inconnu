@@ -55,7 +55,25 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         embed = discord.Embed(title=" • ".join(title), description="\n".join(description_))
         embed.set_thumbnail(url=character.image_url)
 
-        await ctx.respond(embed=embed)
+        resp = await ctx.respond(embed=embed)
+        if isinstance(resp, discord.Interaction):
+            message = await resp.original_message()
+        else:
+            message = resp
+
+        # Register the header in the database
+        await inconnu.header_col.insert_one(
+            {
+                "character": {
+                    "guild": ctx.guild.id,
+                    "channel": ctx.channel.id,
+                    "user": ctx.user.id,
+                    "charid": character.object_id,
+                },
+                "message": message.id,
+                "timestamp": discord.utils.utcnow(),
+            }
+        )
 
     except ValueError as err:
         await inconnu.common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)

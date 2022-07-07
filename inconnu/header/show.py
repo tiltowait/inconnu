@@ -19,6 +19,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         header.location = kwargs["location"] or header.location
         header.merits = kwargs["merits"] or header.merits
         header.flaws = kwargs["flaws"] or header.flaws
+        header.temp = kwargs["temp"] or header.temp
 
         # Title should not have a trailing "•" if location is empty
         title = [character.name]
@@ -35,6 +36,8 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
             description_.append(header.merits)
         if header.flaws:
             description_.append(header.flaws)
+        if header.temp:
+            description_.append(f"*{header.temp}*")
 
         # Tracker damage
         trackers = []

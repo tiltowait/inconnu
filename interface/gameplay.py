@@ -198,11 +198,18 @@ class Gameplay(commands.Cog):
         location: Option(str, "OVERRIDE: Where the scene is taking place", required=False),
         merits: Option(str, "OVERRIDE: Obvious/important merits", required=False),
         flaws: Option(str, "OVERRIDE: Obvious/important flaws", required=False),
+        temporary: Option(str, "OVERRIDE: Temporary affects", required=False),
         character: inconnu.options.character("The character whose header to post"),
     ):
         """Display you character's RP header."""
         await inconnu.header.show_header(
-            ctx, character, blush=blush, location=location, merits=merits, flaws=flaws
+            ctx,
+            character,
+            blush=blush,
+            location=location,
+            merits=merits,
+            flaws=flaws,
+            temp=temporary,
         )
 
     header_update = SlashCommandGroup("update", "Update commands")

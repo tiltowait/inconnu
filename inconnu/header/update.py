@@ -55,14 +55,30 @@ class _RPHeader(discord.ui.Modal):
                 required=False,
             )
         )
+        self.add_item(
+            discord.ui.InputText(
+                label="Temporary Effects",
+                placeholder="Temporary affects currently affecting your character.",
+                value=current_header.temp,
+                max_length=300,
+                required=False,
+            )
+        )
 
     async def callback(self, interaction: discord.Interaction):
         """Set the header and tell the user."""
         location = " ".join(self.children[0].value.split())
         merits = " ".join(self.children[1].value.split())
         flaws = " ".join(self.children[2].value.split())
+        temp = " ".join(self.children[3].value.split())
 
-        new_header = {"blush": self.blush, "location": location, "merits": merits, "flaws": flaws}
+        new_header = {
+            "blush": self.blush,
+            "location": location,
+            "merits": merits,
+            "flaws": flaws,
+            "temp": temp,
+        }
 
         await asyncio.gather(
             interaction.response.send_message(

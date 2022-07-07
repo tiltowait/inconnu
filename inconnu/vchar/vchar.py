@@ -370,6 +370,7 @@ class VChar:
             location=header_["location"],
             merits=header_["merits"],
             flaws=header_["flaws"],
+            temp=header_["temp"],
         )
 
     async def set_rp_header(self, new_header: Dict[str, str]):

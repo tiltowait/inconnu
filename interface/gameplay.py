@@ -9,6 +9,24 @@ from discord.ext import commands
 import inconnu
 
 
+async def _header_bol_options(ctx):
+    """Generate options for the BoL portion of the header update command."""
+    if (charid := ctx.options.get("character")) is None:
+        return []
+
+    guild = ctx.interaction.guild
+    user = ctx.interaction.user
+    character = await inconnu.char_mgr.fetchone(guild, user, charid)
+
+    if character.is_vampire:
+        return [
+            OptionChoice("Yes", 1),
+            OptionChoice("No", 0),
+            OptionChoice("N/A - Thin-Blood", 0),
+        ]
+    return [OptionChoice("N/A - Mortal", 0)]
+
+
 class Gameplay(commands.Cog):
     """Gameplay-based commands."""
 
@@ -192,7 +210,7 @@ class Gameplay(commands.Cog):
         blush: Option(
             int,
             "OVERRIDE: Is Blush of Life active?",
-            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0)],
+            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0), OptionChoice("N/A", 0)],
             required=False,
         ),
         location: Option(str, "OVERRIDE: Where the scene is taking place", required=False),
@@ -221,9 +239,7 @@ class Gameplay(commands.Cog):
         ctx: discord.ApplicationContext,
         character: inconnu.options.character("The character whose header to update", required=True),
         blush: Option(
-            int,
-            "Is Blush of Life active?",
-            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0)],
+            int, "Is Blush of Life active?", autocomplete=_header_bol_options, required=True
         ),
     ):
         """Update your character's RP header."""

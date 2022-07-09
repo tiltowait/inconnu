@@ -302,11 +302,21 @@ class Gameplay(commands.Cog):
         await ctx.respond("This message isn't a header!", ephemeral=True)
 
     @commands.Cog.listener()
-    async def on_message_delete(self, message):
-        """Remove the roll from statistics."""
-        if message.author == self.bot.user:
-            # Delete the header record if it exists
-            await inconnu.header_col.delete_one({"message": message.id})
+    async def on_raw_message_delete(self, raw_message):
+        """Remove a header record."""
+        # We only have a raw message event, which may not be in the message
+        # cache. If it isn't, then we just have to blindly attempt to remove
+        # the record. If this proves to be a performance hit, we'll have to
+        # revert to using on_message_delete().
+        if (message := raw_message.cached_message) is not None:
+            # Got a cached message, so we can be a little more efficient and
+            # only call the database if it belongs to the bot
+            if message.author == self.bot.user:
+                await inconnu.header_col.delete_one({"message": message.id})
+        else:
+            # The message isn't in the cache; blindly delete the record
+            # if it exists
+            await inconnu.header_col.delete_one({"message": raw_message.message_id})
 
 
 def setup(bot):

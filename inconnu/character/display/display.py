@@ -138,7 +138,10 @@ async def __get_embed(
 
     # Begin building the embed
     embed = discord.Embed(
-        title=title or character.name, description=message or "", color=color or discord.Embed.Empty
+        title=title or character.name,
+        description=message or "",
+        color=color or discord.Embed.Empty,
+        url=inconnu.profile_url(character.id),
     )
 
     embed.set_author(

@@ -9,8 +9,20 @@ from numpy.random import default_rng
 
 from . import character
 from . import cull as culler
-from . import (experience, header, log, macros, misc, options, reference,
-               settings, stats, traits, utils, views)
+from . import (
+    experience,
+    header,
+    log,
+    macros,
+    misc,
+    options,
+    reference,
+    settings,
+    stats,
+    traits,
+    utils,
+    views,
+)
 from .roll import Roll
 from .vchar import CharacterManager, VChar
 
@@ -77,3 +89,8 @@ def get_avatar(user: discord.User | discord.Member):
 
     # Members can have a guild-specific avatar
     return user.guild_avatar or user.display_avatar
+
+
+def profile_url(charid: str) -> str:
+    """Generate a profile URL for the character."""
+    return f"https://pc.inconnu.app/profile/{charid}"

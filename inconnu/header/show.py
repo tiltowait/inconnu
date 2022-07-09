@@ -50,7 +50,11 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
 
         description_.append(" • ".join(trackers))
 
-        embed = discord.Embed(title=" • ".join(title), description="\n".join(description_))
+        embed = discord.Embed(
+            title=" • ".join(title),
+            description="\n".join(description_),
+            url=inconnu.profile_url(character.id),
+        )
         embed.set_thumbnail(url=character.image_url)
 
         if header.temp:

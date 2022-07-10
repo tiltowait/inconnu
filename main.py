@@ -8,6 +8,7 @@ import json
 import os
 from typing import Dict, List
 
+import markdown
 from bson.objectid import ObjectId
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
@@ -63,8 +64,8 @@ def prepare_html(profile: Dict[str, str]) -> str:
 
         # Basic profile info
         name = profile["name"]
-        biography = profile.get("biography") or snippets["unset"]
-        description = profile.get("description") or snippets["unset"]
+        biography = markdown.markdown(profile.get("biography", "")) or snippets["unset"]
+        description = markdown.markdown(profile.get("description", "")) or snippets["unset"]
 
         # Get the profile image by template
         if image := profile.get("image", ""):

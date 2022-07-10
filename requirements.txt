@@ -2,6 +2,7 @@ python-dotenv
 
 fastapi==0.78.0
 flatdict==4.0.1
+markdown==3.3.7
 motor==2.5.1
 numpy==1.23.0
 py-cord==2.0.0

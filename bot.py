@@ -148,3 +148,13 @@ def setup():
     if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:
         print("Establishing top.gg connection.")
         bot.dblpy = topgg.DBLClient(bot, topgg_token, autopost=True)
+
+
+async def run():
+    """Set up and run the bot."""
+    setup()
+    try:
+        await bot.start(os.environ["INCONNU_TOKEN"])
+    except KeyboardInterrupt:
+        print("Logging out")
+        await bot.bot.logout()

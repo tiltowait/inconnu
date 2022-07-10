@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>{name}</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="light dark">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap-dark-5@1.1.3/dist/css/bootstrap-dark.min.css" rel="stylesheet">
+	<link rel="icon" type="image/x-icon" href="/web/favicon/favicon.ico">
+</head>
+
+<body>
+	<nav class="navbar">
+		<div class="container">
+			<a class="navbar-brand link-danger" href="https://www.inconnu.app" title="Inconnu Dice Bot">
+				<h1>
+					<img class="d-inline-block align-text-middle" width="64" height="64" src="https://www.inconnu.app/images/inconnu_logo.png">
+					Inconnu
+					<small class="h3 text-muted" style="padding-left:0.25em">Character Profile</small>
+				</h1>
+			</a>
+		</div>
+	</nav>
+	<div class="container" style="padding-top:1em;padding-bottom:1em">
+		<div class="row">
+			<div class="col-sm-6">
+				<div class="card">
+					<div class="card-body">
+						<div class="well">
+							<h1>{name}</h1>
+							<span class="text-muted">
+								A character played by <strong>{user_name}</strong> on <strong>{guild_name}</strong>.
+								{user_avatar}
+								{guild_icon}
+							</span>
+						</div>
+						<hr>
+						<h5 class="card-title">Biography</h5>
+						<p class="card-text">{biography}</p>
+						<h5 class="card-title">Description</h5>
+						<p class="card-text">{description}</p>
+					</div>
+					<div class="card-footer text-muted">
+						<em>
+							<p>
+								All content on this page is player-generated. Any views or material presented are solely the product of the player. Players are responsible for their own image hosting.
+							</p>
+							<p>
+								Set profile data with <code>/character bio set</code>.
+							</p>
+						</em>
+					</div>
+				</div>
+			</div>
+			<div class="col">
+				<!--
+				<img src="{image}" alt="{name}" class="rounded img-fluid">
+			-->
+				{image}
+			</div>
+		</div>
+		<div class="row">
+			<div class="col text-center text-muted">
+				<hr>
+				<strong>Inconnu</strong> is copyright &copy;2022 by tiltowait. All rights reserved.<br>
+				View the bot's source code <a href="https://github.com/tiltowait/inconnu" title="Inconnu source code">here</a> or this page's source code <a href="https://github.com/tiltowait/inconnu-char-bios" title="Character profile source code">here</a>.<br>
+				Want to support me? Jon the <a href="https://www.patreon.com/tiltowait" title="Patreon">Patreon</a>!
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+</body>
+
+</html>

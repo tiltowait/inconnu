@@ -31,9 +31,11 @@ async def home():
 @app.get("/test", response_class=HTMLResponse)
 async def offline_page():
     """Generate an offline test page."""
-    with open("web/sample.json", "r", encoding="utf-8") as file:
-        bio = json.load(file)
-        return prepare_html(bio)
+    with open("web/snippets.json", "r", encoding="utf-8") as file:
+        profile = json.load(file)["sample"]
+        profile["user"] = 0
+        profile["guild"] = 0
+        return prepare_html(profile)
 
 
 @app.get("/profile/{charid}", response_class=HTMLResponse)
@@ -54,17 +56,34 @@ async def display_character_bio(charid: str):
     return prepare_html(bio)
 
 
-def prepare_html(json: Dict[str, str]) -> str:
+def prepare_html(profile: Dict[str, str]) -> str:
     """Prep the character HTML page."""
-    name = json["name"]
-    biography = json.get("biography") or gen_not_set()
-    description = json.get("description") or gen_not_set()
-    image = gen_img(json.get("image"), name)
+    name = profile["name"]
+    biography = profile.get("biography") or gen_not_set()
+    description = profile.get("description") or gen_not_set()
+    image = gen_img(profile.get("image"), name)
 
-    guild = bot.bot.get_guild(json["guild"])
-    user = guild.get_member(json["user"])
+    guild = bot.bot.get_guild(profile["guild"])
+    user = guild.get_member(profile["user"]) if guild is not None else None
 
-    round = "img-fluid rounded-circle"
+    with open("web/snippets.json", "r", encoding="utf-8") as snippets:
+        snippets = json.load(snippets)
+
+        icons = []
+        if guild is None:
+            ownership = snippets["unknown"]
+        elif user is None:
+            ownership = snippets["unowned"].format(guild=guild.name)
+            icons.append(snippets["icon"].format(source=guild.icon, name=guild.name))
+        elif user == bot.bot.user:
+            ownership = snippets["spc"].format(guild=guild.name)
+            icons.append(snippets["icon"].format(source=guild.icon, name=guild.name))
+        else:
+            ownership = snippets["owned"].format(user=user.display_name, guild=guild.name)
+            icons.append(snippets["icon"].format(source=guild.icon, name=guild.name))
+            icons.append(
+                snippets["icon"].format(source=inconnu.get_avatar(user), name=user.display_name)
+            )
 
     with open("web/profile.html", "r", encoding="utf-8") as html_file:
         html = html_file.read()
@@ -73,15 +92,8 @@ def prepare_html(json: Dict[str, str]) -> str:
             biography=biography,
             description=description,
             image=image,
-            guild_icon=gen_img(str(guild.icon), guild.name, img_class=round, size=32),
-            guild_name=guild.name,
-            user_avatar=gen_img(
-                inconnu.get_avatar(user),
-                user.display_name,
-                img_class=round,
-                size=32,
-            ),
-            user_name=user.display_name,
+            ownership=ownership,
+            icons="\n".join(icons),
         )
 
 

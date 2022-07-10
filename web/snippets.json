@@ -1,0 +1,16 @@
+{
+	"profile_image": "<img src=\"{source}\" class=\"rounded img-fluid\" alt=\"{name}\">",
+	"icon": "<img src=\"{source}\" class=\"rounded-circle\" width=\"48\" alt=\"{name}\">",
+
+	"owned": "A character played by <strong>{user}</strong> on <strong>{guild}</strong>.",
+	"unowned": "A character on <strong>{guild}</strong>.",
+	"spc": "An <strong>SPC</strong> on <strong>{guild}</strong>.",
+	"unknown": "A character floating in the <strong>void</strong>.",
+
+	"sample": {
+		"name": "Nadea Theron",
+		"biography": "Nadea, as she is known now, was a moderately successful ER doctor in life. Her ability to remain cool under pressure was a valuable asset that helped her greatly in her profession; however, it was not due to any strength of character but hidden sociopathy. After meeting Vivette de Klerk at a bookstore, Nadea fell under the vampire’s spell, never suspecting her new “friend” was a Lamia and a priestess of the Bahari. As Nadea became engrossed in the idea of pain as self-actualization, her work began to suffer. After several minor internal scandals involving the withholding of pain medications and certain prescription drugs, the doctor was eventually fired. The loss of her livelihood was devastating to the sociopath, who had no friends or family to fall back on for support. It was at that time of rock-bottom when Vivette revealed her true nature and blessed Nadea with the embrace. And for her, it was a blessing indeed. Now, she can pursue avenues of medicine previously unheard-of.",
+		"description": "With piercing green eyes, black-and-white hair that resembles a lightning bolt in its elaborate braid, and the beauty of a supermodel, Nadea carries herself with the demeanor and grace of a predator. Her mannerisms are just that little bit off, an accumulation of tiny idiosyncracies that add up to unsettling serial killer vibes that causes a tug-of-war battle between attraction and fear. Usually dressed modestly—favoring skirt suits for anything resembling business dealings—she sometimes wears more provocative clothing when trying to blend in by sticking out.",
+		"image": "https://tilt-assets.s3.us-west-1.amazonaws.com/nadea-mynonjo.webp"
+	}
+}

@@ -7,3 +7,4 @@ numpy==1.23.0
 py-cord==2.0.0
 statcord.py==3.1.0
 topggpy==1.4.0
+uvicorn==0.17.6

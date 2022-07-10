@@ -1,6 +1,8 @@
 {
+	"unset": "<em class=\"text-muted\">Not set.</em>",
 	"profile_image": "<img src=\"{source}\" class=\"rounded img-fluid\" alt=\"{name}\">",
-	"icon": "<img src=\"{source}\" class=\"rounded-circle\" width=\"48\" alt=\"{name}\">",
+	"no_profile_image": "<p class=\"text-muted text-center\"><em>No image set.</em></p>",
+	"icon": "<img src=\"{source}\" class=\"rounded-circle\" width=\"32\" alt=\"{name}\">",
 
 	"owned": "A character played by <strong>{user}</strong> on <strong>{guild}</strong>.",
 	"unowned": "A character on <strong>{guild}</strong>.",

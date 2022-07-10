@@ -6,7 +6,7 @@ Invite: https://discord.com/api/oauth2/authorize?client_id=882409882119196704&pe
 import asyncio
 import json
 import os
-from typing import Dict
+from typing import Dict, List
 
 from bson.objectid import ObjectId
 from fastapi import FastAPI
@@ -58,32 +58,34 @@ async def display_character_bio(charid: str):
 
 def prepare_html(profile: Dict[str, str]) -> str:
     """Prep the character HTML page."""
-    name = profile["name"]
-    biography = profile.get("biography") or gen_not_set()
-    description = profile.get("description") or gen_not_set()
-    image = gen_img(profile.get("image"), name)
-
-    guild = bot.bot.get_guild(profile["guild"])
-    user = guild.get_member(profile["user"]) if guild is not None else None
-
     with open("web/snippets.json", "r", encoding="utf-8") as snippets:
         snippets = json.load(snippets)
 
-        icons = []
+        # Basic profile info
+        name = profile["name"]
+        biography = profile.get("biography") or snippets["unset"]
+        description = profile.get("description") or snippets["unset"]
+
+        # Get the profile image by template
+        if image := profile.get("image", ""):
+            image = snippets["profile_image"].format(source=image, name=name)
+        else:
+            image = snippets["no_profile_image"]
+
+        # Generate the ownership string and icons
+        guild = bot.bot.get_guild(profile["guild"])
+        user = guild.get_member(profile["user"]) if guild is not None else None
+        icons = get_icons(snippets, user, guild)
+
         if guild is None:
             ownership = snippets["unknown"]
         elif user is None:
             ownership = snippets["unowned"].format(guild=guild.name)
-            icons.append(snippets["icon"].format(source=guild.icon, name=guild.name))
         elif user == bot.bot.user:
             ownership = snippets["spc"].format(guild=guild.name)
-            icons.append(snippets["icon"].format(source=guild.icon, name=guild.name))
         else:
+            # Guild found, user found, user not the bot
             ownership = snippets["owned"].format(user=user.display_name, guild=guild.name)
-            icons.append(snippets["icon"].format(source=guild.icon, name=guild.name))
-            icons.append(
-                snippets["icon"].format(source=inconnu.get_avatar(user), name=user.display_name)
-            )
 
     with open("web/profile.html", "r", encoding="utf-8") as html_file:
         html = html_file.read()
@@ -97,20 +99,17 @@ def prepare_html(profile: Dict[str, str]) -> str:
         )
 
 
-def gen_not_set() -> str:
-    """Generate a styled "Not set" text."""
-    return '<em class="text-muted">Not set.</em>'
+def get_icons(snippets, user, guild) -> List[str]:
+    """Get the icons for the user and guild."""
+    icons = []
+    if user is not None:
+        icons.append(
+            snippets["icon"].format(source=inconnu.get_avatar(user), name=user.display_name)
+        )
+    if guild is not None:
+        icons.append(snippets["icon"].format(source=guild.icon, name=guild.name))
 
-
-def gen_img(image: str, name: str, *, img_class="rounded img-fluid", size: int = None) -> str:
-    """Generate the img tag or specify unset."""
-    if image:
-        if size is not None:
-            size = f'width="{size}"'
-        else:
-            size = ""
-        return f'<img src="{image}" alt="{name}" {size} class="{img_class}">'
-    return '<p class="text-muted text-center"><em>No image set.</em></p>'
+    return icons
 
 
 if __name__ == "__main__":

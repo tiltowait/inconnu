@@ -243,6 +243,7 @@ class Gameplay(commands.Cog):
     async def header(
         self,
         ctx: discord.ApplicationContext,
+        character: inconnu.options.character("The character whose header to post"),
         blush: Option(
             int,
             "OVERRIDE: Is Blush of Life active?",
@@ -253,7 +254,6 @@ class Gameplay(commands.Cog):
         merits: Option(str, "OVERRIDE: Obvious/important merits", required=False),
         flaws: Option(str, "OVERRIDE: Obvious/important flaws", required=False),
         temporary: Option(str, "OVERRIDE: Temporary affects", required=False),
-        character: inconnu.options.character("The character whose header to post"),
     ):
         """Display you character's RP header."""
         await inconnu.header.show_header(

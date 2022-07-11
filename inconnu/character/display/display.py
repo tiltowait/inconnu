@@ -137,11 +137,17 @@ async def __get_embed(
     fields = fields or DisplayField.all()
 
     # Begin building the embed
+    title = title or character.name
+    if title == character.name:
+        profile_url = inconnu.profile_url(character.id)
+    else:
+        profile_url = discord.Embed.Empty
+
     embed = discord.Embed(
-        title=title or character.name,
+        title=title,
         description=message or "",
         color=color or discord.Embed.Empty,
-        url=inconnu.profile_url(character.id),
+        url=profile_url,
     )
 
     embed.set_author(

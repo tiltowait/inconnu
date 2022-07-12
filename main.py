@@ -86,7 +86,7 @@ def prepare_html(profile: Dict[str, str]) -> str:
             ownership = snippets["spc"].format(guild=guild.name)
         else:
             # Guild found, user found, user not the bot
-            ownership = snippets["owned"].format(user=user.display_name, guild=guild.name)
+            ownership = snippets["owned"].format(user=user.name, guild=guild.name)
 
     with open("web/profile.html", "r", encoding="utf-8") as html_file:
         html = html_file.read()

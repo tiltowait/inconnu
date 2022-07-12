@@ -40,7 +40,7 @@ async def offline_page():
 
 
 @app.get("/profile/{charid}", response_class=HTMLResponse)
-async def display_character_bio(charid: str):
+async def display_character_profile(charid: str):
     """Display character biography detail."""
     if not ObjectId.is_valid(charid):
         raise HTTPException(400, detail="Improper character ID.")
@@ -69,8 +69,10 @@ def prepare_html(profile: Dict[str, str]) -> str:
 
         # Get the profile image by template
         if image := profile.get("image", ""):
+            image_prop = snippets["image_prop"].format(source=image)
             image = snippets["profile_image"].format(source=image, name=name)
         else:
+            image_prop = ""
             image = snippets["no_profile_image"]
 
         # Generate the ownership string and icons
@@ -92,6 +94,8 @@ def prepare_html(profile: Dict[str, str]) -> str:
         html = html_file.read()
         return html.format(
             name=name,
+            url=inconnu.profile_url(profile["_id"]),
+            image_prop=image_prop,
             biography=biography,
             description=description,
             image=image,

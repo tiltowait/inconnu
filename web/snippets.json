@@ -4,7 +4,7 @@
 	"no_profile_image": "<p class=\"text-muted text-center\"><em>No image set.</em></p>",
 	"icon": "<img src=\"{source}\" class=\"rounded-circle\" width=\"32\" alt=\"{name}\">",
 
-	"owned": "A character played by <strong>{user}</strong> on <strong>{guild}</strong>.",
+	"owned": "Played by <strong>{user}</strong> on <strong>{guild}</strong>.",
 	"unowned": "A character on <strong>{guild}</strong>.",
 	"spc": "An <strong>SPC</strong> on <strong>{guild}</strong>.",
 	"unknown": "A character floating in the <strong>void</strong>.",

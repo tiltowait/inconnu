@@ -245,14 +245,14 @@ class Gameplay(commands.Cog):
         character: inconnu.options.character("The character whose header to post"),
         blush: Option(
             int,
-            "OVERRIDE: Is Blush of Life active?",
+            "THIS POST ONLY: Is Blush of Life active?",
             choices=[OptionChoice("Yes", 1), OptionChoice("No", 0), OptionChoice("N/A", 0)],
             required=False,
         ),
-        location: Option(str, "OVERRIDE: Where the scene is taking place", required=False),
-        merits: Option(str, "OVERRIDE: Obvious/important merits", required=False),
-        flaws: Option(str, "OVERRIDE: Obvious/important flaws", required=False),
-        temporary: Option(str, "OVERRIDE: Temporary affects", required=False),
+        location: Option(str, "THIS POST ONLY: Where the scene is taking place", required=False),
+        merits: Option(str, "THIS POST ONLY: Obvious/important merits", required=False),
+        flaws: Option(str, "THIS POST ONLY: Obvious/important flaws", required=False),
+        temporary: Option(str, "THIS POST ONLY: Temporary affects", required=False),
     ):
         """Display you character's RP header."""
         await inconnu.header.show_header(

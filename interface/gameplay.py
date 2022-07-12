@@ -239,7 +239,6 @@ class Gameplay(commands.Cog):
     HEADER_DEBUG_GUILDS = [826628660450689074, 676333549720174605]
 
     @slash_command(debug_guilds=HEADER_DEBUG_GUILDS)
-    @discord.default_permissions(administrator=True)
     async def header(
         self,
         ctx: discord.ApplicationContext,
@@ -269,7 +268,6 @@ class Gameplay(commands.Cog):
     header_update = SlashCommandGroup("update", "Update commands")
 
     @header_update.command(name="header", debug_guilds=HEADER_DEBUG_GUILDS)
-    @commands.has_permissions(administrator=True)
     async def update_header(
         self,
         ctx: discord.ApplicationContext,

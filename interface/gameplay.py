@@ -254,7 +254,7 @@ class Gameplay(commands.Cog):
         flaws: Option(str, "THIS POST ONLY: Obvious/important flaws", required=False),
         temporary: Option(str, "THIS POST ONLY: Temporary affects", required=False),
     ):
-        """Display you character's RP header."""
+        """Display your character's RP header."""
         await inconnu.header.show_header(
             ctx,
             character,

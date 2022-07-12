@@ -71,10 +71,10 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
             {
                 "character": {
                     "guild": ctx.guild.id,
-                    "channel": ctx.channel.id,
                     "user": ctx.user.id,
                     "charid": character.object_id,
                 },
+                "channel": ctx.channel.id,
                 "message": message.id,
                 "timestamp": discord.utils.utcnow(),
             }

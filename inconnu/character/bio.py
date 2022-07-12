@@ -44,7 +44,7 @@ async def show_biography(ctx, character, player, ephemeral=False):
 
 def __biography_embed(character, owner):
     """Display the biography in an embed."""
-    embed = discord.Embed(title="Biography")
+    embed = discord.Embed(title="Biography", url=inconnu.profile_url(character.id))
     embed.set_author(name=character.name, icon_url=inconnu.get_avatar(owner))
 
     if character.biography:

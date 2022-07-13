@@ -9,7 +9,7 @@ import inconnu
 __HELP_URL = "https://www.inconnu.app"
 
 
-async def update_header(ctx: discord.ApplicationContext, character, blush: bool):
+async def update_header(ctx: discord.ApplicationContext, character, blush: int):
     """Update the character's RP header."""
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)

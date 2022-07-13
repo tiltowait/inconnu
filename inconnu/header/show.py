@@ -15,7 +15,8 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         header = character.rp_header
 
         # Get any overrides
-        header.blush = bool(kwargs["blush"] or header.blush)
+        if kwargs["blush"] is not None:
+            header.blush = kwargs["blush"]
         header.location = kwargs["location"] or header.location
         header.merits = kwargs["merits"] or header.merits
         header.flaws = kwargs["flaws"] or header.flaws
@@ -23,7 +24,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
 
         # Title should not have a trailing "•" if location is empty
         title = [character.name]
-        if character.is_vampire:
+        if character.is_vampire and header.blush != -1:
             # Only vampires can blush
             title.append("Blushed" if header.blush else "Not Blushed")
 

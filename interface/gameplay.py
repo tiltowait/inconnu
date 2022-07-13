@@ -55,9 +55,9 @@ async def _header_bol_options(ctx):
         return [
             OptionChoice("Yes", 1),
             OptionChoice("No", 0),
-            OptionChoice("N/A - Thin-Blood", 0),
+            OptionChoice("N/A - Thin-Blood", -1),
         ]
-    return [OptionChoice("N/A - Mortal", 0)]
+    return [OptionChoice("N/A - Mortal", -1)]
 
 
 class Gameplay(commands.Cog):
@@ -246,7 +246,7 @@ class Gameplay(commands.Cog):
         blush: Option(
             int,
             "THIS POST ONLY: Is Blush of Life active?",
-            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0), OptionChoice("N/A", 0)],
+            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0), OptionChoice("N/A", -1)],
             required=False,
         ),
         location: Option(str, "THIS POST ONLY: Where the scene is taking place", required=False),
@@ -277,7 +277,7 @@ class Gameplay(commands.Cog):
         ),
     ):
         """Update your character's RP header."""
-        await inconnu.header.update_header(ctx, character, bool(blush))
+        await inconnu.header.update_header(ctx, character, blush)
 
     @commands.message_command(name="Fix RP Header")
     @commands.guild_only()

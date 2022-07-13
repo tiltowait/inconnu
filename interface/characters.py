@@ -179,6 +179,23 @@ class Characters(commands.Cog, name="Character Management"):
         """Delete a character."""
         await inconnu.character.delete(ctx, character)
 
+    @character.command(name="profile")
+    @commands.guild_only()
+    async def character_profile(
+        self,
+        ctx: discord.ApplicationContext,
+        player: Option(
+            discord.Member, "The character's owner (does not work with EDIT)", required=False
+        ),
+        character: inconnu.options.character("The character to show"),
+        edit: inconnu.options.character("The character whose profile to edit"),
+    ):
+        """Show or edit a character profile."""
+        if edit is not None:
+            await inconnu.character.edit_biography(ctx, edit)
+        else:
+            await inconnu.character.show_biography(ctx, character, player)
+
     biography = character.create_subgroup("bio", "Character biography")
 
     @biography.command(name="edit")
@@ -189,7 +206,9 @@ class Characters(commands.Cog, name="Character Management"):
         character: inconnu.options.character("The character to edit", required=True),
     ):
         """Edit a character's biography."""
-        await inconnu.character.edit_biography(ctx, character)
+        await ctx.respond(
+            "This command has been replaced with `/character profile edit:`.", ephemeral=True
+        )
 
     @biography.command(name="show")
     @commands.guild_only()
@@ -200,7 +219,9 @@ class Characters(commands.Cog, name="Character Management"):
         character: inconnu.options.character("The character to view"),
     ):
         """View a character's biography."""
-        await inconnu.character.show_biography(ctx, character, player)
+        await ctx.respond(
+            "This command has been replaced with `/character profile`.", ephemeral=True
+        )
 
     @commands.user_command(name="Biography")
     async def character_bio_context(self, ctx, member):

@@ -14,11 +14,16 @@ async def edit_biography(ctx, character):
     """Edit a character bio."""
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
-        modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
+        if character.user != ctx.user.id:
+            raise inconnu.common.FetchError("You may only edit your own characters' profile.")
 
+        modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
         await ctx.send_modal(modal)
+
     except inconnu.vchar.errors.CharacterNotFoundError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+    except inconnu.common.FetchError as err:
+        await inconnu.common.present_error(ctx, err)
 
 
 async def show_biography(ctx, character, player, ephemeral=False):
@@ -34,7 +39,11 @@ async def show_biography(ctx, character, player, ephemeral=False):
             embed = __biography_embed(character, owner)
             await ctx.respond(embed=embed, ephemeral=ephemeral)
         else:
-            await ctx.respond(f"**{character.name}** doesn't have a biography!", ephemeral=True)
+            command = f"`/character profile edit:{character.name}`"
+            await ctx.respond(
+                f"**{character.name}** has no profile! Set it using {command}.",
+                ephemeral=True,
+            )
 
     except LookupError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)

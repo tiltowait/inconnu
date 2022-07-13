@@ -49,15 +49,20 @@ async def _header_bol_options(ctx):
 
     guild = ctx.interaction.guild
     user = ctx.interaction.user
-    character = await inconnu.char_mgr.fetchone(guild, user, charid)
 
-    if character.is_vampire:
-        return [
-            OptionChoice("Yes", 1),
-            OptionChoice("No", 0),
-            OptionChoice("N/A - Thin-Blood", -1),
-        ]
-    return [OptionChoice("N/A - Mortal", -1)]
+    try:
+        character = await inconnu.char_mgr.fetchone(guild, user, charid)
+
+        if character.is_vampire:
+            return [
+                OptionChoice("Yes", 1),
+                OptionChoice("No", 0),
+                OptionChoice("N/A - Thin-Blood", -1),
+            ]
+        return [OptionChoice("N/A - Mortal", -1)]
+
+    except inconnu.vchar.errors.CharacterNotFoundError:
+        return []
 
 
 class Gameplay(commands.Cog):

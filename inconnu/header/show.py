@@ -81,8 +81,8 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
             }
         )
 
-    except ValueError as err:
-        await inconnu.common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)
+    except inconnu.common.FetchError:
+        pass
 
 
 def track_damage(sup: int, agg: int) -> str:

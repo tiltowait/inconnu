@@ -22,21 +22,23 @@ app = FastAPI(openapi_url=None)
 app.mount("/web/favicon", StaticFiles(directory="web/favicon"), name="web/favicon")
 
 
-@app.get("/", response_class=HTMLResponse)
-async def home():
-    """Basic webpage with example."""
-    with open("web/index.html", "r", encoding="utf-8") as html:
-        return html.read()
+if "DEBUG" in os.environ:
+    # We don't want these development endpoints in the final API
 
+    @app.get("/", response_class=HTMLResponse)
+    async def home():
+        """Basic webpage with example."""
+        with open("web/index.html", "r", encoding="utf-8") as html:
+            return html.read()
 
-@app.get("/test", response_class=HTMLResponse)
-async def offline_page():
-    """Generate an offline test page."""
-    with open("web/snippets.json", "r", encoding="utf-8") as file:
-        profile = json.load(file)["sample"]
-        profile["user"] = 0
-        profile["guild"] = 0
-        return prepare_html(profile)
+    @app.get("/test", response_class=HTMLResponse)
+    async def offline_page():
+        """Generate an offline test page."""
+        with open("web/snippets.json", "r", encoding="utf-8") as file:
+            profile = json.load(file)["sample"]
+            profile["user"] = 0
+            profile["guild"] = 0
+            return prepare_html(profile)
 
 
 @app.get("/profile/{charid}", response_class=HTMLResponse)

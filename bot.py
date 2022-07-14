@@ -78,7 +78,6 @@ async def on_application_command_error(ctx, error):
 
     if isinstance(error, pymongo.errors.PyMongoError):
         await inconnu.log.report_database_error(bot, ctx)
-        return
 
     await inconnu.log.report_error(bot, ctx, error)
 

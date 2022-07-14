@@ -1,4 +1,3 @@
-
 fastapi==0.78.0
 flatdict==4.0.1
 markdown==3.3.7
@@ -9,3 +8,4 @@ python-dotenv==0.20.0
 statcord.py==3.1.0
 topggpy==1.4.0
 uvicorn==0.18.2
+validators==0.20.0

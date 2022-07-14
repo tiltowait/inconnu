@@ -1,9 +1,9 @@
 """character/bio.py - Create/edit/view character bios."""
 
 import asyncio
-from urllib.parse import urlparse
 
 import discord
+import validators
 
 import inconnu
 
@@ -118,23 +118,13 @@ class _CharacterBio(discord.ui.Modal):
             self.character.set_description(description.strip()),
         ]
 
-        if _valid_url(image_url):
+        message = f"Edited **{self.character.name}'s** biography!"
+
+        if validators.url(image_url):
             tasks.append(self.character.set_image_url(image_url))
         else:
             tasks.append(self.character.set_image_url(""))
+            message += " Your image URL isn't valid and wasn't saved."
 
-        tasks.append(
-            interaction.response.send_message(
-                f"Edited **{self.character.name}'s** biography!", ephemeral=True
-            )
-        )
+        tasks.append(interaction.response.send_message(message, ephemeral=True))
         await asyncio.gather(*tasks)
-
-
-def _valid_url(url):
-    """Validate a URL."""
-    try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc])
-    except:
-        return False

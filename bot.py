@@ -63,6 +63,12 @@ async def on_application_command_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         await ctx.respond("Sorry, you don't have permission to do this!", ephemeral=True)
         return
+    if isinstance(error, discord.errors.HTTPException):
+        await ctx.respond(
+            "Your character profile image isn't a valid URL! Fix with `/character profile edit:`.",
+            ephemeral=True,
+        )
+        return
     if isinstance(error, discord.errors.NotFound):
         # This just means a button tried to disable when its message no longer exists.
         # We don't care, and there's nothing we can do about it anyway.

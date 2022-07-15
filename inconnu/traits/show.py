@@ -17,10 +17,8 @@ async def show(ctx, character: str, player: discord.Member):
             ctx, character, tip, __HELP_URL, owner=owner
         )
 
-        if await inconnu.settings.accessible(ctx):
-            await __list_text(ctx, character)
-        else:
-            await __list_embed(ctx, character, owner)
+        embed = traits_embed(character, owner)
+        await inconnu.respond(ctx)(embed=embed, ephemeral=True)
 
     except LookupError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
@@ -28,7 +26,7 @@ async def show(ctx, character: str, player: discord.Member):
         pass
 
 
-async def __list_embed(ctx, character, owner):
+def traits_embed(character, owner):
     """Display traits in an embed."""
     embed = discord.Embed(title="Character Traits")
     embed.set_author(name=character.name, icon_url=inconnu.get_avatar(owner))
@@ -55,23 +53,4 @@ async def __list_embed(ctx, character, owner):
         traits = "\n".join(traits)
         embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
 
-    await inconnu.respond(ctx)(embed=embed, ephemeral=True)
-
-
-async def __list_text(ctx, character):
-    """Display traits in plain text."""
-    traits = [f"{trait}: {rating}" for trait, rating in character.traits.items()]
-    raw_pages = inconnu.common.paginate(1200, *traits)  # Array of strings
-
-    _pages = []
-    for page in raw_pages:
-        contents = [f"{character.name}'s Traits"]
-        contents.append("```css")
-        contents.append(page)
-        contents.append("```")
-        contents.append("To see HP, WP, etc., use `/character display`")
-
-        _pages.append("\n".join(contents))
-
-    paginator = pages.Paginator(pages=_pages, show_disabled=False)
-    await paginator.respond(ctx.interaction, ephemeral=True)
+    return embed

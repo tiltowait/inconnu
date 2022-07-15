@@ -144,17 +144,22 @@ async def report_update(*, ctx, character, title, message, **kwargs):
         if msg:
             msg = msg.jump_url
 
-        embed = discord.Embed(
-            title=title,
-            description=message,
-            url=msg,
-            color=kwargs.pop("color", discord.Embed.Empty),
-        )
-        embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
+        if "embed" not in kwargs:
+            embed = discord.Embed(
+                title=title,
+                description=message,
+                url=msg,
+                color=kwargs.pop("color", discord.Embed.Empty),
+            )
+            embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
+            content = ""
+        else:
+            embed = kwargs["embed"]
+            content = message
 
         mentions = discord.AllowedMentions(users=False)
 
-        await update_channel.send(embed=embed, allowed_mentions=mentions)
+        await update_channel.send(content, embed=embed, allowed_mentions=mentions)
 
 
 async def select_character(ctx, err, help_url, tip, player=None):

@@ -99,6 +99,7 @@ class Wizard:
                 character=character,
                 title="Character Created",
                 message=f"{self.ctx.user.mention} created **{character.name}**.",
+                embed=inconnu.traits.embed(character, self.ctx.user),
             )
         )
 

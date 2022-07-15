@@ -144,8 +144,20 @@ class RollParser:
             return
 
         # The user provided pool and hunger
-        self._parameters["q_hunger_stack"] = qualified_stacks.pop(0)
-        self._parameters["i_hunger_stack"] = interpolated_stacks.pop(0)
+        if self.character is None or self.character.is_vampire:
+            self._parameters["q_hunger_stack"] = qualified_stacks.pop(0)
+            self._parameters["i_hunger_stack"] = interpolated_stacks.pop(0)
+        else:
+            # This is a mortal character. Mortals don't have Hunger, so we'll
+            # ignore it and set it to 0; however, many players are used to
+            # inputting Hunger on all rolls and may have put a 0 for Hunger.
+            # In that case, we will remove the 0 at the top of the stack.
+            self._parameters["q_hunger_stack"] = ["0"]
+            self._parameters["i_hunger_stack"] = ["0"]
+
+            if interpolated_stacks[0] == ["0"]:
+                del qualified_stacks[0]
+                del interpolated_stacks[0]
 
         if not qualified_stacks:
             # Difficulty was not provided
@@ -153,7 +165,7 @@ class RollParser:
             self._parameters["i_difficulty_stack"] = ["0"]
             return
 
-        # They gave us all three
+        # They gave us all three (pool, hunger, and difficulty)
         self._parameters["q_difficulty_stack"] = qualified_stacks.pop(0)
         self._parameters["i_difficulty_stack"] = interpolated_stacks.pop(0)
 
@@ -171,7 +183,7 @@ class RollParser:
                 f"***Difficulty:*** `{_difficulty}`"
             )
             extra = " ".join(sum(qualified_stacks, []))
-            extra = f"**Unexpected parameter(s):** `{extra}`"
+            extra = f"**Unexpected extra parameter(s):** `{extra}`"
 
             err = "Too many roll parameters given. Interpretation based on input:"
             raise SyntaxError(f"{err}\n\n{interpretation}\n\n{extra}")

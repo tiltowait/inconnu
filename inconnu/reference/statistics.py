@@ -10,7 +10,9 @@ import inconnu
 __HELP_URL = "https://www.inconnu.app"
 
 
-async def statistics(ctx, style: str, character: str, date: datetime):
+async def statistics(
+    ctx, style: str, character: str, date: datetime, player: discord.Member | None
+):
     """
     View the roll statistics for the user's characters.
     Args:
@@ -24,6 +26,7 @@ async def statistics(ctx, style: str, character: str, date: datetime):
     """
     try:
         date = datetime.strptime(date, "%Y%m%d")
+        owner = await inconnu.common.player_lookup(ctx, player)
 
         # As Inconnu was originally made for Cape Town by Night, we will use
         # that server's weekly reset time as the cutoff
@@ -36,19 +39,21 @@ async def statistics(ctx, style: str, character: str, date: datetime):
             return
 
         if style == "General":
-            await __general_statistics(ctx, date)
+            await __general_statistics(ctx, date, owner)
         else:
-            await __traits_statistics(ctx, character, date)
+            await __traits_statistics(ctx, character, date, owner)
 
     except ValueError:
         await inconnu.common.present_error(ctx, f"`{date}` is not a valid date.")
+    except LookupError as err:
+        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
 
 
-async def __traits_statistics(ctx, char_id, date):
+async def __traits_statistics(ctx, char_id, date, owner):
     """View the statistics for all traits since a given date."""
     try:
         tip = "`/statistics` `traits:Full` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, char_id, tip, __HELP_URL)
+        character = await inconnu.common.fetch_character(ctx, char_id, tip, __HELP_URL, owner=owner)
 
     except inconnu.vchar.errors.CharacterNotFoundError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
@@ -99,7 +104,7 @@ async def __traits_statistics(ctx, char_id, date):
             # is useful information, too.
             stats[trait] = raw_stats[0]["traits"].get(trait, 0)
 
-        await __display_trait_statistics(ctx, character, stats, date)
+        await __display_trait_statistics(ctx, character, stats, date, owner)
     else:
         if date.year < 2021:
             # Lifetime rolls
@@ -112,7 +117,7 @@ async def __traits_statistics(ctx, char_id, date):
             )
 
 
-async def __display_trait_statistics(ctx, character, stats, date):
+async def __display_trait_statistics(ctx, character, stats, date, owner):
     """Display the character traits in a paginated embed."""
     if date.year < 2021:
         title = f"{character.name}: Trait successes (Lifetime)"
@@ -120,7 +125,7 @@ async def __display_trait_statistics(ctx, character, stats, date):
         title = f"{character.name}: Trait successes since {__format_date(date)}"
 
     embed = discord.Embed(title=title)
-    embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
+    embed.set_author(name=owner.display_name, icon_url=inconnu.get_avatar(owner))
 
     for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
         embed.add_field(name="​", value=f"**{group}**", inline=False)
@@ -146,14 +151,14 @@ async def __display_trait_statistics(ctx, character, stats, date):
     await ctx.respond(embed=embed)
 
 
-async def __general_statistics(ctx, date):
+async def __general_statistics(ctx, date, owner):
     """View the roll statistics for the user's characters."""
     col = inconnu.db.characters
     pipeline = [
         {
             "$match": {
                 "guild": ctx.guild.id,
-                "user": ctx.user.id,
+                "user": owner.id,
             }
         },
         {
@@ -213,13 +218,18 @@ async def __general_statistics(ctx, date):
     results = await col.aggregate(pipeline).to_list(length=None)
 
     if not results:
-        await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)
+        if ctx.user == owner:
+            await ctx.respond("You haven't made any rolls on any characters.", ephemeral=True)
+        else:
+            await ctx.respond(
+                f"{owner.display_name} hasn't made any rolls on any characters.", ephemeral=True
+            )
         return
 
     if await inconnu.settings.accessible(ctx):
         await __display_text(ctx, results, date)
     else:
-        await __display_embed(ctx, results, date)
+        await __display_embed(ctx, results, date, owner)
 
 
 async def __display_text(ctx, results, date):
@@ -248,7 +258,7 @@ async def __display_text(ctx, results, date):
     await ctx.respond(msg)
 
 
-async def __display_embed(ctx, results, date):
+async def __display_embed(ctx, results, date, owner):
     """Display the statistics in an embed."""
     if date.year < 2021:
         fmt_date = "(Lifetime)"
@@ -256,7 +266,7 @@ async def __display_embed(ctx, results, date):
         fmt_date = "Since " + __format_date(date)
 
     embed = discord.Embed(title=f"Roll Statistics {fmt_date}")
-    embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
+    embed.set_author(name=owner.display_name, icon_url=inconnu.get_avatar(owner))
 
     for character in results:
         outcomes = defaultdict(int)

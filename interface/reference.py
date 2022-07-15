@@ -71,9 +71,10 @@ class ReferenceCommands(commands.Cog):
         ),
         date: Option(str, "(Optional) YYYYMMDD date to count from", default="19700101"),
         character: inconnu.options.character("The character whose statistics will be looked up"),
+        player: inconnu.options.player,
     ):
         """View roll statistics for your characters."""
-        await inconnu.reference.statistics(ctx, style, character, date)
+        await inconnu.reference.statistics(ctx, style, character, date, player)
 
     @slash_command()
     async def temperament(

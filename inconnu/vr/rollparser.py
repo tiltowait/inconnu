@@ -54,7 +54,9 @@ class RollParser:
     @property
     def hunger(self):
         """The int value of the roll's hunger."""
-        return self._parameters["eval_hunger"]
+        if self.character is None or self.character.is_vampire:
+            return self._parameters["eval_hunger"]
+        return 0
 
     @property
     def difficulty(self):

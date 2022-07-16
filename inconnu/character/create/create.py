@@ -21,6 +21,22 @@ async def create(
         )
         return
 
+    # Deferring is ugly, but there are multiple API calls we have to wait for:
+    #   1. Potential database call to see if the character already exists
+    #   2. Attempting to DM the user
+    #   3. If that fails, responding to the user in-channel*
+    #
+    # We also encountered, once, an odd race condition with ctx.respond(). It's
+    # possible it was a Discord error, but using defer() should ensure we never
+    # get it.
+    #
+    # *Ultimately, it might be best not to do anything with DMs. The check for
+    # it is hacky, and ephemeral messages don't clutter up channels. The DM
+    # option exists solely because of the bot's message-command roots. It does
+    # give one benefit, however: they never lose the "What next?" message it
+    # DMs them when they're done.
+    await ctx.defer(ephemeral=True)
+
     try:
         __validate_parameters(name, humanity, health, willpower)  # splat is guaranteed correct
 

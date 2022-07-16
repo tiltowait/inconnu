@@ -103,7 +103,11 @@ class CharacterManager:
 
     async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
         """Determine whether a user already has a named character."""
-        owner_id = user if not is_spc else inconnu.constants.INCONNU_ID
+        if is_spc:
+            owner_id = inconnu.constants.INCONNU_ID
+            name += " (SPC)"
+        else:
+            owner_id = user
         user_chars = await self.fetchall(guild, owner_id)
 
         for character in user_chars:

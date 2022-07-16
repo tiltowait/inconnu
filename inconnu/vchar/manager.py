@@ -1,10 +1,6 @@
 """vchar/manager.py - Character cache/in-memory database."""
 
 import datetime
-import re
-
-import bson.errors
-from bson.objectid import ObjectId
 
 import inconnu
 from inconnu.vchar import errors
@@ -238,15 +234,12 @@ class CharacterManager:
         if not self.bot:
             return False
 
-        if not isinstance(user, int):
-            # We've been sent a Member or User and can directly check permissions
-            return user.guild_permissions.administrator
-
         if isinstance(guild, int):
             guild = self.bot.get_guild(guild)
+        if isinstance(user, int):
+            user = guild.get_member(user)
 
-        user = guild.get_member(user)
-        return user.guild_permissions.administrator
+        return user.top_role.permissions.administrator or user.guild_permissions.administrator
 
     def _validate(self, guild, user, char):
         """Validate that a character belongs to the user."""

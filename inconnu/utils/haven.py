@@ -81,7 +81,7 @@ class Haven:
             err = str(err).replace("You have", f"{self.owner.display_name} has")
 
         view = self._create_view()
-        msg = await inconnu.common.present_error(
+        await inconnu.utils.error(
             self.ctx,
             err,
             ("Proper syntax", self.tip),
@@ -90,7 +90,6 @@ class Haven:
             view=view,
             footer="Characters that can't be clicked cannot perform the desired action.",
         )
-        view.message = msg
         await view.wait()
 
         if (key := view.selected_value) is not None:

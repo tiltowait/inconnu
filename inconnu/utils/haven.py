@@ -18,14 +18,14 @@ class Haven:
         owner: discord.Member = None,
         character: str = None,
         tip: str = None,
-        help_url: str = None,
+        help: str = None,
         char_filter: callable = None,
     ):
         self.uuid = uuid.uuid4().hex
         self.ctx = ctx
         self.owner = player_lookup(ctx, owner)
         self.tip = tip
-        self.help_url = help_url
+        self.help = help
 
         self.match = character
         self.filter = char_filter
@@ -86,7 +86,7 @@ class Haven:
             err,
             ("Proper syntax", self.tip),
             author=self.owner,
-            help_url=self.help_url,
+            help=self.help,
             view=view,
             footer="Characters that can't be clicked cannot perform the desired action.",
         )

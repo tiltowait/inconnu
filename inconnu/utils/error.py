@@ -1,11 +1,11 @@
-"""Simple error embed generator."""
+"""Simple error embed generator and presenter."""
 
 import discord
 import inconnu
 
 
 async def error(ctx, err, *fields, **kwargs):
-    """Show an error message."""
+    """Show a nice-looking error message."""
     embed = ErrorEmbed(kwargs.pop("author", ctx.user), err, *fields, **kwargs)
 
     if (help := kwargs.get("help")) is not None:
@@ -14,6 +14,7 @@ async def error(ctx, err, *fields, **kwargs):
 
         view.add_item(discord.ui.Button(label="Documentation", url=help, row=1))
         view.add_item(discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=1))
+        view.add_item(discord.ui.Button(label="Patreon", url=inconnu.constants.PATREON, row=1))
     else:
         view = kwargs.get("view", discord.MISSING)
 

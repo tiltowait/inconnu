@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.ui import Button, View
 
 import inconnu
-from inconnu.constants import SUPPORT_URL
+from inconnu.constants import PATREON, SUPPORT_URL
 
 
 class _HelpView(View):
@@ -23,7 +23,7 @@ class _HelpView(View):
                 Button(label="New? Click here!", url="https://www.inconnu.app/#/quickstart", row=1)
             )
             self.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
-            self.add_item(Button(label="Patreon", url="https://www.patreon.com/tiltowait", row=1))
+            self.add_item(Button(label="Patreon", url=PATREON, row=1))
 
 
 class Help(commands.Cog):

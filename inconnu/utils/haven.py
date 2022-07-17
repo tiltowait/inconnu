@@ -17,11 +17,16 @@ class Haven:
         *,
         owner: discord.Member = None,
         character: str = None,
+        tip: str = None,
+        help_url: str = None,
         char_filter: callable = None,
     ):
         self.uuid = uuid.uuid4().hex
         self.ctx = ctx
         self.owner = player_lookup(ctx, owner)
+        self.tip = tip
+        self.help_url = help_url
+
         self.match = character
         self.filter = char_filter
         self.possibilities = OrderedDict()
@@ -37,7 +42,7 @@ class Haven:
                 self.match,
             )
 
-        except inconnu.vchar.errors.UnspecifiedCharacterError:
+        except inconnu.vchar.errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
             all_chars = await inconnu.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)
             if self.filter is not None:
@@ -65,14 +70,26 @@ class Haven:
             else:
                 self.possibilities = all_chars
 
-        if self.match is None:
-            await self._present_options()
+            if self.match is None:
+                await self._get_user_selection(err)
         return self.match
 
-    async def _present_options(self):
+    async def _get_user_selection(self, err):
         """Present the player's character options."""
+        if self.ctx.user != self.owner:
+            # We did a lookup, so change the ownership string
+            err = str(err).replace("You have", f"{self.owner.display_name} has")
+
         view = self._create_view()
-        msg = await self.ctx.respond("Select a character", view=view, ephemeral=True)
+        msg = await inconnu.common.present_error(
+            self.ctx,
+            err,
+            ("Proper syntax", self.tip),
+            author=self.owner,
+            help_url=self.help_url,
+            view=view,
+            footer="Characters that can't be clicked cannot perform the desired action.",
+        )
         view.message = msg
         await view.wait()
 
@@ -107,10 +124,9 @@ class Haven:
 def player_lookup(ctx, player: discord.Member):
     """
     Look up a player.
-    Returns the sought-after player OR the ctx author if player_str is None.
+    Returns the sought-after player OR the ctx author if player is None.
 
-    Raises PermissionError if the user doesn't have admin permissions.
-    Raises ValueError if player is not a valid player name.
+    Raises LookupError if the user doesn't have admin permissions.
     """
     if player is None:
         return ctx.user

@@ -58,6 +58,8 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
                 owner=player,
                 character=character,
                 char_filter=partial(perform_roll, syntax=syntax),
+                tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
+                help_url=__HELP_URL,
             )
             owner = haven.owner
             character = await haven.fetch()

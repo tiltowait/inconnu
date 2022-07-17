@@ -67,7 +67,7 @@ class CharacterManager:
             return user_chars[0]
 
         # Two or more characters
-        errmsg = f"You have {count} characters. Please specify which you want."
+        errmsg = f"You have {count} characters. Please specify which to use."
         raise errors.UnspecifiedCharacterError(errmsg)
 
     async def fetchall(self, guild: int, user: int):

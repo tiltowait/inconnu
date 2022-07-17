@@ -13,6 +13,7 @@
 
 import asyncio
 import re
+from functools import partial
 
 import discord
 
@@ -52,12 +53,21 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
     if ctx.guild is not None:
         # Only guilds have characters
         try:
-            owner = await common.player_lookup(ctx, player)
-            if character is not None or needs_character(syntax):
-                tip = f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`"
-                character = await common.fetch_character(
-                    ctx, character, tip, __HELP_URL, owner=owner
-                )
+            haven = inconnu.utils.Haven(
+                ctx,
+                owner=player,
+                character=character,
+                char_filter=partial(perform_roll, syntax=syntax),
+            )
+            owner = haven.owner
+            character = await haven.fetch()
+
+            # owner = await common.player_lookup(ctx, player)
+            # if character is not None or needs_character(syntax):
+            #     tip = f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`"
+            #     character = await common.fetch_character(
+            #         ctx, character, tip, __HELP_URL, owner=owner
+            #     )
 
         except LookupError as err:
             await common.present_error(ctx, err, help_url=__HELP_URL)

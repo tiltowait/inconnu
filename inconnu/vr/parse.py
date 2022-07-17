@@ -13,12 +13,10 @@
 
 import asyncio
 import re
-from functools import partial
 
 import discord
 
 import inconnu
-from inconnu import common
 
 from ..roll import Roll
 from ..vchar import VChar, errors
@@ -31,6 +29,7 @@ __HELP_URL = "https://www.inconnu.app/#/rolls"
 async def parse(ctx, raw_syntax: str, comment: str, character: str, player: discord.Member):
     """Parse the user's arguments and attempt to roll the dice."""
     syntax = raw_syntax  # Save the raw in case we get a character error
+    owner = ctx.user
 
     # Comments appear after the first # in a command
     if "#" in syntax:
@@ -38,46 +37,39 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         comment = await stringify_mentions(ctx, comment)
 
     if RollParser.has_invalid_characters(syntax):
-        await common.present_error(ctx, f"Invalid syntax: `{syntax}`.", ephemeral=False)
+        await inconnu.utils.error(ctx, f"Invalid syntax: `{syntax}`.", ephemeral=False)
         return
 
     if comment is not None and (comment_len := len(comment)) > 300:
-        await common.present_error(ctx, f"Comment is too long by {comment_len - 300} characters.")
+        print("comment is long")
+        await inconnu.utils.error(ctx, f"Comment is too long by {comment_len - 300} characters.")
         return
 
     if ctx.guild is None and needs_character(syntax):
-        await common.present_error(ctx, "You cannot roll traits in DMs!", help_url=__HELP_URL)
+        await inconnu.utils.error(ctx, "You cannot roll traits in DMs!", help=__HELP_URL)
         return
 
     # Determine the character being used, if any
     if ctx.guild is not None:
         # Only guilds have characters
         try:
-            haven = inconnu.utils.Haven(
-                ctx,
-                owner=player,
-                character=character,
-                char_filter=partial(perform_roll, syntax=syntax),
-                tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
-                help=__HELP_URL,
-            )
-            owner = haven.owner
-            character = await haven.fetch()
-
-            # owner = await common.player_lookup(ctx, player)
-            # if character is not None or needs_character(syntax):
-            #     tip = f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`"
-            #     character = await common.fetch_character(
-            #         ctx, character, tip, __HELP_URL, owner=owner
-            #     )
+            if character is not None or needs_character(syntax):
+                haven = inconnu.utils.Haven(
+                    ctx,
+                    owner=player,
+                    character=character,
+                    char_filter=lambda c: RollParser(c, syntax),
+                    tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
+                    help=__HELP_URL,
+                )
+                owner = haven.owner
+                character = await haven.fetch()
 
         except LookupError as err:
-            await common.present_error(ctx, err, help_url=__HELP_URL)
+            await inconnu.utils.error(ctx, err, help=__HELP_URL)
             return
-        except common.FetchError:
+        except inconnu.common.FetchError:
             return
-    else:
-        owner = ctx.user
 
     # Attempt to parse the user's roll syntax
     try:
@@ -96,13 +88,13 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             view = None
             ephemeral = False
 
-        error_task = common.present_error(
+        error_task = inconnu.utils.error(
             ctx,
             err,
             ("Your Input", f"/vr syntax:`{raw_syntax}`"),
             author=owner,
             character=character,
-            help_url=__HELP_URL,
+            help=__HELP_URL,
             view=view,
             ephemeral=ephemeral,
         )

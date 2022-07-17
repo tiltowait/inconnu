@@ -1,6 +1,7 @@
 """macros/roll.py - Rolling character macros."""
 
 import re
+from functools import partial
 from uuid import uuid4
 
 import discord
@@ -21,20 +22,28 @@ __HELP_URL = "https://www.inconnu.app/#/macros?id=rolling"
 async def roll(ctx, syntax: str, character=None):
     """Roll a macro."""
     try:
-        tip = f"`/vm` `syntax:{syntax}` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
-        macro_stack, hunger, difficulty = __normalize_syntax(
-            syntax
-        )  # pylint: disable=unbalanced-tuple-unpacking
+        # Get the basic macro details
+        macro_stack, hunger, difficulty = __normalize_syntax(syntax)
+        macro_name = macro_stack.pop(0)
 
-        if not macro_common.is_macro_name_valid(macro_stack[0]):
+        if not macro_common.is_macro_name_valid(macro_name):
             raise ValueError("Macro names may only contain letters and underscores.")
+
+        # Get the character
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            char_filter=lambda c: c.find_macro(macro_name),
+            tip=f"`/vm` `syntax:{syntax}` `character:CHARACTER`",
+            help=__HELP_URL,
+        )
+        character = await haven.fetch()
 
         # It is possible for the user to make a macro that does nothing. If so,
         # we will display an error message rather than let the bot time out.
         empty_macro = True
 
-        macro = character.find_macro(macro_stack.pop(0))
+        macro = character.find_macro(macro_name)
         if macro.pool:
             # Only roll if the macro has a pool
             empty_macro = False
@@ -90,8 +99,6 @@ async def roll(ctx, syntax: str, character=None):
         err += "\n `hunger` and `difficulty` are optional."
         await common.present_error(ctx, err, help_url=__HELP_URL)
         return
-    except common.FetchError:
-        pass
 
 
 async def __rouse(ctx, character, macro) -> bool:
@@ -196,7 +203,7 @@ def __normalize_syntax(syntax: str):
         if difficulty < 0:
             raise ValueError("Difficulty cannot be less than 0.")
 
-    return params
+    return (params[0], params[1], params[2])
 
 
 class _SlakeView(View):

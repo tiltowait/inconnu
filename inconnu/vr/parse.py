@@ -68,8 +68,6 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         except LookupError as err:
             await inconnu.utils.error(ctx, err, help=__HELP_URL)
             return
-        except inconnu.common.FetchError:
-            return
 
     # Attempt to parse the user's roll syntax
     try:

@@ -8,8 +8,27 @@ import discord
 import inconnu
 
 
-class Haven:
-    """A class that aids with character selection."""
+class Haven:  # pylint: disable=too-few-public-methods
+    """
+    A class for fetching a desired character.
+
+    If the user has only one character, then it will be returned automatically.
+    Automatic return will also happen if the optional `character` parameter is
+    supplied.
+
+    If the user has multiple characters and has not manually specified one,
+    then we generate a list of available characters and filter them based on
+    an optional filter function. This function must be failable and raise a
+    VCharError or one of its subclasses.
+
+    If only one character satisfies the filter, then that character is returned
+    just as if the user had explicitly supplied it.
+
+    If multiple characters satisfy the filter, or if no filter is supplied, we
+    present a selection list. Characters that do not satisfy the filter are
+    disabled. This is done (rather than omitting them completely) to prevent
+    users from worrying that their character was somehow deleted.
+    """
 
     def __init__(
         self,
@@ -18,10 +37,10 @@ class Haven:
         owner: discord.Member = None,
         character: str = None,
         tip: str = None,
-        help: str = None,
+        help: str = None,  # pylint: disable=redefined-builtin
         char_filter: callable = None,
     ):
-        self.uuid = uuid.uuid4().hex
+        self.uuid = uuid.uuid4().hex  # For ensuring button uniqueness
         self.ctx = ctx
         self.owner = player_lookup(ctx, owner)
         self.tip = tip
@@ -35,7 +54,7 @@ class Haven:
         """Fetch the character(s)."""
         try:
             # If the owner only has one character, or selected one, then we
-            # will be golden
+            # can skip the rest of the fetch and filter routine
             self.match = await inconnu.char_mgr.fetchone(
                 self.ctx.guild.id,
                 self.owner.id,
@@ -66,6 +85,14 @@ class Haven:
                         if not failed:
                             self.match = char
                             break
+                elif passed == 0:
+                    await inconnu.utils.error(
+                        self.ctx,
+                        "None of your characters can perform this action.",
+                        author=self.owner,
+                        help=self.help,
+                    )
+                    raise inconnu.common.FetchError()
 
             else:
                 self.possibilities = all_chars

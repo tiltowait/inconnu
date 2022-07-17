@@ -8,20 +8,22 @@ async def error(ctx, err, *fields, **kwargs):
     """Show a nice-looking error message."""
     embed = ErrorEmbed(kwargs.pop("author", ctx.user), err, *fields, **kwargs)
 
-    if (help := kwargs.get("help")) is not None:
+    if (help_url := kwargs.get("help")) is not None:
         # If we have a help URL, we will add some links to the view
         view = kwargs.get("view", discord.ui.View())
 
-        view.add_item(discord.ui.Button(label="Documentation", url=help, row=1))
+        view.add_item(discord.ui.Button(label="Documentation", url=help_url, row=1))
         view.add_item(discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=1))
         view.add_item(discord.ui.Button(label="Patreon", url=inconnu.constants.PATREON, row=1))
     else:
-        view = kwargs.get("view", discord.MISSING)
+        view = kwargs.get("view", None)
 
     msg = await inconnu.respond(ctx)(
         embed=embed, view=view, ephemeral=kwargs.get("ephemeral", True)
     )
-    view.message = msg
+
+    if view is not None:
+        view.message = msg
 
     return msg
 

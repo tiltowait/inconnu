@@ -39,12 +39,14 @@ class Haven:  # pylint: disable=too-few-public-methods
         tip: str = None,
         help: str = None,  # pylint: disable=redefined-builtin
         char_filter: callable = None,
+        errmsg: str = "None of your characters can perform this action.",
     ):
         self.uuid = uuid.uuid4().hex  # For ensuring button uniqueness
         self.ctx = ctx
         self.owner = player_lookup(ctx, owner)
         self.tip = tip
         self.help = help
+        self.errmsg = errmsg
 
         self.match = character
         self.filter = char_filter
@@ -88,7 +90,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                 elif passed == 0:
                     await inconnu.utils.error(
                         self.ctx,
-                        "None of your characters can perform this action.",
+                        self.errmsg,
                         author=self.owner,
                         help=self.help,
                     )

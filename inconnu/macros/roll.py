@@ -36,6 +36,7 @@ async def roll(ctx, syntax: str, character=None):
             char_filter=lambda c: c.find_macro(macro_name),
             tip=f"`/vm` `syntax:{syntax}` `character:CHARACTER`",
             help=__HELP_URL,
+            errmsg=f"None of your characters have a macro named `{macro_name}`.",
         )
         character = await haven.fetch()
 
@@ -90,14 +91,12 @@ async def roll(ctx, syntax: str, character=None):
                 ctx, f"Your `{macro.name}` macro is empty!", character=character.name
             )
 
-    except (ValueError, errors.MacroNotFoundError) as err:
-        await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)
-    except SyntaxError:
+    except (ValueError, SyntaxError):
         err = f"**Unknown syntax:** `{syntax}`"
         err += "\n**Usage:** `/vm <macro_name> [hunger] [difficulty]`"
         err += "\n\nYou may add simple math after `macro_name`."
         err += "\n `hunger` and `difficulty` are optional."
-        await common.present_error(ctx, err, help_url=__HELP_URL)
+        await inconnu.utils.error(ctx, err, help=__HELP_URL)
         return
 
 

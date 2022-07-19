@@ -28,6 +28,7 @@ __HELP_URL = "https://www.inconnu.app/#/rolls"
 
 async def parse(ctx, raw_syntax: str, comment: str, character: str, player: discord.Member):
     """Parse the user's arguments and attempt to roll the dice."""
+    raw_syntax = " ".join(raw_syntax.split())
     syntax = raw_syntax  # Save the raw in case we get a character error
     owner = ctx.user
 
@@ -61,6 +62,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
                     char_filter=lambda c: RollParser(c, syntax),
                     tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
                     help=__HELP_URL,
+                    errmsg=f"None of your characters can roll `{syntax}`.",
                 )
                 owner = haven.owner
                 character = await haven.fetch()

@@ -4,7 +4,6 @@ import uuid
 from collections import OrderedDict
 
 import discord
-
 import inconnu
 
 
@@ -64,7 +63,13 @@ class Haven:  # pylint: disable=too-few-public-methods
             )
 
         except inconnu.vchar.errors.NoCharactersError as err:
-            await inconnu.utils.error(self.ctx, err)
+            errmsg = _personalize_error(err, self.ctx, self.owner)
+            await inconnu.utils.error(self.ctx, errmsg)
+            raise inconnu.common.FetchError() from err
+
+        except inconnu.vchar.errors.CharacterNotFoundError as err:
+            errmsg = _personalize_error(err, self.ctx, self.owner)
+            await inconnu.utils.error(self.ctx, errmsg)
             raise inconnu.common.FetchError() from err
 
         except inconnu.vchar.errors.UnspecifiedCharacterError as err:
@@ -94,7 +99,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                 elif passed == 0:
                     await inconnu.utils.error(
                         self.ctx,
-                        self.errmsg,
+                        _personalize_error(self.errmsg, self.ctx, self.owner),
                         author=self.owner,
                         help=self.help,
                     )
@@ -109,9 +114,7 @@ class Haven:  # pylint: disable=too-few-public-methods
 
     async def _get_user_selection(self, err):
         """Present the player's character options."""
-        if self.ctx.user != self.owner:
-            # We did a lookup, so change the ownership string
-            err = str(err).replace("You have", f"{self.owner.display_name} has")
+        err = _personalize_error(err, self.ctx, self.owner)
 
         view = self._create_view()
         await inconnu.utils.error(
@@ -171,3 +174,11 @@ def player_lookup(ctx, player: discord.Member):
             raise LookupError("You don't have lookup permissions.")
 
     return player
+
+
+def _personalize_error(err, ctx, member):
+    """Replace "You have" with "{member} has" if ctx.user and member don't match."""
+    if member != ctx.user:
+        err = str(err).replace("You have", f"{member.mention} has")
+        err = err.replace("your", f"{member.mention}'s")
+    return err

@@ -13,25 +13,22 @@ __HELP_URL = "https://www.inconnu.app"
 
 async def list_events(ctx, character, player, ephemeral):
     """List a character's XP events."""
-    try:
-        owner = await inconnu.common.player_lookup(ctx, player)
-        tip = "`/experience list character:CHARACTER player:PLAYER`"
-        character = await inconnu.common.fetch_character(
-            ctx, character, tip, __HELP_URL, owner=owner
-        )
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        tip="`/experience list character:CHARACTER player:PLAYER`",
+        owner=player,
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
-        embeds = await __get_embeds(ctx, character, owner)
-        paginator = Paginator(embeds, show_disabled=False)
+    embeds = await __get_embeds(ctx, character, haven.owner)
+    paginator = Paginator(embeds, show_disabled=False)
 
-        if isinstance(ctx, discord.ApplicationContext):
-            await paginator.respond(ctx.interaction, ephemeral=ephemeral)
-        else:
-            await paginator.respond(ctx, ephemeral=ephemeral)
-
-    except LookupError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-    except inconnu.common.FetchError:
-        pass
+    if isinstance(ctx, discord.ApplicationContext):
+        await paginator.respond(ctx.interaction, ephemeral=ephemeral)
+    else:
+        await paginator.respond(ctx, ephemeral=ephemeral)
 
 
 async def __get_embeds(ctx, character, player):

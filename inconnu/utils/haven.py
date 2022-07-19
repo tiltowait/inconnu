@@ -106,7 +106,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                     raise inconnu.common.FetchError()
 
             else:
-                self.possibilities = all_chars
+                self.possibilities = {self.uuid + char.id: (char, False) for char in all_chars}
 
             if self.match is None:
                 await self._get_user_selection(err)

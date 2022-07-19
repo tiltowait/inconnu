@@ -9,40 +9,33 @@ __HELP_URL = "https://www.inconnu.app"
 
 async def award_or_deduct(ctx, player, character, amount, scope, reason):
     """Award or deduct XP from a character."""
-    try:
-        owner = await inconnu.common.player_lookup(ctx, player)
-        tip = "`/experience " + ("award" if amount > 0 else "deduct") + "`"
-        character = await inconnu.common.fetch_character(
-            ctx, character, tip, __HELP_URL, owner=owner
-        )
-        scope = scope.lower()
+    haven = inconnu.utils.Haven(
+        ctx,
+        owner=player,
+        character=character,
+        tip="`/experience " + ("award" if amount > 0 else "deduct") + "`",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
+    scope = scope.lower()
 
-        # Check that we aren't deducting more XP than they have
-        if scope == "unspent" and character.current_xp + amount < 0:
-            if character.current_xp == 0:
-                errmsg = f"**{character.name}** has no XP!"
-            else:
-                errmsg = f"**{character.name}** only has `{character.current_xp}` xp to spend!"
-
-            await inconnu.common.present_error(ctx, errmsg)
-            return
-
-        await character.apply_experience(amount, scope, reason, ctx.author.id)
-
-        if reason[-1] != ".":
-            reason += "."
-
-        if await inconnu.settings.accessible(ctx):
-            msg = {"content": __get_text(character, amount, scope, reason)}
+    # Check that we aren't deducting more XP than they have
+    if scope == "unspent" and character.current_xp + amount < 0:
+        if character.current_xp == 0:
+            errmsg = f"**{character.name}** has no XP!"
         else:
-            msg = {"embed": __get_embed(ctx, player, character, amount, scope, reason)}
+            errmsg = f"**{character.name}** only has `{character.current_xp}` xp to spend!"
 
-        await ctx.respond(**msg, allowed_mentions=discord.AllowedMentions.none())
+        await inconnu.common.present_error(ctx, errmsg)
+        return
 
-    except LookupError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-    except inconnu.common.FetchError:
-        pass
+    await character.apply_experience(amount, scope, reason, ctx.author.id)
+
+    if reason[-1] != ".":
+        reason += "."
+
+    embed = __get_embed(ctx, player, character, amount, scope, reason)
+    await ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none())
 
 
 def __get_embed(ctx, player, character, amount, scope, reason):
@@ -63,19 +56,3 @@ def __get_embed(ctx, player, character, amount, scope, reason):
     )
 
     return embed
-
-
-def __get_text(character, amount, scope, reason):
-    """Generate the plaintext message."""
-    if amount > 0:
-        verb = "Awarded"
-        preposition = "to"
-    else:
-        verb = "Deducted"
-        preposition = "from"
-
-    msg = f"{verb} `{amount} {scope} experience` {preposition} **{character.name}**."
-    msg += f"\n**Reason:** *{reason}*"
-    msg += f"\n\n**New XP:** {character.current_xp} / {character.total_xp}"
-
-    return msg

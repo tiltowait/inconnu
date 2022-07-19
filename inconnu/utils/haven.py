@@ -63,6 +63,10 @@ class Haven:  # pylint: disable=too-few-public-methods
                 self.match,
             )
 
+        except inconnu.vchar.errors.NoCharactersError as err:
+            await inconnu.utils.error(self.ctx, err)
+            raise inconnu.common.FetchError() from err
+
         except inconnu.vchar.errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
             all_chars = await inconnu.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)

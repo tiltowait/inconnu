@@ -11,35 +11,28 @@ __HELP_URL = "https://www.inconnu.app"
 
 async def remove_entry(ctx, player, character, index):
     """Award or deduct XP from a character."""
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        owner=player,
+        tip="`/experience remove player:PLAYER character:CHARACTER index:INDEX`",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
+
     try:
-        owner = await inconnu.common.player_lookup(ctx, player)
-        tip = "`/experience remove player:PLAYER character:CHARACTER index:INDEX`"
-        character = await inconnu.common.fetch_character(
-            ctx, character, tip, __HELP_URL, owner=owner
-        )
+        log = character.experience_log
+        entry_to_delete = log[-index]  # Log entries are presented to the user in reverse
+        await character.remove_experience_log_entry(entry_to_delete)
 
-        try:
-            log = character.experience_log
-            entry_to_delete = log[-index]  # Log entries are presented to the user in reverse
-            await character.remove_experience_log_entry(entry_to_delete)
+        embed = _get_embed(haven.owner, character, entry_to_delete)
+        view = _ExperienceView(character, entry_to_delete)
 
-            if await inconnu.settings.accessible(ctx):
-                msg = {"content": _get_text(character, entry_to_delete)}
-            else:
-                msg = {"embed": _get_embed(owner, character, entry_to_delete)}
+        view.message = await inconnu.respond(ctx)(embed=embed, view=view)
 
-            msg["view"] = _ExperienceView(character, entry_to_delete)
-
-            await inconnu.respond(ctx)(**msg)
-
-        except IndexError:
-            err = f"{character.name} has no experience log entry at index `{index}`."
-            await inconnu.common.present_error(ctx, err)
-
-    except LookupError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-    except inconnu.common.FetchError:
-        pass
+    except IndexError:
+        err = f"{character.name} has no experience log entry at index `{index}`."
+        await inconnu.utils.error(ctx, err)
 
 
 def _get_embed(player, character, entry):
@@ -52,16 +45,6 @@ def _get_embed(player, character, entry):
     embed.add_field(name="Experience", value=experience)
 
     return embed
-
-
-def _get_text(character, entry):
-    """Generate text version of deletion message."""
-    msg = f"**{character.name}**\n"
-    msg += "```Deleted Experience Log Entry```"
-    msg += "\n" + _format_entry(entry)
-    msg += "\n\n*Be sure to adjust unspent/lifetime XP accordingly!"
-
-    return msg
 
 
 def _format_entry(entry):

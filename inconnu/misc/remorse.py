@@ -14,23 +14,30 @@ __HELP_URL = "https://www.inconnu.app/#/additional-commands?id=remorse-checks"
 
 async def remorse(ctx, character=None, minimum=1):
     """Perform a remorse check on a given character."""
-    try:
-        tip = "`/remorse` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        tip="`/remorse` `character:CHARACTER`",
+        char_filter=_can_remorse,
+        errmsg="None of your characters have any stains!",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
-        # Character obtained
-        if character.stains == 0:
-            await ctx.respond(
-                f"{character.name} has no stains! No remorse necessary.", ephemeral=True
-            )
-            return
+    # Character obtained
+    if character.stains == 0:
+        await ctx.respond(f"{character.name} has no stains! No remorse necessary.", ephemeral=True)
+        return
 
-        outcome = await __remorse_roll(character, minimum)
-        inter = await __display_outcome(ctx, character, outcome)
-        await __report(ctx, inter, character, outcome.remorseful)
+    outcome = await __remorse_roll(character, minimum)
+    inter = await __display_outcome(ctx, character, outcome)
+    await __report(ctx, inter, character, outcome.remorseful)
 
-    except inconnu.common.FetchError:
-        pass
+
+def _can_remorse(character):
+    """Raise an exception if we have no stains."""
+    if character.stains == 0:
+        raise inconnu.vchar.errors.CharacterError(f"{character.name} has no stains.")
 
 
 async def __display_outcome(ctx, character: VChar, outcome):

@@ -29,14 +29,10 @@ async def update(ctx, traits: str, character: str):
     await __parse(ctx, True, traits, character)
 
 
-async def __parse(ctx, allow_overwrite: bool, traits: str, character: str, specialties=False):
+async def __parse(ctx, allow_overwrite: bool, raw_traits: str, character: str, specialties=False):
     """Add traits to a character."""
     try:
-        key = "update" if allow_overwrite else "add"
-        term = "traits" if not specialties else "specialties"
-        tip = f"`/{term} {key}` `{term}:{traits}` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL[allow_overwrite])
-
+        traits = raw_traits
         # Specialties are just 1-point traits, but when entered, they don't
         # have an assigned value. Let's do that now.
         if specialties:
@@ -52,16 +48,23 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str, speci
             traits = traits.split()
 
         traits = parse_traits(*traits, specialties=specialties)
+
+        key = "update" if allow_overwrite else "add"
+        term = "traits" if not specialties else "specialties"
+
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            tip=f"`/{term} {key}` `{term}:{raw_traits}` `character:CHARACTER`",
+            help=__HELP_URL[allow_overwrite],
+        )
+        character = await haven.fetch()
         outcome = await __handle_traits(character, traits, allow_overwrite)
 
         await __display_results(ctx, outcome, character, specialties)
 
     except (ValueError, SyntaxError) as err:
-        await common.present_error(
-            ctx, err, character=character, help_url=__HELP_URL[allow_overwrite]
-        )
-    except common.FetchError:
-        pass
+        await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL[allow_overwrite])
 
 
 async def __handle_traits(character: VChar, traits: dict, overwriting: bool):

@@ -10,20 +10,17 @@ __HELP_URL = "https://www.inconnu.app/#/trait-management?id=displaying-traits"
 
 async def show(ctx, character: str, player: discord.Member):
     """Present a character's traits to its owner."""
-    try:
-        owner = await inconnu.common.player_lookup(ctx, player)
-        tip = "`/traits list` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(
-            ctx, character, tip, __HELP_URL, owner=owner
-        )
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        owner=player,
+        tip="`/traits list` `character:CHARACTER`",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
-        embed = traits_embed(character, owner)
-        await inconnu.respond(ctx)(embed=embed, ephemeral=True)
-
-    except LookupError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-    except inconnu.common.FetchError:
-        pass
+    embed = traits_embed(character, haven.owner)
+    await inconnu.respond(ctx)(embed=embed, ephemeral=True)
 
 
 def traits_embed(character, owner):

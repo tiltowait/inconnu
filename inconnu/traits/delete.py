@@ -17,10 +17,16 @@ async def delete(ctx, traits: str, character=None, specialties=False):
     try:
         term = "traits" if not specialties else "specialties"
         command = "traits delete" if not specialties else "specialties remove"
-        tip = f"`/{command}` `{term}:{traits}` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
-        traits = traits.split()
 
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            tip=f"`/{command}` `{term}:{traits}` `character:CHARACTER`",
+            help=__HELP_URL,
+        )
+        character = await haven.fetch()
+
+        traits = traits.split()
         if not traits:
             # Shouldn't be possible to reach here, but just in case Discord messes up
             raise SyntaxError(f"You must supply a list of {term} to delete.")
@@ -30,9 +36,7 @@ async def delete(ctx, traits: str, character=None, specialties=False):
         await __outcome_embed(ctx, character, outcome, specialties)
 
     except (ValueError, SyntaxError) as err:
-        await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
-    except inconnu.common.FetchError:
-        pass
+        await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL)
 
 
 async def __outcome_embed(ctx, character, outcome, specialties: bool):

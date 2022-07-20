@@ -12,11 +12,14 @@ async def stain(ctx, delta, character, owner):
         if delta == 0:
             raise ValueError("Stain `delta` can't be zero!")
 
-        owner = await inconnu.common.player_lookup(ctx, owner)
-        tip = f"`/stain` `delta:{delta}` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(
-            ctx, character, tip, __HELP_URL, owner=owner
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            owner=owner,
+            tip=f"`/stain` `delta:{delta}` `character:CHARACTER`",
+            help=__HELP_URL,
         )
+        character = await haven.fetch()
 
         fields = [("Humanity", inconnu.character.DisplayField.HUMANITY)]
         footer = None
@@ -45,14 +48,13 @@ async def stain(ctx, delta, character, owner):
         title = f"{title} {inconnu.common.pluralize(abs(delta), 'Stain')}"
 
         inter = await inconnu.character.display(
-            ctx, character, title, message=message, owner=owner, fields=fields, footer=footer
+            ctx, character, title, message=message, owner=haven.owner, fields=fields, footer=footer
         )
         await __report(ctx, inter, character, delta)
 
-    except (ValueError, LookupError) as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-    except inconnu.common.FetchError:
-        pass
+    except ValueError as err:
+        # Delta was 0
+        await inconnu.utils.error(ctx, err, help=__HELP_URL)
 
 
 async def __report(ctx, inter, character, delta):

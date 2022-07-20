@@ -24,43 +24,51 @@ async def rouse(
         reroll (bool): Whether failures should be re-rolled
         oblivion (bool, default False): Whether to show the Oblivion message.
     """
-    try:
-        tip = "`/rouse` `character:CHARACTER`"
-        if not isinstance(character, VChar):
-            character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+    if not isinstance(character, VChar):
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            tip="`/rouse` `character:CHARACTER`",
+            char_filter=_can_rouse,
+            help=__HELP_URL,
+        )
+        character = await haven.fetch()
 
-        if character.splat == "mortal":
-            await ctx.respond("Mortals can't make Rouse checks.", ephemeral=True)
-        elif character.splat == "ghoul":
-            await __damage_ghoul(ctx, character)
+    if character.splat == "mortal":
+        await ctx.respond("Mortals can't make Rouse checks.", ephemeral=True)
+    elif character.splat == "ghoul":
+        await __damage_ghoul(ctx, character)
+    else:
+        # Vampire
+        outcome = await __rouse_roll(ctx.guild, character, count, reroll)
+        update_msg = f"**{character.name}** "
+        if outcome.gain:
+            update_msg += f"__failed__ a Rouse check. Hunger is now `{character.hunger}`."
         else:
-            # Vampire
-            outcome = await __rouse_roll(ctx.guild, character, count, reroll)
-            update_msg = f"**{character.name}** "
-            if outcome.gain:
-                update_msg += f"__failed__ a Rouse check. Hunger is now `{character.hunger}`."
-            else:
-                update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
+            update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
-            inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
-            msg = await inconnu.get_message(inter)
+        inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
+        msg = await inconnu.get_message(inter)
 
-            if character.hunger >= 4:
-                color = inconnu.constants.ROUSE_FAIL_COLOR
-            else:
-                color = discord.Embed.Empty
+        if character.hunger >= 4:
+            color = inconnu.constants.ROUSE_FAIL_COLOR
+        else:
+            color = discord.Embed.Empty
 
-            await inconnu.common.report_update(
-                ctx=ctx,
-                msg=msg,
-                character=character,
-                title="Rouse Check",
-                message=update_msg,
-                color=color,
-            )
+        await inconnu.common.report_update(
+            ctx=ctx,
+            msg=msg,
+            character=character,
+            title="Rouse Check",
+            message=update_msg,
+            color=color,
+        )
 
-    except inconnu.common.FetchError:
-        pass
+
+def _can_rouse(character):
+    """Raises an error if the character is mortal."""
+    if character.splat == "mortal":
+        raise inconnu.vchar.errors.CharacterError(f"{character.name} is a mortal.")
 
 
 def __make_title(outcome):

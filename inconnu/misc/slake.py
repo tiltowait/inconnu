@@ -9,48 +9,59 @@ __HELP_URL = "https://www.inconnu.app/#/additional-commands?id=slaking-hunger"
 
 async def slake(ctx, amount, character=None, **kwargs):
     """Slake a character's Hunger."""
-    try:
-        tip = f"`/slake` `amount:{amount}` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        tip=f"`/slake` `amount:{amount}` `character:CHARACTER`",
+        char_filter=_can_slake,
+        errmsg="None of your characters have Hunger to slake.",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
-        if not character.is_vampire:
-            await ctx.respond("Only vampires need to slake Hunger!", ephemeral=True)
-            return
+    if not character.is_vampire:
+        await ctx.respond("Only vampires need to slake Hunger!", ephemeral=True)
+        return
 
-        slaked = min(amount, character.hunger)
+    slaked = min(amount, character.hunger)
 
-        if slaked == 0:
-            await ctx.respond(f"**{character.name}** has no Hunger!", ephemeral=True)
+    if slaked == 0:
+        await ctx.respond(f"**{character.name}** has no Hunger!", ephemeral=True)
+    else:
+        old_hunger = character.hunger
+        await character.set_hunger(old_hunger - slaked)
+
+        if old_hunger >= 4:
+            view = inconnu.views.FrenzyView(character, 3)
         else:
-            old_hunger = character.hunger
-            await character.set_hunger(old_hunger - slaked)
+            view = None
 
-            if old_hunger >= 4:
-                view = inconnu.views.FrenzyView(character, 3)
-            else:
-                view = None
+        update = f"**{character.name}** slaked `{slaked}` Hunger (now at `{character.hunger}`)."
 
-            update = f"**{character.name}** slaked `{slaked}` Hunger (now at `{character.hunger}`)."
+        _, inter = await asyncio.gather(
+            character.log("slake", slaked),
+            inconnu.character.display(
+                ctx,
+                character,
+                title=f"Slaked {slaked} Hunger",
+                fields=[("New Hunger", inconnu.character.DisplayField.HUNGER)],
+                view=view,
+                **kwargs,
+            ),
+        )
+        msg = await inconnu.get_message(inter)
+        await inconnu.common.report_update(
+            ctx=ctx,
+            msg=msg,
+            character=character,
+            title="Hunger Slaked",
+            message=update,
+        )
 
-            _, inter = await asyncio.gather(
-                character.log("slake", slaked),
-                inconnu.character.display(
-                    ctx,
-                    character,
-                    title=f"Slaked {slaked} Hunger",
-                    fields=[("New Hunger", inconnu.character.DisplayField.HUNGER)],
-                    view=view,
-                    **kwargs,
-                ),
-            )
-            msg = await inconnu.get_message(inter)
-            await inconnu.common.report_update(
-                ctx=ctx,
-                msg=msg,
-                character=character,
-                title="Hunger Slaked",
-                message=update,
-            )
 
-    except inconnu.common.FetchError:
-        pass
+def _can_slake(character):
+    """Raises an exception if the character isn't a vampire or is at Hunger 0."""
+    if not character.is_vampire:
+        raise inconnu.vchar.errors.CharacterError(f"{character.name} isn't a vampire!")
+    if character.hunger == 0:
+        raise inconnu.vchar.errors.CharacterError(f"{character.name} has no Hunger!")

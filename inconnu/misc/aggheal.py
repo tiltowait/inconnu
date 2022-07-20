@@ -13,37 +13,48 @@ __HELP_URL = "https://www.inconnu.app/#/"
 
 async def aggheal(ctx, character: str):
     """Heal a point of aggravated damage."""
-    try:
-        tip = "`/aggheal` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        tip="`/aggheal` `character:CHARACTER`",
+        char_filter=_can_aggheal,
+        errmsg="None of your characters have Aggravated Health damage.",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
-        if character.health.count(Damage.AGGRAVATED) == 0:
-            await ctx.respond(f"{character.name} has no aggravated damage to heal!", ephemeral=True)
-            return
+    if character.health.count(Damage.AGGRAVATED) == 0:
+        await ctx.respond(f"{character.name} has no aggravated damage to heal!", ephemeral=True)
+        return
 
-        outcome = await __heal(character)
+    outcome = await __heal(character)
 
-        # Build the update message
-        update_msg = f"`{character.aggravated_hp}` Aggravated Damage remaining."
-        if character.is_vampire:
-            update_msg += f"\nGained `{outcome.gain}` Hunger (now at `{character.hunger}`)"
-            if outcome.torpor:
-                update_msg += " and fell into torpor!"
-            else:
-                update_msg += "."
+    # Build the update message
+    update_msg = f"`{character.aggravated_hp}` Aggravated Damage remaining."
+    if character.is_vampire:
+        update_msg += f"\nGained `{outcome.gain}` Hunger (now at `{character.hunger}`)"
+        if outcome.torpor:
+            update_msg += " and fell into torpor!"
+        else:
+            update_msg += "."
 
-        inter = await __display_outcome(ctx, character, outcome)
-        msg = await inconnu.get_message(inter)
-        await inconnu.common.report_update(
-            ctx=ctx,
-            msg=msg,
-            character=character,
-            title="Aggravated Damage Healed",
-            message=update_msg,
+    inter = await __display_outcome(ctx, character, outcome)
+    msg = await inconnu.get_message(inter)
+    await inconnu.common.report_update(
+        ctx=ctx,
+        msg=msg,
+        character=character,
+        title="Aggravated Damage Healed",
+        message=update_msg,
+    )
+
+
+def _can_aggheal(character):
+    """Raise an error if the character can't agg heal."""
+    if character.aggravated_hp == 0:
+        raise inconnu.vchar.errors.CharacterError(
+            f"{character.name} has no Aggravated Health damage!"
         )
-
-    except inconnu.common.FetchError:
-        pass
 
 
 async def __heal(character: VChar):

@@ -53,11 +53,14 @@ async def update(
     human_readable = parameters
 
     try:
-        owner = await inconnu.common.player_lookup(ctx, player)
-        tip = f"`/character update` `parameters:{parameters}` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(
-            ctx, character, tip, __HELP_URL, owner=owner
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            owner=player,
+            tip=f"`/character update` `parameters:{parameters}` `character:CHARACTER`",
+            help=__HELP_URL,
         )
+        character = await haven.fetch()
 
         parameters = inconnu.utils.parse_parameters(parameters, True)
         human_readable = " ".join([f"{k}={v}" for k, v in parameters.items()])
@@ -94,7 +97,7 @@ async def update(
                 character,
                 fields=fields,
                 color=color,
-                owner=player,
+                owner=haven.owner,
                 message=update_message,
                 thumbnail=character.image_url if not fields else None,
             )
@@ -121,11 +124,6 @@ async def update(
         )
         help_task = update_help(ctx, err)
         await asyncio.gather(log_task, help_task)
-
-    except LookupError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-    except inconnu.common.FetchError:
-        pass
 
 
 def __validate_parameters(parameters):

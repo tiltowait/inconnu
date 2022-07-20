@@ -28,27 +28,33 @@ async def edit_biography(ctx, character):
 
 async def show_biography(ctx, character, player, ephemeral=False):
     """Display a character's biography."""
-    try:
-        owner = player or ctx.user  # Don't need admin permissions for this
-        tip = "`/character bio show` `[character:CHARACTER]` `[player:PLAYER]`"
-        character = await inconnu.common.fetch_character(
-            ctx, character, tip, __HELP_URL, owner=owner
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        owner=player,
+        allow_lookups=True,
+        tip="`/character bio show` `[character:CHARACTER]` `[player:PLAYER]`",
+        char_filter=_has_profile,
+        errmsg="None of your characters have a profile!",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
+
+    if character.has_biography:
+        embed = __biography_embed(character, haven.owner)
+        await ctx.respond(embed=embed, ephemeral=ephemeral)
+    else:
+        command = f"`/character profile edit:{character.name}`"
+        await ctx.respond(
+            f"**{character.name}** has no profile! Set it using {command}.",
+            ephemeral=True,
         )
 
-        if character.has_biography:
-            embed = __biography_embed(character, owner)
-            await ctx.respond(embed=embed, ephemeral=ephemeral)
-        else:
-            command = f"`/character profile edit:{character.name}`"
-            await ctx.respond(
-                f"**{character.name}** has no profile! Set it using {command}.",
-                ephemeral=True,
-            )
 
-    except LookupError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-    except inconnu.common.FetchError:
-        pass
+def _has_profile(character):
+    """Raises an error if the character doesn't have a profile."""
+    if not character.has_biography:
+        raise inconnu.vchar.errors.CharacterError(f"{character.name} doesn't have a profile!")
 
 
 def __biography_embed(character, owner):

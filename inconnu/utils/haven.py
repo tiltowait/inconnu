@@ -35,6 +35,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         ctx,
         *,
         owner: discord.Member = None,
+        allow_lookups=False,
         character: str = None,
         tip: str = None,
         help: str = None,  # pylint: disable=redefined-builtin
@@ -45,6 +46,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         self.ctx = ctx
         self._given_owner = owner
         self.owner = None
+        self.allow_lookups = allow_lookups
         self.tip = tip
         self.help = help
         self.errmsg = errmsg
@@ -59,7 +61,7 @@ class Haven:  # pylint: disable=too-few-public-methods
             # Confirm ownership. We weren't able to do so in a sync context,
             # but now that we're async, we can do so and send an error message
             # if it's invalid.
-            self.owner = player_lookup(self.ctx, self._given_owner)
+            self.owner = player_lookup(self.ctx, self._given_owner, self.allow_lookups)
 
             # If the owner only has one character, or selected one, then we
             # can skip the rest of the fetch and filter routine
@@ -167,7 +169,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         return view
 
 
-def player_lookup(ctx, player: discord.Member):
+def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
     """
     Look up a player.
     Returns the sought-after player OR the ctx author if player is None.
@@ -179,9 +181,10 @@ def player_lookup(ctx, player: discord.Member):
 
     # Players are allowed to look up themselves
     if ctx.user != player:
-        if not (
+        is_admin = (
             ctx.user.guild_permissions.administrator or ctx.user.top_role.permissions.administrator
-        ):
+        )
+        if not (is_admin or allow_lookups):
             raise LookupError("You don't have lookup permissions.")
 
     return player

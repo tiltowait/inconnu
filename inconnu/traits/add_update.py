@@ -33,12 +33,18 @@ async def __parse(ctx, allow_overwrite: bool, raw_traits: str, character: str, s
     """Add traits to a character."""
     try:
         traits = raw_traits
+
+        key = "update" if allow_overwrite else "add"
+        term = "traits" if not specialties else "specialties"
+
         # Specialties are just 1-point traits, but when entered, they don't
         # have an assigned value. Let's do that now.
         if specialties:
             if "=" in traits:
                 # They did a regular trait assignment
-                raise ValueError("Specialties can't have assigned values. Use `/traits` instead.")
+                raise ValueError(
+                    f"Specialties can't have assigned values. Use `/traits {key}` instead."
+                )
 
             traits = map(lambda s: f"{s}=1", traits.split())
         else:
@@ -48,9 +54,6 @@ async def __parse(ctx, allow_overwrite: bool, raw_traits: str, character: str, s
             traits = traits.split()
 
         traits = parse_traits(*traits, specialties=specialties)
-
-        key = "update" if allow_overwrite else "add"
-        term = "traits" if not specialties else "specialties"
 
         haven = inconnu.utils.Haven(
             ctx,

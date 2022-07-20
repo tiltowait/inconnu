@@ -1,8 +1,6 @@
 """misc/frenzy.py - Perform a frenzy check."""
 # pylint: disable=too-many-arguments
 
-import asyncio
-
 import discord
 
 import inconnu
@@ -20,67 +18,76 @@ __FRENZY_BONUSES.update({str(n): n for n in range(1, 6)})
 
 async def frenzy(ctx, difficulty: int, penalty: str, bonus: str, character: str):
     """Perform a frenzy check."""
-    try:
-        tip = "`/frenzy` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        tip="`/frenzy` `character:CHARACTER`",
+        char_filter=_can_frenzy,
+        errmsg="None of your characters are capable of frenzying.",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
-        if not character.is_vampire:
-            await ctx.respond("Only vampires need to roll frenzy!", ephemeral=True)
-            return
+    if not character.is_vampire:
+        await ctx.respond("Only vampires need to roll frenzy!", ephemeral=True)
+        return
 
-        frenzy_pool = character.frenzy_resist
-        footer = []
+    frenzy_pool = character.frenzy_resist
+    footer = []
 
-        if penalty == "brujah":
-            frenzy_pool = max(frenzy_pool - character.bane_severity, 1)
-            footer.append(f"-{character.bane_severity} dice from the Brujah bane.")
-        elif penalty == "malkavian":
-            frenzy_pool = max(frenzy_pool - 2, 1)
-            footer.append("-2 dice from the Malkavian compulsion.")
+    if penalty == "brujah":
+        frenzy_pool = max(frenzy_pool - character.bane_severity, 1)
+        footer.append(f"-{character.bane_severity} dice from the Brujah bane.")
+    elif penalty == "malkavian":
+        frenzy_pool = max(frenzy_pool - 2, 1)
+        footer.append("-2 dice from the Malkavian compulsion.")
 
-        if bonus_dice := __FRENZY_BONUSES.get(bonus):
-            frenzy_pool += bonus_dice
-            if bonus.isdigit():
-                footer.append(f"{bonus_dice:+} bonus dice.")
-            else:
-                footer.append(f"{bonus_dice:+} bonus dice from {bonus}.")
-
-        outcome = inconnu.Roll(frenzy_pool, 0, difficulty)
-
-        if outcome.total_successes >= difficulty:
-            if outcome.is_critical:
-                title = "Critical Success!"
-                message = "Resist frenzy without losing a turn."
-                color = 0x00FF00
-            else:
-                title = "Success!"
-                message = "You spend 1 turn resisting frenzy."
-                color = 0x7777FF
+    if bonus_dice := __FRENZY_BONUSES.get(bonus):
+        frenzy_pool += bonus_dice
+        if bonus.isdigit():
+            footer.append(f"{bonus_dice:+} bonus dice.")
         else:
-            title = "Failure!"
-            message = "You succumb to the Beast."
-            color = 0x5C0700
-            await character.log("frenzy")
+            footer.append(f"{bonus_dice:+} bonus dice from {bonus}.")
 
-        footer.append("Dice: " + ", ".join(map(str, outcome.normal.dice)))
-        footer = "\n".join(footer)
+    outcome = inconnu.Roll(frenzy_pool, 0, difficulty)
 
-        # Display the message
-        if await inconnu.settings.accessible(ctx):
-            # Build the text version of the message
-            name = character.name
-            content = f"**{name}: Frenzy {title} (DC {difficulty})**\n{message}\n*{footer}*"
-            msg_content = {"content": content}
+    if outcome.total_successes >= difficulty:
+        if outcome.is_critical:
+            title = "Critical Success!"
+            message = "Resist frenzy without losing a turn."
+            color = 0x00FF00
         else:
-            embed = __get_embed(ctx, title, message, character.name, difficulty, footer, color)
-            msg_content = {"embed": embed}
+            title = "Success!"
+            message = "You spend 1 turn resisting frenzy."
+            color = 0x7777FF
+    else:
+        title = "Failure!"
+        message = "You succumb to the Beast."
+        color = 0x5C0700
+        await character.log("frenzy")
 
-        inter = await inconnu.respond(ctx)(**msg_content)
-        msg = await inconnu.get_message(inter)
-        await __generate_report_task(ctx, msg, character, outcome)
+    footer.append("Dice: " + ", ".join(map(str, outcome.normal.dice)))
+    footer = "\n".join(footer)
 
-    except inconnu.common.FetchError:
-        pass
+    # Display the message
+    if await inconnu.settings.accessible(ctx):
+        # Build the text version of the message
+        name = character.name
+        content = f"**{name}: Frenzy {title} (DC {difficulty})**\n{message}\n*{footer}*"
+        msg_content = {"content": content}
+    else:
+        embed = __get_embed(ctx, title, message, character.name, difficulty, footer, color)
+        msg_content = {"embed": embed}
+
+    inter = await inconnu.respond(ctx)(**msg_content)
+    msg = await inconnu.get_message(inter)
+    await __generate_report_task(ctx, msg, character, outcome)
+
+
+def _can_frenzy(character):
+    """Raises an exception if the character can't frenzy."""
+    if not character.is_vampire:
+        raise inconnu.vchar.errors.CharacterError("Only vampires can frenzy!")
 
 
 def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, footer: str, color: int):

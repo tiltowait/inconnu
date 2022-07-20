@@ -223,9 +223,9 @@ class Characters(commands.Cog, name="Character Management"):
             "This command has been replaced with `/character profile`.", ephemeral=True
         )
 
-    @commands.user_command(name="Biography")
+    @commands.user_command(name="Profile")
     async def character_bio_context(self, ctx, member):
-        """View a character's biography."""
+        """View a character's profile."""
         await inconnu.character.show_biography(ctx, None, member, True)
 
     # Convictions

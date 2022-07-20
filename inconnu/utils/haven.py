@@ -4,6 +4,7 @@ import uuid
 from collections import OrderedDict
 
 import discord
+
 import inconnu
 
 
@@ -42,7 +43,8 @@ class Haven:  # pylint: disable=too-few-public-methods
     ):
         self.uuid = uuid.uuid4().hex  # For ensuring button uniqueness
         self.ctx = ctx
-        self.owner = player_lookup(ctx, owner)
+        self._given_owner = owner
+        self.owner = None
         self.tip = tip
         self.help = help
         self.errmsg = errmsg
@@ -54,6 +56,11 @@ class Haven:  # pylint: disable=too-few-public-methods
     async def fetch(self):
         """Fetch the character(s)."""
         try:
+            # Confirm ownership. We weren't able to do so in a sync context,
+            # but now that we're async, we can do so and send an error message
+            # if it's invalid.
+            self.owner = player_lookup(self.ctx, self._given_owner)
+
             # If the owner only has one character, or selected one, then we
             # can skip the rest of the fetch and filter routine
             self.match = await inconnu.char_mgr.fetchone(
@@ -61,6 +68,10 @@ class Haven:  # pylint: disable=too-few-public-methods
                 self.owner.id,
                 self.match,
             )
+
+        except LookupError as err:
+            await inconnu.utils.error(self.ctx, err)
+            raise inconnu.common.FetchError() from err
 
         except inconnu.vchar.errors.NoCharactersError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)

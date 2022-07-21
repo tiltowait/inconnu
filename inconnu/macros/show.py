@@ -12,25 +12,31 @@ __HELP_URL = "https://www.inconnu.app/#/macros?id=retrieval"
 
 async def show(ctx, character=None):
     """Show all of a character's macros."""
-    try:
-        tip = "`/macro list` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        tip="`/macro list` `character:CHARACTER`",
+        char_filter=_has_macros,
+        errmsg="None of your characters have any macros!",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
-        # We have a valid character
-        macros = character.macros
-        if not macros:
-            await inconnu.common.present_error(
-                ctx,
-                f"{character.name} has no macros!",
-                character=character.name,
-                help_url=__HELP_URL,
-            )
-            return
+    # We have a valid character
+    macros = character.macros
+    if not macros:
+        await inconnu.utils.error(
+            ctx, f"{character.name} has no macros!", character=character.name, help=__HELP_URL
+        )
+        return
 
-        await __display_macros(ctx, character.name, macros)
+    await __display_macros(ctx, character.name, macros)
 
-    except inconnu.common.FetchError:
-        pass
+
+def _has_macros(character):
+    """Raises an error if the character has no macros."""
+    if not character.macros:
+        raise inconnu.vchar.errors.CharacterError(f"{character.name} has no macros!")
 
 
 async def __display_macros(ctx, char_name, macros):

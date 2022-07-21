@@ -9,80 +9,82 @@ __HELP_URL = "https://www.inconnu.app/"
 
 async def show_header(ctx: discord.ApplicationContext, character: str = None, **kwargs):
     """Display the character's header in an embed."""
-    try:
-        tip = "`/header` `options ...`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
-        header = character.rp_header
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        tip="`/header` `options ...`",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
-        # Get any overrides
-        if kwargs["blush"] is not None:
-            header.blush = kwargs["blush"]
-        header.location = kwargs["location"] or header.location
-        header.merits = kwargs["merits"] or header.merits
-        header.flaws = kwargs["flaws"] or header.flaws
-        header.temp = kwargs["temp"] or header.temp
+    # Prepare the header with any overrides
+    header = character.rp_header
 
-        # Title should not have a trailing "•" if location is empty
-        title = [character.name]
-        if character.is_vampire and header.blush != -1:
-            # Only vampires can blush
-            title.append("Blushed" if header.blush else "Not Blushed")
+    if kwargs["blush"] is not None:
+        header.blush = kwargs["blush"]
+    header.location = kwargs["location"] or header.location
+    header.merits = kwargs["merits"] or header.merits
+    header.flaws = kwargs["flaws"] or header.flaws
+    header.temp = kwargs["temp"] or header.temp
 
-        if header.location:
-            title.append(header.location)
+    # Title should not have a trailing "•" if location is empty
+    title = [character.name]
+    if character.is_vampire and header.blush != -1:
+        # Only vampires can blush
+        title.append("Blushed" if header.blush else "Not Blushed")
 
-        # Merits, flaws, and trackers
-        description_ = []
-        if header.merits:
-            description_.append(header.merits)
-        if header.flaws:
-            description_.append(header.flaws)
+    if header.location:
+        title.append(header.location)
 
-        # Tracker damage
-        trackers = []
-        if character.is_vampire:
-            trackers.append(f"**Hunger** `{character.hunger}`")
+    # Merits, flaws, and trackers
+    description_ = []
+    if header.merits:
+        description_.append(header.merits)
+    if header.flaws:
+        description_.append(header.flaws)
 
-        hp_damage = track_damage(character.superficial_hp, character.aggravated_hp)
-        trackers.append(f"**HP** `{hp_damage}`")
+    # Tracker damage
+    trackers = []
+    if character.is_vampire:
+        trackers.append(f"**Hunger** `{character.hunger}`")
 
-        wp_damage = track_damage(character.superficial_wp, character.aggravated_wp)
-        trackers.append(f"**WP** `{wp_damage}`")
+    hp_damage = track_damage(character.superficial_hp, character.aggravated_hp)
+    trackers.append(f"**HP** `{hp_damage}`")
 
-        description_.append(" • ".join(trackers))
+    wp_damage = track_damage(character.superficial_wp, character.aggravated_wp)
+    trackers.append(f"**WP** `{wp_damage}`")
 
-        embed = discord.Embed(
-            title=" • ".join(title),
-            description="\n".join(description_),
-            url=inconnu.profile_url(character.id),
-        )
-        embed.set_thumbnail(url=character.image_url)
+    description_.append(" • ".join(trackers))
 
-        if header.temp:
-            embed.set_footer(text=header.temp)
+    embed = discord.Embed(
+        title=" • ".join(title),
+        description="\n".join(description_),
+        url=inconnu.profile_url(character.id),
+    )
+    embed.set_thumbnail(url=character.image_url)
 
-        resp = await ctx.respond(embed=embed)
-        if isinstance(resp, discord.Interaction):
-            message = await resp.original_message()
-        else:
-            message = resp
+    if header.temp:
+        embed.set_footer(text=header.temp)
 
-        # Register the header in the database
-        await inconnu.header_col.insert_one(
-            {
-                "character": {
-                    "guild": ctx.guild.id,
-                    "user": ctx.user.id,
-                    "charid": character.object_id,
-                },
-                "channel": ctx.channel.id,
-                "message": message.id,
-                "timestamp": discord.utils.utcnow(),
-            }
-        )
+    resp = await ctx.respond(embed=embed)
+    if isinstance(resp, discord.Interaction):
+        message = await resp.original_message()
+    else:
+        message = resp
 
-    except inconnu.common.FetchError:
-        pass
+    # Register the header in the database
+    await inconnu.header_col.insert_one(
+        {
+            "character": {
+                "guild": ctx.guild.id,
+                "user": ctx.user.id,
+                "charid": character.object_id,
+            },
+            "channel": ctx.channel.id,
+            "message": message.id,
+            "timestamp": discord.utils.utcnow(),
+        }
+    )
 
 
 def track_damage(sup: int, agg: int) -> str:

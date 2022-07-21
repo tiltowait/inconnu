@@ -24,8 +24,13 @@ async def create(
 ):
     """Create a macro if the syntax is valid."""
     try:
-        tip = "`/macro create` `name:NAME` `pool:POOL` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            tip="`/macro create` `name:NAME` `pool:POOL` `character:CHARACTER`",
+            help=__HELP_URL,
+        )
+        character = await haven.fetch()
 
         # Make sure fields aren't too long
         if (length := len(name)) > macro_common.NAME_LEN:
@@ -58,6 +63,4 @@ async def create(
         errors.TraitNotFoundError,
         errors.MacroAlreadyExistsError,
     ) as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL, character=character.name)
-    except inconnu.common.FetchError:
-        pass
+        await inconnu.utils.error(ctx, err, help=__HELP_URL, character=character.name)

@@ -13,6 +13,7 @@
 
 import asyncio
 import re
+from functools import partial
 
 import discord
 
@@ -59,13 +60,13 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
                     ctx,
                     owner=player,
                     character=character,
-                    char_filter=lambda c: RollParser(c, syntax),
+                    char_filter=partial(_can_roll, syntax=syntax),
                     tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
                     help=__HELP_URL,
                     errmsg=f"None of your characters can roll `{syntax}`.",
                 )
-                owner = haven.owner
                 character = await haven.fetch()
+                owner = haven.owner
 
         except LookupError as err:
             await inconnu.utils.error(ctx, err, help=__HELP_URL)
@@ -100,6 +101,16 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         )
 
         await asyncio.gather(log_task, error_task)
+
+
+def _can_roll(character, syntax):
+    """Raises an exception if the traits aren't found."""
+    try:
+        _ = RollParser(character, syntax)
+    except errors.AmbiguousTraitError:
+        # This is the only exception we accept, because the error message
+        # is valuable so the user knows why it failed.
+        pass
 
 
 async def display_outcome(

@@ -25,12 +25,16 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
             await ctx.respond("Sorry, you can't use traits in DMs.")
             return
 
-        try:
-            tip = f"`/probability` `roll:{syntax}` `character:CHARACTER`"
-            character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
-
-        except inconnu.common.FetchError:
-            return
+        syntax = " ".join(syntax.split())
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",
+            char_filter=lambda c: roll.RollParser(c, syntax),
+            errmsg=f"None of your characters can roll `{syntax}`.",
+            help=__HELP_URL,
+        )
+        character = await haven.fetch()
 
     else:
         character = None
@@ -40,63 +44,10 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
         params = SN(pool=parser.pool, hunger=parser.hunger, difficulty=parser.difficulty)
         probabilities = await __get_probabilities(params, strategy)
 
-        if await inconnu.settings.accessible(ctx):
-            await __display_text(ctx, params, strategy, probabilities)
-        else:
-            await __display_embed(ctx, params, strategy, probabilities)
+        await __display_embed(ctx, params, strategy, probabilities)
 
     except (SyntaxError, ValueError, inconnu.vchar.errors.TraitError) as err:
         await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
-
-
-async def __display_text(ctx, params, strategy: str, probs: dict):
-    """Display the probabilities in plain text."""
-    title = "**Outcome Probabilities**\n"
-    title += f"*Pool {params.pool} | Hunger {params.hunger} | DC {params.difficulty}*"
-    if strategy is not None:
-        title += " | " + __STRATEGIES[strategy]
-
-    uncomplicated = probs["success"] + probs["critical"]
-    description = f"**{uncomplicated:.2%}** success without complication"
-    description += f"\n**{probs['total_successes']:.2f}** average successes"
-    description += f"\n**{probs['margin']:.2f}** average margin"
-
-    if strategy is not None:
-        description = f"**{__STRATEGIES[strategy]}**\n\n{description}"
-
-    # Breakdown field
-
-    # We show the following fields in this order:
-    # Critical (Opt)
-    # Success - Technically optional, but we will always show it
-    # Messy (Opt)
-    # ---
-    # Failure (Opt)
-    # Total Faiiure
-    # Bestial (Opt)
-
-    breakdown = ["**Breakdown**"]
-    if probs["critical"] != 0:
-        breakdown.append(f"{probs['critical']:.2%} Critical Win")
-
-    breakdown.append(f"{probs['success']:.2%} Success")
-
-    if probs["messy"] != 0:
-        breakdown.append(f"{probs['messy']:.2%} Messy Critical")
-
-    breakdown.append("------")
-
-    if probs["fail"] != 0:
-        # Only show regular failure if there's a distinction between it and total failure
-        breakdown.append(f"{probs['fail']:.2%} Failure")
-
-    breakdown.append(f"{probs['total_fail']:.2%} Total Failure")
-
-    if probs["bestial"] != 0:
-        breakdown.append(f"{probs['bestial']:.2%} Bestial Failure")
-
-    message = title + "\n" + "\n".join(breakdown)
-    await ctx.respond(message)
 
 
 async def __display_embed(ctx, params, strategy: str, probs: dict):

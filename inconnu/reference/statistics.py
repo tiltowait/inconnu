@@ -44,20 +44,21 @@ async def statistics(
             await __traits_statistics(ctx, character, date, owner)
 
     except ValueError:
-        await inconnu.common.present_error(ctx, f"`{date}` is not a valid date.")
+        await inconnu.utils.error(ctx, f"`{date}` is not a valid date.")
     except LookupError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+        await inconnu.utils.error(ctx, err, help_url=__HELP_URL)
 
 
-async def __traits_statistics(ctx, char_id, date, owner):
+async def __traits_statistics(ctx, char_id, date, player):
     """View the statistics for all traits since a given date."""
-    try:
-        tip = "`/statistics` `traits:Full` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, char_id, tip, __HELP_URL, owner=owner)
-
-    except inconnu.vchar.errors.CharacterNotFoundError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-        return
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=char_id,
+        owner=player,
+        tip="`/statistics` `traits:Full` `character:CHARACTER`",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
     # We got a character
     pipeline = [
@@ -104,7 +105,7 @@ async def __traits_statistics(ctx, char_id, date, owner):
             # is useful information, too.
             stats[trait] = raw_stats[0]["traits"].get(trait, 0)
 
-        await __display_trait_statistics(ctx, character, stats, date, owner)
+        await __display_trait_statistics(ctx, character, stats, date, haven.owner)
     else:
         if date.year < 2021:
             # Lifetime rolls

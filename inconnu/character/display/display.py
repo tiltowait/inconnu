@@ -36,26 +36,25 @@ class DisplayField(str, Enum):
 
 async def display_requested(ctx, character=None, message=None, player=None, ephemeral=False):
     """Display a character as directly requested by a user."""
-    try:
-        owner = await common.player_lookup(ctx, player)
-        tip = "`/character display` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL, owner=owner)
+    haven = inconnu.utils.Haven(
+        ctx,
+        character=character,
+        owner=player,
+        tip="`/character display` `character:CHARACTER`",
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
 
-        await display(
-            ctx,
-            character,
-            owner=player,
-            message=message,
-            footer=None,
-            view=inconnu.views.TraitsView(character, ctx.user),
-            ephemeral=ephemeral,
-            thumbnail=character.image_url,
-        )
-
-    except LookupError as err:
-        await common.present_error(ctx, err, help_url=__HELP_URL)
-    except common.FetchError:
-        pass
+    await display(
+        ctx,
+        character,
+        owner=haven.owner,
+        message=message,
+        footer=None,
+        view=inconnu.views.TraitsView(character, ctx.user),
+        ephemeral=ephemeral,
+        thumbnail=character.image_url,
+    )
 
 
 async def display(

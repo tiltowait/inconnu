@@ -1,6 +1,7 @@
 """macros/delete.py - Deleting character macros."""
 
-from .. import common
+import inconnu
+
 from ..vchar import errors
 
 __HELP_URL = "https://www.inconnu.app/#/macros?id=deletion"
@@ -9,13 +10,16 @@ __HELP_URL = "https://www.inconnu.app/#/macros?id=deletion"
 async def delete(ctx, macro_name: str, character=None):
     """Delete the given macro."""
     try:
-        tip = f"`/macro delete` `macro:{macro_name}` `character:CHARACTER`"
-        character = await common.fetch_character(ctx, character, tip, __HELP_URL)
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            tip=f"`/macro delete` `macro:{macro_name}` `character:CHARACTER`",
+            help=__HELP_URL,
+        )
+        character = await haven.fetch()
 
         await character.delete_macro(macro_name)
         await ctx.respond(f"Deleted **{character.name}'s** `{macro_name}` macro.", ephemeral=True)
 
     except errors.MacroNotFoundError as err:
-        await common.present_error(ctx, err, character=character.name, help_url=__HELP_URL)
-    except common.FetchError:
-        pass
+        await inconnu.utils.error(ctx, err, character=character.name, help=__HELP_URL)

@@ -26,8 +26,13 @@ async def update(ctx, macro: str, syntax: str, character: str):
     """Update a macro."""
     try:
         syntax = " ".join(syntax.split())
-        tip = f"`/macro update` `macro:{macro}` `parameters:{syntax}` `character:CHARACTER`"
-        character = await inconnu.common.fetch_character(ctx, character, tip, __HELP_URL)
+        haven = inconnu.utils.Haven(
+            ctx,
+            character=character,
+            tip=f"`/macro update` `macro:{macro}` `parameters:{syntax}` `character:CHARACTER`",
+            help=__HELP_URL,
+        )
+        character = await haven.fetch()
 
         parameters = inconnu.utils.parse_parameters(syntax, False)
         macro_update = __validate_parameters(character, parameters)
@@ -53,11 +58,9 @@ async def update(ctx, macro: str, syntax: str, character: str):
             ("Valid Keys", "\n".join(keys)),
         ]
 
-        await inconnu.common.present_error(
-            ctx, err, *instructions, help_url=__HELP_URL, character=character.name
+        await inconnu.utils.error(
+            ctx, err, *instructions, help=__HELP_URL, character=character.name
         )
-    except inconnu.common.FetchError:
-        pass
 
 
 def __parameterize(parameters):

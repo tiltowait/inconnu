@@ -108,7 +108,7 @@ def _can_roll(character, syntax):
     try:
         _ = RollParser(character, syntax)
     except (inconnu.errors.AmbiguousTraitError, inconnu.errors.HungerInPool):
-        # This is the only exception we accept, because the error message
+        # These are the only exceptions we accept, because the error message
         # is valuable so the user knows why it failed.
         pass
 

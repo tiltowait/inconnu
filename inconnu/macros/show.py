@@ -36,7 +36,7 @@ async def show(ctx, character=None):
 def _has_macros(character):
     """Raises an error if the character has no macros."""
     if not character.macros:
-        raise inconnu.errors.CharacterError(f"{character.name} has no macros!")
+        raise inconnu.errors.MacroError(f"{character.name} has no macros!")
 
 
 async def __display_macros(ctx, char_name, macros):

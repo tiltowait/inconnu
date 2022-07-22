@@ -65,11 +65,20 @@ class Haven:  # pylint: disable=too-few-public-methods
 
             # If the owner only has one character, or selected one, then we
             # can skip the rest of the fetch and filter routine
-            self.match = await inconnu.char_mgr.fetchone(
+            character = await inconnu.char_mgr.fetchone(
                 self.ctx.guild.id,
                 self.owner.id,
                 self.match,
             )
+            if self.filter is not None:
+                try:
+                    self.filter(character)
+                    self.match = character
+                except Exception as err:
+                    await inconnu.utils.error(self.ctx, err, author=self.owner, help=self.help)
+                    raise inconnu.common.FetchError() from err
+            else:
+                self.match = character
 
         except LookupError as err:
             await inconnu.utils.error(self.ctx, err)

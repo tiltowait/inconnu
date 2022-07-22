@@ -62,6 +62,6 @@ async def slake(ctx, amount, character=None, **kwargs):
 def _can_slake(character):
     """Raises an exception if the character isn't a vampire or is at Hunger 0."""
     if not character.is_vampire:
-        raise inconnu.vchar.errors.CharacterError(f"{character.name} isn't a vampire!")
+        raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
     if character.hunger == 0:
-        raise inconnu.vchar.errors.CharacterError(f"{character.name} has no Hunger!")
+        raise inconnu.errors.CharacterError(f"{character.name} has no Hunger!")

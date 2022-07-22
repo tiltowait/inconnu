@@ -52,7 +52,7 @@ async def aggheal(ctx, character: str):
 def _can_aggheal(character):
     """Raise an error if the character can't agg heal."""
     if character.aggravated_hp == 0:
-        raise inconnu.vchar.errors.CharacterError(
+        raise inconnu.errors.CharacterError(
             f"{character.name} has no Aggravated Health damage!"
         )
 

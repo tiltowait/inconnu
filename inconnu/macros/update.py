@@ -5,7 +5,7 @@ from distutils.util import strtobool
 
 import inconnu
 
-from ..vchar import VChar, errors
+from ..vchar import VChar
 from . import macro_common
 
 __HELP_URL = "https://www.inconnu.app/#/macros?id=updating"
@@ -41,9 +41,9 @@ async def update(ctx, macro: str, syntax: str, character: str):
         await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
 
     except (
-        errors.MacroNotFoundError,
-        errors.AmbiguousTraitError,
-        errors.TraitNotFoundError,
+        inconnu.errors.MacroNotFoundError,
+        inconnu.errors.AmbiguousTraitError,
+        inconnu.errors.TraitNotFoundError,
         SyntaxError,
         ValueError,
     ) as err:

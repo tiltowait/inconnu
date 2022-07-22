@@ -68,7 +68,7 @@ async def rouse(
 def _can_rouse(character):
     """Raises an error if the character is mortal."""
     if character.splat == "mortal":
-        raise inconnu.vchar.errors.CharacterError(f"{character.name} is a mortal.")
+        raise inconnu.errors.CharacterError(f"{character.name} is a mortal.")
 
 
 def __make_title(outcome):

@@ -263,7 +263,7 @@ async def fetch_character(ctx, character, tip, help_url, owner=None):
         owner = owner or ctx.user
         return await inconnu.char_mgr.fetchone(ctx.guild.id, owner.id, character)
 
-    except inconnu.vchar.errors.UnspecifiedCharacterError as err:
+    except inconnu.errors.UnspecifiedCharacterError as err:
         character = await select_character(ctx, err, help_url, ("Proper syntax", tip), player=owner)
 
         if character is None:
@@ -271,7 +271,7 @@ async def fetch_character(ctx, character, tip, help_url, owner=None):
 
         return await inconnu.char_mgr.fetchone(ctx.guild.id, owner.id, character)
 
-    except inconnu.vchar.errors.CharacterError as err:
+    except inconnu.errors.CharacterError as err:
         await present_error(ctx, err, help_url=help_url, author=owner)
         raise FetchError(str(err)) from err
 

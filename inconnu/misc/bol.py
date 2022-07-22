@@ -46,6 +46,6 @@ async def bol(ctx, character):
 def _can_blush(character):
     """Raises an exception if the character isn't capable of Blushing."""
     if not character.is_vampire:
-        raise inconnu.vchar.errors.CharacterError(f"{character.name} isn't a vampire!")
+        raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
     if character.humanity > 8:
-        raise inconnu.vchar.errors.CharacterError(f"{character.name} doesn't need to Blush!")
+        raise inconnu.errors.CharacterError(f"{character.name} doesn't need to Blush!")

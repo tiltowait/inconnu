@@ -37,7 +37,7 @@ async def remorse(ctx, character=None, minimum=1):
 def _can_remorse(character):
     """Raise an exception if we have no stains."""
     if character.stains == 0:
-        raise inconnu.vchar.errors.CharacterError(f"{character.name} has no stains.")
+        raise inconnu.errors.CharacterError(f"{character.name} has no stains.")
 
 
 async def __display_outcome(ctx, character: VChar, outcome):

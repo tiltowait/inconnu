@@ -16,7 +16,7 @@ async def update_header(ctx: discord.ApplicationContext, character, blush: int):
         modal = _RPHeader(character, blush, title=f"Update RP Header: {character.name}")
         await ctx.send_modal(modal)
 
-    except inconnu.vchar.errors.CharacterNotFoundError as err:
+    except inconnu.errors.CharacterNotFoundError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
 
 

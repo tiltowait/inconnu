@@ -75,7 +75,7 @@ class MiscCommands(commands.Cog):
                     ctx, f"{current_owner.display_name} doesn't own {character.name}!"
                 )
 
-        except inconnu.vchar.errors.CharacterNotFoundError:
+        except inconnu.errors.CharacterNotFoundError:
             await inconnu.common.present_error(ctx, "Character not found.")
         except ValueError as err:
             await inconnu.common.present_error(ctx, err)

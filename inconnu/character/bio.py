@@ -20,7 +20,7 @@ async def edit_biography(ctx, character):
         modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
         await ctx.send_modal(modal)
 
-    except inconnu.vchar.errors.CharacterNotFoundError as err:
+    except inconnu.errors.CharacterNotFoundError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
     except inconnu.common.FetchError as err:
         await inconnu.common.present_error(ctx, err)
@@ -54,7 +54,7 @@ async def show_biography(ctx, character, player, ephemeral=False):
 def _has_profile(character):
     """Raises an error if the character doesn't have a profile."""
     if not character.has_biography:
-        raise inconnu.vchar.errors.CharacterError(f"{character.name} doesn't have a profile!")
+        raise inconnu.errors.CharacterError(f"{character.name} doesn't have a profile!")
 
 
 def __biography_embed(character, owner):

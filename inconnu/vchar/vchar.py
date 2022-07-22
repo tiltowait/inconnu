@@ -5,7 +5,7 @@ import asyncio
 import copy
 import datetime
 import math
-from collections import Counter, OrderedDict, defaultdict
+from collections import Counter, defaultdict
 from enum import Enum
 from types import SimpleNamespace
 from typing import Dict, List
@@ -15,7 +15,6 @@ from bson.objectid import ObjectId
 import inconnu
 
 from ..constants import INCONNU_ID, UNIVERSAL_TRAITS, Damage
-from . import errors
 
 
 class _Properties(str, Enum):
@@ -489,7 +488,7 @@ class VChar:
         matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait)]
 
         if not matches:
-            raise errors.TraitNotFoundError(self, trait)
+            raise inconnu.errors.TraitNotFoundError(self, trait)
 
         # A character might have a trait whose name is a subset of another trait.
         # The canonical example: "Surge", "Surgery". Typing "Surge" should work.
@@ -508,7 +507,7 @@ class VChar:
             found_trait, rating = matches[0]
 
             if exact and trait != found_trait.lower():
-                raise errors.TraitNotFoundError(self, trait)
+                raise inconnu.errors.TraitNotFoundError(self, trait)
 
             # Convert trackers to a rating
             if isinstance(rating, str):
@@ -516,7 +515,7 @@ class VChar:
             return SimpleNamespace(name=found_trait, rating=rating)
 
         matches = map(lambda t: t[0], matches)
-        raise errors.AmbiguousTraitError(trait, matches)
+        raise inconnu.errors.AmbiguousTraitError(trait, matches)
 
     async def assign_traits(self, traits: dict) -> str:
         """
@@ -607,7 +606,7 @@ class VChar:
             if macro["name"].lower() == lower:
                 return index
 
-        raise errors.MacroNotFoundError(f"{self.name} has no macro named `{search}`.")
+        raise inconnu.errors.MacroNotFoundError(f"{self.name} has no macro named `{search}`.")
 
     def find_macro(self, search):
         """
@@ -635,8 +634,10 @@ class VChar:
         """
         try:
             _ = self._macro_index(macro)
-            raise errors.MacroAlreadyExistsError(f"You already have a macro named `{macro}`.")
-        except errors.MacroNotFoundError:
+            raise inconnu.errors.MacroAlreadyExistsError(
+                f"You already have a macro named `{macro}`."
+            )
+        except inconnu.errors.MacroNotFoundError:
             pass
 
         macro_doc = {
@@ -869,7 +870,7 @@ class VChar:
             "blush",
         ]
         if key not in valid_keys:
-            raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
+            raise inconnu.errors.InvalidLogKeyError(f"{key} is not a valid log key.")
 
         self._async_collection.update_one(self.find_query, {"$inc": {f"log.{key}": increment}})
 

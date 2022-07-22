@@ -87,7 +87,7 @@ class _BulkModal(Modal):
                     )
                     self.would_award.append(f"`{experience}xp`: `{character.name}` {member}")
 
-            except inconnu.vchar.errors.CharacterNotFoundError:
+            except inconnu.errors.CharacterNotFoundError:
                 self.errors.append(f"**Not found:** {member}: `{char_name}`")
 
         # Finished parsing input

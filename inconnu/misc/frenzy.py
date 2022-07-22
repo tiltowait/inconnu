@@ -87,7 +87,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, bonus: str, character: str)
 def _can_frenzy(character):
     """Raises an exception if the character can't frenzy."""
     if not character.is_vampire:
-        raise inconnu.vchar.errors.CharacterError("Only vampires can frenzy!")
+        raise inconnu.errors.CharacterError("Only vampires can frenzy!")
 
 
 def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, footer: str, color: int):

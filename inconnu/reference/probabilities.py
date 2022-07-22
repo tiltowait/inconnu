@@ -46,7 +46,7 @@ async def probability(ctx, syntax: str, strategy=None, character=None):
 
         await __display_embed(ctx, params, strategy, probabilities)
 
-    except (SyntaxError, ValueError, inconnu.vchar.errors.TraitError) as err:
+    except (SyntaxError, ValueError, inconnu.errors.TraitError) as err:
         await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
 
 

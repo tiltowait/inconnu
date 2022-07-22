@@ -3,7 +3,6 @@
 
 import inconnu
 
-from ..vchar import errors
 from . import macro_common
 
 __HELP_URL = "https://www.inconnu.app/#/macros?id=creation"
@@ -59,8 +58,8 @@ async def create(
 
     except (
         SyntaxError,
-        errors.AmbiguousTraitError,
-        errors.TraitNotFoundError,
-        errors.MacroAlreadyExistsError,
+        inconnu.errors.AmbiguousTraitError,
+        inconnu.errors.TraitNotFoundError,
+        inconnu.errors.MacroAlreadyExistsError,
     ) as err:
         await inconnu.utils.error(ctx, err, help=__HELP_URL, character=character.name)

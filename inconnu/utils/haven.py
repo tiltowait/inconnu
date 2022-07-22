@@ -74,7 +74,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                 try:
                     self.filter(character)
                     self.match = character
-                except Exception as err:
+                except inconnu.errors.InconnuError as err:
                     await inconnu.utils.error(self.ctx, err, author=self.owner, help=self.help)
                     raise inconnu.common.FetchError() from err
             else:
@@ -84,17 +84,17 @@ class Haven:  # pylint: disable=too-few-public-methods
             await inconnu.utils.error(self.ctx, err)
             raise inconnu.common.FetchError() from err
 
-        except inconnu.vchar.errors.NoCharactersError as err:
+        except inconnu.errors.NoCharactersError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await inconnu.utils.error(self.ctx, errmsg)
             raise inconnu.common.FetchError() from err
 
-        except inconnu.vchar.errors.CharacterNotFoundError as err:
+        except inconnu.errors.CharacterNotFoundError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await inconnu.utils.error(self.ctx, errmsg)
             raise inconnu.common.FetchError() from err
 
-        except inconnu.vchar.errors.UnspecifiedCharacterError as err:
+        except inconnu.errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
             all_chars = await inconnu.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)
             if self.filter is not None:
@@ -109,7 +109,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                         self.filter(char)
                         self.possibilities[self.uuid + char.id] = (char, False)
                         passed += 1
-                    except Exception:  # TODO: Proper exception type
+                    except inconnu.errors.InconnuError:
                         self.possibilities[self.uuid + char.id] = (char, True)
 
                 if passed == 1:

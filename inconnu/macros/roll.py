@@ -11,7 +11,6 @@ import inconnu
 
 from .. import common
 from ..misc import rouse
-from ..vchar import errors
 from ..vr import display_outcome, perform_roll
 from . import macro_common
 
@@ -60,7 +59,7 @@ async def roll(ctx, syntax: str, character=None):
 
             try:
                 outcome = perform_roll(character, parameters)
-            except errors.TraitNotFoundError as err:
+            except inconnu.errors.TraitNotFoundError as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
                 await common.present_error(ctx, msg, character=character.name)
                 return

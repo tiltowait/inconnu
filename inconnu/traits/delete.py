@@ -6,7 +6,7 @@ import discord
 
 import inconnu
 
-from ..vchar import VChar, errors
+from ..vchar import VChar
 from . import traitcommon
 
 __HELP_URL = "https://www.inconnu.app/#/trait-management?id=deleting-traits"
@@ -79,7 +79,7 @@ async def __delete_traits(character: VChar, *traits) -> list:
             try:
                 trait = await character.delete_trait(trait)
                 deleted.append(trait)
-            except errors.TraitNotFoundError:
+            except inconnu.errors.TraitNotFoundError:
                 errs.append(trait)
 
     return SimpleNamespace(deleted=deleted, errors=errs)

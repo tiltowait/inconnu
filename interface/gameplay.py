@@ -61,7 +61,7 @@ async def _header_bol_options(ctx):
             ]
         return [OptionChoice("N/A - Mortal", -1)]
 
-    except inconnu.vchar.errors.CharacterNotFoundError:
+    except inconnu.errors.CharacterNotFoundError:
         return []
 
 

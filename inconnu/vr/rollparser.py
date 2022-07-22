@@ -4,6 +4,8 @@ import ast
 import operator as op
 import re
 
+import inconnu
+
 
 class RollParser:
     """Parse user roll input."""
@@ -130,7 +132,7 @@ class RollParser:
 
         if "Hunger" in self.pool_stack:
             errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"
-            raise SyntaxError(errmsg)
+            raise inconnu.errors.HungerInPool(errmsg)
 
         # Only the pool is required, so we need to provide defaults if the other
         # stacks aren't given

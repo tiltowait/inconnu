@@ -1,6 +1,7 @@
 """Simple error embed generator and presenter."""
 
 import discord
+
 import inconnu
 
 
@@ -10,7 +11,7 @@ async def error(ctx, err, *fields, **kwargs):
 
     if (help_url := kwargs.get("help")) is not None:
         # If we have a help URL, we will add some links to the view
-        view = kwargs.get("view", discord.ui.View())
+        view = kwargs.get("view") or discord.ui.View()
 
         view.add_item(discord.ui.Button(label="Documentation", url=help_url, row=1))
         view.add_item(discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=1))

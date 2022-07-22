@@ -10,6 +10,7 @@ from numpy.random import default_rng
 from . import character
 from . import cull as culler
 from . import (
+    errors,
     experience,
     header,
     log,

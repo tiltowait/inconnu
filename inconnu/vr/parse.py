@@ -77,7 +77,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         outcome = perform_roll(character, syntax)
         await display_outcome(ctx, owner, character, outcome, comment)
 
-    except (SyntaxError, ValueError, errors.TraitError) as err:
+    except (SyntaxError, ValueError, errors.TraitError, inconnu.errors.HungerInPool) as err:
         log_task = inconnu.log.log_event(
             "roll_error", user=ctx.user.id, charid=getattr(character, "id", None), syntax=raw_syntax
         )
@@ -86,7 +86,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             view = inconnu.views.TraitsView(character, ctx.user)
             ephemeral = True
         else:
-            view = None
+            view = discord.MISSING
             ephemeral = False
 
         error_task = inconnu.utils.error(
@@ -107,7 +107,7 @@ def _can_roll(character, syntax):
     """Raises an exception if the traits aren't found."""
     try:
         _ = RollParser(character, syntax)
-    except errors.AmbiguousTraitError:
+    except (errors.AmbiguousTraitError, inconnu.errors.HungerInPool):
         # This is the only exception we accept, because the error message
         # is valuable so the user knows why it failed.
         pass

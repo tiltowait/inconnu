@@ -76,23 +76,23 @@ class Haven:  # pylint: disable=too-few-public-methods
                     self.match = character
                 except inconnu.errors.InconnuError as err:
                     await inconnu.utils.error(self.ctx, err, author=self.owner, help=self.help)
-                    raise inconnu.common.FetchError() from err
+                    raise inconnu.errors.HandledError() from err
             else:
                 self.match = character
 
         except LookupError as err:
             await inconnu.utils.error(self.ctx, err)
-            raise inconnu.common.FetchError() from err
+            raise inconnu.errors.HandledError() from err
 
         except inconnu.errors.NoCharactersError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await inconnu.utils.error(self.ctx, errmsg)
-            raise inconnu.common.FetchError() from err
+            raise inconnu.errors.HandledError() from err
 
         except inconnu.errors.CharacterNotFoundError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await inconnu.utils.error(self.ctx, errmsg)
-            raise inconnu.common.FetchError() from err
+            raise inconnu.errors.HandledError() from err
 
         except inconnu.errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
@@ -125,7 +125,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                         author=self.owner,
                         help=self.help,
                     )
-                    raise inconnu.common.FetchError()
+                    raise inconnu.errors.HandledError()
 
             else:
                 self.possibilities = {self.uuid + char.id: (char, False) for char in all_chars}
@@ -154,7 +154,7 @@ class Haven:  # pylint: disable=too-few-public-methods
             character, _ = self.possibilities[key]
             self.match = character
         else:
-            raise inconnu.common.FetchError("No character was selected.")
+            raise inconnu.errors.HandledError("No character was selected.")
 
     def _create_view(self):
         """Create a character selector view."""

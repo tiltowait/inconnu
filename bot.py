@@ -73,8 +73,8 @@ async def on_application_command_error(ctx, error):
         # This just means a button tried to disable when its message no longer exists.
         # We don't care, and there's nothing we can do about it anyway.
         return
-    if isinstance(error, inconnu.common.FetchError):
-        print("Got a FetchError")
+    if isinstance(error, inconnu.errors.HandledError):
+        print("Got a HandledError")
         return
 
     # Unknown errors and database errors are logged to a channel

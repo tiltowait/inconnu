@@ -48,7 +48,7 @@ async def mend(ctx, character=None):
 def _can_mend(character):
     """Raises an error if the character has no superficial health damage."""
     if character.superficial_hp == 0:
-        raise inconnu.vchars.errors.CharacterError(f"{character.name} has no damage to mend.")
+        raise inconnu.errors.CharacterError(f"{character.name} has no damage to mend.")
 
 
 async def __display_outcome(ctx, character, outcome):

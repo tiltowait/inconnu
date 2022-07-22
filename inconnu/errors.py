@@ -5,6 +5,10 @@ class InconnuError(Exception):
     """Base error all others inherit from."""
 
 
+class HandledError(InconnuError):
+    """An error that needs no further handling."""
+
+
 class RollError(InconnuError):
     """Base error pertaining to rolls."""
 
@@ -66,11 +70,15 @@ class AmbiguousTraitError(TraitError):
         super().__init__(self.message)
 
 
-class MacroAlreadyExistsError(Exception):
+class MacroError(InconnuError):
+    """Base macro error."""
+
+
+class MacroAlreadyExistsError(MacroError):
     """Error for when a user tries to create a macro that already exists."""
 
 
-class MacroNotFoundError(Exception):
+class MacroNotFoundError(InconnuError):
     """Error for when a macro isn't found."""
 
 

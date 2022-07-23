@@ -3,6 +3,7 @@
 
 import discord
 from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
+from logger import Logger
 from discord.ext import commands
 
 import inconnu
@@ -117,13 +118,13 @@ class HeaderCog(commands.Cog):
 
     @commands.message_command(name="Fix RP Header")
     @commands.guild_only()
-    async def change_header_location(self, ctx, message: discord.Message):
+    async def fix_rp_header(self, ctx, message: discord.Message):
         """Change an RP header's location."""
         if message.author == self.bot.user:
             # Make sure we have a header
             record = await inconnu.header_col.find_one({"message": message.id})
             if record is not None:
-                # Make sure we own it
+                # Make sure we are allowed to update it
                 owner = record["character"]["user"]
                 if ctx.channel.permissions_for(ctx.user).administrator or owner == ctx.user.id:
                     # Modal gets the new location
@@ -134,6 +135,35 @@ class HeaderCog(commands.Cog):
                 return
 
         await ctx.respond("This message isn't a header!", ephemeral=True)
+
+    @commands.message_command(name="Delete RP Header")
+    @commands.guild_only()
+    async def delete_rp_header(self, ctx, message: discord.Message):
+        """Delete an RP header."""
+        if message.author == self.bot.user:
+            record = await inconnu.header_col.find_one({"message": message.id})
+            if record is not None:
+                # Make sure we are allowed to delete it
+                owner = record["character"]["user"]
+                if ctx.channel.permissions_for(ctx.user).administrator or owner == ctx.user.id:
+                    Logger.debug("HEADER: Deleting RP header")
+                    await message.delete()
+                    await ctx.respond("RP header deleted!", ephemeral=True)
+                else:
+                    Logger.debug(
+                        "HEADER: Unauthorized deletion attempt by %s#%s",
+                        ctx.user.name,
+                        ctx.user.discriminator,
+                    )
+                    await ctx.respond(
+                        "You don't have permission to delete this RP header.", ephemeral=True
+                    )
+            else:
+                Logger.debug("HEADER: Attempted to delete non-header post")
+                await ctx.respond("This is not an RP header.", ephemeral=True)
+        else:
+            Logger.debug("HEADER: Attempted to delete non-%s post", self.bot.user.name)
+            await ctx.respond("This is not an RP header.", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):

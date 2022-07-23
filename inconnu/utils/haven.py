@@ -77,8 +77,11 @@ class Haven:  # pylint: disable=too-few-public-methods
                 try:
                     self.filter(character)
                     self.match = character
+                    Logger.debug("HAVEN: Explicit character %s matches filter", character.name)
                 except inconnu.errors.InconnuError as err:
-                    Logger.debug("HAVEN: Explicit character does not match filter")
+                    Logger.debug(
+                        "HAVEN: Explicit character %s does not match filter", character.name
+                    )
                     await inconnu.utils.error(self.ctx, err, author=self.owner, help=self.help)
                     raise inconnu.errors.HandledError() from err
             else:
@@ -111,9 +114,11 @@ class Haven:  # pylint: disable=too-few-public-methods
                 for char in all_chars:
                     try:
                         self.filter(char)
+                        Logger.debug("HAVEN: Character %s matches filter", char.name)
                         self.possibilities[self.uuid + char.id] = (char, False)
                         passed += 1
                     except inconnu.errors.InconnuError:
+                        Logger.debug("HAVEN: Character %s does not match filter", char.name)
                         self.possibilities[self.uuid + char.id] = (char, True)
 
                 Logger.debug("HAVEN: %s of %s character(s) match filter", passed, len(all_chars))
@@ -201,18 +206,20 @@ def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
 
     # Players are allowed to look up themselves
     if ctx.user != player:
-        Logger.debug(
-            "HAVEN: %s#%s looked up %s#%s",
+        Logger.info(
+            "HAVEN: %s#%s looked up %s#%s (%s)",
             ctx.user.name,
             ctx.user.discriminator,
             player.name,
             player.discriminator,
+            ctx.guild.name,
         )
         if not (ctx.channel.permissions_for(ctx.user).administrator or allow_lookups):
             Logger.info(
-                "HAVEN: Invalid player lookup by %s%s",
+                "HAVEN: Invalid player lookup by %s%s (%s)",
                 ctx.user.name,
                 ctx.user.discriminator,
+                ctx.guild.name,
             )
             raise LookupError("You don't have lookup permissions.")
 

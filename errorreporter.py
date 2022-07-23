@@ -61,7 +61,7 @@ class ErrorReporter:
             # We don't care, and there's nothing we can do about it anyway.
             return
         if isinstance(error, inconnu.errors.HandledError):
-            Logger.debug("REPORTER: Got a HandledError")
+            Logger.debug("REPORTER: Ignoring a HandledError")
             return
 
         # Unknown errors and database errors are logged to a channel

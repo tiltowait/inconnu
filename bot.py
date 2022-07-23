@@ -1,14 +1,14 @@
-"""commands.py - Define the commands and event handlers for the bot."""
+"""Bot instance and event handlers."""
 
 import asyncio
 import os
 
 import discord
-import pymongo.errors
 import topgg
-from discord.ext import commands, tasks
+from discord.ext import tasks
 
 import inconnu
+from errorreporter import reporter
 
 # Check if we're in dev mode
 if (debug_guild := os.getenv("DEBUG")) is not None:
@@ -21,7 +21,6 @@ intents = discord.Intents(guilds=True, members=True, messages=True)
 bot = discord.Bot(intents=intents, debug_guilds=debug_guild)
 bot.persistent_views_added = False
 bot.welcomed = False
-
 
 # General Events
 
@@ -50,39 +49,13 @@ async def finish_setup():
     cull_inactive.start()
     inconnu.char_mgr.bot = bot
     bot.welcomed = True
+    reporter.prepare_channel(bot)
 
 
 @bot.event
 async def on_application_command_error(ctx, error):
-    """Handle various errors we might encounter."""
-    error = getattr(error, "original", error)  # Some pycord errors have `original`, but not all
-
-    if isinstance(error, commands.NoPrivateMessage):
-        await ctx.respond("Sorry, this command can only be run in a server!", ephemeral=True)
-        return
-    if isinstance(error, commands.MissingPermissions):
-        await ctx.respond("Sorry, you don't have permission to do this!", ephemeral=True)
-        return
-    if isinstance(error, discord.errors.HTTPException):
-        await ctx.respond(
-            "Your character profile image isn't a valid URL! Fix with `/character profile edit:`.",
-            ephemeral=True,
-        )
-        return
-    if isinstance(error, discord.errors.NotFound):
-        # This just means a button tried to disable when its message no longer exists.
-        # We don't care, and there's nothing we can do about it anyway.
-        return
-    if isinstance(error, inconnu.errors.HandledError):
-        print("Got a HandledError")
-        return
-
-    # Unknown errors and database errors are logged to a channel
-
-    if isinstance(error, pymongo.errors.PyMongoError):
-        await inconnu.log.report_database_error(bot, ctx)
-
-    await inconnu.log.report_error(bot, ctx, error)
+    """Use centralized reporter to handle errors."""
+    await reporter.report_error(ctx, error)
 
 
 # Member Events

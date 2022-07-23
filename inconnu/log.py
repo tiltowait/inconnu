@@ -4,7 +4,6 @@
 import datetime
 import os
 import textwrap
-import traceback
 
 import discord
 
@@ -16,11 +15,9 @@ async def log_event(event_key, **context):
     log = inconnu.db.log
 
     if event_key in ["update", "update_error", "roll_error", "macro_update_error"]:
-        await log.insert_one({
-            "date": datetime.datetime.utcnow(),
-            "event": event_key,
-            "context": context
-        })
+        await log.insert_one(
+            {"date": datetime.datetime.utcnow(), "event": event_key, "context": context}
+        )
     else:
         raise KeyError("Invalid event key:", event_key)
 
@@ -38,23 +35,3 @@ async def report_database_error(bot, ctx):
 
         db_error_channel = bot.get_channel(int(db_error_channel))
         await db_error_channel.send(f"{timestamp}: Database error detected.")
-
-
-async def report_error(bot, ctx, error):
-    """Report an error to the appropriate channel."""
-    if (channel := os.getenv("REPORT_CHANNEL")) is None:
-        raise error
-
-    embed = discord.Embed(
-        title=type(error).__name__,
-        description="\n".join(traceback.format_exception(error)),
-        color=0xff0000,
-        timestamp=discord.utils.utcnow()
-    )
-    embed.set_author(
-        name=f"{ctx.user.name} on {ctx.guild.name}",
-        icon_url=ctx.guild.icon or ""
-    )
-
-    channel = bot.get_channel(int(channel))
-    await channel.send(embed=embed)

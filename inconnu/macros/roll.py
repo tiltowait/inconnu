@@ -1,7 +1,6 @@
 """macros/roll.py - Rolling character macros."""
 
 import re
-from functools import partial
 from uuid import uuid4
 
 import discord

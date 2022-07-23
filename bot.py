@@ -146,11 +146,14 @@ def setup():
     """Add the cogs to the bot."""
     for filename in os.listdir("./interface"):
         if filename[0] != "_" and filename.endswith(".py"):
+            Logger.debug("COGS: Loading %s", filename)
             bot.load_extension(f"interface.{filename[:-3]}")
 
     if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:
         Logger.info("BOT: Establishing top.gg connection")
         bot.dblpy = topgg.DBLClient(bot, topgg_token, autopost=True)
+    else:
+        Logger.warning("BOT: top.gg not configured")
 
 
 async def run():

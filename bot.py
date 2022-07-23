@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+from datetime import time, timezone
 
 import discord
 import topgg
@@ -12,14 +13,14 @@ from errorreporter import reporter
 from logger import Logger
 
 # Check if we're in dev mode
-if (debug_guild := os.getenv("DEBUG")) is not None:
-    Logger.info("BOT: Debugging on %s", debug_guild)
-    debug_guild = [int(debug_guild)]
+if (_debug_guilds := os.getenv("DEBUG")) is not None:
+    debug_guilds = [int(g) for g in _debug_guilds.split(",")]
+    Logger.info("BOT: Debugging on %s", debug_guilds)
 
 
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True)
-bot = discord.Bot(intents=intents, debug_guilds=debug_guild)
+bot = discord.Bot(intents=intents, debug_guilds=debug_guilds)
 bot.persistent_views_added = False
 bot.welcomed = False
 
@@ -101,7 +102,7 @@ async def on_guild_update(before, after):
 # Tasks
 
 
-@tasks.loop(hours=24)
+@tasks.loop(time=time(12, 0, tzinfo=timezone.utc))
 async def cull_inactive():
     """Cull inactive characters and guilds."""
     await inconnu.culler.cull()
@@ -115,6 +116,7 @@ async def __set_presence():
     servers = len(bot.guilds)
     message = f"/help | {servers} chronicles"
 
+    Logger.info("BOT: Setting presence")
     await bot.change_presence(
         activity=discord.Activity(type=discord.ActivityType.watching, name=message)
     )

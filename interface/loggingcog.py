@@ -1,4 +1,4 @@
-"""interface/statcord.py - Bot statistics logging cog."""
+"""interface/loggingcog.py - Log command events."""
 
 import os
 from logging import DEBUG
@@ -10,7 +10,7 @@ import inconnu.utils
 from logger import Logger
 
 
-class StatcordPost(commands.Cog):
+class LoggingCog(commands.Cog):
     """A simple cog for logging command events."""
 
     def __init__(self, bot):
@@ -50,4 +50,4 @@ class StatcordPost(commands.Cog):
 
 def setup(bot):
     """Add the cog to the bot."""
-    bot.add_cog(StatcordPost(bot))
+    bot.add_cog(LoggingCog(bot))

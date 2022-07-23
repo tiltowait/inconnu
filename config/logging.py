@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+upload_to_aws = bool(os.getenv("AWS_UPLOAD_LOGS", "0"))
 log_level = os.getenv("LOG_LEVEL", "debug")
 log_enable = int(os.getenv("LOG_ENABLE", "1"))
 log_dir = os.getenv("LOG_DIR", "logs")

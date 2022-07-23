@@ -25,7 +25,7 @@ class ErrorReporter:
             if (channel := os.getenv("REPORT_CHANNEL")) is not None:
                 if (channel := bot.get_channel(int(channel))) is not None:
                     Logger.info(
-                        "REPORTER: Uncaught exceptions will be sent to #%s on %s",
+                        "REPORTER: Recording errors in #%s on %s",
                         channel.name,
                         channel.guild.name,
                     )

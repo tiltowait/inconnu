@@ -8,7 +8,9 @@ import discord
 import topgg
 from discord.ext import tasks
 
+import config.logging
 import inconnu
+import s3
 from errorreporter import reporter
 from logger import Logger
 
@@ -41,16 +43,21 @@ async def finish_setup():
         return
 
     await bot.wait_until_ready()
+    bot.welcomed = True
 
     Logger.info("BOT: Logged in as %s!", str(bot.user))
     Logger.info("BOT: Playing on %s servers", len(bot.guilds))
     Logger.info("BOT: %s", discord.version_info)
     Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
 
+    # Schedule tasks
     cull_inactive.start()
+    upload_logs.start()
+
+    # Final prep
     inconnu.char_mgr.bot = bot
-    bot.welcomed = True
     reporter.prepare_channel(bot)
+    Logger.info("BOT: Ready")
 
 
 @bot.event
@@ -106,6 +113,19 @@ async def on_guild_update(before, after):
 async def cull_inactive():
     """Cull inactive characters and guilds."""
     await inconnu.culler.cull()
+
+
+@tasks.loop(minutes=5)
+async def upload_logs():
+    """Upload logs to S3."""
+    if not config.logging.upload_to_aws:
+        Logger.warning("TASK: Log uploading disabled. Unscheduling task")
+        upload_logs.stop()
+    elif not s3.upload_logs():
+        Logger.error("TASK: Unable to upload logs. Unscheduling task")
+        upload_logs.stop()
+    else:
+        Logger.info("TASK: Logs uploaded")
 
 
 # Misc and helpers

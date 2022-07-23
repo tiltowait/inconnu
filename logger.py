@@ -48,6 +48,7 @@ messages::
     from logger import LoggerHistory
     print(LoggerHistory.history)
 """
+# pylint: disable=invalid-name
 
 import copy
 import logging
@@ -308,7 +309,7 @@ logging.root = Logger
 # add default PixelWar logger
 Logger.addHandler(LoggerHistory())
 file_log_handler = None
-if "INCONNU_NO_FILELOG" not in os.environ:
+if config.log_to_file:
     file_log_handler = FileHandler()
     Logger.addHandler(file_log_handler)
 
@@ -346,3 +347,6 @@ if "INCONNU_NO_CONSOLELOG" not in os.environ:
 
 # install stderr handlers
 sys.stderr = LogFile("stderr", Logger.warning)
+
+if not config.log_to_file:
+    Logger.warning("Logger: Log saving disabled")

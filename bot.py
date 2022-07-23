@@ -40,7 +40,7 @@ async def finish_setup():
 
     await bot.wait_until_ready()
 
-    Logger.info("BOT: Logged on as %s!", str(bot.user))
+    Logger.info("BOT: Logged in as %s!", str(bot.user))
     Logger.info("BOT: Playing on %s servers", len(bot.guilds))
     Logger.info("BOT: %s", discord.version_info)
     Logger.info("BOT: Latency: %s ms", bot.latency * 1000)

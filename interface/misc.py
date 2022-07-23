@@ -30,7 +30,7 @@ class MiscCommands(commands.Cog):
         site = discord.ui.Button(label="Website", url="https://www.inconnu.app")
         support = discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL)
 
-        await ctx.respond(embed=embed, view=discord.ui.View(site, support))
+        await ctx.respond(embed=embed, view=inconnu.views.ReportingView(site, support))
 
     @slash_command()
     async def random(

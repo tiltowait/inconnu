@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 import discord
-from discord.ui import Button, View
+from discord.ui import Button
 
 import inconnu
 
@@ -69,7 +69,7 @@ async def present_error(
 
     if help_url is not None:
         # If we have a help URL, we will add some links to the view
-        view = view or View()
+        view = view or inconnu.views.ReportingView()
 
         view.add_item(Button(label="Documentation", url=help_url, row=1))
         view.add_item(Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=1))

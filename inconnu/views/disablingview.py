@@ -2,8 +2,10 @@
 
 import discord
 
+from .reportingview import ReportingView
 
-class DisablingView(discord.ui.View):
+
+class DisablingView(ReportingView):
     """A view that can disable all its buttons, save for its link buttons."""
 
     def __init__(self, timeout=60, remove_on_timeout=False):
@@ -19,7 +21,6 @@ class DisablingView(discord.ui.View):
 
         await interaction.response.edit_message(view=self)
         self.stop()
-
 
     async def on_timeout(self):
         """Disable the components on timeout, if we have the view's message."""

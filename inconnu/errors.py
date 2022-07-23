@@ -5,6 +5,10 @@ class InconnuError(Exception):
     """Base error all others inherit from."""
 
 
+class FetchError(Exception):
+    """Generic character fetch error."""
+
+
 class HandledError(InconnuError):
     """An error that needs no further handling."""
 

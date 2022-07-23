@@ -135,7 +135,7 @@ class Wizard:
 
         button = Button(label="Full Documentation", url="https://www.inconnu.app/#/quickstart")
 
-        await self.edit_message(embed=embed, view=discord.ui.View(button))
+        await self.edit_message(embed=embed, view=inconnu.views.ReportingView(button))
 
     async def __query_trait(self, *, interaction: discord.Interaction = None, message: str = None):
         """Query for the next trait."""

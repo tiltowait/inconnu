@@ -15,15 +15,13 @@ async def edit_biography(ctx, character):
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
         if character.user != ctx.user.id:
-            raise inconnu.common.FetchError("You may only edit your own characters' profile.")
+            raise inconnu.errors.FetchError("You may only edit your own characters' profile.")
 
         modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
         await ctx.send_modal(modal)
 
-    except inconnu.errors.CharacterNotFoundError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
-    except inconnu.common.FetchError as err:
-        await inconnu.common.present_error(ctx, err)
+    except (inconnu.errors.CharacterNotFoundError, inconnu.errors.FetchError) as err:
+        await inconnu.utils.error(ctx, err, help=__HELP_URL)
 
 
 async def show_biography(ctx, character, player, ephemeral=False):

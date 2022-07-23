@@ -5,10 +5,12 @@ import uuid
 
 import discord
 
+from .reportingview import ReportingView
+
 TIMEOUT = 5 if "DEBUG" in os.environ else 300
 
 
-class RatingView(discord.ui.View):
+class RatingView(ReportingView):
     """A View that lets the user select a rating."""
 
     def __init__(self, callback, failback):

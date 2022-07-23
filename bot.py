@@ -18,6 +18,8 @@ from logger import Logger
 if (_debug_guilds := os.getenv("DEBUG")) is not None:
     debug_guilds = [int(g) for g in _debug_guilds.split(",")]
     Logger.info("BOT: Debugging on %s", debug_guilds)
+else:
+    debug_guilds = None
 
 
 # Set up the bot instance

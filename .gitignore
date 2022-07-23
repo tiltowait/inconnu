@@ -2,3 +2,4 @@
 *.pyc
 .env
 .wizard.lock
+logs

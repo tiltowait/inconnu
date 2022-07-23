@@ -9,10 +9,11 @@ from discord.ext import tasks
 
 import inconnu
 from errorreporter import reporter
+from logger import Logger
 
 # Check if we're in dev mode
 if (debug_guild := os.getenv("DEBUG")) is not None:
-    print("Debugging on", debug_guild)
+    Logger.info("BOT: Debugging on %s", debug_guild)
     debug_guild = [int(debug_guild)]
 
 
@@ -39,11 +40,10 @@ async def finish_setup():
 
     await bot.wait_until_ready()
 
-    print(f"Logged on as {bot.user}!")
-    print(f"Playing on {len(bot.guilds)} servers.")
-    print(discord.version_info)
-    print("Latency:", bot.latency * 1000, "ms")
-    print("------------")
+    Logger.info("BOT: Logged on as %s!", str(bot.user))
+    Logger.info("BOT: Playing on %s servers", len(bot.guilds))
+    Logger.info("BOT: %s", discord.version_info)
+    Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
 
     await __set_presence()
     cull_inactive.start()
@@ -79,14 +79,14 @@ async def on_member_join(member):
 @bot.event
 async def on_guild_join(guild):
     """Log whenever a guild is joined."""
-    print(f"Joined {guild.name}!")
+    Logger.info("BOT: Joined %s!", guild.name)
     await asyncio.gather(inconnu.stats.guild_joined(guild), __set_presence())
 
 
 @bot.event
 async def on_guild_remove(guild):
     """Log guild removals."""
-    print(f"Left {guild.name} :(")
+    Logger.info("BOT: Left %s :(", guild.name)
     await asyncio.gather(inconnu.stats.guild_left(guild.id), __set_presence())
 
 
@@ -94,7 +94,7 @@ async def on_guild_remove(guild):
 async def on_guild_update(before, after):
     """Log guild name changes."""
     if before.name != after.name:
-        print(f"Renamed {before.name} => {after.name}")
+        Logger.info("BOT: Renamed %s => %s", before.name, after.name)
         await inconnu.stats.guild_renamed(after.id, after.name)
 
 
@@ -127,7 +127,7 @@ def setup():
             bot.load_extension(f"interface.{filename[:-3]}")
 
     if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:
-        print("Establishing top.gg connection.")
+        Logger.info("BOT: Establishing top.gg connection")
         bot.dblpy = topgg.DBLClient(bot, topgg_token, autopost=True)
 
 
@@ -137,5 +137,5 @@ async def run():
     try:
         await bot.start(os.environ["INCONNU_TOKEN"])
     except KeyboardInterrupt:
-        print("Logging out")
+        Logger.info("BOT: Logging out")
         await bot.bot.logout()

@@ -154,13 +154,28 @@ class HeaderCog(commands.Cog):
                 owner = record["character"]["user"]
                 if ctx.channel.permissions_for(ctx.user).administrator or owner == ctx.user.id:
                     # Modal gets the new location
+                    Logger.debug(
+                        "HEADER: %s#%s is updating an RP header",
+                        ctx.user.name,
+                        ctx.user.discriminator,
+                    )
                     modal = LocationChangeModal(message, title="Fix RP Header Location")
                     await ctx.send_modal(modal)
                 else:
-                    await ctx.respond("This isn't your header!", ephemeral=True)
+                    Logger.debug(
+                        "HEADER: Unauthorized RP header update attempt by %s#%s",
+                        ctx.user.name,
+                        ctx.user.discriminator,
+                    )
+                    await ctx.respond("This isn't your RP header!", ephemeral=True)
                 return
 
-        await ctx.respond("This message isn't a header!", ephemeral=True)
+        Logger.debug(
+            "HEADER: %s#%s attempted to update a non-header post",
+            ctx.user.name,
+            ctx.user.discriminator,
+        )
+        await ctx.respond("This message isn't an RP header!", ephemeral=True)
 
     @commands.message_command(name="Delete RP Header")
     @commands.guild_only()

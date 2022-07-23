@@ -3,10 +3,10 @@
 
 import discord
 from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
-from logger import Logger
 from discord.ext import commands
 
 import inconnu
+from logger import Logger
 
 
 class LocationChangeModal(discord.ui.Modal):
@@ -20,13 +20,31 @@ class LocationChangeModal(discord.ui.Modal):
             discord.ui.InputText(
                 label="New Location",
                 placeholder="The location where the scene takes place",
+                value=self.get_location(),
                 max_length=100,
             )
         )
+        self.add_item(
+            discord.ui.InputText(
+                label="Temporary Effects",
+                placeholder="Temporary effects relevant to the scene",
+                value=header.embeds[0].footer.text,
+                max_length=100,
+                required=False,
+            )
+        )
+
+    def get_location(self):
+        """Get the header's current location."""
+        elements = self.header.embeds[0].title.split(" • ")
+        if len(elements) > 1 and "Blushed" not in elements[-1]:
+            return elements[-1]
+        return ""
 
     async def callback(self, interaction: discord.Interaction):
         """Update the RP header."""
         location = " ".join(self.children[0].value.split())
+        temp_effects = " ".join(self.children[1].value.split())
         embed = self.header.embeds[0]
 
         # The title contains name, blush, location, but only name is guaranteed
@@ -38,9 +56,17 @@ class LocationChangeModal(discord.ui.Modal):
         # Add the location
         elements.append(location)
         embed.title = " • ".join(elements)
+        embed.set_footer(text=temp_effects)
 
         await self.header.edit(embed=embed)
-        await interaction.response.send_message(f"Location set to **{location}**!", ephemeral=True)
+
+        # Inform the user
+        temp_effects = temp_effects or "*None*"
+        embed = discord.Embed(
+            title="Header Updated",
+            description=f"**Location:** {location}\n**Temporary Effects:** {temp_effects}",
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def _header_bol_options(ctx):

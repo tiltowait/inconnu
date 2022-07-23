@@ -2,4 +2,4 @@
 line-length = 100
 
 [tool.isort]
-line-length = 100
+profile = "black"

@@ -25,7 +25,7 @@ class ErrorReporter:
             if (channel := os.getenv("REPORT_CHANNEL")) is not None:
                 if (channel := bot.get_channel(int(channel))) is not None:
                     Logger.info(
-                        "REPORTER: Unhandled exceptions will be sent to #%s on %s",
+                        "REPORTER: Uncaught exceptions will be sent to #%s on %s",
                         channel.name,
                         channel.guild.name,
                     )
@@ -51,10 +51,10 @@ class ErrorReporter:
         # Known exceptions
 
         if isinstance(error, commands.NoPrivateMessage):
-            await ctx.respond("Sorry, this command can only be run in a server!", ephemeral=True)
+            await respond("Sorry, this command can only be run in a server!", ephemeral=True)
             return
         if isinstance(error, commands.MissingPermissions):
-            await ctx.respond("Sorry, you don't have permission to do this!", ephemeral=True)
+            await respond("Sorry, you don't have permission to do this!", ephemeral=True)
             return
         if isinstance(error, discord.errors.NotFound):
             # This just means a button tried to disable when its message no longer exists.
@@ -72,7 +72,14 @@ class ErrorReporter:
         # Unknown exceptions
         embed = await self.error_embed(ctx, error)
         await self._report_unknown_error(respond, embed)
-        raise error
+
+        # Print the error to the log
+        if isinstance(ctx, discord.ApplicationContext):
+            scope = ctx.command.qualified_name.upper()
+        else:
+            scope = "INTERACTION"
+        formatted = "".join(traceback.format_exception(error))
+        Logger.error("%s: %s", scope, formatted)
 
     async def _report_unknown_error(self, respond, embed):
         """Report an unknown exception."""

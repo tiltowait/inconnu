@@ -18,6 +18,7 @@ from functools import partial
 import discord
 
 import inconnu
+from logger import Logger
 
 from ..roll import Roll
 from ..vchar import VChar
@@ -43,7 +44,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         return
 
     if comment is not None and (comment_len := len(comment)) > 300:
-        print("comment is long")
+        Logger.debug("VR: Comment is too long")
         await inconnu.utils.error(ctx, f"Comment is too long by {comment_len - 300} characters.")
         return
 

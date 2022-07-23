@@ -1,6 +1,6 @@
 """reference/resonance.py - Display a random resonance and temperament."""
 
-from typing import Tuple
+from typing import Optional
 
 import discord
 
@@ -28,7 +28,7 @@ __EMOTIONS = {
 RESONANCES = list(__DISCIPLINES)
 
 
-async def random_temperament(ctx, res: str):
+async def random_temperament(ctx, res: Optional[str]):
     """Generate a random temperament for a given resonance."""
     temperament = __get_temperament()
     if temperament == "Negligible":
@@ -87,7 +87,7 @@ def __get_temperament() -> str:
     return "Acute"
 
 
-def __get_resonance(add_empty: bool) -> Tuple[int, str]:
+def __get_resonance(add_empty: bool) -> tuple[int, str]:
     """Return a random resonance plus its associated die."""
     cap = 12 if add_empty else 10
     die = inconnu.random(cap)

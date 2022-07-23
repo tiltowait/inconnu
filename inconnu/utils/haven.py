@@ -6,6 +6,7 @@ from collections import OrderedDict
 import discord
 
 import inconnu
+from logger import Logger
 
 
 class Haven:  # pylint: disable=too-few-public-methods
@@ -70,11 +71,17 @@ class Haven:  # pylint: disable=too-few-public-methods
                 self.owner.id,
                 self.match,
             )
+            Logger.debug("HAVEN: Found explicit character: %s", character.name)
+
             if self.filter is not None:
                 try:
                     self.filter(character)
                     self.match = character
+                    Logger.debug("HAVEN: Explicit character %s matches filter", character.name)
                 except inconnu.errors.InconnuError as err:
+                    Logger.debug(
+                        "HAVEN: Explicit character %s does not match filter", character.name
+                    )
                     await inconnu.utils.error(self.ctx, err, author=self.owner, help=self.help)
                     raise inconnu.errors.HandledError() from err
             else:
@@ -107,16 +114,21 @@ class Haven:  # pylint: disable=too-few-public-methods
                 for char in all_chars:
                     try:
                         self.filter(char)
+                        Logger.debug("HAVEN: Character %s matches filter", char.name)
                         self.possibilities[self.uuid + char.id] = (char, False)
                         passed += 1
                     except inconnu.errors.InconnuError:
+                        Logger.debug("HAVEN: Character %s does not match filter", char.name)
                         self.possibilities[self.uuid + char.id] = (char, True)
+
+                Logger.debug("HAVEN: %s of %s character(s) match filter", passed, len(all_chars))
 
                 if passed == 1:
                     # Only one character passed, so let's find it
                     for char, failed in self.possibilities.values():
                         if not failed:
                             self.match = char
+                            Logger.debug("HAVEN: Sole match: %s", char.name)
                             break
                 elif passed == 0:
                     await inconnu.utils.error(
@@ -128,6 +140,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                     raise inconnu.errors.HandledError()
 
             else:
+                Logger.debug("HAVEN: Presenting %s character options", len(all_chars))
                 self.possibilities = {self.uuid + char.id: (char, False) for char in all_chars}
 
             if self.match is None:
@@ -153,7 +166,9 @@ class Haven:  # pylint: disable=too-few-public-methods
         if (key := view.selected_value) is not None:
             character, _ = self.possibilities[key]
             self.match = character
+            Logger.debug("HAVEN: %s selected", character.name)
         else:
+            Logger.debug("HAVEN: No character selected")
             raise inconnu.errors.HandledError("No character was selected.")
 
     def _create_view(self):
@@ -186,14 +201,26 @@ def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
     Raises LookupError if the user doesn't have admin permissions.
     """
     if player is None:
+        Logger.debug("HAVEN: No lookup issued")
         return ctx.user
 
     # Players are allowed to look up themselves
     if ctx.user != player:
-        is_admin = (
-            ctx.user.guild_permissions.administrator or ctx.user.top_role.permissions.administrator
+        Logger.info(
+            "HAVEN: %s#%s looked up %s#%s (%s)",
+            ctx.user.name,
+            ctx.user.discriminator,
+            player.name,
+            player.discriminator,
+            ctx.guild.name,
         )
-        if not (is_admin or allow_lookups):
+        if not (ctx.channel.permissions_for(ctx.user).administrator or allow_lookups):
+            Logger.info(
+                "HAVEN: Invalid player lookup by %s%s (%s)",
+                ctx.user.name,
+                ctx.user.discriminator,
+                ctx.guild.name,
+            )
             raise LookupError("You don't have lookup permissions.")
 
     return player

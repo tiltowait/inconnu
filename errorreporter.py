@@ -8,6 +8,7 @@ import pymongo.errors
 from discord.ext import commands
 
 import inconnu
+from logger import Logger
 
 
 class ErrorReporter:
@@ -23,9 +24,18 @@ class ErrorReporter:
         try:
             if (channel := os.getenv("REPORT_CHANNEL")) is not None:
                 if (channel := bot.get_channel(int(channel))) is not None:
+                    Logger.info(
+                        "REPORTER: Recording errors in #%s on %s",
+                        channel.name,
+                        channel.guild.name,
+                    )
                     self.channel = channel
+                else:
+                    Logger.warning("REPORTER: Unhandled exceptions channel invalid")
+            else:
+                Logger.warning("REPORTER: Unhandled exceptions report channel not set")
         except ValueError:
-            pass
+            Logger.warning("REPORTER: Unhandled exceptions channel is not an int")
 
     async def report_error(self, ctx: discord.ApplicationContext | discord.Interaction, error):
         """Report an error, switching between known and unknown."""
@@ -41,17 +51,17 @@ class ErrorReporter:
         # Known exceptions
 
         if isinstance(error, commands.NoPrivateMessage):
-            await ctx.respond("Sorry, this command can only be run in a server!", ephemeral=True)
+            await respond("Sorry, this command can only be run in a server!", ephemeral=True)
             return
         if isinstance(error, commands.MissingPermissions):
-            await ctx.respond("Sorry, you don't have permission to do this!", ephemeral=True)
+            await respond("Sorry, you don't have permission to do this!", ephemeral=True)
             return
         if isinstance(error, discord.errors.NotFound):
             # This just means a button tried to disable when its message no longer exists.
             # We don't care, and there's nothing we can do about it anyway.
             return
         if isinstance(error, inconnu.errors.HandledError):
-            print("Got a HandledError")
+            Logger.debug("REPORTER: Ignoring a HandledError")
             return
 
         # Unknown errors and database errors are logged to a channel
@@ -62,7 +72,14 @@ class ErrorReporter:
         # Unknown exceptions
         embed = await self.error_embed(ctx, error)
         await self._report_unknown_error(respond, embed)
-        raise error
+
+        # Print the error to the log
+        if isinstance(ctx, discord.ApplicationContext):
+            scope = ctx.command.qualified_name.upper()
+        else:
+            scope = "INTERACTION"
+        formatted = "".join(traceback.format_exception(error))
+        Logger.error("%s: %s", scope, formatted)
 
     async def _report_unknown_error(self, respond, embed):
         """Report an unknown exception."""

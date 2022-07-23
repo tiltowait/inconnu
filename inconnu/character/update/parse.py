@@ -195,7 +195,7 @@ async def update_help(ctx, err=None, ephemeral=True):
         url="http://www.inconnu.app/#/character-tracking?id=tracker-updates",
     )
     support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
-    view = inconnu.Views.ReportingView(documentation, support)
+    view = inconnu.views.ReportingView(documentation, support)
 
     await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
 

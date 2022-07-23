@@ -31,6 +31,7 @@ async def on_ready():
     """Schedule a task to perform final setup."""
     task = bot.loop.create_task(finish_setup())
     await task
+    await __set_presence()
 
 
 async def finish_setup():
@@ -45,7 +46,6 @@ async def finish_setup():
     Logger.info("BOT: %s", discord.version_info)
     Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
 
-    await __set_presence()
     cull_inactive.start()
     inconnu.char_mgr.bot = bot
     bot.welcomed = True

@@ -6,6 +6,7 @@ from logging import DEBUG
 import statcord
 from discord.ext import commands
 
+import inconnu.utils
 from logger import Logger
 
 
@@ -17,38 +18,33 @@ class StatcordPost(commands.Cog):
         self.key = os.getenv("STATCORD_TOKEN")
 
         if self.key is not None:
-            Logger.info("BOT: Establishing statcord connection.")
+            Logger.info("BOT: Establishing statcord connection")
             self.api = statcord.Client(self.bot, self.key)
+            self.use_statcord = True
             self.api.start_loop()
         else:
+            Logger.warning("BOT: Statcord not configured")
             self.api = None
+            self.use_statcord = False
 
     @commands.Cog.listener()
     async def on_application_command(self, ctx):
-        """Listen to and log command usage."""
-        if Logger.level == DEBUG:
-            # Log the command for debug purposes
-            options = []
-            for option in ctx.interaction.data.get("options", []):
-                _name = option["name"]
-                _value = option["value"]
+        """Log command usage."""
+        if ctx.guild is not None:
+            location = ctx.guild.name
+        else:
+            location = "DMs"
 
-                if isinstance(_value, str):
-                    options.append(f'{_name}="{_value}"')
-                else:
-                    options.append(f"{_name}={_value}")
+        Logger.info(
+            "%s: Invoked by %s#%s in %s. Options: %s",
+            ctx.command.qualified_name.upper(),
+            ctx.user.name,
+            ctx.user.discriminator,
+            location,
+            inconnu.utils.command_options(ctx.interaction),
+        )
 
-            option_string = ", ".join(options) if options else "None"
-
-            Logger.debug(
-                "%s: Invoked by %s%s. Options: %s",
-                ctx.command.qualified_name.upper(),
-                ctx.user.name,
-                ctx.user.discriminator,
-                option_string,
-            )
-
-        if self.key is not None:
+        if self.use_statcord:
             self.api.command_run(ctx)
 
 

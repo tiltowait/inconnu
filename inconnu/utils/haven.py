@@ -216,7 +216,7 @@ def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
         )
         if not (ctx.channel.permissions_for(ctx.user).administrator or allow_lookups):
             Logger.info(
-                "HAVEN: Invalid player lookup by %s%s (%s)",
+                "HAVEN: Invalid player lookup by %s#%s (%s)",
                 ctx.user.name,
                 ctx.user.discriminator,
                 ctx.guild.name,

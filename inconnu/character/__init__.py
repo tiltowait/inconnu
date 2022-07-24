@@ -3,6 +3,7 @@
 from .bio import edit_biography, show_biography
 from .convictions import convictions_set, convictions_show
 from .create import create
-from .display import display, display_requested, DisplayField
-from .update import update, update_help
 from .delete import delete
+from .display import DisplayField, display, display_requested
+from .images import upload
+from .update import update, update_help

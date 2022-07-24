@@ -263,10 +263,23 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="images")
     @commands.guild_only()
-    @inconnu.utils.has_premium()
     async def set_character_images(self, ctx: discord.ApplicationContext):
-        """Set character images."""
-        await ctx.respond("Howdy, supporter")
+        """Display a character's images."""
+        await ctx.respond("WIP")
+
+    images = character.create_subgroup("image", "Character image commands")
+
+    @images.command(name="upload")
+    @commands.guild_only()
+    @inconnu.utils.has_premium()
+    async def upload_image(
+        self,
+        ctx: discord.ApplicationContext,
+        image: Option(discord.Attachment, "The image file to upload"),
+        character: inconnu.options.character(),
+    ):
+        """Upload an image for your character's profile."""
+        await inconnu.character.images.upload(ctx, image, character)
 
 
 def _check_number(label, value):

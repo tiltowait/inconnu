@@ -356,14 +356,21 @@ class VChar:
         """Get a random image URL."""
         profile = self._params.get(_Properties.PROFILE, {})
         images = profile.get(_Properties.IMAGES, [""])
+
+        Logger.debug("VCHAR: Random URL from %s", images)
         return random.choice(images) if images else ""
 
     async def add_image_url(self, new_image_url: str):
         """Set the character's image URL."""
-        # TODO: Push the URL to the array rather than setting it
         new_profile = self._params.get(_Properties.PROFILE, {})
-        new_profile[_Properties.IMAGES] = [new_image_url]
-        await self._async_set_property(_Properties.PROFILE, new_profile)
+
+        images = new_profile[_Properties.IMAGES]
+        if new_image_url in images:
+            Logger.debug("VCHAR: Attempted to add duplicate image: %s", new_image_url)
+        else:
+            Logger.debug("VCHAR: Adding image URL: %s", new_image_url)
+            images.append(new_image_url)
+            await self._async_set_property(_Properties.PROFILE, new_profile)
 
     @property
     def has_biography(self):

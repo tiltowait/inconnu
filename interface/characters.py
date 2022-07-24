@@ -259,6 +259,15 @@ class Characters(commands.Cog, name="Character Management"):
         """Show a character's Convictions."""
         await inconnu.character.convictions_show(ctx, None, member, True)
 
+    # Premium
+
+    @character.command(name="images")
+    @commands.guild_only()
+    @inconnu.utils.has_premium()
+    async def set_character_images(self, ctx: discord.ApplicationContext):
+        """Set character images."""
+        await ctx.respond("Howdy, supporter")
+
 
 def _check_number(label, value):
     """Check whether a given value is a number. Raise a ValueError if not."""

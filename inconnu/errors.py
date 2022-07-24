@@ -1,5 +1,11 @@
 """Package-wide errors."""
 
+from discord.ext import commands
+
+
+class NotPremium(commands.CommandError):
+    """Error for users who are not premium supporters."""
+
 
 class InconnuError(Exception):
     """Base error all others inherit from."""

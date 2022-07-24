@@ -5,6 +5,7 @@ import asyncio
 import copy
 import datetime
 import math
+import random
 from collections import Counter, defaultdict
 from enum import Enum
 from types import SimpleNamespace
@@ -348,7 +349,14 @@ class VChar:
         """The character's images."""
         # TODO: Just return the list
         profile = self._params.get(_Properties.PROFILE, {})
-        return profile.get(_Properties.IMAGES, [""])[0]
+        images = profile.get(_Properties.IMAGES, [""])
+        return images[0] if images else ""
+
+    def random_image_url(self) -> str:
+        """Get a random image URL."""
+        profile = self._params.get(_Properties.PROFILE, {})
+        images = profile.get(_Properties.IMAGES, [""])
+        return random.choice(images) if images else ""
 
     async def add_image_url(self, new_image_url: str):
         """Set the character's image URL."""

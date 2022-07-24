@@ -53,7 +53,7 @@ async def display_requested(ctx, character=None, message=None, player=None, ephe
         footer=None,
         view=inconnu.views.TraitsView(character, ctx.user),
         ephemeral=ephemeral,
-        thumbnail=character.image_url,
+        thumbnail=character.image_urls,
     )
 
 

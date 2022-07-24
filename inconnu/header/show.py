@@ -61,7 +61,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         description="\n".join(description_),
         url=inconnu.profile_url(character.id),
     )
-    embed.set_thumbnail(url=character.image_url)
+    embed.set_thumbnail(url=character.random_image_url())
 
     if header.temp:
         embed.set_footer(text=header.temp)

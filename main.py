@@ -50,7 +50,7 @@ async def display_character_profile(charid: str):
     oid = ObjectId(charid)
     bio = await inconnu.db.characters.find_one(
         {"_id": oid},
-        {"name": 1, "user": 1, "guild": 1, "biography": 1, "description": 1, "image": 1},
+        {"name": 1, "user": 1, "guild": 1, "profile": 1},
     )
     if bio is None:
         raise HTTPException(404, detail="Character not found.")
@@ -59,27 +59,28 @@ async def display_character_profile(charid: str):
     return prepare_html(bio)
 
 
-def prepare_html(profile: Dict[str, str]) -> str:
+def prepare_html(bio: Dict[str, str | dict[str, str]]) -> str:
     """Prep the character HTML page."""
     with open("web/snippets.json", "r", encoding="utf-8") as snippets:
         snippets = json.load(snippets)
 
         # Basic profile info
-        name = profile["name"]
+        name = bio["name"]
+        profile = bio.get("profile", {})
         biography = markdown.markdown(profile.get("biography", "")) or snippets["unset"]
         description = markdown.markdown(profile.get("description", "")) or snippets["unset"]
 
         # Get the profile image by template
-        if image := profile.get("image", ""):
-            image_prop = snippets["image_prop"].format(source=image)
-            image = snippets["profile_image"].format(source=image, name=name)
+        if image := profile.get("images", [""]):
+            image_prop = snippets["image_prop"].format(source=image[0])
+            image = snippets["profile_image"].format(source=image[0], name=name)
         else:
             image_prop = ""
             image = snippets["no_profile_image"]
 
         # Generate the ownership string and icons
-        guild = bot.bot.get_guild(profile["guild"])
-        user = guild.get_member(profile["user"]) if guild is not None else None
+        guild = bot.bot.get_guild(bio["guild"])
+        user = guild.get_member(bio["user"]) if guild is not None else None
         icons = get_icons(snippets, user, guild)
 
         if guild is None:
@@ -96,7 +97,7 @@ def prepare_html(profile: Dict[str, str]) -> str:
         html = html_file.read()
         return html.format(
             name=name,
-            url=inconnu.profile_url(profile["_id"]),
+            url=inconnu.profile_url(bio["_id"]),
             image_prop=image_prop,
             biography=biography,
             description=description,

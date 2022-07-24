@@ -263,9 +263,14 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="images")
     @commands.guild_only()
-    async def set_character_images(self, ctx: discord.ApplicationContext):
+    async def show_character_images(
+        self,
+        ctx: discord.ApplicationContext,
+        character: inconnu.options.character("The character to display"),
+        player: Option(discord.Member, "The character's owner", required=False),
+    ):
         """Display a character's images."""
-        await ctx.respond("WIP")
+        await inconnu.character.images.display(ctx, character, player)
 
     images = character.create_subgroup("image", "Character image commands")
 

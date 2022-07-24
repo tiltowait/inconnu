@@ -16,6 +16,7 @@ load_dotenv()
 
 s3_client = None
 BUCKET = "inconnu"
+BASE_URL = f"https://{BUCKET}.s3.amazonaws.com/"
 
 if aws.access_key_id is None:
     Logger.warning("S3: AWS is not configured")
@@ -26,7 +27,7 @@ else:
 
 def get_url(object_name: str):
     """Get the URL of a given S3 object."""
-    url = f"""https://{BUCKET}.s3.amazonaws.com/{urllib.parse.quote(object_name, safe="~()*!.'")}"""
+    url = f"""https://{BASE_URL}{urllib.parse.quote(object_name, safe="~()*!.'")}"""
     return url
 
 

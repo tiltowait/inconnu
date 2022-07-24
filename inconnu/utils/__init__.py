@@ -1,8 +1,10 @@
 """Commonly used utilities."""
 
+import discord
 from discord.ext import commands
 
 import config
+import inconnu
 from inconnu import errors
 from logger import Logger
 
@@ -30,12 +32,13 @@ def command_options(interaction) -> str:
     return ", ".join(options) if options else "None"
 
 
-def is_supporter(ctx) -> bool:
+def is_supporter(ctx, user: discord.Member = None) -> bool:
     """Returns True if the user invoking the command is a supporter."""
     support_server = ctx.bot.get_guild(config.supporter_server)
+    user = user = ctx.user
 
     # First, see if the invoker is on the support server
-    if (member := support_server.get_member(ctx.user.id)) is not None:
+    if (member := support_server.get_member(user.id)) is not None:
         Logger.debug(
             "SUPPORTER: %s#%s is on %s", member.name, member.discriminator, support_server.name
         )
@@ -51,3 +54,22 @@ def is_supporter(ctx) -> bool:
 def has_premium():
     """A decorator for commands that only work for supporters."""
     return commands.check(is_supporter)
+
+
+class VCharEmbed(discord.Embed):
+    """A standardized VChar display."""
+
+    def __init__(self, ctx, character, owner: discord.Member = None, **kwargs):
+        owner = owner or ctx.user
+        show_thumbnail = kwargs.pop("show_thumbnail", True)
+        title = kwargs.pop("title", character.name)
+
+        if is_supporter(ctx, owner):
+            # Premium color
+            kwargs["color"] = 0x00A4FF
+
+        super().__init__(title=title, **kwargs)
+        self.set_author(name=owner.name, icon_url=inconnu.get_avatar(owner))
+
+        if show_thumbnail:
+            self.set_thumbnail(url=character.profile_image_url)

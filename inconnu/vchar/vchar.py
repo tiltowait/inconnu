@@ -345,9 +345,14 @@ class VChar:
         await self._async_set_property(_Properties.PROFILE, new_profile)
 
     @property
-    def image_urls(self):
+    def image_urls(self) -> list[str]:
         """The character's images."""
-        # TODO: Just return the list
+        profile = self._params.get(_Properties.PROFILE, {})
+        return profile.get(_Properties.IMAGES, [""]).copy()
+
+    @property
+    def profile_image_url(self) -> str:
+        """Get the URL of the first image."""
         profile = self._params.get(_Properties.PROFILE, {})
         images = profile.get(_Properties.IMAGES, [""])
         return images[0] if images else ""

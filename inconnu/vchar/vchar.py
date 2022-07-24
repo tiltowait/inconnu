@@ -13,6 +13,7 @@ from typing import Dict, List
 from bson.objectid import ObjectId
 
 import inconnu
+from logger import Logger
 
 from ..constants import INCONNU_ID, UNIVERSAL_TRAITS, Damage
 
@@ -30,9 +31,10 @@ class _Properties(str, Enum):
     HUNGER = "hunger"
     POTENCY = "potency"
     TRAITS = "traits"
+    PROFILE = "profile"
     BIOGRAPHY = "biography"
     DESCRIPTION = "description"
-    IMAGE = "image"
+    IMAGES = "images"
     CONVICTIONS = "convictions"
     RP_HEADER = "header"
 
@@ -111,6 +113,7 @@ class VChar:
         """Set a field's value, asynchronously."""
         self._params[field] = value
         await self._async_collection.update_one(self.find_query, {"$set": {field: value}})
+        Logger.debug("VCHAR: Setting %s to %s", self.name, field, value)
 
     @property
     def raw(self):
@@ -317,31 +320,42 @@ class VChar:
         await asyncio.gather(task1, task2)
 
     @property
-    def biography(self):
+    def biography(self) -> str:
         """The character's biography."""
-        return self._params.get(_Properties.BIOGRAPHY, "")
+        profile = self._params.get(_Properties.PROFILE, {})
+        return profile.get(_Properties.BIOGRAPHY, "")
 
-    async def set_biography(self, new_biography):
+    async def set_biography(self, new_biography: str):
         """Set the character's biography."""
-        await self._async_set_property(_Properties.BIOGRAPHY, new_biography)
+        new_profile = self._params.get(_Properties.PROFILE, {})
+        new_profile[_Properties.BIOGRAPHY] = new_biography
+        await self._async_set_property(_Properties.PROFILE, new_profile)
 
     @property
-    def description(self):
+    def description(self) -> str:
         """The character's description."""
-        return self._params.get(_Properties.DESCRIPTION, "")
+        profile = self._params.get(_Properties.PROFILE, {})
+        return profile.get(_Properties.DESCRIPTION, "")
 
-    async def set_description(self, new_description):
+    async def set_description(self, new_description: str):
         """Set the character's description."""
-        await self._async_set_property(_Properties.DESCRIPTION, new_description)
+        new_profile = self._params.get(_Properties.PROFILE, {})
+        new_profile[_Properties.DESCRIPTION] = new_description
+        await self._async_set_property(_Properties.PROFILE, new_profile)
 
     @property
-    def image_url(self):
-        """The character's image."""
-        return self._params.get(_Properties.IMAGE, "")
+    def image_urls(self):
+        """The character's images."""
+        # TODO: Just return the list
+        profile = self._params.get(_Properties.PROFILE, {})
+        return profile.get(_Properties.IMAGES, [""])[0]
 
-    async def set_image_url(self, new_image_url):
+    async def add_image_url(self, new_image_url: str):
         """Set the character's image URL."""
-        await self._async_set_property(_Properties.IMAGE, new_image_url)
+        # TODO: Push the URL to the array rather than setting it
+        new_profile = self._params.get(_Properties.PROFILE, {})
+        new_profile[_Properties.IMAGES] = [new_image_url]
+        await self._async_set_property(_Properties.PROFILE, new_profile)
 
     @property
     def has_biography(self):

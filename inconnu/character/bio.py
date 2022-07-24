@@ -69,8 +69,8 @@ def __biography_embed(character, owner):
             inline=False,
         )
 
-    if character.image_url.startswith("https://"):
-        embed.set_image(url=character.image_url)
+    if character.image_urls.startswith("https://"):
+        embed.set_image(url=character.image_urls)
 
     return embed
 
@@ -106,7 +106,7 @@ class _CharacterBio(discord.ui.Modal):
             discord.ui.InputText(
                 label="Image URL",
                 placeholder="Will be publicly shown. Must end in .jpg, .png, etc.",
-                value=character.image_url,
+                value=character.image_urls,
                 required=False,
             )
         )
@@ -125,9 +125,9 @@ class _CharacterBio(discord.ui.Modal):
         message = f"Edited **{self.character.name}'s** biography!"
 
         if validators.url(image_url):
-            tasks.append(self.character.set_image_url(image_url))
+            tasks.append(self.character.add_image_url(image_url))
         else:
-            tasks.append(self.character.set_image_url(""))
+            tasks.append(self.character.add_image_url(""))
             message += " Your image URL isn't valid and wasn't saved."
 
         tasks.append(interaction.response.send_message(message, ephemeral=True))

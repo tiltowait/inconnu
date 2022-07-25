@@ -33,6 +33,7 @@ async def display_images(
 
     pages_ = []
     for image in character.image_urls:
+        Logger.debug("IMAGES: (%s) Making view for %s", character.name, image)
         embed = inconnu.utils.VCharEmbed(ctx, character, haven.owner, show_thumbnail=False)
         embed.set_thumbnail(url=ctx.guild.icon)
         embed.set_image(url=image)
@@ -86,6 +87,7 @@ class _DeleteImageView(ReportingView):
         embed.description = "**Image deleted.** Run `/character images` again to refresh!"
         embed.set_footer(text=discord.Embed.Empty)
         await interaction.response.edit_message(embed=embed, view=None)
+        self.stop()
 
     async def interaction_check(self, interaction: discord.Interaction):
         """Ensure only the character's owner can click the button."""

@@ -27,7 +27,7 @@ else:
 
 def get_url(object_name: str):
     """Get the URL of a given S3 object."""
-    url = f"""https://{BASE_URL}{urllib.parse.quote(object_name, safe="~()*!.'")}"""
+    url = f"""{BASE_URL}{urllib.parse.quote(object_name, safe="/~()*!.'")}"""
     return url
 
 
@@ -47,7 +47,7 @@ def upload_file(file_name, object_name: str = None) -> bool:
 
     try:
         s3_client.upload_file(file_name, BUCKET, object_name)
-        Logger.info("S3: Uploaded %s to %s/%s", file_name, BUCKET, object_name)
+        Logger.info("S3: Uploaded %s to %s%s", file_name, BASE_URL, object_name)
         return True
     except ClientError as err:
         Logger.error("S3: %s", err, exc_info=True)

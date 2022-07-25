@@ -99,7 +99,7 @@ async def update(
                 color=color,
                 owner=haven.owner,
                 message=update_message,
-                thumbnail=character.image_urls if not fields else None,
+                thumbnail=character.profile_image_url if not fields else None,
             )
         )
 

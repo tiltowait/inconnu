@@ -69,8 +69,8 @@ def __biography_embed(character, owner):
             inline=False,
         )
 
-    if character.image_urls.startswith("https://"):
-        embed.set_image(url=character.image_urls)
+    if character.profile_image_url.startswith("https://"):
+        embed.set_image(url=character.profile_image_url)
 
     return embed
 
@@ -106,7 +106,7 @@ class _CharacterBio(discord.ui.Modal):
             discord.ui.InputText(
                 label="Image URL",
                 placeholder="Will be publicly shown. Must end in .jpg, .png, etc.",
-                value=character.image_urls,
+                value=character.profile_image_url,  # TODO: Remove!
                 required=False,
             )
         )

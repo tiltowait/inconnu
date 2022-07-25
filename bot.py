@@ -34,9 +34,9 @@ bot.welcomed = False
 @bot.event
 async def on_ready():
     """Schedule a task to perform final setup."""
+    await __set_presence()
     task = bot.loop.create_task(finish_setup())
     await task
-    await __set_presence()
 
 
 async def finish_setup():
@@ -51,6 +51,10 @@ async def finish_setup():
     Logger.info("BOT: Playing on %s servers", len(bot.guilds))
     Logger.info("BOT: %s", discord.version_info)
     Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
+
+    server_info = await inconnu.db.server_info()
+    database = os.environ["MONGO_DB"]
+    Logger.info("MONGO: Version %s, using %s database", server_info["version"], database)
 
     # Schedule tasks
     cull_inactive.start()

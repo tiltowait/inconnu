@@ -4,24 +4,31 @@ import os
 from typing import List
 
 import discord
-import motor.motor_asyncio
 from numpy.random import default_rng
 
 from . import character
 from . import cull as culler
-from . import (errors, experience, header, log, macros, misc, options,
-               reference, settings, stats, traits, utils, views)
+from . import (
+    db,
+    errors,
+    experience,
+    header,
+    log,
+    macros,
+    misc,
+    options,
+    reference,
+    settings,
+    stats,
+    traits,
+    utils,
+    views,
+)
 from .roll import Roll
 from .vchar import CharacterManager, VChar
 
 char_mgr = CharacterManager()
 settings = settings.Settings()
-
-_mongoclient = motor.motor_asyncio.AsyncIOMotorClient(
-    os.getenv("MONGO_URL"), serverSelectionTimeoutMS=1800
-)
-db = _mongoclient.inconnu
-header_col = db.headers
 
 _rng = default_rng()
 

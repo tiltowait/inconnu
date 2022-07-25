@@ -148,7 +148,7 @@ class HeaderCog(commands.Cog):
         """Change an RP header's location."""
         if message.author == self.bot.user:
             # Make sure we have a header
-            record = await inconnu.header_col.find_one({"message": message.id})
+            record = await inconnu.db.headers.find_one({"message": message.id})
             if record is not None:
                 # Make sure we are allowed to update it
                 owner = record["character"]["user"]
@@ -182,7 +182,7 @@ class HeaderCog(commands.Cog):
     async def delete_rp_header(self, ctx, message: discord.Message):
         """Delete an RP header."""
         if message.author == self.bot.user:
-            record = await inconnu.header_col.find_one({"message": message.id})
+            record = await inconnu.db.headers.find_one({"message": message.id})
             if record is not None:
                 # Make sure we are allowed to delete it
                 owner = record["character"]["user"]
@@ -217,11 +217,11 @@ class HeaderCog(commands.Cog):
             # Got a cached message, so we can be a little more efficient and
             # only call the database if it belongs to the bot
             if message.author == self.bot.user:
-                await inconnu.header_col.delete_one({"message": message.id})
+                await inconnu.db.headers.delete_one({"message": message.id})
         else:
             # The message isn't in the cache; blindly delete the record
             # if it exists
-            await inconnu.header_col.delete_one({"message": raw_message.message_id})
+            await inconnu.db.headers.delete_one({"message": raw_message.message_id})
 
 
 def setup(bot):

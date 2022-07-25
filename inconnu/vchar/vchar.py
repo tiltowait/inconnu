@@ -114,7 +114,7 @@ class VChar:
         """Set a field's value, asynchronously."""
         self._params[field] = value
         await self._async_collection.update_one(self.find_query, {"$set": {field: value}})
-        Logger.debug("VCHAR: Setting %s to %s", self.name, field, value)
+        Logger.debug("VCHAR: %s: Setting %s to %s", self.name, field, value)
 
     @property
     def raw(self):

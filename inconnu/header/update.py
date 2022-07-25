@@ -5,6 +5,7 @@ import asyncio
 import discord
 
 import inconnu
+from logger import Logger
 
 __HELP_URL = "https://www.inconnu.app"
 
@@ -28,13 +29,26 @@ class _RPHeader(discord.ui.Modal):
         self.character = character
         self.blush = blush
 
+        # Since the location field is the embed title, we have to ensure that
+        # we don't exceed the maximum length of 256. We use the non-blush text
+        # in case the status somehow changes mid-scene. For instance, a mortal
+        # might be embraced, or a night might end at a haven, then resume the
+        # next night pre-blush. By using the non-blush text, we ensure we don't
+        # get any nasty surprises (though name changes mid-scene could still be
+        # a problem, which is why we limit the title on show).
+        mock_title = inconnu.header.header_title(character.name, "Not Blushed", "")
+        max_location_len = 256 - len(mock_title)
+
+        Logger.debug("HEADER: Header length, minus location, is %s", len(mock_title))
+        Logger.debug("HEADER: Max location length: %s", max_location_len)
+
         current_header = character.rp_header
         self.add_item(
             discord.ui.InputText(
                 label="Scene Location",
                 placeholder="The location of the current scene",
                 value=current_header.location,
-                max_length=200,
+                max_length=max_location_len,
             ),
         )
         self.add_item(

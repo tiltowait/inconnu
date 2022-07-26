@@ -48,6 +48,7 @@ class _RPHeader(discord.ui.Modal):
                 label="Scene Location",
                 placeholder="The location of the current scene",
                 value=current_header.location,
+                min_length=1,
                 max_length=max_location_len,
             ),
         )
@@ -56,6 +57,7 @@ class _RPHeader(discord.ui.Modal):
                 label="Relevant Merits",
                 placeholder="Merits characters would know or your scene partner SHOULD know.",
                 value=current_header.merits,
+                min_length=0,
                 max_length=300,
                 required=False,
             )
@@ -65,6 +67,7 @@ class _RPHeader(discord.ui.Modal):
                 label="Relevant Flaws",
                 placeholder="Flaws characters would know or your scene partner SHOULD know.",
                 value=current_header.flaws,
+                min_length=0,
                 max_length=300,
                 required=False,
             )

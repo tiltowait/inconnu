@@ -69,7 +69,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
                 character = await haven.fetch()
                 owner = haven.owner
 
-        except LookupError as err:
+        except (SyntaxError, LookupError) as err:
             await inconnu.utils.error(ctx, err, help=__HELP_URL)
             return
 
@@ -78,7 +78,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         outcome = perform_roll(character, syntax)
         await display_outcome(ctx, owner, character, outcome, comment)
 
-    except (SyntaxError, ValueError, inconnu.errors.TraitError, inconnu.errors.HungerInPool) as err:
+    except (SyntaxError, ValueError, inconnu.errors.TraitError, inconnu.errors.RollError) as err:
         log_task = inconnu.log.log_event(
             "roll_error", user=ctx.user.id, charid=getattr(character, "id", None), syntax=raw_syntax
         )

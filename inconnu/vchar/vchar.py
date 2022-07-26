@@ -2,6 +2,7 @@
 # pylint: disable=too-many-public-methods, too-many-arguments, c-extension-no-member
 
 import asyncio
+import bisect
 import copy
 import datetime
 import math
@@ -38,6 +39,7 @@ class _Properties(str, Enum):
     IMAGES = "images"
     CONVICTIONS = "convictions"
     RP_HEADER = "header"
+    MACROS = "macros"
 
 
 class VChar:
@@ -673,21 +675,33 @@ class VChar:
             "hunt": hunt,
             "comment": comment,
         }
+
+        # Get the insertion point for the new macro, which we will then use
+        # for the database insertion as well to keep everything sorted
+        _macros = self._params.setdefault("macros", [])
+
+        # bisect.bisect()'s key parameter doesn't behave the same as sorted.
+        # Instead, the function expects the element to be added to already
+        # have the key function applied, and then it applies the eky function
+        # to the other elements. Thus, we define the lambda separately so
+        # we don't have to type it twice.
+        fold = lambda m: m["name"].casefold()
+
+        insertion = bisect.bisect(_macros, fold(macro_doc), key=fold)
+        _macros.insert(insertion, macro_doc)
+        Logger.debug("VCHAR: New macro inserted at index %s", insertion)
+
         await self._async_collection.update_one(
             self.find_query,
             {
                 "$push": {
                     "macros": {
                         "$each": [macro_doc],
-                        "$sort": {"name": 1},
+                        "$position": insertion,
                     },
                 }
             },
-            collation={"locale": "en"},
         )
-        _macros = self._params.setdefault("macros", [])
-        _macros.append(macro_doc)
-        self._params["macros"] = sorted(_macros, key=lambda s: s["name"].casefold())
 
     async def update_macro(self, search: str, update: dict):
         """Update a macro."""
@@ -695,25 +709,21 @@ class VChar:
         update_doc = {f"macros.{index}.{k}": v for k, v in update.items()}
 
         await self._async_collection.update_one(self.find_query, {"$set": update_doc})
-        self._params["macros"][index].update(update)
-        name = self._params["macros"][index]["name"]
+        self._params[_Properties.MACROS][index].update(update)
+        name = self._params[_Properties.MACROS][index]["name"]
 
         if "name" in update:
-            # Sort both the db and the cache
-            _macros = self._params["macros"]
-            self._params["macros"] = sorted(_macros, key=lambda s: s["name"].casefold())
-            await self._async_collection.update_one(
-                self.find_query,
-                {
-                    "$push": {
-                        "macros": {
-                            "$each": [],
-                            "$sort": {"name": 1},
-                        }
-                    }
-                },
-                collation={"locale": "en"},
-            )
+            # Sort both the db and the cache. We *could* remove the macro, find
+            # its new insertion point, insert it, then pull it from the db and
+            # re-insert it there, but that takes two API calls and just isn't
+            # worth it, so instead we simply reset the entire macro array. Most
+            # users only have a couple of macros; the most as of this writing
+            # is only twelve.
+            _macros = self._params[_Properties.MACROS]
+            _macros = sorted(_macros, key=lambda s: s["name"].casefold())
+            self._params[_Properties.MACROS] = _macros
+
+            await self._async_collection.update_one(self.find_query, {"$set": {"macros": _macros}})
 
         return name
 

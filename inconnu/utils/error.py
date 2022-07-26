@@ -54,7 +54,7 @@ class ErrorEmbed(discord.Embed):
 
         for field in fields:
             name, value = field
-            self.add_field(name=name, value=value)
+            self.add_field(name=name, value=value, inline=False)
 
         self.set_footer(
             text=kwargs.get("footer", discord.Embed.Empty),

@@ -71,7 +71,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         message = resp
 
     # Register the header in the database
-    await inconnu.header_col.insert_one(
+    await inconnu.db.headers.insert_one(
         {
             "character": {
                 "guild": ctx.guild.id,

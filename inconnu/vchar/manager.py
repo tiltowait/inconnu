@@ -81,7 +81,7 @@ class CharacterManager:
 
         # Need to build the cache
         cursor = self.collection.find({"guild": guild, "user": user})
-        cursor.collation({"locale": "en", "strength": 2}).sort("name")
+        # cursor.collation({"locale": "en", "strength": 2}).sort("name")
 
         characters = []
         async for char_params in cursor:
@@ -94,6 +94,9 @@ class CharacterManager:
                 # Use the already cached character. This will probably never
                 # happen, but we'll put it here just in case
                 characters.append(self.id_cache[character.id])
+
+        # Sort them, since serverless doesn't allow collation
+        characters = sorted(characters, key=lambda c: c.name.casefold())
 
         self.user_cache[key] = characters
         self.all_fetched[key] = True

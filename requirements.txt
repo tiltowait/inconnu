@@ -5,6 +5,7 @@ markdown==3.3.7
 motor==3.0.0
 numpy==1.23.1
 py-cord==2.0.0
+pymongo[srv]==4.2.0
 python-dotenv==0.20.0
 statcord.py==3.1.0
 topggpy==1.4.0

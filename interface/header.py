@@ -2,10 +2,9 @@
 # pylint: disable=no-self-use
 
 import discord
+import inconnu
 from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
-
-import inconnu
 from logger import Logger
 
 
@@ -217,10 +216,12 @@ class HeaderCog(commands.Cog):
             # Got a cached message, so we can be a little more efficient and
             # only call the database if it belongs to the bot
             if message.author == self.bot.user:
+                Logger.debug("HEADER: Deleting possible header message")
                 await inconnu.db.headers.delete_one({"message": message.id})
         else:
             # The message isn't in the cache; blindly delete the record
             # if it exists
+            Logger.debug("HEADER: Blindly deleting potential header record")
             await inconnu.db.headers.delete_one({"message": raw_message.message_id})
 
 

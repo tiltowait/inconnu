@@ -121,7 +121,7 @@ async def cull_inactive():
     await inconnu.culler.cull()
 
 
-@tasks.loop(minutes=5)
+@tasks.loop(hours=1)
 async def upload_logs():
     """Upload logs to S3."""
     if not config.logging.upload_to_aws:

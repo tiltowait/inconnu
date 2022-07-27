@@ -8,6 +8,7 @@ from discord.commands import Option, OptionChoice, slash_command
 from discord.ext import commands
 
 import inconnu
+from logger import Logger
 
 
 class ReferenceCommands(commands.Cog):
@@ -115,10 +116,18 @@ class ReferenceCommands(commands.Cog):
             )
 
     @commands.Cog.listener()
-    async def on_message_delete(self, message):
+    async def on_raw_message_delete(self, raw_message):
         """Remove the roll from statistics."""
-        if message.author == self.bot.user:
-            await inconnu.stats.roll_message_deleted(message.id)
+        # Check if the message is in the cache
+        if (message := raw_message.cached_message) is not None:
+            if message.author == self.bot.user:
+                Logger.debug("REFERENCE: Deleting possible roll record")
+                await inconnu.stats.roll_message_deleted(message.id)
+        else:
+            # We aren't sure what the message is, so we have no choice but to
+            # attempt the deletion.
+            Logger.debug("REFERENCE: Blindly deleting potential roll record")
+            await inconnu.stats.roll_message_deleted(raw_message.message_id)
 
 
 def setup(bot):

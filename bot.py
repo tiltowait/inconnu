@@ -45,6 +45,7 @@ async def on_ready():
     await __set_presence()
     task = bot.loop.create_task(finish_setup())
     await task
+    Logger.info("BOT: Ready")
 
 
 async def finish_setup():
@@ -72,7 +73,6 @@ async def finish_setup():
     # Final prep
     inconnu.char_mgr.bot = bot
     reporter.prepare_channel(bot)
-    Logger.info("BOT: Ready")
 
 
 @bot.event

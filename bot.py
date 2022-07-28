@@ -60,6 +60,7 @@ async def finish_setup():
     Logger.info("BOT: %s", discord.version_info)
     Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
 
+    await inconnu.emojis.load(bot)
     server_info = await inconnu.db.server_info()
     database = os.environ["MONGO_DB"]
     Logger.info("MONGO: Version %s, using %s database", server_info["version"], database)

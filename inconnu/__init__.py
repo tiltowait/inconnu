@@ -24,6 +24,7 @@ from . import (
     utils,
     views,
 )
+from .emoji import emojis
 from .roll import Roll
 from .vchar import CharacterManager, VChar
 

@@ -1,27 +1,7 @@
 """character/display/trackmoji.py - A tool for converting a stress track to emoji."""
 
-from ...constants import Damage
+import inconnu
 
-# <0x200b> is a zero-width space. Its use is a hack to fix a bug with
-# Discord for Android that prints emojis giant-sized if you only have a
-# regular space between them.
-
-__EMOJIS = {
-    Damage.NONE: "<:no_dmg:883516968777449472>​",
-    Damage.SUPERFICIAL: "<:sup_dmg:890694337212579930>​",
-    Damage.AGGRAVATED: "<:agg_dmg:883516968727089202>​",
-    "hunger": "<:hunger:883527494832119858>​",
-    "no_hunger": "<:no_hunger:883527495394164776>​",
-    "hu_filled": "<:hu_filled:883532393946972160>​",
-    "hu_unfilled": "<:hu_unfilled:883532394051809290>​",
-    "degen": "<:degen:893638753304850452>​",
-    "stain": "<:stain:883536498950025258>​",
-    "bp_filled": ":red_circle:​",
-    "bp_unfilled": ":o:​",
-}
-
-
-# Public Methods
 
 def emojify_track(track: str) -> str:
     """Convert a stress track into an emoji string."""
@@ -29,7 +9,7 @@ def emojify_track(track: str) -> str:
     for box in track:
         emoji_track.append(__emojify_stressbox(box))
 
-    gaps = int((len(emoji_track) - 1) / 5) # Minus 1 so we don't put a dot at multiples of 5
+    gaps = int((len(emoji_track) - 1) / 5)  # Minus 1 so we don't put a dot at multiples of 5
     for pos in range(gaps * 5, 0, -5):
         emoji_track.insert(pos, "∙")
 
@@ -41,8 +21,8 @@ def emojify_hunger(level: int) -> str:
     filled = level
     unfilled = 5 - level
 
-    hunger = [__hungermoji(True) for _ in range(filled)]
-    unfilled = [__hungermoji(False) for _ in range(unfilled)]
+    hunger = __hungermoji(True, filled)
+    unfilled = __hungermoji(False, unfilled)
     hunger.extend(unfilled)
 
     return " ".join(hunger)
@@ -51,10 +31,10 @@ def emojify_hunger(level: int) -> str:
 def emojify_blood_potency(level: int) -> str:
     """Create a Blood Potency track."""
     if level > 0:
-        potency = [__EMOJIS["bp_filled"] for _ in range(level)]
+        potency = inconnu.emojis.get("bp_filled", level)
         return " ".join(potency)
 
-    return __EMOJIS["bp_unfilled"]
+    return inconnu.emojis["bp_unfilled"]
 
 
 def emojify_humanity(humanity: int, stains: int) -> str:
@@ -69,15 +49,15 @@ def emojify_humanity(humanity: int, stains: int) -> str:
     if unfilled < 0:
         overlapped = abs(unfilled)
         stains -= overlapped
-        unfilled = 0 # So we don't accidentally add to filled boxes
+        unfilled = 0  # So we don't accidentally add to filled boxes
     else:
         overlapped = 0
     filled = 10 - unfilled - stains - overlapped
 
-    filled = [__humanitymoji(True) for _ in range(filled)]
-    overlapped = [__degenerationmoji() for _ in range(overlapped)]
-    unfilled = [__humanitymoji(False) for _ in range(unfilled)]
-    stains = [__stainmoji() for _ in range(stains)]
+    filled = __humanitymoji(True, filled)
+    overlapped = __degenerationmoji(overlapped)
+    unfilled = __humanitymoji(False, unfilled)
+    stains = __stainmoji(stains)
 
     track = filled
     track.extend(overlapped)
@@ -89,31 +69,32 @@ def emojify_humanity(humanity: int, stains: int) -> str:
 
 # Helper Methods
 
+
 def __emojify_stressbox(box: str):
     """Convert a stress box value to an emoji."""
     if not box:
-        raise ValueError("Invalid stress box") # Should never happen
+        raise ValueError("Invalid stress box")  # Should never happen
 
-    return __EMOJIS[box]
+    return inconnu.emojis[box]
 
 
-def __hungermoji(hungry: bool) -> str:
+def __hungermoji(hungry: bool, count: int) -> str:
     """Return a filled or unfilled hunger emoji."""
     hunger = "hunger" if hungry else "no_hunger"
-    return __EMOJIS[hunger]
+    return inconnu.emojis.get(hunger, count)
 
 
-def __humanitymoji(filled) -> str:
+def __humanitymoji(filled, count) -> str:
     """Return a filled or unfilled humanity emoji."""
     humanity = "hu_filled" if filled else "hu_unfilled"
-    return __EMOJIS[humanity]
+    return inconnu.emojis.get(humanity, count)
 
 
-def __stainmoji() -> str:
+def __stainmoji(count: int) -> str:
     """Return a stain emoji."""
-    return __EMOJIS["stain"]
+    return inconnu.emojis.get("stain", count)
 
 
-def __degenerationmoji() -> str:
+def __degenerationmoji(count: int) -> str:
     """Return a degeneration emoji."""
-    return __EMOJIS["degen"]
+    return inconnu.emojis.get("degen", count)

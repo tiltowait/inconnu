@@ -41,7 +41,7 @@ class _EmojiManager:
 
     async def load(self, bot):
         """Load the emoji from the specified guild ."""
-        guild = bot.get_guild(int(os.environ["EMOJI_GUILD"]))
+        guild = await bot.fetch_guild(int(os.environ["EMOJI_GUILD"]))
         _emojis = await guild.fetch_emojis()
         self._emojis = {emoji.name: emoji for emoji in _emojis}
 

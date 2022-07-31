@@ -11,15 +11,9 @@ from discord.ext import tasks
 import config.logging
 import inconnu
 import s3
+from config import DEBUG_GUILDS
 from errorreporter import reporter
 from logger import Logger
-
-# Check if we're in dev mode
-if (_debug_guilds := os.getenv("DEBUG")) is not None:
-    debug_guilds = [int(g) for g in _debug_guilds.split(",")]
-    Logger.info("MAIN: Debugging on %s", debug_guilds)
-else:
-    debug_guilds = None
 
 
 class InconnuBot(discord.Bot):
@@ -34,7 +28,7 @@ class InconnuBot(discord.Bot):
 
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True)
-bot = InconnuBot(intents=intents, debug_guilds=debug_guilds)
+bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
 
 # General Events
 

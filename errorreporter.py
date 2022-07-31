@@ -115,8 +115,17 @@ class ErrorReporter:
         else:
             description = "\n".join(traceback.format_exception(error))
 
+        # If we can, we use the command name to try to pinpoint where the error
+        # took place. The stack trace usually makes this clear, but not always!
+        if isinstance(ctx, discord.ApplicationContext):
+            command_name = ctx.command.qualified_name.upper()
+        else:
+            command_name = "INTERACTION"
+
+        error_name = type(error).__name__
+
         embed = discord.Embed(
-            title=type(error).__name__,
+            title=f"{command_name}: {error_name}",
             description=description,
             color=0xFF0000,
             timestamp=discord.utils.utcnow(),

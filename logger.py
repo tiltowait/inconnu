@@ -55,15 +55,13 @@ import logging
 import os
 import pathlib
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from functools import partial
 
 import config.logging as config
 
 __all__ = ("Logger", "LOG_LEVELS", "COLORS", "LoggerHistory", "file_log_handler")
 
-
-Logger = None  # pylint: disable=invalid-name
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = list(range(8))
 

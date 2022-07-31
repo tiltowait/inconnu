@@ -16,10 +16,8 @@ class BasicSelector(DisablingView):
             button.callback = self.button_callback
             self.add_item(button)
 
-
     async def button_callback(self, interaction):
         """Set the selected value to the interaction's custom ID."""
-
         # Mark the selected button, then disable
         btn_id = interaction.data.get("custom_id")
         for child in self.children:

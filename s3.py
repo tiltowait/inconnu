@@ -5,8 +5,7 @@ import glob
 import os
 
 import boto3
-from botocore.exceptions import (ClientError, NoCredentialsError,
-                                 ParamValidationError)
+from botocore.exceptions import ClientError, NoCredentialsError, ParamValidationError
 from dotenv import load_dotenv
 
 from config import aws
@@ -47,12 +46,19 @@ def upload_logs() -> bool:
     Logger.info("S3: Uploading logs")
     successful = True
     try:
-        logs = glob.glob("./logs/*.txt")
+        logs = sorted(glob.glob("./logs/*.txt"))
         if logs:
             for file in logs:
                 base = os.path.basename(file)
                 if not upload_file(file, "inconnu", f"logs/{base}"):
                     successful = False
+
+            if successful and len(logs) > 1:
+                # We want to remove all but the most recent log so we don't
+                # waste PutObject requests
+                for log in logs[:-1]:
+                    Logger.info("S3: Deleting old log: %s", log)
+                    os.unlink(log)
         else:
             Logger.error("S3: No log files found")
             return False

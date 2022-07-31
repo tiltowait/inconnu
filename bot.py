@@ -25,6 +25,14 @@ class InconnuBot(discord.Bot):
         self.welcomed = False
         Logger.info("BOT: Instantiated")
 
+    async def on_interaction(self, interaction: discord.Interaction):
+        """Check whether the bot is ready before allowing the interaction to go through."""
+        if not self.welcomed:
+            err = f"{self.user.mention} is currently restarting. Please try again in a moment."
+            await inconnu.respond(interaction)(err, ephemeral=True)
+        else:
+            await self.process_application_commands(interaction)
+
 
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True)
@@ -48,8 +56,6 @@ async def finish_setup():
         return
 
     await bot.wait_until_ready()
-    bot.welcomed = True
-
     Logger.info("BOT: Logged in as %s!", str(bot.user))
     Logger.info("BOT: Playing on %s servers", len(bot.guilds))
     Logger.info("BOT: %s", discord.version_info)
@@ -67,6 +73,7 @@ async def finish_setup():
     # Final prep
     inconnu.char_mgr.bot = bot
     reporter.prepare_channel(bot)
+    bot.welcomed = True
 
 
 @bot.event

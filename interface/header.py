@@ -2,9 +2,11 @@
 # pylint: disable=no-self-use
 
 import discord
-import inconnu
 from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
+from pymongo import DeleteOne
+
+import inconnu
 from logger import Logger
 
 
@@ -204,6 +206,25 @@ class HeaderCog(commands.Cog):
         else:
             Logger.debug("HEADER: Attempted to delete non-%s post", self.bot.user.name)
             await ctx.respond("This is not an RP header.", ephemeral=True)
+
+    @commands.Cog.listener()
+    async def on_raw_bulk_message_delete(self, payload):
+        """Bulk delete headers."""
+        raw_ids = payload.message_ids
+        deletions = []
+
+        for message in payload.cached_messages:
+            raw_ids.discard(message.id)
+            if message.author == self.bot.user:
+                Logger.debug("HEADER: Adding potential header message to deletion queue")
+                deletions.append(DeleteOne({"message": message.id}))
+
+        for message_id in raw_ids:
+            Logger.debug("HEADER: Blindly adding potential header message to deletion queue")
+            deletions.append(DeleteOne({"message": message_id}))
+
+        Logger.debug("HEADER: Deleting %s potential header messages", len(deletions))
+        await inconnu.db.headers.bulk_write(deletions)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):

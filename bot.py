@@ -44,9 +44,9 @@ bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
 @bot.event
 async def on_ready():
     """Schedule a task to perform final setup."""
-    await __set_presence()
     task = bot.loop.create_task(finish_setup())
     await task
+    await __set_presence()
     Logger.info("BOT: Ready")
 
 

@@ -45,7 +45,7 @@ class _EmojiManager:
         _emojis = await guild.fetch_emojis()
         self._emojis = {emoji.name: emoji for emoji in _emojis}
 
-        Logger.info("EMOJIS: Loaded emojis")
+        Logger.info("EMOJIS: Loaded emojis from %s", guild.name)
         Logger.debug("EMOJIS: %s", list(map(lambda e: e.name, self._emojis.values())))
 
 

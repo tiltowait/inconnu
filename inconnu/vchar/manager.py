@@ -103,6 +103,11 @@ class CharacterManager:
 
         return characters
 
+    async def character_count(self, guild: int, user: int) -> int:
+        """Get a count of the user's characters in the server."""
+        chars = await self.fetchall(guild, user)
+        return len(chars)
+
     async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
         """Determine whether a user already has a named character."""
         if is_spc:

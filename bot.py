@@ -165,11 +165,12 @@ def setup():
             Logger.debug("COGS: Loading %s", filename)
             bot.load_extension(f"interface.{filename[:-3]}")
 
-    if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:
-        Logger.info("BOT: Establishing top.gg connection")
-        bot.dblpy = topgg.DBLClient(bot, topgg_token, autopost=True)
-    else:
-        Logger.warning("BOT: top.gg not configured")
+    # if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:
+    #     Logger.info("BOT: Establishing top.gg connection")
+    #     bot.dblpy = topgg.DBLClient(bot, topgg_token, autopost=True)
+    # else:
+    #     Logger.warning("BOT: top.gg not configured")
+    Logger.warning("BOT: Not enabling top.gg!")
 
 
 async def run():

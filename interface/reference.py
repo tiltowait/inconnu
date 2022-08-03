@@ -116,6 +116,24 @@ class ReferenceCommands(commands.Cog):
             )
 
     @commands.Cog.listener()
+    async def on_raw_bulk_message_delete(self, payload):
+        """Bulk remove rolls from statistics."""
+        raw_ids = payload.message_ids
+        deletions = []
+
+        for message in payload.cached_messages:
+            raw_ids.discard(message.id)
+            if message.author == self.bot.user:
+                Logger.debug("REFERENCE: Deleting possible roll record")
+                deletions.append(message.id)
+
+        Logger.debug("REFERENCE: Blindly deleting %s potential roll records", len(raw_ids))
+        deletions.extend(raw_ids)
+        if deletions:
+            Logger.debug("REFERENCE: Deleting %s potential roll records", len(deletions))
+            await inconnu.stats.roll_message_deleted(*deletions)
+
+    @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
         """Remove the roll from statistics."""
         # Check if the message is in the cache

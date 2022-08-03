@@ -27,7 +27,7 @@ class _EmojiManager:
         if emoji := standard.get(emoji_name):
             # Eventually, we won't need the "standard" emoji set, as everything
             # will be custom
-            return emoji
+            return emoji + "\u200b"
 
         emoji_name = emoji_map.get(emoji_name, emoji_name)
 

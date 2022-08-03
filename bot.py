@@ -33,6 +33,32 @@ class InconnuBot(discord.Bot):
         else:
             await self.process_application_commands(interaction)
 
+    @staticmethod
+    async def on_application_command(ctx: discord.ApplicationContext):
+        """General processing after application commands."""
+        # If a user specifies a character but only has one, we want to inform
+        # them it's unnecessary so they don't keep doing it.
+        options = inconnu.utils.raw_command_options(ctx.interaction)
+        if "character" in options and "player" not in options:
+            # Some commands do, in fact, need the character parameter
+            if ctx.command.qualified_name not in {
+                "character bio edit",
+                "character delete",
+                "experience remove entry",
+                "experience award",
+                "experience deduct",
+                "update header",
+            }:
+                num_chars = await inconnu.char_mgr.character_count(ctx.guild.id, ctx.user.id)
+                if num_chars == 1:
+                    await ctx.respond(
+                        (
+                            "**Tip:** You only have one character, so you don't need to use the "
+                            f"`character` option for `/{ctx.command.qualified_name}`."
+                        ),
+                        ephemeral=True,
+                    )
+
 
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True)

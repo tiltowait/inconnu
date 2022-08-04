@@ -79,6 +79,10 @@ class VChar:
             "log": {"created": datetime.datetime.utcnow()},
         }
 
+        if char_params["splat"] == "thinblood":
+            Logger.debug("VCHAR CREATE: Fixing thinblood -> thin-blood")
+            char_params["splat"] = "thin-blood"
+
         if kwargs:
             raise ValueError(f"Received unexpected values: {kwargs}")
 

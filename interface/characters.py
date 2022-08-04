@@ -21,7 +21,12 @@ async def _spc_options(ctx):
 class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
 
-    _TEMPLATES = ["vampire", "ghoul", "mortal", "thin-blood"]
+    _TEMPLATES = [
+        OptionChoice("Vampire", "vampire"),
+        OptionChoice("Ghoul", "ghoul"),
+        OptionChoice("Mortal", "mortal"),
+        OptionChoice("Thin-Blood", "thinblood"),
+    ]
 
     @commands.user_command(name="Stats")
     async def user_characters(self, ctx, member):

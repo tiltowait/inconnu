@@ -393,9 +393,15 @@ class VChar:
     def rp_header(self) -> SimpleNamespace:
         """Get the character's RP header."""
         header_ = defaultdict(str, self._params.get(_Properties.RP_HEADER, {}).copy())
+        if self.is_thin_blood:
+            default_blush = -1
+        elif self.is_vampire:
+            default_blush = 0
+        else:
+            default_blush = -1
 
         return SimpleNamespace(
-            blush=header_["blush"],
+            blush=header_["blush"] or default_blush,
             location=header_["location"],
             merits=header_["merits"],
             flaws=header_["flaws"],

@@ -75,7 +75,7 @@ class _RPHeader(discord.ui.Modal):
         self.add_item(
             discord.ui.InputText(
                 label="Temporary Effects",
-                placeholder="Temporary affects currently affecting your character.",
+                placeholder="Temporary effects currently affecting your character.",
                 value=current_header.temp,
                 max_length=300,
                 required=False,

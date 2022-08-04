@@ -115,7 +115,7 @@ class HeaderCog(commands.Cog):
         location: Option(str, "THIS POST ONLY: Where the scene is taking place", required=False),
         merits: Option(str, "THIS POST ONLY: Obvious/important merits", required=False),
         flaws: Option(str, "THIS POST ONLY: Obvious/important flaws", required=False),
-        temporary: Option(str, "THIS POST ONLY: Temporary affects", required=False),
+        temporary: Option(str, "THIS POST ONLY: Temporary effects", required=False),
     ):
         """Display your character's RP header."""
         await inconnu.header.show_header(

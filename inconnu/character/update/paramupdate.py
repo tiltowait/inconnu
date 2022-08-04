@@ -1,14 +1,13 @@
 """character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
 
 import asyncio
-import re
 
 import inconnu
 
 from ...constants import Damage
 from ...vchar import VChar
 
-VALID_SPLATS = ["vampire", "ghoul", "mortal"]
+VALID_SPLATS = ["vampire", "ghoul", "mortal", "thinblood"]
 
 
 async def update_name(character: VChar, new_name: str) -> str:

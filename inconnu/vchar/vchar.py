@@ -153,6 +153,8 @@ class VChar:
 
     async def set_splat(self, new_splat):
         """Set the character's splat."""
+        if new_splat == "thinblood":
+            new_splat = "thin-blood"
         await self._async_set_property(_Properties.SPLAT, new_splat)
 
     @property
@@ -396,9 +398,20 @@ class VChar:
             temp=header_["temp"],
         )
 
-    async def set_rp_header(self, new_header: Dict[str, str]):
+    async def set_rp_header(self, new_header: Dict[str, str | int]):
         """Set the character's RP header."""
         await self._async_set_property(_Properties.RP_HEADER, new_header)
+
+    async def set_blush(self, new_blush: int):
+        """Toggle the character's Blush of Life."""
+        header = self.rp_header
+        if header.blush >= 0:
+            # We only want to update blush of full vampires
+            header.blush = new_blush
+            await self.set_rp_header(vars(header))
+            Logger.debug("VCHAR: Setting %s's Blush of Life to %s", self.name, new_blush)
+        else:
+            Logger.warning("VCHAR: Can't set Blush of Life; %s is not a vampire", self.name)
 
     # Derived attributes
 
@@ -443,7 +456,12 @@ class VChar:
     @property
     def is_vampire(self):
         """Whether the character is a vampire."""
-        return self.splat == "vampire"
+        return self.splat in {"vampire", "thin-blood"}
+
+    @property
+    def is_thin_blood(self):
+        """Whether the character is thin-blooded."""
+        return self.splat == "thin-blood"
 
     @property
     def surge(self):

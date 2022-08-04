@@ -19,7 +19,7 @@ __KEYS = {
     "health": "The character's max Health",
     "willpower": "The character's max Willpower",
     "humanity": "The character's Humanity",
-    "splat": "The type of character: `vampire`, `mortal`, or `ghoul`",
+    "splat": "The type of character: `vampire`, `mortal`, `ghoul`, or `thinblood`",
     "sh": "+/- Superficial Health damage",
     "ah": "+/- Aggravated Health damage",
     "sw": "+/- Superficial Willpower damage",

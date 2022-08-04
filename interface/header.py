@@ -81,6 +81,8 @@ async def _header_bol_options(ctx):
     try:
         character = await inconnu.char_mgr.fetchone(guild, user, charid)
 
+        if character.is_thin_blood:
+            return [OptionChoice("N/A - Thin-Blood", -1)]
         if character.is_vampire:
             return [
                 OptionChoice("Yes", 1),

@@ -22,12 +22,20 @@ class InconnuBot(discord.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.persistent_views_added = False
+        self.ready = False
         self.welcomed = False
         Logger.info("BOT: Instantiated")
 
+    async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
+        """Look up a guild in the guild cache or fetches if not found."""
+        if guild := self.get_guild(guild_id):
+            return guild
+        Logger.debug("BOT: Guild %s not found in cache; attempting fetch", guild_id)
+        return await self.fetch_guild(guild_id)
+
     async def on_interaction(self, interaction: discord.Interaction):
         """Check whether the bot is ready before allowing the interaction to go through."""
-        if not self.welcomed:
+        if not self.ready:
             err = f"{self.user.mention} is currently restarting. Please try again in a moment."
             await inconnu.respond(interaction)(err, ephemeral=True)
         else:
@@ -70,14 +78,18 @@ bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
 @bot.event
 async def on_ready():
     """Schedule a task to perform final setup."""
+    await inconnu.emojis.load(bot)
+    bot.ready = True
+    Logger.info("BOT: Accepting commands")
+
     await bot.wait_until_ready()
     if not bot.welcomed:
+        Logger.info("BOT: Internal cache built")
         Logger.info("BOT: Logged in as %s!", str(bot.user))
         Logger.info("BOT: Playing on %s servers", len(bot.guilds))
         Logger.info("BOT: %s", discord.version_info)
         Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
 
-        await inconnu.emojis.load(bot)
         server_info = await inconnu.db.server_info()
         database = os.environ["MONGO_DB"]
         Logger.info("MONGO: Version %s, using %s database", server_info["version"], database)

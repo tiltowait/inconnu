@@ -98,13 +98,10 @@ async def _header_bol_options(ctx):
 class HeaderCog(commands.Cog):
     """A cog with header-related commands, including context menu commands."""
 
-    # For now, headers are only allowed in the dev guild and Cape Town by Night
-    HEADER_DEBUG_GUILDS = [826628660450689074, 676333549720174605]
-
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(debug_guilds=HEADER_DEBUG_GUILDS)
+    @slash_command()
     async def header(
         self,
         ctx: discord.ApplicationContext,
@@ -133,7 +130,7 @@ class HeaderCog(commands.Cog):
 
     header_update = SlashCommandGroup("update", "Update commands")
 
-    @header_update.command(name="header", debug_guilds=HEADER_DEBUG_GUILDS)
+    @header_update.command(name="header")
     async def update_header(
         self,
         ctx: discord.ApplicationContext,

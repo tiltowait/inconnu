@@ -26,11 +26,17 @@ async def bol(ctx, character):
         )
         return
 
-    if character.humanity == 10:
+    if character.is_thin_blood:
+        # Thin-Bloods don't need to Blush. Their appearance depends on Humanity
+        effective_humanity = max(9, character.humanity)
+    else:
+        effective_humanity = character.humanity
+
+    if effective_humanity == 10:
         await ctx.respond(
             f"Blush of Life is unnecessary. **{character.name}** looks hale and healthy."
         )
-    elif character.humanity == 9:
+    elif effective_humanity == 9:
         await ctx.respond(
             f"Blush of Life is unnecessary. **{character.name}** only looks a little sick."
         )
@@ -39,6 +45,7 @@ async def bol(ctx, character):
             inconnu.misc.rouse(
                 ctx, 1, character, "Blush of Life", character.humanity == 8, oblivion=False
             ),
+            character.set_blush(1),
             character.log("blush"),
         )
 
@@ -47,5 +54,3 @@ def _can_blush(character):
     """Raises an exception if the character isn't capable of Blushing."""
     if not character.is_vampire:
         raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
-    if character.humanity > 8:
-        raise inconnu.errors.CharacterError(f"{character.name} doesn't need to Blush!")

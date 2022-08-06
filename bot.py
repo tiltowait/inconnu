@@ -62,15 +62,19 @@ class InconnuBot(discord.Bot):
             }:
                 num_chars = await inconnu.char_mgr.character_count(ctx.guild.id, ctx.user.id)
                 if num_chars == 1:
-                    await ctx.respond(
-                        (
-                            "**Tip:** You only have one character, so you don't need to use the "
-                            f"`character` option for `/{ctx.command.qualified_name}`."
-                        ),
-                        ephemeral=True,
+                    # The user might have been using an SPC, so let's grab that
+                    # character and double-check before yelling at them.
+                    character = await inconnu.char_mgr.fetchone(
+                        ctx.guild, ctx.user, options["character"]
                     )
-            else:
-                Logger.debug("BOT: Ignoring command: %s", ctx.command.qualified_name)
+                    if character.is_pc:
+                        await ctx.respond(
+                            (
+                                "**Tip:** You only have one character, so you don't need "
+                                f"the `character` option for `/{ctx.command.qualified_name}`."
+                            ),
+                            ephemeral=True,
+                        )
 
 
 # Set up the bot instance

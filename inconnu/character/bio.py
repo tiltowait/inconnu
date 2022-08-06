@@ -6,6 +6,7 @@ import discord
 import validators
 
 import inconnu
+from logger import Logger
 
 __HELP_URL = "https://www.inconnu.app"
 
@@ -14,7 +15,7 @@ async def edit_biography(ctx, character):
     """Edit a character bio."""
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
-        if character.user != ctx.user.id:
+        if character.is_pc and character.user != ctx.user.id:
             raise inconnu.errors.FetchError("You may only edit your own characters' profile.")
 
         modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
@@ -128,7 +129,10 @@ class _CharacterBio(discord.ui.Modal):
             tasks.append(self.character.add_image_url(image_url))
         else:
             tasks.append(self.character.add_image_url(""))
-            message += " Your image URL isn't valid and wasn't saved."
+            if image_url:
+                # We don't want to pester them if they entered nothing
+                Logger.debug("CHARACTER PROFILE: Image URL invalid: %s", image_url)
+                message += " Your image URL isn't valid and wasn't saved."
 
         tasks.append(interaction.response.send_message(message, ephemeral=True))
         await asyncio.gather(*tasks)

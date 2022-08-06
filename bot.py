@@ -58,6 +58,7 @@ class InconnuBot(discord.Bot):
                 "experience award",
                 "experience deduct",
                 "update header",
+                "transfer",
             }:
                 num_chars = await inconnu.char_mgr.character_count(ctx.guild.id, ctx.user.id)
                 if num_chars == 1:
@@ -68,6 +69,8 @@ class InconnuBot(discord.Bot):
                         ),
                         ephemeral=True,
                     )
+            else:
+                Logger.debug("BOT: Ignoring command: %s", ctx.command.qualified_name)
 
 
 # Set up the bot instance

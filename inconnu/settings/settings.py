@@ -193,6 +193,19 @@ class Settings:
 
         return f"Empty Resonance **{will_or_not}** be added to the Resonance table."
 
+    async def max_hunger(self, guild: discord.Guild):
+        """Get the max Hunger rating allowed in rolls."""
+        guild = await self._fetch_guild(guild)
+        return guild.max_hunger
+
+    async def set_max_hunger(self, ctx, max_hunger: int) -> str:
+        """Set the max Hunger rating to 5 or 10."""
+        if not ctx.user.guild_permissions.administrator:
+            raise PermissionError("Sorry, only admins can set the max Hunger rating.")
+
+        await self._set_key(ctx.guild, "max_hunger", max_hunger)
+        return f"Max Hunger rating is now `{max_hunger}`."
+
     async def _set_key(self, scope, key: str, value):
         """
         Enable or disable a setting.

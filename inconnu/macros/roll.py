@@ -57,7 +57,7 @@ async def roll(ctx, syntax: str, character=None):
             parameters.append(difficulty or macro.difficulty)
 
             try:
-                outcome = perform_roll(character, parameters)
+                outcome = await perform_roll(character, parameters)
             except inconnu.errors.TraitNotFoundError as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
                 await common.present_error(ctx, msg, character=character.name)

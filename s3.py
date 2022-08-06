@@ -66,3 +66,8 @@ def upload_logs() -> bool:
         Logger.exception("S3: %s", error)
         successful = False
     return successful
+
+
+if __name__ == "__main__":
+    # On dokku release, we want to upload the logs as they currently stand.
+    upload_logs()

@@ -60,6 +60,23 @@ class ErrorReporter:
             # This just means a button tried to disable when its message no longer exists.
             # We don't care, and there's nothing we can do about it anyway.
             return
+        if isinstance(error, commands.NotOwner):
+            await respond(
+                f"Sorry, only {ctx.bot.user.mention}'s owner may issue this command!",
+                ephemeral=True,
+            )
+            return
+        if isinstance(error, inconnu.errors.LockdownError):
+            timestamp = inconnu.gen_timestamp(ctx.bot.lockdown, "R")
+            err = f"{ctx.bot.user.mention} is undergoing maintenance {timestamp}."
+            embed = inconnu.utils.ErrorEmbed(
+                ctx.user,
+                err,
+                title="Command temporarily unavailable",
+                footer="Sorry for any inconvenience.",
+            )
+            await respond(embed=embed, ephemeral=True)
+            return
         if isinstance(error, inconnu.errors.HandledError):
             Logger.debug("REPORTER: Ignoring a HandledError")
             return

@@ -37,6 +37,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="create")
     @commands.guild_only()
+    @inconnu.utils.not_on_lockdown()
     async def character_create(
         self,
         ctx: discord.ApplicationContext,
@@ -176,6 +177,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="delete")
     @commands.guild_only()
+    @inconnu.utils.not_on_lockdown()
     async def character_delete(
         self,
         ctx: discord.ApplicationContext,

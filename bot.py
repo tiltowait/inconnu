@@ -24,6 +24,8 @@ class InconnuBot(discord.Bot):
         self.persistent_views_added = False
         self.ready = False
         self.welcomed = False
+        self.lockdown = None
+        self.wizards = 0
         Logger.info("BOT: Instantiated")
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:

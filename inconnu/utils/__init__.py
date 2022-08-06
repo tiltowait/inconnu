@@ -1,5 +1,6 @@
 """Commonly used utilities."""
 
+from .decorators import not_on_lockdown
 from .error import ErrorEmbed, error
 from .haven import Haven
 from .paramparse import parse_parameters

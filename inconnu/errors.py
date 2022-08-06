@@ -1,5 +1,11 @@
 """Package-wide errors."""
 
+from discord.ext.commands import CheckFailure
+
+
+class LockdownError(CheckFailure):
+    """An exception raised if the bot is on lockdown."""
+
 
 class InconnuError(Exception):
     """Base error all others inherit from."""

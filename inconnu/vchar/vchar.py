@@ -415,6 +415,9 @@ class VChar:
     async def set_blush(self, new_blush: int):
         """Toggle the character's Blush of Life."""
         header = self.rp_header
+        if header.blush == new_blush:
+            Logger.debug("VCHAR: %s's Blush of Life (%s) is unchanged", self.name, new_blush)
+            return
         if header.blush >= 0:
             # We only want to update blush of full vampires
             header.blush = new_blush

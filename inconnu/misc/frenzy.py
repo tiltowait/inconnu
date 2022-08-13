@@ -4,6 +4,7 @@
 import discord
 
 import inconnu
+from config import aws_asset
 
 __HELP_URL = "https://www.inconnu.app/#/additional-commands?id=frenzy-checks"
 
@@ -98,8 +99,7 @@ def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, foote
     embed.set_footer(text=footer)
 
     if title == "Failure!":
-        url = "https://www.inconnu.app/images/assets/frenzy.webp"
-        embed.set_thumbnail(url=url)
+        embed.set_thumbnail(url=aws_asset("frenzy5.webp"))
 
     return embed
 

@@ -113,6 +113,6 @@ async def __generate_report_task(ctx, msg, character, outcome):
         msg=msg,
         character=character,
         title="Frenzy Success" if outcome.is_successful else "Frenzy Failure",
-        message=f"**{character.name}** {verbed} their frenzy check.",
+        message=f"**{character.name}** {verbed} a frenzy check.",
         color=0x880000 if outcome.is_failure else discord.Embed.Empty,
     )

@@ -54,6 +54,14 @@ class AdminCog(commands.Cog):
         )
         Logger.info("SHUTDOWN: Bot is ready for shutdown")
 
+    @discord.slash_command(debug_guilds=WHITELIST)
+    @discord.default_permissions(administrator=True)
+    @commands.is_owner()
+    async def purge(self, ctx: discord.ApplicationContext):
+        """Purge the character cache."""
+        inconnu.char_mgr.purge()
+        await ctx.respond("Character cache purged.", ephemeral=True)
+
 
 def setup(bot):
     """Add the cog to the bot."""

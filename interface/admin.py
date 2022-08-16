@@ -49,9 +49,12 @@ class AdminCog(commands.Cog):
                 message.edit(content=msg)
             await asyncio.sleep(15)
 
-        await message.edit(
-            f"{ctx.bot.user.mention} can restart now. No chargen wizards are running."
-        )
+        msg = f"{ctx.bot.user.mention} can restart now. No chargen wizards are running."
+        if message is None:
+            await message.edit(msg)
+        else:
+            await ctx.respond(msg, ephemeral=True)
+
         Logger.info("SHUTDOWN: Bot is ready for shutdown")
 
     @discord.slash_command(debug_guilds=WHITELIST)

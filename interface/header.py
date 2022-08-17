@@ -30,7 +30,7 @@ class LocationChangeModal(discord.ui.Modal):
                 label="Temporary Effects",
                 placeholder="Temporary effects relevant to the scene",
                 value=header.embeds[0].footer.text,
-                max_length=100,
+                max_length=512,
                 required=False,
             )
         )

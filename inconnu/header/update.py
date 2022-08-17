@@ -77,7 +77,7 @@ class _RPHeader(discord.ui.Modal):
                 label="Temporary Effects",
                 placeholder="Temporary effects currently affecting your character.",
                 value=current_header.temp,
-                max_length=300,
+                max_length=512,
                 required=False,
             )
         )

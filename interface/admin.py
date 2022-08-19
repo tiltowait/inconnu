@@ -17,7 +17,7 @@ class AdminCog(commands.Cog):
 
     WHITELIST = [826628660450689074, 935219170176532580]
 
-    @discord.slash_command(debug_guilds=WHITELIST)
+    @discord.slash_command(guild_ids=WHITELIST)
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
     async def shutdown(self, ctx: discord.ApplicationContext):
@@ -57,7 +57,7 @@ class AdminCog(commands.Cog):
 
         Logger.info("SHUTDOWN: Bot is ready for shutdown")
 
-    @discord.slash_command(debug_guilds=WHITELIST)
+    @discord.slash_command(guild_ids=WHITELIST)
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
     async def purge(self, ctx: discord.ApplicationContext):

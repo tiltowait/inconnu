@@ -2,8 +2,7 @@
 # pylint: disable=no-self-use
 
 import discord
-from discord.commands import (Option, OptionChoice, SlashCommandGroup,
-                              slash_command)
+from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 
 import inconnu
@@ -71,6 +70,15 @@ class SettingsCommands(commands.Cog):
             ],
             required=False,
         ),
+        max_hunger: Option(
+            int,
+            (
+                "Maximum Hunger rating in rolls (Only affects /vr. Characters still "
+                "max out at Hunger 5.)"
+            ),
+            choices=[5, 10],
+            required=False,
+        ),
         accessibility: Option(
             int,
             "Whether to enable or disable accessibility",
@@ -96,6 +104,10 @@ class SettingsCommands(commands.Cog):
         if add_empty_resonance is not None:
             add_empty = bool(add_empty_resonance)
             response = await inconnu.settings.set_empty_resonance(ctx, add_empty)
+            responses.append(response)
+
+        if max_hunger is not None:
+            response = await inconnu.settings.set_max_hunger(ctx, max_hunger)
             responses.append(response)
 
         if accessibility is not None:

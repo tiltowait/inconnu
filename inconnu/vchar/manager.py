@@ -3,23 +3,28 @@
 import datetime
 
 import inconnu
+from logger import Logger
 
 
 class CharacterManager:
     """A class for maintaining a local copy of characters."""
 
     def __init__(self):
+        Logger.info("CHARACTER MANAGER: Initialized")
         self.all_fetched = {}  # [user_id: bool]
         self.user_cache = {}  # [guild: [user: [VChar]]]
         self.id_cache = {}  # [char_id: VChar]
 
         # Set after construction. Used to check whether a user is an admin
         self.bot = None
+        self.collection = inconnu.db.characters
 
-    @property
-    def collection(self):
-        """Get the database's characters collection."""
-        return inconnu.db.characters
+    def purge(self):
+        """Purge the cache."""
+        Logger.info("CHARACTER MANAGER: Purging the cache")
+        self.all_fetched = {}  # [user_id: bool]
+        self.user_cache = {}  # [guild: [user: [VChar]]]
+        self.id_cache = {}  # [char_id: VChar]
 
     async def fetchone(self, guild: int, user: int, name: str):
         """
@@ -100,6 +105,10 @@ class CharacterManager:
 
         self.user_cache[key] = characters
         self.all_fetched[key] = True
+
+        Logger.debug(
+            "CHARACTER MANAGER: Found %s characters (%s on %s)", len(characters), user, guild
+        )
 
         return characters
 

@@ -38,7 +38,7 @@ class InconnuBot(discord.Bot):
     async def on_interaction(self, interaction: discord.Interaction):
         """Check whether the bot is ready before allowing the interaction to go through."""
         if not self.ready:
-            err = f"{self.user.mention} is currently restarting. Please try again in a moment."
+            err = f"{self.user.mention} is currently restarting. This might take a few minutes."
             await inconnu.respond(interaction)(err, ephemeral=True)
         else:
             await self.process_application_commands(interaction)
@@ -204,7 +204,7 @@ def setup():
     for filename in os.listdir("./interface"):
         if filename[0] != "_" and filename.endswith(".py"):
             Logger.debug("COGS: Loading %s", filename)
-            bot.load_extension(f"interface.{filename[:-3]}")
+            bot.load_extension(f"interface.{filename[:-3]}", store=False)
 
     if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:
         Logger.info("BOT: Establishing top.gg connection")

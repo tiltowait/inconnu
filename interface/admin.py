@@ -17,7 +17,7 @@ class AdminCog(commands.Cog):
 
     WHITELIST = [826628660450689074, 935219170176532580]
 
-    @discord.slash_command(debug_guilds=WHITELIST)
+    @discord.slash_command(guild_ids=WHITELIST)
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
     async def shutdown(self, ctx: discord.ApplicationContext):
@@ -49,10 +49,21 @@ class AdminCog(commands.Cog):
                 message.edit(content=msg)
             await asyncio.sleep(15)
 
-        await message.edit(
-            f"{ctx.bot.user.mention} can restart now. No chargen wizards are running."
-        )
+        msg = f"{ctx.bot.user.mention} can restart now. No chargen wizards are running."
+        if message is None:
+            await message.edit(msg)
+        else:
+            await ctx.respond(msg, ephemeral=True)
+
         Logger.info("SHUTDOWN: Bot is ready for shutdown")
+
+    @discord.slash_command(guild_ids=WHITELIST)
+    @discord.default_permissions(administrator=True)
+    @commands.is_owner()
+    async def purge(self, ctx: discord.ApplicationContext):
+        """Purge the character cache."""
+        inconnu.char_mgr.purge()
+        await ctx.respond("Character cache purged.", ephemeral=True)
 
 
 def setup(bot):

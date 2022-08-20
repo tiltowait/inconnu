@@ -26,7 +26,14 @@ class InconnuBot(discord.Bot):
         self.welcomed = False
         self.lockdown = None
         self.wizards = 0
+        self.motd = None
+        self.motd_given = set()
         Logger.info("BOT: Instantiated")
+
+    def set_motd(self, embed: discord.Embed | None):
+        """Set the MOTD embed."""
+        self.motd = embed
+        self.motd_given = set()
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
         """Look up a guild in the guild cache or fetches if not found."""
@@ -43,8 +50,7 @@ class InconnuBot(discord.Bot):
         else:
             await self.process_application_commands(interaction)
 
-    @staticmethod
-    async def on_application_command(ctx: discord.ApplicationContext):
+    async def on_application_command(self, ctx: discord.ApplicationContext):
         """General processing after application commands."""
         # If a user specifies a character but only has one, we want to inform
         # them it's unnecessary so they don't keep doing it.
@@ -75,6 +81,13 @@ class InconnuBot(discord.Bot):
                             ),
                             ephemeral=True,
                         )
+
+        if self.motd:
+            if ctx.user.id not in self.motd_given:
+                Logger.debug("MOTD: Showing MOTD to %s#%s", ctx.user.name, ctx.user.discriminator)
+                await asyncio.sleep(1)
+                await ctx.respond(embed=self.motd, ephemeral=True)
+                self.motd_given.add(ctx.user.id)
 
 
 # Set up the bot instance

@@ -3,6 +3,7 @@
 import discord
 
 import inconnu
+from logger import Logger
 
 from .guildsettings import ExpPerms, GuildSettings
 
@@ -232,6 +233,7 @@ class Settings:
             await inconnu.db.guilds.insert_one({"guild": guild.id, "settings": {key: value}})
 
         # Update the cache
+        Logger.info("SETTINGS: %s (guild): %s=%s", guild.name, key, value)
         guild = await self._fetch_guild(guild)
         setattr(guild, key, value)
 
@@ -244,6 +246,13 @@ class Settings:
             await inconnu.db.users.insert_one({"user": user.id, "settings": {key: value}})
 
         # Update the cache
+        Logger.info(
+            "SETTINGS: %s#%s: %s=%s",
+            user.name,
+            user.discriminator,
+            key,
+            value,
+        )
         user_settings = await self._fetch_user(user)
         user_settings.setdefault("settings", {})[key] = value
         self._user_cache[user.id] = user_settings

@@ -1,4 +1,5 @@
 """Admin commands."""
+# pylint: disable=no-self-use
 
 import asyncio
 from datetime import timedelta
@@ -7,17 +8,14 @@ import discord
 from discord.ext import commands
 
 import inconnu
+from config import ADMIN_GUILD
 from logger import Logger
-
-# pylint: disable=no-self-use
 
 
 class AdminCog(commands.Cog):
     """A cog with various administrative commands."""
 
-    WHITELIST = [826628660450689074, 935219170176532580]
-
-    @discord.slash_command(guild_ids=WHITELIST)
+    @discord.slash_command(guild_ids=[ADMIN_GUILD])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
     async def shutdown(self, ctx: discord.ApplicationContext):
@@ -57,7 +55,7 @@ class AdminCog(commands.Cog):
 
         Logger.info("SHUTDOWN: Bot is ready for shutdown")
 
-    @discord.slash_command(guild_ids=WHITELIST)
+    @discord.slash_command(guild_ids=[ADMIN_GUILD])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
     async def purge(self, ctx: discord.ApplicationContext):

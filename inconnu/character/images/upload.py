@@ -43,7 +43,7 @@ async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachmen
     webp = convert_to_webp(original)
 
     destination = f"profiles/{character.id}/{webp}"
-    s3.upload_file(webp, destination)
+    await s3.upload_file(webp, destination)
     aws_url = s3.get_url(destination)
     await character.add_image_url(aws_url)
     delete_file(webp)
@@ -88,7 +88,6 @@ def convert_to_webp(source: str, quality=99) -> Path:
         quality,
         os.stat(destination).st_size,
     )
-
     delete_file(source)
     return destination
 

@@ -385,6 +385,15 @@ class VChar:
             images.append(new_image_url)
             await self._async_set_property(_Properties.PROFILE, new_profile)
 
+    async def remove_image_url(self, index: int):
+        """Remove an image URL at a given index."""
+        new_profile = self._params.get(_Properties.PROFILE, {})
+        images = new_profile[_Properties.IMAGES]
+
+        del images[index]
+        await self._async_set_property(_Properties.PROFILE, new_profile)
+        Logger.debug("VCHAR: Deleted %s's image at index %s", self.name, index)
+
     @property
     def has_biography(self):
         """Whether the character has any biographical data."""

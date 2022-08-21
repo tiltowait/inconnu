@@ -32,7 +32,7 @@ async def display_images(
     character = await haven.fetch()
 
     pages_ = []
-    for image in character.image_urls:
+    for index, image in enumerate(character.image_urls):
         Logger.debug("IMAGES: (%s) Making view for %s", character.name, image)
         embed = inconnu.utils.VCharEmbed(ctx, character, haven.owner, show_thumbnail=False)
         embed.set_thumbnail(url=ctx.guild.icon)
@@ -46,7 +46,7 @@ async def display_images(
         pages_.append(
             pages.Page(
                 embeds=[embed],
-                custom_view=_DeleteImageView(character, image),
+                custom_view=_DeleteImageView(character, index),
             )
         )
 
@@ -66,13 +66,14 @@ def _has_image(character):
 class _DeleteImageView(ReportingView):
     """A view for deleting character images."""
 
-    def __init__(self, character, image_url, *args, **kwargs):
+    def __init__(self, character, image_index, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.character = character
-        self.image_url = image_url
+        self.image_index = image_index
+        self.image_url = character.image_urls[image_index]
 
-        if not image_url.startswith(s3.BASE_URL):
-            Logger.debug("IMAGES: %s is not a managed URL", image_url)
+        if not self.image_url.startswith(s3.BASE_URL):
+            Logger.debug("IMAGES: %s is not a managed URL", self.image_url)
             self.disable_all_items()
 
     @discord.ui.button(label="Delete Image", style=discord.ButtonStyle.danger)
@@ -87,7 +88,10 @@ class _DeleteImageView(ReportingView):
         embed.set_image(url="")
         embed.description = "**Image deleted.** Run `/character images` again to refresh!"
         embed.set_footer(text=discord.Embed.Empty)
+
+        await self.character.remove_image_url(self.image_index)
         await interaction.response.edit_message(embed=embed, view=None)
+        await s3.delete_file(self.image_url)
         self.stop()
 
     async def interaction_check(self, interaction: discord.Interaction):

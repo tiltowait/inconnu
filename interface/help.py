@@ -130,7 +130,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name="Additional Packages",
-            value="motor 2.5.1\nstatcord.py 3.1.0\ntopggpy 1.4.0",
+            value="motor 3.0.0\nstatcord.py 3.1.0",
         )
         embed.add_field(name="Author", value="@tiltowait#8282", inline=False)
 

@@ -3,7 +3,6 @@
 import asyncio
 
 import discord
-import validators
 from discord.ext import pages
 
 import inconnu
@@ -89,6 +88,8 @@ def __biography_paginator(ctx, character, owner):
     if not embeds:
         # There weren't any valid images, so just use the original embed
         embeds.append(embed)
+
+    Logger.debug("PROFILE: Created %s page(s) for %s", len(embeds), character.name)
 
     if len(embeds) > 1:
         paginator = pages.Paginator(embeds, loop_pages=True, author_check=False)

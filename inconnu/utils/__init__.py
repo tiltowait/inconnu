@@ -73,15 +73,17 @@ class VCharEmbed(discord.Embed):
 
     def __init__(self, ctx, character, owner: discord.Member = None, **kwargs):
         owner = owner or ctx.user
-        show_thumbnail = kwargs.pop("show_thumbnail", True)
         title = kwargs.pop("title", character.name)
+        show_thumbnail = kwargs.pop("show_thumbnail", True)
+        author_name = kwargs.pop("author_name", owner.name)
 
         if is_supporter(ctx, owner):
             # Premium color
             kwargs["color"] = 0x00A4FF
 
         super().__init__(title=title, **kwargs)
-        self.set_author(name=owner.name, icon_url=inconnu.get_avatar(owner))
+
+        self.set_author(name=author_name, icon_url=inconnu.get_avatar(owner))
 
         if show_thumbnail:
             self.set_thumbnail(url=character.profile_image_url)

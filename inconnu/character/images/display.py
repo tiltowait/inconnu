@@ -111,7 +111,7 @@ class ImagePaginator(pages.Paginator):
             embed.set_image(url=image)
             embed.set_footer(
                 text=(
-                    "Images are a premium feature. Become a supporter with /patreon!\n"
+                    "Upload images via /character image upload.\n"
                     "Users are solely responsible for image content."
                 )
             )

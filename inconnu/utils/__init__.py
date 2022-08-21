@@ -14,6 +14,11 @@ from .haven import Haven
 from .paramparse import parse_parameters
 
 
+def clean_text(text: str) -> str:
+    """Remove extra spaces in text."""
+    return " ".join(text.split())
+
+
 def raw_command_options(interaction) -> str:
     """Get the options in a command as a dict."""
     options = {}

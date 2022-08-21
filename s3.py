@@ -1,6 +1,9 @@
 """S3 uploads."""
 # pylint: disable=invalid-name
 
+import asyncio
+import concurrent.futures
+import functools
 import glob
 import os
 import urllib
@@ -14,6 +17,7 @@ from logger import Logger
 
 load_dotenv()
 
+executor = concurrent.futures.ThreadPoolExecutor()
 s3_client = None
 BUCKET = "inconnu"
 BASE_URL = f"https://{BUCKET}.s3.amazonaws.com/"
@@ -25,13 +29,25 @@ else:
     s3_client = boto3.client("s3")
 
 
+def aio(func):
+    """AsyncIO decorator for AWS."""
+
+    async def aio_wrapper(*args, **kwargs):
+        """Wraps an AWS function into an async one."""
+        f_bound = functools.partial(func, *args, **kwargs)
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(executor, f_bound)
+
+    return aio_wrapper
+
+
 def get_url(object_name: str):
     """Get the URL of a given S3 object."""
     url = f"""{BASE_URL}{urllib.parse.quote(object_name, safe="/~()*!.'")}"""
     return url
 
 
-def upload_file(file_name, object_name: str = None) -> bool:
+async def upload_file(file_name, object_name: str = None) -> bool:
     """Upload a file to an S3 bucket. Returns True if successful."""
     if s3_client is None:
         Logger.error("S3: Cannot upload %s; client not configured", file_name)
@@ -46,7 +62,8 @@ def upload_file(file_name, object_name: str = None) -> bool:
         object_name = os.path.basename(file_name)
 
     try:
-        s3_client.upload_file(file_name, BUCKET, object_name)
+        upload_object = aio(s3_client.upload_file)
+        await upload_object(file_name, BUCKET, object_name)
         Logger.info("S3: Uploaded %s to %s%s", file_name, BASE_URL, object_name)
         return True
     except ClientError as err:
@@ -54,7 +71,18 @@ def upload_file(file_name, object_name: str = None) -> bool:
         return False
 
 
-def upload_logs() -> bool:
+async def delete_file(resource: str):
+    """Delete a file from S3."""
+    if not resource.startswith(BASE_URL):
+        raise ValueError(f"{resource} is not a managed resource.!")
+
+    key = resource.replace(BASE_URL, "")
+    delete_object = aio(s3_client.delete_object)
+    await delete_object(Bucket=BUCKET, Key=key)
+    Logger.info("S3: Deleted %s", key)
+
+
+async def upload_logs() -> bool:
     """Upload the contents of the log directory."""
     Logger.info("S3: Uploading logs")
     successful = True
@@ -63,7 +91,7 @@ def upload_logs() -> bool:
         if logs:
             for file in logs:
                 base = os.path.basename(file)
-                if not upload_file(file, f"logs/{base}"):
+                if not await upload_file(file, f"logs/{base}"):
                     successful = False
 
             if successful and len(logs) > 1:

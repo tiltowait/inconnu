@@ -191,7 +191,7 @@ async def upload_logs():
     if not config.logging.upload_to_aws:
         Logger.warning("TASK: Log uploading disabled. Unscheduling task")
         upload_logs.stop()
-    elif not s3.upload_logs():
+    elif not await s3.upload_logs():
         Logger.error("TASK: Unable to upload logs. Unscheduling task")
         upload_logs.stop()
     else:

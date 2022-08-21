@@ -47,6 +47,18 @@ def get_url(object_name: str):
     return url
 
 
+def is_managed_url(url: str) -> bool:
+    """Check whether a URL is managed by the bot."""
+    return url.startswith(BASE_URL)
+
+
+def get_s3_object(url: str) -> str | None:
+    """Get the base object of an S3 URL. Returns None if it isn't a managed URL."""
+    if is_managed_url(url):
+        return url.replace(BASE_URL, "")
+    return None
+
+
 async def upload_file(file_name, object_name: str = None) -> bool:
     """Upload a file to an S3 bucket. Returns True if successful."""
     if s3_client is None:

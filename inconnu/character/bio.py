@@ -4,6 +4,7 @@ import asyncio
 
 import discord
 import validators
+from discord.ext import pages
 
 import inconnu
 from logger import Logger
@@ -40,8 +41,8 @@ async def show_biography(ctx, character, player, ephemeral=False):
     character = await haven.fetch()
 
     if character.has_biography:
-        embed = __biography_embed(character, haven.owner)
-        await ctx.respond(embed=embed, ephemeral=ephemeral)
+        paginator = __biography_paginator(ctx, character, haven.owner)
+        await paginator.respond(ctx.interaction, ephemeral=ephemeral)
     else:
         command = f"`/character profile edit:{character.name}`"
         await ctx.respond(
@@ -56,10 +57,17 @@ def _has_profile(character):
         raise inconnu.errors.CharacterError(f"{character.name} doesn't have a profile!")
 
 
-def __biography_embed(character, owner):
+def __biography_paginator(ctx, character, owner):
     """Display the biography in an embed."""
-    embed = discord.Embed(title="Biography", url=inconnu.profile_url(character.id))
-    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(owner))
+    embed = inconnu.utils.VCharEmbed(
+        ctx,
+        character,
+        owner,
+        title="Biography",
+        url=inconnu.profile_url(character.id),
+        author_name=character.name,
+        show_thumbnail=False,
+    )
 
     if character.biography:
         embed.add_field(name="History", value=character.biography or "*Not set.*", inline=False)
@@ -70,10 +78,25 @@ def __biography_embed(character, owner):
             inline=False,
         )
 
-    if character.profile_image_url.startswith("https://"):
-        embed.set_image(url=character.profile_image_url)
+    embeds = []
+    if character.image_urls:
+        for image in character.image_urls:
+            if image.startswith("https://"):
+                embed_copy = embed.copy()
+                embed_copy.set_image(url=image)
+                embeds.append(embed_copy)
 
-    return embed
+    if not embeds:
+        # There weren't any valid images, so just use the original embed
+        embeds.append(embed)
+
+    if len(embeds) > 1:
+        paginator = pages.Paginator(embeds, loop_pages=True, author_check=False)
+    else:
+        # We don't want to show useless buttons with only 1 page
+        paginator = pages.Paginator(embeds, show_disabled=False, show_indicator=False)
+
+    return paginator
 
 
 class _CharacterBio(discord.ui.Modal):
@@ -103,36 +126,16 @@ class _CharacterBio(discord.ui.Modal):
                 required=False,
             )
         )
-        self.add_item(
-            discord.ui.InputText(
-                label="Image URL",
-                placeholder="Will be publicly shown. Must end in .jpg, .png, etc.",
-                value=character.profile_image_url,  # TODO: Remove!
-                required=False,
-            )
-        )
 
     async def callback(self, interaction: discord.Interaction):
         """Finalize the modal."""
-        biography = self.children[0].value
-        description = self.children[1].value
-        image_url = self.children[2].value
+        biography = inconnu.utils.clean_text(self.children[0].value)
+        description = inconnu.utils.clean_text(self.children[1].value)
 
-        tasks = [
-            self.character.set_biography(biography.strip()),
-            self.character.set_description(description.strip()),
-        ]
-
-        message = f"Edited **{self.character.name}'s** biography!"
-
-        if validators.url(image_url):
-            tasks.append(self.character.add_image_url(image_url))
-        else:
-            tasks.append(self.character.add_image_url(""))
-            if image_url:
-                # We don't want to pester them if they entered nothing
-                Logger.debug("CHARACTER PROFILE: Image URL invalid: %s", image_url)
-                message += " Your image URL isn't valid and wasn't saved."
-
-        tasks.append(interaction.response.send_message(message, ephemeral=True))
-        await asyncio.gather(*tasks)
+        await asyncio.gather(
+            self.character.set_biography(biography),
+            self.character.set_description(description),
+            interaction.response.send_message(
+                f"Edited **{self.character.name}'s** biography!", ephemeral=True
+            ),
+        )

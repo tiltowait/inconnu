@@ -356,19 +356,19 @@ class VChar:
     def image_urls(self) -> list[str]:
         """The character's images."""
         profile = self._params.get(_Properties.PROFILE, {})
-        return profile.get(_Properties.IMAGES, [""]).copy()
+        return profile.get(_Properties.IMAGES, []).copy()
 
     @property
     def profile_image_url(self) -> str:
         """Get the URL of the first image."""
         profile = self._params.get(_Properties.PROFILE, {})
-        images = profile.get(_Properties.IMAGES, [""])
+        images = profile.get(_Properties.IMAGES, [])
         return images[0] if images else ""
 
     def random_image_url(self) -> str:
         """Get a random image URL."""
         profile = self._params.get(_Properties.PROFILE, {})
-        images = profile.get(_Properties.IMAGES, [""])
+        images = profile.get(_Properties.IMAGES, [])
 
         Logger.debug("VCHAR: Random URL from %s", images)
         return random.choice(images) if images else ""
@@ -376,8 +376,8 @@ class VChar:
     async def add_image_url(self, new_image_url: str):
         """Set the character's image URL."""
         new_profile = self._params.get(_Properties.PROFILE, {})
+        images = new_profile.get(_Properties.IMAGES, [])
 
-        images = new_profile[_Properties.IMAGES]
         if new_image_url in images:
             Logger.debug("VCHAR: Attempted to add duplicate image: %s", new_image_url)
         else:

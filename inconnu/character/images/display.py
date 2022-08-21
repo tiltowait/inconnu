@@ -26,7 +26,7 @@ async def display_images(
         owner=player,
         tip="`/character images` `character:CHARACTER` `player:PLAYER`",
         char_filter=_has_image,
-        errmsg="None of your characters have any images!",
+        errmsg="None of your characters have any images! Upload via `/character image upload`.",
         help=__HELP_URL,
     )
     character = await haven.fetch()
@@ -38,9 +38,12 @@ async def display_images(
 def _has_image(character):
     """Raises an error if the character doesn't have an image."""
     for image in character.image_urls:
+        # We need to make sure the image isn't an empty string.
         if image:
             return
-    raise inconnu.errors.CharacterError(f"{character.name} has no images set!")
+    raise inconnu.errors.CharacterError(
+        f"{character.name} doesn't have any images! Upload via `/character image upload`."
+    )
 
 
 class ImagePaginator(pages.Paginator):
@@ -56,12 +59,15 @@ class ImagePaginator(pages.Paginator):
             self.embeds,
             loop_pages=True,
             author_check=False,
-            custom_view=_DeleteImager(character.user, self._delete_image),
+            custom_view=_DeleteImageView(character.user, self._delete_image),
         )
 
     async def _delete_image(self, interaction: discord.Interaction):
         """Delete the image."""
         del self.embeds[self.current_page]
+        image_url = self.character.image_urls[self.current_page]
+        Logger.info("IMAGES: Removing %s from %s", image_url, self.character.name)
+
         if self.embeds:
             await self.update(
                 pages=self.embeds,
@@ -85,6 +91,15 @@ class ImagePaginator(pages.Paginator):
             self.stop()
             self.custom_view.stop()
 
+        # Now that we've updated the display, do the actual work of removing
+        # the images from both S3 and the VChar object. Since the image might
+        # be an unmanaged URL, we modify the character outside of the if
+        # statement.
+        await self.character.remove_image_url(self.current_page)
+
+        if s3.is_managed_url(image_url):
+            await s3.delete_file(image_url)
+
     def _generate_pages(self):
         """Generate the pages."""
         pages_ = []
@@ -93,7 +108,6 @@ class ImagePaginator(pages.Paginator):
             embed = inconnu.utils.VCharEmbed(
                 self.ctx, self.character, self.owner, show_thumbnail=False
             )
-            # embed.set_thumbnail(url=embed.author.icon_url)
             embed.set_image(url=image)
             embed.set_footer(
                 text=(
@@ -107,7 +121,7 @@ class ImagePaginator(pages.Paginator):
         return pages_
 
 
-class _DeleteImager(ReportingView):
+class _DeleteImageView(ReportingView):
     """A View that tells its parent to delete images."""
 
     def __init__(self, owner, callback, *args, **kwargs):
@@ -125,35 +139,3 @@ class _DeleteImager(ReportingView):
             )
         else:
             await self.callback(interaction)
-
-
-class _DeleteImageView(ReportingView):
-    """A view for deleting character images."""
-
-    def __init__(self, character, image_index, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.character = character
-        self.image_index = image_index
-        self.image_url = character.image_urls[image_index]
-
-        if not self.image_url.startswith(s3.BASE_URL):
-            Logger.debug("IMAGES: %s is not a managed URL", self.image_url)
-            self.disable_all_items()
-
-    @discord.ui.button(label="Delete Image", style=discord.ButtonStyle.danger)
-    async def delete_image(self, _, interaction: discord.Interaction):
-        """Delete the image."""
-        object_name = self.image_url.replace(s3.BASE_URL, "")
-        Logger.info("IMAGES: Deleting %s", object_name)
-
-        # We don't have the paginator object to modify its contents, so let's
-        # just edit the embed instead.
-        embed = interaction.message.embeds[0]
-        embed.set_image(url="")
-        embed.description = "**Image deleted.** Run `/character images` again to refresh!"
-        embed.set_footer(text=discord.Embed.Empty)
-
-        await self.character.remove_image_url(self.image_index)
-        await interaction.response.edit_message(embed=embed, view=None)
-        await s3.delete_file(self.image_url)
-        self.stop()

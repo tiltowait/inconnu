@@ -50,6 +50,7 @@ async def display_images(
             )
         )
 
+    Logger.info("IMAGES: Found %s images for %s", len(pages_), character.name)
     paginator = pages.Paginator(pages_, loop_pages=True)
     await paginator.respond(ctx.interaction)
 
@@ -71,7 +72,7 @@ class _DeleteImageView(ReportingView):
         self.image_url = image_url
 
         if not image_url.startswith(s3.BASE_URL):
-            Logger.debug("IMAGES: %s is not an S3 URL", image_url)
+            Logger.debug("IMAGES: %s is not a managed URL", image_url)
             self.disable_all_items()
 
     @discord.ui.button(label="Delete Image", style=discord.ButtonStyle.danger)

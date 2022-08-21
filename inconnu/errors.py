@@ -1,10 +1,15 @@
 """Package-wide errors."""
 
 from discord.ext import commands
+from discord.ext.commands import CheckFailure
 
 
 class NotPremium(commands.CommandError):
     """Error for users who are not premium supporters."""
+
+
+class LockdownError(CheckFailure):
+    """An exception raised if the bot is on lockdown."""
 
 
 class InconnuError(Exception):

@@ -4,6 +4,7 @@
 import discord
 from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
+from pymongo import DeleteOne
 
 import inconnu
 from logger import Logger
@@ -29,7 +30,7 @@ class LocationChangeModal(discord.ui.Modal):
                 label="Temporary Effects",
                 placeholder="Temporary effects relevant to the scene",
                 value=header.embeds[0].footer.text,
-                max_length=100,
+                max_length=512,
                 required=False,
             )
         )
@@ -80,6 +81,8 @@ async def _header_bol_options(ctx):
     try:
         character = await inconnu.char_mgr.fetchone(guild, user, charid)
 
+        if character.is_thin_blood:
+            return [OptionChoice("N/A - Thin-Blood", -1)]
         if character.is_vampire:
             return [
                 OptionChoice("Yes", 1),
@@ -95,13 +98,10 @@ async def _header_bol_options(ctx):
 class HeaderCog(commands.Cog):
     """A cog with header-related commands, including context menu commands."""
 
-    # For now, headers are only allowed in the dev guild and Cape Town by Night
-    HEADER_DEBUG_GUILDS = [826628660450689074, 676333549720174605]
-
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command(debug_guilds=HEADER_DEBUG_GUILDS)
+    @slash_command()
     async def header(
         self,
         ctx: discord.ApplicationContext,
@@ -115,7 +115,7 @@ class HeaderCog(commands.Cog):
         location: Option(str, "THIS POST ONLY: Where the scene is taking place", required=False),
         merits: Option(str, "THIS POST ONLY: Obvious/important merits", required=False),
         flaws: Option(str, "THIS POST ONLY: Obvious/important flaws", required=False),
-        temporary: Option(str, "THIS POST ONLY: Temporary affects", required=False),
+        temporary: Option(str, "THIS POST ONLY: Temporary effects", required=False),
     ):
         """Display your character's RP header."""
         await inconnu.header.show_header(
@@ -130,7 +130,7 @@ class HeaderCog(commands.Cog):
 
     header_update = SlashCommandGroup("update", "Update commands")
 
-    @header_update.command(name="header", debug_guilds=HEADER_DEBUG_GUILDS)
+    @header_update.command(name="header")
     async def update_header(
         self,
         ctx: discord.ApplicationContext,
@@ -148,7 +148,7 @@ class HeaderCog(commands.Cog):
         """Change an RP header's location."""
         if message.author == self.bot.user:
             # Make sure we have a header
-            record = await inconnu.header_col.find_one({"message": message.id})
+            record = await inconnu.db.headers.find_one({"message": message.id})
             if record is not None:
                 # Make sure we are allowed to update it
                 owner = record["character"]["user"]
@@ -182,7 +182,7 @@ class HeaderCog(commands.Cog):
     async def delete_rp_header(self, ctx, message: discord.Message):
         """Delete an RP header."""
         if message.author == self.bot.user:
-            record = await inconnu.header_col.find_one({"message": message.id})
+            record = await inconnu.db.headers.find_one({"message": message.id})
             if record is not None:
                 # Make sure we are allowed to delete it
                 owner = record["character"]["user"]
@@ -207,6 +207,25 @@ class HeaderCog(commands.Cog):
             await ctx.respond("This is not an RP header.", ephemeral=True)
 
     @commands.Cog.listener()
+    async def on_raw_bulk_message_delete(self, payload):
+        """Bulk delete headers."""
+        raw_ids = payload.message_ids
+        deletions = []
+
+        for message in payload.cached_messages:
+            raw_ids.discard(message.id)
+            if message.author == self.bot.user:
+                Logger.debug("HEADER: Adding potential header message to deletion queue")
+                deletions.append(DeleteOne({"message": message.id}))
+
+        for message_id in raw_ids:
+            Logger.debug("HEADER: Blindly adding potential header message to deletion queue")
+            deletions.append(DeleteOne({"message": message_id}))
+
+        Logger.debug("HEADER: Deleting %s potential header messages", len(deletions))
+        await inconnu.db.headers.bulk_write(deletions)
+
+    @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
         """Remove a header record."""
         # We only have a raw message event, which may not be in the message
@@ -217,11 +236,13 @@ class HeaderCog(commands.Cog):
             # Got a cached message, so we can be a little more efficient and
             # only call the database if it belongs to the bot
             if message.author == self.bot.user:
-                await inconnu.header_col.delete_one({"message": message.id})
+                Logger.debug("HEADER: Deleting possible header message")
+                await inconnu.db.headers.delete_one({"message": message.id})
         else:
             # The message isn't in the cache; blindly delete the record
             # if it exists
-            await inconnu.header_col.delete_one({"message": raw_message.message_id})
+            Logger.debug("HEADER: Blindly deleting potential header record")
+            await inconnu.db.headers.delete_one({"message": raw_message.message_id})
 
 
 def setup(bot):

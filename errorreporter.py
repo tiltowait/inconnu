@@ -63,6 +63,23 @@ class ErrorReporter:
         if isinstance(error, inconnu.errors.NotPremium):
             await respond("You must be a premium supporter to use this feature.", ephemeral=True)
             return
+        if isinstance(error, commands.NotOwner):
+            await respond(
+                f"Sorry, only {ctx.bot.user.mention}'s owner may issue this command!",
+                ephemeral=True,
+            )
+            return
+        if isinstance(error, inconnu.errors.LockdownError):
+            timestamp = inconnu.gen_timestamp(ctx.bot.lockdown, "R")
+            err = f"{ctx.bot.user.mention} is undergoing maintenance {timestamp}."
+            embed = inconnu.utils.ErrorEmbed(
+                ctx.user,
+                err,
+                title="Command temporarily unavailable",
+                footer="Sorry for any inconvenience.",
+            )
+            await respond(embed=embed, ephemeral=True)
+            return
         if isinstance(error, inconnu.errors.HandledError):
             Logger.debug("REPORTER: Ignoring a HandledError")
             return
@@ -118,8 +135,17 @@ class ErrorReporter:
         else:
             description = "\n".join(traceback.format_exception(error))
 
+        # If we can, we use the command name to try to pinpoint where the error
+        # took place. The stack trace usually makes this clear, but not always!
+        if isinstance(ctx, discord.ApplicationContext):
+            command_name = ctx.command.qualified_name.upper()
+        else:
+            command_name = "INTERACTION"
+
+        error_name = type(error).__name__
+
         embed = discord.Embed(
-            title=type(error).__name__,
+            title=f"{command_name}: {error_name}",
             description=description,
             color=0xFF0000,
             timestamp=discord.utils.utcnow(),

@@ -7,6 +7,7 @@ import discord
 from discord.ui import Button, View
 
 import inconnu
+from logger import Logger
 
 from .. import common
 from ..misc import rouse
@@ -57,7 +58,7 @@ async def roll(ctx, syntax: str, character=None):
             parameters.append(difficulty or macro.difficulty)
 
             try:
-                outcome = perform_roll(character, parameters)
+                outcome = await perform_roll(character, parameters)
             except inconnu.errors.TraitNotFoundError as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
                 await common.present_error(ctx, msg, character=character.name)
@@ -88,6 +89,9 @@ async def roll(ctx, syntax: str, character=None):
             await common.present_error(
                 ctx, f"Your `{macro.name}` macro is empty!", character=character.name
             )
+        elif macro.name.lower() == "bol":
+            Logger.info("VM: %s's macro mimics Blush of Life", character.name)
+            await character.set_blush(1)
 
     except (ValueError, SyntaxError):
         err = f"**Unknown syntax:** `{syntax}`"

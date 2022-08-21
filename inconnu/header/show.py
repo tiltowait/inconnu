@@ -28,10 +28,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
     header.temp = kwargs["temp"] or header.temp
 
     # Title should not have a trailing "•" if location is empty
-    title = [character.name]
-    if character.is_vampire and header.blush != -1:
-        # Only vampires can blush
-        title.append("Blushed" if header.blush else "Not Blushed")
+    title = [character.name, inconnu.header.blush_text(character, header.blush)]
 
     if header.location:
         title.append(header.location)
@@ -57,7 +54,8 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
     description_.append(" • ".join(trackers))
 
     embed = discord.Embed(
-        title=" • ".join(title),
+        # Ensure we don't exceed the title limit
+        title=inconnu.header.header_title(*title)[:256],
         description="\n".join(description_),
         url=inconnu.profile_url(character.id),
     )
@@ -73,7 +71,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         message = resp
 
     # Register the header in the database
-    await inconnu.header_col.insert_one(
+    await inconnu.db.headers.insert_one(
         {
             "character": {
                 "guild": ctx.guild.id,

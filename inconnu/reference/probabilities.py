@@ -20,26 +20,26 @@ __STRATEGIES = {
 
 async def probability(ctx, syntax: str, strategy=None, character=None):
     """Calculate the probabilities surrounding a roll."""
-    if roll.needs_character(syntax):
-        if ctx.guild is None:
-            await ctx.respond("Sorry, you can't use traits in DMs.")
-            return
-
-        syntax = " ".join(syntax.split())
-        haven = inconnu.utils.Haven(
-            ctx,
-            character=character,
-            tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",
-            char_filter=lambda c: roll.RollParser(c, syntax),
-            errmsg=f"None of your characters can roll `{syntax}`.",
-            help=__HELP_URL,
-        )
-        character = await haven.fetch()
-
-    else:
-        character = None
-
     try:
+        if roll.needs_character(syntax):
+            if ctx.guild is None:
+                await ctx.respond("Sorry, you can't use traits in DMs.")
+                return
+
+            syntax = " ".join(syntax.split())
+            haven = inconnu.utils.Haven(
+                ctx,
+                character=character,
+                tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",
+                char_filter=lambda c: roll.RollParser(c, syntax),
+                errmsg=f"None of your characters can roll `{syntax}`.",
+                help=__HELP_URL,
+            )
+            character = await haven.fetch()
+
+        else:
+            character = None
+
         parser = roll.RollParser(character, syntax)
         params = SN(pool=parser.pool, hunger=parser.hunger, difficulty=parser.difficulty)
         probabilities = await __get_probabilities(params, strategy)

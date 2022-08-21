@@ -13,7 +13,7 @@ __MAX_REROLL = 3
 class Roll:
     """A container class that determines the result of a roll."""
 
-    def __init__(self, pool, hunger, difficulty, pool_str=None, syntax=None):
+    def __init__(self, pool, hunger, difficulty, max_hunger=5, pool_str=None, syntax=None):
         """
         Args:
             pool (int): The pool's total size, including hunger
@@ -23,8 +23,8 @@ class Roll:
         """
         self.id = bson.objectid.ObjectId()  # pylint: disable=invalid-name
 
-        if not 0 <= hunger <= 5:
-            raise ValueError(f"Hunger must be between 0 and 5. (Got `{hunger}`.)")
+        if not 0 <= hunger <= max_hunger:
+            raise ValueError(f"Hunger must be between 0 and {max_hunger}. (Got `{hunger}`.)")
 
         if difficulty < 0:
             raise ValueError(f"Difficulty cannot be less than 0. (Got `{difficulty}`.)")

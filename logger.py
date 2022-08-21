@@ -55,14 +55,13 @@ import logging
 import os
 import pathlib
 import sys
+from datetime import datetime
 from functools import partial
 
 import config.logging as config
 
 __all__ = ("Logger", "LOG_LEVELS", "COLORS", "LoggerHistory", "file_log_handler")
 
-
-Logger = None  # pylint: disable=invalid-name
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = list(range(8))
 
@@ -109,6 +108,7 @@ class FileHandler(logging.Handler):
     fd = None
     log_dir = "logs"
     encoding = "utf-8"
+    last_update = datetime.utcnow()
 
     def purge_logs(self):
         """Purge logs which exceed the maximum amount of log files,
@@ -177,6 +177,12 @@ class FileHandler(logging.Handler):
     def _write_message(self, record):
         if FileHandler.fd in (None, False):
             return
+
+        now = datetime.utcnow()
+        if now.day != self.last_update.day:
+            # The day rolled over, so start a new log
+            self.last_update = now
+            self._configure()
 
         msg = self.format(record)
         stream = FileHandler.fd

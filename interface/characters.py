@@ -21,7 +21,12 @@ async def _spc_options(ctx):
 class Characters(commands.Cog, name="Character Management"):
     """Character management commands."""
 
-    _TEMPLATES = ["vampire", "ghoul", "mortal"]
+    _TEMPLATES = [
+        OptionChoice("Vampire", "vampire"),
+        OptionChoice("Ghoul", "ghoul"),
+        OptionChoice("Mortal", "mortal"),
+        OptionChoice("Thin-Blood", "thinblood"),
+    ]
 
     @commands.user_command(name="Stats")
     async def user_characters(self, ctx, member):
@@ -32,6 +37,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="create")
     @commands.guild_only()
+    @inconnu.utils.not_on_lockdown()
     async def character_create(
         self,
         ctx: discord.ApplicationContext,
@@ -171,6 +177,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="delete")
     @commands.guild_only()
+    @inconnu.utils.not_on_lockdown()
     async def character_delete(
         self,
         ctx: discord.ApplicationContext,
@@ -230,28 +237,22 @@ class Characters(commands.Cog, name="Character Management"):
 
     # Convictions
 
-    convictions = character.create_subgroup("convictions", "Character convictions")
-
-    @convictions.command(name="set")
+    @character.command(name="convictions")
     @commands.guild_only()
-    async def character_convictions_set(
+    async def character_convictions(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to look up", required=True),
-    ):
-        """Change or view Convictions."""
-        await inconnu.character.convictions_set(ctx, character)
-
-    @convictions.command(name="show")
-    @commands.guild_only()
-    async def character_convictions_show(
-        self,
-        ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to look up", required=False),
-        player: inconnu.options.player,
+        character: inconnu.options.character("The character to show"),
+        player: Option(
+            discord.Member, "The character's owner (does not work with EDIT)", required=False
+        ),
+        edit: inconnu.options.character("The character whose convictions to set"),
     ):
         """Show a character's Convictions."""
-        await inconnu.character.convictions_show(ctx, character, player, False)
+        if edit is None:
+            await inconnu.character.convictions_show(ctx, character, player, False)
+        else:
+            await inconnu.character.convictions_set(ctx, edit)
 
     @commands.user_command(name="Convictions")
     @commands.guild_only()

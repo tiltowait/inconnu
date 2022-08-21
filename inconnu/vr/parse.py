@@ -69,16 +69,17 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
                 character = await haven.fetch()
                 owner = haven.owner
 
-        except LookupError as err:
+        except (SyntaxError, LookupError) as err:
             await inconnu.utils.error(ctx, err, help=__HELP_URL)
             return
 
     # Attempt to parse the user's roll syntax
     try:
-        outcome = perform_roll(character, syntax)
+        max_hunger = await inconnu.settings.max_hunger(ctx.guild)
+        outcome = await perform_roll(character, syntax, max_hunger)
         await display_outcome(ctx, owner, character, outcome, comment)
 
-    except (SyntaxError, ValueError, inconnu.errors.TraitError, inconnu.errors.HungerInPool) as err:
+    except (SyntaxError, ValueError, inconnu.errors.TraitError, inconnu.errors.RollError) as err:
         log_task = inconnu.log.log_event(
             "roll_error", user=ctx.user.id, charid=getattr(character, "id", None), syntax=raw_syntax
         )
@@ -123,10 +124,10 @@ async def display_outcome(
     await roll_display.display()
 
 
-def perform_roll(character: VChar, syntax):
+async def perform_roll(character: VChar, syntax, max_hunger=5):
     """Public interface for __evaluate_syntax() that returns a Roll."""
     parser = RollParser(character, syntax)
-    return Roll(parser.pool, parser.hunger, parser.difficulty, parser.pool_str, syntax)
+    return Roll(parser.pool, parser.hunger, parser.difficulty, max_hunger, parser.pool_str, syntax)
 
 
 def needs_character(syntax: str):

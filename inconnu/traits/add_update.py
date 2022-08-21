@@ -129,7 +129,7 @@ async def __display_results(ctx, outcome, character: VChar, specialties: bool):
 
         tasks.append(
             inconnu.common.report_update(
-                ctx=ctx, character=character, title=f"{term} Updated", message=msg
+                ctx=ctx, character=character, title=f"{term} Updated", message=msg, color=0xFF9400
             )
         )
 

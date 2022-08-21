@@ -4,7 +4,7 @@
 import datetime
 from typing import Optional
 
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, UpdateOne
 
 import inconnu
 
@@ -41,9 +41,13 @@ async def toggle_roll_stats(message: int) -> bool:
     return None
 
 
-async def roll_message_deleted(message: int):
-    """Remove a roll from stats calculation."""
-    await inconnu.db.rolls.update_one({"message": message}, {"$set": {"use_in_stats": False}})
+async def roll_message_deleted(*message_ids):
+    """Remove a set of rolls from stats calculation."""
+    updates = []
+    for message_id in message_ids:
+        updates.append(UpdateOne({"message": message_id}, {"$set": {"use_in_stats": False}}))
+
+    await inconnu.db.rolls.bulk_write(updates)
 
 
 async def guild_joined(guild):

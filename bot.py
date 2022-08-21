@@ -11,22 +11,88 @@ from discord.ext import tasks
 import config.logging
 import inconnu
 import s3
+from config import DEBUG_GUILDS
 from errorreporter import reporter
 from logger import Logger
 
-# Check if we're in dev mode
-if (_debug_guilds := os.getenv("DEBUG")) is not None:
-    debug_guilds = [int(g) for g in _debug_guilds.split(",")]
-    Logger.info("BOT: Debugging on %s", debug_guilds)
-else:
-    debug_guilds = None
+
+class InconnuBot(discord.Bot):
+    """Adds minor functionality over the superclass. All commands in cogs."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.persistent_views_added = False
+        self.ready = False
+        self.welcomed = False
+        self.lockdown = None
+        self.wizards = 0
+        self.motd = None
+        self.motd_given = set()
+        Logger.info("BOT: Instantiated")
+
+    def set_motd(self, embed: discord.Embed | None):
+        """Set the MOTD embed."""
+        self.motd = embed
+        self.motd_given = set()
+
+    async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
+        """Look up a guild in the guild cache or fetches if not found."""
+        if guild := self.get_guild(guild_id):
+            return guild
+        Logger.debug("BOT: Guild %s not found in cache; attempting fetch", guild_id)
+        return await self.fetch_guild(guild_id)
+
+    async def on_interaction(self, interaction: discord.Interaction):
+        """Check whether the bot is ready before allowing the interaction to go through."""
+        if not self.ready:
+            err = f"{self.user.mention} is currently restarting. This might take a few minutes."
+            await inconnu.respond(interaction)(err, ephemeral=True)
+        else:
+            await self.process_application_commands(interaction)
+
+    async def on_application_command(self, ctx: discord.ApplicationContext):
+        """General processing after application commands."""
+        # If a user specifies a character but only has one, we want to inform
+        # them it's unnecessary so they don't keep doing it.
+        options = inconnu.utils.raw_command_options(ctx.interaction)
+        if "character" in options and "player" not in options:
+            # Some commands do, in fact, need the character parameter
+            if ctx.command.qualified_name not in {
+                "character bio edit",
+                "character delete",
+                "experience remove entry",
+                "experience award",
+                "experience deduct",
+                "update header",
+                "transfer",
+            }:
+                num_chars = await inconnu.char_mgr.character_count(ctx.guild.id, ctx.user.id)
+                if num_chars == 1:
+                    # The user might have been using an SPC, so let's grab that
+                    # character and double-check before yelling at them.
+                    character = await inconnu.char_mgr.fetchone(
+                        ctx.guild, ctx.user, options["character"]
+                    )
+                    if character.is_pc:
+                        await ctx.respond(
+                            (
+                                "**Tip:** You only have one character, so you don't need "
+                                f"the `character` option for `/{ctx.command.qualified_name}`."
+                            ),
+                            ephemeral=True,
+                        )
+
+        if self.motd:
+            if ctx.user.id not in self.motd_given:
+                Logger.debug("MOTD: Showing MOTD to %s#%s", ctx.user.name, ctx.user.discriminator)
+                await asyncio.sleep(1)
+                await ctx.respond(embed=self.motd, ephemeral=True)
+                self.motd_given.add(ctx.user.id)
 
 
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True)
-bot = discord.Bot(intents=intents, debug_guilds=debug_guilds)
-bot.persistent_views_added = False
-bot.welcomed = False
+bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
 
 # General Events
 
@@ -34,31 +100,33 @@ bot.welcomed = False
 @bot.event
 async def on_ready():
     """Schedule a task to perform final setup."""
-    task = bot.loop.create_task(finish_setup())
-    await task
-    await __set_presence()
-
-
-async def finish_setup():
-    """Print login message and perform final setup."""
-    if bot.welcomed:
-        return
+    await inconnu.emojis.load(bot)
+    bot.ready = True
+    Logger.info("BOT: Accepting commands")
 
     await bot.wait_until_ready()
-    bot.welcomed = True
+    if not bot.welcomed:
+        Logger.info("BOT: Internal cache built")
+        Logger.info("BOT: Logged in as %s!", str(bot.user))
+        Logger.info("BOT: Playing on %s servers", len(bot.guilds))
+        Logger.info("BOT: %s", discord.version_info)
+        Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
 
-    Logger.info("BOT: Logged in as %s!", str(bot.user))
-    Logger.info("BOT: Playing on %s servers", len(bot.guilds))
-    Logger.info("BOT: %s", discord.version_info)
-    Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
+        server_info = await inconnu.db.server_info()
+        database = os.environ["MONGO_DB"]
+        Logger.info("MONGO: Version %s, using %s database", server_info["version"], database)
 
-    # Schedule tasks
-    cull_inactive.start()
-    upload_logs.start()
+        # Schedule tasks
+        cull_inactive.start()
+        upload_logs.start()
 
-    # Final prep
-    inconnu.char_mgr.bot = bot
-    reporter.prepare_channel(bot)
+        # Final prep
+        inconnu.char_mgr.bot = bot
+        reporter.prepare_channel(bot)
+        bot.welcomed = True
+
+    # We always want to do these regardless of welcoming or not
+    await __set_presence()
     Logger.info("BOT: Ready")
 
 
@@ -117,7 +185,7 @@ async def cull_inactive():
     await inconnu.culler.cull()
 
 
-@tasks.loop(minutes=5)
+@tasks.loop(hours=1)
 async def upload_logs():
     """Upload logs to S3."""
     if not config.logging.upload_to_aws:
@@ -149,7 +217,7 @@ def setup():
     for filename in os.listdir("./interface"):
         if filename[0] != "_" and filename.endswith(".py"):
             Logger.debug("COGS: Loading %s", filename)
-            bot.load_extension(f"interface.{filename[:-3]}")
+            bot.load_extension(f"interface.{filename[:-3]}", store=False)
 
     if (topgg_token := os.getenv("TOPGG_TOKEN")) is not None:
         Logger.info("BOT: Establishing top.gg connection")

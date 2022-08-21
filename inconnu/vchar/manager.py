@@ -3,23 +3,28 @@
 import datetime
 
 import inconnu
+from logger import Logger
 
 
 class CharacterManager:
     """A class for maintaining a local copy of characters."""
 
     def __init__(self):
+        Logger.info("CHARACTER MANAGER: Initialized")
         self.all_fetched = {}  # [user_id: bool]
         self.user_cache = {}  # [guild: [user: [VChar]]]
         self.id_cache = {}  # [char_id: VChar]
 
         # Set after construction. Used to check whether a user is an admin
         self.bot = None
+        self.collection = inconnu.db.characters
 
-    @property
-    def collection(self):
-        """Get the database's characters collection."""
-        return inconnu.db.characters
+    def purge(self):
+        """Purge the cache."""
+        Logger.info("CHARACTER MANAGER: Purging the cache")
+        self.all_fetched = {}  # [user_id: bool]
+        self.user_cache = {}  # [guild: [user: [VChar]]]
+        self.id_cache = {}  # [char_id: VChar]
 
     async def fetchone(self, guild: int, user: int, name: str):
         """
@@ -81,7 +86,7 @@ class CharacterManager:
 
         # Need to build the cache
         cursor = self.collection.find({"guild": guild, "user": user})
-        cursor.collation({"locale": "en", "strength": 2}).sort("name")
+        # cursor.collation({"locale": "en", "strength": 2}).sort("name")
 
         characters = []
         async for char_params in cursor:
@@ -95,10 +100,22 @@ class CharacterManager:
                 # happen, but we'll put it here just in case
                 characters.append(self.id_cache[character.id])
 
+        # Sort them, since serverless doesn't allow collation
+        characters = sorted(characters, key=lambda c: c.name.casefold())
+
         self.user_cache[key] = characters
         self.all_fetched[key] = True
 
+        Logger.debug(
+            "CHARACTER MANAGER: Found %s characters (%s on %s)", len(characters), user, guild
+        )
+
         return characters
+
+    async def character_count(self, guild: int, user: int) -> int:
+        """Get a count of the user's characters in the server."""
+        chars = await self.fetchall(guild, user)
+        return len(chars)
 
     async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
         """Determine whether a user already has a named character."""

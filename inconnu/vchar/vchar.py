@@ -2,6 +2,7 @@
 # pylint: disable=too-many-public-methods, too-many-arguments, c-extension-no-member
 
 import asyncio
+import bisect
 import copy
 import datetime
 import math
@@ -38,6 +39,7 @@ class _Properties(str, Enum):
     IMAGES = "images"
     CONVICTIONS = "convictions"
     RP_HEADER = "header"
+    MACROS = "macros"
 
 
 class VChar:
@@ -77,6 +79,10 @@ class VChar:
             "log": {"created": datetime.datetime.utcnow()},
         }
 
+        if char_params["splat"] == "thinblood":
+            Logger.debug("VCHAR CREATE: Fixing thinblood -> thin-blood")
+            char_params["splat"] = "thin-blood"
+
         if kwargs:
             raise ValueError(f"Received unexpected values: {kwargs}")
 
@@ -114,7 +120,7 @@ class VChar:
         """Set a field's value, asynchronously."""
         self._params[field] = value
         await self._async_collection.update_one(self.find_query, {"$set": {field: value}})
-        Logger.debug("VCHAR: Setting %s to %s", self.name, field, value)
+        Logger.debug("VCHAR: %s: Setting %s to %s", self.name, field, value)
 
     @property
     def raw(self):
@@ -151,6 +157,8 @@ class VChar:
 
     async def set_splat(self, new_splat):
         """Set the character's splat."""
+        if new_splat == "thinblood":
+            new_splat = "thin-blood"
         await self._async_set_property(_Properties.SPLAT, new_splat)
 
     @property
@@ -397,18 +405,38 @@ class VChar:
     def rp_header(self) -> SimpleNamespace:
         """Get the character's RP header."""
         header_ = defaultdict(str, self._params.get(_Properties.RP_HEADER, {}).copy())
+        if self.is_thin_blood:
+            default_blush = -1
+        elif self.is_vampire:
+            default_blush = 0
+        else:
+            default_blush = -1
 
         return SimpleNamespace(
-            blush=header_["blush"],
+            blush=header_["blush"] or default_blush,
             location=header_["location"],
             merits=header_["merits"],
             flaws=header_["flaws"],
             temp=header_["temp"],
         )
 
-    async def set_rp_header(self, new_header: Dict[str, str]):
+    async def set_rp_header(self, new_header: Dict[str, str | int]):
         """Set the character's RP header."""
         await self._async_set_property(_Properties.RP_HEADER, new_header)
+
+    async def set_blush(self, new_blush: int):
+        """Toggle the character's Blush of Life."""
+        header = self.rp_header
+        if header.blush == new_blush:
+            Logger.debug("VCHAR: %s's Blush of Life (%s) is unchanged", self.name, new_blush)
+            return
+        if header.blush >= 0:
+            # We only want to update blush of full vampires
+            header.blush = new_blush
+            await self.set_rp_header(vars(header))
+            Logger.debug("VCHAR: Setting %s's Blush of Life to %s", self.name, new_blush)
+        else:
+            Logger.warning("VCHAR: Can't set Blush of Life; %s is not a vampire", self.name)
 
     # Derived attributes
 
@@ -453,7 +481,12 @@ class VChar:
     @property
     def is_vampire(self):
         """Whether the character is a vampire."""
-        return self.splat == "vampire"
+        return self.splat in {"vampire", "thin-blood"}
+
+    @property
+    def is_thin_blood(self):
+        """Whether the character is thin-blooded."""
+        return self.splat == "thin-blood"
 
     @property
     def surge(self):
@@ -685,21 +718,33 @@ class VChar:
             "hunt": hunt,
             "comment": comment,
         }
+
+        # Get the insertion point for the new macro, which we will then use
+        # for the database insertion as well to keep everything sorted
+        _macros = self._params.setdefault("macros", [])
+
+        # bisect.bisect()'s key parameter doesn't behave the same as sorted.
+        # Instead, the function expects the element to be added to already
+        # have the key function applied, and then it applies the eky function
+        # to the other elements. Thus, we define the lambda separately so
+        # we don't have to type it twice.
+        fold = lambda m: m["name"].casefold()
+
+        insertion = bisect.bisect(_macros, fold(macro_doc), key=fold)
+        _macros.insert(insertion, macro_doc)
+        Logger.debug("VCHAR: New macro inserted at index %s", insertion)
+
         await self._async_collection.update_one(
             self.find_query,
             {
                 "$push": {
                     "macros": {
                         "$each": [macro_doc],
-                        "$sort": {"name": 1},
+                        "$position": insertion,
                     },
                 }
             },
-            collation={"locale": "en"},
         )
-        _macros = self._params.setdefault("macros", [])
-        _macros.append(macro_doc)
-        self._params["macros"] = sorted(_macros, key=lambda s: s["name"].casefold())
 
     async def update_macro(self, search: str, update: dict):
         """Update a macro."""
@@ -707,25 +752,21 @@ class VChar:
         update_doc = {f"macros.{index}.{k}": v for k, v in update.items()}
 
         await self._async_collection.update_one(self.find_query, {"$set": update_doc})
-        self._params["macros"][index].update(update)
-        name = self._params["macros"][index]["name"]
+        self._params[_Properties.MACROS][index].update(update)
+        name = self._params[_Properties.MACROS][index]["name"]
 
         if "name" in update:
-            # Sort both the db and the cache
-            _macros = self._params["macros"]
-            self._params["macros"] = sorted(_macros, key=lambda s: s["name"].casefold())
-            await self._async_collection.update_one(
-                self.find_query,
-                {
-                    "$push": {
-                        "macros": {
-                            "$each": [],
-                            "$sort": {"name": 1},
-                        }
-                    }
-                },
-                collation={"locale": "en"},
-            )
+            # Sort both the db and the cache. We *could* remove the macro, find
+            # its new insertion point, insert it, then pull it from the db and
+            # re-insert it there, but that takes two API calls and just isn't
+            # worth it, so instead we simply reset the entire macro array. Most
+            # users only have a couple of macros; the most as of this writing
+            # is only twelve.
+            _macros = self._params[_Properties.MACROS]
+            _macros = sorted(_macros, key=lambda s: s["name"].casefold())
+            self._params[_Properties.MACROS] = _macros
+
+            await self._async_collection.update_one(self.find_query, {"$set": {"macros": _macros}})
 
         return name
 

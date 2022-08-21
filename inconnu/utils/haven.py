@@ -186,7 +186,8 @@ class Haven:  # pylint: disable=too-few-public-methods
                     )
                 )
         else:
-            options = [(char.name, char.id) for char in self.possibilities.values()]
+            options = [(char.name, self.uuid + char.id) for char, _ in self.possibilities.values()]
+            Logger.debug("HAVEN: Too many characters for buttons: %s", options)
             components = [inconnu.views.Dropdown("Select a character", *options)]
 
         view = inconnu.views.BasicSelector(*components)

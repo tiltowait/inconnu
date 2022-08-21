@@ -3,6 +3,7 @@
 import asyncio
 
 import inconnu
+from logger import Logger
 
 __HELP_URL = "https://www.inconnu.app/#/additional-commands?id=awakening"
 
@@ -60,6 +61,14 @@ async def awaken(ctx, character=None):
     )
 
     tasks = [character.log("awaken")]
+
+    # If a vampire awakens, we want to turn off its blush
+    if character.is_vampire and not character.is_thin_blood:
+        Logger.debug("AWAKEN: %s is no longer Blushed", character.name)
+        tasks.append(character.set_blush(0))
+    else:
+        Logger.debug("AWAKEN: %s is a mortal or Thin-Blood; header unchanged", character.name)
+
     if character.is_vampire:
         tasks.append(character.log("rouse"))
 

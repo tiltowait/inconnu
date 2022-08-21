@@ -1,19 +1,18 @@
 """character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
 
 import asyncio
-import re
 
 import inconnu
 
 from ...constants import Damage
 from ...vchar import VChar
 
-VALID_SPLATS = ["vampire", "ghoul", "mortal"]
+VALID_SPLATS = ["vampire", "ghoul", "mortal", "thinblood"]
 
 
 async def update_name(character: VChar, new_name: str) -> str:
     """Update the character's name."""
-    if not re.match(r"[A-z_\d]+", new_name):
+    if not inconnu.character.valid_name(new_name):
         raise ValueError("Names may only contain letters, numbers, and underscores.")
     if (name_len := len(new_name)) > 30:
         raise ValueError(f"`{new_name}` is too long by {name_len - 30} characters.")

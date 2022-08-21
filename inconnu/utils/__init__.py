@@ -3,14 +3,26 @@
 import discord
 from discord.ext import commands
 
-import config
 import inconnu
+from config import SUPPORTER_GUILD, SUPPORTER_ROLE
 from inconnu import errors
 from logger import Logger
 
+from .decorators import not_on_lockdown
 from .error import ErrorEmbed, error
 from .haven import Haven
 from .paramparse import parse_parameters
+
+
+def raw_command_options(interaction) -> str:
+    """Get the options in a command as a dict."""
+    options = {}
+    for option in interaction.data.get("options", []):
+        name = option["name"]
+        value = option["value"]
+        options[name] = value
+
+    return options
 
 
 def command_options(interaction) -> str:
@@ -34,7 +46,7 @@ def command_options(interaction) -> str:
 
 def is_supporter(ctx, user: discord.Member = None) -> bool:
     """Returns True if the user invoking the command is a supporter."""
-    support_server = ctx.bot.get_guild(config.supporter_server)
+    support_server = ctx.bot.get_guild(SUPPORTER_GUILD)
     user = user = ctx.user
 
     # First, see if the invoker is on the support server
@@ -42,7 +54,7 @@ def is_supporter(ctx, user: discord.Member = None) -> bool:
         Logger.debug(
             "SUPPORTER: %s#%s is on %s", member.name, member.discriminator, support_server.name
         )
-        if member.get_role(config.supporter_role) is not None:
+        if member.get_role(SUPPORTER_ROLE) is not None:
             Logger.info("SUPPORTER: %s#%s is a supporter", member.name, member.discriminator)
             return True
         Logger.info("SUPPORTER: %s#%s is a not a supporter", member.name, member.discriminator)

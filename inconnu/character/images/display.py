@@ -3,7 +3,6 @@
 from typing import Optional
 
 import discord
-from discord.ext import pages
 
 import inconnu
 import s3
@@ -26,13 +25,14 @@ async def display_images(
         owner=player,
         tip="`/character images` `character:CHARACTER` `player:PLAYER`",
         char_filter=_has_image,
+        allow_lookups=True,
         errmsg="None of your characters have any images! Upload via `/character image upload`.",
         help=__HELP_URL,
     )
     character = await haven.fetch()
 
-    paginator = ImagePaginator(ctx, character, haven.owner)
-    await paginator.respond(ctx.interaction)
+    pager = ImagePager(ctx, character, haven.owner)
+    await pager.respond()
 
 
 def _has_image(character):
@@ -46,37 +46,145 @@ def _has_image(character):
     )
 
 
-class ImagePaginator(pages.Paginator):
-    """A Paginator for displaying character images."""
+class ImagePager(ReportingView):
+    """
+    A display that pages through character images. It features two modes: view
+    and manage. In management mode, the character's owner may delete or promote
+    images. Management mode is only available if the initiating user is the
+    character's owner.
+    """
 
     def __init__(self, ctx, character, owner):
         self.ctx = ctx
         self.character = character
         self.owner = owner
-        self.embeds = self._generate_pages()
+        self.current_page = 0
+        self.management_mode = False
 
-        super().__init__(
-            self.embeds,
-            loop_pages=True,
-            author_check=False,
-            custom_view=_DeleteImageView(character.user, self._delete_image),
+        # Standard paging buttons
+        self.first_button = discord.ui.Button(
+            label="<<", style=discord.ButtonStyle.primary, disabled=True
         )
+        self.first_button.callback = self.first_page
+        self.prev_button = discord.ui.Button(label="<", style=discord.ButtonStyle.danger)
+        self.prev_button.callback = self.previous_page
+        self.indicator = discord.ui.Button(label=self.indicator_label, disabled=True)
+        self.next_button = discord.ui.Button(label=">", style=discord.ButtonStyle.success)
+        self.next_button.callback = self.next_page
+        self.last_button = discord.ui.Button(label=">>", style=discord.ButtonStyle.primary)
+        self.last_button.callback = self.last_page
+
+        self.manage_button = discord.ui.Button(label="Manage", row=1)
+        self.manage_button.callback = self.mode_toggle
+
+        # Management mode buttons
+        self.delete_button = discord.ui.Button(label="Delete", style=discord.ButtonStyle.danger)
+        self.delete_button.callback = self._delete_image
+        self.promote_button = discord.ui.Button(label="Promote", style=discord.ButtonStyle.primary)
+        self.cancel_button = discord.ui.Button(label="Cancel", row=1)
+        self.cancel_button.callback = self.mode_toggle
+
+        super().__init__(timeout=300)
+        self.add_pager_buttons()
+
+    @property
+    def num_pages(self) -> int:
+        """The number of pages in the view."""
+        return len(self.character.image_urls)
+
+    @property
+    def indicator_label(self) -> str:
+        """The label for the page indicator."""
+        return f"{self.current_page + 1}/{self.num_pages}"
+
+    @property
+    def current_image(self) -> str:
+        """The URL of the current image."""
+        return self.character.image_urls[self.current_page]
+
+    def add_pager_buttons(self):
+        """Add the pager buttons."""
+        if self.num_pages > 1:
+            self.add_item(self.first_button)
+            self.add_item(self.prev_button)
+            self.add_item(self.indicator)
+            self.add_item(self.next_button)
+            self.add_item(self.last_button)
+
+        if self.character.user == self.ctx.user.id:
+            self.add_item(self.manage_button)
+
+    def remove_all_items(self):
+        """Remove all buttons."""
+        children = list(self.children)
+        for child in children:
+            self.remove_item(child)
+
+    async def respond(self):
+        """Display the pager."""
+        embed = inconnu.utils.VCharEmbed(self.ctx, self.character, self.owner, show_thumbnail=False)
+        embed.set_footer(text="Upload some with /character image upload.")
+        embed.set_image(url=self.current_image)
+
+        await self.ctx.respond(embed=embed, view=self)
+
+    async def previous_page(self, interaction: discord.Interaction):
+        """Go to the next page."""
+        if self.current_page == 0:
+            await self.goto_page(self.num_pages - 1, interaction)
+        else:
+            await self.goto_page(self.current_page - 1, interaction)
+
+    async def next_page(self, interaction: discord.Interaction):
+        """Go to the next page."""
+        if self.current_page >= self.num_pages - 1:
+            await self.goto_page(0, interaction)
+        else:
+            await self.goto_page(self.current_page + 1, interaction)
+
+    async def first_page(self, interaction: discord.Interaction):
+        """Go to the first page."""
+        await self.goto_page(0, interaction)
+
+    async def last_page(self, interaction: discord.Interaction):
+        """Go to the last page."""
+        await self.goto_page(self.num_pages - 1, interaction)
+
+    async def goto_page(self, page_number: int, interaction: discord.Interaction):
+        """Go to a specific page number."""
+        self.current_page = page_number
+        self.indicator.label = self.indicator_label
+
+        self.first_button.disabled = self.current_page == 0
+        self.last_button.disabled = self.current_page == self.num_pages - 1
+
+        embed = interaction.message.embeds[0]
+        embed.set_image(url=self.current_image)
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    async def mode_toggle(self, interaction: discord.Interaction):
+        """Toggle between management and normal modes."""
+        if self.management_mode:
+            self.remove_all_items()
+            self.add_pager_buttons()
+        else:
+            self.remove_all_items()
+            self.add_item(self.delete_button)
+            # self.add_item(self.promote_button)
+            self.add_item(self.cancel_button)
+
+        self.management_mode = not self.management_mode
+        await interaction.response.edit_message(view=self)
+
+    # Image manipulation
 
     async def _delete_image(self, interaction: discord.Interaction):
-        """Delete the image."""
-        del self.embeds[self.current_page]
-        image_url = self.character.image_urls[self.current_page]
+        """Delete the current image."""
+        image_url = await self.character.remove_image_url(self.current_page)
         Logger.info("IMAGES: Removing %s from %s", image_url, self.character.name)
 
-        if self.embeds:
-            await self.update(
-                pages=self.embeds,
-                loop_pages=True,
-                author_check=False,
-                custom_view=self.custom_view,
-                interaction=interaction,
-            )
-        else:
+        if self.num_pages == 0:
+            Logger.debug("IMAGES: Deleted %s's last image", self.character.name)
             embed = inconnu.utils.VCharEmbed(
                 self.ctx,
                 self.character,
@@ -89,53 +197,21 @@ class ImagePaginator(pages.Paginator):
 
             await interaction.response.edit_message(embed=embed, view=None)
             self.stop()
-            self.custom_view.stop()
-
-        # Now that we've updated the display, do the actual work of removing
-        # the images from both S3 and the VChar object. Since the image might
-        # be an unmanaged URL, we modify the character outside of the if
-        # statement.
-        await self.character.remove_image_url(self.current_page)
+        else:
+            page = min(self.current_page, self.num_pages - 1)
+            await self.goto_page(page, interaction)
 
         if s3.is_managed_url(image_url):
             await s3.delete_file(image_url)
 
-    def _generate_pages(self):
-        """Generate the pages."""
-        pages_ = []
-        for image in self.character.image_urls:
-            Logger.debug("IMAGES: (%s) Making view for %s", self.character.name, image)
-            embed = inconnu.utils.VCharEmbed(
-                self.ctx, self.character, self.owner, show_thumbnail=False
-            )
-            embed.set_image(url=image)
-            embed.set_footer(
-                text=(
-                    "Upload images via /character image upload.\n"
-                    "Users are solely responsible for image content."
-                )
-            )
-            pages_.append(embed)
-
-        Logger.info("IMAGES: Found %s images for %s", len(pages_), self.character.name)
-        return pages_
-
-
-class _DeleteImageView(ReportingView):
-    """A View that tells its parent to delete images."""
-
-    def __init__(self, owner, callback, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.owner = owner
-        self.callback = callback
-
-    @discord.ui.button(label="Delete Image", style=discord.ButtonStyle.danger)
-    async def delete_image(self, _, interaction: discord.Interaction):
-        """Inform the callback of the deletion event."""
-        if interaction.user.id != self.owner:
+    async def interaction_check(self, interaction: discord.Interaction):
+        """Ensure image management safety."""
+        if interaction.user.id == self.character.user:
+            return True
+        if self.management_mode or self.manage_button.custom_id == interaction.data["custom_id"]:
             await interaction.response.send_message(
-                "This character doesn't belong to you!",
-                ephemeral=True,
+                "You may only manage your own characters' images.", ephemeral=True
             )
-        else:
-            await self.callback(interaction)
+            return False
+
+        return True

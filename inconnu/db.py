@@ -5,6 +5,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
+from umongo.frameworks import MotorAsyncIOInstance
 
 load_dotenv()
 
@@ -21,6 +22,8 @@ probabilities = _db.probabilities
 rolls = _db.rolls
 upload_log = _db.upload_log
 users = _db.users
+
+instance = MotorAsyncIOInstance(_db)
 
 
 async def server_info() -> dict[str, Any]:

@@ -16,6 +16,7 @@ from . import (
     log,
     macros,
     misc,
+    models,
     options,
     reference,
     settings,

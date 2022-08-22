@@ -9,5 +9,6 @@ py-cord==2.0.1
 pymongo[srv]==4.2.0
 python-dotenv==0.20.0
 statcord.py==3.1.0
+umongo==3.1.0
 uvicorn==0.18.2
 validators==0.20.0

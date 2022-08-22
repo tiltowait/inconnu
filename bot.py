@@ -10,7 +10,7 @@ from discord.ext import tasks
 import config.logging
 import inconnu
 import s3
-from config import DEBUG_GUILDS
+from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from errorreporter import reporter
 from logger import Logger
 
@@ -48,6 +48,8 @@ class InconnuBot(discord.Bot):
             await inconnu.respond(interaction)(err, ephemeral=True)
         else:
             await self.process_application_commands(interaction)
+
+    # Events
 
     async def on_application_command(self, ctx: discord.ApplicationContext):
         """General processing after application commands."""
@@ -87,6 +89,25 @@ class InconnuBot(discord.Bot):
                 await asyncio.sleep(1)
                 await ctx.respond(embed=self.motd, ephemeral=True)
                 self.motd_given.add(ctx.user.id)
+
+    @staticmethod
+    async def on_member_update(before: discord.Member, after: discord.Member):
+        """Check for supporter status changes."""
+        if before.guild.id != SUPPORTER_GUILD:
+            return
+
+        def is_supporter(member: discord.Member) -> bool:
+            """Check if the member is a supporter."""
+            return member.get_role(SUPPORTER_ROLE) is not None
+
+        if is_supporter(before) and not is_supporter(after):
+            Logger.info("BOT: %s#%s is no longer a supporter", after.name, after.discriminator)
+            await inconnu.db.expired_supporters.insert_one(
+                {"_id": after.id, "timestamp": discord.utils.utcnow()}
+            )
+        elif is_supporter(after) and not is_supporter(before):
+            Logger.info("BOT: %s#%s is now a supporter!", after.name, after.discriminator)
+            await inconnu.db.expired_supporters.delete_one({"_id": after.id})
 
 
 # Set up the bot instance

@@ -13,6 +13,7 @@ _db = _client[os.environ["MONGO_DB"]]
 
 # The collections
 characters = _db.characters
+expired_supporters = _db.expired_supporters
 guilds = _db.guilds
 headers = _db.headers
 log = _db.log

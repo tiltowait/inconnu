@@ -87,14 +87,20 @@ class InconnuBot(discord.Bot):
 
     async def mark_premium_loss(self, member: discord.Member):
         """Mark premium loss in the database."""
-        await inconnu.db.supporters.insert_one(
-            {"_id": member.id, "timestamp": discord.utils.utcnow()}
+        await inconnu.db.supporters.update_one(
+            {"_id": member.id},
+            {"$set": {"_id": member.id, "discontinued": discord.utils.utcnow()}},
+            upsert=True,
         )
         await self.inform_premium_loss(member)
 
     async def mark_premium_gain(self, member: discord.Member):
         """Mark premium gain in the database."""
-        await inconnu.db.supporters.delete_one({"_id": member.id})
+        await inconnu.db.supporters.update_one(
+            {"_id": member.id},
+            {"$set": {"_id": member.id, "discontinued": None}},
+            upsert=True,
+        )
         await self.inform_premium_features(member)
 
     # Events

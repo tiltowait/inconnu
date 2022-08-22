@@ -18,7 +18,7 @@ async def remove_expired_images():
     expired_user_ids = []
     s3_tasks = []
     character_tasks = []
-    async for supporter in inconnu.db.supporters.find({"timestamp": {"$lt": expiration}}):
+    async for supporter in inconnu.db.supporters.find({"discontinued": {"$lt": expiration}}):
         user_id = supporter["_id"]
         expired_user_ids.append(user_id)
         Logger.info("TASK: Removing %s's profile images", user_id)

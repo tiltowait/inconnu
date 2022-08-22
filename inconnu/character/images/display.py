@@ -56,6 +56,7 @@ class ImagePager(ReportingView):
 
     def __init__(self, ctx, character, owner):
         self.ctx = ctx
+        self.message = None
         self.character = character
         self.owner = owner
         self.current_page = 0
@@ -126,7 +127,7 @@ class ImagePager(ReportingView):
         embed.set_footer(text="Upload some with /character image upload.")
         embed.set_image(url=self.current_image)
 
-        await self.ctx.respond(embed=embed, view=self)
+        self.message = await self.ctx.respond(embed=embed, view=self)
 
     async def previous_page(self, interaction: discord.Interaction):
         """Go to the next page."""
@@ -215,3 +216,11 @@ class ImagePager(ReportingView):
             return False
 
         return True
+
+    async def on_timeout(self):
+        """Delete the components."""
+        if self.children:
+            Logger.debug("IMAGES: View timed out; deleting components")
+            await self.message.edit_original_message(view=None)
+        else:
+            Logger.debug("IMAGES: View timed out, but no components")

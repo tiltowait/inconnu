@@ -51,9 +51,14 @@ class InconnuBot(discord.Bot):
             )
             embed.set_footer(text="Thank you for your support!")
             await member.send(embed=embed)
+            Logger.info(
+                "PREMIUM: Informed %s#%s about premium loss", member.name, member.discriminator
+            )
 
         except discord.errors.Forbidden:
-            # Their DMs are closed, and there's nothing we can do about it
+            Logger.info(
+                "PREMIUM: Could not DM %s#%s about premium loss", member.name, member.discriminator
+            )
             pass
 
     async def inform_premium_features(self, member: discord.Member):
@@ -65,9 +70,16 @@ class InconnuBot(discord.Bot):
                 color=discord.Color.green(),
             )
             await member.send(embed=embed)
+            Logger.info(
+                "PREMIUM: Informed %s#%s about premium features", member.name, member.discriminator
+            )
 
         except discord.errors.Forbidden:
-            # Their DMs are closed
+            Logger.info(
+                "PREMIUM: Could not DM %s#%s about premium features",
+                member.name,
+                member.discriminator,
+            )
             pass
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
@@ -154,11 +166,11 @@ class InconnuBot(discord.Bot):
             return member.get_role(SUPPORTER_ROLE) is not None
 
         if is_supporter(before) and not is_supporter(after):
-            Logger.info("BOT: %s#%s is no longer a supporter", after.name, after.discriminator)
+            Logger.info("PREMIUM: %s#%s is no longer a supporter", after.name, after.discriminator)
             await self.mark_premium_loss(after)
 
         elif is_supporter(after) and not is_supporter(before):
-            Logger.info("BOT: %s#%s is now a supporter!", after.name, after.discriminator)
+            Logger.info("PREMIUM: %s#%s is now a supporter!", after.name, after.discriminator)
             await self.mark_premium_gain(after)
 
 

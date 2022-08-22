@@ -15,10 +15,12 @@ async def remove_expired_images():
     Logger.info("TASK: Removing images from expired supporters")
 
     expiration = discord.utils.utcnow() - timedelta(days=7)
+    expired_user_ids = []
     s3_tasks = []
     character_tasks = []
     async for supporter in inconnu.db.expired_supporters.find({"timestamp": {"$lt": expiration}}):
         user_id = supporter["_id"]
+        expired_user_ids.append(user_id)
         Logger.info("TASK: Removing %s's profile images", user_id)
 
         # The cache doesn't have a facility for fetching cross-guild, so we
@@ -42,6 +44,7 @@ async def remove_expired_images():
 
         await asyncio.gather(*s3_tasks)
         await asyncio.gather(*character_tasks)
+        await inconnu.db.expired_supporters.delete_many({"_id": {"$in": expired_user_ids}})
 
         # There is a very rare but potential race condition: a former supporter
         # might have loaded their character between purge begin and end.

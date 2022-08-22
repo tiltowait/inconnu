@@ -36,6 +36,8 @@ async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachmen
     )
     character = await haven.fetch()
 
+    await ctx.defer(ephemeral=True)
+
     original = await download_file(image.url)
     Logger.debug(
         "IMAGES: Downloaded image for %s, size=%s", character.name, os.stat(original).st_size
@@ -49,6 +51,18 @@ async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachmen
     delete_file(webp)
 
     await ctx.respond("Profile image added!", ephemeral=True)
+
+    # We maintain a log of all image uploads to protect ourself against
+    # potential legal claims if someone uploads something illegal
+    await inconnu.db.upload_log.insert_one(
+        {
+            "user": ctx.user.id,
+            "charid": character.object_id,
+            "url": aws_url,
+            "deleted": False,
+            "timestamp": discord.utils.utcnow(),
+        }
+    )
 
 
 def valid_url(url: str) -> bool:

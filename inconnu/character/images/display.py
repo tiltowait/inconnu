@@ -212,6 +212,7 @@ class ImagePager(ReportingView):
 
         if s3.is_managed_url(image_url):
             await s3.delete_file(image_url)
+            await inconnu.db.upload_log.update_one({"url": image_url}, {"$set": {"deleted": True}})
 
     async def interaction_check(self, interaction: discord.Interaction):
         """Ensure image management safety."""

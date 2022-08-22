@@ -18,6 +18,7 @@ headers = _db.headers
 log = _db.log
 probabilities = _db.probabilities
 rolls = _db.rolls
+upload_log = _db.upload_log
 users = _db.users
 
 

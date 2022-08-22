@@ -36,7 +36,10 @@ async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachmen
     )
     character = await haven.fetch()
 
-    await ctx.defer(ephemeral=True)
+    if not ctx.interaction.response.is_done():
+        # If we responded already, there's no chance of timeout; also we can't
+        # defer if we've responded, so ...
+        await ctx.defer(ephemeral=True)
 
     original = await download_file(image.url)
     Logger.debug(

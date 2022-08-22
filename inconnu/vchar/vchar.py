@@ -388,14 +388,16 @@ class VChar:
             images.append(new_image_url)
             await self._async_set_property(_Properties.PROFILE, new_profile)
 
-    async def remove_image_url(self, index: int):
+    async def remove_image_url(self, index: int) -> str:
         """Remove an image URL at a given index."""
         new_profile = self._params.get(_Properties.PROFILE, {})
         images = new_profile[_Properties.IMAGES]
 
-        del images[index]
+        url = images.pop(index)
         await self._async_set_property(_Properties.PROFILE, new_profile)
         Logger.debug("VCHAR: Deleted %s's image at index %s", self.name, index)
+
+        return url
 
     @property
     def has_biography(self):

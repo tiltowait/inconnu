@@ -379,7 +379,7 @@ class VChar:
     async def add_image_url(self, new_image_url: str):
         """Set the character's image URL."""
         new_profile = self._params.get(_Properties.PROFILE, {})
-        images = new_profile.get(_Properties.IMAGES, [])
+        images = new_profile.setdefault(_Properties.IMAGES, [])
 
         if new_image_url in images:
             Logger.debug("VCHAR: Attempted to add duplicate image: %s", new_image_url)

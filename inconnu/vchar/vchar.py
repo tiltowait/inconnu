@@ -356,7 +356,10 @@ class VChar:
     def image_urls(self) -> list[str]:
         """The character's images."""
         profile = self._params.get(_Properties.PROFILE, {})
-        return profile.get(_Properties.IMAGES, []).copy()
+        images = profile.get(_Properties.IMAGES, []).copy()
+
+        # Some older profiles have empty-string images. Filter them out
+        return [image for image in images if image]
 
     @property
     def profile_image_url(self) -> str:

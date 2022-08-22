@@ -153,6 +153,10 @@ class ImagePager(ReportingView):
 
     async def goto_page(self, page_number: int, interaction: discord.Interaction):
         """Go to a specific page number."""
+        if not self.num_pages:
+            await self._display_no_images(interaction)
+            return
+
         self.current_page = page_number
         self.indicator.label = self.indicator_label
 
@@ -162,6 +166,21 @@ class ImagePager(ReportingView):
         embed = interaction.message.embeds[0]
         embed.set_image(url=self.current_image)
         await interaction.response.edit_message(embed=embed, view=self)
+
+    async def _display_no_images(self, interaction: discord.Interaction):
+        """Inform the character has no images if the last image is deleted."""
+        embed = inconnu.utils.VCharEmbed(
+            self.ctx,
+            self.character,
+            self.owner,
+            title="No Images",
+            description=f"**{self.character.name}** has no images!",
+            show_thumbnail=False,
+        )
+        embed.set_footer(text="Upload some with /character image upload.")
+
+        await interaction.response.edit_message(embed=embed, view=None)
+        self.stop()
 
     async def mode_toggle(self, interaction: discord.Interaction):
         """Toggle between management and normal modes."""
@@ -186,18 +205,7 @@ class ImagePager(ReportingView):
 
         if self.num_pages == 0:
             Logger.debug("IMAGES: Deleted %s's last image", self.character.name)
-            embed = inconnu.utils.VCharEmbed(
-                self.ctx,
-                self.character,
-                self.owner,
-                title="No Images",
-                description=f"**{self.character.name}** has no images!",
-                show_thumbnail=False,
-            )
-            embed.set_footer(text="Upload some with /character image upload.")
-
-            await interaction.response.edit_message(embed=embed, view=None)
-            self.stop()
+            await self._display_no_images(interaction)
         else:
             page = min(self.current_page, self.num_pages - 1)
             await self.goto_page(page, interaction)

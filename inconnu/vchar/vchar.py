@@ -399,6 +399,13 @@ class VChar:
 
         return url
 
+    async def remove_all_image_urls(self):
+        """Remove all of the character's image URLs."""
+        new_profile = self._params.get(_Properties.PROFILE, {})
+        new_profile[_Properties.IMAGES] = []
+        await self._async_set_property(_Properties.PROFILE, new_profile)
+        Logger.debug("VCHAR: Removed all of %s's images", self.name)
+
     @property
     def has_biography(self):
         """Whether the character has any biographical data."""

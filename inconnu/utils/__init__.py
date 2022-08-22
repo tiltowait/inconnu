@@ -63,14 +63,21 @@ def is_supporter(ctx, user: discord.Member = None) -> bool:
             Logger.info("SUPPORTER: %s#%s is a supporter", member.name, member.discriminator)
             return True
         Logger.info("SUPPORTER: %s#%s is a not a supporter", member.name, member.discriminator)
-        raise errors.NotPremium()
+        return False
     Logger.debug("SUPPORTER: %s#%s is not on the support server", member.name, member.discriminator)
-    raise errors.NotPremium()
+    return False
+
+
+def _check_supporter(ctx, user: discord.Member = None):
+    """Wraps is_supporter() to raise on failure."""
+    if not is_supporter(ctx, user):
+        raise errors.NotPremium()
+    return True
 
 
 def has_premium():
     """A decorator for commands that only work for supporters."""
-    return commands.check(is_supporter)
+    return commands.check(_check_supporter)
 
 
 class VCharEmbed(discord.Embed):

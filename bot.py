@@ -34,6 +34,42 @@ class InconnuBot(discord.Bot):
         self.motd = embed
         self.motd_given = set()
 
+    async def inform_premium_loss(self, member: discord.Member):
+        """Inform a member if they lost premium status."""
+        try:
+            server = f"[Inconnu server]({inconnu.constants.SUPPORT_URL})"
+            patreon = f"[patron]({inconnu.constants.PATREON})"
+            embed = discord.Embed(
+                title="You are no longer a supporter!",
+                description=(
+                    "If you do not re-up your membership within 7 days, "
+                    "any profile images you've uploaded will be deleted.\n\n"
+                    f"To maintain supporter status, you must be on the {server} "
+                    f"and a {patreon}."
+                ),
+                color=discord.Color.red(),
+            )
+            embed.set_footer(text="Thank you for your support!")
+            await member.send(embed=embed)
+
+        except discord.errors.Forbidden:
+            # Their DMs are closed, and there's nothing we can do about it
+            pass
+
+    async def inform_premium_features(self, member: discord.Member):
+        """Inform the member of premium features."""
+        try:
+            embed = discord.Embed(
+                title="Thank you for your support!",
+                description="You may now upload profile images via `/character image upload`.",
+                color=discord.Color.green(),
+            )
+            await member.send(embed=embed)
+
+        except discord.errors.Forbidden:
+            # Their DMs are closed
+            pass
+
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
         """Look up a guild in the guild cache or fetches if not found."""
         if guild := self.get_guild(guild_id):
@@ -48,6 +84,18 @@ class InconnuBot(discord.Bot):
             await inconnu.respond(interaction)(err, ephemeral=True)
         else:
             await self.process_application_commands(interaction)
+
+    async def mark_premium_loss(self, member: discord.Member):
+        """Mark premium loss in the database."""
+        await inconnu.db.expired_supporters.insert_one(
+            {"_id": member.id, "timestamp": discord.utils.utcnow()}
+        )
+        await self.inform_premium_loss(member)
+
+    async def mark_premium_gain(self, member: discord.Member):
+        """Mark premium gain in the database."""
+        await inconnu.db.expired_supporters.delete_one({"_id": member.id})
+        await self.inform_premium_features(member)
 
     # Events
 
@@ -90,8 +138,7 @@ class InconnuBot(discord.Bot):
                 await ctx.respond(embed=self.motd, ephemeral=True)
                 self.motd_given.add(ctx.user.id)
 
-    @staticmethod
-    async def on_member_update(before: discord.Member, after: discord.Member):
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
         """Check for supporter status changes."""
         if before.guild.id != SUPPORTER_GUILD:
             return
@@ -102,12 +149,11 @@ class InconnuBot(discord.Bot):
 
         if is_supporter(before) and not is_supporter(after):
             Logger.info("BOT: %s#%s is no longer a supporter", after.name, after.discriminator)
-            await inconnu.db.expired_supporters.insert_one(
-                {"_id": after.id, "timestamp": discord.utils.utcnow()}
-            )
+            await self.mark_premium_loss(after)
+
         elif is_supporter(after) and not is_supporter(before):
             Logger.info("BOT: %s#%s is now a supporter!", after.name, after.discriminator)
-            await inconnu.db.expired_supporters.delete_one({"_id": after.id})
+            await self.mark_premium_gain(after)
 
 
 # Set up the bot instance
@@ -139,6 +185,7 @@ async def on_ready():
         # Schedule tasks
         cull_inactive.start()
         upload_logs.start()
+        check_premium_expiries.start()
 
         # Final prep
         inconnu.char_mgr.bot = bot
@@ -164,11 +211,19 @@ async def on_member_remove(member):
     """Mark all of a member's characters as inactive."""
     await inconnu.char_mgr.mark_inactive(member)
 
+    if member.guild.id == SUPPORTER_GUILD:
+        if member.get_role(SUPPORTER_ROLE):
+            await bot.mark_premium_loss(member)
+
 
 @bot.event
 async def on_member_join(member):
     """Mark all the player's characters as active when they rejoin a guild."""
     await inconnu.char_mgr.mark_active(member)
+
+    if member.guild.id == SUPPORTER_GUILD:
+        if member.get_role(SUPPORTER_ROLE):
+            await bot.mark_premium_gain(member)
 
 
 # Guild Events
@@ -203,6 +258,12 @@ async def on_guild_update(before, after):
 async def cull_inactive():
     """Cull inactive characters and guilds."""
     await inconnu.culler.cull()
+
+
+@tasks.loop(time=time(12, 0, tzinfo=timezone.utc))
+async def check_premium_expiries():
+    """Perform required actions on expired premium users."""
+    await inconnu.tasks.premium.remove_expired_images()
 
 
 @tasks.loop(hours=1)

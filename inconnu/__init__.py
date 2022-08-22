@@ -20,6 +20,7 @@ from . import (
     reference,
     settings,
     stats,
+    tasks,
     traits,
     utils,
     views,

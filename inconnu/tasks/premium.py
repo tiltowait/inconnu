@@ -1,0 +1,52 @@
+"""Tasks for premium features."""
+
+import asyncio
+from datetime import timedelta
+
+import discord
+
+import inconnu
+import s3
+from logger import Logger
+
+
+async def remove_expired_images():
+    """Removes images from expired premium users."""
+    Logger.info("TASK: Removing images from expired supporters")
+
+    expiration = discord.utils.utcnow() - timedelta(days=7)
+    s3_tasks = []
+    character_tasks = []
+    async for supporter in inconnu.db.expired_supporters.find({"timestamp": {"$lt": expiration}}):
+        user_id = supporter["_id"]
+        Logger.info("TASK: Removing %s's profile images", user_id)
+
+        # The cache doesn't have a facility for fetching cross-guild, so we
+        # have to fetch them manually
+        async for char_params in inconnu.db.characters.find({"user": user_id}):
+            character = inconnu.VChar(char_params)
+            if character.image_urls:
+                s3_tasks.append(s3.delete_character_images(character))
+                character_tasks.append(character.remove_all_image_urls())
+
+    Logger.info(
+        "TASK: Removing images from %s characters due to expired supporter status",
+        len(character_tasks),
+    )
+    if s3_tasks:
+        # We have to do the S3 tasks first, because the character tasks will
+        # erase all record of the image URLs
+
+        # Because we directly modified the database, we have to purge the cache
+        inconnu.char_mgr.purge()
+
+        await asyncio.gather(*s3_tasks)
+        await asyncio.gather(*character_tasks)
+
+        # There is a very rare but potential race condition: a former supporter
+        # might have loaded their character between purge begin and end.
+        # Ideally, we would do all this in the cache; failing that, we would
+        # somehow lock the cache until this task is complete. Until a better
+        # solution is found, we try to hedge our bets by purging the cache once
+        # more.
+        inconnu.char_mgr.purge()

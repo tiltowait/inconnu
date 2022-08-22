@@ -85,6 +85,10 @@ async def upload_file(file_name, object_name: str = None) -> bool:
 
 async def delete_file(resource: str):
     """Delete a file from S3."""
+    if s3_client is None:
+        Logger.error("S3: Cannot delete %s; client not configured", resource)
+        return
+
     if not resource.startswith(BASE_URL):
         raise ValueError(f"{resource} is not a managed resource.!")
 
@@ -92,6 +96,17 @@ async def delete_file(resource: str):
     delete_object = aio(s3_client.delete_object)
     await delete_object(Bucket=BUCKET, Key=key)
     Logger.info("S3: Deleted %s", key)
+
+
+async def delete_character_images(character: "VChar"):
+    """Delete all of a character's images."""
+    if character.image_urls:
+        deletions = [delete_file(image) for image in character.image_urls]
+        await asyncio.gather(*deletions)
+        await delete_file(get_url(f"profiles/{character.id}"))  # Delete the directory
+        Logger.info("S3: Deleted %s's images", character.name)
+    else:
+        Logger.info("S3: %s had no images to delete", character.name)
 
 
 async def upload_logs() -> bool:
@@ -121,6 +136,10 @@ async def upload_logs() -> bool:
     return successful
 
 
+async def main():
+    """On dokku release, we want to upload the logs as they currently stand."""
+    await upload_logs()
+
+
 if __name__ == "__main__":
-    # On dokku release, we want to upload the logs as they currently stand.
-    upload_logs()
+    asyncio.run(main())

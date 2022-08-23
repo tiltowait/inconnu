@@ -3,8 +3,9 @@
 
 from datetime import datetime
 
-import inconnu
 from umongo import EmbeddedDocument, fields
+
+import inconnu
 
 
 @inconnu.db.instance.register
@@ -61,4 +62,4 @@ class VCharMacro(EmbeddedDocument):
     reroll_rouses: bool = fields.BoolField()
     staining: str = fields.StrField()
     hunt: bool = fields.BoolField()
-    comment: str = fields.StrField()
+    comment: str = fields.StrField(allow_none=True, required=True)

@@ -64,6 +64,12 @@ async def rouse(
             color=color,
         )
 
+        # Yes, we already committed. This is because pre_update() clamps Hunger
+        # within valid boundaries. Unfortunately, __display_outcome() runs
+        # VChar.log(), which needs to be saved.
+        # TODO: Move logging outside of __display_outcome()
+        await character.commit()
+
 
 def _can_rouse(character):
     """Raises an error if the character is mortal."""

@@ -575,7 +575,7 @@ class VChar(Document):
             event=f"{event}_{scope}", amount=amount, reason=reason, admin=admin
         )
         self.experience.log.append(event)
-        Logger.debug("VCHAR: %s: Experience event: %s", self.name, event)
+        Logger.info("VCHAR: %s: Experience event: %s", self.name, event)
 
         if scope == "lifetime":
             self.set_lifetime_xp(self.experience.lifetime + amount)

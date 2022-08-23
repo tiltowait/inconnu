@@ -1,5 +1,7 @@
 """experience/award_deduct.py - Award or deduct XP from a character."""
 
+import asyncio
+
 import discord
 
 import inconnu
@@ -29,13 +31,16 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
         await inconnu.common.present_error(ctx, errmsg)
         return
 
-    await character.apply_experience(amount, scope, reason, ctx.author.id)
+    character.apply_experience(amount, scope, reason, ctx.author.id)
 
     if reason[-1] != ".":
         reason += "."
 
     embed = __get_embed(ctx, player, character, amount, scope, reason)
-    await ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+    await asyncio.gather(
+        ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none()),
+        character.commit(),
+    )
 
 
 def __get_embed(ctx, player, character, amount, scope, reason):

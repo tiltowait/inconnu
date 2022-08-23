@@ -8,6 +8,7 @@ from discord.ext.commands import Paginator
 from discord.ui import InputText, Modal
 
 import inconnu
+from logger import Logger
 
 
 async def bulk_award_xp(ctx):
@@ -31,9 +32,7 @@ class _BulkModal(Modal):
 
         self.add_item(
             InputText(
-                label="Reason",
-                placeholder="Enter the reason for the XP award.",
-                required=True
+                label="Reason", placeholder="Enter the reason for the XP award.", required=True
             )
         )
         self.add_item(
@@ -41,7 +40,7 @@ class _BulkModal(Modal):
                 label="Experience List",
                 placeholder=instructions,
                 style=discord.InputTextStyle.long,
-                required=True
+                required=True,
             )
         )
 
@@ -50,12 +49,12 @@ class _BulkModal(Modal):
         await interaction.response.defer()
         reason = self.children[0].value.strip()
         entries = self.children[1].value.split("\n")
-        seen = set() # For making sure duplicates aren't made
+        seen = set()  # For making sure duplicates aren't made
 
         # Set up the containers
 
         for entry in entries:
-            entry = " ".join(entry.split()) # Normalize
+            entry = " ".join(entry.split())  # Normalize
             if not entry:
                 # Ignore empty lines
                 continue
@@ -79,29 +78,28 @@ class _BulkModal(Modal):
                 if match in seen:
                     self.errors.append(f"**Duplicate:** {member}: `{char_name}` ({experience}xp)")
                 else:
-                    seen.add(match)
+                    # We need bulk awarding to be multi-document atomic. To
+                    # accomplish this, we store the character and the
+                    # experience arguments in a list of tuples. If we receive
+                    # no errors, then we will commit them all at once.
                     self.xp_tasks.append(
-                        character.apply_experience(
-                            experience, "lifetime", reason, interaction.user.id
-                        )
+                        (character, [experience, "lifetime", reason, interaction.user.id])
                     )
                     self.would_award.append(f"`{experience}xp`: `{character.name}` {member}")
+
+                    # Prevent the character from being awarded again
+                    seen.add(match)
 
             except inconnu.errors.CharacterNotFoundError:
                 self.errors.append(f"**Not found:** {member}: `{char_name}`")
 
         # Finished parsing input
         if self.errors:
-            # Clean up coroutines
-            for task in self.xp_tasks:
-                task.close()
-
             await self._present_errors(interaction)
         elif self.xp_tasks:
             await self._award_xp(interaction)
         else:
             await inconnu.common.present_error(interaction, "You didn't supply any input!")
-
 
     async def _present_errors(self, interaction):
         """Show the error message. No XP awarded."""
@@ -113,21 +111,21 @@ class _BulkModal(Modal):
 
         await inconnu.common.present_error(interaction, contents, *fields, ephemeral=False)
 
-
     async def _award_xp(self, interaction):
         """Award the XP."""
         self._chunk_fields()
 
-        embed = discord.Embed(
-            title="Bulk Awarding XP",
-            color=0x7ED321
-        )
+        embed = discord.Embed(title="Bulk Awarding XP", color=0x7ED321)
         for page in self.would_award:
             embed.add_field(name="Awarding", value=page, inline=False)
 
-        send_embed = interaction.followup.send(embed=embed)
-        await asyncio.gather(*self.xp_tasks, send_embed)
+        commit_tasks = []
+        for character, xp_args in self.xp_tasks:
+            character.apply_experience(*xp_args)
+            commit_tasks.append(character.commit())
 
+        send_embed = interaction.followup.send(embed=embed)
+        await asyncio.gather(*commit_tasks, send_embed)
 
     def _chunk_fields(self):
         """Split the fields up into smaller chunks."""

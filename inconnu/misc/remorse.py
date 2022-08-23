@@ -7,8 +7,6 @@ import discord
 
 import inconnu
 
-from ..vchar import VChar
-
 __HELP_URL = "https://www.inconnu.app/#/additional-commands?id=remorse-checks"
 
 
@@ -41,7 +39,7 @@ def _can_remorse(character):
         raise inconnu.errors.CharacterError(f"{character.name} has no stains.")
 
 
-async def __display_outcome(ctx, character: VChar, outcome):
+async def __display_outcome(ctx, character: "VChar", outcome):
     """Process the remorse result and display to the user."""
     title = "Remorse Success" if outcome.remorseful else "Remorse Fail"
     if outcome.remorseful:
@@ -67,7 +65,7 @@ async def __display_outcome(ctx, character: VChar, outcome):
     )
 
 
-def __remorse_roll(character: VChar, minimum: int) -> SN:
+def __remorse_roll(character: "VChar", minimum: int) -> SN:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
     rolls = max(unfilled, minimum)

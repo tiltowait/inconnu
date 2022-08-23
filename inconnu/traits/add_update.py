@@ -10,7 +10,6 @@ import inconnu.settings
 import inconnu.views
 
 from .. import common
-from ..vchar import VChar
 from .parser import parse_traits
 
 __HELP_URL = {
@@ -70,7 +69,7 @@ async def __parse(ctx, allow_overwrite: bool, raw_traits: str, character: str, s
         await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL[allow_overwrite])
 
 
-async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
+async def __handle_traits(character: "VChar", traits: dict, overwriting: bool):
     """
     Add the rated traits to the character directly.
     Args:
@@ -118,7 +117,7 @@ def __partition_traits(character, traits):
     return SimpleNamespace(owned=owned, unowned=unowned)
 
 
-async def __display_results(ctx, outcome, character: VChar, specialties: bool):
+async def __display_results(ctx, outcome, character: "VChar", specialties: bool):
     """Display the results of the operation."""
     tasks = [__results_embed(ctx, outcome, character, specialties)]
 
@@ -137,7 +136,7 @@ async def __display_results(ctx, outcome, character: VChar, specialties: bool):
     await asyncio.gather(*tasks)
 
 
-async def __results_embed(ctx, outcome, character: VChar, specialties: bool):
+async def __results_embed(ctx, outcome, character: "VChar", specialties: bool):
     """Display the results of the operation in a nice embed."""
     action_present = "Update" if outcome.updating else "Assign"
     action_past = "Updated" if outcome.updating else "Assigned"
@@ -191,7 +190,7 @@ async def __results_embed(ctx, outcome, character: VChar, specialties: bool):
     await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 
-async def __results_text(ctx, outcome, character: VChar):
+async def __results_text(ctx, outcome, character: "VChar"):
     """Display the results in plain text."""
     contents = [f"**{character.name}: Trait Assignment**\n"]
 

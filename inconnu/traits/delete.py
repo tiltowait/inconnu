@@ -6,7 +6,6 @@ import discord
 
 import inconnu
 
-from ..vchar import VChar
 from . import traitcommon
 
 __HELP_URL = "https://www.inconnu.app/#/trait-management?id=deleting-traits"
@@ -61,7 +60,7 @@ async def __outcome_embed(ctx, character, outcome, specialties: bool):
     await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 
-def __delete_traits(character: VChar, *traits) -> list:
+def __delete_traits(character: "VChar", *traits) -> list:
     """
     Delete the validated traits. If the trait is a core trait, then it is set to 0.
     Returns (list): A list of traits that could not be found.

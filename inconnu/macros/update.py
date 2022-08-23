@@ -5,7 +5,6 @@ from distutils.util import strtobool
 
 import inconnu
 
-from ..vchar import VChar
 from . import macro_common
 
 __HELP_URL = "https://www.inconnu.app/#/macros?id=updating"
@@ -94,7 +93,7 @@ def __parameterize(parameters):
     return params
 
 
-def __validate_parameters(character: VChar, parameters: dict):
+def __validate_parameters(character: "VChar", parameters: dict):
     """Parse the update parameters."""
     macro_update = {}
 

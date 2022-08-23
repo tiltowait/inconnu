@@ -5,7 +5,6 @@ from types import SimpleNamespace
 import inconnu
 
 from ..constants import ROUSE_FAIL_COLOR, Damage
-from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu.app/#/"
 
@@ -54,7 +53,7 @@ def _can_aggheal(character):
         raise inconnu.errors.CharacterError(f"{character.name} has no Aggravated Health damage!")
 
 
-async def __heal(character: VChar):
+async def __heal(character: "VChar"):
     """
     Heal agg damage.
     Does not check if the character has agg damage!

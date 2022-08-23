@@ -21,7 +21,6 @@ import inconnu
 from logger import Logger
 
 from ..roll import Roll
-from ..vchar import VChar
 from .rolldisplay import RollDisplay
 from .rollparser import RollParser
 
@@ -116,7 +115,7 @@ def _can_roll(character, syntax):
 
 
 async def display_outcome(
-    ctx, player, character: VChar, results, comment, listener=None, timeout=None
+    ctx, player, character: "VChar", results, comment, listener=None, timeout=None
 ):
     """Display the roll results."""
     roll_display = RollDisplay(ctx, results, comment, character, player, listener, timeout)
@@ -124,7 +123,7 @@ async def display_outcome(
     await roll_display.display()
 
 
-async def perform_roll(character: VChar, syntax, max_hunger=5):
+async def perform_roll(character: "VChar", syntax, max_hunger=5):
     """Public interface for __evaluate_syntax() that returns a Roll."""
     parser = RollParser(character, syntax)
     return Roll(parser.pool, parser.hunger, parser.difficulty, max_hunger, parser.pool_str, syntax)

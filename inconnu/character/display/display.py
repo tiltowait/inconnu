@@ -7,9 +7,7 @@ import discord
 
 import inconnu
 
-from ... import common
 from ...constants import Damage
-from ...vchar import VChar
 from . import trackmoji
 
 __HELP_URL = "https://www.inconnu.app/#/character-tracking?id=character-display"
@@ -59,7 +57,7 @@ async def display_requested(ctx, character=None, message=None, player=None, ephe
 
 async def display(
     ctx,
-    character: VChar,
+    character: "VChar",
     title: str = None,
     message: str = None,
     footer: str = None,
@@ -121,7 +119,7 @@ async def display(
 
 async def __get_embed(
     ctx,
-    character: VChar,
+    character: "VChar",
     title: str = None,
     message: str = None,
     footer: str = None,

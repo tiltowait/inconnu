@@ -27,8 +27,8 @@ from . import (
     views,
 )
 from .emoji import emojis
+from .models import CharacterManager
 from .roll import Roll
-from .vchar import CharacterManager, VChar
 
 char_mgr = CharacterManager()
 settings = settings.Settings()

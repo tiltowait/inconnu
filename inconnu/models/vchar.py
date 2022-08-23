@@ -103,6 +103,8 @@ class VChar(Document):
         self.potency = max(0, min(10, self.potency))
         self.experience.unspent = max(0, min(self.experience.unspent, self.experience.lifetime))
 
+        Logger.debug("VCHAR: %s will update", self.name)
+
     # Comparators
 
     def __lt__(self, other):

@@ -7,7 +7,7 @@ import discord
 
 from .reportingview import ReportingView
 
-TIMEOUT = 5 if "DEBUG" in os.environ else 300
+TIMEOUT = 5 if "TRUNCATE_COMMANDS" in os.environ else 300
 
 
 class RatingView(ReportingView):

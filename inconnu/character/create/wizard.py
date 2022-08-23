@@ -21,7 +21,7 @@ class Wizard:
             self.using_dms = False
         else:
             self.using_dms = True
-            if "DEBUG" in os.environ:
+            if "TRUNCATE_COMMANDS" in os.environ:
                 # Quicker creation for testing
                 self.core_traits = ["Stamina", "Resolve", "Composure"]
             else:

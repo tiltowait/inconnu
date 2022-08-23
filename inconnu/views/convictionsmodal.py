@@ -15,7 +15,7 @@ class ConvictionsModal(Modal):
         self.character = character
         self.report = report
 
-        convictions = character.convictions
+        convictions = character.convictions.copy()
 
         self.add_item(
             InputText(
@@ -56,7 +56,7 @@ class ConvictionsModal(Modal):
         if third and third[-1].isalpha():
             third += "."
 
-        old_convictions = self.character.convictions
+        old_convictions = self.character.convictions.copy()
         old_convictions = "\n".join(old_convictions) if old_convictions else "*None*"
 
         new_convictions = [first, second, third]

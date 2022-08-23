@@ -122,30 +122,26 @@ def generate_image_column(snippets, name, images):
         image = snippets["no_profile_image"]
     else:
         image_prop = snippets["image_prop"].format(source=images[0])
-        if len(images) == 1:
-            image = snippets["profile_image"].format(source=images[0], name=name)
-        else:
-            # We get to make a carousel!
-            carousel_items = []
-            for index, image in enumerate(images):
-                section_classes = "carousel-item"
-                if index == 0:
-                    section_classes += " active"
-                carousel_items.append(
-                    f"""
-                    <div class="{section_classes}">
-                      <img src="{image}" class="d-block w-100" alt="{name}">
-                    </div>
-                    """
-                )
-            items = "\n".join(carousel_items)
-            image = f"""
-            <div id="carouselExampleSlidesOnly" class="carousel slide rounded" data-bs-ride="carousel">
-                <div class="carousel-inner">
-                    {items}
+        carousel_items = []
+        for index, image in enumerate(images):
+            section_classes = "carousel-item"
+            if index == 0:
+                section_classes += " active"
+            carousel_items.append(
+                f"""
+                <div class="{section_classes}">
+                  <img src="{image}" class="d-block w-100" alt="{name}">
                 </div>
+                """
+            )
+        items = "\n".join(carousel_items)
+        image = f"""
+        <div id="character-carousel" class="carousel slide rounded" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {items}
             </div>
-            """
+        </div>
+        """
 
     return image_prop, image
 

@@ -1,10 +1,9 @@
 """Commonly used utilities."""
 
 import discord
-from discord.ext import commands
-
 import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
+from discord.ext import commands
 from inconnu import errors
 from logger import Logger
 
@@ -51,7 +50,7 @@ def command_options(interaction) -> str:
 
 def is_supporter(ctx, user: discord.Member = None) -> bool:
     """Returns True if the user invoking the command is a supporter."""
-    support_server = ctx.bot.get_guild(SUPPORTER_GUILD)
+    support_server = inconnu.bot.get_guild(SUPPORTER_GUILD)
     user = user = ctx.user
 
     # First, see if the invoker is on the support server

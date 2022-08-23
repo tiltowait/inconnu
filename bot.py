@@ -177,6 +177,7 @@ class InconnuBot(discord.Bot):
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True)
 bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
+inconnu.bot = bot
 
 # General Events
 

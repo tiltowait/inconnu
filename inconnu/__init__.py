@@ -32,6 +32,7 @@ from .vchar import CharacterManager, VChar
 
 char_mgr = CharacterManager()
 settings = settings.Settings()
+bot = None
 
 _rng = default_rng()
 

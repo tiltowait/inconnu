@@ -27,7 +27,7 @@ async def remove_expired_images():
         # have to fetch them manually
         async for char_params in inconnu.db.characters.find({"user": user_id}):
             character = inconnu.VChar(char_params)
-            if character.image_urls:
+            if character.profile.images:
                 s3_tasks.append(s3.delete_character_images(character))
                 character_tasks.append(character.remove_all_image_urls())
 

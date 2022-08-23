@@ -37,7 +37,7 @@ async def display_images(
 
 def _has_image(character):
     """Raises an error if the character doesn't have an image."""
-    for image in character.image_urls:
+    for image in character.profile.images:
         # We need to make sure the image isn't an empty string.
         if image:
             return
@@ -91,7 +91,7 @@ class ImagePager(ReportingView):
     @property
     def num_pages(self) -> int:
         """The number of pages in the view."""
-        return len(self.character.image_urls)
+        return len(self.character.profile.images)
 
     @property
     def indicator_label(self) -> str:
@@ -101,7 +101,7 @@ class ImagePager(ReportingView):
     @property
     def current_image(self) -> str:
         """The URL of the current image."""
-        return self.character.image_urls[self.current_page]
+        return self.character.profile.images[self.current_page]
 
     def add_pager_buttons(self):
         """Add the pager buttons."""
@@ -200,7 +200,7 @@ class ImagePager(ReportingView):
 
     async def _delete_image(self, interaction: discord.Interaction):
         """Delete the current image."""
-        image_url = await self.character.remove_image_url(self.current_page)
+        image_url = self.character.profile.images.pop(self.current_page)
         Logger.info("IMAGES: Removing %s from %s", image_url, self.character.name)
 
         if self.num_pages == 0:
@@ -213,6 +213,7 @@ class ImagePager(ReportingView):
         if s3.is_managed_url(image_url):
             await s3.delete_file(image_url)
             await inconnu.db.upload_log.update_one({"url": image_url}, {"$set": {"deleted": True}})
+        await self.character.commit()
 
     async def interaction_check(self, interaction: discord.Interaction):
         """Ensure image management safety."""

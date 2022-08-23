@@ -68,18 +68,20 @@ def __biography_paginator(ctx, character, owner):
         show_thumbnail=False,
     )
 
-    if character.biography:
-        embed.add_field(name="History", value=character.biography or "*Not set.*", inline=False)
-    if character.description:
+    if character.profile.biography:
+        embed.add_field(
+            name="History", value=character.profile.biography or "*Not set.*", inline=False
+        )
+    if character.profile.description:
         embed.add_field(
             name="Description & Personality",
-            value=character.description or "*Not set.*",
+            value=character.profile.description or "*Not set.*",
             inline=False,
         )
 
     embeds = []
-    if character.image_urls:
-        for image in character.image_urls:
+    if character.profile.images:
+        for image in character.profile.images:
             if image.startswith("https://"):
                 embed_copy = embed.copy()
                 embed_copy.set_image(url=image)
@@ -111,7 +113,7 @@ class _CharacterBio(discord.ui.Modal):
             discord.ui.InputText(
                 label="Biography",
                 placeholder="Character biography and history. Will be publicly shown.",
-                value=character.biography,
+                value=character.profile.biography,
                 style=discord.InputTextStyle.long,
                 max_length=1024,
                 required=False,
@@ -121,7 +123,7 @@ class _CharacterBio(discord.ui.Modal):
             discord.ui.InputText(
                 label="Description & Personality",
                 placeholder="The character's physical description. Will be publicly shown.",
-                value=character.description,
+                value=character.profile.description,
                 style=discord.InputTextStyle.long,
                 max_length=1024,
                 required=False,
@@ -133,10 +135,13 @@ class _CharacterBio(discord.ui.Modal):
         biography = inconnu.utils.clean_text(self.children[0].value)
         description = inconnu.utils.clean_text(self.children[1].value)
 
-        await asyncio.gather(
-            self.character.set_biography(biography),
-            self.character.set_description(description),
-            interaction.response.send_message(
-                f"Edited **{self.character.name}'s** biography!", ephemeral=True
-            ),
+        embed = inconnu.utils.VCharEmbed(
+            interaction, self.character, description="Profile updated!"
         )
+        embed.add_field(name="Want to set profile images?", value="Use `/character image upload`.")
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        self.character.profile.biography = biography
+        self.character.profile.description = description
+        await self.character.commit()

@@ -50,17 +50,23 @@ async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachmen
     destination = f"profiles/{character.id}/{webp}"
     await s3.upload_file(webp, destination)
     aws_url = s3.get_url(destination)
-    await character.add_image_url(aws_url)
+
+    if aws_url in character.profile.images:
+        Logger.info("IMAGES: %s: Ignoring duplicate image: %s", character.name, aws_url)
+    else:
+        Logger.info("IMAGES: %s: Adding image URL: %s", character.name, aws_url)
+        character.profile.images.append(aws_url)
     delete_file(webp)
 
     await ctx.respond("Profile image added!", ephemeral=True)
+    await character.commit()
 
     # We maintain a log of all image uploads to protect ourself against
     # potential legal claims if someone uploads something illegal
     await inconnu.db.upload_log.insert_one(
         {
             "user": ctx.user.id,
-            "charid": character.object_id,
+            "charid": character.pk,
             "url": aws_url,
             "deleted": False,
             "timestamp": discord.utils.utcnow(),

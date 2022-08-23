@@ -100,8 +100,8 @@ async def delete_file(resource: str):
 
 async def delete_character_images(character: "VChar"):
     """Delete all of a character's images."""
-    if character.image_urls:
-        deletions = [delete_file(image) for image in character.image_urls]
+    if character.profile.images:
+        deletions = [delete_file(image) for image in character.profile.images]
         await asyncio.gather(*deletions)
         await delete_file(get_url(f"profiles/{character.id}"))  # Delete the directory
         Logger.info("S3: Deleted %s's images", character.name)

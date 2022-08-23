@@ -21,14 +21,15 @@ async def remove_entry(ctx, player, character, index):
     character = await haven.fetch()
 
     try:
-        log = character.experience_log
-        entry_to_delete = log[-index]  # Log entries are presented to the user in reverse
-        await character.remove_experience_log_entry(entry_to_delete)
+        # Log entries are presented to the user in reverse, so we need the
+        # negative index
+        entry_to_delete = character.experience.log.pop(-index)
 
         embed = _get_embed(haven.owner, character, entry_to_delete)
         view = _ExperienceView(character, entry_to_delete)
 
         view.message = await inconnu.respond(ctx)(embed=embed, view=view)
+        await character.commit()
 
     except IndexError:
         err = f"{character.name} has no experience log entry at index `{index}`."

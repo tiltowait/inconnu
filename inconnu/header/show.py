@@ -76,7 +76,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
             "character": {
                 "guild": ctx.guild.id,
                 "user": ctx.user.id,
-                "charid": character.object_id,
+                "charid": character.pk,
             },
             "channel": ctx.channel.id,
             "message": message.id,

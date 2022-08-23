@@ -76,7 +76,7 @@ class Wizard:
         character = inconnu.models.VChar(
             guild=self.ctx.guild.id,
             user=owner,
-            name=self.parameters.name,
+            _name=self.parameters.name,
             splat=self.parameters.splat,
             humanity=self.parameters.humanity,
             health=self.parameters.hp * inconnu.constants.Damage.NONE,

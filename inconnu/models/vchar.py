@@ -26,10 +26,10 @@ from .vchardocs import (
 
 
 class _Properties(str, Enum):
-    """An enum to prevent needing to stringly type database fields."""
+    """An enum to avoid stringly typing database fields."""
 
     USER = "user"
-    NAME = "name"
+    NAME = "_name"
     SPLAT = "splat"
     HUMANITY = "humanity"
     STAINS = "stains"
@@ -37,7 +37,7 @@ class _Properties(str, Enum):
     WILLPOWER = "willpower"
     HUNGER = "hunger"
     POTENCY = "potency"
-    TRAITS = "traits"
+    TRAITS = "_traits"
     PROFILE = "profile"
     BIOGRAPHY = "biography"
     DESCRIPTION = "description"
@@ -58,7 +58,7 @@ class VChar(Document):
     user = fields.IntField()
 
     # Basic stats used in trackers
-    name = fields.StrField()
+    _name = fields.StrField(attribute="name")
     splat = fields.StrField()
     health = fields.StrField()
     willpower = fields.StrField()
@@ -134,6 +134,18 @@ class VChar(Document):
     def id(self) -> str:
         """The ObjectId's string value."""
         return str(self.pk)
+
+    @property
+    def name(self) -> str:
+        """The character's name plus an indicator if it's an SPC."""
+        if not self.is_pc:
+            return self._name + " (SPC)"
+        return self._name
+
+    @name.setter
+    def name(self, new_name: str):
+        """Set the character's name."""
+        self._name = new_name
 
     @property
     def traits(self) -> dict[str, int]:

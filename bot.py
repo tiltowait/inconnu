@@ -141,6 +141,7 @@ class InconnuBot(discord.Bot):
                         ctx.guild, ctx.user, options["character"]
                     )
                     if character.is_pc:
+                        await asyncio.sleep(1)  # Make sure it shows after the command
                         await ctx.respond(
                             (
                                 "**Tip:** You only have one character, so you don't need "

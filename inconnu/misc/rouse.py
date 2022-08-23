@@ -1,7 +1,6 @@
 """misc/rouse.py - Perform rouse checks."""
 # pylint: disable=too-many-arguments
 
-import asyncio
 from types import SimpleNamespace
 
 import discord

@@ -64,7 +64,7 @@ def __biography_paginator(ctx, character, owner):
         owner,
         title="Biography",
         url=inconnu.profile_url(character.id),
-        author_name=character.name,
+        character_author=True,
         show_thumbnail=False,
     )
 

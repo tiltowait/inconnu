@@ -1,9 +1,10 @@
 """Commonly used utilities."""
 
 import discord
+from discord.ext import commands
+
 import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
-from discord.ext import commands
 from inconnu import errors
 from logger import Logger
 
@@ -86,7 +87,11 @@ class VCharEmbed(discord.Embed):
         owner = owner or ctx.user
         title = kwargs.pop("title", character.name)
         show_thumbnail = kwargs.pop("show_thumbnail", True)
-        author_name = kwargs.pop("author_name", owner.name)
+
+        if kwargs.pop("character_author", False):
+            author_name = character.name
+        else:
+            author_name = owner.name
 
         if is_supporter(ctx, owner):
             # Premium color

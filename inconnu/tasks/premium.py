@@ -17,7 +17,6 @@ async def remove_expired_images():
     expiration = discord.utils.utcnow() - timedelta(days=7)
     expired_user_ids = []
     s3_tasks = []
-    character_tasks = []
     async for supporter in inconnu.db.supporters.find({"discontinued": {"$lt": expiration}}):
         user_id = supporter["_id"]
         expired_user_ids.append(user_id)
@@ -25,15 +24,13 @@ async def remove_expired_images():
 
         # The cache doesn't have a facility for fetching cross-guild, so we
         # have to fetch them manually
-        async for char_params in inconnu.db.characters.find({"user": user_id}):
-            character = inconnu.VChar(char_params)
+        async for character in inconnu.models.VChar.find({"user": user_id}):
             if character.profile.images:
                 s3_tasks.append(s3.delete_character_images(character))
-                character_tasks.append(character.remove_all_image_urls())
 
     Logger.info(
         "TASK: Removing images from %s characters due to expired supporter status",
-        len(character_tasks),
+        len(s3_tasks),
     )
     if s3_tasks:
         # We have to do the S3 tasks first, because the character tasks will
@@ -43,7 +40,6 @@ async def remove_expired_images():
         inconnu.char_mgr.purge()
 
         await asyncio.gather(*s3_tasks)
-        await asyncio.gather(*character_tasks)
         await inconnu.db.supporters.delete_many({"_id": {"$in": expired_user_ids}})
 
         # There is a very rare but potential race condition: a former supporter

@@ -167,6 +167,11 @@ class VChar(Document):
 
         return max(resolve.rating, composure.rating)
 
+    @property
+    def superficial_wp(self) -> int:
+        """The amount of Superficial Willpower damage sustained."""
+        return self.willpower.count(Damage.SUPERFICIAL)
+
     def set_superficial_wp(self, new_value):
         """Set the Superficial Willpower damage."""
         self.set_damage(_Properties.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)

@@ -65,7 +65,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, bonus: str, character: str)
         title = "Failure!"
         message = "You succumb to the Beast."
         color = 0x5C0700
-        await character.log("frenzy")
+        character.log("frenzy")
 
     footer.append("Dice: " + ", ".join(map(str, outcome.normal.dice)))
     footer = "\n".join(footer)
@@ -83,6 +83,7 @@ async def frenzy(ctx, difficulty: int, penalty: str, bonus: str, character: str)
     inter = await inconnu.respond(ctx)(**msg_content)
     msg = await inconnu.get_message(inter)
     await __generate_report_task(ctx, msg, character, outcome)
+    await character.commit()
 
 
 def _can_frenzy(character):

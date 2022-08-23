@@ -47,6 +47,7 @@ async def rouse(
         else:
             update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
+        await character.commit()
         inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
         msg = await inconnu.get_message(inter)
 
@@ -63,8 +64,6 @@ async def rouse(
             message=update_msg,
             color=color,
         )
-
-    await character.commit()
 
 
 def _can_rouse(character):

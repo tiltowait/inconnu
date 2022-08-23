@@ -54,29 +54,29 @@ class VChar(Document):
     VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane"]
 
     # Ownership
-    guild: int = fields.IntField()
-    user: int = fields.IntField()
+    guild = fields.IntField()
+    user = fields.IntField()
 
     # Basic stats used in trackers
-    name: str = fields.StrField()
-    splat: str = fields.StrField()
-    health: str = fields.StrField()
-    willpower: str = fields.StrField()
-    humanity: int = fields.IntField()
-    stains: int = fields.IntField(default=0)
-    hunger: int = fields.IntField(default=1)
-    potency: int = fields.IntField()
-    traits: dict[str, int] = fields.DictField()
+    name = fields.StrField()
+    splat = fields.StrField()
+    health = fields.StrField()
+    willpower = fields.StrField()
+    humanity = fields.IntField()
+    stains = fields.IntField(default=0)
+    hunger = fields.IntField(default=1)
+    potency = fields.IntField()
+    _traits = fields.DictField(attribute="traits")
 
     # Biographical/profile data
-    profile: VCharProfile = fields.EmbeddedField(VCharProfile, default=VCharProfile)
-    convictions: list[str] = fields.ListField(fields.StrField, default=list)
-    header: VCharHeader = fields.EmbeddedField(VCharHeader, default=VCharHeader)
+    profile = fields.EmbeddedField(VCharProfile, default=VCharProfile)
+    convictions = fields.ListField(fields.StrField, default=list)
+    header = fields.EmbeddedField(VCharHeader, default=VCharHeader)
 
     # Misc/convenience
-    macros: list[VCharMacro] = fields.ListField(fields.EmbeddedField(VCharMacro), default=list)
-    experience: VCharExperience = fields.EmbeddedField(VCharExperience, default=VCharExperience)
-    stat_log: dict = fields.DictField(default=dict, attribute="log")
+    macros = fields.ListField(fields.EmbeddedField(VCharMacro), default=list)
+    experience = fields.EmbeddedField(VCharExperience, default=VCharExperience)
+    stat_log = fields.DictField(default=dict, attribute="log")
 
     class Meta:
         collection_name = "characters"
@@ -96,6 +96,8 @@ class VChar(Document):
             self.header.blush = 0
         else:
             self.blush = -1
+
+        Logger.info("VCHAR: Created %s", self.name)
 
     def pre_update(self):
         """Clamp values within required bounds."""
@@ -132,6 +134,11 @@ class VChar(Document):
     def id(self) -> str:
         """The ObjectId's string value."""
         return str(self.pk)
+
+    @property
+    def traits(self) -> dict[str, int]:
+        """A copy of the character's traits."""
+        return self._traits.copy()
 
     @property
     def has_biography(self) -> bool:
@@ -370,7 +377,7 @@ class VChar(Document):
                 counter["health"] += rating - current_rating
 
             canonical_traits[trait] = rating
-            self.traits[trait] = rating
+            self._traits[trait] = rating
 
         # Determine HP/WP gain, if any
         adjustments = []
@@ -393,7 +400,7 @@ class VChar(Document):
     def delete_trait(self, trait: str) -> str:
         """Delete a trait. Raises TraitNotFoundError if the trait doesn't exist."""
         trait = self.find_trait(trait, exact=True).name
-        del self.traits[trait]
+        del self._traits[trait]
 
         return trait
 

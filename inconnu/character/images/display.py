@@ -82,9 +82,17 @@ class ImagePager(ReportingView):
         self.delete_button = discord.ui.Button(label="Delete", style=discord.ButtonStyle.danger)
         self.delete_button.callback = self._delete_image
         self.promote_button = discord.ui.Button(
-            label="Make First", style=discord.ButtonStyle.primary, disabled=True
+            label="Make First",
+            style=discord.ButtonStyle.primary,
+            disabled=True,
         )
         self.promote_button.callback = self._promote_image
+        self.demote_button = discord.ui.Button(
+            label="Make Last",
+            style=discord.ButtonStyle.primary,
+            disabled=self.num_pages == 1,
+        )
+        self.demote_button.callback = self._demote_image
         self.cancel_button = discord.ui.Button(label="Cancel", row=1)
         self.cancel_button.callback = self.mode_toggle
 
@@ -166,6 +174,7 @@ class ImagePager(ReportingView):
         self.first_button.disabled = self.current_page == 0
         self.last_button.disabled = self.current_page == self.num_pages - 1
         self.promote_button.disabled = self.current_page == 0
+        self.demote_button.disabled = self.current_page == self.num_pages - 1
 
         embed = interaction.message.embeds[0]
         embed.set_image(url=self.current_image)
@@ -193,8 +202,9 @@ class ImagePager(ReportingView):
             self.add_pager_buttons()
         else:
             self.remove_all_items()
-            self.add_item(self.delete_button)
             self.add_item(self.promote_button)
+            self.add_item(self.demote_button)
+            self.add_item(self.delete_button)
             self.add_item(self.cancel_button)
 
         self.management_mode = not self.management_mode
@@ -211,6 +221,15 @@ class ImagePager(ReportingView):
 
         await self.mode_toggle(None)  # No point in showing management buttons
         await self.goto_page(0, interaction)
+        await self.character.commit()
+
+    async def _demote_image(self, interaction: discord.Interaction):
+        """Demote the current image to the last position."""
+        url = self.character.profile.images.pop(self.current_page)
+        self.character.profile.images.append(url)
+
+        await self.mode_toggle(None)  # No point in showing management buttons
+        await self.goto_page(self.num_pages - 1, interaction)
         await self.character.commit()
 
     async def _delete_image(self, interaction: discord.Interaction):

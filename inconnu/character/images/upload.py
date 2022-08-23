@@ -58,7 +58,17 @@ async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachmen
         character.profile.images.append(aws_url)
     delete_file(webp)
 
-    await ctx.respond("Profile image added!", ephemeral=True)
+    embed = inconnu.utils.VCharEmbed(
+        ctx,
+        character,
+        title="Image uploaded!",
+        character_author=True,
+        show_thumbnail=False,
+    )
+    embed.set_image(url=aws_url)
+    embed.set_footer(text="View your images with /character images.")
+
+    await ctx.respond(embed=embed, ephemeral=True)
     await character.commit()
 
     # We maintain a log of all image uploads to protect ourself against

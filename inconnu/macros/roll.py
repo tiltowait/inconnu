@@ -91,7 +91,8 @@ async def roll(ctx, syntax: str, character=None):
             )
         elif macro.name.lower() == "bol":
             Logger.info("VM: %s's macro mimics Blush of Life", character.name)
-            await character.set_blush(1)
+            character.set_blush(1)
+            await character.commit()
 
     except (ValueError, SyntaxError):
         err = f"**Unknown syntax:** `{syntax}`"

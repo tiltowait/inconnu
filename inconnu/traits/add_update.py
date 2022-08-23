@@ -90,8 +90,9 @@ async def __handle_traits(character: VChar, traits: dict, overwriting: bool):
         unassigned = [k for k, v in partition.unowned.items() if v is None]
         to_assign = {k: v for k, v in partition.unowned.items() if v is not None}
 
-    track_adjustment, assigned = await character.assign_traits(to_assign)
+    track_adjustment, assigned = character.assign_traits(to_assign)
     assigned = [f"{trait}: `{rating}`" for trait, rating in assigned.items()]
+    await character.commit()
 
     return SimpleNamespace(
         assigned=assigned,

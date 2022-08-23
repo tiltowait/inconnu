@@ -32,8 +32,9 @@ async def delete(ctx, traits: str, character=None, specialties=False):
             raise SyntaxError(f"You must supply a list of {term} to delete.")
 
         traitcommon.validate_trait_names(*traits, specialties=specialties)
-        outcome = await __delete_traits(character, *traits)
+        outcome = __delete_traits(character, *traits)
         await __outcome_embed(ctx, character, outcome, specialties)
+        await character.commit()
 
     except (ValueError, SyntaxError) as err:
         await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL)
@@ -43,8 +44,7 @@ async def __outcome_embed(ctx, character, outcome, specialties: bool):
     """Display the operation outcome in an embed."""
     term = "Trait" if not specialties else "Specialty"
 
-    embed = discord.Embed(title=f"{term} Removal")
-    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
+    embed = inconnu.utils.VCharEmbed(ctx, character, title=f"{term} Removal", character_author=True)
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if outcome.deleted:
@@ -61,7 +61,7 @@ async def __outcome_embed(ctx, character, outcome, specialties: bool):
     await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 
-async def __delete_traits(character: VChar, *traits) -> list:
+def __delete_traits(character: VChar, *traits) -> list:
     """
     Delete the validated traits. If the trait is a core trait, then it is set to 0.
     Returns (list): A list of traits that could not be found.
@@ -73,11 +73,11 @@ async def __delete_traits(character: VChar, *traits) -> list:
     for trait in traits:
         if trait.lower() in standard_traits:
             # Set attributes and skills to 0 for better UX
-            _, trait = await character.assign_traits({trait: 0})
+            _, trait = character.assign_traits({trait: 0})
             deleted.extend(trait.keys())
         else:
             try:
-                trait = await character.delete_trait(trait)
+                trait = character.delete_trait(trait)
                 deleted.append(trait)
             except inconnu.errors.TraitNotFoundError:
                 errs.append(trait)

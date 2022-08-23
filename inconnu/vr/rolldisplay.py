@@ -170,7 +170,8 @@ class RollDisplay:
         if button_id == _ButtonID.WILLPOWER:
             if self.character is not None:
                 sup_wp = self.character.superficial_wp + 1
-                await self.character.set_superficial_wp(sup_wp)
+                self.character.set_superficial_wp(sup_wp)
+                await self.character.commit()
 
             await inconnu.character.display(
                 btn,

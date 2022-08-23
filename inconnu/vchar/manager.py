@@ -89,7 +89,6 @@ class CharacterManager:
 
         characters = []
         async for character in inconnu.models.VChar.find({"guild": guild, "user": user}):
-            print(character.name)
             if character.id not in self.id_cache:
                 bisect.insort(characters, character)
                 self.id_cache[character.id] = character
@@ -146,12 +145,11 @@ class CharacterManager:
 
         key = self._user_key(character)
         self.user_cache[key] = user_chars
-
-        await self.collection.insert_one(character.raw)
+        await character.commit()
 
     async def remove(self, character):
         """Remove a character from the database and the cache."""
-        deletion = await self.collection.delete_one(character.find_query)
+        deletion = await character.delete()
 
         if deletion.deleted_count == 1:
             user_chars = await self.fetchall(character.guild, character.user)

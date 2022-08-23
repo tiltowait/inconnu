@@ -175,7 +175,8 @@ class CharacterManager:
         self.user_cache[current_key] = current_chars
 
         # Make the transfer
-        await character.set_user(new_owner)
+        character.user = new_owner.id
+        await character.commit()
 
         # Only add it to the new owner's cache if they've already loaded
         new_key = self._user_key(character)

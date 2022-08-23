@@ -147,6 +147,7 @@ async def __damage_ghoul(ctx, ghoul):
         fields=[("Health", inconnu.character.DisplayField.HEALTH)],
         footer="V5 Core, p.234",
     ),
+    await ghoul.commit()
 
 
 async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):

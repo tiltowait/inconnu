@@ -171,6 +171,11 @@ class VChar(Document):
         """Set the Superficial Willpower damage."""
         self.set_damage(_Properties.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)
 
+    @property
+    def superficial_hp(self) -> int:
+        """The amount of Superficial Health damage sustained."""
+        return self.health.count(Damage.SUPERFICIAL)
+
     def set_lifetime_xp(self, new_lifetime_xp):
         """Set the lifetime XP and adjust unspent by the delta."""
         new_lifetime_xp = max(0, new_lifetime_xp)

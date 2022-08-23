@@ -1,6 +1,7 @@
 {
 	"unset": "<em class=\"text-muted\">Not set.</em>",
 	"profile_image": "<img src=\"{source}\" class=\"rounded img-fluid\" alt=\"{name}\">",
+	"carousel_image": "<img src=\"{source}\" class=\"d-block w-100 rounded\" alt=\"{name}\">",
 	"no_profile_image": "<p class=\"text-muted text-center\"><em>No image set.</em></p>",
 	"icon": "<img src=\"{source}\" class=\"rounded-circle\" width=\"32\" alt=\"{name}\">",
 	"image_prop": "<meta property=\"og:image\" content=\"{source}\">",

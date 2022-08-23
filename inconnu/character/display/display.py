@@ -196,7 +196,7 @@ def __embed_field_value(character, parameter, can_emoji):
             value = f"```{character.bane_severity}```"
 
         case DisplayField.EXPERIENCE:
-            value = f"```{character.current_xp} / {character.total_xp}```"
+            value = f"```{character.experience.unspent} / {character.experience.lifetime}```"
 
     return value
 

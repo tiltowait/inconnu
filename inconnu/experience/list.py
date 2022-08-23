@@ -41,7 +41,7 @@ async def __get_embeds(ctx, character, player):
         embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
         embed.add_field(
             name="Experience (Unspent / Lifetime)",
-            value=f"```{character.current_xp} / {character.total_xp}```",
+            value=f"```{character.experience.unspent} / {character.experience.lifetime}```",
         )
         embeds.append(embed)
 

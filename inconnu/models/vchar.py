@@ -76,7 +76,7 @@ class VChar(Document):
     # Misc/convenience
     macros: list[VCharMacro] = fields.ListField(fields.EmbeddedField(VCharMacro), default=list)
     experience: VCharExperience = fields.EmbeddedField(VCharExperience, default=VCharExperience)
-    stat_log: dict = fields.DictField(default=dict)
+    stat_log: dict = fields.DictField(default=dict, attribute="log")
 
     class Meta:
         collection_name = "characters"
@@ -125,6 +125,11 @@ class VChar(Document):
         return self.id != other.id
 
     # Synthetic properties
+
+    @property
+    def id(self) -> str:
+        """The ObjectId's string value."""
+        return str(self.pk)
 
     @property
     def has_biography(self) -> bool:

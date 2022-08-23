@@ -41,7 +41,7 @@ def _get_embed(player, character, entry):
     embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
     embed.set_footer(text="Be sure to adjust unspent/lifetime XP accordingly!")
 
-    experience = f"```{character.current_xp} / {character.total_xp}```"
+    experience = f"```{character.experience.unspent} / {character.experience.lifetime}```"
     embed.add_field(name="Experience", value=experience)
 
     return embed

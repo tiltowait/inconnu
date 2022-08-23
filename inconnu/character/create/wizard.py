@@ -8,7 +8,6 @@ import discord
 from discord.ui import Button
 
 import inconnu
-from inconnu.vchar import VChar
 from logger import Logger
 
 
@@ -74,7 +73,7 @@ class Wizard:
         """Add the character to the database and inform the user they are done."""
         owner = self.ctx.user.id if not self.parameters.spc else inconnu.constants.INCONNU_ID
 
-        character = VChar.create(
+        character = inconnu.models.VChar(
             guild=self.ctx.guild.id,
             user=owner,
             name=self.parameters.name,
@@ -83,8 +82,9 @@ class Wizard:
             health=self.parameters.hp * inconnu.constants.Damage.NONE,
             willpower=self.parameters.wp * inconnu.constants.Damage.NONE,
             potency=self.assigned_traits.pop("Blood Potency", 0),
-            traits=self.assigned_traits,
+            _traits=self.assigned_traits,
         )
+        await character.commit()
 
         tasks = []
         if self.assigned_traits:

@@ -150,9 +150,9 @@ class VChar(Document):
         """The amount of Aggravated Health damage sustained."""
         return self.health.count(Damage.AGGRAVATED)
 
-    async def set_aggravated_hp(self, new_value):
+    def set_aggravated_hp(self, new_value):
         """Set the Aggravated Health damage."""
-        await self.set_damage(_Properties.HEALTH, Damage.AGGRAVATED, new_value, wrap=False)
+        self.set_damage(_Properties.HEALTH, Damage.AGGRAVATED, new_value, wrap=False)
 
     @property
     def aggravated_wp(self) -> int:
@@ -167,9 +167,9 @@ class VChar(Document):
 
         return max(resolve.rating, composure.rating)
 
-    async def set_superficial_wp(self, new_value):
+    def set_superficial_wp(self, new_value):
         """Set the Superficial Willpower damage."""
-        await self.set_damage(_Properties.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)
+        self.set_damage(_Properties.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)
 
     def set_lifetime_xp(self, new_lifetime_xp):
         """Set the lifetime XP and adjust unspent by the delta."""

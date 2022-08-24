@@ -135,7 +135,7 @@ class ImagePager(ReportingView):
     async def respond(self):
         """Display the pager."""
         embed = inconnu.utils.VCharEmbed(self.ctx, self.character, self.owner, show_thumbnail=False)
-        embed.set_footer(text="Upload some with /character image upload.")
+        embed.set_footer(text="Upload images with /character image upload.")
         embed.set_image(url=self.current_image)
 
         self.message = await self.ctx.respond(embed=embed, view=self)
@@ -190,7 +190,7 @@ class ImagePager(ReportingView):
             description=f"**{self.character.name}** has no images!",
             show_thumbnail=False,
         )
-        embed.set_footer(text="Upload some with /character image upload.")
+        embed.set_footer(text="Upload images with /character image upload.")
 
         await interaction.response.edit_message(embed=embed, view=None)
         self.stop()

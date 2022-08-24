@@ -140,10 +140,5 @@ async def upload_logs() -> bool:
     return successful
 
 
-async def main():
-    """On dokku release, we want to upload the logs as they currently stand."""
-    await upload_logs()
-
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(upload_logs())

@@ -6,8 +6,7 @@ from types import SimpleNamespace
 
 import discord
 
-import inconnu.settings
-import inconnu.views
+import inconnu
 
 from .. import common
 from .parser import parse_traits
@@ -164,8 +163,7 @@ async def __results_embed(ctx, outcome, character: "VChar", specialties: bool):
     if unassigned + errors:
         color = 0x000000 if assigned else 0xFF0000
 
-    embed = discord.Embed(title=title, color=color)
-    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
+    embed = inconnu.utils.VCharEmbed(ctx, character, title=title, color=color)
     embed.set_footer(text=outcome.track_adjustment)
 
     if outcome.assigned:

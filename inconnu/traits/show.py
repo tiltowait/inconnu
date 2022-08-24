@@ -19,17 +19,20 @@ async def show(ctx, character: str, player: discord.Member):
     )
     character = await haven.fetch()
 
-    embed = traits_embed(character, haven.owner)
+    embed = traits_embed(ctx, character, haven.owner)
     await inconnu.respond(ctx)(embed=embed, ephemeral=True)
 
 
-def traits_embed(character, owner):
+def traits_embed(
+    ctx: discord.ApplicationContext | discord.Interaction,
+    character: "VChar",
+    owner: discord.Member = None,
+):
     """Display traits in an embed."""
-    embed = discord.Embed(title="Character Traits")
-    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(owner))
+    embed = inconnu.utils.VCharEmbed(ctx, character, owner, title="Character Traits")
     embed.set_footer(text="To see HP, WP, etc., use /character display")
 
-    char_traits = character.traits
+    char_traits = character.traits  # This is an automatic copy
 
     for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
         embed.add_field(name="​", value=f"**{group}**", inline=False)

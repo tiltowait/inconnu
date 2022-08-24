@@ -216,9 +216,21 @@ class RollDisplay:
         The Hunger for the roll. This uses the character's Hunger if possible and
         falls back to the hunger dice count if unavailable.
         """
-        if self.character is None or self.character.is_vampire:
-            return self.outcome.hunger.count
-        return "Mortal"
+        if self.character is not None:
+            if self.character.is_vampire:
+                if self.character.hunger == 0 and self.outcome.hunger.count == 0:
+                    # Vampires are rarely at Hunger 0, so it can raise a few
+                    # eyebrows when STs see a 0 here. Often, it means the player
+                    # forgot to input Hunger. Saying "sated" when Hunger is
+                    # actually 0 helps to assure onlookers that a Hunger rating of
+                    # zero is correct.
+                    return "*Sated*"
+            else:
+                return "*Mortal*"
+
+        # We were given a specific Hunger (or implicit 0), a character wasn't
+        # given, or possibly both.
+        return self.outcome.hunger.count
 
     @property
     def comment(self):

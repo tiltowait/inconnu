@@ -62,7 +62,6 @@ async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachmen
         ctx,
         character,
         title="Image uploaded!",
-        character_author=True,
         show_thumbnail=False,
     )
     embed.set_image(url=aws_url)

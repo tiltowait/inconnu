@@ -35,7 +35,6 @@ async def convictions_show(ctx, character, player, ephemeral):
         ctx,
         character,
         player,
-        character_author=True,
         title="Convictions",
         description=char_convictions,
     )

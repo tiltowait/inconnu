@@ -43,7 +43,7 @@ async def __outcome_embed(ctx, character, outcome, specialties: bool):
     """Display the operation outcome in an embed."""
     term = "Trait" if not specialties else "Specialty"
 
-    embed = inconnu.utils.VCharEmbed(ctx, character, title=f"{term} Removal", character_author=True)
+    embed = inconnu.utils.VCharEmbed(ctx, character, title=f"{term} Removal")
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if outcome.deleted:

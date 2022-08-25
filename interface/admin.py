@@ -109,7 +109,7 @@ class AdminCog(commands.Cog):
             await asyncio.sleep(15)
 
         msg = f"{ctx.bot.user.mention} can restart now. No chargen wizards are running."
-        if message is None:
+        if message is not None:
             await message.edit(msg)
         else:
             await ctx.respond(msg, ephemeral=True)

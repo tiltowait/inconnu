@@ -199,8 +199,9 @@ async def on_ready():
         Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
 
         server_info = await inconnu.db.server_info()
-        database = os.environ["MONGO_DB"]
-        Logger.info("MONGO: Version %s, using %s database", server_info["version"], database)
+        Logger.info(
+            "MONGO: Version %s, using %s database", server_info["version"], server_info["database"]
+        )
 
         # Schedule tasks
         cull_inactive.start()

@@ -9,8 +9,11 @@ from umongo.frameworks import MotorAsyncIOInstance
 
 load_dotenv()
 
-_client = AsyncIOMotorClient(os.getenv("MONGO_URL"), serverSelectionTimeoutMS=1800)
-_db = _client[os.environ["MONGO_DB"]]
+_mongo_url = os.environ["MONGO_URL"]
+_db_name = _mongo_url.rsplit("/", 1)[-1]
+
+_client = AsyncIOMotorClient(_mongo_url, serverSelectionTimeoutMS=1800)
+_db = _client[_db_name]
 
 # The collections
 characters = _db.characters
@@ -28,4 +31,6 @@ instance = MotorAsyncIOInstance(_db)
 
 async def server_info() -> dict[str, Any]:
     """Run the client server_info() method and return the result."""
-    return await _client.server_info()
+    info = await _client.server_info()
+    info["database"] = _db_name
+    return info

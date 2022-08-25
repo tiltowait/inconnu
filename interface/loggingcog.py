@@ -36,8 +36,8 @@ class LoggingCog(commands.Cog):
             location = "DMs"
 
         Logger.info(
-            "%s: Invoked by %s#%s in %s. Options: %s",
-            ctx.command.qualified_name.upper(),
+            "COMMAND: `/%s` invoked by %s#%s in %s. Options: %s",
+            ctx.command.qualified_name,
             ctx.user.name,
             ctx.user.discriminator,
             location,

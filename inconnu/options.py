@@ -15,16 +15,14 @@ def ratings(low, high) -> list:
 
 def character(description="The character to use", required=False) -> Option:
     """Return an Option that generates a list of player characters."""
-    return Option(str, description,
-        autocomplete=_available_characters,
-        required=required
-    )
+    return Option(str, description, autocomplete=_available_characters, required=required)
 
 
 player = Option(discord.Member, "The character's owner (admin only)", required=False)
 
 
 # Helper functions
+
 
 async def _available_characters(ctx):
     """Generate a list of the user's available characters."""
@@ -50,7 +48,13 @@ async def _available_characters(ctx):
     chars = [(char.name, char.id) for char in chars]
     chars.extend(spcs)
 
-    return [
-        OptionChoice(name, ident) for name, ident in chars
-            if name.lower().startswith(ctx.value or "")
+    found_chars = [
+        OptionChoice(name, ident)
+        for name, ident in chars
+        if name.lower().startswith(ctx.value or "")
     ]
+
+    if len(found_chars) > 25:
+        instructions = "Keep typing ..." if ctx.value else "Start typing a name."
+        return [OptionChoice(f"Too many characters to display. {instructions}", "")]
+    return found_chars

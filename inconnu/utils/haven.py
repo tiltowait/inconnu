@@ -152,6 +152,9 @@ class Haven:  # pylint: disable=too-few-public-methods
         err = _personalize_error(err, self.ctx, self.owner)
 
         view = self._create_view()
+        if view is None:
+            err = "There are too many characters to display! Please use the `character` parameter."
+
         await inconnu.utils.error(
             self.ctx,
             err,
@@ -161,6 +164,10 @@ class Haven:  # pylint: disable=too-few-public-methods
             view=view,
             footer="Characters that can't be clicked cannot perform the desired action.",
         )
+
+        if view is None:
+            raise inconnu.errors.HandledError("Too many characters.")
+
         await view.wait()
 
         if (key := view.selected_value) is not None:
@@ -171,8 +178,12 @@ class Haven:  # pylint: disable=too-few-public-methods
             Logger.debug("HAVEN: No character selected")
             raise inconnu.errors.HandledError("No character was selected.")
 
-    def _create_view(self):
+    def _create_view(self) -> inconnu.views.BasicSelector | None:
         """Create a character selector view."""
+        if len(self.possibilities) > 100:
+            Logger.debug("HAVEN: More than 100 characters; selection not possible")
+            return None
+
         components = []
         if len(self.possibilities) < 6:
             for key, value in self.possibilities.items():
@@ -187,9 +198,31 @@ class Haven:  # pylint: disable=too-few-public-methods
                 )
         else:
             options = [(char.name, self.uuid + char.id) for char, _ in self.possibilities.values()]
-            Logger.debug("HAVEN: Too many characters for buttons: %s", options)
-            components = [inconnu.views.Dropdown("Select a character", *options)]
+            Logger.debug("HAVEN: %s characters are too many for buttons", len(options))
 
+            # A very small number of users have more than 25 characters, so we
+            # might need to display multiple select menus
+            components = []
+            show_name_range = len(options) > 25
+
+            while options:
+                selection = options[:25]
+                begin_letter = selection[0][0][0]
+                end_letter = selection[-1][0][0]
+
+                placeholder = "Select a character"
+                if show_name_range:
+                    # For example: "Select a character (A-S)"
+                    if begin_letter == end_letter:
+                        name_range = f" ({begin_letter})"
+                    else:
+                        name_range = f" ({begin_letter}-{end_letter})"
+                    placeholder += name_range
+
+                components.append(inconnu.views.Dropdown(placeholder, *selection))
+                options = options[25:]
+
+        Logger.debug("HAVEN: Created %s component(s)", len(components))
         view = inconnu.views.BasicSelector(*components)
         return view
 

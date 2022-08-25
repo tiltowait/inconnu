@@ -13,9 +13,9 @@ async def error(ctx, err, *fields, **kwargs):
         # If we have a help URL, we will add some links to the view
         view = kwargs.get("view") or inconnu.views.ReportingView()
 
-        view.add_item(discord.ui.Button(label="Documentation", url=help_url, row=1))
-        view.add_item(discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=1))
-        view.add_item(discord.ui.Button(label="Patreon", url=inconnu.constants.PATREON, row=1))
+        view.add_item(discord.ui.Button(label="Documentation", url=help_url, row=4))
+        view.add_item(discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=4))
+        view.add_item(discord.ui.Button(label="Patreon", url=inconnu.constants.PATREON, row=4))
     else:
         view = kwargs.get("view", None)
 

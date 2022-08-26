@@ -3,8 +3,6 @@
 import bisect
 import datetime
 
-import discord
-
 import inconnu
 from logger import Logger
 

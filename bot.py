@@ -34,7 +34,8 @@ class InconnuBot(discord.Bot):
         self.motd = embed
         self.motd_given = set()
 
-    async def inform_premium_loss(self, member: discord.Member):
+    @staticmethod
+    async def inform_premium_loss(member: discord.Member):
         """Inform a member if they lost premium status."""
         try:
             server = f"[Inconnu server]({inconnu.constants.SUPPORT_URL})"
@@ -59,7 +60,6 @@ class InconnuBot(discord.Bot):
             Logger.info(
                 "PREMIUM: Could not DM %s#%s about premium loss", member.name, member.discriminator
             )
-            pass
 
     async def inform_premium_features(self, member: discord.Member):
         """Inform the member of premium features."""

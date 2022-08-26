@@ -32,5 +32,5 @@ instance = MotorAsyncIOInstance(_db)
 async def server_info() -> dict[str, Any]:
     """Run the client server_info() method and return the result."""
     info = await _client.server_info()
-    info["database"] = _db_name
+    info["database"] = _db_name  # For logging purposes
     return info

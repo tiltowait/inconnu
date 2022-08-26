@@ -30,9 +30,12 @@ async def convictions_show(ctx, character, player, ephemeral):
     )
     character = await haven.fetch()
 
-    char_convictions = character.convictions
-    char_convictions = "\n".join(char_convictions) if char_convictions else "*None*"
-
-    await inconnu.respond(ctx)(
-        f"**{character.name}'s Convictions**\n\n{char_convictions}", ephemeral=ephemeral
+    char_convictions = "\n".join(character.convictions) if character.convictions else "*None*"
+    embed = inconnu.utils.VCharEmbed(
+        ctx,
+        character,
+        player,
+        title="Convictions",
+        description=char_convictions,
     )
+    await inconnu.respond(ctx)(embed=embed, ephemeral=ephemeral)

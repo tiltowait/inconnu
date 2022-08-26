@@ -1,12 +1,10 @@
 """misc/aggheal.py - Heal aggravated damage."""
 
-import asyncio
 from types import SimpleNamespace
 
 import inconnu
 
 from ..constants import ROUSE_FAIL_COLOR, Damage
-from ..vchar import VChar
 
 __HELP_URL = "https://www.inconnu.app/#/"
 
@@ -52,12 +50,10 @@ async def aggheal(ctx, character: str):
 def _can_aggheal(character):
     """Raise an error if the character can't agg heal."""
     if character.aggravated_hp == 0:
-        raise inconnu.errors.CharacterError(
-            f"{character.name} has no Aggravated Health damage!"
-        )
+        raise inconnu.errors.CharacterError(f"{character.name} has no Aggravated Health damage!")
 
 
-async def __heal(character: VChar):
+async def __heal(character: "VChar"):
     """
     Heal agg damage.
     Does not check if the character has agg damage!
@@ -73,15 +69,13 @@ async def __heal(character: VChar):
         torpor = True
 
     # Update the character
-    tasks = []
-    tasks.append(character.set_hunger(character.hunger + hunger_gain))
-    tasks.append(character.set_health(Damage.NONE + character.health[:-1]))
+    character.hunger += hunger_gain
+    character.health = Damage.NONE + character.health[:-1]
 
     if character.is_vampire:
-        tasks.append(character.log("rouse", 3))
+        character.log("rouse", 3)
 
-    await asyncio.gather(*tasks)
-
+    await character.commit()
     return SimpleNamespace(gain=hunger_gain, torpor=torpor)
 
 

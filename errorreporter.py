@@ -60,6 +60,9 @@ class ErrorReporter:
             # This just means a button tried to disable when its message no longer exists.
             # We don't care, and there's nothing we can do about it anyway.
             return
+        if isinstance(error, inconnu.errors.NotPremium):
+            await respond("You must be a premium supporter to use this feature.", ephemeral=True)
+            return
         if isinstance(error, commands.NotOwner):
             await respond(
                 f"Sorry, only {ctx.bot.user.mention}'s owner may issue this command!",

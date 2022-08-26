@@ -11,12 +11,20 @@ load_dotenv()
 
 DEBUG_GUILDS: Optional[list] = None
 ADMIN_GUILD = int(os.environ["ADMIN_SERVER"])
+SUPPORTER_GUILD = int(os.environ["SUPPORTER_GUILD"])
+SUPPORTER_ROLE = int(os.environ["SUPPORTER_ROLE"])
+PROFILE_SITE = os.environ.get("PROFILE_SITE", "http://localhost:8000/")
+
+if PROFILE_SITE[-1] != "/":
+    PROFILE_SITE += "/"
+
+Logger.info("CONFIG: Profile site set to %s", PROFILE_SITE)
 
 Logger.info("CONFIG: Admin guild: %s", ADMIN_GUILD)
 
 if (_debug_guilds := os.getenv("DEBUG")) is not None:
     DEBUG_GUILDS = [int(g) for g in _debug_guilds.split(",")]
-    Logger.info("MAIN: Debugging on %s", DEBUG_GUILDS)
+    Logger.info("CONFIG: Debugging on %s", DEBUG_GUILDS)
 
 
 def aws_asset(path: str):

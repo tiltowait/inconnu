@@ -8,7 +8,6 @@ from discord.ui import Button
 
 import inconnu
 
-from ...vchar import VChar
 from ..display import display
 from . import paramupdate
 
@@ -78,13 +77,14 @@ async def update(
             updates.append(impairment)
 
         tasks = [
+            character.commit(),
             inconnu.log.log_event(
                 "update",
                 user=ctx.user.id,
                 guild=ctx.guild.id,
                 charid=character.id,
                 syntax=human_readable,
-            )
+            ),
         ]
 
         # Ignore generated output if we got a custom message
@@ -99,11 +99,11 @@ async def update(
                 color=color,
                 owner=haven.owner,
                 message=update_message,
-                thumbnail=character.image_urls if not fields else None,
+                thumbnail=character.profile_image_url if not fields else None,
             )
         )
 
-        _, inter = await asyncio.gather(*tasks)
+        _, _, inter = await asyncio.gather(*tasks)
         if update_message:  # May not always be true in the future
             msg = await inconnu.get_message(inter)
             await inconnu.common.report_update(
@@ -147,7 +147,7 @@ def __validate_parameters(parameters):
     return validated
 
 
-async def __update_character(ctx, character: VChar, param: str, value: str) -> str:
+async def __update_character(ctx, character: "VChar", param: str, value: str) -> str:
     """
     Update one of a character's parameters.
     Args:
@@ -162,9 +162,12 @@ async def __update_character(ctx, character: VChar, param: str, value: str) -> s
     elif param == "total_xp":
         if not await inconnu.settings.can_adjust_lifetime_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust lifetime XP.")
+    elif param == "name":
+        # This is the only async method
+        return await paramupdate.update_name(character, value)
 
-    coro = getattr(paramupdate, f"update_{param}")
-    return await coro(character, value)
+    func = getattr(paramupdate, f"update_{param}")
+    return func(character, value)
 
 
 async def update_help(ctx, err=None, ephemeral=True):

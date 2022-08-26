@@ -10,7 +10,7 @@ from discord.ext import tasks
 import config.logging
 import inconnu
 import s3
-from config import DEBUG_GUILDS
+from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from errorreporter import reporter
 from logger import Logger
 
@@ -34,6 +34,54 @@ class InconnuBot(discord.Bot):
         self.motd = embed
         self.motd_given = set()
 
+    @staticmethod
+    async def inform_premium_loss(member: discord.Member):
+        """Inform a member if they lost premium status."""
+        try:
+            server = f"[Inconnu server]({inconnu.constants.SUPPORT_URL})"
+            patreon = f"[patron]({inconnu.constants.PATREON})"
+            embed = discord.Embed(
+                title="You are no longer a supporter!",
+                description=(
+                    "If you do not re-up your membership within 7 days, "
+                    "any profile images you've uploaded will be deleted.\n\n"
+                    f"To maintain supporter status, you must be on the {server} "
+                    f"and a {patreon}."
+                ),
+                color=discord.Color.red(),
+            )
+            embed.set_footer(text="Thank you for your support!")
+            await member.send(embed=embed)
+            Logger.info(
+                "PREMIUM: Informed %s#%s about premium loss", member.name, member.discriminator
+            )
+
+        except discord.errors.Forbidden:
+            Logger.info(
+                "PREMIUM: Could not DM %s#%s about premium loss", member.name, member.discriminator
+            )
+
+    async def inform_premium_features(self, member: discord.Member):
+        """Inform the member of premium features."""
+        try:
+            embed = discord.Embed(
+                title="Thank you for your support!",
+                description="You may now upload profile images via `/character image upload`.",
+                color=discord.Color.green(),
+            )
+            await member.send(embed=embed)
+            Logger.info(
+                "PREMIUM: Informed %s#%s about premium features", member.name, member.discriminator
+            )
+
+        except discord.errors.Forbidden:
+            Logger.info(
+                "PREMIUM: Could not DM %s#%s about premium features",
+                member.name,
+                member.discriminator,
+            )
+            pass
+
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
         """Look up a guild in the guild cache or fetches if not found."""
         if guild := self.get_guild(guild_id):
@@ -48,6 +96,26 @@ class InconnuBot(discord.Bot):
             await inconnu.respond(interaction)(err, ephemeral=True)
         else:
             await self.process_application_commands(interaction)
+
+    async def mark_premium_loss(self, member: discord.Member):
+        """Mark premium loss in the database."""
+        await inconnu.db.supporters.update_one(
+            {"_id": member.id},
+            {"$set": {"_id": member.id, "discontinued": discord.utils.utcnow()}},
+            upsert=True,
+        )
+        await self.inform_premium_loss(member)
+
+    async def mark_premium_gain(self, member: discord.Member):
+        """Mark premium gain in the database."""
+        await inconnu.db.supporters.update_one(
+            {"_id": member.id},
+            {"$set": {"_id": member.id, "discontinued": None}},
+            upsert=True,
+        )
+        await self.inform_premium_features(member)
+
+    # Events
 
     async def on_application_command(self, ctx: discord.ApplicationContext):
         """General processing after application commands."""
@@ -73,6 +141,7 @@ class InconnuBot(discord.Bot):
                         ctx.guild, ctx.user, options["character"]
                     )
                     if character.is_pc:
+                        await asyncio.sleep(1)  # Make sure it shows after the command
                         await ctx.respond(
                             (
                                 "**Tip:** You only have one character, so you don't need "
@@ -88,10 +157,28 @@ class InconnuBot(discord.Bot):
                 await ctx.respond(embed=self.motd, ephemeral=True)
                 self.motd_given.add(ctx.user.id)
 
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
+        """Check for supporter status changes."""
+        if before.guild.id != SUPPORTER_GUILD:
+            return
+
+        def is_supporter(member: discord.Member) -> bool:
+            """Check if the member is a supporter."""
+            return member.get_role(SUPPORTER_ROLE) is not None
+
+        if is_supporter(before) and not is_supporter(after):
+            Logger.info("PREMIUM: %s#%s is no longer a supporter", after.name, after.discriminator)
+            await self.mark_premium_loss(after)
+
+        elif is_supporter(after) and not is_supporter(before):
+            Logger.info("PREMIUM: %s#%s is now a supporter!", after.name, after.discriminator)
+            await self.mark_premium_gain(after)
+
 
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True)
 bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
+inconnu.bot = bot
 
 # General Events
 
@@ -112,12 +199,14 @@ async def on_ready():
         Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
 
         server_info = await inconnu.db.server_info()
-        database = os.environ["MONGO_DB"]
-        Logger.info("MONGO: Version %s, using %s database", server_info["version"], database)
+        Logger.info(
+            "MONGO: Version %s, using %s database", server_info["version"], server_info["database"]
+        )
 
         # Schedule tasks
         cull_inactive.start()
         upload_logs.start()
+        check_premium_expiries.start()
 
         # Final prep
         inconnu.char_mgr.bot = bot
@@ -143,11 +232,19 @@ async def on_member_remove(member):
     """Mark all of a member's characters as inactive."""
     await inconnu.char_mgr.mark_inactive(member)
 
+    if member.guild.id == SUPPORTER_GUILD:
+        if member.get_role(SUPPORTER_ROLE):
+            await bot.mark_premium_loss(member)
+
 
 @bot.event
 async def on_member_join(member):
     """Mark all the player's characters as active when they rejoin a guild."""
     await inconnu.char_mgr.mark_active(member)
+
+    if member.guild.id == SUPPORTER_GUILD:
+        if member.get_role(SUPPORTER_ROLE):
+            await bot.mark_premium_gain(member)
 
 
 # Guild Events
@@ -184,13 +281,19 @@ async def cull_inactive():
     await inconnu.culler.cull()
 
 
+@tasks.loop(time=time(12, 0, tzinfo=timezone.utc))
+async def check_premium_expiries():
+    """Perform required actions on expired premium users."""
+    await inconnu.tasks.premium.remove_expired_images()
+
+
 @tasks.loop(hours=1)
 async def upload_logs():
     """Upload logs to S3."""
     if not config.logging.upload_to_aws:
         Logger.warning("TASK: Log uploading disabled. Unscheduling task")
         upload_logs.stop()
-    elif not s3.upload_logs():
+    elif not await s3.upload_logs():
         Logger.error("TASK: Unable to upload logs. Unscheduling task")
         upload_logs.stop()
     else:

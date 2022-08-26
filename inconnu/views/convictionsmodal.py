@@ -15,14 +15,14 @@ class ConvictionsModal(Modal):
         self.character = character
         self.report = report
 
-        convictions = character.convictions
+        convictions = character.convictions.copy()
 
         self.add_item(
             InputText(
                 label="First Conviction",
                 placeholder="First Conviction",
                 value=_pop_first(convictions),
-                required=False
+                required=False,
             )
         )
         self.add_item(
@@ -30,7 +30,7 @@ class ConvictionsModal(Modal):
                 label="Second Conviction",
                 placeholder="Second Conviction",
                 value=_pop_first(convictions),
-                required=False
+                required=False,
             )
         )
         self.add_item(
@@ -38,10 +38,9 @@ class ConvictionsModal(Modal):
                 label="Third Conviction",
                 placeholder="Third Conviction",
                 value=_pop_first(convictions),
-                required=False
+                required=False,
             )
         )
-
 
     async def callback(self, interaction):
         """Set the character's Convictions."""
@@ -57,7 +56,7 @@ class ConvictionsModal(Modal):
         if third and third[-1].isalpha():
             third += "."
 
-        old_convictions = self.character.convictions
+        old_convictions = self.character.convictions.copy()
         old_convictions = "\n".join(old_convictions) if old_convictions else "*None*"
 
         new_convictions = [first, second, third]
@@ -67,13 +66,13 @@ class ConvictionsModal(Modal):
         update_message = f"__{user.mention} changed **{self.character.name}'s** Convictions__"
         update_message += f"\n\n***Old***\n{old_convictions}\n\n***New***\n{new_convictions_str}"
 
-        tasks = [self.character.set_convictions(new_convictions)]
+        self.character.convictions = new_convictions
 
+        tasks = [self.character.commit()]
         if self.report:
             tasks.append(
                 interaction.response.send_message(
-                    f"Changed **{self.character.name}'s** Convictions!",
-                    ephemeral=True
+                    f"Changed **{self.character.name}'s** Convictions!", ephemeral=True
                 )
             )
             tasks.append(
@@ -81,7 +80,7 @@ class ConvictionsModal(Modal):
                     ctx=interaction,
                     character=self.character,
                     title="Changed Convictions",
-                    message=update_message
+                    message=update_message,
                 )
             )
         else:

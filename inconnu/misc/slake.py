@@ -29,7 +29,8 @@ async def slake(ctx, amount, character=None, **kwargs):
         await ctx.respond(f"**{character.name}** has no Hunger!", ephemeral=True)
     else:
         old_hunger = character.hunger
-        await character.set_hunger(old_hunger - slaked)
+        character.hunger -= slaked
+        character.log("slake", slaked)
 
         if old_hunger >= 4:
             view = inconnu.views.FrenzyView(character, 3)
@@ -38,24 +39,24 @@ async def slake(ctx, amount, character=None, **kwargs):
 
         update = f"**{character.name}** slaked `{slaked}` Hunger (now at `{character.hunger}`)."
 
-        _, inter = await asyncio.gather(
-            character.log("slake", slaked),
-            inconnu.character.display(
-                ctx,
-                character,
-                title=f"Slaked {slaked} Hunger",
-                fields=[("New Hunger", inconnu.character.DisplayField.HUNGER)],
-                view=view,
-                **kwargs,
-            ),
+        inter = await inconnu.character.display(
+            ctx,
+            character,
+            title=f"Slaked {slaked} Hunger",
+            fields=[("New Hunger", inconnu.character.DisplayField.HUNGER)],
+            view=view,
+            **kwargs,
         )
         msg = await inconnu.get_message(inter)
-        await inconnu.common.report_update(
-            ctx=ctx,
-            msg=msg,
-            character=character,
-            title="Hunger Slaked",
-            message=update,
+        await asyncio.gather(
+            character.commit(),
+            inconnu.common.report_update(
+                ctx=ctx,
+                msg=msg,
+                character=character,
+                title="Hunger Slaked",
+                message=update,
+            ),
         )
 
 

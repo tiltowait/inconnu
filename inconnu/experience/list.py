@@ -41,7 +41,7 @@ async def __get_embeds(ctx, character, player):
         embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
         embed.add_field(
             name="Experience (Unspent / Lifetime)",
-            value=f"```{character.current_xp} / {character.total_xp}```",
+            value=f"```{character.experience.unspent} / {character.experience.lifetime}```",
         )
         embeds.append(embed)
 
@@ -50,10 +50,9 @@ async def __get_embeds(ctx, character, player):
 
 async def __get_chunks(ctx, character):
     """Get the event contents used by both embeds and text."""
-    events = character.experience_log
     chunker = Chunker(prefix="", suffix="")
 
-    for index, event in enumerate(reversed(events)):
+    for index, event in enumerate(reversed(character.experience.log)):
         # We need the date/time to be TZ-aware
         date = event["date"]
         date = date.replace(tzinfo=timezone.utc)

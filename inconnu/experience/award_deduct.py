@@ -1,5 +1,7 @@
 """experience/award_deduct.py - Award or deduct XP from a character."""
 
+import asyncio
+
 import discord
 
 import inconnu
@@ -20,22 +22,25 @@ async def award_or_deduct(ctx, player, character, amount, scope, reason):
     scope = scope.lower()
 
     # Check that we aren't deducting more XP than they have
-    if scope == "unspent" and character.current_xp + amount < 0:
-        if character.current_xp == 0:
+    if scope == "unspent" and character.experience.unspent + amount < 0:
+        if character.experience.unspent == 0:
             errmsg = f"**{character.name}** has no XP!"
         else:
-            errmsg = f"**{character.name}** only has `{character.current_xp}` xp to spend!"
+            errmsg = f"**{character.name}** only has `{character.experience.unspent}` xp to spend!"
 
         await inconnu.common.present_error(ctx, errmsg)
         return
 
-    await character.apply_experience(amount, scope, reason, ctx.author.id)
+    character.apply_experience(amount, scope, reason, ctx.author.id)
 
     if reason[-1] != ".":
         reason += "."
 
     embed = __get_embed(ctx, player, character, amount, scope, reason)
-    await ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+    await asyncio.gather(
+        ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none()),
+        character.commit(),
+    )
 
 
 def __get_embed(ctx, player, character, amount, scope, reason):
@@ -51,7 +56,7 @@ def __get_embed(ctx, player, character, amount, scope, reason):
     embed.add_field(name="Awarded By", value=ctx.user.mention, inline=False)
     embed.add_field(
         name="New Experience (Unspent / Lifetime)",
-        value=f"```{character.current_xp} / {character.total_xp}```",
+        value=f"```{character.experience.unspent} / {character.experience.lifetime}```",
         inline=False,
     )
 

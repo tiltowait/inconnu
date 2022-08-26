@@ -7,8 +7,6 @@ import discord
 
 import inconnu
 
-from ..vchar import VChar
-
 __HELP_URL = "https://www.inconnu.app/#/additional-commands?id=remorse-checks"
 
 
@@ -29,9 +27,10 @@ async def remorse(ctx, character=None, minimum=1):
         await ctx.respond(f"{character.name} has no stains! No remorse necessary.", ephemeral=True)
         return
 
-    outcome = await __remorse_roll(character, minimum)
+    outcome = __remorse_roll(character, minimum)
     inter = await __display_outcome(ctx, character, outcome)
     await __report(ctx, inter, character, outcome.remorseful)
+    await character.commit()
 
 
 def _can_remorse(character):
@@ -40,7 +39,7 @@ def _can_remorse(character):
         raise inconnu.errors.CharacterError(f"{character.name} has no stains.")
 
 
-async def __display_outcome(ctx, character: VChar, outcome):
+async def __display_outcome(ctx, character: "VChar", outcome):
     """Process the remorse result and display to the user."""
     title = "Remorse Success" if outcome.remorseful else "Remorse Fail"
     if outcome.remorseful:
@@ -66,7 +65,7 @@ async def __display_outcome(ctx, character: VChar, outcome):
     )
 
 
-async def __remorse_roll(character: VChar, minimum: int) -> SN:
+def __remorse_roll(character: "VChar", minimum: int) -> SN:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
     rolls = max(unfilled, minimum)
@@ -81,15 +80,14 @@ async def __remorse_roll(character: VChar, minimum: int) -> SN:
         if throw >= 6:
             successful = True
 
-    tasks = []
     if not successful:
-        tasks.append(character.set_humanity(character.humanity - 1))
-        tasks.append(character.log("degen"))
+        character.humanity -= 1
+        character.stains = 0
+        character.log("degen")
     else:
-        tasks.append(character.set_stains(0))
+        character.stains = 0
 
-    tasks.append(character.log("remorse"))
-    await asyncio.gather(*tasks)
+    character.log("remorse")
 
     return SN(remorseful=successful, minimum=minimum, dice=dice, overrode=overrode, nominal=nominal)
 
@@ -104,7 +102,6 @@ async def __report(ctx, inter, character, remorseful):
         humanity_str = f"Humanity drops to `{character.humanity}`."
 
     msg = await inconnu.get_message(inter)
-
     await inconnu.common.report_update(
         ctx=ctx,
         msg=msg,

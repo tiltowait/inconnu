@@ -17,12 +17,13 @@ from fastapi.staticfiles import StaticFiles
 
 import bot
 import inconnu
+from config import SHOW_TEST_ROUTES
 
 app = FastAPI(openapi_url=None)
 app.mount("/web", StaticFiles(directory="web"), name="web")
 
 
-if "DEBUG" in os.environ:
+if SHOW_TEST_ROUTES:
     # We don't want these development endpoints in the final API
 
     @app.get("/", response_class=HTMLResponse)

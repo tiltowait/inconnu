@@ -14,6 +14,10 @@ ADMIN_GUILD = int(os.environ["ADMIN_SERVER"])
 SUPPORTER_GUILD = int(os.environ["SUPPORTER_GUILD"])
 SUPPORTER_ROLE = int(os.environ["SUPPORTER_ROLE"])
 PROFILE_SITE = os.environ.get("PROFILE_SITE", "http://localhost:8000/")
+SHOW_TEST_ROUTES = "SHOW_TEST_ROUTES" in os.environ
+
+if SHOW_TEST_ROUTES:
+    Logger.info("CONFIG: Showing test routes")
 
 if PROFILE_SITE[-1] != "/":
     PROFILE_SITE += "/"

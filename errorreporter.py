@@ -61,7 +61,16 @@ class ErrorReporter:
             # We don't care, and there's nothing we can do about it anyway.
             return
         if isinstance(error, inconnu.errors.NotPremium):
-            await respond("You must be a premium supporter to use this feature.", ephemeral=True)
+            await inconnu.utils.error(
+                ctx,
+                (
+                    f"Only patrons can use `/{ctx.command.qualified_name}`. "
+                    "Click the Patreon button to get started!"
+                ),
+                ("Already a patron?", "Click the support button below."),
+                title="Premium feature",
+                help="https://www.inconnu.app",
+            )
             return
         if isinstance(error, commands.NotOwner):
             await respond(

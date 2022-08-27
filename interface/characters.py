@@ -10,7 +10,6 @@ from discord.ext import commands
 import inconnu
 
 
-# Unused due to Discord API issues
 async def _spc_options(ctx):
     """Determine whether the user can make an SPC."""
     if ctx.interaction.user.guild_permissions.administrator:

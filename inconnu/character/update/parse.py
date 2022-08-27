@@ -115,15 +115,19 @@ async def update(
             )
 
     except (SyntaxError, ValueError) as err:
-        log_task = inconnu.log.log_event(
-            "update_error",
-            user=ctx.user.id,
-            guild=ctx.guild.id,
-            charid=character.id,
-            syntax=human_readable,
+        character.clear_modified()
+
+        await asyncio.gather(
+            inconnu.log.log_event(
+                "update_error",
+                user=ctx.user.id,
+                guild=ctx.guild.id,
+                charid=character.id,
+                syntax=human_readable,
+            ),
+            update_help(ctx, err),
+            character.reload(),  # clear_modified() doesn't reset the fields
         )
-        help_task = update_help(ctx, err)
-        await asyncio.gather(log_task, help_task)
 
 
 def __validate_parameters(parameters):

@@ -29,6 +29,12 @@ class InconnuBot(discord.Bot):
         self.motd_given = set()
         Logger.info("BOT: Instantiated")
 
+        # Add the cogs
+        for filename in os.listdir("./interface"):
+            if filename[0] != "_" and filename.endswith(".py"):
+                Logger.debug("COGS: Loading %s", filename)
+                self.load_extension(f"interface.{filename[:-3]}")
+
     def set_motd(self, embed: discord.Embed | None):
         """Set the MOTD embed."""
         self.motd = embed
@@ -88,13 +94,15 @@ class InconnuBot(discord.Bot):
         Logger.debug("BOT: Guild %s not found in cache; attempting fetch", guild_id)
         return await self.fetch_guild(guild_id)
 
-    async def on_interaction(self, interaction: discord.Interaction):
-        """Check whether the bot is ready before allowing the interaction to go through."""
-        if not self.ready:
-            err = f"{self.user.mention} is currently restarting. This might take a few minutes."
-            await inconnu.respond(interaction)(err, ephemeral=True)
-        else:
-            await self.process_application_commands(interaction)
+    async def _set_presence(self):
+        """Set the bot's presence message."""
+        servers = len(self.guilds)
+        message = f"/help | {servers} chronicles"
+
+        Logger.info("BOT: Setting presence")
+        await self.change_presence(
+            activity=discord.Activity(type=discord.ActivityType.watching, name=message)
+        )
 
     async def mark_premium_loss(self, member: discord.Member):
         """Mark premium loss in the database."""
@@ -115,6 +123,14 @@ class InconnuBot(discord.Bot):
         await self.inform_premium_features(member)
 
     # Events
+
+    async def on_interaction(self, interaction: discord.Interaction):
+        """Check whether the bot is ready before allowing the interaction to go through."""
+        if not self.ready:
+            err = f"{self.user.mention} is currently restarting. This might take a few minutes."
+            await inconnu.respond(interaction)(err, ephemeral=True)
+        else:
+            await self.process_application_commands(interaction)
 
     async def on_application_command(self, ctx: discord.ApplicationContext):
         """General processing after application commands."""
@@ -156,6 +172,48 @@ class InconnuBot(discord.Bot):
                 await ctx.respond(embed=self.motd, ephemeral=True)
                 self.motd_given.add(ctx.user.id)
 
+    async def on_ready(self):
+        """Schedule a task to perform final setup."""
+        await inconnu.emojis.load(bot)
+        self.ready = True
+        Logger.info("BOT: Accepting commands")
+
+        await bot.wait_until_ready()
+        if not bot.welcomed:
+            Logger.info("BOT: Internal cache built")
+            Logger.info("BOT: Logged in as %s!", str(self.user))
+            Logger.info("BOT: Playing on %s servers", len(self.guilds))
+            Logger.info("BOT: %s", discord.version_info)
+            Logger.info("BOT: Latency: %s ms", self.latency * 1000)
+
+            server_info = await inconnu.db.server_info()
+            Logger.info(
+                "MONGO: Version %s, using %s database",
+                server_info["version"],
+                server_info["database"],
+            )
+
+            # Schedule tasks
+            cull_inactive.start()
+            upload_logs.start()
+            check_premium_expiries.start()
+
+            # Final prep
+            inconnu.char_mgr.bot = self
+            reporter.prepare_channel(self)
+            self.welcomed = True
+
+        # We always want to do these regardless of welcoming or not
+        await __set_presence()
+        Logger.info("BOT: Ready")
+
+    @staticmethod
+    async def on_application_command_error(context, exception):
+        """Use centralized reporter to handle errors."""
+        await reporter.report_error(context, exception)
+
+    # Member Events
+
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         """Check for supporter status changes."""
         if before.guild.id != SUPPORTER_GUILD:
@@ -173,102 +231,44 @@ class InconnuBot(discord.Bot):
             Logger.info("PREMIUM: %s#%s is now a supporter!", after.name, after.discriminator)
             await self.mark_premium_gain(after)
 
+    @staticmethod
+    async def on_member_remove(member: discord.Member):
+        """Mark all of a member's characters as inactive."""
+        await inconnu.char_mgr.mark_inactive(member)
 
-# Set up the bot instance
-intents = discord.Intents(guilds=True, members=True, messages=True)
-bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
-inconnu.bot = bot
+        if member.guild.id == SUPPORTER_GUILD:
+            if member.get_role(SUPPORTER_ROLE):
+                await bot.mark_premium_loss(member)
 
-# General Events
+    @staticmethod
+    async def on_member_join(member: discord.Member):
+        """Mark all the player's characters as active when they rejoin a guild."""
+        await inconnu.char_mgr.mark_active(member)
 
+        if member.guild.id == SUPPORTER_GUILD:
+            if member.get_role(SUPPORTER_ROLE):
+                await bot.mark_premium_gain(member)
 
-@bot.event
-async def on_ready():
-    """Schedule a task to perform final setup."""
-    await inconnu.emojis.load(bot)
-    bot.ready = True
-    Logger.info("BOT: Accepting commands")
+    # Guild Events
 
-    await bot.wait_until_ready()
-    if not bot.welcomed:
-        Logger.info("BOT: Internal cache built")
-        Logger.info("BOT: Logged in as %s!", str(bot.user))
-        Logger.info("BOT: Playing on %s servers", len(bot.guilds))
-        Logger.info("BOT: %s", discord.version_info)
-        Logger.info("BOT: Latency: %s ms", bot.latency * 1000)
+    @staticmethod
+    async def on_guild_join(guild: discord.Guild):
+        """Log whenever a guild is joined."""
+        Logger.info("BOT: Joined %s!", guild.name)
+        await asyncio.gather(inconnu.stats.guild_joined(guild), __set_presence())
 
-        server_info = await inconnu.db.server_info()
-        Logger.info(
-            "MONGO: Version %s, using %s database", server_info["version"], server_info["database"]
-        )
+    @staticmethod
+    async def on_guild_remove(guild: discord.Guild):
+        """Log guild removals."""
+        Logger.info("BOT: Left %s :(", guild.name)
+        await asyncio.gather(inconnu.stats.guild_left(guild.id), __set_presence())
 
-        # Schedule tasks
-        cull_inactive.start()
-        upload_logs.start()
-        check_premium_expiries.start()
-
-        # Final prep
-        inconnu.char_mgr.bot = bot
-        reporter.prepare_channel(bot)
-        bot.welcomed = True
-
-    # We always want to do these regardless of welcoming or not
-    await __set_presence()
-    Logger.info("BOT: Ready")
-
-
-@bot.event
-async def on_application_command_error(ctx, error):
-    """Use centralized reporter to handle errors."""
-    await reporter.report_error(ctx, error)
-
-
-# Member Events
-
-
-@bot.event
-async def on_member_remove(member):
-    """Mark all of a member's characters as inactive."""
-    await inconnu.char_mgr.mark_inactive(member)
-
-    if member.guild.id == SUPPORTER_GUILD:
-        if member.get_role(SUPPORTER_ROLE):
-            await bot.mark_premium_loss(member)
-
-
-@bot.event
-async def on_member_join(member):
-    """Mark all the player's characters as active when they rejoin a guild."""
-    await inconnu.char_mgr.mark_active(member)
-
-    if member.guild.id == SUPPORTER_GUILD:
-        if member.get_role(SUPPORTER_ROLE):
-            await bot.mark_premium_gain(member)
-
-
-# Guild Events
-
-
-@bot.event
-async def on_guild_join(guild):
-    """Log whenever a guild is joined."""
-    Logger.info("BOT: Joined %s!", guild.name)
-    await asyncio.gather(inconnu.stats.guild_joined(guild), __set_presence())
-
-
-@bot.event
-async def on_guild_remove(guild):
-    """Log guild removals."""
-    Logger.info("BOT: Left %s :(", guild.name)
-    await asyncio.gather(inconnu.stats.guild_left(guild.id), __set_presence())
-
-
-@bot.event
-async def on_guild_update(before, after):
-    """Log guild name changes."""
-    if before.name != after.name:
-        Logger.info("BOT: Renamed %s => %s", before.name, after.name)
-        await inconnu.stats.guild_renamed(after.id, after.name)
+    @staticmethod
+    async def on_guild_update(before: discord.Guild, after: discord.Guild):
+        """Log guild name changes."""
+        if before.name != after.name:
+            Logger.info("BOT: Renamed %s => %s", before.name, after.name)
+            await inconnu.stats.guild_renamed(after.id, after.name)
 
 
 # Tasks
@@ -299,31 +299,14 @@ async def upload_logs():
         Logger.info("TASK: Logs uploaded")
 
 
-# Misc and helpers
-
-
-async def __set_presence():
-    """Set the bot's presence message."""
-    servers = len(bot.guilds)
-    message = f"/help | {servers} chronicles"
-
-    Logger.info("BOT: Setting presence")
-    await bot.change_presence(
-        activity=discord.Activity(type=discord.ActivityType.watching, name=message)
-    )
-
-
-def setup():
-    """Add the cogs to the bot."""
-    for filename in os.listdir("./interface"):
-        if filename[0] != "_" and filename.endswith(".py"):
-            Logger.debug("COGS: Loading %s", filename)
-            bot.load_extension(f"interface.{filename[:-3]}", store=False)
+# Set up the bot instance
+intents = discord.Intents(guilds=True, members=True, messages=True)
+bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
+inconnu.bot = bot
 
 
 async def run():
     """Set up and run the bot."""
-    setup()
     try:
         await bot.start(os.environ["INCONNU_TOKEN"])
     except KeyboardInterrupt:

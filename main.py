@@ -149,7 +149,6 @@ def generate_image_column(snippets, name, images):
 
 if __name__ == "__main__":
     # DEBUG MODE. Does not spin up the web server.
-    bot.setup()
     bot.bot.run(os.environ["INCONNU_TOKEN"])
 else:
     # PRODUCTION. Called with inconnu.sh (or uvicorn main:app).

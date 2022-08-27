@@ -15,10 +15,14 @@ async def update_name(character: "VChar", new_name: str) -> str:
     if (name_len := len(new_name)) > 30:
         raise ValueError(f"`{new_name}` is too long by {name_len - 30} characters.")
 
-    all_chars = await inconnu.char_mgr.fetchall(character.guild, character.user)
-    for char in all_chars:
-        if char.name.lower() == new_name.lower():
-            raise ValueError(f"You already have a character named `{new_name}`!")
+    if character.name == new_name:
+        raise ValueError(f"{new_name} is already this character's name!")
+    if character.name.lower() != new_name.lower():
+        # We want to let them rename a character to fix capitalization
+        all_chars = await inconnu.char_mgr.fetchall(character.guild, character.user)
+        for char in all_chars:
+            if char.name.lower() == new_name.lower():
+                raise ValueError(f"You already have a character named `{new_name}`!")
 
     old_name = character.name
     character.name = new_name

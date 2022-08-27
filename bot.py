@@ -80,7 +80,6 @@ class InconnuBot(discord.Bot):
                 member.name,
                 member.discriminator,
             )
-            pass
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
         """Look up a guild in the guild cache or fetches if not found."""

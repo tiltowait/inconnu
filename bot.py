@@ -67,7 +67,8 @@ class InconnuBot(discord.Bot):
                 "PREMIUM: Could not DM %s#%s about premium loss", member.name, member.discriminator
             )
 
-    async def inform_premium_features(self, member: discord.Member):
+    @staticmethod
+    async def inform_premium_features(member: discord.Member):
         """Inform the member of premium features."""
         try:
             embed = discord.Embed(
@@ -204,7 +205,7 @@ class InconnuBot(discord.Bot):
             self.welcomed = True
 
         # We always want to do these regardless of welcoming or not
-        await __set_presence()
+        await self._set_presence()
         Logger.info("BOT: Ready")
 
     @staticmethod
@@ -251,17 +252,15 @@ class InconnuBot(discord.Bot):
 
     # Guild Events
 
-    @staticmethod
-    async def on_guild_join(guild: discord.Guild):
+    async def on_guild_join(self, guild: discord.Guild):
         """Log whenever a guild is joined."""
         Logger.info("BOT: Joined %s!", guild.name)
-        await asyncio.gather(inconnu.stats.guild_joined(guild), __set_presence())
+        await asyncio.gather(inconnu.stats.guild_joined(guild), self._set_presence())
 
-    @staticmethod
-    async def on_guild_remove(guild: discord.Guild):
+    async def on_guild_remove(self, guild: discord.Guild):
         """Log guild removals."""
         Logger.info("BOT: Left %s :(", guild.name)
-        await asyncio.gather(inconnu.stats.guild_left(guild.id), __set_presence())
+        await asyncio.gather(inconnu.stats.guild_left(guild.id), self._set_presence())
 
     @staticmethod
     async def on_guild_update(before: discord.Guild, after: discord.Guild):

@@ -12,8 +12,9 @@ import markdown
 from bson.objectid import ObjectId
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette import status
 
 import bot
 import inconnu
@@ -23,14 +24,16 @@ app = FastAPI(openapi_url=None)
 app.mount("/web", StaticFiles(directory="web"), name="web")
 
 
-if SHOW_TEST_ROUTES:
-    # We don't want these development endpoints in the final API
-
-    @app.get("/", response_class=HTMLResponse)
-    async def home():
-        """Basic webpage with example."""
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    """Debug page or (if live) redirect to the documentation."""
+    if SHOW_TEST_ROUTES:
         with open("web/index.html", "r", encoding="utf-8") as html:
             return html.read()
+    return RedirectResponse("https://docs.inconnu.app", status_code=status.HTTP_303_SEE_OTHER)
+
+
+if SHOW_TEST_ROUTES:
 
     @app.get("/test", response_class=HTMLResponse)
     async def offline_page():

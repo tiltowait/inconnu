@@ -101,15 +101,31 @@ async def delete_file(resource: str):
 async def delete_character_images(character: "VChar"):
     """Delete all of a character's images."""
     if character.profile.images:
-        deletions = [delete_file(image) for image in character.profile.images]
-        await asyncio.gather(*deletions)
-        del character.profile.images[:]
-        await character.commit()
-        Logger.info("S3: Deleted %s's images", character.name)
+        # We only want to delete images if they're managed by S3, so we take a
+        # copy of the image list before wiping it. When we loop, we test if
+        # the image is in S3 or not. If it is, add it to the deletion queue;
+        # otherwise, add it back to the character.
+        images = character.profile.images
+        deletions = []
+        character.profile.images = []
+
+        for image in images:
+            if is_managed_url(image):
+                deletions.append(delete_file(image))
+            else:
+                Logger.info("S3: %s: Ignoring non-managed image URL", character.name)
+                character.profile.images.append(image)
+
+        if deletions:
+            await asyncio.gather(character.commit(), *deletions)
+            Logger.info("S3: Deleted %s's images", character.name)
+        else:
+            Logger.info("S3: %s had only non-managed image(s)", character.name)
     else:
         Logger.info("S3: %s had no images to delete", character.name)
 
-    # Delete the directory
+    # Attempt to delete the directory no matter what. This will silently fail
+    # if the directory isn't empty.
     await delete_file(get_url(f"profiles/{character.id}"))
 
 

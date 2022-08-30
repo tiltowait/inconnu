@@ -8,9 +8,8 @@ from numpy.random import default_rng
 
 import config
 
-from . import character
-from . import cull as culler
 from . import (
+    character,
     db,
     errors,
     experience,

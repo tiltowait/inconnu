@@ -276,10 +276,11 @@ class InconnuBot(discord.Bot):
 @tasks.loop(time=time(12, 0, tzinfo=timezone.utc))
 async def cull_inactive():
     """Cull inactive characters and guilds."""
-    await inconnu.culler.cull()
+    await inconnu.tasks.cull()
 
 
-@tasks.loop(time=time(12, 0, tzinfo=timezone.utc))
+@tasks.loop(minutes=10)
+# @tasks.loop(time=time(12, 0, tzinfo=timezone.utc))
 async def check_premium_expiries():
     """Perform required actions on expired premium users."""
     await inconnu.tasks.premium.remove_expired_images()

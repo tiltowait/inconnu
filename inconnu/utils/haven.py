@@ -248,7 +248,7 @@ def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
             player.discriminator,
             ctx.guild.name,
         )
-        if not (ctx.channel.permissions_for(ctx.user).administrator or allow_lookups):
+        if not (is_admin(ctx.user) or allow_lookups):
             Logger.info(
                 "HAVEN: Invalid player lookup by %s#%s (%s)",
                 ctx.user.name,
@@ -258,6 +258,18 @@ def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
             raise LookupError("You don't have lookup permissions.")
 
     return player
+
+
+def is_admin(member: discord.Member):
+    """Check if a user has admin permissions."""
+    # We can't rely on ctx.channel.permissions_for, because sometimes we
+    # receive a PartialMessageable
+    privileged = member.top_role.permissions.administrator or member.guild_permissions.administrator
+    if not privileged:
+        Logger.debug("HAVEN: %s#%s is not an admin", member.name, member.discriminator)
+    else:
+        Logger.debug("HAVEN: %s#%s is an admin", member.name, member.discriminator)
+    return privileged
 
 
 def _personalize_error(err, ctx, member):

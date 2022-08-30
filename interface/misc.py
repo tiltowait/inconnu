@@ -69,6 +69,7 @@ class MiscCommands(commands.Cog):
                 await asyncio.gather(
                     inconnu.char_mgr.transfer(character, current_owner, new_owner), ctx.respond(msg)
                 )
+                await ctx.bot.transfer_premium(new_owner, character)
 
             else:
                 await inconnu.common.present_error(

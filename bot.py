@@ -41,18 +41,20 @@ class InconnuBot(discord.Bot):
         self.motd_given = set()
 
     @staticmethod
-    async def inform_premium_loss(member: discord.Member):
+    async def inform_premium_loss(member: discord.Member, title="You are no longer a supporter!"):
         """Inform a member if they lost premium status."""
         try:
             server = f"[Inconnu server]({inconnu.constants.SUPPORT_URL})"
             patreon = f"[patron]({inconnu.constants.PATREON})"
             embed = discord.Embed(
-                title="You are no longer a supporter!",
+                title=title,
                 description=(
-                    "If you do not re-up your membership within 7 days, "
-                    "any profile images you've uploaded will be deleted.\n\n"
+                    f"If you aren't a {patreon} by the first of the month, your "
+                    "character profile images will be deleted.\n\n"
                     f"To maintain supporter status, you must be on the {server} "
-                    f"and a {patreon}."
+                    f"and a {patreon}.\n\n"
+                    "**Note:** Old-style (URL-based) images are grandfathered "
+                    "in and will not be removed."
                 ),
                 color=discord.Color.red(),
             )
@@ -105,14 +107,20 @@ class InconnuBot(discord.Bot):
             activity=discord.Activity(type=discord.ActivityType.watching, name=message)
         )
 
-    async def mark_premium_loss(self, member: discord.Member):
+    async def mark_premium_loss(self, member: discord.Member, transferral=False):
         """Mark premium loss in the database."""
         await inconnu.db.supporters.update_one(
             {"_id": member.id},
             {"$set": {"_id": member.id, "discontinued": discord.utils.utcnow()}},
             upsert=True,
         )
-        await self.inform_premium_loss(member)
+        if transferral:
+            await self.inform_premium_loss(
+                member,
+                "A premium character was just transferred to you, but you aren't a supporter",
+            )
+        else:
+            await self.inform_premium_loss(member)
 
     async def mark_premium_gain(self, member: discord.Member):
         """Mark premium gain in the database."""
@@ -122,6 +130,30 @@ class InconnuBot(discord.Bot):
             upsert=True,
         )
         await self.inform_premium_features(member)
+
+    async def transfer_premium(self, member: discord.Member, character: "VChar"):
+        """
+        When a character is transferred to a new user, mark that user's premium
+        status if the character has images.
+        """
+        if not character.profile.images:
+            Logger.info("TRANSFER: %s has no images", character.name)
+            return
+
+        if not await inconnu.db.supporters.find_one({"_id": character.user}):
+            Logger.info(
+                "TRANSFER: Creating a supporter record for %s#%s, because %s has images",
+                member.name,
+                member.discriminator,
+                character.name,
+            )
+            await self.mark_premium_loss(member, True)
+        else:
+            Logger.info(
+                "TRANSFER: %s#%s has a supporter record; no action needed",
+                member.name,
+                member.discriminator,
+            )
 
     # Events
 

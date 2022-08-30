@@ -25,8 +25,8 @@ async def remove_expired_images():
         # The cache doesn't have a facility for fetching cross-guild, so we
         # have to fetch them manually
         async for character in inconnu.models.VChar.find({"user": user_id}):
-            if character.profile.images:
-                s3_tasks.append(s3.delete_character_images(character))
+            Logger.info("TASK: Removing images from %s", character.name)
+            s3_tasks.append(s3.delete_character_images(character))
 
     Logger.info(
         "TASK: Removing images from %s characters due to expired supporter status",

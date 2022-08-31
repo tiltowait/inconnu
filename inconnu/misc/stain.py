@@ -3,7 +3,7 @@
 import inconnu
 from inconnu.constants import Damage
 
-__HELP_URL = "https://www.inconnu.app/#/shortcuts?id=applying-stains"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#applying-stains"
 
 
 async def stain(ctx, delta, character, owner):

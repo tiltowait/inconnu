@@ -13,7 +13,7 @@ import inconnu
 import s3
 from logger import Logger
 
-__HELP_URL = "https://www.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
 
 

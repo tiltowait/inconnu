@@ -10,7 +10,7 @@ from logger import Logger
 
 from ...views import ReportingView
 
-__HELP_URL = "https://www.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 
 
 async def display_images(

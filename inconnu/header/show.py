@@ -6,7 +6,7 @@ import discord
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app/"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
 
 async def show_header(ctx: discord.ApplicationContext, character: str = None, **kwargs):

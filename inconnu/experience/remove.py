@@ -6,7 +6,7 @@ import inconnu
 
 from ..views import DisablingView
 
-__HELP_URL = "https://www.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
 
 async def remove_entry(ctx, player, character, index):

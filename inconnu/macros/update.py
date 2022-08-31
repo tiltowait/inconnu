@@ -7,7 +7,7 @@ import inconnu
 
 from . import macro_common
 
-__HELP_URL = "https://www.inconnu.app/#/macros?id=updating"
+__HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"
 __VALID_KEYS = {
     "name": "The macro's name (letters and underscores only)",
     "pool": "The macro's pool",

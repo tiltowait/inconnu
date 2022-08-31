@@ -5,7 +5,7 @@ import asyncio
 import inconnu
 from logger import Logger
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=awakening"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#awakening"
 
 
 async def awaken(ctx, character=None):

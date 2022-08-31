@@ -4,7 +4,7 @@ import asyncio
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=slaking-hunger"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"
 
 
 async def slake(ctx, amount, character=None, **kwargs):

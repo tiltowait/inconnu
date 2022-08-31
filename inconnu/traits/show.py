@@ -5,7 +5,7 @@ from discord.ext import pages
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app/#/trait-management?id=displaying-traits"
+__HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-traits"
 
 
 async def show(ctx, character: str, player: discord.Member):

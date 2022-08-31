@@ -2,7 +2,7 @@
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app/#/macros?id=deletion"
+__HELP_URL = "https://docs.inconnu.app/command-reference/macros/deletion"
 
 
 async def delete(ctx, macro_name: str, character=None):

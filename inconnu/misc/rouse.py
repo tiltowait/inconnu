@@ -8,7 +8,7 @@ import discord
 import inconnu
 from inconnu.models import VChar
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=rouse-checks"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 
 
 async def rouse(

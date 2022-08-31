@@ -24,7 +24,7 @@ from ..roll import Roll
 from .rolldisplay import RollDisplay
 from .rollparser import RollParser
 
-__HELP_URL = "https://www.inconnu.app/#/rolls"
+__HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
 
 async def parse(ctx, raw_syntax: str, comment: str, character: str, player: discord.Member):

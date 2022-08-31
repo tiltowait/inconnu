@@ -1,13 +1,12 @@
 """misc/remorse.py - Perform a remorse check."""
 
-import asyncio
 from types import SimpleNamespace as SN
 
 import discord
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=remorse-checks"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#remorse-checks"
 
 
 async def remorse(ctx, character=None, minimum=1):

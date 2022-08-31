@@ -8,7 +8,7 @@ from discord.ui import InputText, Modal
 import inconnu
 import s3
 
-__HELP_URL = "https://www.inconnu.app/#/character-tracking?id=character-deletion"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 
 
 async def delete(ctx, character: str):

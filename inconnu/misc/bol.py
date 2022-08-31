@@ -4,7 +4,7 @@ import asyncio
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=blush-of-life"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#blush-of-life"
 
 
 async def bol(ctx, character):

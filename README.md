@@ -14,7 +14,7 @@
 
 * **Invite Inconnu to your server:** [Link](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147747840&scope=bot%20applications.commands)
 * **Demo/Support server:** [Link](https://discord.gg/QHnCdSPeEE)
-* **Full documentation:** [Link](https://www.inconnu.app/#/)
+* **Full documentation:** [Link](https://docs.inconnu.app)
 
 ### Basic Usage
 
@@ -31,5 +31,5 @@ An **Inconnu** roll uses the following syntax: `/vr syntax:<pool> [hunger] [diff
 ## Troubleshooting
 
 * **Can't use commands?** Make sure **Inconnu** has the permissions above. Additionally, make sure the `@everyone` role has the *Use slash commands* permission.
-* **Emojis not working?** Make sure to enable the *Use External Emoji* permission. Alternatively, enable [accessibility mode](https://www.inconnu.app/#/accessibility).
+* **Emojis not working?** Make sure to enable the *Use External Emoji* permission. Alternatively, enable [accessibility mode](https://docs.inconnu.app/command-reference/miscellaneous#accessibility-mode).
 * **Can't see embeds?** You need the *Show website preview info from links pasted into chat* setting under *Text & Images* enabled in order to see **Inconnu's** embeds. Some AV software, such as McAfee, have also been known to block embeds.

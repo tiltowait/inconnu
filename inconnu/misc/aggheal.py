@@ -6,7 +6,7 @@ import inconnu
 
 from ..constants import ROUSE_FAIL_COLOR, Damage
 
-__HELP_URL = "https://www.inconnu.app/#/"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#aggravated-healing"
 
 
 async def aggheal(ctx, character: str):

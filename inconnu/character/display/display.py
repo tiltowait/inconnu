@@ -10,7 +10,7 @@ import inconnu
 from ...constants import Damage
 from . import trackmoji
 
-__HELP_URL = "https://www.inconnu.app/#/character-tracking?id=character-display"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 
 # Display fields
 

@@ -5,7 +5,7 @@ import inconnu
 
 from . import macro_common
 
-__HELP_URL = "https://www.inconnu.app/#/macros?id=creation"
+__HELP_URL = "https://docs.inconnu.app/command-reference/macros/creation"
 
 
 async def create(

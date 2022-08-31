@@ -8,7 +8,7 @@ import inconnu
 
 from . import traitcommon
 
-__HELP_URL = "https://www.inconnu.app/#/trait-management?id=deleting-traits"
+__HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 
 
 async def delete(ctx, traits: str, character=None, specialties=False):

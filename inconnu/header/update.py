@@ -7,7 +7,7 @@ import discord
 import inconnu
 from logger import Logger
 
-__HELP_URL = "https://www.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
 
 async def update_header(ctx: discord.ApplicationContext, character, blush: int):

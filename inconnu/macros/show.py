@@ -7,7 +7,7 @@ from discord.ext import pages
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app/#/macros?id=retrieval"
+__HELP_URL = "https://docs.inconnu.app/command-reference/macros/listing"
 
 
 async def show(ctx, character=None):

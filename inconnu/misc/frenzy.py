@@ -6,7 +6,7 @@ import discord
 import inconnu
 from config import aws_asset
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=frenzy-checks"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#frenzy-checks"
 
 __FRENZY_BONUSES = {
     "The Dream": 3,

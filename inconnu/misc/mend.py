@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import inconnu
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=mending-damage"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
 
 
 async def mend(ctx, character=None):

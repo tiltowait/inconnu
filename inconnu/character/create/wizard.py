@@ -140,7 +140,9 @@ class Wizard:
         )
         embed.set_footer(text="See /help overview for further details.")
 
-        button = Button(label="Full Documentation", url="https://www.inconnu.app/#/quickstart")
+        button = Button(
+            label="Full Documentation", url="https://docs.inconnu.app/guides/quickstart"
+        )
 
         await self.edit_message(embed=embed, view=inconnu.views.ReportingView(button))
 

@@ -12,8 +12,8 @@ from .. import common
 from .parser import parse_traits
 
 __HELP_URL = {
-    False: "https://www.inconnu.app/#/trait-management?id=adding-traits",
-    True: "https://www.inconnu.app/#/trait-management?id=updating-traits",
+    False: "https://docs.inconnu.app/command-reference/traits/adding-traits",
+    True: "https://docs.inconnu.app/command-reference/traits/updating-traits",
 }
 
 

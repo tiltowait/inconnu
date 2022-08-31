@@ -8,7 +8,7 @@ from discord.ext.pages import Paginator
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
 
 async def list_events(ctx, character, player, ephemeral):

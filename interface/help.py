@@ -20,7 +20,11 @@ class _HelpView(View):
 
         if show_support:
             self.add_item(
-                Button(label="New? Click here!", url="https://www.inconnu.app/#/quickstart", row=1)
+                Button(
+                    label="New? Click here!",
+                    url="https://docs.inconnu.app/guides/quickstart",
+                    row=1,
+                )
             )
             self.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
             self.add_item(Button(label="Patreon", url=PATREON, row=1))
@@ -245,7 +249,7 @@ class Help(commands.Cog):
         )
 
         buttons = [
-            Button(label="Documentation", url="https://www.inconnu.app/#/trait-management"),
+            Button(label="Documentation", url="https://docs.inconnu.app/command-reference/traits"),
             Button(label="Support", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
@@ -277,7 +281,7 @@ class Help(commands.Cog):
         )
 
         buttons = [
-            Button(label="Documentation", url="https://www.inconnu.app/#/macros"),
+            Button(label="Documentation", url="https://docs.inconnu.app/command-reference/macros"),
             Button(label="Support", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)

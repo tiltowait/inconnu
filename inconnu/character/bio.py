@@ -8,7 +8,7 @@ from discord.ext import pages
 import inconnu
 from logger import Logger
 
-__HELP_URL = "https://www.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#profile"
 
 
 async def edit_biography(ctx, character):

@@ -3,10 +3,12 @@ fastapi==0.79.1
 flatdict==4.0.1
 markdown==3.4.1
 motor==3.0.0
-numpy==1.23.2
-py-cord==2.0.1
+numpy==1.23.1
+Pillow==9.2.0
+py-cord==2.1.1
 pymongo[srv]==4.2.0
 python-dotenv==0.20.0
 statcord.py==3.1.0
+umongo==3.1.0
 uvicorn==0.18.2
 validators==0.20.0

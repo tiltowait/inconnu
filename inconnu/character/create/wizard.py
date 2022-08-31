@@ -8,7 +8,6 @@ import discord
 from discord.ui import Button
 
 import inconnu
-from inconnu.vchar import VChar
 from logger import Logger
 
 
@@ -22,7 +21,7 @@ class Wizard:
             self.using_dms = False
         else:
             self.using_dms = True
-            if "DEBUG" in os.environ:
+            if "TRUNCATE_COMMANDS" in os.environ:
                 # Quicker creation for testing
                 self.core_traits = ["Stamina", "Resolve", "Composure"]
             else:
@@ -74,17 +73,18 @@ class Wizard:
         """Add the character to the database and inform the user they are done."""
         owner = self.ctx.user.id if not self.parameters.spc else inconnu.constants.INCONNU_ID
 
-        character = VChar.create(
+        character = inconnu.models.VChar(
             guild=self.ctx.guild.id,
             user=owner,
-            name=self.parameters.name,
+            _name=self.parameters.name,
             splat=self.parameters.splat,
             humanity=self.parameters.humanity,
             health=self.parameters.hp * inconnu.constants.Damage.NONE,
             willpower=self.parameters.wp * inconnu.constants.Damage.NONE,
             potency=self.assigned_traits.pop("Blood Potency", 0),
-            traits=self.assigned_traits,
+            _traits=self.assigned_traits,
         )
+        await character.commit()
 
         tasks = []
         if self.assigned_traits:
@@ -105,7 +105,7 @@ class Wizard:
                 character=character,
                 title="Character Created",
                 message=f"{self.ctx.user.mention} created **{character.name}**.",
-                embed=inconnu.traits.embed(character, self.ctx.user),
+                embed=inconnu.traits.embed(self.ctx, character),
             )
         )
 
@@ -140,7 +140,9 @@ class Wizard:
         )
         embed.set_footer(text="See /help overview for further details.")
 
-        button = Button(label="Full Documentation", url="https://www.inconnu.app/#/quickstart")
+        button = Button(
+            label="Full Documentation", url="https://docs.inconnu.app/guides/quickstart"
+        )
 
         await self.edit_message(embed=embed, view=inconnu.views.ReportingView(button))
 

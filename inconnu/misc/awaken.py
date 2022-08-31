@@ -5,7 +5,7 @@ import asyncio
 import inconnu
 from logger import Logger
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=awakening"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#awakening"
 
 
 async def awaken(ctx, character=None):
@@ -41,7 +41,7 @@ async def awaken(ctx, character=None):
             if character.hunger == 5:
                 message += "**Enter torpor!**"
             else:
-                await character.set_hunger(character.hunger + 1)
+                character.hunger += 1
                 message += f"Increase Hunger to **{character.hunger}**."
     else:
         shp = character.superficial_hp
@@ -52,6 +52,19 @@ async def awaken(ctx, character=None):
             message += f"\nRecovered **{recovered}** Health."
             recovery.append(f"sh=-{recovered}")
 
+    character.log("awaken")
+
+    # If a vampire awakens, we want to turn off its blush
+    if character.is_vampire and not character.is_thin_blood:
+        Logger.debug("AWAKEN: %s is no longer Blushed", character.name)
+        character.set_blush(0)
+    else:
+        Logger.debug("AWAKEN: %s is a mortal or Thin-Blood; header unchanged", character.name)
+
+    if character.is_vampire:
+        character.log("rouse")
+
+    # The update function will commit for us
     await inconnu.character.update(
         ctx,
         parameters=" ".join(recovery),
@@ -59,17 +72,3 @@ async def awaken(ctx, character=None):
         color=color,
         update_message=message,
     )
-
-    tasks = [character.log("awaken")]
-
-    # If a vampire awakens, we want to turn off its blush
-    if character.is_vampire and not character.is_thin_blood:
-        Logger.debug("AWAKEN: %s is no longer Blushed", character.name)
-        tasks.append(character.set_blush(0))
-    else:
-        Logger.debug("AWAKEN: %s is a mortal or Thin-Blood; header unchanged", character.name)
-
-    if character.is_vampire:
-        tasks.append(character.log("rouse"))
-
-    await asyncio.gather(*tasks)

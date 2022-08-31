@@ -7,6 +7,7 @@ from .convictions import convictions_set, convictions_show
 from .create import create
 from .delete import delete
 from .display import DisplayField, display, display_requested
+from .images import upload
 from .update import update, update_help
 
 

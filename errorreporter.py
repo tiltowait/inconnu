@@ -60,6 +60,24 @@ class ErrorReporter:
             # This just means a button tried to disable when its message no longer exists.
             # We don't care, and there's nothing we can do about it anyway.
             return
+        if isinstance(error, inconnu.errors.NotPremium):
+            troubleshoot_url = (
+                "https://docs.inconnu.app/advanced/troubleshooting#you-arent-able-to-upload-images"
+            )
+            await inconnu.utils.error(
+                ctx,
+                (
+                    f"Only patrons can use `/{ctx.command.qualified_name}`. "
+                    "Click the Patreon button to get started!"
+                ),
+                (
+                    "Already a patron?",
+                    f"[Check the troubleshooting page.]({troubleshoot_url})",
+                ),
+                title="Premium feature",
+                help="https://docs.inconnu.app/guides/premium",
+            )
+            return
         if isinstance(error, commands.NotOwner):
             await respond(
                 f"Sorry, only {ctx.bot.user.mention}'s owner may issue this command!",

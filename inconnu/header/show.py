@@ -1,10 +1,12 @@
 """header/display.py - RP header display facilities."""
 
+import copy
+
 import discord
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app/"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
 
 async def show_header(ctx: discord.ApplicationContext, character: str = None, **kwargs):
@@ -18,7 +20,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
     character = await haven.fetch()
 
     # Prepare the header with any overrides
-    header = character.rp_header
+    header = copy.deepcopy(character.header)
 
     if kwargs["blush"] is not None:
         header.blush = kwargs["blush"]
@@ -76,7 +78,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
             "character": {
                 "guild": ctx.guild.id,
                 "user": ctx.user.id,
-                "charid": character.object_id,
+                "charid": character.pk,
             },
             "channel": ctx.channel.id,
             "message": message.id,

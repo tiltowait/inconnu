@@ -162,38 +162,6 @@ async def report_update(*, ctx, character, title, message, **kwargs):
         await update_channel.send(content, embed=embed, allowed_mentions=mentions)
 
 
-async def select_character(ctx, err, help_url, tip, player=None):
-    """
-    A prompt for the user to select a character from a list.
-    Args:
-        ctx: Discord context
-        err: An error message to display
-        help_url: A URL pointing to the documentation
-        tip (tuple): A name and value for an embed field
-        player: (Optional) A Discord member to query instead
-    """
-    if ctx.user != player:
-        user = player
-        err = str(err).replace("You have", f"{user.display_name} has")
-    else:
-        user = ctx.user
-
-    options = await character_options(ctx.guild.id, user.id)
-    msg = await present_error(
-        ctx, err, (tip[0], tip[1]), author=user, help_url=help_url, view=options.view
-    )
-
-    options.view.message = msg
-    await options.view.wait()
-
-    if (character_id := options.view.selected_value) is not None:
-        # These button IDs follow the format "character_id UUID", so we need
-        # to remove the UUID to get just the character ID
-        character_id = character_id.split()[0]
-
-    return character_id
-
-
 async def character_options(guild: int, user: int):
     """
     Generate a dictionary of characters keyed by ID plus components for selecting them.
@@ -240,40 +208,6 @@ async def player_lookup(ctx, player: discord.Member):
         raise LookupError("You don't have lookup permissions.")
 
     return player
-
-
-class FetchError(Exception):
-    """An error for when we are unable to fetch a character."""
-
-
-async def fetch_character(ctx, character, tip, help_url, owner=None):
-    """
-    Attempt to fetch a character, presenting a selection dialogue if necessary.
-    Args:
-        ctx: The Discord context for displaying messages and retrieving guild info
-        character (str): The name of the character to fetch. Optional.
-        tip (str): The proper syntax for the command
-        help_url (str): The URL of the button to display on any error messages
-        userid (int): The ID of the user who owns the character, if different from the ctx author
-    """
-    if isinstance(character, inconnu.VChar):
-        return character
-
-    try:
-        owner = owner or ctx.user
-        return await inconnu.char_mgr.fetchone(ctx.guild.id, owner.id, character)
-
-    except inconnu.errors.UnspecifiedCharacterError as err:
-        character = await select_character(ctx, err, help_url, ("Proper syntax", tip), player=owner)
-
-        if character is None:
-            raise FetchError("No character was selected.") from err
-
-        return await inconnu.char_mgr.fetchone(ctx.guild.id, owner.id, character)
-
-    except inconnu.errors.CharacterError as err:
-        await present_error(ctx, err, help_url=help_url, author=owner)
-        raise FetchError(str(err)) from err
 
 
 def paginate(page_size: int, *contents) -> list:

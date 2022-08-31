@@ -188,8 +188,23 @@ class HeaderCog(commands.Cog):
                 owner = record["character"]["user"]
                 if ctx.channel.permissions_for(ctx.user).administrator or owner == ctx.user.id:
                     Logger.debug("HEADER: Deleting RP header")
-                    await message.delete()
-                    await ctx.respond("RP header deleted!", ephemeral=True)
+                    try:
+                        await message.delete()
+                        await ctx.respond("RP header deleted!", ephemeral=True)
+                    except discord.errors.Forbidden:
+                        await ctx.respond(
+                            (
+                                "Something went wrong. Unable to delete the header. "
+                                "This may be a permissions issue."
+                            ),
+                            ephemeral=True,
+                        )
+                        Logger.warning(
+                            "HEADER: Unable to delete %s in #%s on %s",
+                            record["message"],
+                            ctx.channel.name,
+                            ctx.guild.name,
+                        )
                 else:
                     Logger.debug(
                         "HEADER: Unauthorized deletion attempt by %s#%s",

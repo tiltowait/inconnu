@@ -1,5 +1,6 @@
 """vchar/manager.py - Character cache/in-memory database."""
 
+import bisect
 import datetime
 
 import inconnu
@@ -36,7 +37,7 @@ class CharacterManager:
 
         If the name isn't given, return the user's sole character, if applicable.
         """
-        if isinstance(name, inconnu.VChar):
+        if isinstance(name, inconnu.models.VChar):
             return name
 
         guild, user, _ = self._get_ids(guild, user)
@@ -84,24 +85,15 @@ class CharacterManager:
         if self.all_fetched.get(key, False):
             return self.user_cache.get(key, [])
 
-        # Need to build the cache
-        cursor = self.collection.find({"guild": guild, "user": user})
-        # cursor.collation({"locale": "en", "strength": 2}).sort("name")
-
         characters = []
-        async for char_params in cursor:
-            character = inconnu.VChar(char_params)
-
+        async for character in inconnu.models.VChar.find({"guild": guild, "user": user}):
             if character.id not in self.id_cache:
-                characters.append(character)
+                bisect.insort(characters, character)
                 self.id_cache[character.id] = character
             else:
                 # Use the already cached character. This will probably never
                 # happen, but we'll put it here just in case
-                characters.append(self.id_cache[character.id])
-
-        # Sort them, since serverless doesn't allow collation
-        characters = sorted(characters, key=lambda c: c.name.casefold())
+                bisect.insort(characters, self.id_cache[character.id])
 
         self.user_cache[key] = characters
         self.all_fetched[key] = True
@@ -151,12 +143,11 @@ class CharacterManager:
 
         key = self._user_key(character)
         self.user_cache[key] = user_chars
-
-        await self.collection.insert_one(character.raw)
+        await character.commit()
 
     async def remove(self, character):
         """Remove a character from the database and the cache."""
-        deletion = await self.collection.delete_one(character.find_query)
+        deletion = await character.delete()
 
         if deletion.deleted_count == 1:
             user_chars = await self.fetchall(character.guild, character.user)
@@ -182,7 +173,8 @@ class CharacterManager:
         self.user_cache[current_key] = current_chars
 
         # Make the transfer
-        await character.set_user(new_owner)
+        character.user = new_owner.id
+        await character.commit()
 
         # Only add it to the new owner's cache if they've already loaded
         new_key = self._user_key(character)
@@ -199,6 +191,15 @@ class CharacterManager:
                 new_chars.append(character)
 
             self.user_cache[new_key] = new_chars
+
+        Logger.info(
+            "CHARACTER MANAGER: Transferred '%s' from %s#%s to %s#%s",
+            character.name,
+            current_owner.name,
+            current_owner.discriminator,
+            new_owner.name,
+            new_owner.discriminator,
+        )
 
     async def mark_inactive(self, player):
         """

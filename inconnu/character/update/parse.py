@@ -8,7 +8,6 @@ from discord.ui import Button
 
 import inconnu
 
-from ...vchar import VChar
 from ..display import display
 from . import paramupdate
 
@@ -31,7 +30,7 @@ __KEYS = {
     "potency": "+/- The character's Blood Potency",
 }
 
-__HELP_URL = "https://www.inconnu.app/#/character-tracking?id=tracker-updates"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/updates"
 
 
 async def update(
@@ -78,13 +77,14 @@ async def update(
             updates.append(impairment)
 
         tasks = [
+            character.commit(),
             inconnu.log.log_event(
                 "update",
                 user=ctx.user.id,
                 guild=ctx.guild.id,
                 charid=character.id,
                 syntax=human_readable,
-            )
+            ),
         ]
 
         # Ignore generated output if we got a custom message
@@ -99,11 +99,11 @@ async def update(
                 color=color,
                 owner=haven.owner,
                 message=update_message,
-                thumbnail=character.image_urls if not fields else None,
+                thumbnail=character.profile_image_url if not fields else None,
             )
         )
 
-        _, inter = await asyncio.gather(*tasks)
+        _, _, inter = await asyncio.gather(*tasks)
         if update_message:  # May not always be true in the future
             msg = await inconnu.get_message(inter)
             await inconnu.common.report_update(
@@ -115,15 +115,19 @@ async def update(
             )
 
     except (SyntaxError, ValueError) as err:
-        log_task = inconnu.log.log_event(
-            "update_error",
-            user=ctx.user.id,
-            guild=ctx.guild.id,
-            charid=character.id,
-            syntax=human_readable,
+        character.clear_modified()
+
+        await asyncio.gather(
+            inconnu.log.log_event(
+                "update_error",
+                user=ctx.user.id,
+                guild=ctx.guild.id,
+                charid=character.id,
+                syntax=human_readable,
+            ),
+            update_help(ctx, err),
+            character.reload(),  # clear_modified() doesn't reset the fields
         )
-        help_task = update_help(ctx, err)
-        await asyncio.gather(log_task, help_task)
 
 
 def __validate_parameters(parameters):
@@ -147,7 +151,7 @@ def __validate_parameters(parameters):
     return validated
 
 
-async def __update_character(ctx, character: VChar, param: str, value: str) -> str:
+async def __update_character(ctx, character: "VChar", param: str, value: str) -> str:
     """
     Update one of a character's parameters.
     Args:
@@ -162,9 +166,12 @@ async def __update_character(ctx, character: VChar, param: str, value: str) -> s
     elif param == "total_xp":
         if not await inconnu.settings.can_adjust_lifetime_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust lifetime XP.")
+    elif param == "name":
+        # This is the only async method
+        return await paramupdate.update_name(character, value)
 
-    coro = getattr(paramupdate, f"update_{param}")
-    return await coro(character, value)
+    func = getattr(paramupdate, f"update_{param}")
+    return func(character, value)
 
 
 async def update_help(ctx, err=None, ephemeral=True):
@@ -192,7 +199,7 @@ async def update_help(ctx, err=None, ephemeral=True):
 
     documentation = Button(
         label="Full Documentation",
-        url="http://www.inconnu.app/#/character-tracking?id=tracker-updates",
+        url="https://docs.inconnu.app/command-reference/characters/updates",
     )
     support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
     view = inconnu.views.ReportingView(documentation, support)

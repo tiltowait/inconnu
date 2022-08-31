@@ -7,7 +7,7 @@ import discord
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
 
 
 async def statistics(
@@ -64,7 +64,7 @@ async def __traits_statistics(ctx, char_id, date, player):
     pipeline = [
         {
             "$match": {
-                "charid": character.object_id,
+                "charid": character.pk,
                 "use_in_stats": True,
                 "date": {"$gte": date},
                 "pool": {"$ne": None},

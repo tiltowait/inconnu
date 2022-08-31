@@ -6,8 +6,9 @@ import discord
 from discord.ui import InputText, Modal
 
 import inconnu
+import s3
 
-__HELP_URL = "https://www.inconnu.app/#/character-tracking?id=character-deletion"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 
 
 async def delete(ctx, character: str):
@@ -29,32 +30,27 @@ class _DeletionModal(Modal):
         super().__init__(*args, **kwargs)
 
         self.add_item(
-            InputText(
-                label="Enter character name to delete",
-                placeholder=self.character.name
-            )
+            InputText(label="Enter character name to delete", placeholder=self.character.name)
         )
-
 
     async def callback(self, interaction: discord.Interaction):
         """Delete the character if its name was typed correctly."""
         user_input = self.children[0].value
 
         if user_input == self.character.name:
-            tasks = []
-
             msg = f"Deleted **{self.character.name}**!"
-            tasks.append(inconnu.char_mgr.remove(self.character))
-            tasks.append(interaction.response.send_message(msg))
 
-            tasks.append(inconnu.common.report_update(
-                ctx=interaction,
-                character=self.character,
-                title="Character Deleted",
-                message=f"**{interaction.user.mention}** deleted **{self.character.name}**."
-            ))
-
-            await asyncio.gather(*tasks)
+            await asyncio.gather(
+                inconnu.char_mgr.remove(self.character),
+                interaction.response.send_message(msg),
+                inconnu.common.report_update(
+                    ctx=interaction,
+                    character=self.character,
+                    title="Character Deleted",
+                    message=f"**{interaction.user.mention}** deleted **{self.character.name}**.",
+                ),
+                s3.delete_character_images(self.character),
+            )
         else:
             await inconnu.common.present_error(
                 interaction, "You must type the character's name exactly."

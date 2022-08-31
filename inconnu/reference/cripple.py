@@ -6,7 +6,7 @@ import discord
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#crippling-injuries"
 
 
 async def cripple(ctx, damage: int):

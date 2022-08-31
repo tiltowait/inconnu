@@ -5,10 +5,9 @@ from distutils.util import strtobool
 
 import inconnu
 
-from ..vchar import VChar
 from . import macro_common
 
-__HELP_URL = "https://www.inconnu.app/#/macros?id=updating"
+__HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"
 __VALID_KEYS = {
     "name": "The macro's name (letters and underscores only)",
     "pool": "The macro's pool",
@@ -37,8 +36,9 @@ async def update(ctx, macro: str, syntax: str, character: str):
         parameters = inconnu.utils.parse_parameters(syntax, False)
         macro_update = __validate_parameters(character, parameters)
 
-        macro_name = await character.update_macro(macro, macro_update)
+        macro_name = character.update_macro(macro, macro_update)
         await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
+        await character.commit()
 
     except (
         inconnu.errors.MacroNotFoundError,
@@ -93,7 +93,7 @@ def __parameterize(parameters):
     return params
 
 
-def __validate_parameters(character: VChar, parameters: dict):
+def __validate_parameters(character: "VChar", parameters: dict):
     """Parse the update parameters."""
     macro_update = {}
 

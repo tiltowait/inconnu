@@ -10,7 +10,6 @@ from discord.ext import commands
 import inconnu
 
 
-# Unused due to Discord API issues
 async def _spc_options(ctx):
     """Determine whether the user can make an SPC."""
     if ctx.interaction.user.guild_permissions.administrator:
@@ -259,6 +258,33 @@ class Characters(commands.Cog, name="Character Management"):
     async def character_convictions_context(self, ctx, member):
         """Show a character's Convictions."""
         await inconnu.character.convictions_show(ctx, None, member, True)
+
+    # Premium
+
+    @character.command(name="images")
+    @commands.guild_only()
+    async def show_character_images(
+        self,
+        ctx: discord.ApplicationContext,
+        character: inconnu.options.character("The character to display"),
+        player: Option(discord.Member, "The character's owner", required=False),
+    ):
+        """Display a character's images."""
+        await inconnu.character.images.display(ctx, character, player)
+
+    images = character.create_subgroup("image", "Character image commands")
+
+    @images.command(name="upload")
+    @commands.guild_only()
+    @inconnu.utils.has_premium()
+    async def upload_image(
+        self,
+        ctx: discord.ApplicationContext,
+        image: Option(discord.Attachment, "The image file to upload"),
+        character: inconnu.options.character(),
+    ):
+        """Upload an image for your character's profile."""
+        await inconnu.character.images.upload(ctx, image, character)
 
 
 def _check_number(label, value):

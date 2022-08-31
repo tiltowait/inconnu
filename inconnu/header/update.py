@@ -7,7 +7,7 @@ import discord
 import inconnu
 from logger import Logger
 
-__HELP_URL = "https://www.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
 
 async def update_header(ctx: discord.ApplicationContext, character, blush: int):
@@ -42,12 +42,11 @@ class _RPHeader(discord.ui.Modal):
         Logger.debug("HEADER: Header length, minus location, is %s", len(mock_title))
         Logger.debug("HEADER: Max location length: %s", max_location_len)
 
-        current_header = character.rp_header
         self.add_item(
             discord.ui.InputText(
                 label="Scene Location",
                 placeholder="The location of the current scene",
-                value=current_header.location,
+                value=character.header.location,
                 min_length=1,
                 max_length=max_location_len,
             ),
@@ -56,7 +55,7 @@ class _RPHeader(discord.ui.Modal):
             discord.ui.InputText(
                 label="Relevant Merits",
                 placeholder="Merits characters would know or your scene partner SHOULD know.",
-                value=current_header.merits,
+                value=character.header.merits,
                 min_length=0,
                 max_length=300,
                 required=False,
@@ -66,7 +65,7 @@ class _RPHeader(discord.ui.Modal):
             discord.ui.InputText(
                 label="Relevant Flaws",
                 placeholder="Flaws characters would know or your scene partner SHOULD know.",
-                value=current_header.flaws,
+                value=character.header.flaws,
                 min_length=0,
                 max_length=300,
                 required=False,
@@ -76,7 +75,7 @@ class _RPHeader(discord.ui.Modal):
             discord.ui.InputText(
                 label="Temporary Effects",
                 placeholder="Temporary effects currently affecting your character.",
-                value=current_header.temp,
+                value=character.header.temp,
                 max_length=512,
                 required=False,
             )
@@ -84,22 +83,15 @@ class _RPHeader(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Set the header and tell the user."""
-        location = " ".join(self.children[0].value.split())
-        merits = " ".join(self.children[1].value.split())
-        flaws = " ".join(self.children[2].value.split())
-        temp = " ".join(self.children[3].value.split())
-
-        new_header = {
-            "blush": self.blush,
-            "location": location,
-            "merits": merits,
-            "flaws": flaws,
-            "temp": temp,
-        }
+        self.character.header.location = inconnu.utils.clean_text(self.children[0].value)
+        self.character.header.merits = inconnu.utils.clean_text(self.children[1].value)
+        self.character.header.blush = self.blush
+        self.character.header.flaws = inconnu.utils.clean_text(self.children[2].value)
+        self.character.header.temp = inconnu.utils.clean_text(self.children[3].value)
 
         await asyncio.gather(
             interaction.response.send_message(
                 f"Updated **{self.character.name}'s** RP header!", ephemeral=True
             ),
-            self.character.set_rp_header(new_header),
+            self.character.commit(),
         )

@@ -6,9 +6,10 @@ from typing import List
 import discord
 from numpy.random import default_rng
 
-from . import character
-from . import cull as culler
+import config
+
 from . import (
+    character,
     db,
     errors,
     experience,
@@ -16,17 +17,19 @@ from . import (
     log,
     macros,
     misc,
+    models,
     options,
     reference,
     settings,
     stats,
+    tasks,
     traits,
     utils,
     views,
 )
 from .emoji import emojis
+from .models import CharacterManager
 from .roll import Roll
-from .vchar import CharacterManager, VChar
 
 char_mgr = CharacterManager()
 settings = settings.Settings()
@@ -90,6 +93,4 @@ def get_avatar(user: discord.User | discord.Member):
 
 def profile_url(charid: str) -> str:
     """Generate a profile URL for the character."""
-    if "DEBUG" in os.environ:
-        return f"http://localhost:8000/profile/{charid}"
-    return f"https://pc.inconnu.app/profile/{charid}"
+    return config.PROFILE_SITE + f"profile/{charid}"

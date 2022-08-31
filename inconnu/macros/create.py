@@ -5,7 +5,7 @@ import inconnu
 
 from . import macro_common
 
-__HELP_URL = "https://www.inconnu.app/#/macros?id=creation"
+__HELP_URL = "https://docs.inconnu.app/command-reference/macros/creation"
 
 
 async def create(
@@ -51,10 +51,19 @@ async def create(
         else:
             pool = []
 
-        await character.add_macro(
-            name, pool, hunger, diff, rouses, reroll_rouses, staining, hunt, comment
+        character.add_macro(
+            name=name,
+            pool=pool,
+            hunger=hunger,
+            difficulty=diff,
+            rouses=rouses,
+            reroll_rouses=reroll_rouses,
+            staining=staining,
+            hunt=hunt,
+            comment=comment,
         )
         await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
+        await character.commit()
 
     except (
         SyntaxError,

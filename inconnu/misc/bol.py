@@ -4,7 +4,7 @@ import asyncio
 
 import inconnu
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=blush-of-life"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#blush-of-life"
 
 
 async def bol(ctx, character):
@@ -41,12 +41,13 @@ async def bol(ctx, character):
             f"Blush of Life is unnecessary. **{character.name}** only looks a little sick."
         )
     else:
+        character.set_blush(1)
+        character.log("blush")
         await asyncio.gather(
             inconnu.misc.rouse(
                 ctx, 1, character, "Blush of Life", character.humanity == 8, oblivion=False
             ),
-            character.set_blush(1),
-            character.log("blush"),
+            character.commit(),
         )
 
 

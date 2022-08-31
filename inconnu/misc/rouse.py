@@ -1,15 +1,14 @@
 """misc/rouse.py - Perform rouse checks."""
 # pylint: disable=too-many-arguments
 
-import asyncio
 from types import SimpleNamespace
 
 import discord
 
 import inconnu
-from inconnu.vchar import VChar
+from inconnu.models import VChar
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=rouse-checks"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 
 
 async def rouse(
@@ -47,6 +46,7 @@ async def rouse(
         else:
             update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
+        await character.commit()
         inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
         msg = await inconnu.get_message(inter)
 
@@ -63,6 +63,12 @@ async def rouse(
             message=update_msg,
             color=color,
         )
+
+        # Yes, we already committed. This is because pre_update() clamps Hunger
+        # within valid boundaries. Unfortunately, __display_outcome() runs
+        # VChar.log(), which needs to be saved.
+        # TODO: Move logging outside of __display_outcome()
+        await character.commit()
 
 
 def _can_rouse(character):
@@ -114,10 +120,8 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         if oblivion == "show":
             footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
         elif oblivion == "apply":
-            await asyncio.gather(
-                character.set_stains(character.stains + outcome.stains),
-                character.log("stains", outcome.stains),
-            )
+            character.stains += outcome.stains
+            character.log("stains", outcome.stains)
             fields.append((f"Gain {stains_txt}", inconnu.character.DisplayField.HUMANITY))
 
     footer = "\n".join(footer)
@@ -140,7 +144,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
 async def __damage_ghoul(ctx, ghoul):
     """Apply Aggravated damage to a ghoul and display."""
-    await ghoul.set_aggravated_hp(ghoul.aggravated_hp + 1)
+    ghoul.set_aggravated_hp(ghoul.aggravated_hp + 1)
     await inconnu.character.display(
         ctx,
         ghoul,
@@ -148,7 +152,8 @@ async def __damage_ghoul(ctx, ghoul):
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
         fields=[("Health", inconnu.character.DisplayField.HEALTH)],
         footer="V5 Core, p.234",
-    )
+    ),
+    await ghoul.commit()
 
 
 async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):
@@ -174,10 +179,10 @@ async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):
 
     starting_hunger = character.hunger
     frenzy = starting_hunger == 5
-    await character.set_hunger(starting_hunger + failures)
+    character.hunger += failures
     gain = starting_hunger - character.hunger
 
-    await character.log("rouse", rolls)
+    character.log("rouse", rolls)
 
     return SimpleNamespace(
         total=rolls,

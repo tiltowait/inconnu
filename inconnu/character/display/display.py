@@ -7,12 +7,10 @@ import discord
 
 import inconnu
 
-from ... import common
 from ...constants import Damage
-from ...vchar import VChar
 from . import trackmoji
 
-__HELP_URL = "https://www.inconnu.app/#/character-tracking?id=character-display"
+__HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 
 # Display fields
 
@@ -53,13 +51,13 @@ async def display_requested(ctx, character=None, message=None, player=None, ephe
         footer=None,
         view=inconnu.views.TraitsView(character, ctx.user),
         ephemeral=ephemeral,
-        thumbnail=character.image_urls,
+        thumbnail=character.profile_image_url,
     )
 
 
 async def display(
     ctx,
-    character: VChar,
+    character: "VChar",
     title: str = None,
     message: str = None,
     footer: str = None,
@@ -121,7 +119,7 @@ async def display(
 
 async def __get_embed(
     ctx,
-    character: VChar,
+    character: "VChar",
     title: str = None,
     message: str = None,
     footer: str = None,
@@ -196,7 +194,7 @@ def __embed_field_value(character, parameter, can_emoji):
             value = f"```{character.bane_severity}```"
 
         case DisplayField.EXPERIENCE:
-            value = f"```{character.current_xp} / {character.total_xp}```"
+            value = f"```{character.experience.unspent} / {character.experience.lifetime}```"
 
     return value
 

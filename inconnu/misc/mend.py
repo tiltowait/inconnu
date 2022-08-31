@@ -1,12 +1,11 @@
 """misc/mend.py - Mend Superficial damage."""
 
-import asyncio
 from types import SimpleNamespace
 
 import inconnu
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
 
-__HELP_URL = "https://www.inconnu.app/#/additional-commands?id=mending-damage"
+__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
 
 
 async def mend(ctx, character=None):
@@ -91,18 +90,17 @@ async def __heal(character):
     unhurt = len(character.health) - superficial - aggravated
 
     track = Damage.NONE * unhurt + Damage.SUPERFICIAL * superficial + Damage.AGGRAVATED * aggravated
-
-    tasks = [character.set_health(track)]
+    character.health = track
 
     rouse = inconnu.d10() >= 6
     if not rouse:
         frenzy = character.hunger == 5
-        tasks.append(character.set_hunger(character.hunger + 1))
+        character.hunger += 1
     else:
         frenzy = False
 
     if character.is_vampire:
-        tasks.append(character.log("rouse"))
+        character.log("rouse")
 
-    await asyncio.gather(*tasks)
+    await character.commit()
     return SimpleNamespace(mended=mending, rouse=rouse, frenzy=frenzy)

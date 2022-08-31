@@ -75,8 +75,17 @@ class InconnuBot(discord.Bot):
         try:
             embed = discord.Embed(
                 title="Thank you for your support!",
-                description="You may now upload profile images via `/character image upload`.",
+                description=(
+                    "You may now upload profile images via `/character image upload`.\n\n"
+                    "[Read more here!](https://docs.inconnu.app/guides/premium/character-images)"
+                ),
                 color=discord.Color.green(),
+            )
+            embed.set_footer(
+                text=(
+                    "You are responsible for the images you upload. "
+                    "Violating the terms of service will result in a permanent ban from the bot."
+                )
             )
             await member.send(embed=embed)
             Logger.info(

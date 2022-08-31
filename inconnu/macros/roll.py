@@ -47,7 +47,7 @@ async def roll(ctx, syntax: str, character=None):
         if macro.pool:
             # Only roll if the macro has a pool
             empty_macro = False
-            parameters = macro.pool
+            parameters = macro.pool.copy()
             parameters.extend(macro_stack)
 
             # Macros can contain hunger by default, but the user can override

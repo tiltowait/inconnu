@@ -33,7 +33,7 @@ if (_debug_guilds := os.getenv("DEBUG")) is not None:
 
 def aws_asset(path: str):
     """Returns the AWS URL for the given path."""
-    base = "https://inconnu.s3-us-west-1.amazonaws.com/assets/"
+    base = "https://assets.inconnu.app/"
     if path[0] == "/":
         path = path[1:]
     return base + path

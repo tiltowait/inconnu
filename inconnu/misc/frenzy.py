@@ -100,7 +100,7 @@ def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, foote
     embed.set_footer(text=footer)
 
     if title == "Failure!":
-        embed.set_thumbnail(url=aws_asset("frenzy5.webp"))
+        embed.set_thumbnail(url=aws_asset("frenzy.webp"))
 
     return embed
 

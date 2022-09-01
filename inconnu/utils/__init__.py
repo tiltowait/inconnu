@@ -6,6 +6,7 @@ from discord.ext import commands
 import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
 from inconnu import errors
+from logger import Logger
 
 from .decorators import not_on_lockdown
 from .error import ErrorEmbed, error
@@ -55,9 +56,15 @@ def is_supporter(ctx, user: discord.Member = None) -> bool:
 
     # First, see if the invoker is on the support server
     if (member := support_server.get_member(user.id)) is not None:
+        Logger.debug(
+            "SUPPORTER: %s#%s is on %s", user.name, user.discriminator, support_server.name
+        )
         if member.get_role(SUPPORTER_ROLE) is not None:
+            Logger.debug("SUPPORTER: %s#%s is a supporter", user.name, user.discriminator)
             return True
+        Logger.debug("SUPPORTER: %s#%s is a not a supporter", user.name, user.discriminator)
         return False
+    Logger.debug("SUPPORTER: %s#%s is not on the support server", user.name, user.discriminator)
     return False
 
 

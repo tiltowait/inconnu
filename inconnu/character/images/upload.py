@@ -74,6 +74,7 @@ async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachmen
     # potential legal claims if someone uploads something illegal
     await inconnu.db.upload_log.insert_one(
         {
+            "guild": ctx.guild.id,
             "user": ctx.user.id,
             "charid": character.pk,
             "url": aws_url,

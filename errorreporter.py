@@ -98,6 +98,10 @@ class ErrorReporter:
         if isinstance(error, inconnu.errors.HandledError):
             Logger.debug("REPORTER: Ignoring a HandledError")
             return
+        if isinstance(error, discord.errors.DiscordServerError):
+            # There's nothing we can do about these
+            Logger.error("REPORTER: Discord server error detected")
+            return
 
         # Unknown errors and database errors are logged to a channel
 

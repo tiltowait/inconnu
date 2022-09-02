@@ -85,6 +85,8 @@ class CharacterManager:
         if self.all_fetched.get(key, False):
             return self.user_cache.get(key, [])
 
+        Logger.info("CHARACTER MANAGER: Fetching %s's characters on %s from the db", user, guild)
+
         characters = []
         async for character in inconnu.models.VChar.find({"guild": guild, "user": user}):
             if character.id not in self.id_cache:

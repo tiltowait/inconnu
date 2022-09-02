@@ -168,11 +168,14 @@ class InconnuBot(discord.Bot):
 
     async def on_interaction(self, interaction: discord.Interaction):
         """Check whether the bot is ready before allowing the interaction to go through."""
-        if not self.ready:
+        # It's better UX to allow autocomplete interactions to go through even
+        # if the bot isn't ready; users frequently get confused if the menus
+        # don't populate during restart.
+        if self.ready or interaction.type == discord.InteractionType.auto_complete:
+            await self.process_application_commands(interaction)
+        else:
             err = f"{self.user.mention} is currently restarting. This might take a few minutes."
             await inconnu.respond(interaction)(err, ephemeral=True)
-        else:
-            await self.process_application_commands(interaction)
 
     async def on_application_command(self, ctx: discord.ApplicationContext):
         """General processing after application commands."""

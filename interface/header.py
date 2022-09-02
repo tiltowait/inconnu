@@ -70,7 +70,7 @@ class LocationChangeModal(discord.ui.Modal):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
-async def _header_bol_options(ctx):
+async def _header_bol_options(ctx) -> str:
     """Generate options for the BoL portion of the header update command."""
     if (charid := ctx.options.get("character")) is None:
         return []
@@ -82,14 +82,14 @@ async def _header_bol_options(ctx):
         character = await inconnu.char_mgr.fetchone(guild, user, charid)
 
         if character.is_thin_blood:
-            return [OptionChoice("N/A - Thin-Blood", -1)]
+            return [OptionChoice("N/A - Thin-Blood", "-1")]
         if character.is_vampire:
             return [
-                OptionChoice("Yes", 1),
-                OptionChoice("No", 0),
-                OptionChoice("N/A - Thin-Blood", -1),
+                OptionChoice("Yes", "1"),
+                OptionChoice("No", "0"),
+                OptionChoice("N/A - Thin-Blood", "-1"),
             ]
-        return [OptionChoice("N/A - Mortal", -1)]
+        return [OptionChoice("N/A - Mortal", "-1")]
 
     except inconnu.errors.CharacterNotFoundError:
         return []
@@ -136,11 +136,11 @@ class HeaderCog(commands.Cog):
         ctx: discord.ApplicationContext,
         character: inconnu.options.character("The character whose header to update", required=True),
         blush: Option(
-            int, "Is Blush of Life active?", autocomplete=_header_bol_options, required=True
+            str, "Is Blush of Life active?", autocomplete=_header_bol_options, required=True
         ),
     ):
         """Update your character's RP header."""
-        await inconnu.header.update_header(ctx, character, blush)
+        await inconnu.header.update_header(ctx, character, int(blush))
 
     @commands.message_command(name="Fix RP Header")
     @commands.guild_only()

@@ -140,6 +140,18 @@ class HeaderCog(commands.Cog):
         ),
     ):
         """Update your character's RP header."""
+        # If the user selects a Blush option, then leaves channels, then comes
+        # back and hits enter, Discord will send "Yes" instead of "1" (as an
+        # example). Therefore, we need to check their response.
+        try:
+            blush = int(blush)
+        except ValueError:
+            blush = blush.lower()
+            blush_options = {"yes": 1, "no": 0, "n/a - thin-blood": -1}
+            if (blush := blush_options.get(blush)) is None:
+                await inconnu.utils.error(ctx, f"Unknown Blush of Life option: `{blush}`.")
+                return
+
         await inconnu.header.update_header(ctx, character, int(blush))
 
     @commands.message_command(name="Fix RP Header")

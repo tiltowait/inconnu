@@ -75,8 +75,8 @@ def __validate_parameters(name, humanity, health, willpower):
     if not 0 <= humanity <= 10:
         errors.append(f"Humanity must be between 0 and 10. (Got `{humanity}`)")
 
-    if not 4 <= health <= 15:
-        errors.append(f"Health must be between 4 and 15. (Got `{health}`)")
+    if not 3 <= health <= 15:
+        errors.append(f"Health must be between 3 and 15. (Got `{health}`)")
 
     if not 3 <= willpower <= 15:
         errors.append(f"Willpower must be between 3 and 15. (Got `{willpower}`)")

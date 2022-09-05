@@ -147,9 +147,8 @@ def __update_track(character: "VChar", tracker: str, new_len: str) -> str:
     new_len = int(new_len)
 
     # Ensure the tracker is the right size
-    minimum = 4 if tracker == "health" else 3  # Minimum size
-    if not minimum <= new_len <= 25:
-        raise ValueError(f"{tracker.title()} must be between {minimum} and 25.")
+    if not 3 <= new_len <= 25:
+        raise ValueError(f"{tracker.title()} must be between 3 and 25.")
 
     if new_len > cur_len:  # Growing
         track = track.rjust(new_len, Damage.NONE)

@@ -110,7 +110,7 @@ def _gen_roll(guild: int, user: int, message: int, char, outcome, comment: str):
         "guild": guild,  # We use the guild and user keys for easier lookups
         "user": user,
         "message": message,
-        "charid": getattr(char, "object_id", None),
+        "charid": getattr(char, "pk", None),
         "raw": outcome.syntax,
         "normal": outcome.normal.dice,
         "hunger": outcome.hunger.dice,

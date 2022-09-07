@@ -48,10 +48,12 @@ async def _available_characters(ctx):
     chars = [(char.name, char.id) for char in chars]
     chars.extend(spcs)
 
+    name_search = ctx.value.casefold()
+
     found_chars = [
         OptionChoice(name, ident)
         for name, ident in chars
-        if name.lower().startswith(ctx.value or "")
+        if name.casefold().startswith(name_search or "")
     ]
 
     if len(found_chars) > 25:

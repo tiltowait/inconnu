@@ -8,6 +8,7 @@ import discord
 from discord.ui import Button
 
 import inconnu
+from logger import Logger
 
 
 def pluralize(value: int, noun: str) -> str:
@@ -159,7 +160,14 @@ async def report_update(*, ctx, character, title, message, **kwargs):
 
         mentions = discord.AllowedMentions(users=False)
 
-        await update_channel.send(content, embed=embed, allowed_mentions=mentions)
+        try:
+            await update_channel.send(content, embed=embed, allowed_mentions=mentions)
+        except discord.errors.Forbidden:
+            Logger.warning(
+                "UPDATE REPORT: No access to post in #%s on %s",
+                update_channel.name,
+                update_channel.guild.name,
+            )
 
 
 async def character_options(guild: int, user: int):

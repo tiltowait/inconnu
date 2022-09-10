@@ -78,7 +78,7 @@ class Wizard:
             user=owner,
             _name=self.parameters.name,
             splat=self.parameters.splat,
-            humanity=self.parameters.humanity,
+            _humanity=self.parameters.humanity,
             health=self.parameters.hp * inconnu.constants.Damage.NONE,
             willpower=self.parameters.wp * inconnu.constants.Damage.NONE,
             potency=self.assigned_traits.pop("Blood Potency", 0),

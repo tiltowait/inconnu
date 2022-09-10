@@ -62,9 +62,9 @@ class VChar(Document):
     splat = fields.StrField()
     health = fields.StrField()
     willpower = fields.StrField()
-    humanity = fields.IntField()
+    _humanity = fields.IntField(attribute="humanity")
     stains = fields.IntField(default=0)
-    hunger = fields.IntField(default=1)
+    _hunger = fields.IntField(default=1, attribute="hunger")
     potency = fields.IntField()
     _traits = fields.DictField(attribute="traits")
 
@@ -149,6 +149,31 @@ class VChar(Document):
     def name(self, new_name: str):
         """Set the character's name."""
         self._name = new_name
+
+    @property
+    def hunger(self) -> int:
+        """Get the character's Hunger rating."""
+        if self.is_vampire:
+            return self._hunger
+        return 0
+
+    @hunger.setter
+    def hunger(self, new_hunger: int):
+        """Set the character's Hunger rating."""
+        new_hunger = max(0, min(new_hunger, 5))
+        self._hunger = new_hunger
+
+    @property
+    def humanity(self) -> int:
+        """The character's Humanity rating."""
+        return self._humanity
+
+    @humanity.setter
+    def humanity(self, new_humanity: int):
+        """Set the character's new Humanity rating, clamped, and wipe stains."""
+        new_humanity = max(0, min(new_humanity, 10))
+        self._humanity = new_humanity
+        self.stains = 0
 
     @property
     def traits(self) -> dict[str, int]:

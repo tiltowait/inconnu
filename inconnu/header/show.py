@@ -45,7 +45,8 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
     # Tracker damage
     trackers = []
     if character.is_vampire:
-        trackers.append(f"**Hunger** `{character.hunger}`")
+        hunger = kwargs.pop("hunger") or character.hunger
+        trackers.append(f"**Hunger** `{hunger}`")
 
     hp_damage = track_damage(character.superficial_hp, character.aggravated_hp)
     trackers.append(f"**HP** `{hp_damage}`")

@@ -1,19 +1,19 @@
 version: 2.1
 
 orbs:
-	python: circleci/python@2.1.0
-	snyk: snyk/snyk@1.2.3
+  python: circleci/python@2.1.0
+  snyk: snyk/snyk@1.2.3
 
 jobs:
-	snyk-scan:
-		executor:
-			name: python/default
-			tag: 3.10.6
-		steps:
-			- checkout
-			- snyk/scan
+  snyk-scan:
+    executor:
+      name: python/default
+      tag: 3.10.6
+    steps:
+      - checkout
+      - snyk/scan
 
 workflows:
-	tests:
-		jobs:
-			- snyk-scan
+  tests:
+    jobs:
+      - snyk-scan

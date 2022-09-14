@@ -12,7 +12,7 @@ jobs:
     steps:
       - checkout
       - python/install-packages:
-          pkg-manager: pip
+          pkg-manager: poetry
       - snyk/scan:
           project: '${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}'
   run-test-battery:

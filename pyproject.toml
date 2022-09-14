@@ -3,3 +3,33 @@ line-length = 100
 
 [tool.isort]
 profile = "black"
+
+[tool.poetry]
+name = "inconnu"
+version = "6.0.2"
+description = "An advanced Discord dice bot and character manager for V5"
+authors = ["tiltowait <208040+tiltowait@users.noreply.github.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+boto3 = "^1.24.73"
+fastapi = "^0.84.0"
+flatdict = "^4.0.1"
+Markdown = "^3.4.1"
+motor = "^3.0.0"
+numpy = "^1.23.3"
+Pillow = "^9.2.0"
+py-cord = "^2.1.3"
+pymongo = {extras = ["srv"], version = "^4.2.0"}
+python-dotenv = "^0.21.0"
+"statcord.py" = "^3.1.0"
+umongo = "^3.1.0"
+uvicorn = "^0.18.3"
+validators = "^0.20.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

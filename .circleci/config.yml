@@ -13,7 +13,8 @@ jobs:
       - checkout
       - python/install-packages:
           pkg-manager: pip
-      - snyk/scan
+      - snyk/scan:
+          project: '${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}'
 
 workflows:
   tests:

@@ -11,7 +11,7 @@ jobs:
       tag: 3.10.6
     steps:
       - checkout
-      - python/install-packages
+      - python/install-packages:
           pkg-manager: pip
       - snyk/scan
 

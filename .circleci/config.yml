@@ -19,4 +19,8 @@ jobs:
 workflows:
   tests:
     jobs:
-      - snyk-scan
+      - snyk-scan:
+          filters:
+            branches:
+              only:
+                - master

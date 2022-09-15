@@ -1,6 +1,6 @@
 """Defines the imported interfaces for performing rolls."""
 
-from . import dicemoji
-from .parse import parse, perform_roll, display_outcome, needs_character
-from .rolldisplay import RollDisplay
-from .rollparser import RollParser
+from inconnu.vr import dicemoji
+from inconnu.vr.parse import display_outcome, needs_character, parse, perform_roll
+from inconnu.vr.rolldisplay import RollDisplay
+from inconnu.vr.rollparser import RollParser

@@ -6,9 +6,8 @@ import discord
 
 import inconnu
 import s3
+from inconnu.views import ReportingView
 from logger import Logger
-
-from ...views import ReportingView
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 

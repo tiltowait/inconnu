@@ -1,6 +1,6 @@
 """traits/parser.py - Parses trait-based arguments."""
 
-from . import traitcommon
+from inconnu.traits import traitcommon
 
 
 def parse_traits(*args, specialties: bool) -> dict:

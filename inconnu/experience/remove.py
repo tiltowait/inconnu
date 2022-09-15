@@ -3,8 +3,7 @@
 import discord
 
 import inconnu
-
-from ..views import DisablingView
+from inconnu.views import DisablingView
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 

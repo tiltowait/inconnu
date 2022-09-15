@@ -7,9 +7,7 @@ from types import SimpleNamespace
 import discord
 
 import inconnu
-
-from .. import common
-from .parser import parse_traits
+from inconnu.traits.parser import parse_traits
 
 __HELP_URL = {
     False: "https://docs.inconnu.app/command-reference/traits/adding-traits",
@@ -150,11 +148,13 @@ async def __results_embed(ctx, outcome, character: "VChar", specialties: bool):
     if not outcome.assigned and not outcome.unassigned and outcome.errors:
         title = f"Unable to {action_present} {term_plural}"
     elif outcome.assigned and not outcome.unassigned:
-        title = f"{action_past} " + common.pluralize(assigned, term_singular)
+        title = f"{action_past} " + inconnu.common.pluralize(assigned, term_singular)
     elif outcome.assigned and outcome.unassigned:
         title = f"{action_past}: {assigned} | Unassigned: {unassigned + errors}"
     else:
-        title = f"Couldn't {action_present} " + common.pluralize(unassigned + errors, term_singular)
+        title = f"Couldn't {action_present} " + inconnu.common.pluralize(
+            unassigned + errors, term_singular
+        )
 
     # No color if no mistakes
     # Black if some mistakes

@@ -1,4 +1,4 @@
 """Simple task interface."""
 
-from . import premium
-from .cull import cull
+from inconnu.tasks import premium
+from inconnu.tasks.cull import cull

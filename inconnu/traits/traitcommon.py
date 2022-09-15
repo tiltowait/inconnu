@@ -2,7 +2,7 @@
 
 import re
 
-from ..constants import UNIVERSAL_TRAITS
+from inconnu.constants import UNIVERSAL_TRAITS
 
 VALID_TRAIT_PATTERN = re.compile(r"^[A-z_\']+$")
 

@@ -4,8 +4,7 @@ import bson
 
 import inconnu
 from inconnu.constants import ATTRIBUTES_AND_SKILLS
-
-from .dicethrow import DiceThrow
+from inconnu.roll.dicethrow import DiceThrow
 
 __MAX_REROLL = 3
 

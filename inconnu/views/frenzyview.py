@@ -3,8 +3,7 @@
 import discord
 
 import inconnu
-
-from .disablingview import DisablingView
+from inconnu.views.disablingview import DisablingView
 
 
 class FrenzyView(DisablingView):

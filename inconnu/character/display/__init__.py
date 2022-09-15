@@ -1,4 +1,4 @@
 """Set up the package interface."""
 
-from .display import display, display_requested, DisplayField
-from . import trackmoji
+from inconnu.character.display import trackmoji
+from inconnu.character.display.display import DisplayField, display, display_requested

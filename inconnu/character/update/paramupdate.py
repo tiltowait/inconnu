@@ -2,8 +2,7 @@
 # pylint: disable=too-many-arguments
 
 import inconnu
-
-from ...constants import Damage
+from inconnu.constants import Damage
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal", "thinblood"]
 

@@ -5,7 +5,7 @@ import uuid
 
 import discord
 
-from .reportingview import ReportingView
+from inconnu.views.reportingview import ReportingView
 
 TIMEOUT = 5 if "TRUNCATE_COMMANDS" in os.environ else 300
 

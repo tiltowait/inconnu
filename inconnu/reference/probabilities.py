@@ -6,8 +6,7 @@ from types import SimpleNamespace as SN
 import discord
 
 import inconnu
-
-from .. import vr as roll
+from inconnu import vr as roll
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
 __STRATEGIES = {

@@ -10,8 +10,7 @@ from discord.ui import Button
 
 import inconnu
 from config import aws_asset
-
-from . import dicemoji
+from inconnu.vr import dicemoji
 
 
 class _ButtonID(str, Enum):

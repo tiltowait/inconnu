@@ -13,16 +13,15 @@ from types import SimpleNamespace
 from umongo import Document, fields
 
 import inconnu
-from logger import Logger
-
-from ..constants import INCONNU_ID, UNIVERSAL_TRAITS, Damage
-from .vchardocs import (
+from inconnu.constants import INCONNU_ID, UNIVERSAL_TRAITS, Damage
+from inconnu.models.vchardocs import (
     VCharExperience,
     VCharExperienceEntry,
     VCharHeader,
     VCharMacro,
     VCharProfile,
 )
+from logger import Logger
 
 
 class _Properties(str, Enum):

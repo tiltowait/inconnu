@@ -2,7 +2,7 @@
 
 import discord
 
-from .reportingview import ReportingView
+from inconnu.views.reportingview import ReportingView
 
 
 class DisablingView(ReportingView):

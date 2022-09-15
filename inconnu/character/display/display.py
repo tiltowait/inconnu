@@ -6,9 +6,8 @@ from enum import Enum
 import discord
 
 import inconnu
-
-from ...constants import Damage
-from . import trackmoji
+from inconnu.character.display import trackmoji
+from inconnu.constants import Damage
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 

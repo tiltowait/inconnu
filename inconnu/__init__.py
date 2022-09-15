@@ -7,8 +7,7 @@ import discord
 from numpy.random import default_rng
 
 import config
-
-from . import (
+from inconnu import (
     character,
     db,
     errors,
@@ -27,9 +26,9 @@ from . import (
     utils,
     views,
 )
-from .emoji import emojis
-from .models import CharacterManager
-from .roll import Roll
+from inconnu.emoji import emojis
+from inconnu.models import CharacterManager
+from inconnu.roll import Roll
 
 char_mgr = CharacterManager()
 settings = settings.Settings()

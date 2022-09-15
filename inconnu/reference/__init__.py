@@ -1,7 +1,7 @@
 """Reference commands."""
 
-from .bloodpotency import blood_potency
-from .cripple import cripple
-from .probabilities import probability
-from .resonance import RESONANCES, random_temperament, resonance
-from .statistics import statistics
+from inconnu.reference.bloodpotency import blood_potency
+from inconnu.reference.cripple import cripple
+from inconnu.reference.probabilities import probability
+from inconnu.reference.resonance import RESONANCES, random_temperament, resonance
+from inconnu.reference.statistics import statistics

@@ -3,9 +3,8 @@
 import discord
 
 import inconnu
+from inconnu.settings import ExpPerms, GuildSettings
 from logger import Logger
-
-from .guildsettings import ExpPerms, GuildSettings
 
 
 class Settings:

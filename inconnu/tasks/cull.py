@@ -10,7 +10,6 @@ async def cull(days=30):
     """Cull inactive guilds, characters, and macros."""
     Logger.info("CULLER: Initiating culling run.")
 
-    char_col = inconnu.db.characters
     guild_col = inconnu.db.guilds
 
     past = datetime.utcnow() - timedelta(days=days)
@@ -31,12 +30,11 @@ async def cull(days=30):
     # We remove characters separately so as to make only one database call
     # rather than potentially many
 
-    characters = char_col.find(
+    characters = inconnu.models.VChar.find(
         {"$or": [{"guild": {"$in": removed_guilds}}, {"log.left": {"$lt": past}}]}
     )
 
-    async for char_params in characters:
-        character = inconnu.VChar(char_params)
+    async for character in characters:
         if await inconnu.char_mgr.remove(character):
             Logger.info("CULLER: Culling %s", character.name)
         else:

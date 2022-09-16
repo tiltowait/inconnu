@@ -1,6 +1,4 @@
-"""misc/wake.py - Automate the awakening bookkeeping."""
-
-import asyncio
+"""misc/awake.py - Automate the awakening bookkeeping."""
 
 import inconnu
 from logger import Logger

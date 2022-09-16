@@ -1,7 +1,6 @@
 """traits/show.py - Display character traits."""
 
 import discord
-from discord.ext import pages
 
 import inconnu
 

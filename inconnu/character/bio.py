@@ -1,7 +1,5 @@
 """character/bio.py - Create/edit/view character bios."""
 
-import asyncio
-
 import discord
 from discord.ext import pages
 

@@ -153,7 +153,7 @@ async def __damage_ghoul(ctx, ghoul):
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
         fields=[("Health", inconnu.character.DisplayField.HEALTH)],
         footer="V5 Core, p.234",
-    ),
+    )
     await ghoul.commit()
 
 

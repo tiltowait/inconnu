@@ -94,7 +94,7 @@ class VChar(Document):
         elif self.is_vampire:
             self.header.blush = 0
         else:
-            self.blush = -1
+            self.header.blush = -1
 
         Logger.info("VCHAR: Created %s", self.name)
 

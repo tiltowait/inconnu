@@ -94,7 +94,7 @@ class Wizard:
                 self.edit_message(
                     content=f"Created SPC **{self.parameters.name}**.",
                     embed=None,
-                    view=None,
+                    view=None if self.parameters.splat == "vampire" else discord.MISSING,
                 )
             )
 

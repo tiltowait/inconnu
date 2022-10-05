@@ -81,7 +81,6 @@ def __remorse_roll(character: "VChar", minimum: int) -> SN:
 
     if not successful:
         character.humanity -= 1
-        character.stains = 0
         character.log("degen")
     else:
         character.stains = 0

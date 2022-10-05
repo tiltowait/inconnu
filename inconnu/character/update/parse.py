@@ -218,7 +218,7 @@ def __setup_matches():
     __register_keys("health", "hp")
     __register_keys("willpower", "wp", "w")
     __register_keys("humanity", "hm")
-    __register_keys("splat", "type")
+    __register_keys("splat", "type", "template")
     __register_keys(
         "sh", "sd", "shp", "suphp", "suph", "supd", "superficialhealth", "superficialdamage"
     )

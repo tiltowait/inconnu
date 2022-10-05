@@ -13,9 +13,24 @@ jobs:
       - checkout
       - python/install-packages:
           pkg-manager: pip
-      - snyk/scan
+      - snyk/scan:
+          project: '${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}'
+  run-test-battery:
+    executor:
+      name: python/default
+      tag: 3.10.6
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+      - run: python3 -m unittest discover tests
 
 workflows:
   tests:
     jobs:
-      - snyk-scan
+      - run-test-battery
+      - snyk-scan:
+          filters:
+            branches:
+              only:
+                - master

@@ -226,6 +226,12 @@ class _SlakeView(View):
             if hunger == character.hunger:
                 label = "Drain"
                 button_style = discord.ButtonStyle.danger
+
+                # They might have surged in the hunt, and pressing the rouse
+                # button after this view is created can increase their Hunger.
+                # Therefore, we set the Hunger slaked to 5, since the point of
+                # this button is to drain all the way to 0.
+                hunger = 5
             elif hunger > 2:
                 label = str(hunger)
                 button_style = discord.ButtonStyle.danger

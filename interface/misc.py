@@ -78,7 +78,7 @@ class MiscCommands(commands.Cog):
 
         except inconnu.errors.CharacterNotFoundError:
             await inconnu.common.present_error(ctx, "Character not found.")
-        except ValueError as err:
+        except (LookupError, ValueError) as err:
             await inconnu.common.present_error(ctx, err)
 
 

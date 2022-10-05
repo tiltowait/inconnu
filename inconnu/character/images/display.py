@@ -265,6 +265,6 @@ class ImagePager(ReportingView):
         """Delete the components."""
         if self.children:
             Logger.debug("IMAGES: View timed out; deleting components")
-            await self.message.edit_original_message(view=None)
+            await self.message.edit_original_response(view=None)
         else:
             Logger.debug("IMAGES: View timed out, but no components")

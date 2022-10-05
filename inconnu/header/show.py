@@ -69,7 +69,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
 
     resp = await ctx.respond(embed=embed)
     if isinstance(resp, discord.Interaction):
-        message = await resp.original_message()
+        message = await resp.original_response()
     else:
         message = resp
 

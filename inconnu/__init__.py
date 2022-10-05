@@ -59,7 +59,7 @@ async def get_message(inter):
     """Get the message from an interaction."""
     if isinstance(inter, discord.Message):
         return inter
-    return await inter.original_message()
+    return await inter.original_response()
 
 
 def respond(ctx):

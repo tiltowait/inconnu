@@ -137,7 +137,7 @@ class RollDisplay:
                 inter = ctx
             else:
                 # The interaction is a followup
-                inter = await ctx.edit_original_message(**msg_contents)
+                inter = await ctx.edit_original_response(**msg_contents)
 
         if self.controls is not None:
             # Attach the interaction so we can disable the buttons when appropriate

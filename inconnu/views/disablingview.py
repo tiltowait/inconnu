@@ -36,7 +36,7 @@ class DisablingView(ReportingView):
                 if hasattr(self.message, "edit"):
                     await self.message.edit(view=self)
                 else:
-                    await self.message.edit_original_message(view=self)
+                    await self.message.edit_original_response(view=self)
             except discord.NotFound:
                 # The message has been deleted
                 pass

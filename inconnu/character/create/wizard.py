@@ -196,7 +196,7 @@ class Wizard:
         """Get the proper edit method for editing our message outside of an interaction."""
         if self.msg:
             return self.msg.edit
-            # return self.msg.edit if self.using_dms else self.msg.edit_original_message
+            # return self.msg.edit if self.using_dms else self.msg.edit_original_response
         return self.ctx.respond
 
     async def _timeout(self):

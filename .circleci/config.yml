@@ -8,7 +8,7 @@ jobs:
   snyk-scan:
     executor:
       name: python/default
-      tag: 3.10
+      tag: 3.10.7
     steps:
       - checkout
       - python/install-packages:
@@ -18,7 +18,7 @@ jobs:
   run-test-battery:
     executor:
       name: python/default
-      tag: 3.10
+      tag: 3.10.7
     steps:
       - checkout
       - python/install-packages:

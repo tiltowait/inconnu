@@ -2,8 +2,7 @@
 # pylint: disable=too-many-arguments
 
 import inconnu
-
-from . import macro_common
+from inconnu.macros import macro_common
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/creation"
 

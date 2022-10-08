@@ -18,11 +18,10 @@ from functools import partial
 import discord
 
 import inconnu
+from inconnu.roll import Roll
+from inconnu.vr.rolldisplay import RollDisplay
+from inconnu.vr.rollparser import RollParser
 from logger import Logger
-
-from ..roll import Roll
-from .rolldisplay import RollDisplay
-from .rollparser import RollParser
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 

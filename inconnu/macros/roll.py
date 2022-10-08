@@ -7,12 +7,11 @@ import discord
 from discord.ui import Button, View
 
 import inconnu
+from inconnu import common
+from inconnu.macros import macro_common
+from inconnu.misc import rouse
+from inconnu.vr import display_outcome, perform_roll
 from logger import Logger
-
-from .. import common
-from ..misc import rouse
-from ..vr import display_outcome, perform_roll
-from . import macro_common
 
 __HUNT_LISTENERS = {}
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/rolling"

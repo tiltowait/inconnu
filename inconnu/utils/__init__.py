@@ -6,12 +6,11 @@ from discord.ext import commands
 import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
 from inconnu import errors
+from inconnu.utils.decorators import not_on_lockdown
+from inconnu.utils.error import ErrorEmbed, error
+from inconnu.utils.haven import Haven
+from inconnu.utils.paramparse import parse_parameters
 from logger import Logger
-
-from .decorators import not_on_lockdown
-from .error import ErrorEmbed, error
-from .haven import Haven
-from .paramparse import parse_parameters
 
 
 def clean_text(text: str) -> str:

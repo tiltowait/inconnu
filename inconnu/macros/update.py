@@ -4,8 +4,7 @@ import re
 from distutils.util import strtobool
 
 import inconnu
-
-from . import macro_common
+from inconnu.macros import macro_common
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"
 __VALID_KEYS = {

@@ -8,7 +8,6 @@ from discord.ext.commands import Paginator
 from discord.ui import InputText, Modal
 
 import inconnu
-from logger import Logger
 
 
 async def bulk_award_xp(ctx):

@@ -5,8 +5,7 @@ import re
 from types import SimpleNamespace as SN
 
 import inconnu
-
-from . import wizard
+from inconnu.character.create import wizard
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/creation"
 

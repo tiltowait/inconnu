@@ -2,7 +2,6 @@
 # pylint: disable=too-many-arguments
 
 import datetime
-from typing import Optional
 
 from pymongo import ReturnDocument, UpdateOne
 

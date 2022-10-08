@@ -2,13 +2,13 @@
 
 import re
 
-from .bio import edit_biography, show_biography
-from .convictions import convictions_set, convictions_show
-from .create import create
-from .delete import delete
-from .display import DisplayField, display, display_requested
-from .images import upload
-from .update import update, update_help
+from inconnu.character.bio import edit_biography, show_biography
+from inconnu.character.convictions import convictions_set, convictions_show
+from inconnu.character.create import create
+from inconnu.character.delete import delete
+from inconnu.character.display import DisplayField, display, display_requested
+from inconnu.character.images import upload
+from inconnu.character.update import update, update_help
 
 
 def valid_name(name: str) -> bool:

@@ -1,4 +1,4 @@
 """Database model package."""
 
-from .manager import CharacterManager
-from .vchar import VChar
+from inconnu.models.manager import CharacterManager
+from inconnu.models.vchar import VChar

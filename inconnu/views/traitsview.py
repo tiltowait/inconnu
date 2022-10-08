@@ -3,7 +3,7 @@
 import discord
 
 import inconnu
-from .disablingview import DisablingView
+from inconnu.views.disablingview import DisablingView
 
 
 class TraitsView(DisablingView):
@@ -13,7 +13,6 @@ class TraitsView(DisablingView):
         super().__init__(remove_on_timeout=True)
         self.character = character
         self.owner = owner
-
 
     @discord.ui.button(label="Traits", style=discord.ButtonStyle.primary)
     async def show_traits(self, _, interaction):

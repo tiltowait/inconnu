@@ -1,7 +1,7 @@
 """Set up the package interface."""
 
-from .add_update import add, update
-from .delete import delete
-from .show import show
-from .show import traits_embed as embed
-from .traitcommon import validate_trait_names
+from inconnu.traits.add_update import add, update
+from inconnu.traits.delete import delete
+from inconnu.traits.show import show
+from inconnu.traits.show import traits_embed as embed
+from inconnu.traits.traitcommon import validate_trait_names

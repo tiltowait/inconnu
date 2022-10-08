@@ -1,7 +1,7 @@
 """Header imports."""
 
-from .show import show_header
-from .update import update_header
+from inconnu.header.show import show_header
+from inconnu.header.update import update_header
 
 
 def header_title(*fields):

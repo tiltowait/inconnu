@@ -3,12 +3,11 @@
 import discord
 
 from errorreporter import reporter
-
-from .basicselector import BasicSelector
-from .convictionsmodal import ConvictionsModal
-from .disablingview import DisablingView
-from .dropdown import Dropdown
-from .frenzyview import FrenzyView
-from .ratingview import RatingView
-from .reportingview import ReportingView
-from .traitsview import TraitsView
+from inconnu.views.basicselector import BasicSelector
+from inconnu.views.convictionsmodal import ConvictionsModal
+from inconnu.views.disablingview import DisablingView
+from inconnu.views.dropdown import Dropdown
+from inconnu.views.frenzyview import FrenzyView
+from inconnu.views.ratingview import RatingView
+from inconnu.views.reportingview import ReportingView
+from inconnu.views.traitsview import TraitsView

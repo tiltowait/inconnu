@@ -5,8 +5,7 @@ from types import SimpleNamespace
 import discord
 
 import inconnu
-
-from . import traitcommon
+from inconnu.traits import traitcommon
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 

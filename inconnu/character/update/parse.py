@@ -7,9 +7,8 @@ import discord
 from discord.ui import Button
 
 import inconnu
-
-from ..display import display
-from . import paramupdate
+from inconnu.character.display import display
+from inconnu.character.update import paramupdate
 
 __MATCHES = {}
 

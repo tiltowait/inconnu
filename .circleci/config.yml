@@ -23,7 +23,7 @@ jobs:
       - checkout
       - python/install-packages:
           pkg-manager: poetry
-      - run: poetry python3 -m unittest discover tests
+      - run: poetry run python3 -m unittest discover tests
 
 workflows:
   tests:

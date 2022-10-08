@@ -20,7 +20,9 @@ class ReferenceCommands(commands.Cog):
 
     @slash_command()
     async def bp(
-        self, ctx, rating: Option(int, "The Blood Potency rating", min_value=0, max_value=10)
+        self,
+        ctx,
+        rating: Option(int, "The Blood Potency rating", choices=inconnu.options.ratings(1, 10)),
     ):
         """Look up Blood Potency effects."""
         await inconnu.reference.blood_potency(ctx, rating)

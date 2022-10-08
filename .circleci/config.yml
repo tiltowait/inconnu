@@ -8,22 +8,22 @@ jobs:
   snyk-scan:
     executor:
       name: python/default
-      tag: 3.10.6
+      tag: 3.10.7
     steps:
       - checkout
       - python/install-packages:
-          pkg-manager: pip
+          pkg-manager: poetry
       - snyk/scan:
           project: '${CIRCLE_PROJECT_REPONAME}:${CIRCLE_BRANCH}'
   run-test-battery:
     executor:
       name: python/default
-      tag: 3.10.6
+      tag: 3.10.7
     steps:
       - checkout
       - python/install-packages:
-          pkg-manager: pip
-      - run: python3 -m unittest discover tests
+          pkg-manager: poetry
+      - run: poetry run python3 -m unittest discover tests
 
 workflows:
   tests:

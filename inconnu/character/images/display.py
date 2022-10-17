@@ -92,7 +92,7 @@ class ImagePager(ReportingView):
             disabled=self.num_pages == 1,
         )
         self.demote_button.callback = self._demote_image
-        self.cancel_button = discord.ui.Button(label="Cancel", row=1)
+        self.cancel_button = discord.ui.Button(label="Done", row=1)
         self.cancel_button.callback = self.mode_toggle
 
         super().__init__(timeout=300)

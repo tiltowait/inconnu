@@ -41,7 +41,6 @@ class _DeletionModal(Modal):
             msg = f"Deleted **{self.character.name}**!"
 
             await asyncio.gather(
-                inconnu.char_mgr.remove(self.character),
                 interaction.response.send_message(msg),
                 inconnu.common.report_update(
                     ctx=interaction,
@@ -51,6 +50,7 @@ class _DeletionModal(Modal):
                 ),
                 s3.delete_character_images(self.character),
             )
+            await inconnu.char_mgr.remove(self.character) # Has to be done after image deletion
         else:
             await inconnu.common.present_error(
                 interaction, "You must type the character's name exactly."

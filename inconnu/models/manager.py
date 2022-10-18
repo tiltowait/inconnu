@@ -162,8 +162,11 @@ class CharacterManager:
             if character.id in self.id_cache:
                 del self.id_cache[character.id]
 
+            Logger.info("CHARACTER MANAGER: Removed %s", character.name)
+
             return True
 
+        Logger.warning("CHARACTER MANAGER: Unable to remove %s", character.name)
         return False
 
     async def transfer(self, character, current_owner, new_owner):

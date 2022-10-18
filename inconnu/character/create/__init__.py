@@ -1,3 +1,3 @@
 """Defines the imported interfaces for creating characters."""
 
-from inconnu.character.create import create
+from inconnu.character.create.create import create

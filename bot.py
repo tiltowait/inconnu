@@ -190,6 +190,7 @@ class InconnuBot(discord.Bot):
                 "experience remove entry",
                 "experience award",
                 "experience deduct",
+                "post",
                 "update header",
                 "transfer",
             }:

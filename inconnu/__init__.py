@@ -19,6 +19,7 @@ from inconnu import (
     models,
     options,
     reference,
+    roleplay,
     settings,
     stats,
     tasks,

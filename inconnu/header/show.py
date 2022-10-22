@@ -18,8 +18,31 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         help=__HELP_URL,
     )
     character = await haven.fetch()
+    embed = create_header(character, **kwargs)
 
-    # Prepare the header with any overrides
+    resp = await ctx.respond(embed=embed)
+    if isinstance(resp, discord.Interaction):
+        message = await resp.original_response()
+    else:
+        message = resp
+
+    # Register the header in the database
+    await inconnu.db.headers.insert_one(
+        {
+            "character": {
+                "guild": ctx.guild.id,
+                "user": ctx.user.id,
+                "charid": character.pk,
+            },
+            "channel": ctx.channel.id,
+            "message": message.id,
+            "timestamp": discord.utils.utcnow(),
+        }
+    )
+
+
+def create_header(character: "VChar", **kwargs):
+    """Prepare the header with any overrides."""
     header = copy.deepcopy(character.header)
 
     if kwargs["blush"] is not None:
@@ -67,25 +90,7 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
     if header.temp:
         embed.set_footer(text=header.temp)
 
-    resp = await ctx.respond(embed=embed)
-    if isinstance(resp, discord.Interaction):
-        message = await resp.original_response()
-    else:
-        message = resp
-
-    # Register the header in the database
-    await inconnu.db.headers.insert_one(
-        {
-            "character": {
-                "guild": ctx.guild.id,
-                "user": ctx.user.id,
-                "charid": character.pk,
-            },
-            "channel": ctx.channel.id,
-            "message": message.id,
-            "timestamp": discord.utils.utcnow(),
-        }
-    )
+    return embed
 
 
 def track_damage(sup: int, agg: int) -> str:

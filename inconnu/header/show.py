@@ -26,7 +26,11 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
     else:
         message = resp
 
-    # Register the header in the database
+    await register_header(ctx, message, character)
+
+
+async def register_header(ctx, message, character):
+    """Register the header in the database."""
     await inconnu.db.headers.insert_one(
         {
             "character": {

@@ -3,6 +3,7 @@
 import discord
 
 import inconnu
+from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/"
 
@@ -46,13 +47,23 @@ class PostModal(discord.ui.Modal):
         rp_post.description += "\n\n" + content
 
         if self.mention:
-            await interaction.response.send_message(self.mention.mention, embed=rp_post)
+            resp = await interaction.response.send_message(self.mention.mention, embed=rp_post)
         else:
-            await interaction.response.send_message(embed=rp_post)
+            resp = await interaction.response.send_message(embed=rp_post)
+
+        # Register the header
+        message = await resp.original_response()
+        await inconnu.header.register(interaction, message, self.character)
+        Logger.info("POST: %s registered header", self.character.name)
+
+        # Register the RP post
+        db_rp_post = inconnu.models.RPPost.create(self.character, content)
+        await db_rp_post.commit()
+        Logger.info("POST: %s registered post", self.character.name)
 
 
 async def post(ctx: discord.ApplicationContext, character: str, **kwargs):
-    """Send an RP post."""
+    """Create a modal that sends an RP post."""
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
         modal = PostModal(character, title=f"{character.name}'s Post", **kwargs)

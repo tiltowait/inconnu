@@ -279,6 +279,12 @@ class HeaderCog(commands.Cog):
             Logger.debug("HEADER: Blindly deleting potential header record")
             await inconnu.db.headers.delete_one({"message": raw_message.message_id})
 
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(self, channel):
+        """Remove header records from the deleted channel."""
+        Logger.info("HEADER: Removing header records from deleted channel %s", channel.name)
+        await inconnu.db.headers.delete_many({"channel": channel.id})
+
 
 def setup(bot):
     """Add the cog to the bot."""

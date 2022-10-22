@@ -154,13 +154,19 @@ class RollDisplay:
                 msg_id = None
 
             await inconnu.stats.log_roll(
-                ctx.guild.id, self.owner.id, msg_id, self.character, self.outcome, self.comment
+                ctx.guild.id,
+                ctx.channel.id,
+                self.owner.id,
+                msg_id,
+                self.character,
+                self.outcome,
+                self.comment,
             )
         else:
             # If this is a DM roll, we don't keep stats, so we don't need to
             # get the message ID
             await inconnu.stats.log_roll(
-                None, self.owner.id, None, self.character, self.outcome, self.comment
+                None, None, self.owner.id, None, self.character, self.outcome, self.comment
             )
 
     async def respond_to_button(self, btn):

@@ -149,6 +149,16 @@ class ReferenceCommands(commands.Cog):
             Logger.debug("REFERENCE: Blindly deleting potential roll record")
             await inconnu.stats.roll_message_deleted(raw_message.message_id)
 
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(self, channel):
+        """Mark all rolls in the deleted channel as deleted."""
+        Logger.info(
+            "REFERENCE: Deleting all roll records in deleted channel %s (%s)",
+            channel.name,
+            channel.id,
+        )
+        await inconnu.stats.delete_rolls_in_channel(channel)
+
 
 def setup(bot):
     """Add the cog to the bot."""

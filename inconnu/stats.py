@@ -8,7 +8,7 @@ from pymongo import ReturnDocument, UpdateOne
 import inconnu
 
 
-async def log_roll(guild: int, user: int, message: int, char, outcome, comment):
+async def log_roll(guild: int, channel: int, user: int, message: int, char, outcome, comment):
     """
     Log a roll and its outcome. If the roll is a reroll, simply replace it.
     Args:
@@ -20,7 +20,7 @@ async def log_roll(guild: int, user: int, message: int, char, outcome, comment):
     rolls = inconnu.db.rolls
 
     if await rolls.find_one({"_id": outcome.id}) is None:
-        roll = _gen_roll(guild, user, message, char, outcome, comment)
+        roll = _gen_roll(guild, channel, user, message, char, outcome, comment)
         await rolls.insert_one(roll)
     else:
         reroll = _gen_reroll(outcome)
@@ -47,6 +47,11 @@ async def roll_message_deleted(*message_ids):
         updates.append(UpdateOne({"message": message_id}, {"$set": {"use_in_stats": False}}))
 
     await inconnu.db.rolls.bulk_write(updates)
+
+
+async def delete_rolls_in_channel(channel):
+    """Delete all rolls in a channel."""
+    await inconnu.db.rolls.update_many({"channel": channel.id}, {"$set": {"use_in_stats": False}})
 
 
 async def guild_joined(guild):
@@ -101,12 +106,13 @@ async def guild_renamed(guild, new_name):
 # Roll logging helpers
 
 
-def _gen_roll(guild: int, user: int, message: int, char, outcome, comment: str):
+def _gen_roll(guild: int, channel: int, user: int, message: int, char, outcome, comment: str):
     """Add a new roll outcome entry to the database."""
     return {
         "_id": outcome.id,
         "date": datetime.datetime.utcnow(),
         "guild": guild,  # We use the guild and user keys for easier lookups
+        "channel": channel,
         "user": user,
         "message": message,
         "charid": getattr(char, "pk", None),

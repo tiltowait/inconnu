@@ -5,6 +5,7 @@ import copy
 import discord
 
 import inconnu
+from inconnu.models.rpheader import HeaderSubdoc
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
@@ -18,7 +19,8 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         help=__HELP_URL,
     )
     character = await haven.fetch()
-    embed = create_header(character, **kwargs)
+    header_doc = HeaderSubdoc.create(character, **kwargs)
+    embed = header_embed(header_doc, character)
 
     resp = await ctx.respond(embed=embed)
     if isinstance(resp, discord.Interaction):
@@ -45,24 +47,17 @@ async def register_header(ctx, message, character):
     )
 
 
-def create_header(character: "VChar", **kwargs):
-    """Prepare the header with any overrides."""
-    header = copy.deepcopy(character.header)
-
-    if kwargs["blush"] is not None:
-        header.blush = kwargs["blush"]
-    header.location = kwargs["location"] or header.location
-    header.merits = kwargs["merits"] or header.merits
-    header.flaws = kwargs["flaws"] or header.flaws
-    header.temp = kwargs["temp"] or header.temp
-
-    # Title should not have a trailing "•" if location is empty
-    title = [character.name, inconnu.header.blush_text(character, header.blush)]
+def header_embed(header: inconnu.models.HeaderSubdoc, character: "VChar") -> discord.Embed:
+    """Generate the header embed from the document."""
+    # Title format: Name • Location (if applicable) • Blush (if applicable)
+    # Location may be None if the user has never run /update header
+    # Blush string may be None if the character isn't a vampire
+    title = [character.name, header.blush_str]
 
     if header.location:
         title.append(header.location)
 
-    # Merits, flaws, and trackers
+    # Merits, flaws, and trackers go in the description field
     description_ = []
     if header.merits:
         description_.append(header.merits)
@@ -71,21 +66,17 @@ def create_header(character: "VChar", **kwargs):
 
     # Tracker damage
     trackers = []
-    if character.is_vampire:
-        hunger = kwargs.pop("hunger") or character.hunger
-        trackers.append(f"**Hunger** `{hunger}`")
+    if header.hunger is not None:
+        trackers.append(f"**Hunger** `{header.hunger}`")
 
-    hp_damage = track_damage(character.superficial_hp, character.aggravated_hp)
-    trackers.append(f"**HP** `{hp_damage}`")
-
-    wp_damage = track_damage(character.superficial_wp, character.aggravated_wp)
-    trackers.append(f"**WP** `{wp_damage}`")
+    trackers.append(f"**HP** `{header.hp_damage}`")
+    trackers.append(f"**WP** `{header.wp_damage}`")
 
     description_.append(" • ".join(trackers))
 
     embed = discord.Embed(
         # Ensure we don't exceed the title limit
-        title=inconnu.header.header_title(*title)[:256],
+        title=header.gen_title(character.name),
         description="\n".join(description_),
         url=inconnu.profile_url(character.id),
     )
@@ -95,17 +86,3 @@ def create_header(character: "VChar", **kwargs):
         embed.set_footer(text=header.temp)
 
     return embed
-
-
-def track_damage(sup: int, agg: int) -> str:
-    """Generate a text value for the tracker damage."""
-    # We want to keep the total HP/WP secret. Instead, just show damage
-    damage = []
-    if sup > 0:
-        damage.append(f"-{sup}s")
-    if agg > 0:
-        damage.append(f"-{agg}a")
-
-    if damage:
-        return "/".join(damage)
-    return "-0"

@@ -11,19 +11,21 @@ __HELP_URL = "https://docs.inconnu.app/"
 class PostModal(discord.ui.Modal):
     """A modal for getting post details."""
 
+    DIVIDER = "\n" + " " * 30 + "\n\n"  # Ogham space mark: \u1680
+
     def __init__(self, character: inconnu.models.VChar, *args, **kwargs):
         self.character = character
-        self.header_params = {
+        self.mention = kwargs.pop("mention")
+
+        header_params = {
             param: kwargs.pop(param, None)
             for param in ["blush", "location", "merits", "flaws", "temp", "hunger"]
         }
-        self.mention = kwargs.pop("mention")
+        self.header = inconnu.models.HeaderSubdoc.create(character, **header_params)
 
-        # Header parameters
-        self.blush = kwargs.pop("blush", None)
-        self.merits = kwargs.pop("merits", None)
-        self.flaws = kwargs.pop("flaws", None)
-        self.temp = kwargs.pop("temp", None)
+        # We create a throwaway embed to determine the max possible post length
+        embed = inconnu.header.embed(self.header, self.character)
+        header_len = len(embed.description)
 
         super().__init__(*args, **kwargs)
         self.add_item(
@@ -31,7 +33,7 @@ class PostModal(discord.ui.Modal):
                 label="Post details",
                 placeholder="Your RP post",
                 min_length=1,
-                max_length=4000,
+                max_length=4000 - header_len - len(self.DIVIDER),  # 33 is from the divider
                 style=discord.InputTextStyle.long,
             )
         )
@@ -43,8 +45,8 @@ class PostModal(discord.ui.Modal):
         content = "\n\n".join(cleaned)
 
         # We will use a basic RP header as the base for our embed
-        rp_post = inconnu.header.create(self.character, **self.header_params)
-        rp_post.description += "\n\n" + content
+        rp_post = inconnu.header.embed(self.header, self.character)
+        rp_post.description += self.DIVIDER + content
 
         if self.mention:
             resp = await interaction.response.send_message(self.mention.mention, embed=rp_post)
@@ -57,7 +59,7 @@ class PostModal(discord.ui.Modal):
         Logger.info("POST: %s registered header", self.character.name)
 
         # Register the RP post
-        db_rp_post = inconnu.models.RPPost.create(self.character, content)
+        db_rp_post = inconnu.models.RPPost.create(self.character, self.header, content)
         await db_rp_post.commit()
         Logger.info("POST: %s registered post", self.character.name)
 

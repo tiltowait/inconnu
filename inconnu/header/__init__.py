@@ -1,6 +1,6 @@
 """Header imports."""
 
-from inconnu.header.show import create_header as create
+from inconnu.header.show import header_embed as embed
 from inconnu.header.show import register_header as register
 from inconnu.header.show import show_header
 from inconnu.header.update import update_header

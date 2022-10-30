@@ -15,26 +15,28 @@ class RPPost(Document):
     date = fields.DateTimeField(default=datetime.utcnow)
     guild = fields.IntField()
     user = fields.IntField()
+    message_id = fields.IntField()
     charid = fields.ObjectIdField()
 
     header = fields.EmbeddedField(HeaderSubdoc)
     content = fields.StrField()
     history = fields.ListField(fields.StrField, default=list)
-    url = fields.UrlField()
+    url = fields.UrlField(allow_none=True)
 
     class Meta:
         collection_name = "rp_posts"
 
     @classmethod
-    def create(cls, character: "VChar", header: HeaderSubdoc, content: str, url: str):
+    def create(cls, character: "VChar", header: HeaderSubdoc, content: str, message: "Message"):
         """Create an RP post."""
         return cls(
             guild=character.guild,
             user=character.user,
+            message_id=message.id,
             charid=character.pk,
             header=header,
             content=content,
-            url=url,
+            url=message.jump_url,
         )
 
     def edit_post(self, new_post: str):

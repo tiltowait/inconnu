@@ -8,6 +8,14 @@ import inconnu
 
 
 @inconnu.db.instance.register
+class DamageSubdoc(EmbeddedDocument):
+    """Tracks aggravated and superficial damage."""
+
+    superficial = fields.IntField()
+    aggravated = fields.IntField()
+
+
+@inconnu.db.instance.register
 class HeaderSubdoc(EmbeddedDocument):
     """A subdocument for RP headers. It gets stored in the database for later editing.."""
 
@@ -20,8 +28,8 @@ class HeaderSubdoc(EmbeddedDocument):
     flaws: str = fields.StrField()
     temp: str = fields.StrField()
 
-    hp_damage = fields.StrField()
-    wp_damage = fields.StrField()
+    health = fields.EmbeddedField(DamageSubdoc)
+    willpower = fields.EmbeddedField(DamageSubdoc)
 
     @property
     def blush_str(self) -> str | None:
@@ -61,21 +69,11 @@ class HeaderSubdoc(EmbeddedDocument):
             merits=header.merits,
             flaws=header.flaws,
             temp=header.temp,
-            hp_damage=track_damage(character.superficial_hp, character.aggravated_hp),
-            wp_damage=track_damage(character.superficial_wp, character.aggravated_wp),
+            health=DamageSubdoc(
+                superficial=character.superficial_hp, aggravated=character.aggravated_hp
+            ),
+            willpower=DamageSubdoc(
+                superficial=character.superficial_wp, aggravated=character.aggravated_wp
+            ),
         )
         return header_doc
-
-
-def track_damage(sup: int, agg: int) -> str:
-    """Generate a text value for the tracker damage."""
-    # We want to keep the total HP/WP secret. Instead, just show damage
-    damage = []
-    if sup > 0:
-        damage.append(f"-{sup}s")
-    if agg > 0:
-        damage.append(f"-{agg}a")
-
-    if damage:
-        return "/".join(damage)
-    return "-0"

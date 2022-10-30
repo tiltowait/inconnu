@@ -69,8 +69,10 @@ def header_embed(header: inconnu.models.HeaderSubdoc, character: "VChar") -> dis
     if header.hunger is not None:
         trackers.append(f"**Hunger** `{header.hunger}`")
 
-    trackers.append(f"**HP** `{header.hp_damage}`")
-    trackers.append(f"**WP** `{header.wp_damage}`")
+    hp_damage = track_damage(header.health.superficial, header.health.aggravated)
+    wp_damage = track_damage(header.willpower.superficial, header.willpower.aggravated)
+    trackers.append(f"**HP** `{hp_damage}`")
+    trackers.append(f"**WP** `{wp_damage}`")
 
     description_.append(" • ".join(trackers))
 
@@ -86,3 +88,17 @@ def header_embed(header: inconnu.models.HeaderSubdoc, character: "VChar") -> dis
         embed.set_footer(text=header.temp)
 
     return embed
+
+
+def track_damage(sup: int, agg: int) -> str:
+    """Generate a text value for the tracker damage."""
+    # We want to keep the total HP/WP secret. Instead, just show damage
+    damage = []
+    if sup > 0:
+        damage.append(f"-{sup}s")
+    if agg > 0:
+        damage.append(f"-{agg}a")
+
+    if damage:
+        return "/".join(damage)
+    return "-0"

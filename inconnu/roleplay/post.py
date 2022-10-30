@@ -59,7 +59,9 @@ class PostModal(discord.ui.Modal):
         Logger.info("POST: %s registered header", self.character.name)
 
         # Register the RP post
-        db_rp_post = inconnu.models.RPPost.create(self.character, self.header, content)
+        db_rp_post = inconnu.models.RPPost.create(
+            self.character, self.header, content, message.jump_url
+        )
         await db_rp_post.commit()
         Logger.info("POST: %s registered post", self.character.name)
 

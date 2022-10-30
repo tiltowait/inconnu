@@ -20,12 +20,13 @@ class RPPost(Document):
     header = fields.EmbeddedField(HeaderSubdoc)
     content = fields.StrField()
     history = fields.ListField(fields.StrField, default=list)
+    url = fields.UrlField()
 
     class Meta:
         collection_name = "rp_posts"
 
     @classmethod
-    def create(cls, character: "VChar", header: HeaderSubdoc, content: str):
+    def create(cls, character: "VChar", header: HeaderSubdoc, content: str, url: str):
         """Create an RP post."""
         return cls(
             guild=character.guild,
@@ -33,6 +34,7 @@ class RPPost(Document):
             charid=character.pk,
             header=header,
             content=content,
+            url=url,
         )
 
     def edit_post(self, new_post: str):

@@ -18,6 +18,13 @@ class RPPost(Document):
     message_id = fields.IntField()
     charid = fields.ObjectIdField()
 
+    # The character's name when the post was made. We use this instead of the
+    # current name (if it's changed), because the post will necessarily
+    # reference the old name. It also has the added benefit of reducing
+    # complexity; we don't have to look up the character by ID, nor do we
+    # have to perform an update_many when a character is renamed.
+    char_name = fields.StrField()  # This is used in case the character is deleted
+
     header = fields.EmbeddedField(HeaderSubdoc)
     content = fields.StrField()
     history = fields.ListField(fields.StrField, default=list)
@@ -34,6 +41,7 @@ class RPPost(Document):
             user=character.user,
             message_id=message.id,
             charid=character.pk,
+            char_name=character.name,
             header=header,
             content=content,
             url=message.jump_url,

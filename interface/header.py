@@ -38,9 +38,13 @@ class LocationChangeModal(discord.ui.Modal):
     def get_location(self):
         """Get the header's current location."""
         elements = self.header.embeds[0].title.split(" • ")
-        if len(elements) > 1 and "Blushed" not in elements[-1]:
+        if len(elements) == 1:
+            return ""
+        if len(elements) == 2:
+            if "Blushed" in elements[-1]:
+                return ""
             return elements[-1]
-        return ""
+        return elements[-2]
 
     async def callback(self, interaction: discord.Interaction):
         """Update the RP header."""

@@ -46,7 +46,7 @@ class HeaderSubdoc(EmbeddedDocument):
     def title(self) -> str:
         """Make a header title out of the given fields."""
         title_fields = [self.char_name, self.location, self.blush_str]
-        title = " • ".join(filter(lambda f: f is not None, title_fields))
+        title = " • ".join(filter(lambda f: f, title_fields))
 
         return title[: HeaderSubdoc.MAX_TITLE_LEN]
 

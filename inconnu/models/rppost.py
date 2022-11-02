@@ -20,25 +20,37 @@ class PostHistoryEntry(EmbeddedDocument):
 class RPPost(Document):
     """Represents an RP post with the ability to maintain deltas."""
 
+    # Metadata
     date = fields.DateTimeField(default=datetime.utcnow)
     date_modified = fields.DateTimeField(default=None)
     guild = fields.IntField()
+    channel = fields.IntField()
     user = fields.IntField()
     message_id = fields.IntField()
+    url = fields.UrlField(allow_none=True)
+    deleted = fields.BoolField(default=False)
 
+    # Content
     header = fields.EmbeddedField(HeaderSubdoc)
     content = fields.StrField()
     history = fields.ListField(fields.EmbeddedField(PostHistoryEntry), default=list)
-    url = fields.UrlField(allow_none=True)
 
     class Meta:
         collection_name = "rp_posts"
 
     @classmethod
-    def create(cls, character: "VChar", header: HeaderSubdoc, content: str, message: "Message"):
+    def create(
+        cls,
+        channel: int,
+        character: "VChar",
+        header: HeaderSubdoc,
+        content: str,
+        message: "Message",
+    ):
         """Create an RP post."""
         return cls(
             guild=character.guild,
+            channel=channel,
             user=character.user,
             message_id=message.id,
             header=header,

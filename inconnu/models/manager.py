@@ -54,7 +54,8 @@ class CharacterManager:
             # We could check the ID cache again, but this is only a tiny bit
             # slower, so let's avoid code duplication
             for char in user_chars:
-                if char.name.lower() == name.lower():
+                # Post editing sends an ObjectId, so we need to check that, too
+                if char.name.lower() == name.lower() or str(char.pk) == name:
                     self._validate(guild, user, char)
                     return char
 

@@ -34,6 +34,12 @@ class RoleplayCog(commands.Cog):
         """Search for an RP post. Displays up to 5 results."""
         await inconnu.roleplay.search(ctx, user, content)
 
+    @commands.message_command(name="Edit RP Post")
+    @commands.guild_only()
+    async def edit_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
+        """Edit the selected roleplay post."""
+        await inconnu.roleplay.edit_post(ctx, message)
+
 
 def setup(bot):
     """Set up the cog."""

@@ -15,13 +15,20 @@ class PostModal(discord.ui.Modal):
 
     def __init__(self, character: inconnu.models.VChar, *args, **kwargs):
         self.character = character
-        self.mention = kwargs.pop("mention")
+        self.mention = kwargs.pop("mention", None)
+        self.post_to_edit = kwargs.pop("rp_post", None)
+        self.message = kwargs.pop("message", None)
 
-        header_params = {
-            param: kwargs.pop(param, None)
-            for param in ["blush", "location", "merits", "flaws", "temp", "hunger"]
-        }
-        self.header = inconnu.models.HeaderSubdoc.create(character, **header_params)
+        if self.post_to_edit is None:
+            header_params = {
+                param: kwargs.pop(param, None)
+                for param in ["blush", "location", "merits", "flaws", "temp", "hunger"]
+            }
+            self.header = inconnu.models.HeaderSubdoc.create(character, **header_params)
+            starting_value = ""
+        else:
+            self.header = self.post_to_edit.header
+            starting_value = self.post_to_edit.content
 
         # We create a throwaway embed to determine the max possible post length
         embed = inconnu.header.embed(self.header, self.character)
@@ -32,21 +39,55 @@ class PostModal(discord.ui.Modal):
             discord.ui.InputText(
                 label="Post details",
                 placeholder="Your RP post",
+                value=starting_value,
                 min_length=1,
                 max_length=4000 - header_len - len(self.DIVIDER),  # 33 is from the divider
                 style=discord.InputTextStyle.long,
             )
         )
 
-    async def callback(self, interaction: discord.Interaction):
-        """Set the RP post content."""
+    def _clean_post_content(self) -> str:
+        """Clean and attempt to normalize the post content."""
         lines = self.children[0].value.split("\n")
         cleaned = [inconnu.utils.clean_text(line) for line in lines if line]
-        content = "\n\n".join(cleaned)
+        return "\n\n".join(cleaned)
 
-        # We will use a basic RP header as the base for our embed
+    def _create_embed(self, content: str) -> discord.Embed:
+        """Create an RP post embed."""
         rp_post = inconnu.header.embed(self.header, self.character)
         rp_post.description += self.DIVIDER + content
+
+        return rp_post
+
+    async def callback(self, interaction: discord.Interaction):
+        """Set the RP post content."""
+
+        if self.post_to_edit is None:
+            await self._new_rp_post(interaction)
+        else:
+            await self._edit_rp_post(interaction)
+
+    async def _edit_rp_post(self, interaction: discord.Interaction):
+        """Edit an existing post."""
+        new_content = self._clean_post_content()
+        new_rp_embed = self._create_embed(new_content)
+
+        await self.message.edit(embed=new_rp_embed)
+
+        # Update the RPPost object
+        self.post_to_edit.edit_post(new_content)
+        await self.post_to_edit.commit()
+        Logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
+
+        # Inform the user
+        await interaction.response.send_message("Post updated!", ephemeral=True)
+
+    async def _new_rp_post(self, interaction: discord.Interaction):
+        """Post a new RP post."""
+        content = self._clean_post_content()
+
+        # We will use a basic RP header as the base for our embed
+        rp_post = self._create_embed(content)
 
         if self.mention:
             resp = await interaction.response.send_message(self.mention.mention, embed=rp_post)
@@ -65,7 +106,7 @@ class PostModal(discord.ui.Modal):
         Logger.info("POST: %s registered post", self.character.name)
 
 
-async def post(ctx: discord.ApplicationContext, character: str, **kwargs):
+async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs):
     """Create a modal that sends an RP post."""
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
@@ -74,3 +115,37 @@ async def post(ctx: discord.ApplicationContext, character: str, **kwargs):
 
     except inconnu.errors.CharacterNotFoundError as err:
         await inconnu.utils.error(ctx, err, help_url=__HELP_URL)
+
+
+async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
+    """Edit an RP post."""
+    rp_post = await inconnu.models.RPPost.find_one({"message_id": message.id})
+
+    # Need to perform some checks to ensure we can edit the post
+    if rp_post is None:
+        await inconnu.utils.error(ctx, "This isn't a roleplay post!", help=__HELP_URL)
+    elif ctx.user.id != rp_post.user:
+        await inconnu.utils.error(ctx, "You can only edit your own posts!", help=__HELP_URL)
+    else:
+        # It's a valid post, but we can only work our magic if the character
+        # still exists. Otherwise, spit out an error.
+        try:
+            character = await inconnu.char_mgr.fetchone(
+                ctx.guild_id,
+                ctx.user.id,
+                str(rp_post.charid),
+            )
+            modal = PostModal(
+                character,
+                title=f"{rp_post.char_name}'s Post",
+                rp_post=rp_post,
+                message=message,
+            )
+            await ctx.send_modal(modal)
+
+        except inconnu.errors.CharacterNotFoundError:
+            await inconnu.utils.error(
+                ctx,
+                "You can't edit the post of a deleted character!",
+                help=__HELP_URL,
+            )

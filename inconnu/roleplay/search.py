@@ -33,4 +33,8 @@ async def search(ctx, user: discord.Member, needle: str, charid: ObjectId = None
         paginator = Paginator(posts)
         await paginator.respond(ctx.interaction)
     else:
-        await ctx.respond(f"No posts by {user.mention} found matching `{needle}`.", ephemeral=True)
+        await inconnu.utils.error(
+            ctx,
+            f"No posts by {user.mention} found matching `{needle}`.",
+            title="Not found",
+        )

@@ -49,14 +49,6 @@ async def register_header(ctx, message, character):
 
 def header_embed(header: inconnu.models.HeaderSubdoc, character: "VChar") -> discord.Embed:
     """Generate the header embed from the document."""
-    # Title format: Name • Location (if applicable) • Blush (if applicable)
-    # Location may be None if the user has never run /update header
-    # Blush string may be None if the character isn't a vampire
-    title = [character.name, header.blush_str]
-
-    if header.location:
-        title.append(header.location)
-
     # Merits, flaws, and trackers go in the description field
     description_ = []
     if header.merits:

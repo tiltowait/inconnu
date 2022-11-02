@@ -7,6 +7,8 @@ from discord.ext import commands
 
 import inconnu
 
+TEST_GUILDS = [676333549720174605, 826628660450689074]  # CtBN and dev server
+
 
 class RoleplayCog(commands.Cog):
     """A cog with roleplay commands."""
@@ -14,7 +16,7 @@ class RoleplayCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command()
+    @slash_command(guild_ids=TEST_GUILDS)
     async def post(
         self,
         ctx: discord.ApplicationContext,
@@ -24,7 +26,7 @@ class RoleplayCog(commands.Cog):
         """Make an RP post as your character. Uses your current header."""
         await inconnu.roleplay.post(ctx, character, mention=mention)
 
-    @slash_command()
+    @slash_command(guild_ids=TEST_GUILDS)
     async def search(
         self,
         ctx: discord.ApplicationContext,
@@ -34,7 +36,7 @@ class RoleplayCog(commands.Cog):
         """Search for an RP post. Displays up to 5 results."""
         await inconnu.roleplay.search(ctx, user, content)
 
-    @commands.message_command(name="Edit RP Post")
+    @commands.message_command(name="Edit RP Post", guild_ids=TEST_GUILDS)
     @commands.guild_only()
     async def edit_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
         """Edit the selected roleplay post."""

@@ -1,6 +1,8 @@
 """Roleplay commands."""
 # pylint: disable=no-self-use
 
+import os
+
 import discord
 from discord.commands import Option, slash_command
 from discord.ext import commands
@@ -9,7 +11,7 @@ from pymongo import UpdateOne
 import inconnu
 from logger import Logger
 
-TEST_GUILDS = [676333549720174605, 826628660450689074]  # CtBN and dev server
+TEST_GUILDS = [int(os.environ["TEST_SERVER"])]
 
 
 class RoleplayCog(commands.Cog):

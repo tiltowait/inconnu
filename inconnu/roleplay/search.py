@@ -14,7 +14,7 @@ async def search(ctx, user: discord.Member, needle: str, charid: ObjectId = None
     needle = " ".join(needle.split())
     # TODO: More needle processing
 
-    query = {"guild": ctx.guild_id, "user": user.id, "$text": {"$search": needle}}
+    query = {"deleted": False, "guild": ctx.guild_id, "user": user.id, "$text": {"$search": needle}}
     if charid is not None:
         query["charid"] = charid
 

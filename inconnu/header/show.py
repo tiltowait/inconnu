@@ -5,6 +5,7 @@ import copy
 import discord
 
 import inconnu
+from inconnu.models.rpheader import HeaderSubdoc
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
@@ -18,54 +19,8 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
         help=__HELP_URL,
     )
     character = await haven.fetch()
-
-    # Prepare the header with any overrides
-    header = copy.deepcopy(character.header)
-
-    if kwargs["blush"] is not None:
-        header.blush = kwargs["blush"]
-    header.location = kwargs["location"] or header.location
-    header.merits = kwargs["merits"] or header.merits
-    header.flaws = kwargs["flaws"] or header.flaws
-    header.temp = kwargs["temp"] or header.temp
-
-    # Title should not have a trailing "•" if location is empty
-    title = [character.name, inconnu.header.blush_text(character, header.blush)]
-
-    if header.location:
-        title.append(header.location)
-
-    # Merits, flaws, and trackers
-    description_ = []
-    if header.merits:
-        description_.append(header.merits)
-    if header.flaws:
-        description_.append(header.flaws)
-
-    # Tracker damage
-    trackers = []
-    if character.is_vampire:
-        hunger = kwargs.pop("hunger") or character.hunger
-        trackers.append(f"**Hunger** `{hunger}`")
-
-    hp_damage = track_damage(character.superficial_hp, character.aggravated_hp)
-    trackers.append(f"**HP** `{hp_damage}`")
-
-    wp_damage = track_damage(character.superficial_wp, character.aggravated_wp)
-    trackers.append(f"**WP** `{wp_damage}`")
-
-    description_.append(" • ".join(trackers))
-
-    embed = discord.Embed(
-        # Ensure we don't exceed the title limit
-        title=inconnu.header.header_title(*title)[:256],
-        description="\n".join(description_),
-        url=inconnu.profile_url(character.id),
-    )
-    embed.set_thumbnail(url=character.random_image_url())
-
-    if header.temp:
-        embed.set_footer(text=header.temp)
+    header_doc = HeaderSubdoc.create(character, **kwargs)
+    embed = header_embed(header_doc, character)
 
     resp = await ctx.respond(embed=embed)
     if isinstance(resp, discord.Interaction):
@@ -73,7 +28,11 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
     else:
         message = resp
 
-    # Register the header in the database
+    await register_header(ctx, message, character)
+
+
+async def register_header(ctx, message, character):
+    """Register the header in the database."""
     await inconnu.db.headers.insert_one(
         {
             "character": {
@@ -86,6 +45,41 @@ async def show_header(ctx: discord.ApplicationContext, character: str = None, **
             "timestamp": discord.utils.utcnow(),
         }
     )
+
+
+def header_embed(header: inconnu.models.HeaderSubdoc, character: "VChar") -> discord.Embed:
+    """Generate the header embed from the document."""
+    # Merits, flaws, and trackers go in the description field
+    description_ = []
+    if header.merits:
+        description_.append(header.merits)
+    if header.flaws:
+        description_.append(header.flaws)
+
+    # Tracker damage
+    trackers = []
+    if header.hunger is not None:
+        trackers.append(f"**Hunger** `{header.hunger}`")
+
+    hp_damage = track_damage(header.health.superficial, header.health.aggravated)
+    wp_damage = track_damage(header.willpower.superficial, header.willpower.aggravated)
+    trackers.append(f"**HP** `{hp_damage}`")
+    trackers.append(f"**WP** `{wp_damage}`")
+
+    description_.append(" • ".join(trackers))
+
+    embed = discord.Embed(
+        # Ensure we don't exceed the title limit
+        title=header.title,
+        description="\n".join(description_),
+        url=inconnu.profile_url(character.id),
+    )
+    embed.set_thumbnail(url=character.random_image_url())
+
+    if header.temp:
+        embed.set_footer(text=header.temp)
+
+    return embed
 
 
 def track_damage(sup: int, agg: int) -> str:

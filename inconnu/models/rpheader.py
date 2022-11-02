@@ -2,6 +2,7 @@
 
 import copy
 
+from bson.objectid import ObjectId
 from umongo import EmbeddedDocument, fields
 
 import inconnu
@@ -21,6 +22,9 @@ class HeaderSubdoc(EmbeddedDocument):
 
     MAX_TITLE_LEN = 256
 
+    charid: ObjectId = fields.ObjectIdField()
+    char_name: str = fields.StrField()
+
     blush: int = fields.IntField()
     hunger: int = fields.IntField(allow_none=True)
     location: str = fields.StrField()
@@ -38,9 +42,10 @@ class HeaderSubdoc(EmbeddedDocument):
             return None
         return "Blushed" if self.blush else "Not Blushed"
 
-    def gen_title(self, char_name: str) -> str:
+    @property
+    def title(self) -> str:
         """Make a header title out of the given fields."""
-        title_fields = [char_name, self.location, self.blush_str]
+        title_fields = [self.char_name, self.location, self.blush_str]
         title = " • ".join(filter(lambda f: f is not None, title_fields))
 
         return title[: HeaderSubdoc.MAX_TITLE_LEN]
@@ -63,6 +68,8 @@ class HeaderSubdoc(EmbeddedDocument):
             hunger = None
 
         header_doc = cls(
+            charid=character.pk,
+            char_name=character.name,
             blush=header.blush,
             hunger=hunger,
             location=header.location,

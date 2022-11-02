@@ -133,11 +133,11 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
             character = await inconnu.char_mgr.fetchone(
                 ctx.guild_id,
                 ctx.user.id,
-                str(rp_post.charid),
+                str(rp_post.header.charid),
             )
             modal = PostModal(
                 character,
-                title=f"{rp_post.char_name}'s Post",
+                title=f"Edit {rp_post.header.char_name}'s Post",
                 rp_post=rp_post,
                 message=message,
             )

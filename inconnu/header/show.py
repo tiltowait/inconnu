@@ -70,7 +70,7 @@ def header_embed(header: inconnu.models.HeaderSubdoc, character: "VChar") -> dis
 
     embed = discord.Embed(
         # Ensure we don't exceed the title limit
-        title=header.gen_title(character.name),
+        title=header.title,
         description="\n".join(description_),
         url=inconnu.profile_url(character.id),
     )

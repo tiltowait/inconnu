@@ -25,12 +25,6 @@ class RPPost(Document):
     guild = fields.IntField()
     user = fields.IntField()
     message_id = fields.IntField()
-    charid = fields.ObjectIdField()
-
-    # The character's name when the post was made. We use this instead of the
-    # current name (if it's changed), because the post will necessarily
-    # reference the old name.
-    char_name = fields.StrField()  # This is used in case the character is deleted
 
     header = fields.EmbeddedField(HeaderSubdoc)
     content = fields.StrField()
@@ -47,8 +41,6 @@ class RPPost(Document):
             guild=character.guild,
             user=character.user,
             message_id=message.id,
-            charid=character.pk,
-            char_name=character.name,
             header=header,
             content=content,
             url=message.jump_url,

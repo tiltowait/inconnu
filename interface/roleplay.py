@@ -24,6 +24,16 @@ class RoleplayCog(commands.Cog):
         """Make an RP post as your character. Uses your current header."""
         await inconnu.roleplay.post(ctx, character, mention=mention)
 
+    @slash_command()
+    async def search(
+        self,
+        ctx: discord.ApplicationContext,
+        user: Option(discord.Member, "The user who made the post"),
+        content: Option(str, "What to search for"),
+    ):
+        """Search for an RP post. Displays up to 5 results."""
+        await inconnu.roleplay.search(ctx, user, content)
+
 
 def setup(bot):
     """Set up the cog."""

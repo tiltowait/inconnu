@@ -55,7 +55,7 @@ class Gameplay(commands.Cog):
         character: inconnu.options.character(),
         player: inconnu.options.player,
     ):
-        """Roll the dice. Easier (slower) version of /vr."""
+        """Roll the dice. Guided version of /vr."""
         syntax = f"{pool} {hunger} {difficulty}"
         await inconnu.vr.parse(ctx, syntax, comment, character, player)
 

@@ -54,13 +54,14 @@ class LocationChangeModal(discord.ui.Modal):
 
         # The title contains name, blush, location, but only name is guaranteed
         elements = embed.title.split(" • ")
-        if len(elements) > 1 and "Blushed" not in elements[-1]:
-            # We do have location info
-            elements.pop()
+        if self.get_location():
+            # The location is always at position 1, so we can remove it
+            del elements[1]
 
-        # Add the location
-        elements.append(location)
+        # Insert the location and combine the elements into the title
+        elements.insert(1, location)
         embed.title = " • ".join(elements)
+
         embed.set_footer(text=temp_effects)
 
         await self.header.edit(embed=embed)

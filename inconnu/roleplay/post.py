@@ -18,7 +18,7 @@ class PostModal(discord.ui.Modal):
         self.bot = bot  # Used for webhook management
         self.post_to_edit = kwargs.pop("rp_post", None)
         self.message = kwargs.pop("message", None)
-        self.mention = kwargs.pop("mention", None)
+        self.mentions = " ".join(inconnu.utils.pull_mentions(kwargs.pop("mentions", "")))
 
         if self.post_to_edit is None:
             header_params = {
@@ -81,10 +81,10 @@ class PostModal(discord.ui.Modal):
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new RP post."""
         # We need an interaction response, so make and delete this one
-        resp = await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
+        await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
 
-        # Use our caching system for getting/creating the webhook
         webhook = await self.bot.prep_webhook(interaction.channel)
+        webhook_avatar = self.character.profile_image_url or inconnu.get_avatar(interaction.user)
 
         # We take a regular header embed as a base, then modify it ... a lot
         header_embed = inconnu.header.embed(self.header, self.character)
@@ -96,17 +96,18 @@ class PostModal(discord.ui.Modal):
 
         content = self._clean_post_content()
 
-        webhook_avatar = self.character.profile_image_url or inconnu.get_avatar(interaction.user)
         header_message = await webhook.send(
-            # content="**Author:** " + interaction.user.mention,
+            content=self.mentions,
             embed=header_embed,
             username=self.character.name,
             avatar_url=webhook_avatar,
-            allowed_mentions=discord.AllowedMentions.none(),
             wait=True,
         )
         content_message = await webhook.send(
-            content=content, username=self.character.name, avatar_url=webhook_avatar, wait=True
+            content=content,
+            username=self.character.name,
+            avatar_url=webhook_avatar,
+            wait=True,
         )
 
         # Register the messages

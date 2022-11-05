@@ -28,10 +28,10 @@ class RoleplayCog(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         character: inconnu.options.character("The character to post as", required=True),
-        mention: Option(discord.Member, "The player to mention", required=False),
+        mentions: Option(str, "Users, roles, and channels to mention", required=False),
     ):
         """Make an RP post as your character. Uses your current header."""
-        await inconnu.roleplay.post(ctx, character, mention=mention)
+        await inconnu.roleplay.post(ctx, character, mentions=mentions)
 
     @slash_command(guild_ids=TEST_GUILDS)
     async def search(

@@ -28,7 +28,7 @@ class RoleplayCog(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         character: inconnu.options.character("The character to post as", required=True),
-        mentions: Option(str, "Users, roles, and channels to mention", required=False),
+        mentions: Option(str, "Users, roles, and channels to mention", default=""),
     ):
         """Make an RP post as your character. Uses your current header."""
         await inconnu.roleplay.post(ctx, character, mentions=mentions)

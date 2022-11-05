@@ -60,7 +60,7 @@ class RoleplayCog(commands.Cog):
             payload,
             self.bot,
             lambda id: UpdateOne({"message_id": id}, {"$set": {"deleted": True}}),
-            author_comparator=lambda author: author.discriminator == "0000" and author.bot,
+            author_comparator=lambda author: author.id in self.bot.webhook_ids,
         )
         if updates:
             Logger.debug("POST: Marking %s potential RP posts as deleted", len(updates))
@@ -81,7 +81,7 @@ class RoleplayCog(commands.Cog):
             raw_message,
             self.bot,
             deletion_handler,
-            author_comparator=lambda author: author.discriminator == "0000" and author.bot,
+            author_comparator=lambda author: author.id in self.bot.webhook_ids,
         )
 
     @commands.Cog.listener()

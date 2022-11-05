@@ -31,6 +31,7 @@ class InconnuBot(discord.Bot):
         self.motd = None
         self.motd_given = set()
         self.webhooks: dict[int, discord.Webhook] = defaultdict(lambda: None)
+        self.webhook_ids = set()
         Logger.info("BOT: Instantiated")
 
         # Add the cogs
@@ -115,6 +116,7 @@ class InconnuBot(discord.Bot):
         if not self.webhooks[channel.id]:
             if (webhook := await self._find_webhook(channel)) is None:
                 webhook = await channel.create_webhook(name="Inconnuhook", reason="For RP posts")
+                self.webhook_ids.add(webhook.id)
                 Logger.info(
                     "WEBHOOK: Created a webhook in #%s on %s",
                     channel.name,
@@ -345,6 +347,7 @@ class InconnuBot(discord.Bot):
                     channel.name,
                     channel.guild.name,
                 )
+                self.webhook_ids.add(_webhook.id)
                 return _webhook
 
         Logger.info("WEBHOOK: Not found in #%s on %s", channel.name, channel.guild.name)

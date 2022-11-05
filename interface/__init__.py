@@ -11,7 +11,8 @@ async def raw_message_delete_handler(
     raw_message, bot, handler: Callable[[int], Awaitable], author_comparator=None
 ):
     """Handle raw message deletion."""
-    comparator = author_comparator or (lambda author: author == bot.user)
+    if author_comparator is None:
+        author_comparator = lambda _: False
 
     # We only have a raw message event, which may not be in the message
     # cache. If it isn't, then we just have to blindly attempt to remove
@@ -22,7 +23,7 @@ async def raw_message_delete_handler(
             return
         # Got a cached message, so we can be a little more efficient and
         # only call the database if it belongs to the bot
-        if comparator(message.author):
+        if author_comparator(message.author) or message.author == bot.user:
             Logger.debug("RAW DELETER: Handling bot message")
             await handler(message.id)
     else:
@@ -36,7 +37,9 @@ def raw_bulk_delete_handler(
     payload, bot, gen_update: Callable[[int], DeleteOne | UpdateOne], author_comparator=None
 ):
     """Handle bulk message deletion."""
-    comparator = author_comparator or (lambda author: author == bot.user)
+    if author_comparator is None:
+        author_comparator = lambda _: False
+
     raw_ids = payload.message_ids
     write_ops = []
 
@@ -47,7 +50,7 @@ def raw_bulk_delete_handler(
 
         raw_ids.discard(message.id)  # Prevent double updates
 
-        if comparator(message.author):
+        if author_comparator(message.author) or message.author == bot.user:
             Logger.debug("RAW BULK DELETER: Adding potential bot message to queue")
             write_ops.append(gen_update(message.id))
 

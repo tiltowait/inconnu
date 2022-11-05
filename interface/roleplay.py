@@ -9,6 +9,7 @@ from discord.ext import commands
 from pymongo import UpdateOne
 
 import inconnu
+import interface
 from logger import Logger
 
 TEST_GUILDS = [int(os.environ["TEST_SERVER"])]
@@ -55,44 +56,27 @@ class RoleplayCog(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
         """Bulk mark RP posts as deleted."""
-        raw_ids = payload.message_ids
-        updates = []
-
-        for message in payload.cached_messages:
-            raw_ids.discard(message.id)
-            if message.author == self.bot.user:
-                Logger.debug("POST: Adding potential RP post to update queue")
-                updates.append(UpdateOne({"message_id": message.id}, {"$set": {"deleted": True}}))
-
-        for message_id in raw_ids:
-            Logger.debug("POST: Blindly adding potential RP post to update queue")
-            updates.append(UpdateOne({"message_id": message_id}, {"$set": {"deleted": True}}))
-
-        Logger.debug("POST: Marking %s potential RP posts as deleted", len(updates))
-        await inconnu.db.rp_posts.bulk_write(updates)
+        updates = interface.raw_bulk_delete_handler(
+            payload,
+            self.bot,
+            lambda id: UpdateOne({"message_id": id}, {"$set": {"deleted": True}}),
+        )
+        if updates:
+            Logger.debug("POST: Marking %s potential RP posts as deleted", len(updates))
+            await inconnu.db.rp_posts.bulk_write(updates)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
         """Set RP post deletion marker."""
-        # We only have a raw message event, which may not be in the message
-        # cache. If it isn't, then we just have to blindly attempt to update
-        # the record. If this proves to be a performance hit, we'll have to
-        # revert to using on_message_delete().
-        if (message := raw_message.cached_message) is not None:
-            # Got a cached message, so we can be a little more efficient and
-            # only call the database if it belongs to the bot
-            if message.author == self.bot.user:
-                Logger.debug("POST: Marking potential RP post as deleted")
-                await inconnu.db.rp_posts.update_one(
-                    {"message_id": message.id}, {"$set": {"deleted": True}}
-                )
-        else:
-            # The message isn't in the cache; blindly delete the record
-            # if it exists
-            Logger.debug("POST: Blindly marking potential RP post as deleted")
+
+        async def deletion_handler(message_id: int):
+            """Mark an RP post as deleted."""
+            Logger.debug("POST: Marking potential RP post as deleted")
             await inconnu.db.rp_posts.update_one(
-                {"message_id": raw_message.message_id}, {"$set": {"deleted": True}}
+                {"message_id": message_id}, {"$set": {"deleted": True}}
             )
+
+        await interface.raw_message_delete_handler(raw_message, self.bot, deletion_handler)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):

@@ -2,12 +2,13 @@
 # pylint: disable=no-self-use
 
 import discord
-from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
-from discord.ext import commands
-from pymongo import DeleteOne
-
 import inconnu
+import interface
+from discord.commands import (Option, OptionChoice, SlashCommandGroup,
+                              slash_command)
+from discord.ext import commands
 from logger import Logger
+from pymongo import DeleteOne
 
 
 class LocationChangeModal(discord.ui.Modal):
@@ -249,40 +250,23 @@ class HeaderCog(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
         """Bulk delete headers."""
-        raw_ids = payload.message_ids
-        deletions = []
-
-        for message in payload.cached_messages:
-            raw_ids.discard(message.id)
-            if message.author == self.bot.user:
-                Logger.debug("HEADER: Adding potential header message to deletion queue")
-                deletions.append(DeleteOne({"message": message.id}))
-
-        for message_id in raw_ids:
-            Logger.debug("HEADER: Blindly adding potential header message to deletion queue")
-            deletions.append(DeleteOne({"message": message_id}))
-
-        Logger.debug("HEADER: Deleting %s potential header messages", len(deletions))
-        await inconnu.db.headers.bulk_write(deletions)
+        deletions = interface.raw_bulk_delete_handler(
+            payload, self.bot, lambda id: DeleteOne({"message": id})
+        )
+        if deletions:
+            Logger.debug("HEADER: Deleting %s potential header messages", len(deletions))
+            await inconnu.db.headers.bulk_write(deletions)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
         """Remove a header record."""
-        # We only have a raw message event, which may not be in the message
-        # cache. If it isn't, then we just have to blindly attempt to remove
-        # the record. If this proves to be a performance hit, we'll have to
-        # revert to using on_message_delete().
-        if (message := raw_message.cached_message) is not None:
-            # Got a cached message, so we can be a little more efficient and
-            # only call the database if it belongs to the bot
-            if message.author == self.bot.user:
-                Logger.debug("HEADER: Deleting possible header message")
-                await inconnu.db.headers.delete_one({"message": message.id})
-        else:
-            # The message isn't in the cache; blindly delete the record
-            # if it exists
-            Logger.debug("HEADER: Blindly deleting potential header record")
-            await inconnu.db.headers.delete_one({"message": raw_message.message_id})
+
+        async def deletion_handler(message_id: int):
+            """Delete the header record."""
+            Logger.debug("HEADER: Deleting possible header")
+            await inconnu.db.headers.delete_one({"message": message_id})
+
+        await interface.raw_message_delete_handler(raw_message, self.bot, deletion_handler)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):

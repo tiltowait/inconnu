@@ -81,8 +81,7 @@ class PostModal(discord.ui.Modal):
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new RP post."""
         # We need an interaction response, so make and delete this one
-        resp = await interaction.response.send_message("Posting!", ephemeral=True)
-        await resp.delete_original_response()  # TODO: Prevent this from triggering DB on_deletes
+        resp = await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
 
         # Use our caching system for getting/creating the webhook
         webhook = await self.bot.prep_webhook(interaction.channel)

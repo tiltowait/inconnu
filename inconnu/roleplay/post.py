@@ -79,10 +79,48 @@ class PostModal(discord.ui.Modal):
 
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new RP post."""
+        resp = await interaction.response.send_message("Posting!", ephemeral=True)
+        await resp.delete_original_response()
+
+        # Get or create the webhook
+        webhooks = await interaction.channel.webhooks()
+        webhook = None
+        for _webhook in webhooks:
+            if _webhook.name == "Inconnuhook":
+                webhook = _webhook
+                break
+
+        if webhook is None:
+            webhook = await interaction.channel.create_webhook(
+                name="Inconnuhook", reason="For RP posts"
+            )
+
         header_embed = inconnu.header.embed(self.header, self.character)
-        header_resp = await interaction.response.send_message(embed=header_embed)
+
+        # Gonna manipulate the heck out of this header
+        title_elements = header_embed.title.split(" • ")[1:]
+        header_embed.set_author(name=" • ".join(title_elements), url=header_embed.url)
+        header_embed.title = ""
+        header_embed.description += f"\n*Author: {interaction.user.mention}*"
 
         content = self._clean_post_content()
+
+        await webhook.send(
+            # content="**Author:** " + interaction.user.mention,
+            embed=header_embed,
+            username=self.character.name,
+            avatar_url=self.character.profile_image_url,
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
+        await webhook.send(
+            content=content,
+            username=self.character.name,
+            avatar_url=self.character.profile_image_url,
+        )
+
+        return
+        header_resp = await interaction.response.send_message(embed=header_embed)
+
         content_message = await interaction.channel.send(content)
 
         if self.mention:

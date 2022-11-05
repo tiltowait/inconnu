@@ -15,9 +15,9 @@ class PostModal(discord.ui.Modal):
 
     def __init__(self, character: inconnu.models.VChar, *args, **kwargs):
         self.character = character
-        self.mention = kwargs.pop("mention", None)
         self.post_to_edit = kwargs.pop("rp_post", None)
         self.message = kwargs.pop("message", None)
+        self.mention = kwargs.pop("mention", None)
 
         if self.post_to_edit is None:
             header_params = {
@@ -30,10 +30,7 @@ class PostModal(discord.ui.Modal):
             self.header = self.post_to_edit.header
             starting_value = self.post_to_edit.content
 
-        # We create a throwaway embed to determine the max possible post length
-        embed = inconnu.header.embed(self.header, self.character)
-        header_len = len(embed.description)
-
+        # Populate the modal
         super().__init__(*args, **kwargs)
         self.add_item(
             discord.ui.InputText(
@@ -41,7 +38,7 @@ class PostModal(discord.ui.Modal):
                 placeholder="Your RP post",
                 value=starting_value,
                 min_length=1,
-                max_length=4000 - header_len - len(self.DIVIDER),  # 33 is from the divider
+                max_length=2000,
                 style=discord.InputTextStyle.long,
             )
         )
@@ -70,9 +67,7 @@ class PostModal(discord.ui.Modal):
     async def _edit_rp_post(self, interaction: discord.Interaction):
         """Edit an existing post."""
         new_content = self._clean_post_content()
-        new_rp_embed = self._create_embed(new_content)
-
-        await self.message.edit(embed=new_rp_embed)
+        await self.message.edit(new_content)
 
         # Update the RPPost object
         self.post_to_edit.edit_post(new_content)
@@ -83,25 +78,26 @@ class PostModal(discord.ui.Modal):
         await interaction.response.send_message("Post updated!", ephemeral=True)
 
     async def _new_rp_post(self, interaction: discord.Interaction):
-        """Post a new RP post."""
-        content = self._clean_post_content()
+        """Make a new RP post."""
+        header_embed = inconnu.header.embed(self.header, self.character)
+        header_resp = await interaction.response.send_message(embed=header_embed)
 
-        # We will use a basic RP header as the base for our embed
-        rp_post = self._create_embed(content)
+        content = self._clean_post_content()
+        content_message = await interaction.channel.send(content)
 
         if self.mention:
-            resp = await interaction.response.send_message(self.mention.mention, embed=rp_post)
-        else:
-            resp = await interaction.response.send_message(embed=rp_post)
+            await interaction.channel.send(self.mention.mention)
 
-        # Register the header
-        message = await resp.original_response()
-        await inconnu.header.register(interaction, message, self.character)
+        # Now that we're done showing responses, we can fetch the message ID
+        # at our leisure and not worry about being rate-limited, then register
+        # the header
+        header_message = await header_resp.original_response()
+        await inconnu.header.register(interaction, header_message, self.character)
         Logger.info("POST: %s registered header", self.character.name)
 
         # Register the RP post
         db_rp_post = inconnu.models.RPPost.create(
-            interaction.channel_id, self.character, self.header, content, message
+            interaction.channel_id, self.character, self.header, content, content_message
         )
         await db_rp_post.commit()
 

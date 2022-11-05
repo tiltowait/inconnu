@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+from collections import defaultdict
 from datetime import time, timezone
 
 import discord
@@ -18,6 +19,8 @@ from logger import Logger
 class InconnuBot(discord.Bot):
     """Adds minor functionality over the superclass. All commands in cogs."""
 
+    WEBHOOK_NAME = "Inconnuhook"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.persistent_views_added = False
@@ -27,6 +30,7 @@ class InconnuBot(discord.Bot):
         self.wizards = 0
         self.motd = None
         self.motd_given = set()
+        self.webhooks: dict[int, discord.Webhook] = defaultdict(lambda: None)
         Logger.info("BOT: Instantiated")
 
         # Add the cogs
@@ -105,6 +109,23 @@ class InconnuBot(discord.Bot):
             return guild
         Logger.debug("BOT: Guild %s not found in cache; attempting fetch", guild_id)
         return await self.fetch_guild(guild_id)
+
+    async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
+        """Prepare a webhook, either from the cache or creating one. Raises Forbidden."""
+        if not self.webhooks[channel.id]:
+            if (webhook := await self._find_webhook(channel)) is None:
+                webhook = await channel.create_webhook(name="Inconnuhook", reason="For RP posts")
+                Logger.info(
+                    "WEBHOOK: Created a webhook in #%s on %s",
+                    channel.name,
+                    channel.guild.name,
+                )
+            # Add it to the cache
+            self.webhooks[channel.id] = webhook
+        else:
+            Logger.info("WEBHOOK: Webhook CACHED in #%s on %s", channel.name, channel.guild.name)
+
+        return self.webhooks[channel.id]
 
     async def _set_presence(self):
         """Set the bot's presence message."""
@@ -314,6 +335,26 @@ class InconnuBot(discord.Bot):
             Logger.info("BOT: Renamed %s => %s", before.name, after.name)
             await inconnu.stats.guild_renamed(after.id, after.name)
 
+    async def _find_webhook(self, channel: discord.TextChannel):
+        """Find the appropriate webhook in the channel."""
+        for _webhook in await channel.webhooks():
+            if _webhook.name == self.WEBHOOK_NAME:
+                Logger.info(
+                    "WEBHOOK: %s found in #%s on %s",
+                    self.WEBHOOK_NAME,
+                    channel.name,
+                    channel.guild.name,
+                )
+                return _webhook
+
+        Logger.info("WEBHOOK: Not found in #%s on %s", channel.name, channel.guild.name)
+        return None
+
+    async def on_webhooks_update(self, channel: discord.TextChannel):
+        """Update the webhooks cache."""
+        # TODO: Prevent this API call when we just created the webhook
+        self.webhooks[channel.id] = await self._find_webhook(channel)
+
 
 # Tasks
 
@@ -348,7 +389,7 @@ async def upload_logs():
 
 
 # Set up the bot instance
-intents = discord.Intents(guilds=True, members=True, messages=True)
+intents = discord.Intents(guilds=True, members=True, messages=True, webhooks=True)
 bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
 inconnu.bot = bot
 

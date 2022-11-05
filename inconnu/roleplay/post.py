@@ -13,8 +13,9 @@ class PostModal(discord.ui.Modal):
 
     DIVIDER = "\n" + " " * 30 + "\n\n"  # Ogham space mark: \u1680
 
-    def __init__(self, character: inconnu.models.VChar, *args, **kwargs):
+    def __init__(self, character: inconnu.models.VChar, bot, *args, **kwargs):
         self.character = character
+        self.bot = bot  # Used for webhook management
         self.post_to_edit = kwargs.pop("rp_post", None)
         self.message = kwargs.pop("message", None)
         self.mention = kwargs.pop("mention", None)
@@ -79,25 +80,16 @@ class PostModal(discord.ui.Modal):
 
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new RP post."""
+        # We need an interaction response, so make and delete this one
         resp = await interaction.response.send_message("Posting!", ephemeral=True)
-        await resp.delete_original_response()
+        await resp.delete_original_response()  # TODO: Prevent this from triggering DB on_deletes
 
-        # Get or create the webhook
-        webhooks = await interaction.channel.webhooks()
-        webhook = None
-        for _webhook in webhooks:
-            if _webhook.name == "Inconnuhook":
-                webhook = _webhook
-                break
+        # Use our caching system for getting/creating the webhook
+        webhook = await self.bot.prep_webhook(interaction.channel)
 
-        if webhook is None:
-            webhook = await interaction.channel.create_webhook(
-                name="Inconnuhook", reason="For RP posts"
-            )
-
+        # We take a regular header embed as a base, then modify it ... a lot
         header_embed = inconnu.header.embed(self.header, self.character)
 
-        # Gonna manipulate the heck out of this header
         title_elements = header_embed.title.split(" • ")[1:]
         header_embed.set_author(name=" • ".join(title_elements), url=header_embed.url)
         header_embed.title = ""
@@ -146,7 +138,7 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
     """Create a modal that sends an RP post."""
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
-        modal = PostModal(character, title=f"{character.name}'s Post", **kwargs)
+        modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
         await ctx.send_modal(modal)
 
     except inconnu.errors.CharacterNotFoundError as err:
@@ -173,6 +165,7 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
             )
             modal = PostModal(
                 character,
+                ctx.bot,
                 title=f"Edit {rp_post.header.char_name}'s Post",
                 rp_post=rp_post,
                 message=message,

@@ -1,5 +1,7 @@
 """Commonly used utilities."""
 
+import re
+
 import discord
 from discord.ext import commands
 
@@ -77,6 +79,12 @@ def _check_supporter(ctx, user: discord.Member = None):
 def has_premium():
     """A decorator for commands that only work for supporters."""
     return commands.check(_check_supporter)
+
+
+def pull_mentions(text: str) -> set[str]:
+    """Pulls mentions from text."""
+    mentions = re.findall(r"(<(?:@|@&|#)\d{1,30}>)", text)
+    return set(mentions)
 
 
 class VCharEmbed(discord.Embed):

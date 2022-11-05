@@ -13,11 +13,12 @@ class PostModal(discord.ui.Modal):
 
     DIVIDER = "\n" + " " * 30 + "\n\n"  # Ogham space mark: \u1680
 
-    def __init__(self, character: inconnu.models.VChar, *args, **kwargs):
+    def __init__(self, character: inconnu.models.VChar, bot, *args, **kwargs):
         self.character = character
-        self.mention = kwargs.pop("mention", None)
+        self.bot = bot  # Used for webhook management
         self.post_to_edit = kwargs.pop("rp_post", None)
         self.message = kwargs.pop("message", None)
+        self.mentions = " ".join(inconnu.utils.pull_mentions(kwargs.pop("mentions", "")))
 
         if self.post_to_edit is None:
             header_params = {
@@ -30,10 +31,7 @@ class PostModal(discord.ui.Modal):
             self.header = self.post_to_edit.header
             starting_value = self.post_to_edit.content
 
-        # We create a throwaway embed to determine the max possible post length
-        embed = inconnu.header.embed(self.header, self.character)
-        header_len = len(embed.description)
-
+        # Populate the modal
         super().__init__(*args, **kwargs)
         self.add_item(
             discord.ui.InputText(
@@ -41,7 +39,7 @@ class PostModal(discord.ui.Modal):
                 placeholder="Your RP post",
                 value=starting_value,
                 min_length=1,
-                max_length=4000 - header_len - len(self.DIVIDER),  # 33 is from the divider
+                max_length=2000,
                 style=discord.InputTextStyle.long,
             )
         )
@@ -70,9 +68,7 @@ class PostModal(discord.ui.Modal):
     async def _edit_rp_post(self, interaction: discord.Interaction):
         """Edit an existing post."""
         new_content = self._clean_post_content()
-        new_rp_embed = self._create_embed(new_content)
-
-        await self.message.edit(embed=new_rp_embed)
+        await self.message.edit(new_content)
 
         # Update the RPPost object
         self.post_to_edit.edit_post(new_content)
@@ -83,25 +79,44 @@ class PostModal(discord.ui.Modal):
         await interaction.response.send_message("Post updated!", ephemeral=True)
 
     async def _new_rp_post(self, interaction: discord.Interaction):
-        """Post a new RP post."""
+        """Make a new RP post."""
+        # We need an interaction response, so make and delete this one
+        await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
+
+        webhook = await self.bot.prep_webhook(interaction.channel)
+        webhook_avatar = self.character.profile_image_url or inconnu.get_avatar(interaction.user)
+
+        # We take a regular header embed as a base, then modify it ... a lot
+        header_embed = inconnu.header.embed(self.header, self.character)
+
+        title_elements = header_embed.title.split(" • ")[1:]
+        header_embed.set_author(name=" • ".join(title_elements), url=header_embed.url)
+        header_embed.title = ""
+        header_embed.description += f"\n*Author: {interaction.user.mention}*"
+
         content = self._clean_post_content()
 
-        # We will use a basic RP header as the base for our embed
-        rp_post = self._create_embed(content)
+        header_message = await webhook.send(
+            content=self.mentions,
+            embed=header_embed,
+            username=self.character.name,
+            avatar_url=webhook_avatar,
+            wait=True,
+        )
+        content_message = await webhook.send(
+            content=content,
+            username=self.character.name,
+            avatar_url=webhook_avatar,
+            wait=True,
+        )
 
-        if self.mention:
-            resp = await interaction.response.send_message(self.mention.mention, embed=rp_post)
-        else:
-            resp = await interaction.response.send_message(embed=rp_post)
-
-        # Register the header
-        message = await resp.original_response()
-        await inconnu.header.register(interaction, message, self.character)
+        # Register the messages
+        await inconnu.header.register(interaction, header_message, self.character)
         Logger.info("POST: %s registered header", self.character.name)
 
         # Register the RP post
         db_rp_post = inconnu.models.RPPost.create(
-            interaction.channel_id, self.character, self.header, content, message
+            interaction.channel_id, self.character, self.header, content, content_message
         )
         await db_rp_post.commit()
 
@@ -112,7 +127,7 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
     """Create a modal that sends an RP post."""
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
-        modal = PostModal(character, title=f"{character.name}'s Post", **kwargs)
+        modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
         await ctx.send_modal(modal)
 
     except inconnu.errors.CharacterNotFoundError as err:
@@ -139,6 +154,7 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
             )
             modal = PostModal(
                 character,
+                ctx.bot,
                 title=f"Edit {rp_post.header.char_name}'s Post",
                 rp_post=rp_post,
                 message=message,

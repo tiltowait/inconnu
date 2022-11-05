@@ -2,13 +2,13 @@
 # pylint: disable=no-self-use
 
 import discord
+from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
+from discord.ext import commands
+from pymongo import DeleteOne
+
 import inconnu
 import interface
-from discord.commands import (Option, OptionChoice, SlashCommandGroup,
-                              slash_command)
-from discord.ext import commands
 from logger import Logger
-from pymongo import DeleteOne
 
 
 class LocationChangeModal(discord.ui.Modal):
@@ -251,7 +251,11 @@ class HeaderCog(commands.Cog):
     async def on_raw_bulk_message_delete(self, payload):
         """Bulk delete headers."""
         deletions = interface.raw_bulk_delete_handler(
-            payload, self.bot, lambda id: DeleteOne({"message": id})
+            payload,
+            self.bot,
+            lambda id: DeleteOne({"message": id}),
+            author_comparator=lambda author: author == self.bot.user
+            or (author.discriminator == "0000" and author.bot),
         )
         if deletions:
             Logger.debug("HEADER: Deleting %s potential header messages", len(deletions))
@@ -266,7 +270,13 @@ class HeaderCog(commands.Cog):
             Logger.debug("HEADER: Deleting possible header")
             await inconnu.db.headers.delete_one({"message": message_id})
 
-        await interface.raw_message_delete_handler(raw_message, self.bot, deletion_handler)
+        await interface.raw_message_delete_handler(
+            raw_message,
+            self.bot,
+            deletion_handler,
+            author_comparator=lambda author: author == self.bot.user
+            or (author.discriminator == "0000" and author.bot),
+        )
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):

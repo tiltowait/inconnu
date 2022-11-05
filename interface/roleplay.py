@@ -28,10 +28,10 @@ class RoleplayCog(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         character: inconnu.options.character("The character to post as", required=True),
-        mention: Option(discord.Member, "The player to mention", required=False),
+        mentions: Option(str, "Users, roles, and channels to mention", required=False),
     ):
         """Make an RP post as your character. Uses your current header."""
-        await inconnu.roleplay.post(ctx, character, mention=mention)
+        await inconnu.roleplay.post(ctx, character, mentions=mentions)
 
     @slash_command(guild_ids=TEST_GUILDS)
     async def search(
@@ -60,6 +60,7 @@ class RoleplayCog(commands.Cog):
             payload,
             self.bot,
             lambda id: UpdateOne({"message_id": id}, {"$set": {"deleted": True}}),
+            author_comparator=lambda author: author.discriminator == "0000" and author.bot,
         )
         if updates:
             Logger.debug("POST: Marking %s potential RP posts as deleted", len(updates))
@@ -76,7 +77,12 @@ class RoleplayCog(commands.Cog):
                 {"message_id": message_id}, {"$set": {"deleted": True}}
             )
 
-        await interface.raw_message_delete_handler(raw_message, self.bot, deletion_handler)
+        await interface.raw_message_delete_handler(
+            raw_message,
+            self.bot,
+            deletion_handler,
+            author_comparator=lambda author: author.discriminator == "0000" and author.bot,
+        )
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):

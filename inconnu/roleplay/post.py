@@ -97,31 +97,19 @@ class PostModal(discord.ui.Modal):
         content = self._clean_post_content()
 
         webhook_avatar = self.character.profile_image_url or inconnu.get_avatar(interaction.user)
-        await webhook.send(
+        header_message = await webhook.send(
             # content="**Author:** " + interaction.user.mention,
             embed=header_embed,
             username=self.character.name,
             avatar_url=webhook_avatar,
             allowed_mentions=discord.AllowedMentions.none(),
+            wait=True,
         )
-        await webhook.send(
-            content=content,
-            username=self.character.name,
-            avatar_url=webhook_avatar,
+        content_message = await webhook.send(
+            content=content, username=self.character.name, avatar_url=webhook_avatar, wait=True
         )
 
-        return
-        header_resp = await interaction.response.send_message(embed=header_embed)
-
-        content_message = await interaction.channel.send(content)
-
-        if self.mention:
-            await interaction.channel.send(self.mention.mention)
-
-        # Now that we're done showing responses, we can fetch the message ID
-        # at our leisure and not worry about being rate-limited, then register
-        # the header
-        header_message = await header_resp.original_response()
+        # Register the messages
         await inconnu.header.register(interaction, header_message, self.character)
         Logger.info("POST: %s registered header", self.character.name)
 

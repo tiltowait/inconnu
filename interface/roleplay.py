@@ -60,6 +60,7 @@ class RoleplayCog(commands.Cog):
             payload,
             self.bot,
             lambda id: UpdateOne({"message_id": id}, {"$set": {"deleted": True}}),
+            author_comparator=lambda author: author.discriminator == "0000" and author.bot,
         )
         if updates:
             Logger.debug("POST: Marking %s potential RP posts as deleted", len(updates))
@@ -76,7 +77,12 @@ class RoleplayCog(commands.Cog):
                 {"message_id": message_id}, {"$set": {"deleted": True}}
             )
 
-        await interface.raw_message_delete_handler(raw_message, self.bot, deletion_handler)
+        await interface.raw_message_delete_handler(
+            raw_message,
+            self.bot,
+            deletion_handler,
+            author_comparator=lambda author: author.discriminator == "0000" and author.bot,
+        )
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):

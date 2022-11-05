@@ -7,8 +7,12 @@ from pymongo import DeleteOne, UpdateOne
 from logger import Logger
 
 
-async def raw_message_delete_handler(raw_message, bot, handler: Callable[[int], Awaitable]):
+async def raw_message_delete_handler(
+    raw_message, bot, handler: Callable[[int], Awaitable], author_comparator=None
+):
     """Handle raw message deletion."""
+    comparator = author_comparator or (lambda author: author == bot.user)
+
     # We only have a raw message event, which may not be in the message
     # cache. If it isn't, then we just have to blindly attempt to remove
     # the record.
@@ -18,7 +22,7 @@ async def raw_message_delete_handler(raw_message, bot, handler: Callable[[int], 
             return
         # Got a cached message, so we can be a little more efficient and
         # only call the database if it belongs to the bot
-        if message.author == bot.user:
+        if comparator(message.author):
             Logger.debug("RAW DELETER: Handling bot message")
             await handler(message.id)
     else:
@@ -28,8 +32,11 @@ async def raw_message_delete_handler(raw_message, bot, handler: Callable[[int], 
         await handler(raw_message.message_id)
 
 
-def raw_bulk_delete_handler(payload, bot, gen_update: Callable[[int], DeleteOne | UpdateOne]):
+def raw_bulk_delete_handler(
+    payload, bot, gen_update: Callable[[int], DeleteOne | UpdateOne], author_comparator=None
+):
     """Handle bulk message deletion."""
+    comparator = author_comparator or (lambda author: author == bot.user)
     raw_ids = payload.message_ids
     write_ops = []
 
@@ -40,7 +47,7 @@ def raw_bulk_delete_handler(payload, bot, gen_update: Callable[[int], DeleteOne 
 
         raw_ids.discard(message.id)  # Prevent double updates
 
-        if message.author == bot.user:
+        if comparator(message.author):
             Logger.debug("RAW BULK DELETER: Adding potential bot message to queue")
             write_ops.append(gen_update(message.id))
 

@@ -97,17 +97,18 @@ class PostModal(discord.ui.Modal):
 
         content = self._clean_post_content()
 
+        webhook_avatar = self.character.profile_image_url or inconnu.get_avatar(interaction.user)
         await webhook.send(
             # content="**Author:** " + interaction.user.mention,
             embed=header_embed,
             username=self.character.name,
-            avatar_url=self.character.profile_image_url,
+            avatar_url=webhook_avatar,
             allowed_mentions=discord.AllowedMentions.none(),
         )
         await webhook.send(
             content=content,
             username=self.character.name,
-            avatar_url=self.character.profile_image_url,
+            avatar_url=webhook_avatar,
         )
 
         return

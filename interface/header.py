@@ -254,7 +254,7 @@ class HeaderCog(commands.Cog):
             payload,
             self.bot,
             lambda id: DeleteOne({"message": id}),
-            author_comparator=lambda author: author.id in self.bot.webhook_ids,
+            author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
         if deletions:
             Logger.debug("HEADER: Deleting %s potential header messages", len(deletions))
@@ -273,7 +273,7 @@ class HeaderCog(commands.Cog):
             raw_message,
             self.bot,
             deletion_handler,
-            author_comparator=lambda author: author.id in self.bot.webhook_ids,
+            author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
 
     @commands.Cog.listener()

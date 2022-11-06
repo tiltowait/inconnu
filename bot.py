@@ -19,8 +19,6 @@ from logger import Logger
 class InconnuBot(discord.Bot):
     """Adds minor functionality over the superclass. All commands in cogs."""
 
-    WEBHOOK_NAME = "Inconnuhook"
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.persistent_views_added = False
@@ -30,8 +28,7 @@ class InconnuBot(discord.Bot):
         self.wizards = 0
         self.motd = None
         self.motd_given = set()
-        self.webhooks: dict[int, discord.Webhook] = defaultdict(lambda: None)
-        self.webhook_ids = set()
+        self.webhook_cache = None
         Logger.info("BOT: Instantiated")
 
         # Add the cogs
@@ -113,21 +110,7 @@ class InconnuBot(discord.Bot):
 
     async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
         """Prepare a webhook, either from the cache or creating one. Raises Forbidden."""
-        if not self.webhooks[channel.id]:
-            if (webhook := await self._find_webhook(channel)) is None:
-                webhook = await channel.create_webhook(name="Inconnuhook", reason="For RP posts")
-                self.webhook_ids.add(webhook.id)
-                Logger.info(
-                    "WEBHOOK: Created a webhook in #%s on %s",
-                    channel.name,
-                    channel.guild.name,
-                )
-            # Add it to the cache
-            self.webhooks[channel.id] = webhook
-        else:
-            Logger.info("WEBHOOK: Webhook CACHED in #%s on %s", channel.name, channel.guild.name)
-
-        return self.webhooks[channel.id]
+        return await self.webhook_cache.prep_webhook(channel)
 
     async def _set_presence(self):
         """Set the bot's presence message."""
@@ -270,6 +253,7 @@ class InconnuBot(discord.Bot):
             # Final prep
             inconnu.char_mgr.bot = self
             reporter.prepare_channel(self)
+            self.webhook_cache = inconnu.webhookcache.WebhookCache(self.user.id)
             self.welcomed = True
 
         # We always want to do these regardless of welcoming or not
@@ -337,26 +321,9 @@ class InconnuBot(discord.Bot):
             Logger.info("BOT: Renamed %s => %s", before.name, after.name)
             await inconnu.stats.guild_renamed(after.id, after.name)
 
-    async def _find_webhook(self, channel: discord.TextChannel):
-        """Find the appropriate webhook in the channel."""
-        for _webhook in await channel.webhooks():
-            if _webhook.name == self.WEBHOOK_NAME:
-                Logger.info(
-                    "WEBHOOK: %s found in #%s on %s",
-                    self.WEBHOOK_NAME,
-                    channel.name,
-                    channel.guild.name,
-                )
-                self.webhook_ids.add(_webhook.id)
-                return _webhook
-
-        Logger.info("WEBHOOK: Not found in #%s on %s", channel.name, channel.guild.name)
-        return None
-
     async def on_webhooks_update(self, channel: discord.TextChannel):
         """Update the webhooks cache."""
-        # TODO: Prevent this API call when we just created the webhook
-        self.webhooks[channel.id] = await self._find_webhook(channel)
+        await self.webhook_cache.update_webhooks(channel)
 
 
 # Tasks

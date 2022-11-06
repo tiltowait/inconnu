@@ -26,6 +26,7 @@ from inconnu import (
     traits,
     utils,
     views,
+    webhookcache,
 )
 from inconnu.emoji import emojis
 from inconnu.models import CharacterManager

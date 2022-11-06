@@ -63,7 +63,7 @@ class InconnuBot(discord.Bot):
             if message.reference.resolved.author.id in self.webhook_cache.webhook_ids:
                 Logger.debug("BOT: Received a reply to one of our webhooks")
                 rp_post = await inconnu.models.RPPost.find_one(
-                    {"message_id": message.reference.message_id}
+                    {"id_chain": message.reference.message_id}
                 )
                 if rp_post is not None:
                     # Users can't turn off reply pings to bots, so we don't
@@ -72,7 +72,7 @@ class InconnuBot(discord.Bot):
                     if rp_post.user not in map(lambda m: m.id, message.mentions):
                         Logger.debug("BOT: Pinging RP post's author")
                         user = await self.get_or_fetch_user(rp_post.user)
-                        await message.channel.send(user.mention, delete_after=60)
+                        await message.reply(user.mention, mention_author=False, delete_after=60)
                     else:
                         Logger.debug("BOT: Replier pinged the RP post's author; doing nothing")
                 else:

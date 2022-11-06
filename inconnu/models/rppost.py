@@ -29,6 +29,7 @@ class RPPost(Document):
     message_id = fields.IntField()
     url = fields.UrlField(allow_none=True)
     deleted = fields.BoolField(default=False)
+    id_chain = fields.ListField(fields.IntField, default=list)
 
     # Content
     header = fields.EmbeddedField(HeaderSubdoc)

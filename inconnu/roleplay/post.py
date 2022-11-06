@@ -110,6 +110,17 @@ class PostModal(discord.ui.Modal):
             wait=True,
         )
 
+        id_chain = [header_message.id, content_message.id]
+
+        if self.mentions:
+            mention_message = await webhook.send(
+                content=self.mentions,
+                username=self.character.name,
+                avatar_url=webhook_avatar,
+                wait=True,
+            )
+            id_chain.append(mention_message.id)
+
         # Register the messages
         await inconnu.header.register(interaction, header_message, self.character)
         Logger.info("POST: %s registered header", self.character.name)
@@ -118,6 +129,7 @@ class PostModal(discord.ui.Modal):
         db_rp_post = inconnu.models.RPPost.create(
             interaction.channel_id, self.character, self.header, content, content_message
         )
+        db_rp_post.id_chain = id_chain
         await db_rp_post.commit()
 
         Logger.info("POST: %s registered post", self.character.name)

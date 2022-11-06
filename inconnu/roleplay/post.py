@@ -68,7 +68,25 @@ class PostModal(discord.ui.Modal):
     async def _edit_rp_post(self, interaction: discord.Interaction):
         """Edit an existing post."""
         new_content = self._clean_post_content()
-        await self.message.edit(new_content)
+
+        # We have a WebhookMessage, so we need to fetch its originating
+        # Webhook, which is the only entity that can edit it. We keep this
+        # call outside of the try block so we can use our general Webhook
+        # error checker.
+        webhook = await self.bot.prep_webhook(interaction.channel)
+        try:
+            await webhook.edit_message(self.message.id, content=new_content)
+
+        except discord.NotFound:
+            await inconnu.utils.error(
+                interaction,
+                (
+                    "The message wasn't found. Either someone deleted it while you "
+                    "were editing, or else the webhook that created it was deleted."
+                ),
+                title="Unable to edit message",
+            )
+            return
 
         # Update the RPPost object
         self.post_to_edit.edit_post(new_content)
@@ -76,7 +94,7 @@ class PostModal(discord.ui.Modal):
         Logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
 
         # Inform the user
-        await interaction.response.send_message("Post updated!", ephemeral=True)
+        await interaction.response.send_message("Post updated!", ephemeral=True, delete_after=3)
 
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new RP post."""

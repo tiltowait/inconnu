@@ -42,6 +42,44 @@ class InconnuBot(discord.Bot):
         self.motd = embed
         self.motd_given = set()
 
+    async def on_message(self, message: discord.Message):
+        """If the message is a reply to an RP post, ping the RP post's author."""
+        # TODO: Once satisfied with this method, remove most of the debug lines
+        if message.author.bot:
+            Logger.debug("BOT: Disregarding bot message")
+            return
+        if message.type != discord.MessageType.reply:
+            Logger.debug("BOT: Disregarding non-reply message.")
+            return
+        if message.reference is None:
+            Logger.debug("BOT: Disregarding message with no reference.")
+            return
+
+        # It's possible for the backend to not fill in this property, which is
+        # why we have to check it. We *could* also search the cached messages,
+        # and maybe we'll add that in the future.
+        if message.reference.resolved is not None:
+            # This routine only works if the webhooks have already been fetched
+            if message.reference.resolved.author.id in self.webhook_cache.webhook_ids:
+                Logger.debug("BOT: Received a reply to one of our webhooks")
+                rp_post = await inconnu.models.RPPost.find_one(
+                    {"message_id": message.reference.message_id}
+                )
+                if rp_post is not None:
+                    # Users can't turn off reply pings to bots, so we don't
+                    # need to worry about an edge case where they disabled the
+                    # reply ping and can safely ping the author.
+                    if rp_post.user not in map(lambda m: m.id, message.mentions):
+                        Logger.debug("BOT: Pinging RP post's author")
+                        user = await self.get_or_fetch_user(rp_post.user)
+                        await message.channel.send(user.mention, delete_after=60)
+                    else:
+                        Logger.debug("BOT: Replier pinged the RP post's author; doing nothing")
+                else:
+                    Logger.debug("BOT: RP post not found")
+            else:
+                Logger.debug("BOT: Disregarding reply that isn't to one of our webhooks")
+
     @staticmethod
     async def inform_premium_loss(member: discord.Member, title="You are no longer a supporter!"):
         """Inform a member if they lost premium status."""

@@ -50,6 +50,19 @@ def command_options(interaction) -> str:
     return ", ".join(options) if options else "None"
 
 
+def is_admin(ctx, owner_id=None):
+    """
+    Check if the ctx user is an admin.
+    If owner is set, checks if it and ctx.user are equal.
+    """
+    if owner_id == ctx.user.id:
+        return True
+    if isinstance(ctx.channel, discord.PartialMessageable):
+        # We can't use permissions_for
+        return ctx.user.guild_permissions.administrator
+    return ctx.channel.permissions_for(ctx.user).administrator
+
+
 def is_supporter(ctx, user: discord.Member = None) -> bool:
     """Returns True if the user invoking the command is a supporter."""
     support_server = inconnu.bot.get_guild(SUPPORTER_GUILD)

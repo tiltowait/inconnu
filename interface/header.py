@@ -178,7 +178,7 @@ class HeaderCog(commands.Cog):
             if record is not None:
                 # Make sure we are allowed to update it
                 owner = record["character"]["user"]
-                if ctx.channel.permissions_for(ctx.user).administrator or owner == ctx.user.id:
+                if inconnu.utils.is_admin(ctx, owner_id=owner):
                     # Modal gets the new location
                     Logger.debug(
                         "HEADER: %s#%s is updating an RP header",
@@ -212,11 +212,11 @@ class HeaderCog(commands.Cog):
             if record is not None:
                 # Make sure we are allowed to delete it
                 owner = record["character"]["user"]
-                if ctx.channel.permissions_for(ctx.user).administrator or owner == ctx.user.id:
+                if inconnu.utils.is_admin(ctx, owner_id=owner):
                     Logger.debug("HEADER: Deleting RP header")
                     try:
                         await message.delete()
-                        await ctx.respond("RP header deleted!", ephemeral=True)
+                        await ctx.respond("RP header deleted!", ephemeral=True, delete_after=3)
                     except discord.errors.Forbidden:
                         await ctx.respond(
                             (

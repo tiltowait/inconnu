@@ -59,7 +59,8 @@ def is_admin(ctx, owner_id=None):
         return True
     if isinstance(ctx.channel, discord.PartialMessageable):
         # We can't use permissions_for
-        return ctx.user.guild_permissions.administrator
+        user = ctx.user
+        return user.top_role.permissions.administrator or user.guild_permissions.administrator
     return ctx.channel.permissions_for(ctx.user).administrator
 
 

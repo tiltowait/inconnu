@@ -115,7 +115,6 @@ class PostModal(discord.ui.Modal):
         content = self._clean_post_content()
 
         header_message = await webhook.send(
-            content=self.mentions,
             embed=header_embed,
             username=self.character.name,
             avatar_url=webhook_avatar,

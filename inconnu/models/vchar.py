@@ -470,7 +470,7 @@ class VChar(Document):
         try:
             _ = self._macro_index(kwargs["name"])
             raise inconnu.errors.MacroAlreadyExistsError(
-                f"You already have a macro named `{kwargs['macro']}`."
+                f"You already have a macro named `{kwargs['name']}`."
             )
         except inconnu.errors.MacroNotFoundError:
             pass

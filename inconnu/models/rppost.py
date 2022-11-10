@@ -1,6 +1,6 @@
 """An RP post."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from umongo import Document, EmbeddedDocument, fields
 
@@ -35,6 +35,11 @@ class RPPost(Document):
     header = fields.EmbeddedField(HeaderSubdoc)
     content = fields.StrField()
     history = fields.ListField(fields.EmbeddedField(PostHistoryEntry), default=list)
+
+    @property
+    def utc_date(self) -> datetime:
+        """The UTC-aware post date."""
+        return self.date.replace(tzinfo=timezone.utc)
 
     class Meta:
         collection_name = "rp_posts"

@@ -1,7 +1,6 @@
 """Post search functionality."""
 
 import discord
-import pymongo
 from bson.objectid import ObjectId
 from discord.ext.pages import Paginator
 

@@ -11,7 +11,13 @@ from inconnu.models import RPPost
 async def search(ctx, user: discord.Member, needle: str, ephemeral: bool, charid: ObjectId = None):
     """Search RP posts for a given string."""
     needle = " ".join(needle.split())
-    # TODO: More needle processing
+    if len(needle) < 5:
+        await inconnu.utils.error(
+            ctx,
+            "Your search string must be at least 5 characters long.",
+            title="Please revise your search string",
+        )
+        return
 
     query = {"deleted": False, "guild": ctx.guild_id, "user": user.id, "$text": {"$search": needle}}
     if charid is not None:

@@ -19,6 +19,7 @@ class PostModal(discord.ui.Modal):
         self.post_to_edit = kwargs.pop("rp_post", None)
         self.message = kwargs.pop("message", None)
         self.mentions = " ".join(inconnu.utils.pull_mentions(kwargs.pop("mentions", "")))
+        self.show_header = kwargs.pop("show_header", True)
 
         if self.post_to_edit is None:
             header_params = {
@@ -104,22 +105,25 @@ class PostModal(discord.ui.Modal):
         webhook = await self.bot.prep_webhook(interaction.channel)
         webhook_avatar = self.character.profile_image_url or inconnu.get_avatar(interaction.user)
 
-        # We take a regular header embed as a base, then modify it ... a lot
-        header_embed = inconnu.header.embed(self.header, self.character)
+        if self.show_header:
+            # We take a regular header embed as a base, then modify it ... a lot
+            header_embed = inconnu.header.embed(self.header, self.character)
 
-        title_elements = header_embed.title.split(" • ")[1:]
-        header_embed.set_author(name=" • ".join(title_elements), url=header_embed.url)
-        header_embed.title = ""
-        header_embed.description += f"\n*Author: {interaction.user.mention}*"
+            title_elements = header_embed.title.split(" • ")[1:]
+            header_embed.set_author(name=" • ".join(title_elements), url=header_embed.url)
+            header_embed.title = ""
+            header_embed.description += f"\n*Author: {interaction.user.mention}*"
+
+            header_message = await webhook.send(
+                embed=header_embed,
+                username=self.character.name,
+                avatar_url=webhook_avatar,
+                wait=True,
+            )
+        else:
+            header_message = None
 
         content = self._clean_post_content()
-
-        header_message = await webhook.send(
-            embed=header_embed,
-            username=self.character.name,
-            avatar_url=webhook_avatar,
-            wait=True,
-        )
         content_message = await webhook.send(
             content=content,
             username=self.character.name,
@@ -127,7 +131,9 @@ class PostModal(discord.ui.Modal):
             wait=True,
         )
 
-        id_chain = [header_message.id, content_message.id]
+        id_chain = [content_message.id]
+        if self.show_header:
+            id_chain.insert(0, header_message.id)
 
         if self.mentions:
             mention_message = await webhook.send(
@@ -139,8 +145,9 @@ class PostModal(discord.ui.Modal):
             id_chain.append(mention_message.id)
 
         # Register the messages
-        await inconnu.header.register(interaction, header_message, self.character)
-        Logger.info("POST: %s registered header", self.character.name)
+        if self.show_header:
+            await inconnu.header.register(interaction, header_message, self.character)
+            Logger.info("POST: %s registered header", self.character.name)
 
         # Register the RP post
         db_rp_post = inconnu.models.RPPost.create(

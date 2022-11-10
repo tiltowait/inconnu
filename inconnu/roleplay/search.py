@@ -23,9 +23,14 @@ async def search(ctx, user: discord.Member, needle: str, charid: ObjectId = None
     async for post in RPPost.find(query).sort("content", {"$meta": "textScore"}).limit(5):
         # Make an embed for each post
         embed = discord.Embed(
-            title=f"Post #{num}: {post.header.char_name}", description=post.content, url=post.url
+            title=f"Post #{num}: {post.header.char_name}",
+            description=post.content,
+            url=post.url,
+            timestamp=post.utc_date,
         )
         embed.set_footer(text=f"Search key: {needle}")
+        embed.set_author(name=user.display_name, icon_url=user.display_avatar)
+
         posts.append(embed)
         num += 1
 

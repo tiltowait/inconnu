@@ -8,7 +8,7 @@ import inconnu
 from inconnu.models import RPPost
 
 
-async def search(ctx, user: discord.Member, needle: str, charid: ObjectId = None):
+async def search(ctx, user: discord.Member, needle: str, ephemeral: bool, charid: ObjectId = None):
     """Search RP posts for a given string."""
     needle = " ".join(needle.split())
     # TODO: More needle processing
@@ -35,7 +35,7 @@ async def search(ctx, user: discord.Member, needle: str, charid: ObjectId = None
 
     if posts:
         paginator = Paginator(posts)
-        await paginator.respond(ctx.interaction)
+        await paginator.respond(ctx.interaction, ephemeral=ephemeral)
     else:
         await inconnu.utils.error(
             ctx,

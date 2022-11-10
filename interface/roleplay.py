@@ -4,6 +4,7 @@
 import os
 
 import discord
+from discord import option
 from discord.commands import Option, slash_command
 from discord.ext import commands
 from pymongo import UpdateOne
@@ -34,14 +35,22 @@ class RoleplayCog(commands.Cog):
         await inconnu.roleplay.post(ctx, character, mentions=mentions)
 
     @slash_command(guild_ids=TEST_GUILDS)
+    @option("user", description="The user who wrote the post")
+    @option("content", description="What to search for")
+    @option(
+        "hidden",
+        description="Whether to hide the search results from others (default true)",
+        default=True,
+    )
     async def search(
         self,
         ctx: discord.ApplicationContext,
-        user: Option(discord.Member, "The user who made the post"),
-        content: Option(str, "What to search for"),
+        user: discord.Member,
+        content: str,
+        hidden: bool,
     ):
         """Search for an RP post. Displays up to 5 results."""
-        await inconnu.roleplay.search(ctx, user, content)
+        await inconnu.roleplay.search(ctx, user, content, hidden)
 
     # Message commands
 

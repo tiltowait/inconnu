@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 
+import discord
 from umongo import Document, EmbeddedDocument, fields
 
 import inconnu
@@ -47,17 +48,17 @@ class RPPost(Document):
     @classmethod
     def create(
         cls,
-        channel: int,
+        interaction: discord.Interaction,
         character: "VChar",
         header: HeaderSubdoc,
         content: str,
-        message: "Message",
+        message: discord.Message,
     ):
         """Create an RP post."""
         return cls(
             guild=character.guild,
-            channel=channel,
-            user=character.user,
+            channel=interaction.channel_id,
+            user=interaction.user.id,
             message_id=message.id,
             header=header,
             content=content,

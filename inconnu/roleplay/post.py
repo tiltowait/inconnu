@@ -60,7 +60,6 @@ class PostModal(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Set the RP post content."""
-
         if self.post_to_edit is None:
             await self._new_rp_post(interaction)
         else:
@@ -151,7 +150,7 @@ class PostModal(discord.ui.Modal):
 
         # Register the RP post
         db_rp_post = inconnu.models.RPPost.create(
-            interaction.channel_id, self.character, self.header, content, content_message
+            interaction, self.character, self.header, content, content_message
         )
         db_rp_post.id_chain = id_chain
         await db_rp_post.commit()

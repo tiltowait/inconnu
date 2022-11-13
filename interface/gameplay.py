@@ -116,7 +116,7 @@ class Gameplay(commands.Cog):
     @slash_command()
     @commands.guild_only()
     async def mend(self, ctx, character: inconnu.options.character("The character to heal")):
-        """Mend Superficial damage."""
+        """Mend Superficial damage. For vampires, amount is based on BP and costs a Rouse check."""
         await inconnu.misc.mend(ctx, character)
 
     @slash_command()

@@ -5,23 +5,20 @@ from types import SimpleNamespace as SN
 import discord
 
 import inconnu
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#remorse-checks"
 
 
-async def remorse(ctx, character=None, minimum=1):
-    """Perform a remorse check on a given character."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip="`/remorse` `character:CHARACTER`",
-        char_filter=_can_remorse,
-        errmsg="None of your characters have any stains!",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
+def _can_remorse(character):
+    """Raise an exception if we have no stains."""
+    if character.stains == 0:
+        raise inconnu.errors.CharacterError(f"{character.name} has no stains.")
 
-    # Character obtained
+
+@haven(__HELP_URL, _can_remorse, "None of your characters have any stains!")
+async def remorse(ctx, character, minimum=1):
+    """Perform a remorse check on a given character."""
     if character.stains == 0:
         await ctx.respond(f"{character.name} has no stains! No remorse necessary.", ephemeral=True)
         return
@@ -30,12 +27,6 @@ async def remorse(ctx, character=None, minimum=1):
     inter = await __display_outcome(ctx, character, outcome)
     await __report(ctx, inter, character, outcome.remorseful)
     await character.commit()
-
-
-def _can_remorse(character):
-    """Raise an exception if we have no stains."""
-    if character.stains == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no stains.")
 
 
 async def __display_outcome(ctx, character: "VChar", outcome):

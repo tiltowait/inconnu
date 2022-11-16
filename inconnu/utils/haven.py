@@ -1,5 +1,6 @@
 """Character selection tool."""
 
+import functools
 import uuid
 from collections import OrderedDict
 
@@ -278,3 +279,28 @@ def _personalize_error(err, ctx, member):
         err = str(err).replace("You have", f"{member.mention} has")
         err = err.replace("your", f"{member.mention}'s")
     return err
+
+
+def haven(url, char_filter=None, errmsg=None):
+    """A decorator that handles character fetching duties."""
+
+    def haven_decorator(func):
+        """Inner decorator necessary due to argument passing."""
+
+        @functools.wraps(func)
+        async def wrapper(ctx, character, *args, **kwargs):
+            """Fetch the character and pass it to the wrapped function."""
+            haven_ = Haven(
+                ctx,
+                character=character,
+                owner=kwargs.get("player"),
+                char_filter=char_filter,
+                errmsg=errmsg,
+                help=url,
+            )
+            character = await haven_.fetch()
+            return await func(ctx, character, *args, **kwargs)
+
+        return wrapper
+
+    return haven_decorator

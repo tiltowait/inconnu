@@ -167,7 +167,7 @@ class Gameplay(commands.Cog):
         character: inconnu.options.character("The character feeding"),
     ):
         """Slake 1 or more Hunger."""
-        await inconnu.misc.slake(ctx, amount, character)
+        await inconnu.misc.slake(ctx, character, amount)
 
     @slash_command()
     @commands.guild_only()

@@ -30,10 +30,10 @@ class RoleplayCog(commands.Cog):
         ctx: discord.ApplicationContext,
         character: inconnu.options.character("The character to post as", required=True),
         mentions: Option(str, "Users, roles, and channels to mention", default=""),
-        header: Option(bool, "Whether to post a header", default=True),
+        display_header: Option(bool, "Whether to display a header above the post", default=True),
     ):
         """Make an RP post as your character. Uses your current header."""
-        await inconnu.roleplay.post(ctx, character, mentions=mentions, show_header=header)
+        await inconnu.roleplay.post(ctx, character, mentions=mentions, show_header=display_header)
 
     @slash_command(guild_ids=TEST_GUILDS)
     @option("user", description="The user who wrote the post")

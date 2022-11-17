@@ -170,6 +170,7 @@ class Haven:  # pylint: disable=too-few-public-methods
             raise inconnu.errors.HandledError("Too many characters.")
 
         await view.wait()
+        await self.ctx.delete()
 
         if (key := view.selected_value) is not None:
             character, _ = self.possibilities[key]

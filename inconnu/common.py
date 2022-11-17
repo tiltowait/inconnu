@@ -170,36 +170,6 @@ async def report_update(*, ctx, character, title, message, **kwargs):
             )
 
 
-async def character_options(guild: int, user: int):
-    """
-    Generate a dictionary of characters keyed by ID plus components for selecting them.
-    Under 6 characters: Buttons
-    Six or more characters: Selections
-    """
-    characters = await inconnu.char_mgr.fetchall(guild, user)
-    chardict = {char.id: char for char in characters}
-
-    # We have to use an ugly hack for this. If we just use the character's ID
-    # as the button's identifier, then multiple displays of these buttons will
-    # work incorrectly: click on one, and the other instances stop responding.
-    # Therefore, we tack a UUID to the end. Later, we will split the custom ID
-    # so we can pull just the character ID.
-
-    if len(characters) < 6:
-        components = [
-            Button(
-                label=char.name, custom_id=f"{char.id} {uuid4()}", style=discord.ButtonStyle.primary
-            )
-            for char in characters
-        ]
-    else:
-        options = [(char.name, char.id) for char in characters]
-        components = [inconnu.views.Dropdown("Select a character", *options)]
-
-    view = inconnu.views.BasicSelector(*components)
-    return SimpleNamespace(characters=chardict, view=view)
-
-
 async def player_lookup(ctx, player: discord.Member):
     """
     Look up a player.

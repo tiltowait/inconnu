@@ -23,6 +23,7 @@ class InconnuBot(discord.Bot):
         super().__init__(*args, **kwargs)
         self.persistent_views_added = False
         self.welcomed = False
+        self.connected = False
         self.lockdown = None
         self.wizards = 0
         self.motd = None
@@ -258,15 +259,24 @@ class InconnuBot(discord.Bot):
                 await ctx.respond(embed=self.motd, ephemeral=True)
                 self.motd_given.add(ctx.user.id)
 
+    async def on_connect(self):
+        """Perform early setup."""
+        if not self.connected:
+            inconnu.char_mgr.bot = self
+            reporter.prepare_channel(self)
+            self.webhook_cache = inconnu.webhookcache.WebhookCache(self.user.id)
+
+            Logger.info("BOT: Logged in as %s!", str(self.user))
+            Logger.info("BOT: Playing on %s servers", len(self.guilds))
+            Logger.info("BOT: %s", discord.version_info)
+            Logger.info("BOT: Latency: %s ms", self.latency * 1000)
+            self.connected = True
+
     async def on_ready(self):
         """Schedule a task to perform final setup."""
         await bot.wait_until_ready()
         if not bot.welcomed:
             Logger.info("BOT: Internal cache built")
-            Logger.info("BOT: Logged in as %s!", str(self.user))
-            Logger.info("BOT: Playing on %s servers", len(self.guilds))
-            Logger.info("BOT: %s", discord.version_info)
-            Logger.info("BOT: Latency: %s ms", self.latency * 1000)
 
             server_info = await inconnu.db.server_info()
             Logger.info(
@@ -280,10 +290,6 @@ class InconnuBot(discord.Bot):
             upload_logs.start()
             check_premium_expiries.start()
 
-            # Final prep
-            inconnu.char_mgr.bot = self
-            reporter.prepare_channel(self)
-            self.webhook_cache = inconnu.webhookcache.WebhookCache(self.user.id)
             self.welcomed = True
 
         # We always want to do these regardless of welcoming or not

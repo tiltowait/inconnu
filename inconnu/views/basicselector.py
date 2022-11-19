@@ -25,7 +25,8 @@ class BasicSelector(DisablingView):
                 child.style = discord.ButtonStyle.secondary
                 break
 
-        await self.disable_items(interaction)
+        # await self.disable_items(interaction)
+        self.stop()
 
         if (selected_values := interaction.data.get("values")) is not None:
             # Select Menu

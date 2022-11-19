@@ -15,6 +15,7 @@ class _EmojiManager:
 
     def __init__(self):
         self._emojis = {}
+        self.loaded = False
 
     def __getitem__(self, emoji_name: str) -> str:
         standard = {"bp_filled": ":red_circle:​", "bp_unfilled": ":o:​"}

@@ -22,7 +22,6 @@ class InconnuBot(discord.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.persistent_views_added = False
-        self.ready = False
         self.welcomed = False
         self.lockdown = None
         self.wizards = 0
@@ -212,14 +211,11 @@ class InconnuBot(discord.Bot):
 
     async def on_interaction(self, interaction: discord.Interaction):
         """Check whether the bot is ready before allowing the interaction to go through."""
-        # It's better UX to allow autocomplete interactions to go through even
-        # if the bot isn't ready; users frequently get confused if the menus
-        # don't populate during restart.
-        if self.ready or interaction.type == discord.InteractionType.auto_complete:
-            await self.process_application_commands(interaction)
-        else:
-            err = f"{self.user.mention} is currently restarting. This might take a few minutes."
-            await inconnu.respond(interaction)(err, ephemeral=True)
+        if not inconnu.emojis.loaded:
+            # To speed up start times, we load emojis here rather than in on_ready
+            await inconnu.emojis.load(bot)
+
+        await self.process_application_commands(interaction)
 
     async def on_application_command(self, ctx: discord.ApplicationContext):
         """General processing after application commands."""
@@ -264,10 +260,6 @@ class InconnuBot(discord.Bot):
 
     async def on_ready(self):
         """Schedule a task to perform final setup."""
-        await inconnu.emojis.load(bot)
-        self.ready = True
-        Logger.info("BOT: Accepting commands")
-
         await bot.wait_until_ready()
         if not bot.welcomed:
             Logger.info("BOT: Internal cache built")

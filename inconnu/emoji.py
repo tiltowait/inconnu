@@ -48,6 +48,7 @@ class _EmojiManager:
 
         Logger.info("EMOJIS: Loaded emojis from %s", guild.name)
         Logger.debug("EMOJIS: %s", list(map(lambda e: e.name, self._emojis.values())))
+        self.loaded = True
 
 
 # Singleton instance

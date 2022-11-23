@@ -18,12 +18,12 @@ class ErrorReporter:
         self.bot = None
         self.channel = None
 
-    def prepare_channel(self, bot):
+    async def prepare_channel(self, bot):
         """Attempt to get the error channel from the bot."""
         self.bot = bot
         try:
             if (channel := os.getenv("REPORT_CHANNEL")) is not None:
-                if (channel := bot.get_channel(int(channel))) is not None:
+                if (channel := await bot.fetch_channel(int(channel))) is not None:
                     Logger.info(
                         "REPORTER: Recording errors in #%s on %s",
                         channel.name,

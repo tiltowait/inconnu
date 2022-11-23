@@ -263,7 +263,7 @@ class InconnuBot(discord.Bot):
         """Perform early setup."""
         if not self.connected:
             inconnu.char_mgr.bot = self
-            reporter.prepare_channel(self)
+            await reporter.prepare_channel(self)
             self.webhook_cache = inconnu.webhookcache.WebhookCache(self.user.id)
 
             Logger.info("BOT: Logged in as %s!", str(self.user))

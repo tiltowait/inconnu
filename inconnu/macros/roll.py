@@ -269,7 +269,7 @@ class _SlakeView(View):
             await remove_hunt_listener(self.outcome)
         else:
             # await inter.message.delete()
-            await inconnu.misc.slake(inter, slake_amount, self.character, edit_message=True)
+            await inconnu.misc.slake(inter, self.character, slake_amount, edit_message=True)
             await inconnu.reference.resonance(inter, character=self.character.name)
 
     async def on_timeout(self):

@@ -1,6 +1,7 @@
 """Character selection tool."""
 
 import functools
+import inspect
 import uuid
 from collections import OrderedDict
 
@@ -291,15 +292,47 @@ def haven(url, char_filter=None, errmsg=None):
         @functools.wraps(func)
         async def wrapper(ctx, character, *args, **kwargs):
             """Fetch the character and pass it to the wrapped function."""
+            # Sometimes, the wrapped function has a "player" property,
+            # which we need to capture
+            func_sig = list(inspect.signature(func).parameters)
+            Logger.debug("@HAVEN: Function '%s' signature: %s", func.__name__, str(func_sig))
+
+            player = None
+            player_loc = None
+
+            if "player" in func_sig:
+                # We need to check both args and kwargs. inspect.signature
+                # returns a flat list of both, so we have to check both
+                # separately.
+                if player := kwargs.get("player"):
+                    player_loc = "kwargs"
+                else:
+                    player_loc = func_sig.index("player") - 2  # Subtract 2 due to positionals
+                    Logger.debug("@HAVEN: Found player in args loc %s", player_loc)
+                    player = args[player_loc]
+
+            # Actual character fetching
             haven_ = Haven(
                 ctx,
                 character=character,
-                owner=kwargs.get("player"),
+                owner=player,
                 char_filter=char_filter,
                 errmsg=errmsg,
                 help=url,
             )
             character = await haven_.fetch()
+
+            # Replace the player argument. No need to check if it's None
+            if player_loc == "kwargs":
+                Logger.debug("@HAVEN: 'player' found in kwargs")
+                kwargs["player"] = haven_.owner
+            elif isinstance(player_loc, int):
+                Logger.debug("@HAVEN: 'player' found in args")
+                Logger.debug("@HAVEN: args before: %s", str(args))
+                args = list(args)
+                args[player_loc] = haven_.owner
+                Logger.debug("@HAVEN: args after: %s", str(args))
+
             return await func(ctx, character, *args, **kwargs)
 
         return wrapper

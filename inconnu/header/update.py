@@ -14,7 +14,8 @@ async def update_header(ctx: discord.ApplicationContext, character, blush: int):
     """Update the character's RP header."""
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
-        modal = _RPHeader(character, blush, title=f"Update RP Header: {character.name}")
+        title = f"Set RP Header: {character.name}"
+        modal = _RPHeader(character, blush, title=title[:45])
         await ctx.send_modal(modal)
 
     except inconnu.errors.CharacterNotFoundError as err:

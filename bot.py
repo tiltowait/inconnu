@@ -266,11 +266,14 @@ class InconnuBot(discord.Bot):
             await reporter.prepare_channel(self)
             self.webhook_cache = inconnu.webhookcache.WebhookCache(self.user.id)
 
-            Logger.info("BOT: Logged in as %s!", str(self.user))
-            Logger.info("BOT: Playing on %s servers", len(self.guilds))
-            Logger.info("BOT: %s", discord.version_info)
-            Logger.info("BOT: Latency: %s ms", self.latency * 1000)
+            Logger.info("CONNECT: Logged in as %s!", str(self.user))
+            Logger.info("CONNECT: Playing on %s servers", len(self.guilds))
+            Logger.info("CONNECT: %s", discord.version_info)
+            Logger.info("CONNECT: Latency: %s ms", self.latency * 1000)
             self.connected = True
+
+        await self.sync_commands()
+        Logger.info("CONNECT: Commands synced")
 
     async def on_ready(self):
         """Schedule a task to perform final setup."""

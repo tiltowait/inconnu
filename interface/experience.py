@@ -13,12 +13,10 @@ class ExperienceCommands(commands.Cog):
 
     experience = SlashCommandGroup("experience", "Experience-tracking commands.")
 
-
     @user_command(name="Experience Log")
     async def context_experience_list(self, ctx, member: discord.Member):
         """Display the given member's character XP logs."""
-        await inconnu.experience.list_events(ctx, None, member, True)
-
+        await inconnu.experience.list_events(ctx, None, True, player=member)
 
     @experience.command()
     @commands.guild_only()
@@ -30,11 +28,10 @@ class ExperienceCommands(commands.Cog):
         character: inconnu.options.character("The character receiving the XP", required=True),
         amount: Option(int, "The amount of XP to give", min_value=1),
         scope: Option(str, "Unspent or lifetime XP", choices=["Lifetime", "Unspent"]),
-        reason: Option(str, "The reason for the grant")
+        reason: Option(str, "The reason for the grant"),
     ):
         """Give experience points to a character."""
         await inconnu.experience.award_or_deduct(ctx, player, character, amount, scope, reason)
-
 
     @experience.command()
     @commands.guild_only()
@@ -51,7 +48,6 @@ class ExperienceCommands(commands.Cog):
         """Deduct experience points from a character."""
         await inconnu.experience.award_or_deduct(ctx, player, character, amount * -1, scope, reason)
 
-
     experience_remove = experience.create_subgroup("remove", "Remove log entry")
 
     @experience_remove.command(name="entry")
@@ -67,7 +63,6 @@ class ExperienceCommands(commands.Cog):
         """Remove an experience log entry."""
         await inconnu.experience.remove_entry(ctx, player, character, log_index)
 
-
     @experience.command()
     @commands.guild_only()
     async def log(
@@ -77,8 +72,7 @@ class ExperienceCommands(commands.Cog):
         player: inconnu.options.player,
     ):
         """Display a character's experience log."""
-        await inconnu.experience.list_events(ctx, character, player, False)
-
+        await inconnu.experience.list_events(ctx, character, False, player=player)
 
     bulk = SlashCommandGroup("bulk", "Bulk experience awarding")
     bulk_award = bulk.create_subgroup("award", "Bulk experience awarding")

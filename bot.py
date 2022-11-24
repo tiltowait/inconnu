@@ -104,7 +104,7 @@ class InconnuBot(discord.Bot):
                 "PREMIUM: Informed %s#%s about premium loss", member.name, member.discriminator
             )
 
-        except discord.errors.Forbidden:
+        except (discord.errors.Forbidden, discord.errors.HTTPException):
             Logger.info(
                 "PREMIUM: Could not DM %s#%s about premium loss", member.name, member.discriminator
             )

@@ -102,6 +102,7 @@ class VChar(Document):
         """Clamp values within required bounds."""
         self.hunger = max(0, min(5, self.hunger))
         self.potency = max(0, min(10, self.potency))
+        self.stains = max(0, min(10, self.stains))
         self.experience.unspent = max(0, min(self.experience.unspent, self.experience.lifetime))
 
         if self.splat == "thinblood":

@@ -24,7 +24,7 @@ async def stain(ctx, delta, character, owner):
         fields = [("Humanity", inconnu.character.DisplayField.HUMANITY)]
         footer = None
 
-        total_stains = character.stains + delta
+        total_stains = max(0, min(10, character.stains + delta))
         delta = total_stains - character.stains
 
         # Determine degeneration

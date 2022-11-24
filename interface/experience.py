@@ -31,7 +31,9 @@ class ExperienceCommands(commands.Cog):
         reason: Option(str, "The reason for the grant"),
     ):
         """Give experience points to a character."""
-        await inconnu.experience.award_or_deduct(ctx, player, character, amount, scope, reason)
+        await inconnu.experience.award_or_deduct(
+            ctx, character, amount, scope, reason, player=player
+        )
 
     @experience.command()
     @commands.guild_only()
@@ -46,7 +48,9 @@ class ExperienceCommands(commands.Cog):
         reason: Option(str, "The reason for the deduction"),
     ):
         """Deduct experience points from a character."""
-        await inconnu.experience.award_or_deduct(ctx, player, character, amount * -1, scope, reason)
+        await inconnu.experience.award_or_deduct(
+            ctx, character, amount * -1, scope, reason, player=player
+        )
 
     experience_remove = experience.create_subgroup("remove", "Remove log entry")
 
@@ -61,7 +65,7 @@ class ExperienceCommands(commands.Cog):
         log_index: Option(int, "The log entry number (find with /experience log)", min_value=1),
     ):
         """Remove an experience log entry."""
-        await inconnu.experience.remove_entry(ctx, player, character, log_index)
+        await inconnu.experience.remove_entry(ctx, character, log_index, player=player)
 
     @experience.command()
     @commands.guild_only()

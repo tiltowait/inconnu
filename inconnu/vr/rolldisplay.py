@@ -189,7 +189,7 @@ class RollDisplay:
 
         elif inconnu.common.contains_digit(button_id):  # Surge buttons are just charids
             self.surged = True
-            await inconnu.misc.rouse(btn, 1, self.character, "Surge", False)
+            await inconnu.misc.rouse(btn, self.character, 1, "Surge", False)
 
         else:
             # We're rerolling

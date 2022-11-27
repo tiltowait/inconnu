@@ -1,27 +1,20 @@
 """misc/awake.py - Automate the awakening bookkeeping."""
 
 import inconnu
+from inconnu.utils.haven import haven
 from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#awakening"
 
 
-async def awaken(ctx, character=None):
+@haven(__HELP_URL)
+async def awaken(ctx, character):
     """Perform a Rouse check and heal Superficial Willpower damage."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip="`/awaken` `character:CHARACTER`",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
     message = "**Awakening:**"
     recovery = []
 
     # First, heal Superficial Willpower damage
-    swp = character.superficial_wp
-    recovered = min(swp, character.willpower_recovery)
+    recovered = min(character.superficial_wp, character.willpower_recovery)
     recovery.append(f"sw=-{recovered}")
     color = None
 
@@ -42,9 +35,8 @@ async def awaken(ctx, character=None):
                 character.hunger += 1
                 message += f"Increase Hunger to **{character.hunger}**."
     else:
-        shp = character.superficial_hp
         stamina = character.find_trait("Stamina").rating
-        recovered = min(shp, stamina)
+        recovered = min(character.superficial_hp, stamina)
 
         if recovered > 0:
             message += f"\nRecovered **{recovered}** Health."

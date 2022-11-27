@@ -5,6 +5,7 @@ import discord
 
 import inconnu
 from config import aws_asset
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#frenzy-checks"
 
@@ -17,22 +18,15 @@ __FRENZY_BONUSES = {
 __FRENZY_BONUSES.update({str(n): n for n in range(1, 6)})
 
 
-async def frenzy(ctx, difficulty: int, penalty: str, bonus: str, character: str):
-    """Perform a frenzy check."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip="`/frenzy` `character:CHARACTER`",
-        char_filter=_can_frenzy,
-        errmsg="None of your characters are capable of frenzying.",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
+def _can_frenzy(character):
+    """Raises an exception if the character can't frenzy."""
     if not character.is_vampire:
-        await ctx.respond("Only vampires need to roll frenzy!", ephemeral=True)
-        return
+        raise inconnu.errors.CharacterError("Only vampires can frenzy!")
 
+
+@haven(__HELP_URL, _can_frenzy, "None of your characters are capable of frenzying.")
+async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
+    """Perform a frenzy check."""
     frenzy_pool = character.frenzy_resist
     footer = []
 
@@ -84,12 +78,6 @@ async def frenzy(ctx, difficulty: int, penalty: str, bonus: str, character: str)
     msg = await inconnu.get_message(inter)
     await __generate_report_task(ctx, msg, character, outcome)
     await character.commit()
-
-
-def _can_frenzy(character):
-    """Raises an exception if the character can't frenzy."""
-    if not character.is_vampire:
-        raise inconnu.errors.CharacterError("Only vampires can frenzy!")
 
 
 def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, footer: str, color: int):

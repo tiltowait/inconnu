@@ -38,7 +38,7 @@ class Traits(commands.Cog, name="Trait Management"):
         player: inconnu.options.player,
     ):
         """Display a character's traits."""
-        await inconnu.traits.show(ctx, character, player)
+        await inconnu.traits.show(ctx, character, player=player)
 
     @traits.command(name="update")
     @commands.guild_only()

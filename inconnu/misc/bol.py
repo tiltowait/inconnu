@@ -3,29 +3,20 @@
 import asyncio
 
 import inconnu
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#blush-of-life"
 
 
+def _can_blush(character):
+    """Raises an exception if the character isn't capable of Blushing."""
+    if not character.is_vampire:
+        raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
+
+
+@haven(__HELP_URL, _can_blush, "None of your characters need to Blush.")
 async def bol(ctx, character):
     """Perform a Blush of Life check based on the character's Humanity."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip="`/bol` `character:CHARACTER`",
-        char_filter=_can_blush,
-        errmsg="None of your characters need to Blush.",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
-    if not character.is_vampire:
-        await ctx.respond(
-            f"**{character.name}** isn't a vampire and doesn't need the Blush of Life!",
-            ephemeral=True,
-        )
-        return
-
     if character.is_thin_blood:
         # Thin-Bloods don't need to Blush. Their appearance depends on Humanity
         effective_humanity = max(9, character.humanity)
@@ -43,15 +34,7 @@ async def bol(ctx, character):
     else:
         character.set_blush(1)
         character.log("blush")
-        await asyncio.gather(
-            inconnu.misc.rouse(
-                ctx, 1, character, "Blush of Life", character.humanity == 8, oblivion=False
-            ),
-            character.commit(),
+        await inconnu.misc.rouse(
+            ctx, character, 1, "Blush of Life", character.humanity == 8, oblivion=False
         )
-
-
-def _can_blush(character):
-    """Raises an exception if the character isn't capable of Blushing."""
-    if not character.is_vampire:
-        raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
+        await character.commit()

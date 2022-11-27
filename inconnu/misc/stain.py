@@ -2,24 +2,17 @@
 
 import inconnu
 from inconnu.constants import Damage
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#applying-stains"
 
 
-async def stain(ctx, delta, character, owner):
+@haven(__HELP_URL)
+async def stain(ctx, character, delta, *, player):
     """Apply or remove stains."""
     try:
         if delta == 0:
             raise ValueError("Stain `delta` can't be zero!")
-
-        haven = inconnu.utils.Haven(
-            ctx,
-            character=character,
-            owner=owner,
-            tip=f"`/stain` `delta:{delta}` `character:CHARACTER`",
-            help=__HELP_URL,
-        )
-        character = await haven.fetch()
 
         fields = [("Humanity", inconnu.character.DisplayField.HUMANITY)]
         footer = None
@@ -49,7 +42,7 @@ async def stain(ctx, delta, character, owner):
         title = f"{title} {inconnu.common.pluralize(abs(delta), 'Stain')}"
 
         inter = await inconnu.character.display(
-            ctx, character, title, message=message, owner=haven.owner, fields=fields, footer=footer
+            ctx, character, title, message=message, owner=player, fields=fields, footer=footer
         )
         await __report(ctx, inter, character, delta)
         await character.commit()

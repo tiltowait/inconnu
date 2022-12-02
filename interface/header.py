@@ -14,9 +14,11 @@ from logger import Logger
 class LocationChangeModal(discord.ui.Modal):
     """A modal for changing RP header location."""
 
-    def __init__(self, header: discord.Message, *args, **kwargs):
+    def __init__(self, header: discord.Message, webhook: discord.Webhook | None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.header = header
+        self.webhook = webhook
+        self.updating_title = webhook is None
 
         self.add_item(
             discord.ui.InputText(
@@ -38,17 +40,15 @@ class LocationChangeModal(discord.ui.Modal):
 
     def get_location(self):
         """Get the header's current location."""
-        if self.header.embeds[0].title:
+        if self.updating_title:
             elements = self.header.embeds[0].title.split(" • ")
-            using_title = True
         else:
             elements = self.header.embeds[0].author.name.split(" • ")
-            using_title = False
 
-        if using_title and len(elements) == 1:
+        if self.updating_title and len(elements) == 1:
             return ""
         if len(elements) == 2:
-            if using_title:
+            if self.updating_title:
                 if "Blushed" in elements[-1]:
                     return ""
                 return elements[-1]
@@ -65,29 +65,27 @@ class LocationChangeModal(discord.ui.Modal):
         embed = self.header.embeds[0]
 
         # Some headers have a title; others use the author string
-        if embed.title:
+        if self.updating_title:
             # The title contains name, blush, location, but only name is guaranteed
             Logger.debug("EDIT HEADER: Embed has a title")
             elements = embed.title.split(" • ")
-            update_title = True
         else:
             Logger.debug("EDIT HEADER: Embed does not have a title")
             elements = embed.author.name.split(" • ")
-            update_title = False
 
         if self.get_location():
             # We need to remove the old location
-            if update_title:
+            if self.updating_title:
                 del elements[1]
             else:
                 del elements[0]
 
         # Generate the new heading
-        insertion_index = 1 if update_title else 0
+        insertion_index = 1 if self.updating_title else 0
         elements.insert(insertion_index, location)
         new_heading = " • ".join(elements)
 
-        if update_title:
+        if self.updating_title:
             embed.title = new_heading
         else:
             url = embed.author.url
@@ -96,7 +94,12 @@ class LocationChangeModal(discord.ui.Modal):
 
         embed.set_footer(text=temp_effects)
 
-        await self.header.edit(embed=embed)
+        if self.webhook is None:
+            Logger.debug("EDIT HEADER: Updating with Message.edit()")
+            await self.header.edit(embed=embed)
+        else:
+            Logger.debug("EDIT HEADER: Updating with Webhook.edit_message()")
+            await self.webhook.edit_message(self.header.id, embed=embed)
 
         # Inform the user
         temp_effects = temp_effects or "*None*"
@@ -205,22 +208,11 @@ class HeaderCog(commands.Cog):
         """Change an RP header's location."""
         proceed = False
         if message.author == self.bot.user:
+            webhook = None
             proceed = True
         elif webhook := await self.bot.webhook_cache.fetch_webhook(ctx.channel, message.author.id):
-            # The author is one of our webhooks, so we need to get the message
-            try:
-                if message.thread is not None:
-                    Logger.debug("EDIT HEADER: Header message is in a thread")
-                    thread_id = message.thread_id
-                else:
-                    thread_id = None
-                webhook_message = await webhook.fetch_message(message.id, thread_id=thread_id)
-                message = webhook_message
-                Logger.info("EDIT HEADER: Editing a WebhookMessage")
-                proceed = True
-
-            except discord.NotFound:
-                Logger.debug("No WebhookMessage found with ID# %s", message.id)
+            Logger.info("EDIT HEADER: Editing a WebhookMessage")
+            proceed = True
 
         if proceed:
             # Make sure we have a header
@@ -235,7 +227,7 @@ class HeaderCog(commands.Cog):
                         ctx.user.name,
                         ctx.user.discriminator,
                     )
-                    modal = LocationChangeModal(message, title="Edit RP Header")
+                    modal = LocationChangeModal(message, webhook, title="Edit RP Header")
                     await ctx.send_modal(modal)
                 else:
                     Logger.debug(

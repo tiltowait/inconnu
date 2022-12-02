@@ -57,7 +57,7 @@ class RoleplayCog(commands.Cog):
 
     # Message commands
 
-    @commands.message_command(name="Edit RP Post", guild_ids=TEST_GUILDS)
+    @commands.message_command(name="Post: Edit", guild_ids=TEST_GUILDS)
     @commands.guild_only()
     async def edit_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
         """Edit the selected roleplay post."""

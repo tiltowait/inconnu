@@ -199,7 +199,7 @@ class HeaderCog(commands.Cog):
 
         await inconnu.header.update_header(ctx, character, int(blush))
 
-    @commands.message_command(name="Fix RP Header")
+    @commands.message_command(name="Header: Edit")
     @commands.guild_only()
     async def fix_rp_header(self, ctx, message: discord.Message):
         """Change an RP header's location."""
@@ -228,14 +228,14 @@ class HeaderCog(commands.Cog):
             if record is not None:
                 # Make sure we are allowed to update it
                 owner = record["character"]["user"]
-                if inconnu.utils.is_admin(ctx, owner_id=owner):
+                if ctx.user.id == owner:
                     # Modal gets the new location
                     Logger.debug(
                         "HEADER: %s#%s is updating an RP header",
                         ctx.user.name,
                         ctx.user.discriminator,
                     )
-                    modal = LocationChangeModal(message, title="Fix RP Header Location")
+                    modal = LocationChangeModal(message, title="Edit RP Header")
                     await ctx.send_modal(modal)
                 else:
                     Logger.debug(
@@ -253,7 +253,7 @@ class HeaderCog(commands.Cog):
         )
         await ctx.respond("This message isn't an RP header!", ephemeral=True)
 
-    @commands.message_command(name="Delete RP Header")
+    @commands.message_command(name="Header: Delete")
     @commands.guild_only()
     async def delete_rp_header(self, ctx, message: discord.Message):
         """Delete an RP header."""

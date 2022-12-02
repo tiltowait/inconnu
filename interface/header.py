@@ -38,13 +38,24 @@ class LocationChangeModal(discord.ui.Modal):
 
     def get_location(self):
         """Get the header's current location."""
-        elements = self.header.embeds[0].title.split(" • ")
-        if len(elements) == 1:
+        if self.header.embeds[0].title:
+            elements = self.header.embeds[0].title.split(" • ")
+            using_title = True
+        else:
+            elements = self.header.embeds[0].author.name.split(" • ")
+            using_title = False
+
+        if using_title and len(elements) == 1:
             return ""
         if len(elements) == 2:
-            if "Blushed" in elements[-1]:
-                return ""
-            return elements[-1]
+            if using_title:
+                if "Blushed" in elements[-1]:
+                    return ""
+                return elements[-1]
+
+            return elements[0]
+
+        # Using a title by default
         return elements[-2]
 
     async def callback(self, interaction: discord.Interaction):
@@ -53,15 +64,35 @@ class LocationChangeModal(discord.ui.Modal):
         temp_effects = " ".join(self.children[1].value.split())
         embed = self.header.embeds[0]
 
-        # The title contains name, blush, location, but only name is guaranteed
-        elements = embed.title.split(" • ")
-        if self.get_location():
-            # The location is always at position 1, so we can remove it
-            del elements[1]
+        # Some headers have a title; others use the author string
+        if embed.title:
+            # The title contains name, blush, location, but only name is guaranteed
+            Logger.debug("EDIT HEADER: Embed has a title")
+            elements = embed.title.split(" • ")
+            update_title = True
+        else:
+            Logger.debug("EDIT HEADER: Embed does not have a title")
+            elements = embed.author.name.split(" • ")
+            update_title = False
 
-        # Insert the location and combine the elements into the title
-        elements.insert(1, location)
-        embed.title = " • ".join(elements)
+        if self.get_location():
+            # We need to remove the old location
+            if update_title:
+                del elements[1]
+            else:
+                del elements[0]
+
+        # Generate the new heading
+        insertion_index = 1 if update_title else 0
+        elements.insert(insertion_index, location)
+        new_heading = " • ".join(elements)
+
+        if update_title:
+            embed.title = new_heading
+        else:
+            url = embed.author.url
+            icon_url = embed.author.icon_url
+            embed.set_author(name=new_heading, url=url, icon_url=icon_url)
 
         embed.set_footer(text=temp_effects)
 
@@ -73,7 +104,7 @@ class LocationChangeModal(discord.ui.Modal):
             title="Header Updated",
             description=f"**Location:** {location}\n**Temporary Effects:** {temp_effects}",
         )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=5)
 
 
 async def _header_bol_options(ctx) -> str:
@@ -172,7 +203,26 @@ class HeaderCog(commands.Cog):
     @commands.guild_only()
     async def fix_rp_header(self, ctx, message: discord.Message):
         """Change an RP header's location."""
+        proceed = False
         if message.author == self.bot.user:
+            proceed = True
+        elif webhook := await self.bot.webhook_cache.fetch_webhook(ctx.channel, message.author.id):
+            # The author is one of our webhooks, so we need to get the message
+            try:
+                if message.thread is not None:
+                    Logger.debug("EDIT HEADER: Header message is in a thread")
+                    thread_id = message.thread_id
+                else:
+                    thread_id = None
+                webhook_message = await webhook.fetch_message(message.id, thread_id=thread_id)
+                message = webhook_message
+                Logger.info("EDIT HEADER: Editing a WebhookMessage")
+                proceed = True
+
+            except discord.NotFound:
+                Logger.debug("No WebhookMessage found with ID# %s", message.id)
+
+        if proceed:
             # Make sure we have a header
             record = await inconnu.db.headers.find_one({"message": message.id})
             if record is not None:

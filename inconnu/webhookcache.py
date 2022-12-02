@@ -1,6 +1,7 @@
 """Class package."""
 
 import discord
+
 from logger import Logger
 
 
@@ -72,6 +73,23 @@ class WebhookCache:
             )
 
         return self._webhooks[channel.id]
+
+    async def fetch_webhook(self, channel: discord.TextChannel, webhook_id: int):
+        """Fetch a webhook for a particular guild."""
+        if channel.guild.id not in self._guilds_polled:
+            await self._poll_guild(channel.guild)
+
+        if webhook := self._webhooks.get(channel.id):
+            Logger.debug("WEBHOOK: Found Webhook ID# %s", webhook.id)
+            if webhook.id == webhook_id:
+                return webhook
+            else:
+                Logger.debug("WEBHOOK: Webhook found, but the ID doesn't match")
+                return None
+        else:
+            Logger.debug("WEBHOOK: No Webhook found with ID# %s", webhook_id)
+
+        return webhook
 
     async def update_webhooks(self, channel: discord.TextChannel):
         """Check if the webhook was deleted or not."""

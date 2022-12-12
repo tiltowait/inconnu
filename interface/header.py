@@ -210,9 +210,16 @@ class HeaderCog(commands.Cog):
         if message.author == self.bot.user:
             webhook = None
             proceed = True
-        elif webhook := await self.bot.webhook_cache.fetch_webhook(ctx.channel, message.author.id):
-            Logger.info("EDIT HEADER: Editing a WebhookMessage")
-            proceed = True
+        else:
+            try:
+                webhook = await self.bot.webhook_cache.fetch_webhook(ctx.channel, message.author.id)
+                if webhook is not None:
+                    Logger.info("EDIT HEADER: Editing a WebhookMessage")
+                    proceed = True
+                else:
+                    Logger.debug("EDIT HEADER: Not a WebhookMessage")
+            except discord.errors.Forbidden:
+                Logger.info("EDIT HEADER: No webhook permissions")
 
         if proceed:
             # Make sure we have a header

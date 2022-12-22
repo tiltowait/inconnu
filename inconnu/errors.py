@@ -32,6 +32,14 @@ class HungerInPool(RollError):
     """An exception raised if Hunger is used in a roll pool."""
 
 
+class TooManyParameters(RollError):
+    """An exception raised if too many roll parameters are given."""
+
+    def __init__(self, count: int, message: str):
+        self.count = count
+        super().__init__(message)
+
+
 # Character Errors
 
 

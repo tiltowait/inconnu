@@ -108,9 +108,37 @@ def _can_roll(character, syntax):
     try:
         _ = RollParser(character, syntax)
     except (inconnu.errors.AmbiguousTraitError, inconnu.errors.HungerInPool):
-        # These are the only exceptions we accept, because the error message
-        # is valuable so the user knows why it failed.
+        # It's possible there's no ambiguity on another character
         pass
+    except inconnu.errors.TooManyParameters as err:
+        # Vampires take the most parameters, so we always want to show the
+        # error message if it's too many for a vampire. Mortals, however, have
+        # a Hunger 0 inserted, so their parameter count is always one higher.
+        if character.is_vampire:
+            raise SyntaxError(str(err)) from err
+
+        # We can't use the auto-generated error message for mortals, because
+        # the user might have a mortal and a vampire, and the auto-generated
+        # message might be confusing given it says Hunger 0.
+
+        msg = (
+            f"**Got {err.count - 3} too many parameters!**\n"
+            "*If you're adding traits together, don't forget `+` and `-`!*\n"
+            f"**Raw:** `{syntax}`"
+        )
+
+        if err.count == 4:
+            # We don't want to abort early if it's just a case of Hunger being
+            # added to a mortal roll, or it won't roll for vampires. This means
+            # a user with only mortals will get the most generic error message,
+            # but that can't be helped for now.
+            msg += "\n\nRemember: Mortals only need `POOL` and `DIFFICULTY`."
+            raise inconnu.errors.TooManyParameters(4, msg) from err
+
+        # There are too many parameters even for a vampire, so we'll just fail.
+        # This works, because SyntaxErrors aren't handled by Haven.
+        msg += "\n\n**Vampires:** `POOL` `HUNGER` `DIFFICULTY`\n**Mortals:** `POOL` `DIFFICULTY`"
+        raise SyntaxError(msg) from err
 
 
 async def display_outcome(

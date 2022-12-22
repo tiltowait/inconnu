@@ -62,6 +62,7 @@ ATTRIBUTES_AND_SKILLS = ATTRIBUTES.union(SKILLS)
 FLAT_TRAITS = lambda: sum(FlatDict(GROUPED_TRAITS).values(), [])
 
 UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]
+RESERVED_TRAITS = UNIVERSAL_TRAITS + ["current_hunger"]
 
 ROUSE_FAIL_COLOR = 0xC70F0F
 

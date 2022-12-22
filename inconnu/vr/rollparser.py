@@ -105,6 +105,9 @@ class RollParser:
                 current_qualified = []
                 current_interpolated = []
 
+            if token == "current_hunger":
+                token = "hunger" if self.character.is_vampire else "0"
+
             if token.isdigit():
                 # Digits require no interpolation, so just add it to the stacks
                 current_qualified.append(token)
@@ -188,7 +191,9 @@ class RollParser:
             extra = f"**Unexpected extra parameter(s):** `{extra}`"
 
             err = "Too many roll parameters given. Interpretation based on input:"
-            raise SyntaxError(f"{err}\n\n{interpretation}\n\n{extra}")
+            raise inconnu.errors.TooManyParameters(
+                3 + len(qualified_stacks), f"{err}\n\n{interpretation}\n\n{extra}"
+            )
 
     def _evaluate_stacks(self):
         """Convert the pool, hunger, and difficulty into values."""

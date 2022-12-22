@@ -2,7 +2,7 @@
 
 import re
 
-from inconnu.constants import UNIVERSAL_TRAITS
+from inconnu.constants import RESERVED_TRAITS
 
 VALID_TRAIT_PATTERN = re.compile(r"^[A-z_\']+$")
 
@@ -16,10 +16,12 @@ def validate_trait_names(*traits, specialties=False):
         if (trait_len := len(trait)) > 20:
             raise ValueError(f"`{trait}` is too long by {trait_len - 20} characters.")
 
-        if trait.title() in UNIVERSAL_TRAITS:
-            raise SyntaxError(
+        if trait.title() in RESERVED_TRAITS:
+            raise ValueError(
                 f"`{trait.title()}` is a reserved trait. Use `/character adjust` to set."
             )
+        if trait.lower() in RESERVED_TRAITS:
+            raise ValueError("Set Hunger with `/character adjust`.")
 
         if VALID_TRAIT_PATTERN.match(trait) is None:
             term = "Traits" if not specialties else "Specialties"

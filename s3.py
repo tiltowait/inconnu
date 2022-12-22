@@ -21,6 +21,7 @@ executor = concurrent.futures.ThreadPoolExecutor()
 s3_client = None
 BUCKET = "inconnu"
 BASE_URL = f"https://{BUCKET}.s3.amazonaws.com/"
+FACECLAIMS_URL = "https://fcs.inconnu.app/"
 
 if aws.access_key_id is None:
     Logger.warning("S3: AWS is not configured")
@@ -49,7 +50,7 @@ def get_url(object_name: str):
 
 def is_managed_url(url: str) -> bool:
     """Check whether a URL is managed by the bot."""
-    return url.startswith(BASE_URL)
+    return url.startswith(BASE_URL) or url.startswith(FACECLAIMS_URL)
 
 
 def get_s3_object(url: str) -> str | None:
@@ -89,10 +90,13 @@ async def delete_file(resource: str):
         Logger.error("S3: Cannot delete %s; client not configured", resource)
         return
 
-    if not resource.startswith(BASE_URL):
+    if resource.startswith(BASE_URL):
+        key = resource.replace(BASE_URL, "")
+    elif resource.startswith(FACECLAIMS_URL):
+        key = resource.replace(FACECLAIMS_URL, "profiles/")
+    else:
         raise ValueError(f"{resource} is not a managed resource.!")
 
-    key = resource.replace(BASE_URL, "")
     delete_object = aio(s3_client.delete_object)
     await delete_object(Bucket=BUCKET, Key=key)
     Logger.info("S3: Deleted %s", key)

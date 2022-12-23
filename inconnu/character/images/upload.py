@@ -85,7 +85,7 @@ def valid_url(url: str) -> bool:
 
 async def process_file(charid: str, image_url: str) -> str:
     """Send the file URL to the API for processing."""
-    url = "https://api.inconnu.app/upload-fc"
+    url = "https://api.inconnu.app/faceclaim"
     token = os.environ["INCONNU_API_TOKEN"]
     header = {"Authorization": f"token {token}"}
     payload = {"charid": charid, "image_url": image_url}

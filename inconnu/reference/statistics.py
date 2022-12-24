@@ -6,13 +6,12 @@ from datetime import datetime, timedelta
 import discord
 
 import inconnu
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
 
 
-async def statistics(
-    ctx, style: str, character: str, date: datetime, player: discord.Member | None
-):
+async def statistics(ctx, character, style: str, date: datetime, *, player: discord.Member | None):
     """
     View the roll statistics for the user's characters.
     Args:
@@ -41,7 +40,7 @@ async def statistics(
         if style == "General":
             await __general_statistics(ctx, date, owner)
         else:
-            await __traits_statistics(ctx, character, date, owner)
+            await __traits_statistics(ctx, character, date, player=owner)
 
     except ValueError:
         await inconnu.utils.error(ctx, f"`{date}` is not a valid date.")
@@ -49,18 +48,9 @@ async def statistics(
         await inconnu.utils.error(ctx, err, help_url=__HELP_URL)
 
 
-async def __traits_statistics(ctx, char_id, date, player):
+@haven(__HELP_URL)
+async def __traits_statistics(ctx, character, date, *, player):
     """View the statistics for all traits since a given date."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=char_id,
-        owner=player,
-        tip="`/statistics` `traits:Full` `character:CHARACTER`",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
-    # We got a character
     pipeline = [
         {
             "$match": {
@@ -105,7 +95,7 @@ async def __traits_statistics(ctx, char_id, date, player):
             # is useful information, too.
             stats[trait] = raw_stats[0]["traits"].get(trait, 0)
 
-        await __display_trait_statistics(ctx, character, stats, date, haven.owner)
+        await __display_trait_statistics(ctx, character, stats, date, player)
     else:
         if date.year < 2021:
             # Lifetime rolls

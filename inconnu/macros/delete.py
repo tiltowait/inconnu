@@ -1,21 +1,15 @@
 """macros/delete.py - Deleting character macros."""
 
 import inconnu
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/deletion"
 
 
-async def delete(ctx, macro_name: str, character=None):
+@haven(__HELP_URL)
+async def delete(ctx, character, macro_name: str):
     """Delete the given macro."""
     try:
-        haven = inconnu.utils.Haven(
-            ctx,
-            character=character,
-            tip=f"`/macro delete` `macro:{macro_name}` `character:CHARACTER`",
-            help=__HELP_URL,
-        )
-        character = await haven.fetch()
-
         character.delete_macro(macro_name)
         await ctx.respond(f"Deleted **{character.name}'s** `{macro_name}` macro.", ephemeral=True)
         await character.commit()

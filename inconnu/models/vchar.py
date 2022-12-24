@@ -453,7 +453,7 @@ class VChar(Document):
             if macro.name.lower() == lower:
                 return index
 
-        raise inconnu.errors.MacroNotFoundError(f"{self.name} has no macro named `{search}`.")
+        raise inconnu.errors.MacroNotFoundError(f"**{self.name}** has no macro named `{search}`.")
 
     def find_macro(self, search: str) -> VCharMacro:
         """

@@ -289,6 +289,7 @@ def haven(url, char_filter=None, errmsg=None, allow_lookups=False):
     def haven_decorator(func):
         @functools.wraps(func)
         async def wrapper(ctx, character, *args, **kwargs):
+            Logger.debug("@HAVEN: Using @haven")
             if "player" in kwargs:
                 # Capture the player lookup
                 Logger.debug("@HAVEN: Found 'player' in kwargs")

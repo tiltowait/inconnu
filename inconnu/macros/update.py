@@ -5,6 +5,7 @@ from distutils.util import strtobool
 
 import inconnu
 from inconnu.macros import macro_common
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"
 __VALID_KEYS = {
@@ -20,17 +21,11 @@ __VALID_KEYS = {
 }
 
 
-async def update(ctx, macro: str, syntax: str, character: str):
+@haven(__HELP_URL)
+async def update(ctx, character, macro: str, syntax: str):
     """Update a macro."""
     try:
         syntax = " ".join(syntax.split())
-        haven = inconnu.utils.Haven(
-            ctx,
-            character=character,
-            tip=f"`/macro update` `macro:{macro}` `parameters:{syntax}` `character:CHARACTER`",
-            help=__HELP_URL,
-        )
-        character = await haven.fetch()
 
         parameters = inconnu.utils.parse_parameters(syntax, False)
         macro_update = __validate_parameters(character, parameters)

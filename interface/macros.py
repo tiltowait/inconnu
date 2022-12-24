@@ -2,8 +2,7 @@
 # pylint: disable=too-many-arguments
 
 import discord
-from discord.commands import (Option, OptionChoice, SlashCommandGroup,
-                              slash_command)
+from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 
 import inconnu
@@ -72,6 +71,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         """Create a macro."""
         await inconnu.macros.create(
             ctx,
+            character,
             name,
             pool,
             bool(hunger),
@@ -81,7 +81,6 @@ class Macros(commands.Cog, name="Macro Utilities"):
             staining,
             bool(hunt),
             comment,
-            character,
         )
 
     @macro.command(name="list")
@@ -100,7 +99,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         character: inconnu.options.character("The character who owns the macro"),
     ):
         """Update a macro using PARAMETER=VALUE pairs. Parameter names match macro creation."""
-        await inconnu.macros.update(ctx, macro, parameters, character)
+        await inconnu.macros.update(ctx, character, macro, parameters)
 
     @macro.command(name="delete")
     @commands.guild_only()
@@ -111,7 +110,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
         character: inconnu.options.character("The character who owns the macro"),
     ):
         """Delete a macro."""
-        await inconnu.macros.delete(ctx, macro, character)
+        await inconnu.macros.delete(ctx, character, macro)
 
 
 def setup(bot):

@@ -3,12 +3,15 @@
 
 import inconnu
 from inconnu.macros import macro_common
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/creation"
 
 
+@haven(__HELP_URL)
 async def create(
     ctx,
+    character: str,
     name: str,
     pool: str,
     hunger: bool,
@@ -18,18 +21,9 @@ async def create(
     staining: str,
     hunt: bool,
     comment: str,
-    character: str,
 ):
     """Create a macro if the syntax is valid."""
     try:
-        haven = inconnu.utils.Haven(
-            ctx,
-            character=character,
-            tip="`/macro create` `name:NAME` `pool:POOL` `character:CHARACTER`",
-            help=__HELP_URL,
-        )
-        character = await haven.fetch()
-
         # Make sure fields aren't too long
         if (length := len(name)) > macro_common.NAME_LEN:
             raise SyntaxError(f"Macro names can't be longer than 50 characters. (Yours: {length})")

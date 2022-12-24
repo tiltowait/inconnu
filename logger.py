@@ -52,11 +52,14 @@ messages::
 
 import copy
 import logging
+import logging.handlers
 import os
 import pathlib
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
+
+import boto3
 
 import config.logging as config
 
@@ -273,6 +276,88 @@ class ConsoleHandler(logging.StreamHandler):
         return True
 
 
+class CloudWatchHandler(logging.handlers.BufferingHandler):
+    """A handler that flushes to AWS CloudWatch Logs."""
+
+    LOG_GROUP_NAME = "Inconnu"
+
+    def __init__(self, capacity=50):
+        logging.handlers.BufferingHandler.__init__(self, capacity)
+        self.last_event = None
+        self.last_flush = None
+
+        # AWS stuff
+        self.cloudwatch = boto3.client("logs")
+        self.log_stream_name = None
+        self.next_sequence_token = None
+
+        self.create_log_stream()
+
+    def create_log_stream(self):
+        """Create a log stream based on the current time."""
+        fmt = "%Y-%m-%d_%H-%M-%S"
+        log_start = datetime.now(timezone.utc)
+        self.log_stream_name = log_start.strftime(fmt)
+        self.cloudwatch.create_log_stream(
+            logGroupName=self.LOG_GROUP_NAME, logStreamName=self.log_stream_name
+        )
+
+    def process_time(self):
+        """Set the last event time and create a new log stream if new date."""
+        now = datetime.now(timezone.utc)
+        if self.last_event is not None:
+            if now.day != self.last_event.day:
+                self.create_log_stream()
+        self.last_event = now
+
+    def emit(self, record):
+        """Add the record to the buffer, with a timestamp."""
+        msg = self.format(record)
+
+        if ":" in msg:
+            msg = msg.split(":", 1)
+            msg = f"[{msg[0]}]{msg[1]}"
+
+        msg = "[" + record.levelname + "." * (7 - len(record.levelname)) + "]" + msg
+        timestamp = datetime.now(timezone.utc).timestamp() * 1000
+
+        self.buffer.append({"timestamp": int(timestamp), "message": msg})
+
+        self.process_time()
+        if self.shouldFlush(record):
+            self.flush()
+
+    def shouldFlush(self, record) -> bool:
+        """We should flush if the buffer is full and it's been > 5 seconds."""
+        if self.last_flush is not None:
+            # AWS limits us to one update every 5 seconds
+            delta = self.last_event - self.last_flush
+            if delta.seconds < 5:
+                return False
+
+        return super().shouldFlush(record)
+
+    def flush(self):
+        """Upload the events to CloudWatch Logs and flush."""
+        if self.next_sequence_token:
+            response = self.cloudwatch.put_log_events(
+                logGroupName=self.LOG_GROUP_NAME,
+                logStreamName=self.log_stream_name,
+                logEvents=self.buffer,
+                sequenceToken=self.next_sequence_token,
+            )
+        else:
+            response = self.cloudwatch.put_log_events(
+                logGroupName=self.LOG_GROUP_NAME,
+                logStreamName=self.log_stream_name,
+                logEvents=self.buffer,
+            )
+
+        self.next_sequence_token = response["nextSequenceToken"]
+        del self.buffer[:]
+        self.last_flush = datetime.now(timezone.utc)
+
+
 class LogFile(object):
     def __init__(self, channel, func):
         self.buffer = ""
@@ -312,8 +397,9 @@ logger_config_update(config.log_level)
 # Set the Inconnu logger as the default
 logging.root = Logger
 
-# add default PixelWar logger
 Logger.addHandler(LoggerHistory())
+Logger.addHandler(CloudWatchHandler())
+
 file_log_handler = None
 if config.log_to_file:
     file_log_handler = FileHandler()
@@ -355,4 +441,4 @@ if "INCONNU_NO_CONSOLELOG" not in os.environ:
 sys.stderr = LogFile("stderr", Logger.warning)
 
 if not config.log_to_file:
-    Logger.warning("Logger: Log saving disabled")
+    Logger.warning("LOGGER: Log saving disabled")

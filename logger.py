@@ -60,6 +60,7 @@ from datetime import datetime, timezone
 from functools import partial
 
 import boto3
+import botocore.exceptions
 
 import config.logging as config
 
@@ -339,23 +340,28 @@ class CloudWatchHandler(logging.handlers.BufferingHandler):
 
     def flush(self):
         """Upload the events to CloudWatch Logs and flush."""
-        if self.next_sequence_token:
-            response = self.cloudwatch.put_log_events(
-                logGroupName=self.LOG_GROUP_NAME,
-                logStreamName=self.log_stream_name,
-                logEvents=self.buffer,
-                sequenceToken=self.next_sequence_token,
-            )
-        else:
-            response = self.cloudwatch.put_log_events(
-                logGroupName=self.LOG_GROUP_NAME,
-                logStreamName=self.log_stream_name,
-                logEvents=self.buffer,
-            )
+        try:
+            if self.next_sequence_token:
+                response = self.cloudwatch.put_log_events(
+                    logGroupName=self.LOG_GROUP_NAME,
+                    logStreamName=self.log_stream_name,
+                    logEvents=self.buffer,
+                    sequenceToken=self.next_sequence_token,
+                )
+            else:
+                response = self.cloudwatch.put_log_events(
+                    logGroupName=self.LOG_GROUP_NAME,
+                    logStreamName=self.log_stream_name,
+                    logEvents=self.buffer,
+                )
 
-        self.next_sequence_token = response["nextSequenceToken"]
-        del self.buffer[:]
-        self.last_flush = datetime.now(timezone.utc)
+            self.next_sequence_token = response["nextSequenceToken"]
+            del self.buffer[:]
+            self.last_flush = datetime.now(timezone.utc)
+        except botocore.exceptions.ClientError:
+            # It would be nice to log an error here, but we don't have access
+            # to the Logger object at this point.
+            pass
 
 
 class LogFile(object):
@@ -398,7 +404,8 @@ logger_config_update(config.log_level)
 logging.root = Logger
 
 Logger.addHandler(LoggerHistory())
-Logger.addHandler(CloudWatchHandler())
+if config.log_to_file:
+    Logger.addHandler(CloudWatchHandler())
 
 file_log_handler = None
 if config.log_to_file:
@@ -441,4 +448,5 @@ if "INCONNU_NO_CONSOLELOG" not in os.environ:
 sys.stderr = LogFile("stderr", Logger.warning)
 
 if not config.log_to_file:
-    Logger.warning("LOGGER: Log saving disabled")
+    Logger.warning("LOGGER: Log file disabled")
+    Logger.warning("LOGGER: CloudWatch Logs disabled")

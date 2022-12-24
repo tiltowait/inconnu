@@ -8,30 +8,32 @@ import discord
 
 import inconnu
 from inconnu.traits.parser import parse_traits
+from inconnu.utils.haven import haven
 
 __HELP_URL = {
     False: "https://docs.inconnu.app/command-reference/traits/adding-traits",
     True: "https://docs.inconnu.app/command-reference/traits/updating-traits",
 }
+__HELP_ADD = "https://docs.inconnu.app/command-reference/traits/adding-traits"
+__HELP_UPDATE = "https://docs.inconnu.app/command-reference/traits/updating-traits"
 
 
-async def add(ctx, traits: str, character: str, specialties=False):
+@haven(__HELP_ADD)
+async def add(ctx, character, traits: str, specialties=False):
     """Add traits to a character. Wrapper for add_update."""
     await __parse(ctx, False, traits, character, specialties)
 
 
-async def update(ctx, traits: str, character: str):
+@haven(__HELP_UPDATE)
+async def update(ctx, character, traits: str):
     """Update a character's traits. Wrapper for add_update."""
     await __parse(ctx, True, traits, character)
 
 
-async def __parse(ctx, allow_overwrite: bool, raw_traits: str, character: str, specialties=False):
+async def __parse(ctx, allow_overwrite: bool, traits: str, character: str, specialties=False):
     """Add traits to a character."""
     try:
-        traits = raw_traits
-
         key = "update" if allow_overwrite else "add"
-        term = "traits" if not specialties else "specialties"
 
         # Specialties are just 1-point traits, but when entered, they don't
         # have an assigned value. Let's do that now.
@@ -50,14 +52,6 @@ async def __parse(ctx, allow_overwrite: bool, raw_traits: str, character: str, s
             traits = traits.split()
 
         traits = parse_traits(*traits, specialties=specialties)
-
-        haven = inconnu.utils.Haven(
-            ctx,
-            character=character,
-            tip=f"`/{term} {key}` `{term}:{raw_traits}` `character:CHARACTER`",
-            help=__HELP_URL[allow_overwrite],
-        )
-        character = await haven.fetch()
         outcome = await __handle_traits(character, traits, allow_overwrite)
 
         await __display_results(ctx, outcome, character, specialties)

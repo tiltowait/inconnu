@@ -6,28 +6,19 @@ import discord
 
 import inconnu
 from inconnu.traits import traitcommon
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 
 
-async def delete(ctx, traits: str, character=None, specialties=False):
+@haven(__HELP_URL)
+async def delete(ctx, character, traits: str, specialties=False):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
-        term = "traits" if not specialties else "specialties"
-        command = "traits delete" if not specialties else "specialties remove"
-
-        haven = inconnu.utils.Haven(
-            ctx,
-            character=character,
-            tip=f"`/{command}` `{term}:{traits}` `character:CHARACTER`",
-            help=__HELP_URL,
-        )
-        character = await haven.fetch()
-
         traits = traits.split()
         if not traits:
             # Shouldn't be possible to reach here, but just in case Discord messes up
-            raise SyntaxError(f"You must supply a list of {term} to delete.")
+            raise SyntaxError("You must supply a list of traits or specialties to delete.")
 
         traitcommon.validate_trait_names(*traits, specialties=specialties)
         outcome = __delete_traits(character, *traits)

@@ -7,13 +7,15 @@ import async_timeout
 import discord
 
 import inconnu
+from inconnu.utils.haven import haven
 from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
 
 
-async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachment, character: str):
+@haven(__HELP_URL)
+async def upload_image(ctx: discord.ApplicationContext, character, image: discord.Attachment):
     """Upload an image. Only premium users can use this feature."""
     if not valid_url(image.url):
         embed = inconnu.utils.ErrorEmbed(
@@ -23,14 +25,6 @@ async def upload_image(ctx: discord.ApplicationContext, image: discord.Attachmen
         )
         await ctx.respond(embed=embed, ephemeral=True)
         return
-
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip="`/character image upload` `character:CHARACTER`",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
 
     if not ctx.interaction.response.is_done():
         # If we responded already, there's no chance of timeout; also we can't

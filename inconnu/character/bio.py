@@ -4,41 +4,30 @@ import discord
 from discord.ext import pages
 
 import inconnu
+from inconnu.utils.haven import haven
 from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#profile"
 
 
+@haven(__HELP_URL)
 async def edit_biography(ctx, character):
     """Edit a character bio."""
-    try:
-        character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
-        if character.is_pc and character.user != ctx.user.id:
-            raise inconnu.errors.FetchError("You may only edit your own characters' profile.")
-
-        modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
-        await ctx.send_modal(modal)
-
-    except (inconnu.errors.CharacterNotFoundError, inconnu.errors.FetchError) as err:
-        await inconnu.utils.error(ctx, err, help=__HELP_URL)
+    modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
+    await ctx.send_modal(modal)
 
 
+def _has_profile(character):
+    """Raises an error if the character doesn't have a profile."""
+    if not character.has_biography:
+        raise inconnu.errors.CharacterError(f"{character.name} doesn't have a profile!")
+
+
+@haven(__HELP_URL, _has_profile, "None of your characters have a profile!", True)
 async def show_biography(ctx, character, player, ephemeral=False):
     """Display a character's biography."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        owner=player,
-        allow_lookups=True,
-        tip="`/character bio show` `[character:CHARACTER]` `[player:PLAYER]`",
-        char_filter=_has_profile,
-        errmsg="None of your characters have a profile!",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
     if character.has_biography:
-        paginator = __biography_paginator(ctx, character, haven.owner)
+        paginator = __biography_paginator(ctx, character, player)
         await paginator.respond(ctx.interaction, ephemeral=ephemeral)
     else:
         command = f"`/character profile edit:{character.name}`"
@@ -46,12 +35,6 @@ async def show_biography(ctx, character, player, ephemeral=False):
             f"**{character.name}** has no profile! Set it using {command}.",
             ephemeral=True,
         )
-
-
-def _has_profile(character):
-    """Raises an error if the character doesn't have a profile."""
-    if not character.has_biography:
-        raise inconnu.errors.CharacterError(f"{character.name} doesn't have a profile!")
 
 
 def __biography_paginator(ctx, character, owner):

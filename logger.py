@@ -404,7 +404,7 @@ logger_config_update(config.log_level)
 logging.root = Logger
 
 Logger.addHandler(LoggerHistory())
-if config.log_to_file:
+if config.upload_to_aws:
     Logger.addHandler(CloudWatchHandler())
 
 file_log_handler = None
@@ -449,4 +449,5 @@ sys.stderr = LogFile("stderr", Logger.warning)
 
 if not config.log_to_file:
     Logger.warning("LOGGER: Log file disabled")
+if not config.upload_to_aws:
     Logger.warning("LOGGER: CloudWatch Logs disabled")

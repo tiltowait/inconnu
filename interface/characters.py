@@ -200,39 +200,12 @@ class Characters(commands.Cog, name="Character Management"):
         if edit is not None:
             await inconnu.character.edit_biography(ctx, edit)
         else:
-            await inconnu.character.show_biography(ctx, character, player)
-
-    biography = character.create_subgroup("bio", "Character biography")
-
-    @biography.command(name="edit")
-    @commands.guild_only()
-    async def character_bio_edit(
-        self,
-        ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to edit", required=True),
-    ):
-        """Edit a character's biography."""
-        await ctx.respond(
-            "This command has been replaced with `/character profile edit:`.", ephemeral=True
-        )
-
-    @biography.command(name="show")
-    @commands.guild_only()
-    async def character_bio_show(
-        self,
-        ctx: discord.ApplicationContext,
-        player: Option(discord.Member, "The character's owner", required=False),
-        character: inconnu.options.character("The character to view"),
-    ):
-        """View a character's biography."""
-        await ctx.respond(
-            "This command has been replaced with `/character profile`.", ephemeral=True
-        )
+            await inconnu.character.show_biography(ctx, character, player=player)
 
     @commands.user_command(name="Profile")
     async def character_bio_context(self, ctx, member):
         """View a character's profile."""
-        await inconnu.character.show_biography(ctx, None, member, True)
+        await inconnu.character.show_biography(ctx, None, player=member, ephemeral=True)
 
     # Convictions
 
@@ -249,7 +222,7 @@ class Characters(commands.Cog, name="Character Management"):
     ):
         """Show a character's Convictions."""
         if edit is None:
-            await inconnu.character.convictions_show(ctx, character, player, False)
+            await inconnu.character.convictions_show(ctx, character, player=player, ephemeral=False)
         else:
             await inconnu.character.convictions_set(ctx, edit)
 
@@ -257,7 +230,7 @@ class Characters(commands.Cog, name="Character Management"):
     @commands.guild_only()
     async def character_convictions_context(self, ctx, member):
         """Show a character's Convictions."""
-        await inconnu.character.convictions_show(ctx, None, member, True)
+        await inconnu.character.convictions_show(ctx, None, player=member, ephemeral=True)
 
     # Premium
 
@@ -270,7 +243,7 @@ class Characters(commands.Cog, name="Character Management"):
         player: Option(discord.Member, "The character's owner", required=False),
     ):
         """Display a character's images."""
-        await inconnu.character.images.display(ctx, character, player)
+        await inconnu.character.images.display(ctx, character, player=player)
 
     images = character.create_subgroup("image", "Character image commands")
 
@@ -284,7 +257,7 @@ class Characters(commands.Cog, name="Character Management"):
         character: inconnu.options.character(),
     ):
         """Upload an image for your character's profile."""
-        await inconnu.character.images.upload(ctx, image, character)
+        await inconnu.character.images.upload(ctx, character, image)
 
 
 def _check_number(label, value):

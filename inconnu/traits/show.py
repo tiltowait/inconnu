@@ -3,22 +3,15 @@
 import discord
 
 import inconnu
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-traits"
 
 
-async def show(ctx, character: str, player: discord.Member):
+@haven(__HELP_URL)
+async def show(ctx, character: str, *, player: discord.Member):
     """Present a character's traits to its owner."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        owner=player,
-        tip="`/traits list` `character:CHARACTER`",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
-    embed = traits_embed(ctx, character, haven.owner)
+    embed = traits_embed(ctx, character, player)
     await inconnu.respond(ctx)(embed=embed, ephemeral=True)
 
 

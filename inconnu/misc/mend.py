@@ -4,21 +4,24 @@ from types import SimpleNamespace
 
 import inconnu
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
 
 
-async def mend(ctx, character=None):
+def _can_mend(character):
+    """Raises an error if the character has no superficial health damage."""
+    if character.superficial_hp == 0:
+        raise inconnu.errors.CharacterError(f"{character.name} has no damage to mend.")
+
+
+@haven(
+    __HELP_URL,
+    _can_mend,
+    "None of your characters have any damage to mend! Did you mean `/aggheal`?",
+)
+async def mend(ctx, character):
     """Mend damage on a character OR the user's only character."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip="`/mend` `character:CHARACTER`",
-        char_filter=_can_mend,
-        errmsg="None of your characters have any damage to mend! Did you mean `/aggheal`?",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
     outcome = await __heal(character)
 
     if isinstance(outcome, str):
@@ -42,12 +45,6 @@ async def mend(ctx, character=None):
         await inconnu.common.report_update(
             ctx=ctx, character=character, title="Damage Mended", message=update_msg, msg=msg
         )
-
-
-def _can_mend(character):
-    """Raises an error if the character has no superficial health damage."""
-    if character.superficial_hp == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no damage to mend.")
 
 
 async def __display_outcome(ctx, character, outcome):

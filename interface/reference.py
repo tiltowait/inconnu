@@ -78,7 +78,7 @@ class ReferenceCommands(commands.Cog):
         player: inconnu.options.player,
     ):
         """View roll statistics for your characters."""
-        await inconnu.reference.statistics(ctx, style, character, date, player)
+        await inconnu.reference.statistics(ctx, character, style, date, player=player)
 
     @slash_command()
     async def temperament(

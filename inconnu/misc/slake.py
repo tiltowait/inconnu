@@ -3,22 +3,22 @@
 import asyncio
 
 import inconnu
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"
 
 
-async def slake(ctx, amount, character=None, **kwargs):
-    """Slake a character's Hunger."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip=f"`/slake` `amount:{amount}` `character:CHARACTER`",
-        char_filter=_can_slake,
-        errmsg="None of your characters have Hunger to slake.",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
+def _can_slake(character):
+    """Raises an exception if the character isn't a vampire or is at Hunger 0."""
+    if not character.is_vampire:
+        raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
+    if character.hunger == 0:
+        raise inconnu.errors.CharacterError(f"{character.name} has no Hunger!")
 
+
+@haven(__HELP_URL, _can_slake, "None of your characters have Hunger to slake.")
+async def slake(ctx, character, amount: int, **kwargs):
+    """Slake a character's Hunger."""
     if not character.is_vampire:
         await ctx.respond("Only vampires need to slake Hunger!", ephemeral=True)
         return
@@ -58,11 +58,3 @@ async def slake(ctx, amount, character=None, **kwargs):
                 message=update,
             ),
         )
-
-
-def _can_slake(character):
-    """Raises an exception if the character isn't a vampire or is at Hunger 0."""
-    if not character.is_vampire:
-        raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
-    if character.hunger == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no Hunger!")

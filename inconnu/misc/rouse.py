@@ -8,12 +8,20 @@ import discord
 import inconnu
 from config import aws_asset
 from inconnu.models import VChar
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 
 
+def _can_rouse(character):
+    """Raises an error if the character is mortal."""
+    if character.splat == "mortal":
+        raise inconnu.errors.CharacterError(f"{character.name} is a mortal.")
+
+
+@haven(__HELP_URL, _can_rouse)
 async def rouse(
-    ctx, count: int, character: str, purpose: str, reroll: bool, oblivion="show", message=None
+    ctx, character: str, count: int, purpose: str, reroll: bool, oblivion="show", message=None
 ):
     """
     Perform a remorse check on a given character and display the results.
@@ -24,19 +32,7 @@ async def rouse(
         reroll (bool): Whether failures should be re-rolled
         oblivion (bool, default False): Whether to show the Oblivion message.
     """
-    if not isinstance(character, VChar):
-        haven = inconnu.utils.Haven(
-            ctx,
-            character=character,
-            tip="`/rouse` `character:CHARACTER`",
-            char_filter=_can_rouse,
-            help=__HELP_URL,
-        )
-        character = await haven.fetch()
-
-    if character.splat == "mortal":
-        await ctx.respond("Mortals can't make Rouse checks.", ephemeral=True)
-    elif character.splat == "ghoul":
+    if character.splat == "ghoul":
         await __damage_ghoul(ctx, character)
     else:
         # Vampire
@@ -70,12 +66,6 @@ async def rouse(
         # VChar.log(), which needs to be saved.
         # TODO: Move logging outside of __display_outcome()
         await character.commit()
-
-
-def _can_rouse(character):
-    """Raises an error if the character is mortal."""
-    if character.splat == "mortal":
-        raise inconnu.errors.CharacterError(f"{character.name} is a mortal.")
 
 
 def __make_title(outcome):

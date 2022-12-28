@@ -24,7 +24,7 @@ class FrenzyView(DisablingView):
         """Frenzy, if applicable."""
         self.frenzy_button.style = discord.ButtonStyle.secondary
         await self.disable_items(interaction)
-        await inconnu.misc.frenzy(interaction, self.difficulty, None, None, self.character)
+        await inconnu.misc.frenzy(interaction, self.character, self.difficulty, None, None)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check that the user is the character's owner."""

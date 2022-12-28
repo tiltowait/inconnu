@@ -111,7 +111,7 @@ class Gameplay(commands.Cog):
         character: inconnu.options.character("The frenzying character"),
     ):
         """Perform a Frenzy check."""
-        await inconnu.misc.frenzy(ctx, difficulty, penalty, bonus, character)
+        await inconnu.misc.frenzy(ctx, character, difficulty, penalty, bonus)
 
     @slash_command()
     @commands.guild_only()
@@ -156,7 +156,7 @@ class Gameplay(commands.Cog):
         character: inconnu.options.character("The character to Rouse"),
     ):
         """Perform a Rouse check."""
-        await inconnu.misc.rouse(ctx, count, character, purpose, bool(reroll))
+        await inconnu.misc.rouse(ctx, character, count, purpose, bool(reroll))
 
     @slash_command()
     @commands.guild_only()
@@ -167,19 +167,19 @@ class Gameplay(commands.Cog):
         character: inconnu.options.character("The character feeding"),
     ):
         """Slake 1 or more Hunger."""
-        await inconnu.misc.slake(ctx, amount, character)
+        await inconnu.misc.slake(ctx, character, amount)
 
     @slash_command()
     @commands.guild_only()
     async def stain(
         self,
         ctx: discord.ApplicationContext,
-        delta: Option(int, "How many stains to add/subtract"),
+        delta: Option(int, "How many stains to add/subtract", min_value=-10, max_value=10),
         character: inconnu.options.character("The character to stain"),
         player: inconnu.options.player,
     ):
         """Apply or remove stains from a character."""
-        await inconnu.misc.stain(ctx, delta, character, player)
+        await inconnu.misc.stain(ctx, character, delta, player=player)
 
 
 def setup(bot):

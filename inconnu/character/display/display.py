@@ -8,6 +8,7 @@ import discord
 import inconnu
 from inconnu.character.display import trackmoji
 from inconnu.constants import Damage
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 
@@ -31,21 +32,13 @@ class DisplayField(str, Enum):
         return map(lambda f: (f.value, f), list(cls))
 
 
-async def display_requested(ctx, character=None, message=None, player=None, ephemeral=False):
+@haven(__HELP_URL)
+async def display_requested(ctx, character, message=None, player=None, ephemeral=False):
     """Display a character as directly requested by a user."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        owner=player,
-        tip="`/character display` `character:CHARACTER`",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
     await display(
         ctx,
         character,
-        owner=haven.owner,
+        owner=player,
         message=message,
         footer=None,
         view=inconnu.views.TraitsView(character, ctx.user),

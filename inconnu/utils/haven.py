@@ -1,11 +1,13 @@
 """Character selection tool."""
 
+import functools
 import uuid
 from collections import OrderedDict
 
 import discord
 
 import inconnu
+from inconnu.views.basicselector import BasicSelector
 from logger import Logger
 
 
@@ -158,7 +160,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         await inconnu.utils.error(
             self.ctx,
             err,
-            ("Proper syntax", self.tip),
+            # ("Proper syntax", self.tip),
             author=self.owner,
             help=self.help,
             view=view,
@@ -169,6 +171,7 @@ class Haven:  # pylint: disable=too-few-public-methods
             raise inconnu.errors.HandledError("Too many characters.")
 
         await view.wait()
+        await self.ctx.delete()
 
         if (key := view.selected_value) is not None:
             character, _ = self.possibilities[key]
@@ -178,7 +181,7 @@ class Haven:  # pylint: disable=too-few-public-methods
             Logger.debug("HAVEN: No character selected")
             raise inconnu.errors.HandledError("No character was selected.")
 
-    def _create_view(self) -> inconnu.views.BasicSelector | None:
+    def _create_view(self) -> BasicSelector | None:
         """Create a character selector view."""
         if len(self.possibilities) > 100:
             Logger.debug("HAVEN: More than 100 characters; selection not possible")
@@ -223,7 +226,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                 options = options[25:]
 
         Logger.debug("HAVEN: Created %s component(s)", len(components))
-        view = inconnu.views.BasicSelector(*components)
+        view = BasicSelector(*components)
         return view
 
 
@@ -278,3 +281,42 @@ def _personalize_error(err, ctx, member):
         err = str(err).replace("You have", f"{member.mention} has")
         err = err.replace("your", f"{member.mention}'s")
     return err
+
+
+def haven(url, char_filter=None, errmsg=None, allow_lookups=False):
+    """A decorator that handles character fetching duties."""
+
+    def haven_decorator(func):
+        @functools.wraps(func)
+        async def wrapper(ctx, character, *args, **kwargs):
+            Logger.debug("@HAVEN: Using @haven")
+            if "player" in kwargs:
+                # Capture the player lookup
+                Logger.debug("@HAVEN: Found 'player' in kwargs")
+                player = kwargs["player"]
+                player_kwargs = True
+            else:
+                player = None
+                player_kwargs = False
+
+            # Actual character fetching
+            haven_ = Haven(
+                ctx,
+                character=character,
+                owner=player,
+                char_filter=char_filter,
+                errmsg=errmsg,
+                allow_lookups=allow_lookups,
+                help=url,
+            )
+            character = await haven_.fetch()
+
+            if player_kwargs:
+                Logger.debug("@HAVEN: Replacing 'player' in kwargs")
+                kwargs["player"] = haven_.owner
+
+            return await func(ctx, character, *args, **kwargs)
+
+        return wrapper
+
+    return haven_decorator

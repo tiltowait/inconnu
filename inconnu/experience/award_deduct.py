@@ -5,20 +5,14 @@ import asyncio
 import discord
 
 import inconnu
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
 
-async def award_or_deduct(ctx, player, character, amount, scope, reason):
+@haven(__HELP_URL)
+async def award_or_deduct(ctx, character, amount, scope, reason, *, player):
     """Award or deduct XP from a character."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        owner=player,
-        character=character,
-        tip="`/experience " + ("award" if amount > 0 else "deduct") + "`",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
     scope = scope.lower()
 
     # Check that we aren't deducting more XP than they have

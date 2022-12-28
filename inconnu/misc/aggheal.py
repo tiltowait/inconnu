@@ -4,21 +4,20 @@ from types import SimpleNamespace
 
 import inconnu
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#aggravated-healing"
 
 
-async def aggheal(ctx, character: str):
+def _can_aggheal(character):
+    """Raise an error if the character can't agg heal."""
+    if character.aggravated_hp == 0:
+        raise inconnu.errors.CharacterError(f"{character.name} has no Aggravated Health damage!")
+
+
+@haven(__HELP_URL, _can_aggheal, "None of your characters have Aggravated Health damage.")
+async def aggheal(ctx, character):
     """Heal a point of aggravated damage."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip="`/aggheal` `character:CHARACTER`",
-        char_filter=_can_aggheal,
-        errmsg="None of your characters have Aggravated Health damage.",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
 
     if character.health.count(Damage.AGGRAVATED) == 0:
         await ctx.respond(f"{character.name} has no aggravated damage to heal!", ephemeral=True)
@@ -44,12 +43,6 @@ async def aggheal(ctx, character: str):
         title="Aggravated Damage Healed",
         message=update_msg,
     )
-
-
-def _can_aggheal(character):
-    """Raise an error if the character can't agg heal."""
-    if character.aggravated_hp == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no Aggravated Health damage!")
 
 
 async def __heal(character: "VChar"):

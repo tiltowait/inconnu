@@ -1,35 +1,21 @@
 """character/convictions.py - View or edit character convictions."""
 
 import inconnu
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#convictions"
 
 
+@haven(__HELP_URL)
 async def convictions_set(ctx, character):
     """Edit character Convictions."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip="`/character convictions set` `character:CHARACTER`",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
     modal = inconnu.views.ConvictionsModal(character)
     await ctx.send_modal(modal)
 
 
+@haven(__HELP_URL)
 async def convictions_show(ctx, character, player, ephemeral):
     """Show a character's Convictions."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        owner=player,
-        tip="`/character convictions show` `character:CHARACTER`",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
     char_convictions = "\n".join(character.convictions) if character.convictions else "*None*"
     embed = inconnu.utils.VCharEmbed(
         ctx,

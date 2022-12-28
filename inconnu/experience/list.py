@@ -7,22 +7,15 @@ from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
 import inconnu
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
 
-async def list_events(ctx, character, player, ephemeral):
+@haven(__HELP_URL)
+async def list_events(ctx, character, ephemeral, *, player):
     """List a character's XP events."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        tip="`/experience list character:CHARACTER player:PLAYER`",
-        owner=player,
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
-    embeds = await __get_embeds(ctx, character, haven.owner)
+    embeds = await __get_embeds(ctx, character, player)
     paginator = Paginator(embeds, show_disabled=False)
 
     if isinstance(ctx, discord.ApplicationContext):

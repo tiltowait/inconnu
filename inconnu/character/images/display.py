@@ -6,32 +6,11 @@ import discord
 
 import inconnu
 import s3
+from inconnu.utils.haven import haven
 from inconnu.views import ReportingView
 from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
-
-
-async def display_images(
-    ctx: discord.ApplicationContext,
-    character: Optional[str],
-    player: Optional[discord.Member],
-):
-    """Display a character's images inside a paginator."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        owner=player,
-        tip="`/character images` `character:CHARACTER` `player:PLAYER`",
-        char_filter=_has_image,
-        allow_lookups=True,
-        errmsg="None of your characters have any images! Upload via `/character image upload`.",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
-    pager = ImagePager(ctx, character, haven.owner)
-    await pager.respond()
 
 
 def _has_image(character):
@@ -43,6 +22,22 @@ def _has_image(character):
     raise inconnu.errors.CharacterError(
         f"{character.name} doesn't have any images! Upload via `/character image upload`."
     )
+
+
+@haven(
+    __HELP_URL,
+    _has_image,
+    "None of your characters have any images! Upload via `/character image upload`.",
+    True,
+)
+async def display_images(
+    ctx: discord.ApplicationContext,
+    character: Optional[str],
+    player: Optional[discord.Member],
+):
+    """Display a character's images inside a paginator."""
+    pager = ImagePager(ctx, character, player)
+    await pager.respond()
 
 
 class ImagePager(ReportingView):

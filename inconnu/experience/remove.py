@@ -3,28 +3,21 @@
 import discord
 
 import inconnu
+from inconnu.utils.haven import haven
 from inconnu.views import DisablingView
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
 
-async def remove_entry(ctx, player, character, index):
+@haven(__HELP_URL)
+async def remove_entry(ctx, character, index, *, player):
     """Award or deduct XP from a character."""
-    haven = inconnu.utils.Haven(
-        ctx,
-        character=character,
-        owner=player,
-        tip="`/experience remove player:PLAYER character:CHARACTER index:INDEX`",
-        help=__HELP_URL,
-    )
-    character = await haven.fetch()
-
     try:
         # Log entries are presented to the user in reverse, so we need the
         # negative index
         entry_to_delete = character.experience.log.pop(-index)
 
-        embed = _get_embed(haven.owner, character, entry_to_delete)
+        embed = _get_embed(player, character, entry_to_delete)
         view = _ExperienceView(character, entry_to_delete)
 
         view.message = await inconnu.respond(ctx)(embed=embed, view=view)

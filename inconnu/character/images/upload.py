@@ -1,12 +1,9 @@
 """Character image uploading."""
 
-import os
-
-import aiohttp
-import async_timeout
 import discord
 
 import inconnu
+from inconnu import api
 from inconnu.utils.haven import haven
 from logger import Logger
 
@@ -32,7 +29,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
         await ctx.defer(ephemeral=True)
 
     try:
-        aws_image_url = await process_file(character.id, image.url)
+        aws_image_url = await api.upload_faceclaim(character, image.url)
         Logger.info("IMAGES: %s: Uploaded new image to %s", character.name, aws_image_url)
 
         character.profile.images.append(aws_image_url)
@@ -62,7 +59,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
             }
         )
 
-    except (aiohttp.ClientResponseError, aiohttp.ClientConnectorError):
+    except inconnu.errors.ApiError:
         await inconnu.utils.error(ctx, "Unable to process image. Please try again later.")
 
 
@@ -75,17 +72,3 @@ def valid_url(url: str) -> bool:
         if url.endswith(extension):
             return True
     return False
-
-
-async def process_file(charid: str, image_url: str) -> str:
-    """Send the file URL to the API for processing."""
-    url = "https://api.inconnu.app/faceclaim"
-    token = os.environ["INCONNU_API_TOKEN"]
-    header = {"Authorization": f"token {token}"}
-    payload = {"charid": charid, "image_url": image_url}
-
-    async with async_timeout.timeout(60):
-        async with aiohttp.ClientSession(headers=header, raise_for_status=True) as session:
-            async with session.post(url, json=payload) as response:
-                response_json = await response.json()
-                return response_json["url"]  # The image's new bucket URL

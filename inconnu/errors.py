@@ -20,6 +20,10 @@ class FetchError(Exception):
     """Generic character fetch error."""
 
 
+class ApiError(InconnuError):
+    """An exception raised when there's an API error."""
+
+
 class HandledError(InconnuError):
     """An error that needs no further handling."""
 

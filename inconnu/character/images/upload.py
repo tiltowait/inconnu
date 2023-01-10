@@ -2,8 +2,8 @@
 
 import discord
 
+import api
 import inconnu
-from inconnu import api
 from inconnu.utils.haven import haven
 from logger import Logger
 
@@ -59,7 +59,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
             }
         )
 
-    except inconnu.errors.ApiError:
+    except api.ApiError:
         await inconnu.utils.error(ctx, "Unable to process image. Please try again later.")
 
 

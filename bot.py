@@ -8,12 +8,12 @@ from datetime import time, timezone
 import discord
 from discord.ext import tasks
 
+import api
 import config
 import config.logging
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from errorreporter import reporter
-from inconnu import api
 from logger import Logger
 
 

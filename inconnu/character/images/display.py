@@ -5,7 +5,7 @@ from typing import Optional
 import discord
 
 import inconnu
-from inconnu import api
+import api
 from inconnu.utils.haven import haven
 from inconnu.views import ReportingView
 from logger import Logger

@@ -10,7 +10,6 @@ from json import dumps
 import aiohttp
 import async_timeout
 
-import inconnu
 from logger import Logger
 
 # An argument can be made that these should simply live with their appropriate
@@ -18,6 +17,10 @@ from logger import Logger
 
 AUTH_HEADER = {"Authorization": os.environ["INCONNU_API_TOKEN"]}
 BASE_API = "https://api.inconnu.app/"
+
+
+class ApiError(Exception):
+    """An exception raised when there's an error with the API."""
 
 
 def measure(func):
@@ -93,7 +96,7 @@ async def upload_logs():
         # Logs all uploaded successfully
         return True
 
-    except inconnu.errors.ApiError as err:
+    except ApiError as err:
         Logger.error("API: %s", str(err))
         return False
 
@@ -110,7 +113,7 @@ async def _post(*, path: str, data: dict) -> str:
                 json = await response.json()
 
                 if not response.ok:
-                    raise inconnu.errors.ApiError(str(json))
+                    raise ApiError(str(json))
                 return json
 
 
@@ -126,5 +129,5 @@ async def _delete(*, path: str) -> str:
                 json = await response.json()
 
                 if not response.ok:
-                    raise inconnu.errors.ApiError(str(json))
+                    raise ApiError(str(json))
                 return json

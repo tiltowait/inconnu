@@ -6,7 +6,7 @@ import discord
 from discord.ui import InputText, Modal
 
 import inconnu
-from inconnu import api
+import api
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 

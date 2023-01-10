@@ -8,6 +8,7 @@ from datetime import time, timezone
 import discord
 from discord.ext import tasks
 
+import config
 import config.logging
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
@@ -30,6 +31,15 @@ class InconnuBot(discord.Bot):
         self.motd_given = set()
         self.webhook_cache = None
         Logger.info("BOT: Instantiated")
+
+        if config.SHOW_TEST_ROUTES:
+            Logger.info("CONFIG: Showing test routes")
+
+        Logger.info("CONFIG: Profile site set to %s", config.PROFILE_SITE)
+        Logger.info("CONFIG: Admin guild: %s", config.ADMIN_GUILD)
+
+        if config.DEBUG_GUILDS:
+            Logger.info("CONFIG: Debugging on %s", DEBUG_GUILDS)
 
         # Add the cogs
         for filename in os.listdir("./interface"):

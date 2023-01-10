@@ -13,7 +13,6 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-boto3 = "^1.24.73"
 fastapi = "^0.84.0"
 flatdict = "^4.0.1"
 Markdown = "^3.4.1"
@@ -26,6 +25,7 @@ python-dotenv = "^0.21.0"
 umongo = "^3.1.0"
 uvicorn = "^0.18.3"
 validators = "^0.20.0"
+google-cloud-logging = "^3.4.0"
 
 [tool.poetry.dev-dependencies]
 debugpy = "^1.6.3"

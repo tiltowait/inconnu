@@ -53,7 +53,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
             "user": ctx.user.id,
             "charid": character.pk,
             "url": aws_image_url,
-            "deleted": False,
+            "deleted": None,
             "timestamp": discord.utils.utcnow(),
         }
     )

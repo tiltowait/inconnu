@@ -10,9 +10,9 @@ from discord.ext import tasks
 
 import config.logging
 import inconnu
-import s3
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from errorreporter import reporter
+from inconnu import api
 from logger import Logger
 
 
@@ -390,7 +390,7 @@ async def upload_logs():
     if not config.logging.upload_to_aws:
         Logger.warning("TASK: Log uploading disabled. Unscheduling task")
         upload_logs.stop()
-    elif not await s3.upload_logs():
+    elif not await api.upload_logs():
         Logger.error("TASK: Unable to upload logs. Unscheduling task")
         upload_logs.stop()
     else:

@@ -10,6 +10,7 @@ from datetime import datetime
 from enum import Enum
 from types import SimpleNamespace
 
+from discord import Embed
 from umongo import Document, fields
 
 import inconnu
@@ -188,11 +189,11 @@ class VChar(Document):
     @property
     def profile_image_url(self) -> str:
         """Get the URL of the first profile image."""
-        return self.profile.images[0] if self.profile.images else ""
+        return self.profile.images[0] if self.profile.images else Embed.Empty
 
     def random_image_url(self) -> str:
         """Get a random image URL."""
-        return random.choice(self.profile.images) if self.profile.images else ""
+        return random.choice(self.profile.images) if self.profile.images else Embed.Empty
 
     @property
     def aggravated_hp(self) -> int:

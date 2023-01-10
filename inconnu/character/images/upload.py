@@ -28,39 +28,35 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
         # defer if we've responded, so ...
         await ctx.defer(ephemeral=True)
 
-    try:
-        aws_image_url = await api.upload_faceclaim(character, image.url)
-        Logger.info("IMAGES: %s: Uploaded new image to %s", character.name, aws_image_url)
+    aws_image_url = await api.upload_faceclaim(character, image.url)
+    Logger.info("IMAGES: %s: Uploaded new image to %s", character.name, aws_image_url)
 
-        character.profile.images.append(aws_image_url)
+    character.profile.images.append(aws_image_url)
 
-        embed = inconnu.utils.VCharEmbed(
-            ctx,
-            character,
-            title="Image uploaded!",
-            show_thumbnail=False,
-        )
-        embed.set_image(url=aws_image_url)
-        embed.set_footer(text="View your images with /character images.")
+    embed = inconnu.utils.VCharEmbed(
+        ctx,
+        character,
+        title="Image uploaded!",
+        show_thumbnail=False,
+    )
+    embed.set_image(url=aws_image_url)
+    embed.set_footer(text="View your images with /character images.")
 
-        await ctx.respond(embed=embed, ephemeral=True)
-        await character.commit()
+    await ctx.respond(embed=embed, ephemeral=True)
+    await character.commit()
 
-        # We maintain a log of all image uploads to protect ourself against
-        # potential legal claims if someone uploads something illegal
-        await inconnu.db.upload_log.insert_one(
-            {
-                "guild": ctx.guild.id,
-                "user": ctx.user.id,
-                "charid": character.pk,
-                "url": aws_image_url,
-                "deleted": False,
-                "timestamp": discord.utils.utcnow(),
-            }
-        )
-
-    except api.ApiError:
-        await inconnu.utils.error(ctx, "Unable to process image. Please try again later.")
+    # We maintain a log of all image uploads to protect ourself against
+    # potential legal claims if someone uploads something illegal
+    await inconnu.db.upload_log.insert_one(
+        {
+            "guild": ctx.guild.id,
+            "user": ctx.user.id,
+            "charid": character.pk,
+            "url": aws_image_url,
+            "deleted": False,
+            "timestamp": discord.utils.utcnow(),
+        }
+    )
 
 
 def valid_url(url: str) -> bool:

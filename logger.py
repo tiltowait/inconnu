@@ -59,7 +59,7 @@ import sys
 from datetime import datetime
 from functools import partial
 
-import config.logging as config
+import config
 
 __all__ = ("Logger", "LOG_LEVELS", "COLORS", "LoggerHistory", "file_log_handler")
 
@@ -119,7 +119,7 @@ class FileHandler(logging.Handler):
         if not self.log_dir:
             return
 
-        maxfiles = config.log_maxfiles
+        maxfiles = config.logging.log_maxfiles
 
         # Get path to log directory
         log_dir = pathlib.Path(self.log_dir)
@@ -148,8 +148,8 @@ class FileHandler(logging.Handler):
     def _configure(self, *largs, **kwargs):
         from time import strftime
 
-        log_dir = config.log_dir
-        log_name = config.log_name
+        log_dir = config.logging.log_dir
+        log_name = config.logging.log_name
 
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -308,21 +308,20 @@ def logger_config_update(value):
 Logger = logging.getLogger("inconnu")
 Logger.logfile_activated = True
 Logger.trace = partial(Logger.log, logging.TRACE)
-logger_config_update(config.log_level)
+logger_config_update(config.logging.log_level)
 
 # Set the Inconnu logger as the default
 logging.root = Logger
 
 Logger.addHandler(LoggerHistory())
-if config.cloud_logging:
+if config.logging.cloud_logging:
     import google.cloud.logging
 
-    logging_client = google.cloud.logging.Client()
+    logging_client = google.cloud.logging.Client.from_service_account_info(config.GCP_SVC_ACCT)
     logging_client.setup_logging()
-    Logger.info("LOGGER: Cloud logging enabled")
 
 file_log_handler = None
-if config.log_to_file:
+if config.logging.log_to_file:
     file_log_handler = FileHandler()
     Logger.addHandler(file_log_handler)
 
@@ -361,7 +360,9 @@ if "INCONNU_NO_CONSOLELOG" not in os.environ:
 # Install stderr handlers
 sys.stderr = LogFile("stderr", Logger.warning)
 
-if not config.log_to_file:
+if not config.logging.log_to_file:
     Logger.warning("LOGGER: Log file disabled")
-if not config.cloud_logging:
+if not config.logging.cloud_logging:
     Logger.warning("LOGGER: Cloud logging disabled")
+else:
+    Logger.info("LOGGER: Cloud logging enabled")

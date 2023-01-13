@@ -26,7 +26,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
     if not ctx.interaction.response.is_done():
         # If we responded already, there's no chance of timeout; also we can't
         # defer if we've responded, so ...
-        await ctx.defer(ephemeral=True)
+        await ctx.interaction.response.defer(ephemeral=True, invisible=False)
 
     processed_url = await api.upload_faceclaim(character, image.url)
     Logger.info("IMAGES: %s: Uploaded new image to %s", character.name, processed_url)

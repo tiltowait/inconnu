@@ -3,6 +3,7 @@
 import discord
 
 import inconnu
+from inconnu.utils.haven import haven
 from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/"
@@ -158,15 +159,11 @@ class PostModal(discord.ui.Modal):
         Logger.info("POST: %s registered post", self.character.name)
 
 
+@haven(__HELP_URL, errmsg="You have no characters!")
 async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs):
     """Create a modal that sends an RP post."""
-    try:
-        character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
-        modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
-        await ctx.send_modal(modal)
-
-    except inconnu.errors.CharacterNotFoundError as err:
-        await inconnu.utils.error(ctx, err, help_url=__HELP_URL)
+    modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
+    await ctx.send_modal(modal)
 
 
 async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):

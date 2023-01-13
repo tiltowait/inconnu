@@ -4,7 +4,7 @@
 import discord
 
 import inconnu
-from config import aws_asset
+from config import web_asset
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#frenzy-checks"
@@ -88,7 +88,7 @@ def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, foote
     embed.set_footer(text=footer)
 
     if title == "Failure!":
-        embed.set_thumbnail(url=aws_asset("frenzy.webp"))
+        embed.set_thumbnail(url=web_asset("frenzy.webp"))
 
     return embed
 

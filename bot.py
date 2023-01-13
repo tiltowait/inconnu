@@ -397,7 +397,7 @@ async def check_premium_expiries():
 @tasks.loop(hours=1)
 async def upload_logs():
     """Upload logs to S3."""
-    if not config.logging.upload_to_aws:
+    if not config.logging.cloud_logging:
         Logger.warning("TASK: Log uploading disabled. Unscheduling task")
         upload_logs.stop()
     elif not await api.upload_logs():

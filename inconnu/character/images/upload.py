@@ -28,10 +28,10 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
         # defer if we've responded, so ...
         await ctx.defer(ephemeral=True)
 
-    aws_image_url = await api.upload_faceclaim(character, image.url)
-    Logger.info("IMAGES: %s: Uploaded new image to %s", character.name, aws_image_url)
+    processed_url = await api.upload_faceclaim(character, image.url)
+    Logger.info("IMAGES: %s: Uploaded new image to %s", character.name, processed_url)
 
-    character.profile.images.append(aws_image_url)
+    character.profile.images.append(processed_url)
 
     embed = inconnu.utils.VCharEmbed(
         ctx,
@@ -39,7 +39,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
         title="Image uploaded!",
         show_thumbnail=False,
     )
-    embed.set_image(url=aws_image_url)
+    embed.set_image(url=processed_url)
     embed.set_footer(text="View your images with /character images.")
 
     await ctx.respond(embed=embed, ephemeral=True)
@@ -52,7 +52,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
             "guild": ctx.guild.id,
             "user": ctx.user.id,
             "charid": character.pk,
-            "url": aws_image_url,
+            "url": processed_url,
             "deleted": None,
             "timestamp": discord.utils.utcnow(),
         }

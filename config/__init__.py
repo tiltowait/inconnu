@@ -21,7 +21,7 @@ if (_debug_guilds := os.getenv("DEBUG")) is not None:
     DEBUG_GUILDS = [int(g) for g in _debug_guilds.split(",")]
 
 
-def aws_asset(path: str):
+def web_asset(path: str):
     """Returns the AWS URL for the given path."""
     base = "https://assets.inconnu.app/"
     if path[0] == "/":

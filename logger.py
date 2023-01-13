@@ -314,7 +314,7 @@ logger_config_update(config.log_level)
 logging.root = Logger
 
 Logger.addHandler(LoggerHistory())
-if config.upload_to_aws:
+if config.cloud_logging:
     import google.cloud.logging
 
     logging_client = google.cloud.logging.Client()
@@ -363,5 +363,5 @@ sys.stderr = LogFile("stderr", Logger.warning)
 
 if not config.log_to_file:
     Logger.warning("LOGGER: Log file disabled")
-if not config.upload_to_aws:
+if not config.cloud_logging:
     Logger.warning("LOGGER: Cloud logging disabled")

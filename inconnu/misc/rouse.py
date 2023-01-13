@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import discord
 
 import inconnu
-from config import aws_asset
+from config import web_asset
 from inconnu.models import VChar
 from inconnu.utils.haven import haven
 
@@ -86,10 +86,10 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     if "ailure" in title and "0 fail" not in title:
         color = inconnu.constants.ROUSE_FAIL_COLOR
-        thumbnail = aws_asset("hunger-filled.webp")
+        thumbnail = web_asset("hunger-filled.webp")
     else:
         color = None
-        thumbnail = aws_asset("hunger-unfilled.webp")
+        thumbnail = web_asset("hunger-unfilled.webp")
 
     if outcome.frenzy:
         custom = [("Hunger 5 Rouse Failure", "If awakening: Torpor. Otherwise: Roll for frenzy!")]

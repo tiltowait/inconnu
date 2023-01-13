@@ -8,9 +8,10 @@ from datetime import time, timezone
 import discord
 from discord.ext import tasks
 
+import api
+import config
 import config.logging
 import inconnu
-import s3
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from errorreporter import reporter
 from logger import Logger
@@ -30,6 +31,15 @@ class InconnuBot(discord.Bot):
         self.motd_given = set()
         self.webhook_cache = None
         Logger.info("BOT: Instantiated")
+
+        if config.SHOW_TEST_ROUTES:
+            Logger.info("CONFIG: Showing test routes")
+
+        Logger.info("CONFIG: Profile site set to %s", config.PROFILE_SITE)
+        Logger.info("CONFIG: Admin guild: %s", config.ADMIN_GUILD)
+
+        if config.DEBUG_GUILDS:
+            Logger.info("CONFIG: Debugging on %s", DEBUG_GUILDS)
 
         # Add the cogs
         for filename in os.listdir("./interface"):
@@ -387,10 +397,10 @@ async def check_premium_expiries():
 @tasks.loop(hours=1)
 async def upload_logs():
     """Upload logs to S3."""
-    if not config.logging.upload_to_aws:
+    if not config.logging.cloud_logging:
         Logger.warning("TASK: Log uploading disabled. Unscheduling task")
         upload_logs.stop()
-    elif not await s3.upload_logs():
+    elif not await api.upload_logs():
         Logger.error("TASK: Unable to upload logs. Unscheduling task")
         upload_logs.stop()
     else:

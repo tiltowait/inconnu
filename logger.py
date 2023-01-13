@@ -56,13 +56,10 @@ import logging.handlers
 import os
 import pathlib
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from functools import partial
 
-import boto3
-import botocore.exceptions
-
-import config.logging as config
+import config
 
 __all__ = ("Logger", "LOG_LEVELS", "COLORS", "LoggerHistory", "file_log_handler")
 
@@ -122,7 +119,7 @@ class FileHandler(logging.Handler):
         if not self.log_dir:
             return
 
-        maxfiles = config.log_maxfiles
+        maxfiles = config.logging.log_maxfiles
 
         # Get path to log directory
         log_dir = pathlib.Path(self.log_dir)
@@ -151,8 +148,8 @@ class FileHandler(logging.Handler):
     def _configure(self, *largs, **kwargs):
         from time import strftime
 
-        log_dir = config.log_dir
-        log_name = config.log_name
+        log_dir = config.logging.log_dir
+        log_name = config.logging.log_name
 
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
@@ -277,93 +274,6 @@ class ConsoleHandler(logging.StreamHandler):
         return True
 
 
-class CloudWatchHandler(logging.handlers.BufferingHandler):
-    """A handler that flushes to AWS CloudWatch Logs."""
-
-    LOG_GROUP_NAME = "Inconnu"
-
-    def __init__(self, capacity=50):
-        logging.handlers.BufferingHandler.__init__(self, capacity)
-        self.last_event = None
-        self.last_flush = None
-
-        # AWS stuff
-        self.cloudwatch = boto3.client("logs")
-        self.log_stream_name = None
-        self.next_sequence_token = None
-
-        self.create_log_stream()
-
-    def create_log_stream(self):
-        """Create a log stream based on the current time."""
-        fmt = "%Y-%m-%d_%H-%M-%S"
-        log_start = datetime.now(timezone.utc)
-        self.log_stream_name = log_start.strftime(fmt)
-        self.cloudwatch.create_log_stream(
-            logGroupName=self.LOG_GROUP_NAME, logStreamName=self.log_stream_name
-        )
-
-    def process_time(self):
-        """Set the last event time and create a new log stream if new date."""
-        now = datetime.now(timezone.utc)
-        if self.last_event is not None:
-            if now.day != self.last_event.day:
-                self.create_log_stream()
-        self.last_event = now
-
-    def emit(self, record):
-        """Add the record to the buffer, with a timestamp."""
-        msg = self.format(record)
-
-        if ":" in msg:
-            msg = msg.split(":", 1)
-            msg = f"[{msg[0]}]{msg[1]}"
-
-        msg = "[" + record.levelname + "." * (7 - len(record.levelname)) + "]" + msg
-        timestamp = datetime.now(timezone.utc).timestamp() * 1000
-
-        self.buffer.append({"timestamp": int(timestamp), "message": msg})
-
-        self.process_time()
-        if self.shouldFlush(record):
-            self.flush()
-
-    def shouldFlush(self, record) -> bool:
-        """We should flush if the buffer is full and it's been > 5 seconds."""
-        if self.last_flush is not None:
-            # AWS limits us to one update every 5 seconds
-            delta = self.last_event - self.last_flush
-            if delta.seconds < 5:
-                return False
-
-        return super().shouldFlush(record)
-
-    def flush(self):
-        """Upload the events to CloudWatch Logs and flush."""
-        try:
-            if self.next_sequence_token:
-                response = self.cloudwatch.put_log_events(
-                    logGroupName=self.LOG_GROUP_NAME,
-                    logStreamName=self.log_stream_name,
-                    logEvents=self.buffer,
-                    sequenceToken=self.next_sequence_token,
-                )
-            else:
-                response = self.cloudwatch.put_log_events(
-                    logGroupName=self.LOG_GROUP_NAME,
-                    logStreamName=self.log_stream_name,
-                    logEvents=self.buffer,
-                )
-
-            self.next_sequence_token = response["nextSequenceToken"]
-            del self.buffer[:]
-            self.last_flush = datetime.now(timezone.utc)
-        except botocore.exceptions.ClientError:
-            # It would be nice to log an error here, but we don't have access
-            # to the Logger object at this point.
-            pass
-
-
 class LogFile(object):
     def __init__(self, channel, func):
         self.buffer = ""
@@ -398,17 +308,20 @@ def logger_config_update(value):
 Logger = logging.getLogger("inconnu")
 Logger.logfile_activated = True
 Logger.trace = partial(Logger.log, logging.TRACE)
-logger_config_update(config.log_level)
+logger_config_update(config.logging.log_level)
 
 # Set the Inconnu logger as the default
 logging.root = Logger
 
 Logger.addHandler(LoggerHistory())
-if config.upload_to_aws:
-    Logger.addHandler(CloudWatchHandler())
+if config.logging.cloud_logging:
+    import google.cloud.logging
+
+    logging_client = google.cloud.logging.Client.from_service_account_info(config.GCP_SVC_ACCT)
+    logging_client.setup_logging()
 
 file_log_handler = None
-if config.log_to_file:
+if config.logging.log_to_file:
     file_log_handler = FileHandler()
     Logger.addHandler(file_log_handler)
 
@@ -444,10 +357,12 @@ if "INCONNU_NO_CONSOLELOG" not in os.environ:
         console.setFormatter(formatter)
         Logger.addHandler(console)
 
-# install stderr handlers
+# Install stderr handlers
 sys.stderr = LogFile("stderr", Logger.warning)
 
-if not config.log_to_file:
+if not config.logging.log_to_file:
     Logger.warning("LOGGER: Log file disabled")
-if not config.upload_to_aws:
-    Logger.warning("LOGGER: CloudWatch Logs disabled")
+if not config.logging.cloud_logging:
+    Logger.warning("LOGGER: Cloud logging disabled")
+else:
+    Logger.info("LOGGER: Cloud logging enabled")

@@ -4,8 +4,8 @@ from typing import Optional
 
 import discord
 
+import api
 import inconnu
-import s3
 from inconnu.utils.haven import haven
 from inconnu.views import ReportingView
 from logger import Logger
@@ -238,9 +238,10 @@ class ImagePager(ReportingView):
             page = min(self.current_page, self.num_pages - 1)
             await self.goto_page(page, interaction)
 
-        if s3.is_managed_url(image_url):
-            await s3.delete_file(image_url)
-            await inconnu.db.upload_log.update_one({"url": image_url}, {"$set": {"deleted": True}})
+        if await api.delete_single_faceclaim(image_url):
+            await inconnu.db.upload_log.update_one(
+                {"url": image_url}, {"$set": {"deleted": discord.utils.utcnow()}}
+            )
         else:
             Logger.info("IMAGES: %s is not a managed resource", image_url)
 

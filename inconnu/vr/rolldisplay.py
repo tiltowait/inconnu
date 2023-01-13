@@ -9,7 +9,7 @@ import discord
 from discord.ui import Button
 
 import inconnu
-from config import aws_asset
+from config import web_asset
 from inconnu.vr import dicemoji
 
 
@@ -262,17 +262,17 @@ class RollDisplay:
     def thumbnail_url(self) -> str:
         """The URL for the embed thumbnail."""
         if self.outcome.is_critical:
-            return aws_asset("dice/crit.webp")
+            return web_asset("dice/crit.webp")
         if self.outcome.is_messy:
-            return aws_asset("dice/messy.webp")
+            return web_asset("dice/messy.webp")
         if self.outcome.is_successful:
-            return aws_asset("dice/success.webp")
+            return web_asset("dice/success.webp")
         if self.outcome.is_failure:
-            return aws_asset("dice/fail.webp")
+            return web_asset("dice/fail.webp")
         if self.outcome.is_total_failure:
-            return aws_asset("dice/total-fail.webp")
+            return web_asset("dice/total-fail.webp")
 
-        return aws_asset("dice/bestial.webp")
+        return web_asset("dice/bestial.webp")
 
     async def get_embed(self) -> discord.Embed:
         """The graphical representation of the roll."""

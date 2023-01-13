@@ -6,7 +6,7 @@ from datetime import timedelta
 import discord
 
 import inconnu
-import s3
+import api
 from logger import Logger
 
 
@@ -16,7 +16,7 @@ async def remove_expired_images():
 
     expiration = discord.utils.utcnow() - timedelta(days=7)
     expired_user_ids = []
-    s3_tasks = []
+    api_tasks = []
     async for supporter in inconnu.db.supporters.find({"discontinued": {"$lt": expiration}}):
         user_id = supporter["_id"]
         expired_user_ids.append(user_id)
@@ -26,20 +26,20 @@ async def remove_expired_images():
         # have to fetch them manually
         async for character in inconnu.models.VChar.find({"user": user_id}):
             Logger.info("TASK: Removing images from %s", character.name)
-            s3_tasks.append(s3.delete_character_images(character))
+            api_tasks.append(api.delete_character_faceclaims(character))
 
     Logger.info(
         "TASK: Removing images from %s characters due to expired supporter status",
-        len(s3_tasks),
+        len(api_tasks),
     )
-    if s3_tasks:
+    if api_tasks:
         # We have to do the S3 tasks first, because the character tasks will
         # erase all record of the image URLs
 
         # Because we directly modified the database, we have to purge the cache
         inconnu.char_mgr.purge()
 
-        await asyncio.gather(*s3_tasks)
+        await asyncio.gather(*api_tasks)
         await inconnu.db.supporters.delete_many({"_id": {"$in": expired_user_ids}})
 
         # There is a very rare but potential race condition: a former supporter

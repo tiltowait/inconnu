@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.ui import Button, View
 
 import inconnu
-from config import aws_asset
+from config import web_asset
 from inconnu.constants import PATREON, SUPPORT_URL
 
 
@@ -120,7 +120,7 @@ class Help(commands.Cog):
             description="**Inconnu** is a dice roller for Vampire: The Masquerade 5th Edition.",
         )
         embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
-        embed.set_thumbnail(url=aws_asset("darkpack_logo2.webp"))
+        embed.set_thumbnail(url=web_asset("darkpack_logo2.webp"))
 
         help_commands = [
             "`/help overview` - Basic help",

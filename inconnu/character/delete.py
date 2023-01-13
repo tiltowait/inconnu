@@ -6,7 +6,7 @@ import discord
 from discord.ui import InputText, Modal
 
 import inconnu
-import s3
+import api
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 
@@ -48,9 +48,9 @@ class _DeletionModal(Modal):
                     title="Character Deleted",
                     message=f"**{interaction.user.mention}** deleted **{self.character.name}**.",
                 ),
-                s3.delete_character_images(self.character),
+                api.delete_character_faceclaims(self.character),
             )
-            await inconnu.char_mgr.remove(self.character) # Has to be done after image deletion
+            await inconnu.char_mgr.remove(self.character)  # Has to be done after image deletion
         else:
             await inconnu.common.present_error(
                 interaction, "You must type the character's name exactly."

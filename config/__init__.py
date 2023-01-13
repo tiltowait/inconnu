@@ -1,11 +1,12 @@
 """Basic bot config."""
 
+import json
 import os
 from typing import Optional
 
 from dotenv import load_dotenv
 
-from logger import Logger
+from config import logging
 
 load_dotenv()
 
@@ -15,23 +16,19 @@ SUPPORTER_GUILD = int(os.environ["SUPPORTER_GUILD"])
 SUPPORTER_ROLE = int(os.environ["SUPPORTER_ROLE"])
 PROFILE_SITE = os.environ.get("PROFILE_SITE", "http://localhost:8000/")
 SHOW_TEST_ROUTES = "SHOW_TEST_ROUTES" in os.environ
-
-if SHOW_TEST_ROUTES:
-    Logger.info("CONFIG: Showing test routes")
+GCP_SVC_ACCT: Optional[dict] = None
 
 if PROFILE_SITE[-1] != "/":
     PROFILE_SITE += "/"
 
-Logger.info("CONFIG: Profile site set to %s", PROFILE_SITE)
-
-Logger.info("CONFIG: Admin guild: %s", ADMIN_GUILD)
-
 if (_debug_guilds := os.getenv("DEBUG")) is not None:
     DEBUG_GUILDS = [int(g) for g in _debug_guilds.split(",")]
-    Logger.info("CONFIG: Debugging on %s", DEBUG_GUILDS)
+
+if (_gcp := os.getenv("GCP_SVC_ACCT")) is not None:
+    GCP_SVC_ACCT = json.loads(_gcp)
 
 
-def aws_asset(path: str):
+def web_asset(path: str):
     """Returns the AWS URL for the given path."""
     base = "https://assets.inconnu.app/"
     if path[0] == "/":

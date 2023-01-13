@@ -18,6 +18,37 @@ def character(description="The character to use", required=False) -> Option:
     return Option(str, description, autocomplete=_available_characters, required=required)
 
 
+def char_option(description="The character to use", required=False, param="character"):
+    """A command decorator letting users choose a character."""
+
+    def decorator(func):
+        func.__annotations__[param] = Option(
+            str,
+            description,
+            name=param,
+            autocomplete=_available_characters,
+            required=required,
+        )
+        return func
+
+    return decorator
+
+
+def player_option(param="player"):
+    """A command decorator letting users choose a user."""
+
+    def decorator(func):
+        func.__annotations__[param] = Option(
+            discord.Member,
+            "The character's owner (admin only)",
+            name=param,
+            required=False,
+        )
+        return func
+
+    return decorator
+
+
 player = Option(discord.Member, "The character's owner (admin only)", required=False)
 
 

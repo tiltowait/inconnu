@@ -45,8 +45,11 @@ class LocationChangeModal(discord.ui.Modal):
         else:
             elements = self.header.embeds[0].author.name.split(" • ")
 
-        if self.updating_title and len(elements) == 1:
-            return ""
+        if len(elements) == 1:
+            # Character name isn't given when the header is in the author
+            # field. If we're looking at the embed title, then, no location
+            # exists; otherwise, it's the first and only element.
+            return "" if self.updating_title else elements[0]
         if len(elements) == 2:
             if self.updating_title:
                 if "Blushed" in elements[-1]:
@@ -55,7 +58,7 @@ class LocationChangeModal(discord.ui.Modal):
 
             return elements[0]
 
-        # Using a title by default
+        # 3 elements; this could also be elements[1]
         return elements[-2]
 
     async def callback(self, interaction: discord.Interaction):

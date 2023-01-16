@@ -107,10 +107,10 @@ class ReferenceCommands(commands.Cog):
                 ephemeral=True,
             )
         else:
-            will_or_not = "`WILL`" if toggled else "`WILL NOT`"
+            will_or_not = "will" if toggled else "will not"
 
-            content = "" if toggled else "**This roll `WILL NOT` be included in statistics.**"
-            msg = f"[This roll]({message.jump_url}) {will_or_not} be included in statistics."
+            content = "" if toggled else "This roll **will not** be included in statistics."
+            msg = f"[This roll]({message.jump_url}) **{will_or_not}** be included in statistics."
             embed = discord.Embed(description=msg)
 
             await asyncio.gather(

@@ -35,6 +35,7 @@ class RPPost(Document):
     # Content
     header = fields.EmbeddedField(HeaderSubdoc)
     content = fields.StrField()
+    mentions = fields.ListField(fields.IntField, default=list)
     history = fields.ListField(fields.EmbeddedField(PostHistoryEntry), default=list)
 
     @property
@@ -53,6 +54,7 @@ class RPPost(Document):
         header: HeaderSubdoc,
         content: str,
         message: discord.Message,
+        mentions: list[int],
     ):
         """Create an RP post."""
         return cls(
@@ -63,6 +65,7 @@ class RPPost(Document):
             header=header,
             content=content,
             url=message.jump_url,
+            mentions=mentions,
         )
 
     def edit_post(self, new_post: str):

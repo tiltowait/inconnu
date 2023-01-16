@@ -1,5 +1,7 @@
 """Tupperbox-style character posting."""
 
+import re
+
 import discord
 
 import inconnu
@@ -149,9 +151,19 @@ class PostModal(discord.ui.Modal):
             await inconnu.header.register(interaction, header_message, self.character)
             Logger.info("POST: %s registered header", self.character.name)
 
+        # Extract the user mentions as pure ints
+        mention_ids = []
+        for mention in self.mentions.split():
+            if match := re.search(r"<@!?(\d+)>", mention):
+                try:
+                    mention_ids.append(int(match.group(1)))
+                except ValueError:
+                    # This shouldn't ever happen, but just in case
+                    continue
+
         # Register the RP post
         db_rp_post = inconnu.models.RPPost.create(
-            interaction, self.character, self.header, content, content_message
+            interaction, self.character, self.header, content, content_message, mention_ids
         )
         db_rp_post.id_chain = id_chain
         await db_rp_post.commit()

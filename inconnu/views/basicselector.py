@@ -11,6 +11,7 @@ class BasicSelector(DisablingView):
     def __init__(self, *buttons):
         super().__init__()
         self.selected_value = None
+        self.interaction = None
 
         for button in buttons:
             button.callback = self.button_callback
@@ -26,6 +27,7 @@ class BasicSelector(DisablingView):
                 break
 
         # await self.disable_items(interaction)
+        self.interaction = interaction
         self.stop()
 
         if (selected_values := interaction.data.get("values")) is not None:

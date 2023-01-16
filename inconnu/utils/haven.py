@@ -58,6 +58,12 @@ class Haven:  # pylint: disable=too-few-public-methods
         self.filter = char_filter
         self.possibilities = OrderedDict()
 
+        # When the view's button is clicked, the view doesn't make use of the
+        # interaction. Instead, we'll store it so that the function calling
+        # Haven can make use of it. This speeds up response times (one fewer
+        # API call).
+        self.new_interaction = None
+
     async def fetch(self):
         """Fetch the character(s)."""
         try:
@@ -171,6 +177,7 @@ class Haven:  # pylint: disable=too-few-public-methods
             raise inconnu.errors.HandledError("Too many characters.")
 
         await view.wait()
+        self.new_interaction = view.interaction
         await self.ctx.delete()
 
         if (key := view.selected_value) is not None:
@@ -314,6 +321,10 @@ def haven(url, char_filter=None, errmsg=None, allow_lookups=False):
             if player_kwargs:
                 Logger.debug("@HAVEN: Replacing 'player' in kwargs")
                 kwargs["player"] = haven_.owner
+
+            if haven_.new_interaction is not None:
+                Logger.debug("@HAVEN: Replacing the interaction with a new one")
+                ctx.interaction = haven_.new_interaction
 
             return await func(ctx, character, *args, **kwargs)
 

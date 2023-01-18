@@ -63,15 +63,6 @@ async def get_message(inter):
     return await inter.original_response()
 
 
-def respond(ctx):
-    """Get the proper response callable."""
-    if isinstance(ctx, discord.Interaction):
-        if ctx.response.is_done():
-            return ctx.followup.send
-        return ctx.response.send_message
-    return ctx.respond
-
-
 def gen_timestamp(date, style=None):
     """Generate a Discord timestamp object."""
     timestamp = int(date.timestamp())

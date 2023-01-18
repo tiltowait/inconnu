@@ -123,7 +123,7 @@ class RollDisplay:
         msg_contents["embed"] = await self.get_embed()
 
         if not self.rerolled:
-            inter = await inconnu.respond(ctx)(**msg_contents)
+            inter = await ctx.respond(**msg_contents)
         else:
             # We need this if statement, because if there *is* a character, we
             # don't waste time disabling the buttons, because we're just going

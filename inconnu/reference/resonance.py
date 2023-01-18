@@ -66,7 +66,7 @@ async def __display_embed(ctx, temperament, res, die, **kwargs):
     if die:
         embed.set_footer(text=f"Rolled {die} for the Resonance")
 
-    await inconnu.respond(ctx)(embed=embed)
+    await ctx.respond(embed=embed)
 
 
 def __get_temperament() -> str:

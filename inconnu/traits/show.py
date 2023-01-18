@@ -12,7 +12,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-trait
 async def show(ctx, character: str, *, player: discord.Member):
     """Present a character's traits to its owner."""
     embed = traits_embed(ctx, character, player)
-    await inconnu.respond(ctx)(embed=embed, ephemeral=True)
+    await ctx.respond(embed=embed, ephemeral=True)
 
 
 def traits_embed(

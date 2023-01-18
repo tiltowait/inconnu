@@ -24,4 +24,4 @@ async def convictions_show(ctx, character, player, ephemeral):
         title="Convictions",
         description=char_convictions,
     )
-    await inconnu.respond(ctx)(embed=embed, ephemeral=ephemeral)
+    await ctx.respond(embed=embed, ephemeral=ephemeral)

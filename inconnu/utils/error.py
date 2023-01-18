@@ -19,7 +19,7 @@ async def error(ctx, err, *fields, **kwargs):
     else:
         view = kwargs.get("view", None)
 
-    msg = await inconnu.respond(ctx)(
+    msg = await ctx.respond(
         embed=embed, view=view, ephemeral=kwargs.get("ephemeral", True)
     )
 

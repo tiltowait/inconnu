@@ -93,7 +93,7 @@ async def display(
 
     if not kwargs.get("edit_message", False):
         msg_contents["ephemeral"] = ephemeral
-        msg = await inconnu.respond(ctx)(**msg_contents)
+        msg = await ctx.respond(**msg_contents)
 
         if isinstance(view, inconnu.views.DisablingView):
             view.message = msg

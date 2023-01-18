@@ -78,7 +78,7 @@ async def present_error(
     if view is not None:
         msg_contents["view"] = view
 
-    msg = await inconnu.respond(ctx)(**msg_contents)
+    msg = await ctx.respond(**msg_contents)
 
     if isinstance(view, inconnu.views.DisablingView):
         # So it can automatically disable its buttons

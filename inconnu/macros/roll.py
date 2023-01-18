@@ -163,7 +163,7 @@ async def __slake(ctx, character, outcome):
         )
 
         view = _SlakeView(ctx.user, character, outcome)
-        view.message = await inconnu.respond(ctx)(embed=embed, view=view)
+        view.message = await ctx.respond(embed=embed, view=view)
 
         if outcome is not None:
             __HUNT_LISTENERS[outcome.id] = view.message

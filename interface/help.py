@@ -143,7 +143,7 @@ class Help(commands.Cog):
             text="Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. For more information please visit worldofdarkness.com."
         )
 
-        await inconnu.respond(ctx)(embed=embed, view=self.info_view)
+        await ctx.respond(embed=embed, view=self.info_view)
 
     # Callbacks
 
@@ -213,7 +213,7 @@ class Help(commands.Cog):
             )
         )
 
-        await inconnu.respond(ctx)(embed=embed, view=self.overview_view, ephemeral=ephemeral)
+        await ctx.respond(embed=embed, view=self.overview_view, ephemeral=ephemeral)
 
     async def show_traits_help(self, ctx, ephemeral=True):
         """Run the /traits help command."""
@@ -255,7 +255,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
+        await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
     async def show_macros_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""
@@ -287,7 +287,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
+        await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
     async def show_character_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""

@@ -27,7 +27,7 @@ async def report_database_error(bot, ctx):
     errmsg = """\
     My database is down. Some features are unavailable.
     This error has been reported. Please try again in a bit!"""
-    await inconnu.respond(ctx)(textwrap.dedent(errmsg), ephemeral=True)
+    await ctx.respond(textwrap.dedent(errmsg), ephemeral=True)
 
     # Send an error message to the support server
     if (db_error_channel := os.getenv("DB_ERROR_CHANNEL")) is not None:

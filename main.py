@@ -8,6 +8,7 @@ import json
 import os
 from typing import Dict, List
 
+import discord
 import markdown
 from bson.objectid import ObjectId
 from fastapi import FastAPI
@@ -19,6 +20,7 @@ from starlette import status
 import bot
 import inconnu
 from config import SHOW_TEST_ROUTES
+from logger import Logger
 
 app = FastAPI(openapi_url=None)
 app.mount("/web", StaticFiles(directory="web"), name="web")
@@ -148,6 +150,18 @@ def generate_image_column(snippets, name, images):
         """
 
     return image_prop, image
+
+
+# Patch discord.Interaction
+def respond(self, *args, **kwargs):
+    """Returns either the InteractionResponse or followup's send method."""
+    if self.response.is_done():
+        return self.followup.send(*args, **kwargs)
+    return self.response.send_message(*args, **kwargs)
+
+
+discord.Interaction.respond = respond
+Logger.info("MAIN: Patched discord.Interaction")
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ async def remove_entry(ctx, character, index, *, player):
         embed = _get_embed(player, character, entry_to_delete)
         view = _ExperienceView(character, entry_to_delete)
 
-        view.message = await inconnu.respond(ctx)(embed=embed, view=view)
+        view.message = await ctx.respond(embed=embed, view=view)
         await character.commit()
 
     except IndexError:

@@ -203,7 +203,7 @@ async def update_help(ctx, err=None, ephemeral=True):
     support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
     view = inconnu.views.ReportingView(documentation, support)
 
-    await inconnu.respond(ctx)(embed=embed, view=view, ephemeral=ephemeral)
+    await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 
 # We do flexible matching for the keys. Many of these are the same as RoD's

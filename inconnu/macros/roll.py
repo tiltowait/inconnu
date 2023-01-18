@@ -113,8 +113,8 @@ async def __rouse(ctx, character, macro) -> bool:
 
         await rouse(
             ctx,
+            character,
             macro.rouses,
-            character.name,
             purpose,
             macro.reroll_rouses,
             oblivion=macro.staining,

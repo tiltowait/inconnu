@@ -5,7 +5,7 @@ import os
 
 import discord
 from discord import option
-from discord.commands import Option, slash_command
+from discord.commands import OptionChoice, slash_command
 from discord.ext import commands
 from pymongo import UpdateOne
 
@@ -28,6 +28,24 @@ class RoleplayCog(commands.Cog):
     @inconnu.options.char_option("The character to post as")
     @option("mentions", description="Users, roles, and channels to mention", default="")
     @option(
+        "blush",
+        description="THIS POST ONLY: Is Blush of Life active?",
+        choices=[OptionChoice("Yes", 1), OptionChoice("No", 0), OptionChoice("N/A", -1)],
+        required=False,
+    )
+    @option(
+        "hunger",
+        description="THIS POST ONLY: The character's Hunger (vampires only)",
+        choices=[i for i in range(6)],
+        required=False,
+    )
+    @option(
+        "location", description="THIS POST ONLY: Where the scene is taking place", required=False
+    )
+    @option("merits", description="THIS POST ONLY: Obvious/important merits", required=False)
+    @option("flaws", description="THIS POST ONLY: Obvious/important flaws", required=False)
+    @option("temporary", descroption="THIS POST ONLY: Temporary effects", required=False)
+    @option(
         "display_header",
         description="Display a header above the post (default true)",
         default=True,
@@ -37,10 +55,27 @@ class RoleplayCog(commands.Cog):
         ctx: discord.ApplicationContext,
         character: str,
         mentions: str,
+        blush: int,
+        hunger: int,
+        location: str,
+        merits: str,
+        flaws: str,
+        temporary: str,
         display_header: bool,
     ):
         """Make an RP post as your character. Uses your current header."""
-        await inconnu.roleplay.post(ctx, character, mentions=mentions, show_header=display_header)
+        await inconnu.roleplay.post(
+            ctx,
+            character,
+            mentions=mentions,
+            blush=blush,
+            hunger=hunger,
+            location=location,
+            merits=merits,
+            flaws=flaws,
+            temp=temporary,
+            show_header=display_header,
+        )
 
     @slash_command(guild_ids=TEST_GUILDS)
     @option("user", description="The user who wrote the post")

@@ -131,7 +131,7 @@ class Help(commands.Cog):
 
         embed.add_field(name="Help Commands", value="\n".join(help_commands), inline=False)
         embed.add_field(
-            name="Framework", value="[Pycord 2.0](https://pycord.dev) using Python 3.10"
+            name="Framework", value="[Pycord 2.3](https://pycord.dev) using Python 3.10"
         )
         embed.add_field(
             name="Additional Packages",

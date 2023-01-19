@@ -159,10 +159,12 @@ class InconnuBot(discord.Bot):
         """Prepare a webhook, either from the cache or creating one. Raises WebhookError."""
         try:
             return await self.webhook_cache.prep_webhook(channel)
-        except (discord.Forbidden, AttributeError) as err:
+        except discord.Forbidden:
             raise inconnu.errors.WebhookError(
-                "Inconnu needs `Manage Webhook` permissions for this command."
-            ) from err
+                "Inconnu needs `Manage Webhook` permission for this command."
+            )
+        except AttributeError:
+            raise inconnu.errors.WebhookError("This feature isn't available in threads.")
 
     async def _set_presence(self):
         """Set the bot's presence message."""

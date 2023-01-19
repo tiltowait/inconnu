@@ -43,12 +43,18 @@ class HeaderSubdoc(EmbeddedDocument):
         return "Blushed" if self.blush else "Not Blushed"
 
     @property
+    def base_title(self) -> str:
+        """Header title: Location and blush status."""
+        title_fields = [self.location, self.blush_str]
+        base = " • ".join(filter(lambda f: f, title_fields))
+
+        return base[: HeaderSubdoc.MAX_TITLE_LEN]
+
+    @property
     def title(self) -> str:
         """Make a header title out of the given fields."""
-        title_fields = [self.char_name, self.location, self.blush_str]
-        title = " • ".join(filter(lambda f: f, title_fields))
-
-        return title[: HeaderSubdoc.MAX_TITLE_LEN]
+        full = f"{self.char_name} • {self.base_title}"
+        return full[: HeaderSubdoc.MAX_TITLE_LEN]
 
     @classmethod
     def create(cls, character: "VChar", **kwargs):

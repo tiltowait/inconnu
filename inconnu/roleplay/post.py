@@ -144,11 +144,7 @@ class PostModal(discord.ui.Modal):
 
         if self.show_header:
             # We take a regular header embed as a base, then modify it ... a lot
-            header_embed = inconnu.header.embed(self.header, self.character)
-
-            title_elements = header_embed.title.split(" • ")[1:]
-            header_embed.set_author(name=" • ".join(title_elements), url=header_embed.url)
-            header_embed.title = ""
+            header_embed = inconnu.header.embed(self.header, self.character, True)
             header_embed.description += f"\n*Author: {interaction.user.mention}*"
 
             header_message = await webhook.send(

@@ -7,6 +7,7 @@ import discord
 import inconnu
 from inconnu.models.rpheader import HeaderSubdoc
 from inconnu.utils.haven import haven
+from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
@@ -15,13 +16,29 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
     """Display the character's header in an embed."""
     header_doc = HeaderSubdoc.create(character, **kwargs)
-    embed = header_embed(header_doc, character)
+    try:
+        webhook = await ctx.bot.prep_webhook(ctx.channel)
+        webhook_avatar = character.profile_image_url or inconnu.get_avatar(ctx.user)
+        embed = header_embed(header_doc, character, True)
 
-    resp = await ctx.respond(embed=embed)
-    if isinstance(resp, discord.Interaction):
-        message = await resp.original_response()
-    else:
-        message = resp
+        # Necessary due to Discord requirement that an interaction always be
+        # responded to
+        await ctx.respond("Generating header ...", ephemeral=True, delete_after=1)
+
+        message = await webhook.send(
+            embed=embed, username=character.name, avatar_url=webhook_avatar, wait=True
+        )
+    except inconnu.errors.WebhookError:
+        Logger.info("HEADER: Unable to get webhook (#%s on %s)", ctx.channel.name, ctx.guild.name)
+
+        embed = header_embed(header_doc, character, False)
+        resp = await ctx.respond(embed=embed)
+
+        # This is probably always going to be true now
+        if isinstance(resp, discord.Interaction):
+            message = await resp.original_response()
+        else:
+            message = resp
 
     await register_header(ctx, message, character)
 
@@ -42,7 +59,9 @@ async def register_header(ctx, message, character):
     )
 
 
-def header_embed(header: inconnu.models.HeaderSubdoc, character: "VChar") -> discord.Embed:
+def header_embed(
+    header: inconnu.models.HeaderSubdoc, character: "VChar", webhook: bool
+) -> discord.Embed:
     """Generate the header embed from the document."""
     # Merits, flaws, and trackers go in the description field
     description_ = []
@@ -63,13 +82,14 @@ def header_embed(header: inconnu.models.HeaderSubdoc, character: "VChar") -> dis
 
     description_.append(" • ".join(trackers))
 
-    embed = discord.Embed(
-        # Ensure we don't exceed the title limit
-        title=header.title,
-        description="\n".join(description_),
-        url=inconnu.profile_url(character.id),
-    )
+    embed = discord.Embed(description="\n".join(description_))
     embed.set_thumbnail(url=character.random_image_url())
+
+    if webhook:
+        embed.set_author(name=header.base_title, url=inconnu.profile_url(character.id))
+    else:
+        embed.title = header.title
+        embed.url = inconnu.profile_url(character.id)
 
     if header.temp:
         embed.set_footer(text=header.temp)

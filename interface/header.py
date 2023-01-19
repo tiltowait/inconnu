@@ -258,7 +258,16 @@ class HeaderCog(commands.Cog):
     @commands.guild_only()
     async def delete_rp_header(self, ctx, message: discord.Message):
         """Delete an RP header."""
-        if message.author == self.bot.user:
+        try:
+            webhook = await ctx.bot.prep_webhook(message.channel)
+            is_bot_message = message.author == self.bot.user
+            is_webhook_message = message.author.id == webhook.id
+        except inconnu.errors.WebhookError:
+            webhook = None
+            is_bot_message = message.author == self.bot.user
+            is_webhook_message = False
+
+        if is_bot_message or is_webhook_message:
             record = await inconnu.db.headers.find_one({"message": message.id})
             if record is not None:
                 # Make sure we are allowed to delete it
@@ -266,7 +275,12 @@ class HeaderCog(commands.Cog):
                 if inconnu.utils.is_admin(ctx, owner_id=owner):
                     Logger.debug("HEADER: Deleting RP header")
                     try:
-                        await message.delete()
+                        if is_bot_message:
+                            Logger.debug("HEADER: Calling message.delete()")
+                            await message.delete()
+                        else:
+                            Logger.debug("HEADER: Calling webhook.delete_message()")
+                            await webhook.delete_message(message.id)
                         await ctx.respond("RP header deleted!", ephemeral=True, delete_after=3)
                     except discord.errors.Forbidden:
                         await ctx.respond(
@@ -295,7 +309,7 @@ class HeaderCog(commands.Cog):
                 Logger.debug("HEADER: Attempted to delete non-header post")
                 await ctx.respond("This is not an RP header.", ephemeral=True)
         else:
-            Logger.debug("HEADER: Attempted to delete non-%s post", self.bot.user.name)
+            Logger.debug("HEADER: Attempted to delete non-%s post", bot_user.name)
             await ctx.respond("This is not an RP header.", ephemeral=True)
 
     @commands.Cog.listener()

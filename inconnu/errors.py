@@ -28,6 +28,10 @@ class RollError(InconnuError):
     """Base error pertaining to rolls."""
 
 
+class WebhookError(InconnuError):
+    """Error when a webhook can't be created."""
+
+
 class HungerInPool(RollError):
     """An exception raised if Hunger is used in a roll pool."""
 

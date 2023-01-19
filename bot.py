@@ -157,8 +157,13 @@ class InconnuBot(discord.Bot):
         return await self.fetch_guild(guild_id)
 
     async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
-        """Prepare a webhook, either from the cache or creating one. Raises Forbidden."""
-        return await self.webhook_cache.prep_webhook(channel)
+        """Prepare a webhook, either from the cache or creating one. Raises WebhookError."""
+        try:
+            return await self.webhook_cache.prep_webhook(channel)
+        except (discord.Forbidden, AttributeError) as err:
+            raise inconnu.errors.WebhookError(
+                "Inconnu needs `Manage Webhook` permissions for this command."
+            ) from err
 
     async def _set_presence(self):
         """Set the bot's presence message."""

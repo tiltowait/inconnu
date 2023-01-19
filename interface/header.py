@@ -158,9 +158,8 @@ class HeaderCog(commands.Cog):
         hunger: Option(
             int,
             "THIS POST ONLY: The character's Hunger (vampires only)",
+            choices=[i for i in range(6)],
             required=False,
-            min_value=0,
-            max_value=5,
         ),
         location: Option(str, "THIS POST ONLY: Where the scene is taking place", required=False),
         merits: Option(str, "THIS POST ONLY: Obvious/important merits", required=False),

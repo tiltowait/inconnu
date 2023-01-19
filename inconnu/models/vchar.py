@@ -14,7 +14,7 @@ from discord import Embed
 from umongo import Document, fields
 
 import inconnu
-from inconnu.constants import INCONNU_ID, UNIVERSAL_TRAITS, Damage
+from inconnu.constants import UNIVERSAL_TRAITS, Damage
 from inconnu.models.vchardocs import (
     VCharExperience,
     VCharExperienceEntry,
@@ -289,7 +289,7 @@ class VChar(Document):
     @property
     def is_pc(self):
         """Whether the character is a PC."""
-        return self.user != INCONNU_ID
+        return self.user != inconnu.bot.user.id
 
     @property
     def is_vampire(self):

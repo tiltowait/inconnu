@@ -115,7 +115,7 @@ class CharacterManager:
     async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
         """Determine whether a user already has a named character."""
         if is_spc:
-            owner_id = inconnu.constants.INCONNU_ID
+            owner_id = self.bot.user.id
             name += " (SPC)"
         else:
             owner_id = user

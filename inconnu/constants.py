@@ -11,8 +11,6 @@ load_dotenv()
 SUPPORT_URL = "https://discord.gg/QHnCdSPeEE"
 PATREON = "https://www.patreon.com/tiltowait"
 
-INCONNU_ID = int(os.environ["INCONNU_ID"])
-
 GROUPED_TRAITS = {
     "ATTRIBUTES": {
         "Physical": ["Strength", "Dexterity", "Stamina"],

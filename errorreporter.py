@@ -24,11 +24,7 @@ class ErrorReporter:
         try:
             if (channel := os.getenv("REPORT_CHANNEL")) is not None:
                 if (channel := await bot.fetch_channel(int(channel))) is not None:
-                    Logger.info(
-                        "REPORTER: Recording errors in #%s on %s",
-                        channel.name,
-                        channel.guild.name,
-                    )
+                    Logger.info("REPORTER: Recording errors in #%s", channel.name)
                     self.channel = channel
                 else:
                     Logger.warning("REPORTER: Unhandled exceptions channel invalid")

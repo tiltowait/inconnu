@@ -2,7 +2,6 @@
 
 import asyncio
 import os
-from collections import defaultdict
 from datetime import time, timezone
 
 import discord
@@ -246,7 +245,6 @@ class InconnuBot(discord.Bot):
                 "experience remove entry",
                 "experience award",
                 "experience deduct",
-                "post",
                 "update header",
                 "transfer",
             }:

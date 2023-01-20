@@ -60,10 +60,13 @@ class ErrorReporter:
             troubleshoot_url = (
                 "https://docs.inconnu.app/advanced/troubleshooting#you-arent-able-to-upload-images"
             )
+            # Get the command's name
+            cmd_mention = ctx.bot.get_application_command(ctx.command.qualified_name).mention
+
             await inconnu.utils.error(
                 ctx,
                 (
-                    f"Only patrons can use `/{ctx.command.qualified_name}`. "
+                    f"Only patrons can use {cmd_mention}. "
                     "Click the Patreon button to get started!"
                 ),
                 (

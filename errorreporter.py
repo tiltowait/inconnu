@@ -60,9 +60,8 @@ class ErrorReporter:
             troubleshoot_url = (
                 "https://docs.inconnu.app/advanced/troubleshooting#you-arent-able-to-upload-images"
             )
-            # Get the command's name
-            cmd_mention = ctx.bot.get_application_command(ctx.command.qualified_name).mention
 
+            cmd_mention = ctx.bot.get_command_mention(ctx.command.qualified_name)
             await inconnu.utils.error(
                 ctx,
                 (

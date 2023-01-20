@@ -118,14 +118,15 @@ class InconnuBot(discord.Bot):
                 "PREMIUM: Could not DM %s#%s about premium loss", member.name, member.discriminator
             )
 
-    @staticmethod
-    async def inform_premium_features(member: discord.Member):
+    async def inform_premium_features(self, member: discord.Member):
         """Inform the member of premium features."""
         try:
+            upload_mention = self.get_application_command("character image upload").mention
             embed = discord.Embed(
                 title="Thank you for your support!",
                 description=(
-                    "You may now upload profile images via `/character image upload`.\n\n"
+                    f"You may now upload profile images via {upload_mention}. "
+                    "(Use it in a server, not from this DM!)\n\n"
                     "[Read more here!](https://docs.inconnu.app/guides/premium/character-images)"
                 ),
                 color=discord.Color.green(),
@@ -147,6 +148,12 @@ class InconnuBot(discord.Bot):
                 member.name,
                 member.discriminator,
             )
+
+    def get_command_mention(
+        self, name: str, type: type[discord.ApplicationCommand] = discord.ApplicationCommand
+    ) -> str:
+        """Shorthand for get_application_command(...).mention."""
+        return self.get_application_command(name, type=type).mention
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
         """Look up a guild in the guild cache or fetches if not found."""

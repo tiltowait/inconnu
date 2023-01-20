@@ -67,7 +67,7 @@ def is_admin(ctx, owner_id=None):
 def is_supporter(ctx, user: discord.Member = None) -> bool:
     """Returns True if the user invoking the command is a supporter."""
     support_server = inconnu.bot.get_guild(SUPPORTER_GUILD)
-    user = user = ctx.user
+    user = user or ctx.user
 
     # First, see if the invoker is on the support server
     if (member := support_server.get_member(user.id)) is not None:

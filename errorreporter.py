@@ -61,7 +61,7 @@ class ErrorReporter:
                 "https://docs.inconnu.app/advanced/troubleshooting#you-arent-able-to-upload-images"
             )
 
-            cmd_mention = ctx.bot.get_command_mention(ctx.command.qualified_name)
+            cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
             await inconnu.utils.error(
                 ctx,
                 (

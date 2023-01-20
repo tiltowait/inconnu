@@ -149,7 +149,7 @@ class InconnuBot(discord.Bot):
                 member.discriminator,
             )
 
-    def get_command_mention(
+    def cmd_mention(
         self, name: str, type: type[discord.ApplicationCommand] = discord.ApplicationCommand
     ) -> str:
         """Shorthand for get_application_command(...).mention."""

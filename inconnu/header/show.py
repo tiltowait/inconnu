@@ -17,6 +17,9 @@ async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
     """Display the character's header in an embed."""
     header_doc = HeaderSubdoc.create(character, **kwargs)
     try:
+        if not inconnu.utils.is_supporter(ctx):
+            raise inconnu.errors.NotPremium
+
         webhook = await ctx.bot.prep_webhook(ctx.channel)
         webhook_avatar = character.profile_image_url or inconnu.get_avatar(ctx.user)
         embed = header_embed(header_doc, character, True)
@@ -28,19 +31,12 @@ async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
         message = await webhook.send(
             embed=embed, username=character.name, avatar_url=webhook_avatar, wait=True
         )
-    except inconnu.errors.WebhookError:
-        Logger.info("HEADER: Unable to get webhook (#%s on %s)", ctx.channel.name, ctx.guild.name)
-
+    except (inconnu.errors.NotPremium, inconnu.errors.WebhookError):
         embed = header_embed(header_doc, character, False)
         resp = await ctx.respond(embed=embed)
-
-        # This is probably always going to be true now
-        if isinstance(resp, discord.Interaction):
-            message = await resp.original_response()
-        else:
-            message = resp
-
-    await register_header(ctx, message, character)
+        message = await resp.original_response()
+    finally:
+        await register_header(ctx, message, character)
 
 
 async def register_header(ctx, message, character):

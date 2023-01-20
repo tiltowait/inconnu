@@ -71,7 +71,7 @@ class Wizard:
 
     async def __finalize_character(self):
         """Add the character to the database and inform the user they are done."""
-        owner = self.ctx.user.id if not self.parameters.spc else inconnu.constants.INCONNU_ID
+        owner = self.ctx.user.id if not self.parameters.spc else self.ctx.bot.user.id
 
         character = inconnu.models.VChar(
             guild=self.ctx.guild.id,

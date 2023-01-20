@@ -72,7 +72,7 @@ async def _available_characters(ctx):
 
         if user.guild_permissions.administrator:
             # Add SPCs
-            spcs = await inconnu.char_mgr.fetchall(guild.id, int(os.environ["INCONNU_ID"]))
+            spcs = await inconnu.char_mgr.fetchall(guild.id, ctx.bot.user.id)
             spcs = [(spc.name, spc.id) for spc in spcs]
 
     chars = await inconnu.char_mgr.fetchall(guild.id, int(owner))

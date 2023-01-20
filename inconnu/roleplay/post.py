@@ -31,9 +31,13 @@ class PostModal(discord.ui.Modal):
             }
             self.header = inconnu.models.HeaderSubdoc.create(character, **header_params)
             starting_value = ""
+            starting_title = ""
+            starting_tags = ""
         else:
             self.header = self.post_to_edit.header
             starting_value = self.post_to_edit.content
+            starting_title = self.post_to_edit.title
+            starting_tags = "; ".join(self.post_to_edit.tags)
 
         # Populate the modal
         super().__init__(*args, **kwargs)
@@ -47,6 +51,26 @@ class PostModal(discord.ui.Modal):
                 style=discord.InputTextStyle.long,
             )
         )
+        self.add_item(
+            discord.ui.InputText(
+                label="Title",
+                placeholder="(Optional) A title for easy bookmarking",
+                value=starting_title,
+                max_length=128,
+                style=discord.InputTextStyle.short,
+                required=False,
+            )
+        )
+        self.add_item(
+            discord.ui.InputText(
+                label="Tags",
+                placeholder="(Optional) Separate with ;",
+                value=starting_tags,
+                max_length=128,
+                style=discord.InputTextStyle.short,
+                required=False,
+            )
+        )
 
     def _clean_post_content(self) -> str:
         """Clean and attempt to normalize the post content."""
@@ -54,12 +78,18 @@ class PostModal(discord.ui.Modal):
         cleaned = [inconnu.utils.clean_text(line) for line in lines if line]
         return "\n\n".join(cleaned)
 
-    def _create_embed(self, content: str) -> discord.Embed:
-        """Create an RP post embed."""
-        rp_post = inconnu.header.embed(self.header, self.character)
-        rp_post.description += self.DIVIDER + content
+    def _clean_title(self) -> str:
+        """Clean the title."""
+        return inconnu.utils.clean_text(self.children[-2].value)
 
-        return rp_post
+    def _clean_tags(self) -> list[str]:
+        """Clean and separate the tags."""
+        tags = re.sub(r"[^\w\s;]+", "", self.children[-1].value.lower())
+        tags = tags.split(";")
+        for index, tag in enumerate(tags):
+            tags[index] = inconnu.utils.clean_text(tag)
+
+        return tags
 
     async def callback(self, interaction: discord.Interaction):
         """Set the RP post content."""
@@ -72,28 +102,32 @@ class PostModal(discord.ui.Modal):
         """Edit an existing post."""
         new_content = self._clean_post_content()
 
-        # We have a WebhookMessage, so we need to fetch its originating
-        # Webhook, which is the only entity that can edit it. We keep this
-        # call outside of the try block so we can use our general Webhook
-        # error checker.
-        webhook = await self.bot.prep_webhook(interaction.channel)
-        try:
-            await webhook.edit_message(self.message.id, content=new_content)
+        if new_content != self.post_to_edit.content:
+            # We have a WebhookMessage, so we need to fetch its originating
+            # Webhook, which is the only entity that can edit it. We keep this
+            # call outside of the try block so we can use our general Webhook
+            # error checker.
+            webhook = await self.bot.prep_webhook(interaction.channel)
+            try:
+                await webhook.edit_message(self.message.id, content=new_content)
 
-        except discord.NotFound:
-            await inconnu.utils.error(
-                interaction,
-                (
-                    "The message wasn't found. Either someone deleted it while you "
-                    "were editing, or else the webhook that created it was deleted."
-                ),
-                title="Unable to edit message",
-            )
-            return
+            except discord.NotFound:
+                await inconnu.utils.error(
+                    interaction,
+                    (
+                        "The message wasn't found. Either someone deleted it while you "
+                        "were editing, or else the webhook that created it was deleted."
+                    ),
+                    title="Unable to edit message",
+                )
+                return
 
         # Update the RPPost object
         self.post_to_edit.edit_post(new_content)
+        self.post_to_edit.title = self._clean_title()
+        self.post_to_edit.tags = self._clean_tags()
         await self.post_to_edit.commit()
+
         Logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
 
         # Inform the user
@@ -163,7 +197,14 @@ class PostModal(discord.ui.Modal):
 
         # Register the RP post
         db_rp_post = inconnu.models.RPPost.create(
-            interaction, self.character, self.header, content, content_message, mention_ids
+            interaction=interaction,
+            character=self.character,
+            header=self.header,
+            content=content,
+            message=content_message,
+            mentions=mention_ids,
+            title=self._clean_title(),
+            tags=self._clean_tags(),
         )
         db_rp_post.id_chain = id_chain
         await db_rp_post.commit()

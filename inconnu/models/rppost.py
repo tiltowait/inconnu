@@ -38,6 +38,10 @@ class RPPost(Document):
     mentions = fields.ListField(fields.IntField, default=list)
     history = fields.ListField(fields.EmbeddedField(PostHistoryEntry), default=list)
 
+    # Custom
+    title = fields.StrField(default=None)
+    tags = fields.ListField(fields.StrField, default=list)
+
     @property
     def utc_date(self) -> datetime:
         """The UTC-aware post date."""
@@ -49,12 +53,15 @@ class RPPost(Document):
     @classmethod
     def create(
         cls,
+        *,
         interaction: discord.Interaction,
         character: "VChar",
         header: HeaderSubdoc,
         content: str,
         message: discord.Message,
         mentions: list[int],
+        title: str | None,
+        tags: list[str],
     ):
         """Create an RP post."""
         return cls(
@@ -66,6 +73,8 @@ class RPPost(Document):
             content=content,
             url=message.jump_url,
             mentions=mentions,
+            title=title,
+            tags=tags,
         )
 
     def edit_post(self, new_post: str):

@@ -84,12 +84,13 @@ class PostModal(discord.ui.Modal):
 
     def _clean_tags(self) -> list[str]:
         """Clean and separate the tags."""
-        tags = re.sub(r"[^\w\s;]+", "", self.children[-1].value.lower())
+        raw_tags = self.children[-1].value.lower().replace(",", ";")
+        tags = re.sub(r"[^\w\s;]+", "", raw_tags)
         tags = tags.split(";")
         for index, tag in enumerate(tags):
             tags[index] = inconnu.utils.clean_text(tag)
 
-        return tags
+        return list(set(tags))  # Make sure the tags are unique
 
     async def callback(self, interaction: discord.Interaction):
         """Set the RP post content."""

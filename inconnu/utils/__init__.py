@@ -8,6 +8,7 @@ from discord.ext import commands
 import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
 from inconnu import errors
+from inconnu.utils.cmdreplace import cmd_replace
 from inconnu.utils.decorators import not_on_lockdown
 from inconnu.utils.error import ErrorEmbed, error
 from inconnu.utils.haven import Haven

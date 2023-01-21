@@ -123,10 +123,10 @@ class Help(commands.Cog):
         embed.set_thumbnail(url=web_asset("darkpack_logo2.webp"))
 
         help_commands = [
-            self.bot.cmd_mention("help overview") + " - Basic help",
-            self.bot.cmd_mention("help characters") + " - Character updates help",
-            self.bot.cmd_mention("help traits") + " - Trait management help",
-            self.bot.cmd_mention("help macros") + " - Macro creation/editing help",
+            "`/help overview` - Basic help",
+            "`/help characters` - Character updates help",
+            "`/help traits` - Trait management help",
+            "`/help macros` - Macro creation/editing help",
         ]
 
         embed.add_field(name="Help Commands", value="\n".join(help_commands), inline=False)
@@ -143,7 +143,7 @@ class Help(commands.Cog):
             text="Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. For more information please visit worldofdarkness.com."
         )
 
-        await ctx.respond(embed=embed, view=self.info_view)
+        await inconnu.utils.cmd_replace(ctx, embed=embed, view=self.info_view)
 
     # Callbacks
 
@@ -185,48 +185,43 @@ class Help(commands.Cog):
             ),
             inline=False,
         )
-        char_info = (
-            self.bot.cmd_mention("character create")
-            + "\nYou can use character attributes in rolls."
-        )
-        embed.add_field(name="Create a character", value=char_info, inline=False)
         embed.add_field(
-            name="Display character",
-            value=self.bot.cmd_mention("character display"),
+            name="Create a character",
+            value="`/character create`\nYou can use character attributes in rolls.",
             inline=False,
         )
-        embed.add_field(name="Add traits", value=self.bot.cmd_mention("traits add"))
-        embed.add_field(name="Add specialties", value=self.bot.cmd_mention("specialties add"))
+        embed.add_field(
+            name="Display character",
+            value="`/character display`",
+            inline=False,
+        )
+        embed.add_field(name="Add traits", value="`/traits add`")
+        embed.add_field(name="Add specialties", value="`/specialties add`")
         embed.add_field(
             name="Common commands",
             value=(
                 "The following commands are commonly used:\n\n"
-                f"{self.bot.cmd_mention('rouse')} — Perform a Rouse check. "
-                "Increases Hunger on failure\n"
-                f"{self.bot.cmd_mention('slake')} — Reduce Hunger\n"
-                f"{self.bot.cmd_mention('awaken')} — Perform a Rouse check "
-                "and heal Willpower\n"
-                f"{self.bot.cmd_mention('bol')} — Rouse for Blush of Life, "
-                "taking Humanity into account\n"
-                f"{self.bot.cmd_mention('mend')} — Mend Superficial Health "
-                "damage based on BP, performing a Rouse check\n"
-                f"{self.bot.cmd_mention('aggheal')} — Perform three Rouse "
-                "checks to mend one Aggravated Health damage\n"
-                f"{self.bot.cmd_mention('stain')} — Add or remove Stains\n"
-                f"{self.bot.cmd_mention('remorse')} — Run a Remorse check "
-                "based on your current Stains"
+                "`/rouse` — Perform a Rouse check. Increases Hunger on failure\n"
+                "`/slake` — Reduce Hunger\n"
+                "`/awaken` — Perform a Rouse check and heal Willpower\n"
+                "`/bol` — Rouse for Blush of Life, taking Humanity into account\n"
+                "`/mend` — Mend Superficial Health damage based on BP, performing a Rouse check\n"
+                "`/aggheal` — Perform three Rouse checks to mend one Aggravated Health damage\n"
+                "`/stain` — Add or remove Stains\n"
+                "`/remorse` — Run a Remorse check based on your current Stains"
             ),
             inline=False,
         )
         embed.set_footer(
             text=(
-                "Many commands have a character: parameter. If you only have one character, "
-                "it is usually optional. In commands where it is required, Discord makes it "
-                "obvious."
+                "Many commands have a 'character' parameter, which is usually "
+                "optional. When it's required, Discord makes it obvious."
             )
         )
 
-        await ctx.respond(embed=embed, view=self.overview_view, ephemeral=ephemeral)
+        await inconnu.utils.cmd_replace(
+            ctx, embed=embed, view=self.overview_view, ephemeral=ephemeral
+        )
 
     async def show_traits_help(self, ctx, ephemeral=True):
         """Run the /traits help command."""
@@ -238,31 +233,24 @@ class Help(commands.Cog):
         embed.set_thumbnail(url=self.bot.user.avatar)
         embed.set_footer(text="Traits may be used in rolls. See /help overview for more info.")
 
-        traits_add = self.bot.cmd_mention("traits add")
         embed.add_field(
             name="Addition",
-            value=f"{traits_add}\n**Example:** `/traits add traits:Oblivion=3 Chemistry=1`",
+            value="`/traits add`\n**Example:** `/traits add traits:Oblivion=3 Chemistry=1`",
             inline=False,
         )
-
-        traits_delete = self.bot.cmd_mention("traits delete")
         embed.add_field(
             name="Deletion",
-            value=f"{traits_delete}\n**Example:** `/traits delete traits:Oblivion`",
+            value="`/traits delete`\n**Example:** `/traits delete traits:Oblivion`",
             inline=False,
         )
-
-        traits_update = self.bot.cmd_mention("traits update")
         embed.add_field(
             name="Modification",
-            value=f"{traits_update}\n**Example:** `/traits update traits:Oblivion=2`",
+            value="`/traits update`\n**Example:** `/traits update traits:Oblivion=2`",
             inline=False,
         )
-
-        specialties_add = self.bot.cmd_mention("specialties add")
         embed.add_field(
             name="Specialties",
-            value=f"{specialties_add}\n**Example:** `/specialties add specialties:Grappling`",
+            value="`/specialties add`\n**Example:** `/specialties add specialties:Grappling`",
             inline=False,
         )
 
@@ -272,7 +260,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
+        await inconnu.utils.cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
     async def show_macros_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""
@@ -282,24 +270,22 @@ class Help(commands.Cog):
         )
         embed.set_author(name=self.bot.user.display_name)
         embed.set_thumbnail(url=self.bot.user.avatar)
-        embed.set_footer(text="Roll a macro with the /vm command!")
 
-        macro_create = self.bot.cmd_mention("macro create")
         embed.add_field(
-            name="Creation", value=f"{macro_create}\nFill out the parameters offered.", inline=False
+            name="Creation", value="`/macro create`\nFill out the parameters offered.", inline=False
         )
-
-        macro_delete = self.bot.cmd_mention("macro delete")
+        embed.add_field(
+            name="Use",
+            value="`/vm`\n**Example:** `/vm syntax:hunt`. You may override Hunger and Difficulty.",
+        )
         embed.add_field(
             name="Deletion",
-            value=f"{macro_delete}\nSpecify a macro name. This is non-reversible!",
+            value="`/macro delete`\nSpecify a macro name. This is non-reversible!",
             inline=False,
         )
-
-        macro_update = self.bot.cmd_mention("macro update")
         embed.add_field(
             name="Modification",
-            value=f"{macro_update}\n**Example:** `/macro update macro:hunt parameters:pool=...`",
+            value="`/macro update`\n**Example:** `/macro update macro:hunt parameters:pool=...`",
             inline=False,
         )
 
@@ -309,7 +295,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
+        await inconnu.utils.cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
     async def show_character_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""

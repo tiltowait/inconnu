@@ -53,7 +53,7 @@ class PostModal(discord.ui.Modal):
         )
         self.add_item(
             discord.ui.InputText(
-                label="Title",
+                label="Bookmark title",
                 placeholder="(Optional) A title for easy bookmarking",
                 value=starting_title,
                 max_length=128,
@@ -87,10 +87,13 @@ class PostModal(discord.ui.Modal):
         raw_tags = self.children[-1].value.lower().replace(",", ";")
         tags = re.sub(r"[^\w\s;]+", "", raw_tags)
         tags = tags.split(";")
-        for index, tag in enumerate(tags):
-            tags[index] = inconnu.utils.clean_text(tag)
 
-        return list(set(tags))  # Make sure the tags are unique
+        cleaned_tags = []
+        for tag in tags:
+            if cleaned := inconnu.utils.clean_text(tag):
+                cleaned_tags.append(cleaned)
+
+        return sorted(list(set(cleaned_tags)))  # Make sure the tags are unique
 
     async def callback(self, interaction: discord.Interaction):
         """Set the RP post content."""
@@ -125,7 +128,7 @@ class PostModal(discord.ui.Modal):
 
         # Update the RPPost object
         self.post_to_edit.edit_post(new_content)
-        self.post_to_edit.title = self._clean_title()
+        self.post_to_edit.title = self._clean_title() or None
         self.post_to_edit.tags = self._clean_tags()
         await self.post_to_edit.commit()
 
@@ -200,7 +203,7 @@ class PostModal(discord.ui.Modal):
             content=content,
             message=content_message,
             mentions=mention_ids,
-            title=self._clean_title(),
+            title=self._clean_title() or None,
             tags=self._clean_tags(),
         )
         db_rp_post.id_chain = id_chain

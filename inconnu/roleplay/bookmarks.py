@@ -45,7 +45,8 @@ async def show_bookmarks(ctx: discord.ApplicationContext):
         pages.append(embed)
 
     if pages:
-        paginator = Paginator(pages)
+        show_buttons = len(pages) > 1
+        paginator = Paginator(pages, show_disabled=show_buttons, show_indicator=show_buttons)
         await paginator.respond(ctx.interaction, ephemeral=True)
     else:
         await inconnu.utils.error(ctx, tip, title="You have no bookmarks!")

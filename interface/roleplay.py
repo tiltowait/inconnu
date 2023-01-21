@@ -98,6 +98,11 @@ class RoleplayCog(commands.Cog):
 
     # Message commands
 
+    @slash_command(guild_ids=TEST_GUILDS)
+    async def bookmarks(self, ctx: discord.ApplicationContext):
+        """View your RP post bookmarks."""
+        await inconnu.roleplay.show_bookmarks(ctx)
+
     @commands.message_command(name="Post: Edit", guild_ids=TEST_GUILDS)
     @commands.guild_only()
     async def edit_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):

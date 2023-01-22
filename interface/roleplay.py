@@ -86,6 +86,7 @@ class RoleplayCog(commands.Cog):
         description="Whether to hide the search results from others (default true)",
         default=True,
     )
+    @commands.guild_only()
     async def search(
         self,
         ctx: discord.ApplicationContext,
@@ -96,9 +97,16 @@ class RoleplayCog(commands.Cog):
         """Search for an RP post. Displays up to 5 results."""
         await inconnu.roleplay.search(ctx, user, content, hidden)
 
+    @slash_command(guild_ids=TEST_GUILDS)
+    @commands.guild_only()
+    async def tags(self, ctx: discord.ApplicationContext):
+        """View your RP posts by tag."""
+        await inconnu.roleplay.tags.show_tags(ctx)
+
     # Message commands
 
     @slash_command(guild_ids=TEST_GUILDS)
+    @commands.guild_only()
     async def bookmarks(self, ctx: discord.ApplicationContext):
         """View your RP post bookmarks."""
         await inconnu.roleplay.show_bookmarks(ctx)

@@ -11,7 +11,7 @@ async def delete_message_chain(ctx: discord.ApplicationContext, message: discord
     webhook = await ctx.bot.prep_webhook(ctx.channel)
 
     try:
-        rp_post = await _validate(ctx, webhook, message)
+        rp_post = await _fetch_rp_post(ctx, webhook, message)
 
         await ctx.defer(ephemeral=True)
         for msg_id in rp_post.id_chain:
@@ -29,7 +29,7 @@ async def delete_message_chain(ctx: discord.ApplicationContext, message: discord
         await inconnu.utils.error(ctx, err, title="Invalid message")
 
 
-async def _validate(
+async def _fetch_rp_post(
     ctx: discord.ApplicationContext, webhook: discord.Webhook, message: discord.Message
 ) -> inconnu.models.rppost.RPPost:
     """Validate the message and ownership, displaying an error message if applicable."""

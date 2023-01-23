@@ -162,6 +162,10 @@ class InconnuBot(discord.Bot):
         Logger.debug("BOT: Guild %s not found in cache; attempting fetch", guild_id)
         return await self.fetch_guild(guild_id)
 
+    def can_webhook(self, channel: discord.TextChannel) -> bool:
+        """Whether the bot has manage webhooks permission in the channel."""
+        return channel.permissions_for(channel.guild.me).manage_webhooks
+
     async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
         """Prepare a webhook, either from the cache or creating one. Raises WebhookError."""
         try:

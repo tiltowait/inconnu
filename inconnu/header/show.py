@@ -19,14 +19,14 @@ async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
     try:
         if not inconnu.utils.is_supporter(ctx):
             raise inconnu.errors.NotPremium
+        if not ctx.bot.can_webhook(ctx.channel):
+            raise inconnu.errors.WebhookError
+
+        await ctx.respond("Generating header ...", ephemeral=True, delete_after=1)
 
         webhook = await ctx.bot.prep_webhook(ctx.channel)
         webhook_avatar = character.profile_image_url or inconnu.get_avatar(ctx.user)
         embed = header_embed(header_doc, character, True)
-
-        # Necessary due to Discord requirement that an interaction always be
-        # responded to
-        await ctx.respond("Generating header ...", ephemeral=True, delete_after=1)
 
         message = await webhook.send(
             embed=embed, username=character.name, avatar_url=webhook_avatar, wait=True

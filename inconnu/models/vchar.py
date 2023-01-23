@@ -52,6 +52,7 @@ class VChar(Document):
     """A vampire, mortal, ghoul, or thin-blood character."""
 
     VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane"]
+    SPC_OWNER = 0
 
     # Ownership
     guild = fields.IntField()
@@ -289,7 +290,7 @@ class VChar(Document):
     @property
     def is_pc(self):
         """Whether the character is a PC."""
-        return self.user != inconnu.bot.user.id
+        return self.user != VChar.SPC_OWNER
 
     @property
     def is_vampire(self):

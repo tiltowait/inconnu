@@ -292,6 +292,10 @@ class InconnuBot(discord.Bot):
             Logger.info("CONNECT: Playing on %s servers", len(self.guilds))
             Logger.info("CONNECT: %s", discord.version_info)
             Logger.info("CONNECT: Latency: %s ms", self.latency * 1000)
+
+            inconnu.models.VChar.SPC_OWNER = self.user.id
+            Logger.info("CONNECT: Registered SPC owner")
+
             self.connected = True
 
         await self.sync_commands()

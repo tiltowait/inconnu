@@ -117,6 +117,12 @@ class RoleplayCog(commands.Cog):
         """Edit the selected roleplay post."""
         await inconnu.roleplay.edit_post(ctx, message)
 
+    @commands.message_command(name="Post: Delete", guild_ids=TEST_GUILDS)
+    @commands.guild_only()
+    async def delete_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
+        """Delete the selected roleplay post."""
+        await inconnu.roleplay.delete_message_chain(ctx, message)
+
     # Listeners
 
     @commands.Cog.listener()

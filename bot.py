@@ -407,11 +407,7 @@ async def cull_inactive():
 @tasks.loop(time=time(0, tzinfo=timezone.utc))
 async def check_premium_expiries():
     """Perform required actions on expired premium users."""
-    if discord.utils.utcnow().day == 1:
-        # Only run task on the first day of the month
-        await inconnu.tasks.premium.remove_expired_images()
-    else:
-        Logger.debug("TASK: Premium expiration checks only happen on the first of the month")
+    await inconnu.tasks.premium.remove_expired_images()
 
 
 @tasks.loop(hours=1)

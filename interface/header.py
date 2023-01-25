@@ -309,7 +309,7 @@ class HeaderCog(commands.Cog):
                 Logger.debug("HEADER: Attempted to delete non-header post")
                 await ctx.respond("This is not an RP header.", ephemeral=True)
         else:
-            Logger.debug("HEADER: Attempted to delete non-%s post", bot_user.name)
+            Logger.debug("HEADER: Attempted to delete someone else's post")
             await ctx.respond("This is not an RP header.", ephemeral=True)
 
     @commands.Cog.listener()

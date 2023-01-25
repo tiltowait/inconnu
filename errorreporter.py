@@ -56,6 +56,9 @@ class ErrorReporter:
             # This just means a button tried to disable when its message no longer exists.
             # We don't care, and there's nothing we can do about it anyway.
             return
+        if isinstance(error, inconnu.errors.NotReady):
+            await inconnu.utils.error(ctx, str(error), title="One moment, please")
+            return
         if isinstance(error, inconnu.errors.NotPremium):
             troubleshoot_url = (
                 "https://docs.inconnu.app/advanced/troubleshooting#you-arent-able-to-upload-images"

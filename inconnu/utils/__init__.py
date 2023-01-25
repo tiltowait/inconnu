@@ -86,6 +86,15 @@ def is_supporter(ctx, user: discord.Member = None) -> bool:
 
 def _check_supporter(ctx, user: discord.Member = None):
     """Wraps is_supporter() to raise on failure."""
+    if not ctx.bot.welcomed:
+        command = ctx.bot.cmd_mention(ctx.command.qualified_name)
+        raise inconnu.errors.NotReady(
+            (
+                f"{ctx.bot.user.mention} is currently rebooting. "
+                f"{command} will be available in a few minutes."
+            )
+        )
+
     if not is_supporter(ctx, user):
         raise errors.NotPremium()
     return True

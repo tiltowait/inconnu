@@ -73,7 +73,7 @@ class Traits(commands.Cog, name="Trait Management"):
     async def add_specialties(
         self,
         ctx: discord.ApplicationContext,
-        specialties: Option(str, "The specialties to add"),
+        specialties: Option(str, "The specialties to add. Ex: Chemistry Research OnTheRoad"),
         character: inconnu.options.character("The character to modify"),
     ):
         """Add specialties to a character. Can add multiple at a time."""

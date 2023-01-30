@@ -12,6 +12,7 @@ class Traits(commands.Cog, name="Trait Management"):
     """Trait management commands."""
 
     @commands.user_command(name="Traits")
+    @commands.guild_only()
     async def user_traits(self, ctx, member):
         """Display character traits."""
         await inconnu.traits.show(ctx, None, player=member)

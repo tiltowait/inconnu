@@ -265,18 +265,22 @@ class InconnuBot(discord.Bot):
                 if num_chars == 1:
                     # The user might have been using an SPC, so let's grab that
                     # character and double-check before yelling at them.
-                    character = await inconnu.char_mgr.fetchone(
-                        ctx.guild, ctx.user, options["character"]
-                    )
-                    if character.is_pc:
-                        await asyncio.sleep(1)  # Make sure it shows after the command
-                        await ctx.respond(
-                            (
-                                "**Tip:** You only have one character, so you don't need "
-                                f"the `character` option for `/{ctx.command.qualified_name}`."
-                            ),
-                            ephemeral=True,
+                    try:
+                        character = await inconnu.char_mgr.fetchone(
+                            ctx.guild, ctx.user, options["character"]
                         )
+                        if character.is_pc:
+                            await asyncio.sleep(1)  # Make sure it shows after the command
+                            await ctx.respond(
+                                (
+                                    "**Tip:** You only have one character, so you don't need "
+                                    f"the `character` option for `/{ctx.command.qualified_name}`."
+                                ),
+                                ephemeral=True,
+                            )
+                    except inconnu.errors.CharacterNotFoundError:
+                        # They tried to look up a character they don't have
+                        pass
 
         if self.motd:
             if ctx.user.id not in self.motd_given:

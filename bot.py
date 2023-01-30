@@ -261,7 +261,7 @@ class InconnuBot(discord.Bot):
                 "update header",
                 "transfer",
             }:
-                num_chars = await inconnu.char_mgr.character_count(ctx.guild.id, ctx.user.id)
+                num_chars = await inconnu.char_mgr.character_count(ctx.guild_id, ctx.user.id)
                 if num_chars == 1:
                     # The user might have been using an SPC, so let's grab that
                     # character and double-check before yelling at them.

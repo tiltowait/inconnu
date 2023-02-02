@@ -164,6 +164,8 @@ class InconnuBot(discord.Bot):
 
     def can_webhook(self, channel: discord.TextChannel) -> bool:
         """Whether the bot has manage webhooks permission in the channel."""
+        if isinstance(channel, discord.threads.Thread):
+            return False
         return channel.permissions_for(channel.guild.me).manage_webhooks
 
     async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:

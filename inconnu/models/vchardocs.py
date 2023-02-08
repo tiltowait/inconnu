@@ -1,7 +1,10 @@
 """Sub-documents used in VChars."""
 # pylint: disable=abstract-method, too-few-public-methods
 
+import itertools
 from datetime import datetime
+from enum import Enum
+from types import SimpleNamespace as SN
 
 from umongo import EmbeddedDocument, fields
 
@@ -63,3 +66,140 @@ class VCharMacro(EmbeddedDocument):
     staining: str = fields.StrField()
     hunt: bool = fields.BoolField()
     comment: str = fields.StrField(allow_none=True, required=True)
+
+
+@inconnu.db.instance.register
+class VCharTrait(EmbeddedDocument):
+    """A character trait, which may be an attribute, skill, Discipline, or custom."""
+
+    class Type(str, Enum):
+        """The type of trait."""
+
+        ATTRIBUTE = "attribute"
+        SKILL = "skill"
+        DISCIPLINE = "discipline"
+        CUSTOM = "custom"
+
+    # Trait fields
+    name: str = fields.StrField(required=True)
+    rating: int = fields.IntField(required=True)
+    type: str = fields.StrField(required=True)
+    _specialties: list[str] = fields.ListField(
+        fields.StrField, default=list, attribute="specialties"
+    )
+
+    @property
+    def specialties(self) -> list[str]:
+        """The trait's specialties."""
+        return self._specialties.copy()
+
+    def add_specialties(self, specialties: str | list[str]):
+        """Add specialties to the trait."""
+        if isinstance(specialties, str):
+            specialties = {specialties}
+        else:
+            specialties = set(specialties)
+
+        for specialty in specialties:
+            if specialty.lower() not in map(str.lower, self._specialties):
+                self._specialties.append(specialty)
+
+        self._specialties.sort()
+
+    def remove_specialties(self, specialties: str | list[str]):
+        """Remove specialties from the trait."""
+        if isinstance(specialties, str):
+            specialties = {specialties}
+        else:
+            specialties = set(specialties)
+
+        for specialty in map(str.lower, specialties):
+            current = [spec.lower() for spec in self._specialties]
+            try:
+                index = current.index(specialty)
+                del self._specialties[index]
+            except ValueError:
+                continue
+
+    def matching(self, identifier: str, exact: bool) -> list[SN]:
+        """Returns the fully qualified name if a string matches, or None."""
+        tokens = [token.lower() for token in identifier.split(":")]
+
+        # The "comp" lambda takes a token and an instance var
+        if exact:
+            comp = lambda t, i: t == i.lower()
+        else:
+            comp = lambda t, i: i.lower().startswith(t)
+
+        if comp(tokens[0], self.name):
+            # A token might match multiple specs in the same skill. Therefore,
+            # we need to make a list of all matching specs. We don't need to
+            # track ratings, however, as we can just sum the spec counts at the
+            # end.
+            spec_groups = []
+            for token in tokens[1:]:
+                found_specs = []
+                for specialty in self._specialties:
+                    if comp(token, specialty):
+                        found_specs.append(specialty)
+                spec_groups.append(found_specs)
+
+            # If no specialties were given, then spec_groups is empty. If
+            # specialties were given but not found, then we have [[]], which
+            # will eventually return [].
+            #
+            # This also holds true if multiple specs are given and only one
+            # fails to match (e.g. [["Kindred"], []]). It works because
+            # itertools.product() will return an empty list if one of its
+            # arguments is itself an empty list. Therefore, we don't need any
+            # "if not group: return None" patterns in this next block.
+
+            if spec_groups:
+                qualified = []
+                if len(spec_groups) > 1:
+                    # Multiple matching specs per token; get all combinations:
+                    #     [[1, 2], [3]] -> [(1, 3), (2, 3)]
+                    spec_groups = itertools.product(*spec_groups)
+                else:
+                    # Only a single (or no) set of matches. We want this
+                    spec_groups = spec_groups[0]
+
+                seen_groups = []
+                for group in spec_groups:
+                    if isinstance(group, str):
+                        # In practice, only happens with a single matching set;
+                        # aka this is the golden path
+                        rating = self.rating + 1
+                        specs = group
+                    else:
+                        # Multiple possible matches were found
+                        if len(set(group)) < len(group):
+                            # This group has at least one duplicate spec
+                            continue
+
+                        # Skip if we've seen this group before, otherwise
+                        # register
+                        group = set(group)
+                        if group in seen_groups:
+                            continue
+                        seen_groups.append(group)
+
+                        # This group might be several specs long, and each spec
+                        # adds 1 to the rating
+                        rating = self.rating + len(group)
+                        specs = ", ".join(sorted(group))
+
+                    # Construct the qualified name and rating tuple for this
+                    # group but don't make the namespace yet. Once the loop is
+                    # finished, we will cull duplicates.
+                    qual_name = f"{self.name} ({specs})"
+                    qualified.append((qual_name, rating))
+
+                # Multiple matches (or none) might have been found, which is
+                # fine for now and will be taken care of later
+                return [SN(name=n, rating=r) for n, r in set(qualified)]
+            else:
+                # The user didn't give any specialties, so just get the trait
+                return [SN(name=self.name, rating=self.rating)]
+
+        return []

@@ -1,5 +1,7 @@
 """Post search functionality."""
 
+import re
+
 import discord
 from bson.objectid import ObjectId
 from discord.ext.pages import Paginator
@@ -42,7 +44,9 @@ async def search(
         if summary:
             # Show only links to posts
             timestamp = inconnu.gen_timestamp(post.utc_date, "d")
-            preview = post.content[:20].strip() + " ..."
+            sanitized = re.sub(r"[^\w\s]", "", post.content).replace("\n", " ")
+            preview = sanitized[:20].strip() + " ..."
+
             posts.append(f"{timestamp}: [{preview}]({post.url})")
         else:
             # Make an embed for each post

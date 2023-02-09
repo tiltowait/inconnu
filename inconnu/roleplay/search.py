@@ -3,6 +3,7 @@
 import discord
 from bson.objectid import ObjectId
 from discord.ext.pages import Paginator
+from pymongo import DESCENDING
 
 import inconnu
 from inconnu.models import RPPost
@@ -19,15 +20,17 @@ async def search(
 ):
     """Search RP posts for a given string."""
     needle = " ".join(needle.split())  # Normalize
-    search_meta = None
 
     query = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
     footer = []
 
     if needle:
         query["$text"] = {"$search": needle}
-        search_meta = {"$meta": "textScore"}
         footer.append(f"Search key: {needle}")
+        sort_key = ("content", {"$meta": "textScore"})
+    else:
+        # They're just getting recent posts
+        sort_key = ("date", DESCENDING)
     if mentioning is not None:
         query["mentions"] = mentioning.id
         footer.append(f"Mentioning {user.display_name}")
@@ -35,7 +38,7 @@ async def search(
         query["charid"] = charid
 
     posts = []  # Will either contain strings or embeds
-    async for post in RPPost.find(query).sort("content", search_meta).limit(25):
+    async for post in RPPost.find(query).sort(*sort_key).limit(25):
         if summary:
             # Show only links to posts
             timestamp = inconnu.gen_timestamp(post.utc_date, "d")

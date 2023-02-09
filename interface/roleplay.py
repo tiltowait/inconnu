@@ -87,6 +87,11 @@ class RoleplayCog(commands.Cog):
         description="Whether to hide the search results from others (default true)",
         default=True,
     )
+    @option(
+        "summary",
+        description="Whether to show a summary instead of full posts (default false)",
+        default=False,
+    )
     @commands.guild_only()
     async def search(
         self,
@@ -95,9 +100,10 @@ class RoleplayCog(commands.Cog):
         content: str,
         mentioning: discord.Member,
         hidden: bool,
+        summary: bool,
     ):
         """Search for an RP post. Displays up to 5 results."""
-        await inconnu.roleplay.search(ctx, user, content, mentioning, hidden)
+        await inconnu.roleplay.search(ctx, user, content, mentioning, hidden, summary)
 
     @slash_command(guild_ids=TEST_GUILDS)
     @commands.guild_only()

@@ -14,6 +14,7 @@ async def search(
     needle: str,
     mentioning: discord.Member,
     ephemeral: bool,
+    summary: bool,
     charid: ObjectId = None,
 ):
     """Search RP posts for a given string."""
@@ -21,31 +22,47 @@ async def search(
     search_meta = None
 
     query = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
+    footer = []
+
     if needle:
         query["$text"] = {"$search": needle}
         search_meta = {"$meta": "textScore"}
+        footer.append(f"Search key: {needle}")
     if mentioning is not None:
         query["mentions"] = mentioning.id
+        footer.append(f"Mentioning {user.display_name}")
     if charid is not None:
         query["charid"] = charid
 
-    posts = []
-    num = 1
-    async for post in RPPost.find(query).sort("content", search_meta).limit(20):
-        # Make an embed for each post
-        embed = inconnu.roleplay.post_embed(
-            post,
-            author=user.display_name,
-            icon_url=user.display_avatar,
-            footer=f"Search key: {needle}",
-        )
-
-        posts.append(embed)
-        num += 1
+    posts = []  # Will either contain strings or embeds
+    async for post in RPPost.find(query).sort("content", search_meta).limit(25):
+        if summary:
+            # Show only links to posts
+            timestamp = inconnu.gen_timestamp(post.utc_date, "d")
+            preview = post.content[:20].strip() + " ..."
+            posts.append(f"{timestamp}: [{preview}]({post.url})")
+        else:
+            # Make an embed for each post
+            embed = inconnu.roleplay.post_embed(
+                post,
+                author=user.display_name,
+                icon_url=inconnu.get_avatar(user),
+                footer=" • ".join(footer),
+            )
+            posts.append(embed)
 
     if posts:
-        paginator = Paginator(posts)
-        await paginator.respond(ctx.interaction, ephemeral=ephemeral)
+        if summary:
+            # Still need to construct the embed
+            embed = discord.Embed(title="Recent Posts", description="\n".join(posts))
+            embed.set_author(name=user.display_name, icon_url=inconnu.get_avatar(user))
+            if footer:
+                embed.set_footer(text=" • ".join(footer))
+
+            await ctx.respond(embed=embed, ephemeral=ephemeral)
+        else:
+            paginator = Paginator(posts)
+            await paginator.respond(ctx.interaction, ephemeral=ephemeral)
     else:
         # Construct the error message
         err = f"No posts by {user.mention} found"

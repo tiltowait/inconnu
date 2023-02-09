@@ -8,24 +8,30 @@ import inconnu
 from inconnu.models import RPPost
 
 
-async def search(ctx, user: discord.Member, needle: str, ephemeral: bool, charid: ObjectId = None):
+async def search(
+    ctx,
+    user: discord.Member,
+    needle: str,
+    mentioning: discord.Member,
+    ephemeral: bool,
+    charid: ObjectId = None,
+):
     """Search RP posts for a given string."""
-    needle = " ".join(needle.split())
-    if len(needle) < 5:
-        await inconnu.utils.error(
-            ctx,
-            "Your search string must be at least 5 characters long.",
-            title="Please revise your search string",
-        )
-        return
+    needle = " ".join(needle.split())  # Normalize
+    search_meta = None
 
-    query = {"deleted": False, "guild": ctx.guild_id, "user": user.id, "$text": {"$search": needle}}
+    query = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
+    if needle:
+        query["$text"] = {"$search": needle}
+        search_meta = {"$meta": "textScore"}
+    if mentioning is not None:
+        query["mentions"] = mentioning.id
     if charid is not None:
         query["charid"] = charid
 
     posts = []
     num = 1
-    async for post in RPPost.find(query).sort("content", {"$meta": "textScore"}).limit(5):
+    async for post in RPPost.find(query).sort("content", search_meta).limit(20):
         # Make an embed for each post
         embed = inconnu.roleplay.post_embed(
             post,
@@ -41,8 +47,16 @@ async def search(ctx, user: discord.Member, needle: str, ephemeral: bool, charid
         paginator = Paginator(posts)
         await paginator.respond(ctx.interaction, ephemeral=ephemeral)
     else:
-        await inconnu.utils.error(
-            ctx,
-            f"No posts by {user.mention} found matching `{needle}`.",
-            title="Not found",
-        )
+        # Construct the error message
+        err = f"No posts by {user.mention} found"
+        conditions = []
+        if needle:
+            conditions.append(f"matching `{needle}`")
+        if mentioning is not None:
+            conditions.append(f"mentioning {mentioning.mention}")
+
+        if conditions:
+            err += " " + " and ".join(conditions)
+        err += "."
+
+        await inconnu.utils.error(ctx, err, title="Not found")

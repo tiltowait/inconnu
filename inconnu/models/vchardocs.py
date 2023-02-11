@@ -123,6 +123,31 @@ class VCharTrait(EmbeddedDocument):
 
     def matching(self, identifier: str, exact: bool) -> list[SN]:
         """Returns the fully qualified name if a string matches, or None."""
+        matches = []
+        if groups := self.expanding(identifier, exact, False):
+            # The expanded values are sorted alphabetically, and we need
+            # that to match our input for testing exactness
+            tokens = identifier.split(":")
+            tokens = [tokens[0]] + sorted(tokens[1:])
+            normalized = ":".join(tokens).lower()
+
+            for expanded in groups:
+                full_name = self.name
+                if expanded[1:]:
+                    # Add the specialties
+                    full_name += f" ({', '.join(expanded[1:])})"
+
+                matches.append(
+                    SN(
+                        name=full_name,
+                        rating=self.rating + len(expanded[1:]),
+                        exact=normalized == ":".join(expanded).lower(),
+                    )
+                )
+        return matches
+
+    def expanding(self, identifier: str, exact: bool, join=True) -> list[str | list[str]]:
+        """Expand the user's input to full skill:spec names. If join is False, return a list."""
         tokens = [token.lower() for token in identifier.split(":")]
 
         # The "comp" lambda takes a token and an instance var
@@ -155,51 +180,32 @@ class VCharTrait(EmbeddedDocument):
             # "if not group: return None" patterns in this next block.
 
             if spec_groups:
-                qualified = []
+                matches = []
                 if len(spec_groups) > 1:
                     # Multiple matching specs per token; get all combinations:
                     #     [[1, 2], [3]] -> [(1, 3), (2, 3)]
                     spec_groups = itertools.product(*spec_groups)
                 else:
-                    # Only a single (or no) set of matches. We want this
+                    # Zero or one match; golden path
                     spec_groups = spec_groups[0]
 
                 seen_groups = []
                 for group in spec_groups:
                     if isinstance(group, str):
-                        # In practice, only happens with a single matching set;
-                        # aka this is the golden path
-                        rating = self.rating + 1
-                        specs = group
-                    else:
-                        # Multiple possible matches were found
-                        if len(set(group)) < len(group):
-                            # This group has at least one duplicate spec
-                            continue
+                        group = [group]
+                    if len(set(group)) < len(group):
+                        # This group has at least one duplicate spec; skip
+                        continue
 
-                        # Skip if we've seen this group before, otherwise
-                        # register
-                        group = set(group)
-                        if group in seen_groups:
-                            continue
-                        seen_groups.append(group)
+                    group = set(group)
+                    if group in seen_groups:
+                        # Prevent (A, B) and (B, A) from both showing in the results
+                        continue
 
-                        # This group might be several specs long, and each spec
-                        # adds 1 to the rating
-                        rating = self.rating + len(group)
-                        specs = ", ".join(sorted(group))
-
-                    # Construct the qualified name and rating tuple for this
-                    # group but don't make the namespace yet. Once the loop is
-                    # finished, we will cull duplicates.
-                    qual_name = f"{self.name} ({specs})"
-                    qualified.append((qual_name, rating))
-
-                # Multiple matches (or none) might have been found, which is
-                # fine for now and will be taken care of later
-                return [SN(name=n, rating=r) for n, r in set(qualified)]
+                    matches.append([self.name] + sorted(group))
             else:
-                # The user didn't give any specialties, so just get the trait
-                return [SN(name=self.name, rating=self.rating)]
+                matches = [[self.name]]
 
-        return []
+            if join:
+                return [":".join(match) for match in matches]
+            return matches

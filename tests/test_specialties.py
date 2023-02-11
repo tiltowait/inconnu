@@ -72,6 +72,11 @@ class TestSpecialties(unittest.TestCase):
         skill.add_specialties(["One", "Two", "Two"])
         self.assertEqual(len(skill.specialties), 4, "List wasn't added")
 
+    def test_alphabetic_specialties(self):
+        skill = gen_skill("Kine", "Kindred", "Apples")
+        skill.add_specialties("Blip")
+        self.assertEqual(skill.specialties, ["Apples", "Blip", "Kindred", "Kine"])
+
     def test_specialty_removal(self):
         skill = gen_skill("One", "Two", "Three")
         self.assertEqual(len(skill.specialties), 3)
@@ -109,6 +114,11 @@ class TestSpecialties(unittest.TestCase):
         matches = skill.matching(":kin", False)
         self.assertEqual(len(matches), 1)
 
+        # Exact match with inexact flag should work
+        matches = skill.matching(NAME + ":kindred", False)
+        self.assertEqual(len(matches), 1)
+        self.assertTrue(matches[0].exact, "Match should be exact even without the flag set")
+
         match = matches[0]
         self.assertEqual(match.name, f"{NAME} (Kindred)")
         self.assertEqual(match.rating, RATING + 1)
@@ -116,12 +126,15 @@ class TestSpecialties(unittest.TestCase):
         # Multiple matches
         matches = skill.matching(":k", False)
         self.assertEqual(len(matches), 2, str(matches))
+        self.assertFalse(matches[0].exact)
+        self.assertFalse(matches[1].exact)
 
     def test_exact_specialty_matching(self):
         skill = gen_skill("Kindred", "StreetFighting")
 
         matches = skill.matching(NAME, True)
         self.assertEqual(len(matches), 1)
+        self.assertTrue(matches[0].exact)
 
         matches = skill.matching("b", True)
         self.assertEqual(len(matches), 0)
@@ -137,9 +150,37 @@ class TestSpecialties(unittest.TestCase):
 
         matches = skill.matching(NAME + ":Kindred:StreetFighting", True)
         self.assertEqual(len(matches), 1)
+        self.assertTrue(matches[0].exact)
 
         matches = skill.matching(NAME + ":StreetFighting", True)
         self.assertEqual(len(matches), 1)
+        self.assertTrue(matches[0].exact)
 
         matches = skill.matching(":StreetFighting", True)
         self.assertEqual(len(matches), 0)
+
+    def test_expansion(self):
+        skill = gen_skill("Kindred", "Kine", "StreetFighting")
+
+        expansions = skill.expanding("b", False)
+        self.assertEqual(len(expansions), 1)
+        self.assertEqual(expansions[0], NAME)
+
+        expansions = skill.expanding("b:k", False)
+        self.assertEqual(len(expansions), 2)
+
+        expansions = skill.expanding("b:kind", False)
+        self.assertEqual(len(expansions), 1)
+        self.assertEqual(expansions[0], NAME + ":Kindred")
+
+        expansions = skill.expanding(NAME, True)
+        self.assertEqual(len(expansions), 1)
+        self.assertEqual(expansions[0], NAME)
+
+        expansions = skill.expanding(NAME + ":Kindred", True)
+        self.assertEqual(expansions[0], NAME + ":Kindred")
+
+        expansions = skill.expanding(":k", False)
+        self.assertEqual(len(expansions), 2)
+        self.assertTrue(NAME + ":Kindred" in expansions)
+        self.assertTrue(NAME + ":Kine" in expansions)

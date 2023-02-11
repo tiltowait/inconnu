@@ -116,3 +116,30 @@ class TestSpecialties(unittest.TestCase):
         # Multiple matches
         matches = skill.matching(":k", False)
         self.assertEqual(len(matches), 2, str(matches))
+
+    def test_exact_specialty_matching(self):
+        skill = gen_skill("Kindred", "StreetFighting")
+
+        matches = skill.matching(NAME, True)
+        self.assertEqual(len(matches), 1)
+
+        matches = skill.matching("b", True)
+        self.assertEqual(len(matches), 0)
+
+        matches = skill.matching(NAME + ":k", True)
+        self.assertEqual(len(matches), 0)
+
+        matches = skill.matching(NAME.lower(), True)
+        self.assertEqual(len(matches), 1)
+
+        matches = skill.matching(NAME + ":Kindred", True)
+        self.assertEqual(len(matches), 1)
+
+        matches = skill.matching(NAME + ":Kindred:StreetFighting", True)
+        self.assertEqual(len(matches), 1)
+
+        matches = skill.matching(NAME + ":StreetFighting", True)
+        self.assertEqual(len(matches), 1)
+
+        matches = skill.matching(":StreetFighting", True)
+        self.assertEqual(len(matches), 0)

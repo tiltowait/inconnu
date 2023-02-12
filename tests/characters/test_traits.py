@@ -46,7 +46,7 @@ def test_find_trait(vampire: VChar, custom_traits: dict[str, int]):
         assert found.name == trait
         assert found.rating == rating
 
-    with pytest.raises(inconnu.errors.TraitNotFoundError):
+    with pytest.raises(inconnu.errors.TraitNotFound):
         _ = vampire.find_trait("fake")
 
 
@@ -65,7 +65,7 @@ def test_find_exact_trait(vampire: VChar):
     assert trait.rating == found.rating
     assert found.exact
 
-    with pytest.raises(inconnu.errors.TraitNotFoundError):
+    with pytest.raises(inconnu.errors.TraitNotFound):
         _ = vampire.find_trait(trait.name[0], True)
 
 
@@ -80,7 +80,7 @@ def test_delete_trait(vampire: VChar):
 
     vampire.delete_trait(trait.name)
     assert len(vampire.traits) == trait_count - 1
-    with pytest.raises(inconnu.errors.TraitNotFoundError):
+    with pytest.raises(inconnu.errors.TraitNotFound):
         _ = vampire.find_trait(trait.name)
 
     # Hard check of traits
@@ -117,7 +117,7 @@ def test_add_specialties(vampire: VChar):
             assert "StreetFighting" in trait.specialties
             break
 
-    with pytest.raises(inconnu.errors.TraitNotFoundError):
+    with pytest.raises(inconnu.errors.TraitNotFound):
         vampire.add_specialties("FakeSkill", ["FakeTrait"])
 
     with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
@@ -177,5 +177,5 @@ def test_exact_trait_find(vampire: VChar):
     trait = vampire.find_trait("brawl", True)
     assert trait.name == "Brawl"
 
-    with pytest.raises(inconnu.errors.TraitNotFoundError):
+    with pytest.raises(inconnu.errors.TraitNotFound):
         _ = vampire.find_trait("b", True)

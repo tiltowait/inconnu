@@ -384,7 +384,7 @@ class VChar(Document):
             found.extend(matches)
 
         if not found:
-            raise inconnu.errors.TraitNotFoundError(self, trait)
+            raise inconnu.errors.TraitNotFound(self, trait)
 
         if len(found) > 1:
             keys = map(lambda m: m.key, found)
@@ -445,13 +445,13 @@ class VChar(Document):
         return adjustment_text, adjustments
 
     def delete_trait(self, name: str) -> str:
-        """Delete a trait. Raises TraitNotFoundError if the trait doesn't exist."""
+        """Delete a trait. Raises TraitNotFound if the trait doesn't exist."""
         for index, trait in enumerate(self._traits):
             if trait.matching(name, True):
                 del self._traits[index]
                 return trait
 
-        raise inconnu.errors.TraitNotFoundError(self, name)
+        raise inconnu.errors.TraitNotFound(self, name)
 
     def add_specialties(self, trait_name: str, specialties: list[str] | str):
         """Add specialties to a trait."""
@@ -460,7 +460,7 @@ class VChar(Document):
                 trait.add_specialties(specialties)
                 return
 
-        raise inconnu.errors.TraitNotFoundError(self, trait_name)
+        raise inconnu.errors.TraitNotFound(self, trait_name)
 
     def remove_specialties(self, trait_name: str, specialties: list[str] | str):
         """Remove specialties from a trait."""
@@ -469,7 +469,7 @@ class VChar(Document):
                 trait.remove_specialties(specialties)
                 return
 
-        raise inconnu.errors.TraitNotFoundError(self, trait_name)
+        raise inconnu.errors.TraitNotFound(self, trait_name)
 
     # Macros!
 

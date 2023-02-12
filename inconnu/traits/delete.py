@@ -68,7 +68,7 @@ def __delete_traits(character: "VChar", *traits) -> list:
             try:
                 trait = character.delete_trait(trait)
                 deleted.append(trait)
-            except inconnu.errors.TraitNotFoundError:
+            except inconnu.errors.TraitNotFound:
                 errs.append(trait)
 
     return SimpleNamespace(deleted=deleted, errors=errs)

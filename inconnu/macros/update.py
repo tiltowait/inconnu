@@ -37,7 +37,7 @@ async def update(ctx, character, macro: str, syntax: str):
     except (
         inconnu.errors.MacroNotFoundError,
         inconnu.errors.AmbiguousTraitError,
-        inconnu.errors.TraitNotFoundError,
+        inconnu.errors.TraitNotFound,
         SyntaxError,
         ValueError,
     ) as err:

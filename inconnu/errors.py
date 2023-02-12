@@ -75,7 +75,7 @@ class TraitAlreadyExistsError(TraitError):
     """Raised when the user tries to add an extant trait."""
 
 
-class TraitNotFoundError(TraitError):
+class TraitNotFound(TraitError):
     """Raised when a user specifies a nonexistent trait."""
 
     def __init__(self, character, trait: str):

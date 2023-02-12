@@ -14,7 +14,6 @@ def gen_char(splat: str) -> inconnu.models.VChar:
         health=6 * inconnu.constants.Damage.NONE,
         willpower=5 * inconnu.constants.Damage.NONE,
         potency=splat == "vampire" and 1 or 0,
-        _traits={},
     )
     char.pre_insert()
 

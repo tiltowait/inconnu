@@ -14,13 +14,14 @@ from discord import Embed
 from umongo import Document, fields
 
 import inconnu
-from inconnu.constants import UNIVERSAL_TRAITS, Damage
+from inconnu.constants import ATTRIBUTES, SKILLS, UNIVERSAL_TRAITS, Damage
 from inconnu.models.vchardocs import (
     VCharExperience,
     VCharExperienceEntry,
     VCharHeader,
     VCharMacro,
     VCharProfile,
+    VCharTrait,
 )
 from logger import Logger
 
@@ -67,7 +68,7 @@ class VChar(Document):
     stains = fields.IntField(default=0)
     _hunger = fields.IntField(default=1, attribute="hunger")
     potency = fields.IntField()
-    _traits = fields.DictField(attribute="traits")
+    _traits = fields.ListField(fields.EmbeddedField(VCharTrait), default=list)
 
     # Biographical/profile data
     profile = fields.EmbeddedField(VCharProfile, default=VCharProfile)
@@ -338,90 +339,94 @@ class VChar(Document):
 
     # Traits
 
-    def has_trait(self, trait: str) -> bool:
-        """Determine whether a character has a given trait."""
-        return trait.lower() in map(lambda t: t.lower(), self.traits.keys())
+    @property
+    def _inherent_traits(self) -> list[VCharTrait]:
+        """Get this character's inherent traits."""
+        if self.is_vampire:
+            inherents = UNIVERSAL_TRAITS
+        else:
+            inherents = filter(lambda t: t not in VChar.VAMPIRE_TRAITS, UNIVERSAL_TRAITS)
 
-    def find_trait(self, trait: str, exact=False) -> SimpleNamespace:
+        traits = []
+        for inherent in inherents:
+            rating = getattr(self, inherent.lower())
+            if isinstance(rating, str):
+                # Tracker string, so get the undamaged count
+                rating = rating.count(Damage.NONE)
+            traits.append(VCharTrait(name=inherent, rating=rating, type=VCharTrait.Type.INHERENT))
+
+        return traits
+
+    @property
+    def _all_traits(self) -> list[VCharTrait]:
+        """A copy of all the character's traits, including inherent traits."""
+        return self.traits + self._inherent_traits
+
+    def has_trait(self, name: str) -> bool:
+        """Determine whether a character has a given trait."""
+        for trait in self._traits:
+            if trait.matching(name, True):
+                return True
+        return False
+
+    def find_trait(self, name: str, exact=False) -> SimpleNamespace:
         """
         Finds the closest matching trait.
         Raises AmbiguousTraitError if more than one are found.
         """
-        trait = trait.lower()
+        found = []
 
-        # Add universal traits. Only add the vampire traits if it's a vampire.
-        my_traits = self.traits
-        if self.is_vampire:
-            universals = UNIVERSAL_TRAITS
-        else:
-            universals = filter(lambda t: t not in VChar.VAMPIRE_TRAITS, UNIVERSAL_TRAITS)
+        for trait in self._all_traits:
+            if matches := trait.matching(name, exact):
+                for match in matches:
+                    if match.exact:
+                        return match
+            found.extend(matches)
 
-        for universal in universals:
-            # Only add universal traits if they might match the trait
-            if universal.lower().startswith(trait):
-                my_traits[universal] = getattr(self, universal.lower())
-
-        matches = [(k, v) for k, v in my_traits.items() if k.lower().startswith(trait)]
-
-        if not matches:
+        if not found:
             raise inconnu.errors.TraitNotFoundError(self, trait)
 
-        # A character might have a trait whose name is a subset of another trait.
-        # The canonical example: "Surge", "Surgery". Typing "Surge" should work.
-        # If we've found an exact match, then we replace our matches list with it
-        # and move on from there.
+        if len(found) > 1:
+            keys = map(lambda m: m.key, found)
+            raise inconnu.errors.AmbiguousTraitError(trait, keys)
 
-        filtered = [match for match in matches if match[0].lower() == trait]
-        if len(filtered) == 1:
-            matches = filtered
+        # One single match found
+        return found[0]
 
-        # From here, we've found the most accurate match possible. If there's
-        # only one match, we're good to go. If, however, there are more than
-        # one match, we give them a list of matches so they can disambiguate.
+    def assign_traits(self, traits: dict[str, int], category=VCharTrait.Type.CUSTOM) -> str:
+        """Add traits to the character. Overwrites old traits if they exist."""
+        for name in traits:
+            if name.lower() in map(str.lower, UNIVERSAL_TRAITS):
+                raise ValueError(f"{name!r} is a reserved trait and can't be added")
 
-        if len(matches) == 1:
-            found_trait, rating = matches[0]
-
-            if exact and trait != found_trait.lower():
-                raise inconnu.errors.TraitNotFoundError(self, trait)
-
-            # Convert trackers to a rating
-            if isinstance(rating, str):
-                rating = rating.count(Damage.NONE)
-            return SimpleNamespace(name=found_trait, rating=rating)
-
-        matches = map(lambda t: t[0], matches)
-        raise inconnu.errors.AmbiguousTraitError(trait, matches)
-
-    def assign_traits(self, traits: dict) -> str:
-        """Add traits to the collection. Overwrites old traits if they exist."""
-        canonical_traits = {}
-
-        # This semi-funky structure (example: {stamina: (Stamina, 2)}) is used
-        # to make it easy to quickly get the current rating and canonical name
-        # for a trait. We could use VChar.find_trait(), but it's slower because
-        # of how it tries to do partial matches.
-        current_traits = {t.lower(): (t, r) for t, r in self.traits.items()}
-
-        # WHen the user ups Composure, Resolve, or Stamina, we want to modify
-        # HP or WP by the appropriate amount as well. We use a Counter to track
-        # the amount by which the appropriate track should change.
+        assignments = {}
         counter = Counter()
 
-        # When updating, we want to keep the old capitalization
-        for input_trait, rating in traits.items():
-            trait, current_rating = current_traits.get(input_trait.lower(), (input_trait, 0))
+        for input_name, input_rating in traits.items():
+            updated = False
+            for trait in self._traits:
+                if trait.matching(input_name, True):
+                    if trait.name in ["Resolve", "Composure"]:
+                        counter["willpower"] += input_rating - trait.rating
+                    elif trait.name == "Stamina":
+                        counter["health"] += input_rating - trait.rating
 
-            # Check for Resolve or Composure
-            if trait in ["Resolve", "Composure"]:
-                counter["willpower"] += rating - current_rating
-            elif trait == "Stamina":
-                counter["health"] += rating - current_rating
+                    trait.rating = input_rating
+                    assignments[trait.name] = input_rating
+                    updated = True
 
-            canonical_traits[trait] = rating
-            self._traits[trait] = rating
+            if not updated:
+                # Automatically categorize attributes and skills (helps with chargen)
+                if input_name in ATTRIBUTES:
+                    category = VCharTrait.Type.ATTRIBUTE
+                elif input_name in SKILLS:
+                    category = VCharTrait.Type.SKILL
 
-        # Determine HP/WP gain, if any
+                new_trait = VCharTrait(name=input_name, rating=input_rating, type=category.value)
+                self._traits.append(new_trait)
+                assignments[input_name] = input_rating
+
+        # Traits added; now adjust HP/WP
         adjustments = []
 
         for track, delta in counter.items():
@@ -437,14 +442,34 @@ class VChar(Document):
         else:
             adjustment_text = ""
 
-        return adjustment_text, canonical_traits
+        return adjustment_text, adjustments
 
-    def delete_trait(self, trait: str) -> str:
+    def delete_trait(self, name: str) -> str:
         """Delete a trait. Raises TraitNotFoundError if the trait doesn't exist."""
-        trait = self.find_trait(trait, exact=True).name
-        del self._traits[trait]
+        for index, trait in enumerate(self._traits):
+            if trait.matching(name, True):
+                del self._traits[index]
+                return trait
 
-        return trait
+        raise inconnu.errors.TraitNotFoundError(self, name)
+
+    def add_specialties(self, trait_name: str, specialties: list[str] | str):
+        """Add specialties to a trait."""
+        for trait in self._traits:
+            if trait.matching(trait_name, True):
+                trait.add_specialties(specialties)
+                return
+
+        raise inconnu.errors.TraitNotFoundError(self, trait_name)
+
+    def remove_specialties(self, trait_name: str, specialties: list[str] | str):
+        """Remove specialties from a trait."""
+        for trait in self._traits:
+            if trait.matching(trait_name, True):
+                trait.remove_specialties(specialties)
+                return
+
+        raise inconnu.errors.TraitNotFoundError(self, trait_name)
 
     # Macros!
 

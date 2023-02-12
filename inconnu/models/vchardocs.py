@@ -90,9 +90,39 @@ class VCharTrait(EmbeddedDocument):
     )
 
     @property
+    def is_attribute(self) -> bool:
+        """Whether the trait is an attribute."""
+        return self.type == VCharTrait.Type.ATTRIBUTE
+
+    @property
+    def is_custom(self) -> bool:
+        """Whether the trait is custom."""
+        return self.type == VCharTrait.Type.CUSTOM
+
+    @property
+    def is_discipline(self) -> bool:
+        """Whether the trait is a Discipline."""
+        return self.type == VCharTrait.Type.DISCIPLINE
+
+    @property
+    def is_inherent(self) -> bool:
+        """Whether the trait is inherent."""
+        return self.type == VCharTrait.Type.INHERENT
+
+    @property
+    def is_skill(self) -> bool:
+        """Whether the trait is a skill."""
+        return self.type == VCharTrait.Type.SKILL
+
+    @property
     def specialties_allowed(self) -> bool:
         """Only skills and custom traits can have specialties."""
         return self.type in [VCharTrait.Type.CUSTOM.value, VCharTrait.Type.SKILL.value]
+
+    @property
+    def has_specialties(self) -> bool:
+        """Whether the trait has any specialties."""
+        return len(self._specialties) > 0
 
     @property
     def specialties(self) -> list[str]:
@@ -156,6 +186,7 @@ class VCharTrait(EmbeddedDocument):
                         rating=self.rating + len(expanded[1:]),
                         exact=normalized == key.lower(),
                         key=key,
+                        type=self.type,
                     )
                 )
         return matches

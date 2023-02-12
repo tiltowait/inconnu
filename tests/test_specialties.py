@@ -1,24 +1,21 @@
 """Specialty test suite."""
-# pylint: disable=too-few-public-methods
 
 import pytest
 
 from inconnu.models.vchardocs import VCharTrait
 
-NAME = "Brawl"
-RATING = 4
-SPECIALTIES = ["Kindred", "StreetFighting"]
+SPECIALTIES = ["Kindred", "StreetFighting", "Kine"]  # Shared specialties
 
 
 @pytest.fixture
 def skill() -> VCharTrait:
     """A basic trait."""
-    return VCharTrait(name=NAME, rating=RATING, type=VCharTrait.Type.SKILL)
+    return VCharTrait(name="Brawl", rating=4, type=VCharTrait.Type.SKILL)
 
 
 def gen_skill(*specialties: str) -> VCharTrait:
     """Shorthand skill generation."""
-    skill = VCharTrait(name=NAME, rating=RATING, type=VCharTrait.Type.SKILL)
+    skill = VCharTrait(name="Brawl", rating=4, type=VCharTrait.Type.SKILL)
     skill.add_specialties(specialties)
 
     return skill
@@ -27,11 +24,12 @@ def gen_skill(*specialties: str) -> VCharTrait:
 @pytest.mark.parametrize(
     "needle,exact,count,name,rating",
     [
-        ("b", False, 1, NAME, RATING),
+        ("b", False, 1, "Brawl", 4),
         ("q", False, 0, None, None),
         ("b", True, 0, None, None),
-        (NAME, True, 1, NAME, RATING),
-        (NAME.lower(), True, 1, NAME, RATING),
+        ("Brawl", True, 1, "Brawl", 4),
+        ("brawl", True, 1, "Brawl", 4),
+        ("BRAWL", True, 1, "Brawl", 4),
     ],
 )
 def test_basic_skill_matching(needle, exact, count, name, rating, skill):
@@ -107,7 +105,7 @@ def test_specialty_matching(
     expectations: list[tuple[str, int, bool]],
     skill: VCharTrait,
 ):
-    skill.add_specialties(["Kindred", "StreetFighting", "Kine"])
+    skill.add_specialties(SPECIALTIES)
     assert len(skill.specialties) == 3
 
     matches = skill.matching(needle, exact)
@@ -144,7 +142,7 @@ def test_expansion(
     expectations: list[str],
     skill: VCharTrait,
 ):
-    skill.add_specialties(["Kindred", "Kine", "StreetFighting"])
+    skill.add_specialties(SPECIALTIES)
     assert len(skill.specialties) == 3
 
     expansions = skill.expanding(needle, exact)

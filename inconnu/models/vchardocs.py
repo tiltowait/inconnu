@@ -76,9 +76,10 @@ class VCharTrait(EmbeddedDocument):
         """The type of trait."""
 
         ATTRIBUTE = "attribute"
-        SKILL = "skill"
-        DISCIPLINE = "discipline"
         CUSTOM = "custom"
+        DISCIPLINE = "discipline"
+        INHERENT = "inherent"
+        SKILL = "skill"
 
     # Trait fields
     name: str = fields.StrField(required=True)
@@ -137,11 +138,14 @@ class VCharTrait(EmbeddedDocument):
                     # Add the specialties
                     full_name += f" ({', '.join(expanded[1:])})"
 
+                key = ":".join(expanded)
+
                 matches.append(
                     SN(
                         name=full_name,
                         rating=self.rating + len(expanded[1:]),
-                        exact=normalized == ":".join(expanded).lower(),
+                        exact=normalized == key.lower(),
+                        key=key,
                     )
                 )
         return matches

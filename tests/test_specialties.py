@@ -83,18 +83,36 @@ def test_specialty_removal(skill: VCharTrait):
         # Inexact
         (":z", False, 0, None),
         (":k:z", False, 0, None),
-        ("b:kind", False, 1, [("Brawl (Kindred)", 5, False)]),
-        (":kind", False, 1, [("Brawl (Kindred)", 5, False)]),
-        ("brawl:kindred", False, 1, [("Brawl (Kindred)", 5, True)]),
-        (":k", False, 2, [("Brawl (Kindred)", 5, False), ("Brawl (Kine)", 5, False)]),
-        (":kind:s", False, 1, [("Brawl (Kindred, StreetFighting)", 6, False)]),
+        ("b:kind", False, 1, [("Brawl (Kindred)", 5, False, "Brawl:Kindred")]),
+        (":kind", False, 1, [("Brawl (Kindred)", 5, False, "Brawl:Kindred")]),
+        ("brawl:kindred", False, 1, [("Brawl (Kindred)", 5, True, "Brawl:Kindred")]),
+        (
+            ":k",
+            False,
+            2,
+            [
+                ("Brawl (Kindred)", 5, False, "Brawl:Kindred"),
+                ("Brawl (Kine)", 5, False, "Brawl:Kine"),
+            ],
+        ),
+        (
+            ":kind:s",
+            False,
+            1,
+            [("Brawl (Kindred, StreetFighting)", 6, False, "Brawl:Kindred:StreetFighting")],
+        ),
         # Exact
-        ("Brawl", True, 1, [("Brawl", 4, True)]),
-        ("brawl", True, 1, [("Brawl", 4, True)]),
+        ("Brawl", True, 1, [("Brawl", 4, True, "Brawl")]),
+        ("brawl", True, 1, [("Brawl", 4, True, "Brawl")]),
         ("b", True, 0, None),
-        ("brawl:kindred", True, 1, [("Brawl (Kindred)", 5, True)]),
+        ("brawl:kindred", True, 1, [("Brawl (Kindred)", 5, True, "Brawl:Kindred")]),
         ("brawl:kin", True, 0, None),
-        ("Brawl:Kindred:StreetFighting", True, 1, [("Brawl (Kindred, StreetFighting)", 6, True)]),
+        (
+            "Brawl:Kindred:StreetFighting",
+            True,
+            1,
+            [("Brawl (Kindred, StreetFighting)", 6, True, "Brawl:Kindred:StreetFighting")],
+        ),
         (":kindred", True, 0, None),
     ],
 )
@@ -113,10 +131,11 @@ def test_specialty_matching(
 
     if matches:
         for match, expected in zip(matches, expectations):
-            name, rating, is_exact = expected
+            name, rating, is_exact, key = expected
             assert match.name == name
             assert match.rating == rating
             assert match.exact == is_exact
+            assert match.key == key
 
 
 @pytest.mark.parametrize(

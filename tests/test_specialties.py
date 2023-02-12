@@ -5,21 +5,16 @@ import pytest
 import inconnu.errors
 from inconnu.models.vchardocs import VCharTrait
 
-SPECIALTIES = ["Kindred", "StreetFighting", "Kine"]  # Shared specialties
+
+@pytest.fixture
+def specialties() -> list[str]:
+    return ["Kindred", "StreetFighting", "Kine"]
 
 
 @pytest.fixture
 def skill() -> VCharTrait:
     """A basic trait."""
     return VCharTrait(name="Brawl", rating=4, type=VCharTrait.Type.SKILL.value)
-
-
-def gen_skill(*specialties: str) -> VCharTrait:
-    """Shorthand skill generation."""
-    skill = VCharTrait(name="Brawl", rating=4, type=VCharTrait.Type.SKILL.value)
-    skill.add_specialties(specialties)
-
-    return skill
 
 
 @pytest.mark.parametrize(
@@ -123,8 +118,9 @@ def test_specialty_matching(
     count: int,
     expectations: list[tuple[str, int, bool]],
     skill: VCharTrait,
+    specialties: list[str],
 ):
-    skill.add_specialties(SPECIALTIES)
+    skill.add_specialties(specialties)
     assert len(skill.specialties) == 3
 
     matches = skill.matching(needle, exact)
@@ -161,8 +157,9 @@ def test_expansion(
     count: int,
     expectations: list[str],
     skill: VCharTrait,
+    specialties: list[str],
 ):
-    skill.add_specialties(SPECIALTIES)
+    skill.add_specialties(specialties)
     assert len(skill.specialties) == 3
 
     expansions = skill.expanding(needle, exact)

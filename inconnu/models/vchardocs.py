@@ -209,3 +209,6 @@ class VCharTrait(EmbeddedDocument):
             if join:
                 return [":".join(match) for match in matches]
             return matches
+
+        # No matches
+        return []

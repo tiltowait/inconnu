@@ -1,10 +1,19 @@
 """Test character manager fetching."""
 # pylint: disable=too-few-public-methods
 
-import unittest
 from types import SimpleNamespace
 
+import pytest
+import pytest_asyncio
+
 import inconnu
+from inconnu.errors import CharacterNotFoundError
+
+GUILD = 1
+USER = 1
+CHAR_NAME = "Test"
+WRONG_GUILD = 2
+WRONG_USER = 2
 
 # We have to make a bunch of mock classes in order to fool the CharacterManager
 # into letting us fetch characters.
@@ -51,55 +60,49 @@ class MockUser:
         self.guild_permissions = MockPermissions(admin)
 
 
-class TestManagerPermissions(unittest.IsolatedAsyncioTestCase):
-    """Test the CharacterManager fetch permissions."""
+@pytest_asyncio.fixture(scope="module")
+async def char_id() -> str:
+    """The ID of a dummy character inserted into the database."""
+    splat = "vampire"
+    char = inconnu.models.VChar(
+        guild=1,
+        user=1,
+        _name="Test",
+        splat=splat,
+        _humanity=7,
+        health=6 * inconnu.constants.Damage.NONE,
+        willpower=5 * inconnu.constants.Damage.NONE,
+        potency=splat == "vampire" and 1 or 0,
+    )
+    await char.commit()
+    yield char.id
+    await char.delete()
 
-    GUILD = 1
-    USER = 1
-    CHAR_NAME = "Test"
-    CHAR_ID = "633cd0461b6d765e70385f80"
-    WRONG_GUILD = 2
-    WRONG_USER = 2
 
-    async def test_management(self):
-        """Run a battery of CharManager tests."""
-        # A collision between the unit test closing the running loop each test
-        # and the architecture of umongo + the bot means we have to put
-        # everything into the same test case. We could probably avoid this with
-        # pytest, but for now we'll keep with the built-in unit testing
-        # framework.
+@pytest.mark.parametrize(
+    "user_id,admin,guild,exception",
+    [
+        (USER, False, GUILD, None),
+        (WRONG_USER, False, GUILD, CharacterNotFoundError),
+        (USER, False, WRONG_GUILD, CharacterNotFoundError),
+        (WRONG_USER, False, WRONG_GUILD, CharacterNotFoundError),
+        (WRONG_USER, True, GUILD, None),
+        (WRONG_USER, True, WRONG_GUILD, LookupError),
+        (USER, True, WRONG_GUILD, LookupError),
+    ],
+)
+@pytest.mark.asyncio
+async def test_management(
+    user_id: int, admin: bool, guild: int, exception: Exception, char_id: str
+):
+    """Run a battery of CharManager tests."""
+    user = MockUser(user_id, admin)
+    inconnu.char_mgr.bot = MockBot(user)  # Establish admin (or not)
+    identifier = char_id if admin else CHAR_NAME
 
-        user = MockUser(self.USER, False)
-        char = await inconnu.char_mgr.fetchone(self.GUILD, user, self.CHAR_NAME)
-        self.assertIsNotNone(char)
-
-        # Wrong user, right guild, no admin
-        user = MockUser(self.WRONG_USER, False)
-        with self.assertRaises(inconnu.errors.CharacterNotFoundError):
-            _ = await inconnu.char_mgr.fetchone(self.GUILD, user, self.CHAR_NAME)
-
-        # Right user, wrong guild
-        user = MockUser(self.USER, False)
-        with self.assertRaises(inconnu.errors.CharacterNotFoundError):
-            _ = await inconnu.char_mgr.fetchone(self.WRONG_GUILD, user, self.CHAR_NAME)
-
-        # Wrong user, wrong guild
-        user = MockUser(self.WRONG_USER, False)
-        with self.assertRaises(inconnu.errors.CharacterNotFoundError):
-            _ = await inconnu.char_mgr.fetchone(self.WRONG_GUILD, user, self.CHAR_NAME)
-
-        # Wrong user, right guild, admin
-        user = MockUser(self.WRONG_USER, True)
-        inconnu.char_mgr.bot = MockBot(user)
-        char = await inconnu.char_mgr.fetchone(self.GUILD, user, self.CHAR_ID)
-        self.assertIsNotNone(char)
-
-        # Wrong user, wrong guild, admin
-        user = MockUser(self.WRONG_USER, True)
-        with self.assertRaises(LookupError):
-            _ = await inconnu.char_mgr.fetchone(self.WRONG_GUILD, user, self.CHAR_ID)
-
-        # Right user, wrong guild, admin
-        user = MockUser(self.USER, True)
-        with self.assertRaises(LookupError):
-            _ = await inconnu.char_mgr.fetchone(self.WRONG_GUILD, user, self.CHAR_ID)
+    if exception is not None:
+        with pytest.raises(exception):
+            _ = await inconnu.char_mgr.fetchone(guild, user, identifier)
+    else:
+        char = await inconnu.char_mgr.fetchone(guild, user, identifier)
+        assert char is not None

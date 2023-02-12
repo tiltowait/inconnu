@@ -1,92 +1,89 @@
 """Character tracker tests."""
 
-import unittest
+import pytest
 
 from inconnu.constants import Damage
+from inconnu.models import VChar
 from tests.characters import gen_char
 
 
-class TestCharacterTrackers(unittest.TestCase):
-    """
-    A class for testing various character tracker methods for different splats.
-    """
+@pytest.fixture(params=["vampire", "ghoul", "mortal", "thin-blood"])
+def character(request) -> VChar:
+    return gen_char(request.param)
 
-    def test_hunger(self):
-        """Test Hunger rating for the different splats."""
-        for splat in ["vampire", "ghoul", "mortal", "thin-blood"]:
-            char = gen_char(splat)
-            if char.is_vampire:
-                self.assertEqual(char.hunger, 1)
-            else:
-                self.assertEqual(char.hunger, 0)
-                char.hunger = 4
-                self.assertEqual(char.hunger, 0, "Hunger should always be zero")
 
-        char.hunger = 3
-        self.assertEqual(char.hunger, 3)
-        char.hunger = 30
-        self.assertEqual(char.hunger, 5)
-        char.hunger = -3
-        self.assertEqual(char.hunger, 0)
+def test_hunger(character: VChar):
+    if character.is_vampire:
+        assert character.hunger == 1
 
-    def test_apply_damage(self):
-        """Test damage application and wrapping."""
-        char = gen_char("vampire")
+        # Test clamping
+        character.hunger = 3
+        assert character.hunger == 3
+        character.hunger = 30
+        assert character.hunger == 5, "Hunger should have clamped to 5"
+        character.hunger = -3
+        assert character.hunger == 0, "Hunger should have clamped to 0"
 
-        char.apply_damage("health", Damage.SUPERFICIAL, 3)
-        self.assertEqual(char.health, "...///")
+    else:
+        assert character.hunger == 0
+        character.hunger = 4
+        assert character.hunger == 0, "Non-vampires should have zero Hunger"
 
-        char.apply_damage("health", Damage.AGGRAVATED, 1)
-        self.assertEqual(char.health, "..///x")
 
-        char.apply_damage("health", Damage.SUPERFICIAL, 2)
-        self.assertEqual(char.health, "/////x")
-        self.assertTrue(char.physically_impaired)
-        self.assertFalse(char.mentally_impaired)
+def test_apply_damage(character: VChar):
+    """Test damage application and wrapping."""
+    character.apply_damage("health", Damage.SUPERFICIAL, 3)
+    assert character.health == "...///"
 
-        char.apply_damage("health", Damage.SUPERFICIAL, 2)
-        self.assertEqual(char.health, "///xxx")
-        self.assertEqual(char.superficial_hp, 3)
-        self.assertEqual(char.aggravated_hp, 3)
+    character.apply_damage("health", Damage.AGGRAVATED, 1)
+    assert character.health == "..///x"
 
-        char.apply_damage("willpower", Damage.SUPERFICIAL, 8)
-        self.assertEqual(char.willpower, "//xxx")
-        self.assertEqual(char.superficial_wp, 2)
-        self.assertEqual(char.aggravated_wp, 3)
-        self.assertTrue(char.mentally_impaired)
+    character.apply_damage("health", Damage.SUPERFICIAL, 2)
+    assert character.health == "/////x"
+    assert character.physically_impaired
+    assert not character.mentally_impaired
 
-    def test_set_damage(self):
-        """Test the set_damage() method."""
-        char = gen_char("vampire")
+    character.apply_damage("health", Damage.SUPERFICIAL, 2)
+    assert character.health == "///xxx"
+    assert character.superficial_hp == 3
+    assert character.aggravated_hp == 3
 
-        char.set_damage("health", Damage.SUPERFICIAL, 3)
-        self.assertEqual(char.health, "...///")
+    character.apply_damage("willpower", Damage.SUPERFICIAL, 8)
+    assert character.willpower == "//xxx"
+    assert character.superficial_wp == 2
+    assert character.aggravated_wp == 3
+    assert character.mentally_impaired
 
-        char.set_damage("health", Damage.SUPERFICIAL, 20)
-        self.assertEqual(char.health, "//////")
 
-        char.set_damage("health", Damage.AGGRAVATED, 1)
-        self.assertEqual(char.health, "/////x")
+def test_set_damage(character: VChar):
+    """Test the set_damage() method."""
+    character.set_damage("health", Damage.SUPERFICIAL, 3)
+    assert character.health == "...///"
 
-        char.set_damage("health", Damage.AGGRAVATED, 0)
-        self.assertEqual(char.health, "./////")
+    character.set_damage("health", Damage.SUPERFICIAL, 20)
+    assert character.health == "//////"
 
-    def test_humanity(self):
-        """Test Humanity calculations."""
-        char = gen_char("vampire")
+    character.set_damage("health", Damage.AGGRAVATED, 1)
+    assert character.health == "/////x"
 
-        self.assertEqual(char.humanity, 7)
-        self.assertEqual(char.stains, 0)
+    character.set_damage("health", Damage.AGGRAVATED, 0)
+    assert character.health == "./////"
 
-        char.stains += 2
-        self.assertEqual(char.humanity, 7)
-        self.assertEqual(char.stains, 2)
 
-        self.assertFalse(char.degeneration)
+def test_humanity(character: VChar):
+    """Test Humanity calculations."""
+    assert character.humanity == 7
+    assert character.stains == 0
 
-        char.stains += 2
-        self.assertTrue(char.degeneration)
+    character.stains += 2
+    assert character.humanity == 7
+    assert character.stains == 2
 
-        char.humanity -= 1
-        self.assertEqual(char.humanity, 6)
-        self.assertEqual(char.stains, 0)
+    assert not character.degeneration
+
+    character.stains += 2
+    assert character.degeneration
+
+    character.humanity -= 1
+    assert character.humanity == 6
+    assert character.stains == 0

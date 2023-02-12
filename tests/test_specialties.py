@@ -1,16 +1,19 @@
 """Specialty test suite."""
 # pylint: disable=too-few-public-methods
 
-import unittest
-import warnings
-
-from marshmallow.warnings import RemovedInMarshmallow4Warning
+import pytest
 
 from inconnu.models.vchardocs import VCharTrait
 
 NAME = "Brawl"
 RATING = 4
 SPECIALTIES = ["Kindred", "StreetFighting"]
+
+
+@pytest.fixture
+def skill() -> VCharTrait:
+    """A basic trait."""
+    return VCharTrait(name=NAME, rating=RATING, type=VCharTrait.Type.SKILL)
 
 
 def gen_skill(*specialties: str) -> VCharTrait:
@@ -21,166 +24,131 @@ def gen_skill(*specialties: str) -> VCharTrait:
     return skill
 
 
-class TestSpecialties(unittest.TestCase):
-    """Runs several tests on specialties."""
+@pytest.mark.parametrize(
+    "needle,exact,count,name,rating",
+    [
+        ("b", False, 1, NAME, RATING),
+        ("q", False, 0, None, None),
+        ("b", True, 0, None, None),
+        (NAME, True, 1, NAME, RATING),
+        (NAME.lower(), True, 1, NAME, RATING),
+    ],
+)
+def test_basic_skill_matching(needle, exact, count, name, rating, skill):
+    matches = skill.matching(needle, exact)
+    assert len(matches) == count
 
-    def setUp(self):
-        """Disable the Marshmallow warning."""
-        warnings.simplefilter("ignore", category=RemovedInMarshmallow4Warning)
+    if matches:
+        assert matches[0].name == name
+        assert matches[0].rating == rating
 
-    def test_basic_skill_matching(self):
-        trait = gen_skill()
 
-        matches = trait.matching("b", False)
-        self.assertEqual(len(matches), 1)
+def test_specialty_addition(skill: VCharTrait):
+    assert len(skill.specialties) == 0
 
-        match = matches[0]
-        self.assertEqual(match.name, NAME)
-        self.assertEqual(match.rating, RATING)
+    skill.add_specialties("Kindred")
+    assert len(skill.specialties) == 1
 
-        matches = trait.matching("q", False)
-        self.assertEqual(len(matches), 0, "'q' shouldn't have matched")
+    skill.add_specialties("Kindred")
+    assert len(skill.specialties) == 1, "Two 'Kindred' specs were added"
 
-        # Exact matching
-        matches = trait.matching("b", True)
-        self.assertEqual(len(matches), 0, "Exact matching failed")
+    skill.add_specialties("StreetFighting")
+    assert len(skill.specialties) == 2, "'StreetFighting' wasn't added"
 
-        matches = trait.matching(NAME, True)
-        self.assertEqual(len(matches), 1)
-        self.assertEqual(matches[0].name, NAME)
-        self.assertEqual(matches[0].rating, RATING)
+    skill.add_specialties(["One", "Two", "Two"])
+    assert len(skill.specialties) == 4, "List wasn't added"
 
-        matches = trait.matching(NAME.lower(), True)
-        self.assertEqual(len(matches), 1)
-        self.assertEqual(matches[0].name, NAME)
-        self.assertEqual(matches[0].rating, RATING)
 
-    def test_specialty_addition(self):
-        skill = gen_skill()
+def test_alphabetic_specialties(skill: VCharTrait):
+    skill.add_specialties(["Kine", "Kindred", "Apples"])
+    skill.add_specialties("Blip")
+    assert skill.specialties == ["Apples", "Blip", "Kindred", "Kine"]
 
-        self.assertEqual(len(skill.specialties), 0)
 
-        skill.add_specialties("Kindred")
-        self.assertEqual(len(skill.specialties), 1)
+def test_specialty_removal(skill: VCharTrait):
+    skill.add_specialties(["One", "Two", "Three"])
+    assert len(skill.specialties) == 3
 
-        skill.add_specialties("Kindred")
-        self.assertEqual(len(skill.specialties), 1, "Two 'Kindred' specs were added")
+    skill.remove_specialties("One")
+    assert len(skill.specialties) == 2
 
-        skill.add_specialties("StreetFighting")
-        self.assertEqual(len(skill.specialties), 2, "StreetFighting wasn't added")
+    skill.remove_specialties("One")
+    assert len(skill.specialties) == 2, "Nothing should have been removed"
 
-        skill.add_specialties(["One", "Two", "Two"])
-        self.assertEqual(len(skill.specialties), 4, "List wasn't added")
+    skill.remove_specialties(["Two", "Three"])
+    assert len(skill.specialties) == 0, "Specialties should be gone"
 
-    def test_alphabetic_specialties(self):
-        skill = gen_skill("Kine", "Kindred", "Apples")
-        skill.add_specialties("Blip")
-        self.assertEqual(skill.specialties, ["Apples", "Blip", "Kindred", "Kine"])
 
-    def test_specialty_removal(self):
-        skill = gen_skill("One", "Two", "Three")
-        self.assertEqual(len(skill.specialties), 3)
+@pytest.mark.parametrize(
+    "needle,exact,count,expectations",
+    [
+        # Inexact
+        (":z", False, 0, None),
+        (":k:z", False, 0, None),
+        ("b:kind", False, 1, [("Brawl (Kindred)", 5, False)]),
+        (":kind", False, 1, [("Brawl (Kindred)", 5, False)]),
+        ("brawl:kindred", False, 1, [("Brawl (Kindred)", 5, True)]),
+        (":k", False, 2, [("Brawl (Kindred)", 5, False), ("Brawl (Kine)", 5, False)]),
+        (":kind:s", False, 1, [("Brawl (Kindred, StreetFighting)", 6, False)]),
+        # Exact
+        ("Brawl", True, 1, [("Brawl", 4, True)]),
+        ("brawl", True, 1, [("Brawl", 4, True)]),
+        ("b", True, 0, None),
+        ("brawl:kindred", True, 1, [("Brawl (Kindred)", 5, True)]),
+        ("brawl:kin", True, 0, None),
+        ("Brawl:Kindred:StreetFighting", True, 1, [("Brawl (Kindred, StreetFighting)", 6, True)]),
+        (":kindred", True, 0, None),
+    ],
+)
+def test_specialty_matching(
+    needle: str,
+    exact: bool,
+    count: int,
+    expectations: list[tuple[str, int, bool]],
+    skill: VCharTrait,
+):
+    skill.add_specialties(["Kindred", "StreetFighting", "Kine"])
+    assert len(skill.specialties) == 3
 
-        skill.remove_specialties("One")
-        self.assertEqual(len(skill.specialties), 2)
+    matches = skill.matching(needle, exact)
+    assert len(matches) == count
 
-        skill.remove_specialties("One")
-        self.assertEqual(len(skill.specialties), 2, "Nothing should have been removed")
+    if matches:
+        for match, expected in zip(matches, expectations):
+            name, rating, is_exact = expected
+            assert match.name == name
+            assert match.rating == rating
+            assert match.exact == is_exact
 
-        skill.remove_specialties(["Two", "Three"])
-        self.assertEqual(len(skill.specialties), 0, "Specialties should be gone")
 
-    def test_specialty_matching(self):
-        skill = gen_skill("Kindred", "StreetFighting", "Killing")
-        self.assertEqual(len(skill.specialties), 3)
+@pytest.mark.parametrize(
+    "needle,exact,count,expectations",
+    [
+        # Inexact
+        ("z", False, 0, None),
+        ("b", False, 1, ["Brawl"]),
+        ("b:kind", False, 1, ["Brawl:Kindred"]),
+        ("b:k", False, 2, ["Brawl:Kindred", "Brawl:Kine"]),
+        ("b:kine:kind", False, 1, ["Brawl:Kindred:Kine"]),
+        # Exact
+        ("z", True, 0, None),
+        ("b", True, 0, None),
+        ("Brawl", True, 1, ["Brawl"]),
+        ("brawl:kindred", True, 1, ["Brawl:Kindred"]),
+    ],
+)
+def test_expansion(
+    needle: str,
+    exact: bool,
+    count: int,
+    expectations: list[str],
+    skill: VCharTrait,
+):
+    skill.add_specialties(["Kindred", "Kine", "StreetFighting"])
+    assert len(skill.specialties) == 3
 
-        # No match
-        matches = skill.matching(":z", False)
-        self.assertEqual(len(matches), 0)
+    expansions = skill.expanding(needle, exact)
+    assert len(expansions) == count
 
-        # Partial match -> No match
-        matches = skill.matching(":k:z", False)
-        self.assertEqual(len(matches), 0)
-
-        # Single match, with skill name
-        matches = skill.matching("b:kin", False)
-        self.assertEqual(len(matches), 1)
-
-        match = matches[0]
-        self.assertEqual(match.name, f"{NAME} (Kindred)")
-        self.assertEqual(match.rating, RATING + 1)
-
-        # Single match, no skill name
-        matches = skill.matching(":kin", False)
-        self.assertEqual(len(matches), 1)
-
-        # Exact match with inexact flag should work
-        matches = skill.matching(NAME + ":kindred", False)
-        self.assertEqual(len(matches), 1)
-        self.assertTrue(matches[0].exact, "Match should be exact even without the flag set")
-
-        match = matches[0]
-        self.assertEqual(match.name, f"{NAME} (Kindred)")
-        self.assertEqual(match.rating, RATING + 1)
-
-        # Multiple matches
-        matches = skill.matching(":k", False)
-        self.assertEqual(len(matches), 2, str(matches))
-        self.assertFalse(matches[0].exact)
-        self.assertFalse(matches[1].exact)
-
-    def test_exact_specialty_matching(self):
-        skill = gen_skill("Kindred", "StreetFighting")
-
-        matches = skill.matching(NAME, True)
-        self.assertEqual(len(matches), 1)
-        self.assertTrue(matches[0].exact)
-
-        matches = skill.matching("b", True)
-        self.assertEqual(len(matches), 0)
-
-        matches = skill.matching(NAME + ":k", True)
-        self.assertEqual(len(matches), 0)
-
-        matches = skill.matching(NAME.lower(), True)
-        self.assertEqual(len(matches), 1)
-
-        matches = skill.matching(NAME + ":Kindred", True)
-        self.assertEqual(len(matches), 1)
-
-        matches = skill.matching(NAME + ":Kindred:StreetFighting", True)
-        self.assertEqual(len(matches), 1)
-        self.assertTrue(matches[0].exact)
-
-        matches = skill.matching(NAME + ":StreetFighting", True)
-        self.assertEqual(len(matches), 1)
-        self.assertTrue(matches[0].exact)
-
-        matches = skill.matching(":StreetFighting", True)
-        self.assertEqual(len(matches), 0)
-
-    def test_expansion(self):
-        skill = gen_skill("Kindred", "Kine", "StreetFighting")
-
-        expansions = skill.expanding("b", False)
-        self.assertEqual(len(expansions), 1)
-        self.assertEqual(expansions[0], NAME)
-
-        expansions = skill.expanding("b:k", False)
-        self.assertEqual(len(expansions), 2)
-
-        expansions = skill.expanding("b:kind", False)
-        self.assertEqual(len(expansions), 1)
-        self.assertEqual(expansions[0], NAME + ":Kindred")
-
-        expansions = skill.expanding(NAME, True)
-        self.assertEqual(len(expansions), 1)
-        self.assertEqual(expansions[0], NAME)
-
-        expansions = skill.expanding(NAME + ":Kindred", True)
-        self.assertEqual(expansions[0], NAME + ":Kindred")
-
-        expansions = skill.expanding(":k", False)
-        self.assertEqual(len(expansions), 2)
-        self.assertTrue(NAME + ":Kindred" in expansions)
-        self.assertTrue(NAME + ":Kine" in expansions)
+    for expansion in expansions:
+        assert expansion in expectations

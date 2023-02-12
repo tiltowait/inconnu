@@ -90,12 +90,22 @@ class VCharTrait(EmbeddedDocument):
     )
 
     @property
+    def specialties_allowed(self) -> bool:
+        """Only skills and custom traits can have specialties."""
+        return self.type in [VCharTrait.Type.CUSTOM.value, VCharTrait.Type.SKILL.value]
+
+    @property
     def specialties(self) -> list[str]:
         """The trait's specialties."""
         return self._specialties.copy()
 
     def add_specialties(self, specialties: str | list[str]):
         """Add specialties to the trait."""
+        if not self.specialties_allowed:
+            raise inconnu.errors.SpecialtiesNotAllowed(
+                "Only skills and custom traits may have specialties."
+            )
+
         if isinstance(specialties, str):
             specialties = {specialties}
         else:

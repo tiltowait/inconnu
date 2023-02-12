@@ -2,6 +2,7 @@
 
 import pytest
 
+import inconnu.errors
 from inconnu.models.vchardocs import VCharTrait
 
 SPECIALTIES = ["Kindred", "StreetFighting", "Kine"]  # Shared specialties
@@ -10,12 +11,12 @@ SPECIALTIES = ["Kindred", "StreetFighting", "Kine"]  # Shared specialties
 @pytest.fixture
 def skill() -> VCharTrait:
     """A basic trait."""
-    return VCharTrait(name="Brawl", rating=4, type=VCharTrait.Type.SKILL)
+    return VCharTrait(name="Brawl", rating=4, type=VCharTrait.Type.SKILL.value)
 
 
 def gen_skill(*specialties: str) -> VCharTrait:
     """Shorthand skill generation."""
-    skill = VCharTrait(name="Brawl", rating=4, type=VCharTrait.Type.SKILL)
+    skill = VCharTrait(name="Brawl", rating=4, type=VCharTrait.Type.SKILL.value)
     skill.add_specialties(specialties)
 
     return skill
@@ -169,3 +170,22 @@ def test_expansion(
 
     for expansion in expansions:
         assert expansion in expectations
+
+
+@pytest.mark.parametrize(
+    "category,allowed",
+    [
+        (VCharTrait.Type.ATTRIBUTE.value, False),
+        (VCharTrait.Type.CUSTOM.value, True),
+        (VCharTrait.Type.DISCIPLINE.value, False),
+        (VCharTrait.Type.INHERENT.value, False),
+        (VCharTrait.Type.SKILL.value, True),
+    ],
+)
+def test_specialties_allowed(category: str, allowed: bool):
+    trait = VCharTrait(name="Test", rating=1, type=category)
+    assert trait.specialties_allowed == allowed
+
+    if not allowed:
+        with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+            trait.add_specialties("spec")

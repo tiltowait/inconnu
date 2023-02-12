@@ -101,6 +101,10 @@ class AmbiguousTraitError(TraitError):
         super().__init__(self.message)
 
 
+class SpecialtiesNotAllowed(TraitError):
+    """Raised when a trait can't have a specialty."""
+
+
 class MacroError(InconnuError):
     """Base macro error."""
 

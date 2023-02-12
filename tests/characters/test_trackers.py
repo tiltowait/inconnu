@@ -87,3 +87,33 @@ def test_humanity(character: VChar):
     character.humanity -= 1
     assert character.humanity == 6
     assert character.stains == 0
+
+
+@pytest.mark.parametrize("attribute", ["Resolve", "Composure", "Stamina"])
+def test_tracker_trait_update(attribute: str, character: VChar):
+    """Ensure that trait updates properly update trackers."""
+
+    def rating(tracker: str):
+        """The character's tracker rating."""
+        return len(getattr(character, tracker))
+
+    assert not character.has_trait(attribute)
+
+    if attribute in ["Resolve", "Composure"]:
+        tracker = "willpower"
+    else:
+        tracker = "health"
+
+    base_rating = rating(tracker)
+    character.assign_traits({attribute: 2, "Test": 1})
+    assert base_rating == rating(tracker), "Initial set should not modify the tracker"
+
+    character.assign_traits({attribute: 4})
+    assert rating(tracker) == base_rating + 2
+
+    character.assign_traits({attribute: 1})
+    assert rating(tracker) == base_rating - 1
+
+    current = rating(tracker)
+    character.assign_traits({"Test": 2})
+    assert current == rating(tracker), "Other trait shouldn't trigger update"

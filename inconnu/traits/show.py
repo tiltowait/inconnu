@@ -35,9 +35,8 @@ def traits_embed(
                 for index, char_trait in enumerate(char_traits):
                     if char_trait.matching(trait, True):
                         if char_trait.has_specialties:
-                            spec = f"**{trait.name}:** " + ", ".join(
-                                map(lambda s: f"`{s}`", trait.specialties)
-                            )
+                            specs = inconnu.utils.format_join(char_trait.specialties, ", ", "`")
+                            spec = f"**{char_trait.name}:** {specs}"
                             specialties.append(spec)
 
                         trait_list.append(f"**{trait}:** {char_trait.rating}")

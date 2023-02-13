@@ -201,3 +201,13 @@ def test_traits_copied(vampire: VChar):
     expected_name = vampire.traits[0].name
     vampire.traits[0].name = "Fakeo"
     assert vampire.traits[0].name == expected_name
+
+
+def test_update_trait(vampire: VChar):
+    trait = vampire.traits[0].name
+    rating = vampire.traits[0].rating
+    assert rating != 5
+
+    vampire.assign_traits({trait: 5})
+    assert vampire.traits[0].rating == 5
+    assert vampire.find_trait(trait).rating == 5

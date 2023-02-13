@@ -31,17 +31,19 @@ def traits_embed(
         for subgroup, traits in subgroups.items():
             trait_list = []
             for trait in traits:
-                rating = char_traits.pop(trait, 0)
-                trait_list.append(f"***{trait}:*** {rating}")
+                for index, char_trait in enumerate(char_traits):
+                    if char_trait.matching(trait, True):
+                        trait_list.append(f"**{char_trait.name}:** {char_trait.rating}")
+                        del char_traits[index]
 
             embed.add_field(name=subgroup, value="\n".join(trait_list), inline=True)
 
     # The remaining traits are user-defined
     if char_traits:
         # Sort them first
-        user_defined = sorted(char_traits.items(), key=lambda s: s[0].casefold())
+        user_defined = sorted(char_traits, key=lambda s: s.name.casefold())
 
-        traits = [f"***{trait}:*** {rating}" for trait, rating in user_defined]
+        traits = [f"***{trait.name}:*** {trait.rating}" for trait in user_defined]
         traits = "\n".join(traits)
         embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
 

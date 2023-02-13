@@ -95,12 +95,12 @@ async def __handle_traits(character: "VChar", traits: dict, overwriting: bool):
 
 def __partition_traits(character, traits):
     """Partition the list of traits into owned and unowned groups."""
-    my_traits = character.traits
     owned = {}
     unowned = {}
 
     for trait, rating in traits.items():
-        if trait.lower() in map(lambda t: t.lower(), my_traits.keys()):
+        if character.has_trait(trait):
+            print("have", trait)
             owned[trait] = rating
         else:
             unowned[trait] = rating

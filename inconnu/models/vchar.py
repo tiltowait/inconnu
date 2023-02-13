@@ -3,6 +3,7 @@
 # pylint: disable=too-many-public-methods
 
 import bisect
+import copy
 import math
 import random
 from collections import Counter
@@ -181,7 +182,7 @@ class VChar(Document):
     @property
     def traits(self) -> dict[str, int]:
         """A copy of the character's traits."""
-        return self._traits.copy()
+        return copy.deepcopy(self._traits)
 
     @property
     def has_biography(self) -> bool:

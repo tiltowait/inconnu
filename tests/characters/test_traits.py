@@ -195,3 +195,9 @@ def test_trait_binsort(empty_vampire: VChar):
 def test_discipline_fallback(discipline: str, empty_vampire: VChar):
     empty_vampire.assign_traits({discipline: 1})
     assert empty_vampire.traits[0].is_discipline
+
+
+def test_traits_copied(vampire: VChar):
+    expected_name = vampire.traits[0].name
+    vampire.traits[0].name = "Fakeo"
+    assert vampire.traits[0].name == expected_name

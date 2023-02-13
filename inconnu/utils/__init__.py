@@ -105,6 +105,11 @@ def has_premium():
     return commands.check(_check_supporter)
 
 
+def format_join(collection: list, separator: str, f: str, alt="") -> str:
+    """Join a collection by a separator, formatting each item."""
+    return separator.join(map(lambda c: f"{f}{c}{f}", collection)) or alt
+
+
 def pull_mentions(text: str) -> set[str]:
     """Pulls mentions from text."""
     mentions = re.findall(r"(<(?:@|@&|#)\d{1,30}>)", text)

@@ -78,7 +78,7 @@ class Traits(commands.Cog, name="Trait Management"):
         character: inconnu.options.character("The character to modify"),
     ):
         """Add specialties to a character. Can add multiple at a time."""
-        await inconnu.traits.add(ctx, character, specialties, True)
+        await inconnu.specialties.add(ctx, character, specialties)
 
     @specialties.command(name="remove")
     @commands.guild_only()
@@ -89,7 +89,7 @@ class Traits(commands.Cog, name="Trait Management"):
         character: inconnu.options.character("The character to modify"),
     ):
         """Remove specialties from a character. Can remove multiple at a time."""
-        await inconnu.traits.delete(ctx, character, specialties, True)
+        await inconnu.specialties.remove(ctx, character, specialties)
 
 
 def setup(bot):

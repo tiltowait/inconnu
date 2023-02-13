@@ -14,7 +14,7 @@ from discord import Embed
 from umongo import Document, fields
 
 import inconnu
-from inconnu.constants import ATTRIBUTES, SKILLS, UNIVERSAL_TRAITS, Damage
+from inconnu.constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
 from inconnu.models.vchardocs import (
     VCharExperience,
     VCharExperienceEntry,
@@ -421,6 +421,8 @@ class VChar(Document):
                     category = VCharTrait.Type.ATTRIBUTE
                 elif input_name in SKILLS:
                     category = VCharTrait.Type.SKILL
+                elif name.lower() in map(str.lower, DISCIPLINES):
+                    category = VCharTrait.Type.DISCIPLINE
 
                 new_trait = VCharTrait(name=input_name, rating=input_rating, type=category.value)
                 bisect.insort(self._traits, new_trait, key=lambda t: t.name.casefold())

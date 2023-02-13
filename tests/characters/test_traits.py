@@ -4,7 +4,7 @@ import pytest
 
 import inconnu.errors
 import tests.characters
-from inconnu.constants import ATTRIBUTES, SKILLS, UNIVERSAL_TRAITS
+from inconnu.constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS
 from inconnu.models import VChar
 from inconnu.models.vchardocs import VCharTrait
 
@@ -189,3 +189,9 @@ def test_trait_binsort(empty_vampire: VChar):
     assert empty_vampire.traits[0].name == "A"
     assert empty_vampire.traits[1].name == "B"
     assert empty_vampire.traits[2].name == "C"
+
+
+@pytest.mark.parametrize("discipline", DISCIPLINES)
+def test_discipline_fallback(discipline: str, empty_vampire: VChar):
+    empty_vampire.assign_traits({discipline: 1})
+    assert empty_vampire.traits[0].is_discipline

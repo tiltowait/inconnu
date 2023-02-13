@@ -25,26 +25,46 @@ def traits_embed(
     embed.set_footer(text="To see HP, WP, etc., use /character display")
 
     char_traits = character.traits  # This is an automatic copy
-
+    specialties = []
     for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
         embed.add_field(name="​", value=f"**{group}**", inline=False)
         for subgroup, traits in subgroups.items():
             trait_list = []
             for trait in traits:
+                found = False
                 for index, char_trait in enumerate(char_traits):
                     if char_trait.matching(trait, True):
-                        trait_list.append(f"**{char_trait.name}:** {char_trait.rating}")
+                        if char_trait.has_specialties:
+                            spec = f"**{trait.name}:** " + ", ".join(
+                                map(lambda s: f"`{s}`", trait.specialties)
+                            )
+                            specialties.append(spec)
+
+                        trait_list.append(f"**{trait}:** {char_trait.rating}")
                         del char_traits[index]
+                        found = True
+                        break
+                if not found:
+                    trait_list.append(f"**{trait}:** 0")
 
             embed.add_field(name=subgroup, value="\n".join(trait_list), inline=True)
 
     # The remaining traits are user-defined
-    if char_traits:
-        # Sort them first
-        user_defined = sorted(char_traits, key=lambda s: s.name.casefold())
+    custom = []
+    disciplines = []
 
-        traits = [f"***{trait.name}:*** {trait.rating}" for trait in user_defined]
-        traits = "\n".join(traits)
-        embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
+    for trait in char_traits:
+        entry = f"**{trait.name}:** {trait.rating}"
+        if trait.is_discipline:
+            disciplines.append(entry)
+        else:
+            custom.append(entry)
+
+    # Fill in the custom stuff
+    nbsp = "*None*"
+    embed.add_field(name="​", value="**USER-DEFINED**", inline=False)
+    embed.add_field(name="Custom", value="\n".join(custom) or nbsp, inline=True)
+    embed.add_field(name="Disciplines", value="\n".join(disciplines) or nbsp, inline=True)
+    embed.add_field(name="Specialties", value="\n".join(specialties) or nbsp, inline=True)
 
     return embed

@@ -68,7 +68,7 @@ class VChar(Document):
     stains = fields.IntField(default=0)
     _hunger = fields.IntField(default=1, attribute="hunger")
     potency = fields.IntField()
-    _traits = fields.ListField(fields.EmbeddedField(VCharTrait), default=list)
+    _traits = fields.ListField(fields.EmbeddedField(VCharTrait), default=list, attribute="traits")
 
     # Biographical/profile data
     profile = fields.EmbeddedField(VCharProfile, default=VCharProfile)
@@ -442,14 +442,14 @@ class VChar(Document):
         else:
             adjustment_text = ""
 
-        return adjustment_text, adjustments
+        return adjustment_text, assignments
 
     def delete_trait(self, name: str) -> str:
         """Delete a trait. Raises TraitNotFound if the trait doesn't exist."""
         for index, trait in enumerate(self._traits):
             if trait.matching(name, True):
                 del self._traits[index]
-                return trait
+                return trait.name
 
         raise inconnu.errors.TraitNotFound(self, name)
 

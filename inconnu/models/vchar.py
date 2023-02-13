@@ -456,21 +456,21 @@ class VChar(Document):
 
         raise inconnu.errors.TraitNotFound(self, name)
 
-    def add_specialties(self, trait_name: str, specialties: list[str] | str):
-        """Add specialties to a trait."""
+    def add_specialties(self, trait_name: str, specialties: list[str] | str) -> VCharTrait:
+        """Add specialties to a trait and return a copy of that trait."""
         for trait in self._traits:
             if trait.matching(trait_name, True):
                 trait.add_specialties(specialties)
-                return
+                return copy.deepcopy(trait)
 
         raise inconnu.errors.TraitNotFound(self, trait_name)
 
-    def remove_specialties(self, trait_name: str, specialties: list[str] | str):
+    def remove_specialties(self, trait_name: str, specialties: list[str] | str) -> VCharTrait:
         """Remove specialties from a trait."""
         for trait in self._traits:
             if trait.matching(trait_name, True):
                 trait.remove_specialties(specialties)
-                return
+                return copy.deepcopy(trait)
 
         raise inconnu.errors.TraitNotFound(self, trait_name)
 

@@ -2,7 +2,7 @@
 
 import re
 
-SYNTAX = "Proper syntax: `trait1=spec1,spec2,spec3 trait2=spec4,spec5` ..."
+SYNTAX = "Proper syntax: `trait1=spec1 trait2=spec2,spec3 ...`"
 
 
 def tokenize(syntax: str):
@@ -18,7 +18,7 @@ def tokenize(syntax: str):
     tokens = []
     for token in raw_tokens:
         if re.match(r"^[A-Za-z_]+=([A-Za-z_]+,?)+$", token) is None:
-            raise SyntaxError(f"Invalid token: '{token}'")
+            raise SyntaxError(f"Invalid token: `{token}`")
 
         trait, specs = token.split("=", 1)
         specs = specs.strip(",").split(",")

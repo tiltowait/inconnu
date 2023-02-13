@@ -423,7 +423,7 @@ class VChar(Document):
                     category = VCharTrait.Type.SKILL
 
                 new_trait = VCharTrait(name=input_name, rating=input_rating, type=category.value)
-                self._traits.append(new_trait)
+                bisect.insort(self._traits, new_trait, key=lambda t: t.name.casefold())
                 assignments[input_name] = input_rating
 
         # Traits added; now adjust HP/WP

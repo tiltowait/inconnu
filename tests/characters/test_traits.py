@@ -32,9 +32,10 @@ def vampire(custom_traits) -> VChar:
 def test_add_traits(category: str, empty_vampire: VChar, custom_traits: dict[str, int]):
     """Add traits of different categories and test their values."""
     empty_vampire.assign_traits(custom_traits, category)
+    sorted_traits = sorted(custom_traits.items(), key=lambda t: t[0].casefold())
 
     # Test against the list
-    for trait, (expected_name, expected_rating) in zip(empty_vampire.traits, custom_traits.items()):
+    for trait, (expected_name, expected_rating) in zip(empty_vampire.traits, sorted_traits):
         assert trait.type == category.value
         assert trait.name == expected_name
         assert trait.rating == expected_rating
@@ -179,3 +180,12 @@ def test_exact_trait_find(vampire: VChar):
 
     with pytest.raises(inconnu.errors.TraitNotFound):
         _ = vampire.find_trait("b", True)
+
+
+def test_trait_binsort(empty_vampire: VChar):
+    empty_vampire.assign_traits({"B": 2, "C": 3})
+    empty_vampire.assign_traits({"A": 1})
+
+    assert empty_vampire.traits[0].name == "A"
+    assert empty_vampire.traits[1].name == "B"
+    assert empty_vampire.traits[2].name == "C"

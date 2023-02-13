@@ -111,7 +111,12 @@ class ErrorReporter:
 
         # Unknown exceptions
         embed = await self.error_embed(ctx, error)
-        await self._report_unknown_error(respond, embed)
+        try:
+            await self._report_unknown_error(respond, embed)
+        except discord.HTTPException:
+            embed.description = "The error was too long to fit! Check the logs."
+            await self._report_unknown_error(respond, embed)
+            raise error from error
 
         # Print the error to the log
         if isinstance(ctx, discord.ApplicationContext):

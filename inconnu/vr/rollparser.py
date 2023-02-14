@@ -11,9 +11,10 @@ from logger import Logger
 class RollParser:
     """Parse user roll input."""
 
-    def __init__(self, character, raw_syntax):
+    def __init__(self, character, raw_syntax, expand_only=False):
         self.character = character
         self._parameters = {}
+        self.expand_only = expand_only
 
         # Convert the syntax into tokens, if necessary
         if isinstance(raw_syntax, str):
@@ -119,7 +120,11 @@ class RollParser:
                 # We have a character trait, which needs to be qualified and
                 # interpolated before adding it to the stacks
                 trait = self.character.find_trait(token)
-                current_qualified.append(trait.name)
+                if self.expand_only:
+                    current_qualified.append(trait.key)
+                else:
+                    current_qualified.append(trait.name)
+
                 current_interpolated.append(str(trait.rating))
 
                 if trait.discipline:

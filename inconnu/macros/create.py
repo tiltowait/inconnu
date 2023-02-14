@@ -40,7 +40,7 @@ async def create(
             return
 
         if pool != "0":
-            pool = inconnu.vr.RollParser(character, pool).pool_stack
+            pool = inconnu.vr.RollParser(character, pool, True).pool_stack
         else:
             pool = []
 

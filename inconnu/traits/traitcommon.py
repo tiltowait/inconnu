@@ -22,6 +22,8 @@ def validate_trait_names(*traits, specialties=False):
             )
         if trait.lower() in RESERVED_TRAITS:
             raise ValueError("Set Hunger with `/character adjust`.")
+        if trait.lower() in ["powerbonus", "power_bonus"]:
+            raise ValueError("Power bonus is automatic if you roll with a Discipline.")
 
         if VALID_TRAIT_PATTERN.match(trait) is None:
             term = "Traits" if not specialties else "Specialties"

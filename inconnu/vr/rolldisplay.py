@@ -341,7 +341,10 @@ class RollDisplay:
             # "Xyz", which is not desired.
             splitted = map(lambda t: (t[0].upper() + t[1:]) if t[0].islower() else t, splitted)
 
-            pool_str = " ".join(splitted)
+            # The above for some reason adds a space after open parens
+            # TODO: Just fix/replace the first de-camel-caser.
+            pool_str = " ".join(splitted).replace("( ", "(")
+
             embed.add_field(name="Pool", value=pool_str)
 
         # Show what the roll originally was

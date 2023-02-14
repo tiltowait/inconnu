@@ -16,10 +16,11 @@ class RollParser:
 
         # Convert the syntax into tokens, if necessary
         if isinstance(raw_syntax, str):
-            if not re.match(r"^[\w\s\+-]+$", raw_syntax):
+            if self.has_invalid_characters(raw_syntax):
                 raise SyntaxError("Invalid syntax.")
 
-            syntax = re.sub(r"\s*([+-])\s*", r" \g<1> ", raw_syntax)
+            syntax = re.sub(r":\s+", ":", raw_syntax)
+            syntax = re.sub(r"\s*([+-])\s*", r" \g<1> ", syntax)
 
             self.tokens = syntax.split()
         else:
@@ -212,7 +213,7 @@ class RollParser:
     @classmethod
     def has_invalid_characters(cls, syntax) -> bool:
         """Check whether the roll has invalid characters."""
-        return re.search(r"[^\w\+\-\s]", syntax) is not None
+        return re.search(r"[^\w\+\-\s:]", syntax) is not None
 
 
 # Math Helpers

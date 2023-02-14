@@ -94,11 +94,11 @@ def test_has_trait(vampire: VChar):
     assert vampire.has_trait(trait.name)
 
 
-def test_universal_fail(vampire: VChar):
+@pytest.mark.parametrize("trait", UNIVERSAL_TRAITS)
+def test_universal_fail(trait: str, vampire: VChar):
     """Test that we can't add universal traits."""
-    for universal in UNIVERSAL_TRAITS:
-        with pytest.raises(ValueError):
-            vampire.assign_traits({universal: 1})
+    with pytest.raises(ValueError):
+        vampire.assign_traits({trait: 1})
 
 
 def test_add_specialties(vampire: VChar):

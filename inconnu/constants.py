@@ -71,7 +71,7 @@ DISCIPLINES = [
     "Oblivion",
 ]
 
-UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane", "PowerBonus"]
+UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]
 RESERVED_TRAITS = UNIVERSAL_TRAITS + ["current_hunger"]
 
 ROUSE_FAIL_COLOR = 0xC70F0F

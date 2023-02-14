@@ -396,7 +396,7 @@ class VChar(Document):
 
         if len(found) > 1:
             keys = map(lambda m: m.key, found)
-            raise inconnu.errors.AmbiguousTraitError(trait, keys)
+            raise inconnu.errors.AmbiguousTraitError(name, keys)
 
         # One single match found
         return found[0]
@@ -429,7 +429,7 @@ class VChar(Document):
                     category = VCharTrait.Type.ATTRIBUTE
                 elif input_name in SKILLS:
                     category = VCharTrait.Type.SKILL
-                elif name.lower() in map(str.lower, DISCIPLINES):
+                elif input_name.lower() in map(str.lower, DISCIPLINES):
                     category = VCharTrait.Type.DISCIPLINE
 
                 new_trait = VCharTrait(name=input_name, rating=input_rating, type=category.value)

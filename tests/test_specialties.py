@@ -59,6 +59,16 @@ def test_alphabetic_specialties(skill: VCharTrait):
     assert skill.specialties == ["Apples", "Blip", "Kindred", "Kine"]
 
 
+def test_case_insensitive(skill: VCharTrait):
+    skill.add_specialties(["Kine"])
+    assert len(skill.specialties) == 1
+    assert skill.specialties[0] == "Kine"
+
+    skill.add_specialties(["kine"])
+    assert len(skill.specialties) == 1
+    assert skill.specialties[0] == "Kine"
+
+
 def test_specialty_removal(skill: VCharTrait):
     skill.add_specialties(["One", "Two", "Three"])
     assert len(skill.specialties) == 3

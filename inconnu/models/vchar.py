@@ -53,7 +53,7 @@ class _Properties(str, Enum):
 class VChar(Document):
     """A vampire, mortal, ghoul, or thin-blood character."""
 
-    VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane"]
+    VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane", "PowerBonus"]
     SPC_OWNER = 0
 
     # Ownership
@@ -405,7 +405,7 @@ class VChar(Document):
         """Add traits to the character. Overwrites old traits if they exist."""
         for name in traits:
             if name.lower() in map(str.lower, UNIVERSAL_TRAITS):
-                raise ValueError(f"{name!r} is a reserved trait and can't be added")
+                raise ValueError(f"`{name}` is a reserved trait and can't be added")
 
         assignments = {}
         counter = Counter()

@@ -338,6 +338,13 @@ class VChar(Document):
         """Shorthand for bane_severity. Used in traits."""
         return self.bane_severity
 
+    @property
+    def power_bonus(self) -> int:
+        """The character's power bonus."""
+        if not self.is_vampire:
+            return 0
+        return self.potency // 2
+
     # Traits
 
     @property

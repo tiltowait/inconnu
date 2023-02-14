@@ -187,6 +187,7 @@ class VCharTrait(EmbeddedDocument):
                         exact=normalized == key.lower(),
                         key=key,
                         type=self.type,
+                        discipline=self.is_discipline,
                     )
                 )
         return matches

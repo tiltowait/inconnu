@@ -5,6 +5,7 @@ import operator as op
 import re
 
 import inconnu
+from logger import Logger
 
 
 class RollParser:
@@ -68,6 +69,7 @@ class RollParser:
 
     def _create_stacks(self):
         """Create both the fully qualified stacks and the interpolated stacks."""
+        using_discipline = False
 
         # A "fully qualified" stack has the canonical names of the character's
         # traits. For instance, `wi` will be interpreted to Wits, and `aw` will
@@ -120,6 +122,10 @@ class RollParser:
                 current_qualified.append(trait.name)
                 current_interpolated.append(str(trait.rating))
 
+                if trait.discipline:
+                    Logger.debug("ROLLPARSER: Discipline detected")
+                    using_discipline = True
+
             expecting_operand = False
 
         qualified_stacks.append(current_qualified)
@@ -133,6 +139,11 @@ class RollParser:
 
         self._parameters["q_pool_stack"] = qualified_stacks.pop(0)
         self._parameters["i_pool_stack"] = interpolated_stacks.pop(0)
+
+        if using_discipline and self.character.power_bonus > 0:
+            Logger.debug("ROLLPARSER: Adding power bonus")
+            self._parameters["q_pool_stack"].extend(["+", "PowerBonus"])
+            self._parameters["i_pool_stack"].extend(["+", str(self.character.power_bonus)])
 
         if "Hunger" in self.pool_stack:
             errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"

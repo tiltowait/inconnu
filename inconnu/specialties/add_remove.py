@@ -1,5 +1,6 @@
 """Specialties addition and removal."""
 
+import asyncio
 from enum import Enum
 
 import discord
@@ -8,6 +9,7 @@ import inconnu
 from inconnu.models.vchar import VChar
 from inconnu.specialties.tokenize import SYNTAX, tokenize
 from inconnu.utils.haven import haven
+from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app"
 
@@ -50,8 +52,27 @@ async def _add_or_remove(
         embed = _make_embed(ctx, character, additions, title)
         view = inconnu.views.TraitsView(character, ctx.user)
 
-        await ctx.respond(embed=embed, view=view, ephemeral=True)
-        await character.commit()
+        tasks = [ctx.respond(embed=embed, view=view, ephemeral=True), character.commit()]
+
+        # Because the delta might be zero, only send an update report if
+        # changes were actually made
+        for _, delta in additions:
+            if delta:
+                msg = f"__{ctx.user.mention} updated {character.name}'s specialties__\n"
+                msg += embed.description
+                tasks.append(
+                    inconnu.common.report_update(
+                        ctx=ctx,
+                        character=character,
+                        title=title,
+                        message=msg,
+                        color=0xFF9400,
+                    )
+                )
+                Logger.debug("SPECIALTIES: Delta found")
+                break
+
+        await asyncio.gather(*tasks)
 
     except SyntaxError as err:
         await inconnu.utils.error(

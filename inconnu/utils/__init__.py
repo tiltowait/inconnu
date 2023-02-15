@@ -21,6 +21,14 @@ def clean_text(text: str) -> str:
     return " ".join(text.split())
 
 
+def de_camel(text: str, de_underscore=True) -> str:
+    """CamelCase -> Camel Case. Also does underscores."""
+    temp = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
+    if de_underscore:
+        return temp.replace("_", " ")
+    return temp
+
+
 def raw_command_options(interaction) -> str:
     """Get the options in a command as a dict."""
     options = {}

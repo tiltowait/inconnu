@@ -78,3 +78,26 @@ def test_hunger_in_pool(syntax: str, should_fail: bool, character: VChar):
             _ = RollParser(character, syntax)
         except inconnu.errors.HungerInPool:
             pytest.fail(msg="Should not have raised HungerInPool")
+
+
+@pytest.mark.parametrize(
+    "syntax,bp,pool,dice",
+    [
+        ("res+obl", 1, "Resolve + Oblivion", 9),
+        ("res+obl", 2, "Resolve + Oblivion + PowerBonus", 10),
+        ("res+obl", 3, "Resolve + Oblivion + PowerBonus", 10),
+        ("res+obl", 4, "Resolve + Oblivion + PowerBonus", 11),
+        ("res+obl", 5, "Resolve + Oblivion + PowerBonus", 11),
+        ("res+obl", 6, "Resolve + Oblivion + PowerBonus", 12),
+        ("res+obl", 7, "Resolve + Oblivion + PowerBonus", 12),
+        ("res+obl", 8, "Resolve + Oblivion + PowerBonus", 13),
+        ("res+obl", 9, "Resolve + Oblivion + PowerBonus", 13),
+        ("res+obl", 10, "Resolve + Oblivion + PowerBonus", 14),
+        ("stren+br", 10, "Strength + Brawl", 7),  # No power bonus on non-Disciplines
+    ],
+)
+def test_auto_blood_potency(syntax: str, bp: int, pool: str, dice: int, character: VChar):
+    character.potency = bp
+    p = RollParser(character, syntax)
+    assert p.pool_str == pool
+    assert p.pool == dice

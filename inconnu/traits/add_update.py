@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import discord
 
 import inconnu
+from inconnu.models.vchardocs import VCharTrait
 from inconnu.traits.parser import parse_traits
 from inconnu.utils.haven import haven
 
@@ -19,54 +20,42 @@ __HELP_UPDATE = "https://docs.inconnu.app/command-reference/traits/updating-trai
 
 
 @haven(__HELP_ADD)
-async def add(ctx, character, traits: str, specialties=False):
+async def add(ctx, character, traits: str, disciplines=False):
     """Add traits to a character. Wrapper for add_update."""
-    await __parse(ctx, False, traits, character, specialties)
+    await __parse(ctx, False, traits, character, disciplines)
 
 
 @haven(__HELP_UPDATE)
-async def update(ctx, character, traits: str):
+async def update(ctx, character, traits: str, disciplines=False):
     """Update a character's traits. Wrapper for add_update."""
-    await __parse(ctx, True, traits, character)
+    await __parse(ctx, True, traits, character, disciplines)
 
 
-async def __parse(ctx, allow_overwrite: bool, traits: str, character: str, specialties=False):
+async def __parse(ctx, allow_overwrite: bool, traits: str, character: str, disciplines: bool):
     """Add traits to a character."""
     try:
-        key = "update" if allow_overwrite else "add"
+        # Allow the user to input "trait rating", not only "trait=rating"
+        traits = re.sub(r"\s*=\s*", r"=", traits)
+        traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
+        traits = traits.split()
 
-        # Specialties are just 1-point traits, but when entered, they don't
-        # have an assigned value. Let's do that now.
-        if specialties:
-            if "=" in traits:
-                # They did a regular trait assignment
-                raise ValueError(
-                    f"Specialties can't have assigned values. Use `/traits {key}` instead."
-                )
+        traits = parse_traits(*traits, disciplines=disciplines)
+        outcome = await __handle_traits(character, traits, allow_overwrite, disciplines)
 
-            traits = map(lambda s: f"{s}=1", traits.split())
-        else:
-            # Allow the user to input "trait rating", not only "trait=rating"
-            traits = re.sub(r"\s*=\s*", r"=", traits)
-            traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
-            traits = traits.split()
-
-        traits = parse_traits(*traits, specialties=specialties)
-        outcome = await __handle_traits(character, traits, allow_overwrite)
-
-        await __display_results(ctx, outcome, character, specialties)
+        await __display_results(ctx, outcome, character, disciplines)
 
     except (ValueError, SyntaxError) as err:
         await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL[allow_overwrite])
 
 
-async def __handle_traits(character: "VChar", traits: dict, overwriting: bool):
+async def __handle_traits(character: "VChar", traits: dict, overwriting: bool, disciplines: bool):
     """
     Add the rated traits to the character directly.
     Args:
         character (VChar): The character's database ID
         traits (dict): The {str: Optional[int]} dict of traits
         overwriting (bool): Whether we allow overwrites
+        disciplines (bool): Whether to class the traits as Disciplines
     All traits and ratings are assumed to be valid at this time.
     """
     partition = __partition_traits(character, traits)
@@ -80,7 +69,12 @@ async def __handle_traits(character: "VChar", traits: dict, overwriting: bool):
         unassigned = [k for k, v in partition.unowned.items() if v is None]
         to_assign = {k: v for k, v in partition.unowned.items() if v is not None}
 
-    track_adjustment, assigned = character.assign_traits(to_assign)
+    if disciplines:
+        category = VCharTrait.Type.DISCIPLINE
+    else:
+        category = VCharTrait.Type.CUSTOM
+
+    track_adjustment, assigned = character.assign_traits(to_assign, category)
     assigned = [f"{trait}: `{rating}`" for trait, rating in assigned.items()]
     await character.commit()
 
@@ -108,13 +102,13 @@ def __partition_traits(character, traits):
     return SimpleNamespace(owned=owned, unowned=unowned)
 
 
-async def __display_results(ctx, outcome, character: "VChar", specialties: bool):
+async def __display_results(ctx, outcome, character: "VChar", disciplines: bool):
     """Display the results of the operation."""
-    tasks = [__results_embed(ctx, outcome, character, specialties)]
+    tasks = [__results_embed(ctx, outcome, character, disciplines)]
 
     # Message for the update channel
     if outcome.assigned:
-        term = "Traits" if not specialties else "Specialties"
+        term = "Traits" if not disciplines else "Disciplines"
         msg = f"__{ctx.user.mention} updated {character.name}'s traits:__\n"
         msg += ", ".join(outcome.assigned)
 
@@ -127,13 +121,13 @@ async def __display_results(ctx, outcome, character: "VChar", specialties: bool)
     await asyncio.gather(*tasks)
 
 
-async def __results_embed(ctx, outcome, character: "VChar", specialties: bool):
+async def __results_embed(ctx, outcome, character: "VChar", disciplines: bool):
     """Display the results of the operation in a nice embed."""
     action_present = "Update" if outcome.updating else "Assign"
     action_past = "Updated" if outcome.updating else "Assigned"
 
-    term_singular = "Trait" if not specialties else "Specialty"
-    term_plural = "Traits" if not specialties else "Specialties"
+    term_singular = "Trait" if not disciplines else "Discipline"
+    term_plural = "Traits" if not disciplines else "Disciplines"
 
     assigned = len(outcome.assigned)
     unassigned = len(outcome.unassigned)

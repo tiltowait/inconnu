@@ -2,6 +2,7 @@
 # pylint: disable=no-self-use
 
 import discord
+from discord import option
 from discord.commands import Option, SlashCommandGroup
 from discord.ext import commands
 
@@ -66,6 +67,45 @@ class Traits(commands.Cog, name="Trait Management"):
     # The following commands are just convenience commands. A specialty is just
     # a 1-point trait, but "how do I add specialties" is a common friction
     # point among users. This command group simplifies the process.
+
+    disciplines = SlashCommandGroup("disciplines", "Character disciplines.")
+
+    @disciplines.command(name="add")
+    @commands.guild_only()
+    @option("disciplines", description="The Disciplines to add. Ex: Potence=3 Auspex=2")
+    @inconnu.options.char_option("The character to modify")
+    async def add_disciplines(
+        self,
+        ctx: discord.ApplicationContext,
+        disciplines: str,
+        character: str,
+    ):
+        await inconnu.traits.add(ctx, character, disciplines, True)
+
+    @disciplines.command(name="remove")
+    @commands.guild_only()
+    @option("disciplines", description="The Disciplines to remove. Ex: Potence Auspex")
+    @inconnu.options.char_option("The character to modify")
+    async def remove_disciplines(
+        self,
+        ctx: discord.ApplicationContext,
+        disciplines: str,
+        character: str,
+    ):
+        await inconnu.traits.delete(ctx, character, disciplines, True)
+
+    @disciplines.command(name="update")
+    @option("disciplines", description="The Disciplines to update. Ex: Potence=5")
+    @inconnu.options.char_option("The character to modify")
+    @commands.guild_only()
+    async def disciplines_update(
+        self,
+        ctx: discord.ApplicationContext,
+        disciplines: str,
+        character: str,
+    ):
+        """Update one or more traits. Traits must already exist (use /traits add)."""
+        await inconnu.traits.update(ctx, character, disciplines, True)
 
     specialties = SlashCommandGroup("specialties", "Character specialties.")
 

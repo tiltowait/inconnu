@@ -12,33 +12,33 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 
 
 @haven(__HELP_URL)
-async def delete(ctx, character, traits: str, specialties=False):
+async def delete(ctx, character, traits: str, disciplines=False):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
         traits = traits.split()
         if not traits:
             # Shouldn't be possible to reach here, but just in case Discord messes up
-            raise SyntaxError("You must supply a list of traits or specialties to delete.")
+            raise SyntaxError("You must supply a list of traits or disciplines to delete.")
 
-        traitcommon.validate_trait_names(*traits, specialties=specialties)
+        traitcommon.validate_trait_names(*traits, disciplines=disciplines)
         outcome = __delete_traits(character, *traits)
-        await __outcome_embed(ctx, character, outcome, specialties)
+        await __outcome_embed(ctx, character, outcome, disciplines)
         await character.commit()
 
     except (ValueError, SyntaxError) as err:
         await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL)
 
 
-async def __outcome_embed(ctx, character, outcome, specialties: bool):
+async def __outcome_embed(ctx, character, outcome, disciplines: bool):
     """Display the operation outcome in an embed."""
-    term = "Trait" if not specialties else "Specialty"
+    term = "Trait" if not disciplines else "Discipline"
 
     embed = inconnu.utils.VCharEmbed(ctx, character, title=f"{term} Removal")
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if outcome.deleted:
         deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
-        embed.add_field(name="Deleted", value=deleted)
+        embed.add_field(name="Removed", value=deleted)
         embed.color = discord.Embed.Empty
 
     if outcome.errors:

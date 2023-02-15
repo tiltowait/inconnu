@@ -70,7 +70,8 @@ class VCharMacro(EmbeddedDocument):
 
 @inconnu.db.instance.register
 class VCharTrait(EmbeddedDocument):
-    """A character trait, which may be an attribute, skill, Discipline, or custom."""
+    """A character trait, which may be an attribute, skill, Discipline, or custom.
+    They're called specialties because I'm too lazy to rename them to subtraits."""
 
     class Type(str, Enum):
         """The type of trait."""
@@ -129,13 +130,23 @@ class VCharTrait(EmbeddedDocument):
         """The trait's specialties."""
         return self._specialties.copy()
 
+    def add_powers(self, powers: str | list[str]):
+        """Add powers to the Discipline."""
+        if not self.is_discipline:
+            raise inconnu.errors.SpecialtiesNotAllowed("Only Disciplines may have powers.")
+
+        self._add_subtraits(powers)
+
     def add_specialties(self, specialties: str | list[str]):
         """Add specialties to the trait."""
         if not self.specialties_allowed:
             raise inconnu.errors.SpecialtiesNotAllowed(
                 "Only skills and custom traits may have specialties."
             )
+        self._add_subtraits(specialties)
 
+    def _add_subtraits(self, specialties: str | list[str]):
+        """Add a specialty or a power."""
         if isinstance(specialties, str):
             specialties = {specialties}
         else:
@@ -179,11 +190,14 @@ class VCharTrait(EmbeddedDocument):
                     full_name += f" ({', '.join(expanded[1:])})"
 
                 key = ":".join(expanded)
+                rating = self.rating
+                if not self.is_discipline:
+                    rating += len(expanded[1:])
 
                 matches.append(
                     SN(
                         name=full_name,
-                        rating=self.rating + len(expanded[1:]),
+                        rating=rating,
                         exact=normalized == key.lower(),
                         key=key,
                         type=self.type,

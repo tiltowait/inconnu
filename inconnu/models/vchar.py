@@ -463,14 +463,27 @@ class VChar(Document):
 
         raise inconnu.errors.TraitNotFound(self, name)
 
+    def add_powers(self, trait_name: str, powers: list[str] | str) -> tuple[VCharTrait, set[str]]:
+        """Add powers to a Discipline and return a copy."""
+        return self._add_subtraits(trait_name, powers, VCharTrait.add_powers)
+
     def add_specialties(
         self, trait_name: str, specialties: list[str] | str
     ) -> tuple[VCharTrait, set[str]]:
         """Add specialties to a trait and return a copy of that trait."""
+        return self._add_subtraits(trait_name, specialties, VCharTrait.add_specialties)
+
+    def _add_subtraits(
+        self,
+        trait_name: str,
+        specialties: list[str] | str,
+        action: callable,
+    ) -> tuple[VCharTrait, set[str]]:
+        """The actual work of adding subtraits."""
         for trait in self._traits:
             if trait.matching(trait_name, True):
                 before = set(trait.specialties)
-                trait.add_specialties(specialties)
+                action(trait, specialties)
                 after = set(trait.specialties)
                 delta = sorted(after.symmetric_difference(before))
 

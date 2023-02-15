@@ -126,6 +126,19 @@ def test_add_specialties(vampire: VChar):
         vampire.add_specialties("Strength", ["ShouldNotWork"])
 
 
+def test_add_disciplines(vampire: VChar):
+    vampire.assign_traits({"Auspex": 3}, VCharTrait.Type.DISCIPLINE)
+
+    for trait in vampire.traits:
+        if trait.name == "Auspex":
+            assert trait.is_discipline
+            break
+
+    vampire.add_powers("Auspex", ["Premonition"])
+    with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+        vampire.add_powers("one", "kindred")
+
+
 @pytest.mark.parametrize("attribute", ATTRIBUTES)
 def test_attribute_adding(attribute: str, empty_vampire: VChar):
     empty_vampire.assign_traits({attribute: 1})

@@ -4,7 +4,7 @@ import pytest
 
 import inconnu.errors
 from inconnu.models.vchar import VChar
-from inconnu.specialties.add_remove import add_specialties, remove_specialties
+from inconnu.specialties.add_remove import Category, add_specialties, remove_specialties
 from inconnu.specialties.tokenize import tokenize
 from tests.characters import gen_char
 
@@ -12,7 +12,7 @@ from tests.characters import gen_char
 @pytest.fixture
 def character() -> VChar:
     char = gen_char("vampire")
-    char.assign_traits({"Brawl": 1, "Craft": 2})
+    char.assign_traits({"Brawl": 1, "Craft": 2, "Oblivion": 3})
     return char
 
 
@@ -76,7 +76,7 @@ def test_invalid_syntax(syntax: str):
     ],
 )
 def test_add_specialties(syntax: str, expected: list, character: VChar):
-    traits = add_specialties(character, syntax)
+    traits = add_specialties(character, syntax, Category.SPECIALTY)
     assert len(traits) == len(expected)
 
     for trait, expected in zip(traits, expected):
@@ -98,7 +98,7 @@ def test_add_specialties_intersection(syntax: str, expected: list[str], characte
     """Ensure that the delta filters out duplicates."""
     character.add_specialties("Brawl", "Kindred")
 
-    _, delta = add_specialties(character, syntax)[0]
+    _, delta = add_specialties(character, syntax, Category.SPECIALTY)[0]
     assert delta == expected
 
 
@@ -111,7 +111,7 @@ def test_add_specialties_intersection(syntax: str, expected: list[str], characte
 )
 def test_fail_add_specialties(syntax: str, character: VChar):
     with pytest.raises(inconnu.errors.TraitError):
-        _ = add_specialties(character, syntax)
+        _ = add_specialties(character, syntax, Category.SPECIALTY)
 
 
 @pytest.mark.parametrize(
@@ -136,3 +136,11 @@ def test_remove_specialties(syntax: str, expected: list, specced: VChar):
         assert trait.name == e_trait
         assert trait.specialties == e_specs
         assert delta == e_delta
+
+
+def test_add_powers(character: VChar):
+    powers = add_specialties(character, "oblivion=NecroticPlague", Category.POWER)
+    assert len(powers) == 1
+    _, delta = powers[0]
+
+    assert delta == ["NecroticPlague"]

@@ -107,6 +107,7 @@ class Traits(commands.Cog, name="Trait Management"):
         """Update one or more traits. Traits must already exist (use /traits add)."""
         await inconnu.traits.update(ctx, character, disciplines, True)
 
+    # SPECIALTIES
     specialties = SlashCommandGroup("specialties", "Character specialties.")
 
     @specialties.command(name="add")
@@ -114,22 +115,61 @@ class Traits(commands.Cog, name="Trait Management"):
     async def add_specialties(
         self,
         ctx: discord.ApplicationContext,
-        specialties: Option(str, "The specialties to add. Ex: Chemistry Research OnTheRoad"),
+        specialties: Option(str, "The specialties to add. Ex: Performance=Piano,Singing"),
         character: inconnu.options.character("The character to modify"),
     ):
         """Add specialties to a character. Can add multiple at a time."""
-        await inconnu.specialties.add(ctx, character, specialties)
+        await inconnu.specialties.add(
+            ctx,
+            character,
+            specialties,
+            inconnu.specialties.Category.SPECIALTY,
+        )
 
     @specialties.command(name="remove")
     @commands.guild_only()
     async def remove_specialties(
         self,
         ctx: discord.ApplicationContext,
-        specialties: Option(str, "The specialties to remove"),
+        specialties: Option(str, "The specialties to remove. Ex: Brawl=Kindred,Kine"),
         character: inconnu.options.character("The character to modify"),
     ):
         """Remove specialties from a character. Can remove multiple at a time."""
         await inconnu.specialties.remove(ctx, character, specialties)
+
+    # POWERS
+    powers = SlashCommandGroup("powers", "Character specialties.")
+
+    @powers.command(name="add")
+    @option("powers", description="The powers to add. Ex: Auspex=Premonition,HeightenedSenses")
+    @inconnu.options.char_option("The character to modify")
+    @commands.guild_only()
+    async def add_powers(
+        self,
+        ctx: discord.ApplicationContext,
+        powers: str,
+        character: str,
+    ):
+        """Add powers to a character's Disciplines. Can add multiple at a time."""
+        await inconnu.specialties.add(
+            ctx,
+            character,
+            powers,
+            inconnu.specialties.Category.POWER,
+        )
+
+    @powers.command(name="remove")
+    @option("powers", description="The powers to remove. Ex: Auspex=Premonition")
+    @inconnu.options.char_option("The character to modify")
+    @commands.guild_only()
+    async def remove_specialties(
+        self,
+        ctx: discord.ApplicationContext,
+        powers: str,
+        character: str,
+    ):
+        """Remove powers from a character's Disciplines. Can remove multiple at a time."""
+        await inconnu.specialties.remove(ctx, character, powers)
 
 
 def setup(bot):

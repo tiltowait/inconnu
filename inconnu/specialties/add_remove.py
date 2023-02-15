@@ -21,16 +21,30 @@ class Action(Enum):
     REMOVE = 1
 
 
+class Category(str, Enum):
+    """An enum representing a trait category."""
+
+    SPECIALTY = "Specialty"
+    POWER = "Power"
+
+    @property
+    def plural(self) -> str:
+        """The category's plural form."""
+        if self == Category.SPECIALTY:
+            return "Specialties"
+        return "Powers"
+
+
 @haven(__HELP_URL)
-async def add(ctx: discord.ApplicationContext, character, syntax: str):
+async def add(ctx: discord.ApplicationContext, character, syntax: str, category: Category):
     """Add specialties to one or more of the character's traits."""
-    await _add_or_remove(ctx, character, syntax, Action.ADD)
+    await _add_or_remove(ctx, character, syntax, Action.ADD, category)
 
 
 @haven(__HELP_URL)
 async def remove(ctx: discord.ApplicationContext, character, syntax: str):
     """Remove specialties from one or more of the character's traits."""
-    await _add_or_remove(ctx, character, syntax, Action.REMOVE)
+    await _add_or_remove(ctx, character, syntax, Action.REMOVE, None)
 
 
 async def _add_or_remove(
@@ -38,17 +52,18 @@ async def _add_or_remove(
     character,
     syntax: str,
     action: Action,
+    category: Category,
 ):
     """Perform the actual work of adding or removing a spec."""
     if action == Action.ADD:
         action = add_specialties
-        title = "Specialties added"
+        title = category.plural + " added"
     else:
         action = remove_specialties
-        title = "Specialties removed"
+        title = category.plural + " removed"
 
     try:
-        additions = action(character, syntax)
+        additions = action(character, syntax, category)
         embed = _make_embed(ctx, character, additions, title)
         view = inconnu.views.TraitsView(character, ctx.user)
 
@@ -105,31 +120,36 @@ def _make_embed(
 
     content = "\n".join(entries).strip()
     embed = inconnu.utils.VCharEmbed(ctx, character, title=title, description=content)
-    embed.set_footer(text="See all specialties, traits, and Disciplines with /traits list.")
+    embed.set_footer(text="See all specialties, powers, traits, and Disciplines with /traits list.")
 
     return embed
 
 
-def add_specialties(character: VChar, syntax: str) -> list:
+def add_specialties(character: VChar, syntax: str, category: Category) -> list:
     """Add specialties to the character."""
-    return _mod_specialties(character, syntax, True)
+    return _mod_specialties(character, syntax, True, category)
 
 
-def remove_specialties(character: VChar, syntax: str) -> list:
+def remove_specialties(character: VChar, syntax: str, _=None) -> list:
     """Remove specialties from a character."""
-    return _mod_specialties(character, syntax, False)
+    return _mod_specialties(character, syntax, False, None)
 
 
-def _mod_specialties(character: VChar, syntax: str, adding: bool):
+def _mod_specialties(character: VChar, syntax: str, adding: bool, category: Category):
     """Do the actual work of adding or removing specialties."""
     tokens = tokenize(syntax)
     validate_tokens(character, tokens)
+
+    if category == Category.SPECIALTY:
+        add_method = VChar.add_specialties
+    else:
+        add_method = VChar.add_powers
 
     # We have the traits; add the specialties
     traits = []
     for trait, specs in tokens:
         if adding:
-            new_trait, delta = character.add_specialties(trait, specs)
+            new_trait, delta = add_method(character, trait, specs)
         else:
             new_trait, delta = character.remove_specialties(trait, specs)
         traits.append((new_trait, delta))

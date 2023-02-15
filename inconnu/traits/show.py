@@ -55,6 +55,10 @@ def traits_embed(
     for trait in char_traits:
         entry = f"**{trait.name}:** {trait.rating}"
         if trait.is_discipline:
+            if trait.has_specialties:
+                # If it has any powers, show them
+                powers = inconnu.utils.format_join(trait.specialties, ", ", "`")
+                entry += f" ({powers})"
             disciplines.append(entry)
         else:
             custom.append(entry)
@@ -62,8 +66,8 @@ def traits_embed(
     # Fill in the custom stuff
     nbsp = "*None*"
     embed.add_field(name="​", value="**USER-DEFINED**", inline=False)
-    embed.add_field(name="Custom", value="\n".join(custom) or nbsp, inline=True)
-    embed.add_field(name="Disciplines", value="\n".join(disciplines) or nbsp, inline=True)
-    embed.add_field(name="Specialties", value="\n".join(specialties) or nbsp, inline=True)
+    embed.add_field(name="Disciplines", value="\n".join(disciplines) or nbsp, inline=False)
+    embed.add_field(name="Specialties", value="\n".join(specialties) or nbsp, inline=False)
+    embed.add_field(name="Custom", value="\n".join(custom) or nbsp, inline=False)
 
     return embed

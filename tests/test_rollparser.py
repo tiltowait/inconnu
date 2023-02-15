@@ -13,6 +13,7 @@ def character() -> VChar:
     char = gen_char("vampire")
     char.assign_traits({"Strength": 3, "Brawl": 4, "Oblivion": 5, "Resolve": 4})
     char.add_specialties("Brawl", ["Kindred"])
+    char.add_powers("Oblivion", "ShadowCloak")
     return char
 
 
@@ -37,6 +38,7 @@ def test_has_invalid_characters(string: str, should_fail: bool):
         ("stren+br hunger", "Strength + Brawl", 7),
         ("stren+br:kin", "Strength + Brawl (Kindred)", 8),
         ("stren + br+obl", "Strength + Brawl + Oblivion", 12),
+        ("stren + :shadow", "Strength + Oblivion (ShadowCloak)", 8),
     ],
 )
 def test_pool_creation(syntax: str, pool_str: str, value: int, character: VChar):

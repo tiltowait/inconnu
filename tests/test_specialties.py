@@ -17,6 +17,12 @@ def skill() -> VCharTrait:
     return VCharTrait(name="Brawl", rating=4, type=VCharTrait.Type.SKILL.value)
 
 
+@pytest.fixture
+def discipline() -> VCharTrait:
+    """A basic trait."""
+    return VCharTrait(name="Potence", rating=4, type=VCharTrait.Type.DISCIPLINE.value)
+
+
 @pytest.mark.parametrize(
     "needle,exact,count,name,rating",
     [
@@ -196,3 +202,13 @@ def test_specialties_allowed(category: str, allowed: bool):
     if not allowed:
         with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
             trait.add_specialties("spec")
+
+
+def test_subtrait_delineation(skill: VCharTrait, discipline: VCharTrait):
+    skill.add_specialties("Kindred")
+    discipline.add_powers("Prowess")
+
+    with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+        skill.add_powers("Prowess")
+    with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+        discipline.add_specialties("Kindred")

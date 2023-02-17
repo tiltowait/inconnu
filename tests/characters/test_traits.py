@@ -179,7 +179,7 @@ def test_remove_traits(empty_vampire: VChar):
 def test_specialty_find(vampire: VChar):
     vampire.assign_traits({"Brawl": 1})
     vampire.add_specialties("Brawl", "Kindred")
-    trait = vampire.find_trait(":k")
+    trait = vampire.find_trait(";k")
 
     assert trait.name == "Brawl (Kindred)"
     assert trait.rating == 2

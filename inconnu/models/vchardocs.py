@@ -73,6 +73,8 @@ class VCharTrait(EmbeddedDocument):
     """A character trait, which may be an attribute, skill, Discipline, or custom.
     They're called specialties because I'm too lazy to rename them to subtraits."""
 
+    DELIMITER = ";"
+
     class Type(str, Enum):
         """The type of trait."""
 
@@ -179,9 +181,9 @@ class VCharTrait(EmbeddedDocument):
         if groups := self.expanding(identifier, exact, False):
             # The expanded values are sorted alphabetically, and we need
             # that to match our input for testing exactness
-            tokens = identifier.split(":")
+            tokens = identifier.split(VCharTrait.DELIMITER)
             tokens = [tokens[0]] + sorted(tokens[1:])
-            normalized = ":".join(tokens).lower()
+            normalized = VCharTrait.DELIMITER.join(tokens).lower()
 
             for expanded in groups:
                 full_name = self.name
@@ -189,7 +191,7 @@ class VCharTrait(EmbeddedDocument):
                     # Add the specialties
                     full_name += f" ({', '.join(expanded[1:])})"
 
-                key = ":".join(expanded)
+                key = VCharTrait.DELIMITER.join(expanded)
                 rating = self.rating
                 if not self.is_discipline:
                     rating += len(expanded[1:])
@@ -208,7 +210,7 @@ class VCharTrait(EmbeddedDocument):
 
     def expanding(self, identifier: str, exact: bool, join=True) -> list[str | list[str]]:
         """Expand the user's input to full skill:spec names. If join is False, return a list."""
-        tokens = [token.lower() for token in identifier.split(":")]
+        tokens = [token.lower() for token in identifier.split(VCharTrait.DELIMITER)]
 
         # The "comp" lambda takes a token and an instance var
         if exact:
@@ -267,7 +269,7 @@ class VCharTrait(EmbeddedDocument):
                 matches = [[self.name]]
 
             if join:
-                return [":".join(match) for match in matches]
+                return [VCharTrait.DELIMITER.join(match) for match in matches]
             return matches
 
         # No matches

@@ -36,9 +36,9 @@ def test_has_invalid_characters(string: str, should_fail: bool):
     [
         ("stren+br", "Strength + Brawl", 7),
         ("stren+br hunger", "Strength + Brawl", 7),
-        ("stren+br:kin", "Strength + Brawl (Kindred)", 8),
+        ("stren+br;kin", "Strength + Brawl (Kindred)", 8),
         ("stren + br+obl", "Strength + Brawl + Oblivion", 12),
-        ("stren + :shadow", "Strength + Oblivion (ShadowCloak)", 8),
+        ("stren + ;shadow", "Strength + Oblivion (ShadowCloak)", 8),
     ],
 )
 def test_pool_creation(syntax: str, pool_str: str, value: int, character: VChar):
@@ -50,8 +50,8 @@ def test_pool_creation(syntax: str, pool_str: str, value: int, character: VChar)
 @pytest.mark.parametrize(
     "syntax,stack,expand_only",
     [
-        ("stren+br:kin", ["Strength", "+", "Brawl:Kindred"], True),
-        ("stren+br:kin", ["Strength", "+", "Brawl (Kindred)"], False),
+        ("stren+br;kin", ["Strength", "+", "Brawl;Kindred"], True),
+        ("stren+br;kin", ["Strength", "+", "Brawl (Kindred)"], False),
     ],
 )
 def test_stack_expansion(syntax: str, stack: str, expand_only: bool, character: VChar):

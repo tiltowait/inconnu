@@ -423,8 +423,7 @@ async def upload_logs():
         Logger.warning("TASK: Log uploading disabled. Unscheduling task")
         upload_logs.stop()
     elif not await api.upload_logs():
-        Logger.error("TASK: Unable to upload logs. Unscheduling task")
-        upload_logs.stop()
+        Logger.error("TASK: Unable to upload logs. Please see error console")
     else:
         Logger.info("TASK: Logs uploaded")
 

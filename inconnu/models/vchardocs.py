@@ -88,9 +88,7 @@ class VCharTrait(EmbeddedDocument):
     name: str = fields.StrField(required=True)
     rating: int = fields.IntField(required=True)
     type: str = fields.StrField(required=True)
-    _specialties: list[str] = fields.ListField(
-        fields.StrField, default=list, attribute="specialties"
-    )
+    _specialties: list[str] = fields.ListField(fields.StrField, default=list, attribute="subtraits")
 
     @property
     def is_attribute(self) -> bool:

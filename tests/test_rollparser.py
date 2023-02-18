@@ -47,6 +47,18 @@ def test_pool_creation(syntax: str, pool_str: str, value: int, character: VChar)
     assert p.pool == value
 
 
+def test_solo_semicolon():
+    char = gen_char("vampire")
+    char.assign_traits({"Brawl": 1})
+    char.add_specialties("Brawl", ["Kindred"])
+
+    _ = RollParser(char, ";")
+
+    char.add_specialties("Brawl", ["Kine"])
+    with pytest.raises(inconnu.errors.AmbiguousTraitError):
+        _ = RollParser(char, ";")
+
+
 @pytest.mark.parametrize(
     "syntax,stack,expand_only",
     [

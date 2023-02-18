@@ -64,6 +64,7 @@ DISCIPLINES = [
     "Celerity",
     "Dominate",
     "Fortitude",
+    "Obfuscate",
     "Potence",
     "Presence",
     "Protean",

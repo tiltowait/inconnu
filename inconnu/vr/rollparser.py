@@ -5,6 +5,7 @@ import operator as op
 import re
 
 import inconnu
+from inconnu.models.vchardocs import VCharTrait
 from logger import Logger
 
 
@@ -21,7 +22,13 @@ class RollParser:
             if self.has_invalid_characters(raw_syntax):
                 raise SyntaxError("Invalid syntax.")
 
-            syntax = re.sub(r";\s+", ":", raw_syntax)  # Subtraits
+            # Fix spacing
+            if VCharTrait.DELIMITER == ".":
+                # Period matches any character in regex, so we have to escape it
+                pat = r"\s*\.\s*"
+            else:
+                pat = r"\s*" + VCharTrait.DELIMITER + r"\s*"
+            syntax = re.sub(pat, VCharTrait.DELIMITER, raw_syntax)
             syntax = re.sub(r"\s*([+-])\s*", r" \g<1> ", syntax)
 
             self.tokens = syntax.split()
@@ -47,12 +54,15 @@ class RollParser:
         string = " ".join(self.pool_stack)
 
         if not re.search(r"[A-Za-z_]", string):
+            # Traits weren't used
             return None
 
         if string[0] == "+":
-            string = string[2:]  # Just lop off the leading plus sign
+            # Lop off leading plus sign and the following space
+            string = string[2:]
         if string[0] == "-":
-            string = string.replace(" ", "", 1)  # First item is negative, not subtracting
+            # Remove space between negative sign and trait/number
+            string = string.replace(" ", "", 1)
 
         return string
 
@@ -229,7 +239,7 @@ class RollParser:
     @classmethod
     def has_invalid_characters(cls, syntax) -> bool:
         """Check whether the roll has invalid characters."""
-        return re.search(r"[^\w\+\-\s;]", syntax) is not None
+        return re.search(r"[^\w\+\-\s" + VCharTrait.DELIMITER + "]", syntax) is not None
 
 
 # Math Helpers

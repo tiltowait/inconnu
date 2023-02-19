@@ -73,7 +73,7 @@ class VCharTrait(EmbeddedDocument):
     """A character trait, which may be an attribute, skill, Discipline, or custom.
     They're called specialties because I'm too lazy to rename them to subtraits."""
 
-    DELIMITER = ";"
+    DELIMITER = "."
 
     class Type(str, Enum):
         """The type of trait."""

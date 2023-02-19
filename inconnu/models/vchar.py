@@ -392,7 +392,7 @@ class VChar(Document):
             found.extend(matches)
 
         if not found:
-            raise inconnu.errors.TraitNotFound(self, trait)
+            raise inconnu.errors.TraitNotFound(self, name)
 
         if len(found) > 1:
             keys = map(lambda m: m.key, found)

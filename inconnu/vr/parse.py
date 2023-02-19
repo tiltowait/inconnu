@@ -18,6 +18,7 @@ from functools import partial
 import discord
 
 import inconnu
+from inconnu.models.vchardocs import VCharTrait
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
@@ -158,7 +159,7 @@ async def perform_roll(character: "VChar", syntax, max_hunger=5):
 
 def needs_character(syntax: str):
     """Determines whether a roll needs a character."""
-    return re.search(r"[A-z_]", syntax) is not None
+    return re.search(r"[A-z_" + VCharTrait.DELIMITER + "]", syntax) is not None
 
 
 async def stringify_mentions(ctx, sentence):

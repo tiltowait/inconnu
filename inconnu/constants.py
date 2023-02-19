@@ -61,15 +61,20 @@ FLAT_TRAITS = lambda: sum(FlatDict(GROUPED_TRAITS).values(), [])
 DISCIPLINES = [
     "Animalism",
     "Auspex",
+    "BloodSorcery",
     "Celerity",
     "Dominate",
     "Fortitude",
+    "Obeah",
     "Obfuscate",
+    "Oblivion",
     "Potence",
     "Presence",
     "Protean",
-    "BloodSorcery",
-    "Oblivion",
+    "Valeren",
+    "Vicissitude",
+    "WarriorValeren",
+    "WatcherValeren",
 ]
 
 UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]

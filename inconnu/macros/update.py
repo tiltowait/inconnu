@@ -112,7 +112,9 @@ def __validate_parameters(character: "VChar", parameters: dict):
             macro_update[key] = value
 
         elif key == "pool":
-            pool = inconnu.vr.RollParser(character, value, True).pool_stack
+            pool = inconnu.vr.RollParser(
+                character, value, expand_only=True, power_bonus=False
+            ).pool_stack
             macro_update[key] = pool
 
         elif key == "hunger":

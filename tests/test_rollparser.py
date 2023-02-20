@@ -115,3 +115,25 @@ def test_auto_blood_potency(syntax: str, bp: int, pool: str, dice: int, characte
     p = RollParser(character, syntax)
     assert p.pool_str == pool
     assert p.pool == dice
+
+
+@pytest.mark.parametrize(
+    "syntax,expected_str,expected_dice,add_bonus",
+    [
+        ("Resolve + Oblivion", "Resolve + Oblivion + PowerBonus", 10, True),
+        ("Resolve + Oblivion", "Resolve + Oblivion", 9, False),
+        ("Strength + Brawl", "Strength + Brawl", 7, True),
+        ("Strength + Brawl", "Strength + Brawl", 7, False),
+    ],
+)
+def test_no_power_bonus(
+    syntax: str,
+    expected_str: str,
+    expected_dice: int,
+    add_bonus: bool,
+    character: VChar,
+):
+    character.potency = 2
+    p = RollParser(character, syntax, power_bonus=add_bonus)
+    assert p.pool_str == expected_str
+    assert p.pool == expected_dice

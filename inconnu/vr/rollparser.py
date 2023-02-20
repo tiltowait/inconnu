@@ -12,10 +12,11 @@ from logger import Logger
 class RollParser:
     """Parse user roll input."""
 
-    def __init__(self, character, raw_syntax, expand_only=False):
+    def __init__(self, character, raw_syntax, expand_only=False, power_bonus=True):
         self.character = character
         self._parameters = {}
         self.expand_only = expand_only
+        self.power_bonus = power_bonus
 
         # Convert the syntax into tokens, if necessary
         if isinstance(raw_syntax, str):
@@ -155,7 +156,7 @@ class RollParser:
         self._parameters["q_pool_stack"] = qualified_stacks.pop(0)
         self._parameters["i_pool_stack"] = interpolated_stacks.pop(0)
 
-        if using_discipline and self.character.power_bonus > 0:
+        if self.power_bonus and using_discipline and self.character.power_bonus > 0:
             Logger.debug("ROLLPARSER: Adding power bonus")
             self._parameters["q_pool_stack"].extend(["+", "PowerBonus"])
             self._parameters["i_pool_stack"].extend(["+", str(self.character.power_bonus)])

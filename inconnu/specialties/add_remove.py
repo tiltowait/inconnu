@@ -42,9 +42,9 @@ async def add(ctx: discord.ApplicationContext, character, syntax: str, category:
 
 
 @haven(__HELP_URL)
-async def remove(ctx: discord.ApplicationContext, character, syntax: str):
+async def remove(ctx: discord.ApplicationContext, character, syntax: str, category: Category):
     """Remove specialties from one or more of the character's traits."""
-    await _add_or_remove(ctx, character, syntax, Action.REMOVE, None)
+    await _add_or_remove(ctx, character, syntax, Action.REMOVE, category)
 
 
 async def _add_or_remove(
@@ -73,7 +73,8 @@ async def _add_or_remove(
         # changes were actually made
         for _, delta in additions:
             if delta:
-                msg = f"__{ctx.user.mention} updated {character.name}'s specialties__\n"
+                cat = category.plural.lower()
+                msg = f"__{ctx.user.mention} updated {character.name}'s {cat}__\n"
                 msg += embed.description
                 tasks.append(
                     inconnu.common.report_update(

@@ -135,7 +135,12 @@ class Traits(commands.Cog, name="Trait Management"):
         character: inconnu.options.character("The character to modify"),
     ):
         """Remove specialties from a character. Can remove multiple at a time."""
-        await inconnu.specialties.remove(ctx, character, specialties)
+        await inconnu.specialties.remove(
+            ctx,
+            character,
+            specialties,
+            inconnu.specialties.Category.SPECIALTY,
+        )
 
     # POWERS
     powers = SlashCommandGroup("powers", "Character specialties.")
@@ -169,7 +174,12 @@ class Traits(commands.Cog, name="Trait Management"):
         character: str,
     ):
         """Remove powers from a character's Disciplines. Can remove multiple at a time."""
-        await inconnu.specialties.remove(ctx, character, powers)
+        await inconnu.specialties.remove(
+            ctx,
+            character,
+            powers,
+            inconnu.specialties.Category.POWER,
+        )
 
 
 def setup(bot):

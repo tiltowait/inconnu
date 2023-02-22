@@ -90,6 +90,13 @@ class Help(commands.Cog):
             )
             traits.callback = self.show_traits_help
 
+            disciplines = Button(
+                label="Disciplines",
+                style=discord.ButtonStyle.primary,
+                custom_id="persistent-disciplines",
+            )
+            disciplines.callback = self.show_disciplines_help
+
             specialties = Button(
                 label="Specialties",
                 style=discord.ButtonStyle.primary,
@@ -105,7 +112,7 @@ class Help(commands.Cog):
             macros.callback = self.show_macros_help
 
             self.overview_view = _HelpView(
-                character, traits, specialties, macros, show_support=True
+                character, traits, disciplines, specialties, macros, show_support=True
             )
 
         # Add the persistent views to the bot if we haven't already
@@ -186,24 +193,24 @@ class Help(commands.Cog):
         embed.set_thumbnail(url=self.bot.user.avatar)
 
         embed.add_field(
-            name="Roll",
+            name="Dice Rolls",
             value=(
-                "`/vr syntax:POOL HUNGER DIFFICULTY`\n\n"
-                "Your `POOL` can be numbers or words. `HUNGER` can be a number 0-5 *or* "
-                "the word `hunger`, which will use your character's current Hunger rating. "
+                "`/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`\n\n"
+                "Your `POOL` can be numbers or words. For `HUNGER`, select `Current Hunger`"
+                "if using a character in the bot; otherwise select a number. "
                 "`DIFFICULTY` can be any number 0 or higer. Defaults to 0 if omitted.\n\n"
-                "You need to create a character to use traits. "
-                "If you only supply `POOL`, then `HUNGER` and `DIFFICULTY` will both be 0.\n\n"
-                "**Example:** `/vr syntax:manip+sub hunger 3` will roll Manipulation + "
-                "Subterfuge, using current Hunger, at Difficulty 3."
+                "You must create a character to use traits.\n\n"
+                "**Example:** `/roll pool:manip+sub hunger:Current Hunger difficulty:3` "
+                "will roll Manipulation + Subterfuge, using current Hunger, at Difficulty 3."
             ),
             inline=False,
         )
         embed.add_field(
-            name="Simplified roll syntax",
+            name="Alternate roll syntax",
             value=(
-                "`/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`\n\n"
-                "The same as `/vr`, only easier for new users. All parameters required."
+                "`/vr` - Combines roll elements into one line, similar to Thirst. Use "
+                "`hunger` to use your character's current Hunger, or give a number.\n"
+                "**Example:** `/vr syntax:manip+sub hunger 3`"
             ),
             inline=False,
         )

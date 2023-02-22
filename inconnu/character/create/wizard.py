@@ -138,7 +138,7 @@ class Wizard:
             ),
             inline=False,
         )
-        embed.set_footer(text="See /help overview for further details.")
+        embed.set_footer(text="See /help for further details.")
 
         button = Button(
             label="Full Documentation", url="https://docs.inconnu.app/guides/quickstart"

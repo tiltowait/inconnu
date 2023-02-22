@@ -288,7 +288,7 @@ class InconnuBot(discord.Bot):
             if ctx.user.id not in self.motd_given:
                 Logger.debug("MOTD: Showing MOTD to %s#%s", ctx.user.name, ctx.user.discriminator)
                 await asyncio.sleep(1)
-                await ctx.respond(embed=self.motd, ephemeral=True)
+                await inconnu.utils.cmd_replace(ctx, embed=self.motd, ephemeral=True)
                 self.motd_given.add(ctx.user.id)
 
     async def on_connect(self):

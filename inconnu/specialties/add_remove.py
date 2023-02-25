@@ -161,14 +161,22 @@ def _mod_specialties(character: VChar, syntax: str, adding: bool, category: Cate
 def validate_tokens(character: VChar, tokens: list[tuple[str, list[str]]]):
     """Raise an exception if the character is missing one of the traits."""
     missing = []
-    for trait, _ in tokens:
+    errs = []
+    for trait, subtraits in tokens:
         if not character.has_trait(trait):
             missing.append(trait)
+        if not errs:
+            for subtrait in map(str.lower, subtraits):
+                if subtrait == trait.lower():
+                    errs.append("A subtrait can't have the same name as the parent trait.")
 
     if missing:
         if len(missing) == 1:
-            err_msg = f"**{character.name}** has no trait named `{missing[0]}`."
+            # We want the part of the error with the character name to come first
+            errs.insert(0, f"**{character.name}** has no trait named `{missing[0]}`.")
         else:
             missing = ", ".join(map(lambda t: f"`{t}`", missing))
-            err_msg = f"**{character.name}** doesn't have the following traits: {missing}."
-        raise inconnu.errors.TraitError(err_msg)
+            errs.insert(0, f"**{character.name}** doesn't have the following traits: {missing}.")
+
+    if errs:
+        raise inconnu.errors.TraitError("\n\n".join(errs))

@@ -1,10 +1,17 @@
 """Specialties UI test. (Everything but Discord stuff."""
 
+from contextlib import nullcontext as does_not_raise
+
 import pytest
 
 import inconnu.errors
 from inconnu.models.vchar import VChar
-from inconnu.specialties.add_remove import Category, add_specialties, remove_specialties
+from inconnu.specialties.add_remove import (
+    Category,
+    add_specialties,
+    remove_specialties,
+    validate_tokens,
+)
 from inconnu.specialties.tokenize import tokenize
 from tests.characters import gen_char
 
@@ -144,3 +151,18 @@ def test_add_powers(character: VChar):
     _, delta = powers[0]
 
     assert delta == ["NecroticPlague"]
+
+
+@pytest.mark.parametrize(
+    "exception,skill,specs",
+    [
+        (does_not_raise(), "Brawl", ["Kindred"]),
+        (does_not_raise(), "Brawl", ["Kindred", "Kine"]),
+        (pytest.raises(inconnu.errors.TraitError), "Brawl", ["Brawl"]),
+        (pytest.raises(inconnu.errors.TraitError), "Brawl", ["Kindred", "Brawl"]),
+        (pytest.raises(inconnu.errors.TraitError), "NotASkill", ["ShouldFail"]),
+    ],
+)
+def test_validate_tokens(exception, skill: str, specs: list[str], character: VChar):
+    with exception:
+        validate_tokens(character, [(skill, specs)])

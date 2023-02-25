@@ -9,7 +9,7 @@ def tokenize(syntax: str):
     """Normalize and tokenize specialty syntax."""
     if invalid := re.findall(r"[^A-Za-z_\s=,]", syntax):
         invalid = ", ".join(map(lambda t: f"`{t}`", set(invalid)))
-        raise SyntaxError(f"Invalid characters: {invalid}")
+        raise SyntaxError(f"Invalid character(s): {invalid}")
 
     # Remove spaces surrounding commas and equals signs
     syntax = re.sub(r"\s*([,=])\s*", r"\1", syntax)

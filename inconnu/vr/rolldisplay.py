@@ -326,22 +326,15 @@ class RollDisplay:
         embed.add_field(name="Difficulty", value=str(self.outcome.difficulty))
 
         if self.outcome.pool_str:
-            # If trait names are in CamelCase or snake_case, we want to
-            # convert them to something more easily read
-
-            # First, remove snake_case
-            pool_str = self.outcome.pool_str.replace("_", " ")
-
-            # Add spaces before "Camel", and add spaces before "XYZ", then
-            # split and rejoin to remove the extraneous spaces
-            splitted = re.sub("([A-Z][a-z]+)", r" \1", re.sub("([A-Z]+)", r" \1", pool_str)).split()
+            # Make pool strings nicer to read
+            splitted = inconnu.utils.de_camel(self.outcome.pool_str).split()
 
             # Uppercase each word in the pool. We can't use .title(), because
             # .title() will make everything else lowercase. "XYZ" would become
             # "Xyz", which is not desired.
             splitted = map(lambda t: (t[0].upper() + t[1:]) if t[0].islower() else t, splitted)
-
             pool_str = " ".join(splitted)
+
             embed.add_field(name="Pool", value=pool_str)
 
         # Show what the roll originally was

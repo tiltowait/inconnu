@@ -21,6 +21,14 @@ def clean_text(text: str) -> str:
     return " ".join(text.split())
 
 
+def de_camel(text: str, de_underscore=True) -> str:
+    """CamelCase -> Camel Case. Also does underscores."""
+    temp = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
+    if de_underscore:
+        return temp.replace("_", " ")
+    return temp
+
+
 def raw_command_options(interaction) -> str:
     """Get the options in a command as a dict."""
     options = {}
@@ -103,6 +111,11 @@ def _check_supporter(ctx, user: discord.Member = None):
 def has_premium():
     """A decorator for commands that only work for supporters."""
     return commands.check(_check_supporter)
+
+
+def format_join(collection: list, separator: str, f: str, alt="") -> str:
+    """Join a collection by a separator, formatting each item."""
+    return separator.join(map(lambda c: f"{f}{c}{f}", collection)) or alt
 
 
 def pull_mentions(text: str) -> set[str]:

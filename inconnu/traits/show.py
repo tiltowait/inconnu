@@ -25,24 +25,49 @@ def traits_embed(
     embed.set_footer(text="To see HP, WP, etc., use /character display")
 
     char_traits = character.traits  # This is an automatic copy
-
+    specialties = []
     for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
         embed.add_field(name="​", value=f"**{group}**", inline=False)
         for subgroup, traits in subgroups.items():
             trait_list = []
             for trait in traits:
-                rating = char_traits.pop(trait, 0)
-                trait_list.append(f"***{trait}:*** {rating}")
+                found = False
+                for index, char_trait in enumerate(char_traits):
+                    if char_trait.matching(trait, True):
+                        if char_trait.has_specialties:
+                            specs = inconnu.utils.format_join(char_trait.specialties, ", ", "`")
+                            spec = f"**{char_trait.name}:** {specs}"
+                            specialties.append(spec)
+
+                        trait_list.append(f"**{trait}:** {char_trait.rating}")
+                        del char_traits[index]
+                        found = True
+                        break
+                if not found:
+                    trait_list.append(f"**{trait}:** 0")
 
             embed.add_field(name=subgroup, value="\n".join(trait_list), inline=True)
 
     # The remaining traits are user-defined
-    if char_traits:
-        # Sort them first
-        user_defined = sorted(char_traits.items(), key=lambda s: s[0].casefold())
+    custom = []
+    disciplines = []
 
-        traits = [f"***{trait}:*** {rating}" for trait, rating in user_defined]
-        traits = "\n".join(traits)
-        embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
+    for trait in char_traits:
+        entry = f"**{trait.name}:** {trait.rating}"
+        if trait.is_discipline:
+            if trait.has_specialties:
+                # If it has any powers, show them
+                powers = inconnu.utils.format_join(trait.specialties, ", ", "`")
+                entry += f" ({powers})"
+            disciplines.append(entry)
+        else:
+            custom.append(entry)
+
+    # Fill in the custom stuff
+    nbsp = "*None*"
+    embed.add_field(name="​", value="**USER-DEFINED**", inline=False)
+    embed.add_field(name="Disciplines", value="\n".join(disciplines) or nbsp, inline=False)
+    embed.add_field(name="Specialties", value="\n".join(specialties) or nbsp, inline=False)
+    embed.add_field(name="Custom", value="\n".join(custom) or nbsp, inline=False)
 
     return embed

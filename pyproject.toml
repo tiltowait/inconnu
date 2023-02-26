@@ -4,6 +4,9 @@ line-length = 100
 [tool.isort]
 profile = "black"
 
+[tool.pytest.ini_options]
+filterwarnings = ["ignore::marshmallow.warnings.RemovedInMarshmallow4Warning"]
+
 [tool.poetry]
 name = "inconnu"
 version = "6.0.2"
@@ -13,7 +16,6 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fastapi = "^0.84.0"
 flatdict = "^4.0.1"
 Markdown = "^3.4.1"
 motor = "^3.0.0"
@@ -26,11 +28,15 @@ umongo = "^3.1.0"
 uvicorn = "^0.18.3"
 validators = "^0.20.0"
 google-cloud-logging = "^3.4.0"
+fastapi = "^0.92.0"
 
 [tool.poetry.dev-dependencies]
 debugpy = "^1.6.3"
 mypy = "^0.982"
 pylint = "^2.15.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest-asyncio = "^0.20.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -37,7 +37,7 @@ async def update(ctx, character, macro: str, syntax: str):
     except (
         inconnu.errors.MacroNotFoundError,
         inconnu.errors.AmbiguousTraitError,
-        inconnu.errors.TraitNotFoundError,
+        inconnu.errors.TraitNotFound,
         SyntaxError,
         ValueError,
     ) as err:
@@ -112,7 +112,9 @@ def __validate_parameters(character: "VChar", parameters: dict):
             macro_update[key] = value
 
         elif key == "pool":
-            pool = inconnu.vr.RollParser(character, value).pool_stack
+            pool = inconnu.vr.RollParser(
+                character, value, expand_only=True, power_bonus=False
+            ).pool_stack
             macro_update[key] = pool
 
         elif key == "hunger":

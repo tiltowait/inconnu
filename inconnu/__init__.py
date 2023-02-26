@@ -21,6 +21,7 @@ from inconnu import (
     reference,
     roleplay,
     settings,
+    specialties,
     stats,
     tasks,
     traits,

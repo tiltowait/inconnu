@@ -111,7 +111,12 @@ class ErrorReporter:
 
         # Unknown exceptions
         embed = await self.error_embed(ctx, error)
-        await self._report_unknown_error(respond, embed)
+        try:
+            await self._report_unknown_error(respond, embed)
+        except discord.HTTPException:
+            embed.description = "The error was too long to fit! Check the logs."
+            await self._report_unknown_error(respond, embed)
+            raise error from error
 
         # Print the error to the log
         if isinstance(ctx, discord.ApplicationContext):
@@ -125,19 +130,12 @@ class ErrorReporter:
         """Report an unknown exception."""
         user_msg = f"{self.bot.user.mention} has encountered an error. Support has been notified!"
 
-        if self.channel is None:
-            # Logger.error("REPORTER: Error channel not set.")
-            await respond(user_msg)
-        else:
-            try:
-                await respond(user_msg, ephemeral=True)
-
-            except discord.errors.NotFound:
-                pass
-                # Logger.warning(
-                # "REPORTER: Couldn't inform user of an error due to an unknown interaction."
-                # )
-            finally:
+        try:
+            await respond(user_msg, ephemeral=True)
+        except (discord.NotFound, discord.HTTPException) as err:
+            Logger.error("REPORTER: Couldn't inform user of an error: %s", str(err))
+        finally:
+            if self.channel is not None:
                 await self.channel.send(embed=embed)
 
     @staticmethod

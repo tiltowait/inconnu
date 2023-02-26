@@ -75,7 +75,7 @@ class TraitAlreadyExistsError(TraitError):
     """Raised when the user tries to add an extant trait."""
 
 
-class TraitNotFoundError(TraitError):
+class TraitNotFound(TraitError):
     """Raised when a user specifies a nonexistent trait."""
 
     def __init__(self, character, trait: str):
@@ -99,6 +99,10 @@ class AmbiguousTraitError(TraitError):
         self.message = f"`{input_trait}` is ambiguous. Do you mean: {formatted_matches}?"
 
         super().__init__(self.message)
+
+
+class SpecialtiesNotAllowed(TraitError):
+    """Raised when a trait can't have a specialty."""
 
 
 class MacroError(InconnuError):

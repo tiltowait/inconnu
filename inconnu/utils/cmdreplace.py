@@ -9,6 +9,10 @@ from logger import Logger
 
 async def cmd_replace(ctx: ApplicationContext, content: str = None, **kwargs):
     """Substitute command names for command mentions and respond."""
+    if isinstance(ctx, ApplicationContext):
+        bot = ctx.bot
+    else:
+        bot = ctx.client
 
     # Inlines so the bot doesn't have to be passed all over the place
     def _get_command_strings(text: str) -> list[str]:
@@ -18,7 +22,7 @@ async def cmd_replace(ctx: ApplicationContext, content: str = None, **kwargs):
     def _get_command_mention(cmd_str: str) -> str:
         """Gets the command mention from a command string."""
         cmd_name = cmd_str[2:-1]
-        return ctx.bot.cmd_mention(cmd_name)
+        return bot.cmd_mention(cmd_name)
 
     def _sub(text: str):
         """Perform the substitution on the text."""

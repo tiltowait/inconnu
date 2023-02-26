@@ -5,21 +5,32 @@ import operator as op
 import re
 
 import inconnu
+from inconnu.models.vchardocs import VCharTrait
+from logger import Logger
 
 
 class RollParser:
     """Parse user roll input."""
 
-    def __init__(self, character, raw_syntax):
+    def __init__(self, character, raw_syntax, expand_only=False, power_bonus=True):
         self.character = character
         self._parameters = {}
+        self.expand_only = expand_only
+        self.power_bonus = power_bonus
 
         # Convert the syntax into tokens, if necessary
         if isinstance(raw_syntax, str):
-            if not re.match(r"^[\w\s\+-]+$", raw_syntax):
+            if self.has_invalid_characters(raw_syntax):
                 raise SyntaxError("Invalid syntax.")
 
-            syntax = re.sub(r"\s*([+-])\s*", r" \g<1> ", raw_syntax)
+            # Fix spacing
+            if VCharTrait.DELIMITER == ".":
+                # Period matches any character in regex, so we have to escape it
+                pat = r"\s*\.\s*"
+            else:
+                pat = r"\s*" + VCharTrait.DELIMITER + r"\s*"
+            syntax = re.sub(pat, VCharTrait.DELIMITER, raw_syntax)
+            syntax = re.sub(r"\s*([+-])\s*", r" \g<1> ", syntax)
 
             self.tokens = syntax.split()
         else:
@@ -44,12 +55,15 @@ class RollParser:
         string = " ".join(self.pool_stack)
 
         if not re.search(r"[A-Za-z_]", string):
+            # Traits weren't used
             return None
 
         if string[0] == "+":
-            string = string[2:]  # Just lop off the leading plus sign
+            # Lop off leading plus sign and the following space
+            string = string[2:]
         if string[0] == "-":
-            string = string.replace(" ", "", 1)  # First item is negative, not subtracting
+            # Remove space between negative sign and trait/number
+            string = string.replace(" ", "", 1)
 
         return string
 
@@ -67,6 +81,7 @@ class RollParser:
 
     def _create_stacks(self):
         """Create both the fully qualified stacks and the interpolated stacks."""
+        using_discipline = False
 
         # A "fully qualified" stack has the canonical names of the character's
         # traits. For instance, `wi` will be interpreted to Wits, and `aw` will
@@ -116,8 +131,16 @@ class RollParser:
                 # We have a character trait, which needs to be qualified and
                 # interpolated before adding it to the stacks
                 trait = self.character.find_trait(token)
-                current_qualified.append(trait.name)
+                if self.expand_only:
+                    current_qualified.append(trait.key)
+                else:
+                    current_qualified.append(trait.name)
+
                 current_interpolated.append(str(trait.rating))
+
+                if trait.discipline:
+                    Logger.debug("ROLLPARSER: Discipline detected")
+                    using_discipline = True
 
             expecting_operand = False
 
@@ -132,6 +155,11 @@ class RollParser:
 
         self._parameters["q_pool_stack"] = qualified_stacks.pop(0)
         self._parameters["i_pool_stack"] = interpolated_stacks.pop(0)
+
+        if self.power_bonus and using_discipline and self.character.power_bonus > 0:
+            Logger.debug("ROLLPARSER: Adding power bonus")
+            self._parameters["q_pool_stack"].extend(["+", "PowerBonus"])
+            self._parameters["i_pool_stack"].extend(["+", str(self.character.power_bonus)])
 
         if "Hunger" in self.pool_stack:
             errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"
@@ -212,7 +240,7 @@ class RollParser:
     @classmethod
     def has_invalid_characters(cls, syntax) -> bool:
         """Check whether the roll has invalid characters."""
-        return re.search(r"[^\w\+\-\s]", syntax) is not None
+        return re.search(r"[^\w\+\-\s" + VCharTrait.DELIMITER + "]", syntax) is not None
 
 
 # Math Helpers

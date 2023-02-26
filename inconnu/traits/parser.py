@@ -3,7 +3,7 @@
 from inconnu.traits import traitcommon
 
 
-def parse_traits(*args, specialties: bool) -> dict:
+def parse_traits(*args, disciplines: bool) -> dict:
     """Parses arguments and puts them into a dictionary."""
     ratings = {}
 
@@ -12,7 +12,7 @@ def parse_traits(*args, specialties: bool) -> dict:
         trait = split[0].strip()
         rating = None
 
-        traitcommon.validate_trait_names(trait, specialties=specialties)
+        traitcommon.validate_trait_names(trait, disciplines=disciplines)
 
         if len(split) > 2:
             raise SyntaxError(f"Invalid argument: `{arg}`.")

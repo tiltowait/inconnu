@@ -58,6 +58,24 @@ ATTRIBUTES = set(sum(GROUPED_TRAITS["ATTRIBUTES"].values(), []))
 SKILLS = set(sum(GROUPED_TRAITS["SKILLS"].values(), []))
 ATTRIBUTES_AND_SKILLS = ATTRIBUTES.union(SKILLS)
 FLAT_TRAITS = lambda: sum(FlatDict(GROUPED_TRAITS).values(), [])
+DISCIPLINES = [
+    "Animalism",
+    "Auspex",
+    "BloodSorcery",
+    "Celerity",
+    "Dominate",
+    "Fortitude",
+    "Obeah",
+    "Obfuscate",
+    "Oblivion",
+    "Potence",
+    "Presence",
+    "Protean",
+    "Valeren",
+    "Vicissitude",
+    "WarriorValeren",
+    "WatcherValeren",
+]
 
 UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]
 RESERVED_TRAITS = UNIVERSAL_TRAITS + ["current_hunger"]

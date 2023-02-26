@@ -7,7 +7,7 @@ from inconnu.constants import RESERVED_TRAITS
 VALID_TRAIT_PATTERN = re.compile(r"^[A-z_\']+$")
 
 
-def validate_trait_names(*traits, specialties=False):
+def validate_trait_names(*traits, disciplines=False):
     """
     Raises a ValueError if a trait doesn't exist and a SyntaxError
     if the syntax is bad.
@@ -22,7 +22,9 @@ def validate_trait_names(*traits, specialties=False):
             )
         if trait.lower() in RESERVED_TRAITS:
             raise ValueError("Set Hunger with `/character adjust`.")
+        if trait.lower() in ["powerbonus", "power_bonus"]:
+            raise ValueError("Power bonus is automatic if you roll with a Discipline.")
 
         if VALID_TRAIT_PATTERN.match(trait) is None:
-            term = "Traits" if not specialties else "Specialties"
+            term = "Traits" if not disciplines else "Disciplines"
             raise SyntaxError(f"{term} can only have letters and underscores. Invalid: `{trait}`.")

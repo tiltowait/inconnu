@@ -40,7 +40,9 @@ async def create(
             return
 
         if pool != "0":
-            pool = inconnu.vr.RollParser(character, pool).pool_stack
+            pool = inconnu.vr.RollParser(
+                character, pool, expand_only=True, power_bonus=False
+            ).pool_stack
         else:
             pool = []
 
@@ -61,7 +63,7 @@ async def create(
     except (
         SyntaxError,
         inconnu.errors.AmbiguousTraitError,
-        inconnu.errors.TraitNotFoundError,
+        inconnu.errors.TraitNotFound,
         inconnu.errors.MacroAlreadyExistsError,
     ) as err:
         await inconnu.utils.error(ctx, err, help=__HELP_URL, character=character.name)

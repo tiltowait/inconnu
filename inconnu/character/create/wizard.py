@@ -82,8 +82,8 @@ class Wizard:
             health=self.parameters.hp * inconnu.constants.Damage.NONE,
             willpower=self.parameters.wp * inconnu.constants.Damage.NONE,
             potency=self.assigned_traits.pop("Blood Potency", 0),
-            _traits=self.assigned_traits,
         )
+        character.assign_traits(self.assigned_traits)
         await character.commit()
 
         tasks = []
@@ -138,7 +138,7 @@ class Wizard:
             ),
             inline=False,
         )
-        embed.set_footer(text="See /help overview for further details.")
+        embed.set_footer(text="See /help for further details.")
 
         button = Button(
             label="Full Documentation", url="https://docs.inconnu.app/guides/quickstart"

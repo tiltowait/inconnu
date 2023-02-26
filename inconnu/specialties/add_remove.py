@@ -11,7 +11,7 @@ from inconnu.specialties.tokenize import SYNTAX, tokenize
 from inconnu.utils.haven import haven
 from logger import Logger
 
-__HELP_URL = "https://docs.inconnu.app"
+__HELP_URL = "https://docs.inconnu.app/guides/quickstart/specialties"
 
 
 class Action(Enum):

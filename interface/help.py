@@ -123,7 +123,6 @@ class Help(commands.Cog):
 
     # Help Commands
 
-    # TODO: "help"
     @slash_command(name="help")
     @option("section", description="The help section to look up", choices=Section.all())
     async def help_command(self, ctx: discord.ApplicationContext, section: str):
@@ -329,9 +328,11 @@ class Help(commands.Cog):
         )
         embed.set_footer(text="You may add and remove multiple specialties at a time.")
 
-        # TODO: Correct URL
         buttons = [
-            Button(label="Documentation", url="https://docs.inconnu.app/command-reference/macros"),
+            Button(
+                label="Documentation",
+                url="https://docs.inconnu.app/guides/quickstart/specialties",
+            ),
             Button(label="Support", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
@@ -386,9 +387,11 @@ class Help(commands.Cog):
             inline=False,
         )
 
-        # TODO: Correct URL
         buttons = [
-            Button(label="Documentation", url="https://docs.inconnu.app/command-reference/macros"),
+            Button(
+                label="Documentation",
+                url="https://docs.inconnu.app/guides/quickstart/disciplines-and-powers",
+            ),
             Button(label="Support", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)

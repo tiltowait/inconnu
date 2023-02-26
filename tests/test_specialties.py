@@ -49,7 +49,7 @@ def test_specialty_addition(skill: VCharTrait):
     skill.add_specialties("Kindred")
     assert len(skill.specialties) == 1
 
-    skill.add_specialties("Kindred")
+    skill.add_specialties("kindred")  # Also tests case-insensitivity
     assert len(skill.specialties) == 1, "Two 'Kindred' specs were added"
 
     skill.add_specialties("StreetFighting")

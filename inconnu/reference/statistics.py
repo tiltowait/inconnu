@@ -93,7 +93,7 @@ async def __traits_statistics(ctx, character, date, *, player):
             # get only those traits that the character actually has.
             # If there aren't any successes, we store a 0, because that
             # is useful information, too.
-            stats[trait] = raw_stats[0]["traits"].get(trait, 0)
+            stats[trait.name] = raw_stats[0]["traits"].get(trait.name, 0)
 
         await __display_trait_statistics(ctx, character, stats, date, player)
     else:

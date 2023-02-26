@@ -161,6 +161,7 @@ def test_add_powers(character: VChar):
         (pytest.raises(inconnu.errors.TraitError), "Brawl", ["Brawl"]),
         (pytest.raises(inconnu.errors.TraitError), "Brawl", ["Kindred", "Brawl"]),
         (pytest.raises(inconnu.errors.TraitError), "NotASkill", ["ShouldFail"]),
+        (pytest.raises(inconnu.errors.TraitError), "BRAWL", ["brawl"]),  # Test case-insensitivity
     ],
 )
 def test_validate_tokens(exception, skill: str, specs: list[str], character: VChar):

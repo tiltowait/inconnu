@@ -4,6 +4,7 @@
 from distutils.util import strtobool
 
 import discord
+from discord import option
 from discord.commands import Option, OptionChoice, SlashCommandGroup
 from discord.ext import commands
 
@@ -235,15 +236,25 @@ class Characters(commands.Cog, name="Character Management"):
     # Premium
 
     @character.command(name="images")
+    @inconnu.options.char_option("The character to display")
+    @inconnu.options.player_option(description="The character's owner")
+    @option(
+        "controls",
+        description="Who can press the pager buttons? (Default everyone)",
+        choices=["Everyone", "Only me"],
+        default="Everyone",
+    )
     @commands.guild_only()
     async def show_character_images(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to display"),
-        player: Option(discord.Member, "The character's owner", required=False),
+        character: str,
+        player: discord.Member,
+        controls: str,
     ):
         """Display a character's images."""
-        await inconnu.character.images.display(ctx, character, player=player)
+        invoker_controls = controls == "Only me"
+        await inconnu.character.images.display(ctx, character, invoker_controls, player=player)
 
     images = character.create_subgroup("image", "Character image commands")
 

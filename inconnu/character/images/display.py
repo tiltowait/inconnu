@@ -33,10 +33,11 @@ def _has_image(character):
 async def display_images(
     ctx: discord.ApplicationContext,
     character: Optional[str],
+    invoker_controls: bool,
     player: Optional[discord.Member],
 ):
     """Display a character's images inside a paginator."""
-    pager = ImagePager(ctx, character, player)
+    pager = ImagePager(ctx, character, player, invoker_controls)
     await pager.respond()
 
 
@@ -48,11 +49,12 @@ class ImagePager(ReportingView):
     character's owner.
     """
 
-    def __init__(self, ctx, character, owner):
+    def __init__(self, ctx, character, owner, invoker_controls):
         self.ctx = ctx
         self.message = None
         self.character = character
         self.owner = owner
+        self.invoker_controls = invoker_controls
         self.current_page = 0
         self.management_mode = False
 
@@ -249,14 +251,21 @@ class ImagePager(ReportingView):
 
     async def interaction_check(self, interaction: discord.Interaction):
         """Ensure image management safety."""
-        if interaction.user.id == self.character.user:
-            return True
         if self.management_mode or self.manage_button.custom_id == interaction.data["custom_id"]:
-            await interaction.response.send_message(
-                "You may only manage your own characters' images.", ephemeral=True
+            # Only the character's owner may access management mode.
+            if interaction.user.id != self.character.user:
+                await interaction.response.send_message(
+                    "You may only manage your own characters' images.", ephemeral=True
+                )
+                return False
+        if self.invoker_controls and interaction.user.id != self.ctx.user.id:
+            # Prevent others from using buttons if the option was set
+            await interaction.respond(
+                f"Only {self.ctx.user.mention} can click this button.", ephemeral=True
             )
             return False
 
+        # Default case: Everyone can use pager buttons
         return True
 
     async def on_timeout(self):

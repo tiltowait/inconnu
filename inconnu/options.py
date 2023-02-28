@@ -34,13 +34,13 @@ def char_option(description="The character to use", required=False, param="chara
     return decorator
 
 
-def player_option(param="player"):
+def player_option(param="player", description="The character's owner (admin only)"):
     """A command decorator letting users choose a user."""
 
     def decorator(func):
         func.__annotations__[param] = Option(
             discord.Member,
-            "The character's owner (admin only)",
+            description,
             name=param,
             required=False,
         )

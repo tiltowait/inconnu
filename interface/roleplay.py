@@ -51,6 +51,7 @@ class RoleplayCog(commands.Cog):
         default=True,
     )
     @inconnu.utils.has_premium()
+    @commands.guild_only()
     async def post(
         self,
         ctx: discord.ApplicationContext,

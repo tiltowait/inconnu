@@ -285,11 +285,16 @@ class InconnuBot(discord.Bot):
                         pass
 
         if self.motd:
-            if ctx.user.id not in self.motd_given:
-                Logger.debug("MOTD: Showing MOTD to %s#%s", ctx.user.name, ctx.user.discriminator)
-                await asyncio.sleep(1)
-                await inconnu.utils.cmd_replace(ctx, embed=self.motd, ephemeral=True)
-                self.motd_given.add(ctx.user.id)
+            try:
+                if ctx.user.id not in self.motd_given:
+                    Logger.debug(
+                        "MOTD: Showing MOTD to %s#%s", ctx.user.name, ctx.user.discriminator
+                    )
+                    await asyncio.sleep(1)
+                    await inconnu.utils.cmd_replace(ctx, embed=self.motd, ephemeral=True)
+                    self.motd_given.add(ctx.user.id)
+            except discord.HTTPException:
+                Logger.warning("Could not show MotD to %s%s", ctx.user.name, ctx.user.discriminator)
 
     async def on_connect(self):
         """Perform early setup."""

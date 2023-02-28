@@ -168,7 +168,15 @@ class ErrorReporter:
             color=0xFF0000,
             timestamp=discord.utils.utcnow(),
         )
-        embed.set_author(name=f"{ctx.user.name} on {ctx.guild.name}", icon_url=ctx.guild.icon or "")
+
+        if ctx.guild is not None:
+            guild_name = ctx.guild.name
+            guild_icon = ctx.guild.icon or ""
+        else:
+            guild_name = "DM"
+            guild_icon = ""
+
+        embed.set_author(name=f"{ctx.user.name} on {guild_name}", icon_url=guild_icon)
 
         return embed
 

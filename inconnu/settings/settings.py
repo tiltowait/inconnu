@@ -274,6 +274,10 @@ class Settings:
 
     async def _fetch_guild(self, guild: discord.Guild) -> GuildSettings:
         """Fetch a guild."""
+        if guild is None:
+            # We're in DMs
+            return GuildSettings({})
+
         if guild_settings := self._guild_cache.get(guild.id):
             return guild_settings
 

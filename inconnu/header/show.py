@@ -16,6 +16,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
     """Display the character's header in an embed."""
     header_doc = HeaderSubdoc.create(character, **kwargs)
+    message = None
     try:
         if not inconnu.utils.is_supporter(ctx):
             raise inconnu.errors.NotPremium
@@ -36,7 +37,8 @@ async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
         resp = await ctx.respond(embed=embed)
         message = await resp.original_response()
     finally:
-        await register_header(ctx, message, character)
+        if message is not None:
+            await register_header(ctx, message, character)
 
 
 async def register_header(ctx, message, character):

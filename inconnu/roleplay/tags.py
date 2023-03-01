@@ -43,7 +43,12 @@ async def show_tags(ctx: discord.ApplicationContext):
         # Only show buttons if there is more than one page. The indicator
         # must be explicitly disabled.
         show_buttons = len(pages) > 1
-        paginator = Paginator(pages, show_disabled=show_buttons, show_indicator=show_buttons)
+        paginator = Paginator(
+            pages,
+            show_disabled=show_buttons,
+            show_indicator=show_buttons,
+            loop_pages=show_buttons,
+        )
         await paginator.respond(ctx.interaction, ephemeral=True)
     else:
         post = ctx.bot.cmd_mention("post")
@@ -105,7 +110,10 @@ class TagView(inconnu.views.DisablingView):
         if pages:
             show_buttons = len(pages) > 1
             paginator = Paginator(
-                pages=pages, show_disabled=show_buttons, show_indicator=show_buttons
+                pages=pages,
+                show_disabled=show_buttons,
+                show_indicator=show_buttons,
+                loop_pages=show_buttons,
             )
             await paginator.respond(interaction, ephemeral=True)
         else:

@@ -68,7 +68,7 @@ async def search(
 
             await ctx.respond(embed=embed, ephemeral=ephemeral)
         else:
-            paginator = Paginator(posts)
+            paginator = Paginator(posts, loop_pages=len(posts) > 1)
             await paginator.respond(ctx.interaction, ephemeral=ephemeral)
     else:
         # Construct the error message

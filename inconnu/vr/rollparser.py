@@ -242,6 +242,11 @@ class RollParser:
         """Check whether the roll has invalid characters."""
         return re.search(r"[^\w\+\-\s" + VCharTrait.DELIMITER + "]", syntax) is not None
 
+    @classmethod
+    def possible_spec_use(cls, syntax: str) -> bool:
+        """Check if the user might be trying to use a spec."""
+        return re.search(r"\(.*\)", syntax) is not None
+
 
 # Math Helpers
 

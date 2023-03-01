@@ -39,7 +39,11 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         comment = await stringify_mentions(ctx, comment)
 
     if RollParser.has_invalid_characters(syntax):
-        await inconnu.utils.error(ctx, f"Invalid syntax: `{syntax}`.", ephemeral=False)
+        if RollParser.possible_spec_use(syntax):
+            fields = [("Trying to roll a specialty?", "Use `skill.spec`, not `skill (spec)`.")]
+        else:
+            fields = []
+        await inconnu.utils.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
         return
 
     if comment is not None and (comment_len := len(comment)) > 300:

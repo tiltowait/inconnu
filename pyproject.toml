@@ -17,7 +17,6 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.10"
 flatdict = "^4.0.1"
-Markdown = "^3.4.1"
 motor = "^3.0.0"
 numpy = "^1.23.3"
 py-cord = "^2.1.3"

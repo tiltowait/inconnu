@@ -28,11 +28,10 @@ templates = Jinja2Templates(directory="web/templates")
 
 
 @app.get("/", response_class=HTMLResponse)
-async def home():
+async def home(request: Request):
     """Debug page or (if live) redirect to the documentation."""
     if SHOW_TEST_ROUTES:
-        with open("web/index.html", "r", encoding="utf-8") as html:
-            return html.read()
+        return templates.TemplateResponse("test.html.jinja", {"request": request})
     return RedirectResponse("https://docs.inconnu.app", status_code=status.HTTP_303_SEE_OTHER)
 
 

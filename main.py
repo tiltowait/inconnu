@@ -50,10 +50,10 @@ async def display_character_profile(request: Request, charid: str):
         raise HTTPException(404, detail="Character not found.")
 
     # Got the character; return the HTML
-    return prepare_html(request, bio)
+    return prepare_profile_page(request, bio)
 
 
-def prepare_html(request: Request, bio: dict[str, str | dict[str, str]]) -> str:
+def prepare_profile_page(request: Request, bio: dict[str, str | dict[str, str]]) -> str:
     """Prep the character HTML page."""
     name = bio["name"]
     profile = bio.get("profile", {})

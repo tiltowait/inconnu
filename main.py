@@ -36,16 +36,6 @@ async def home():
     return RedirectResponse("https://docs.inconnu.app", status_code=status.HTTP_303_SEE_OTHER)
 
 
-if SHOW_TEST_ROUTES:
-
-    @app.get("/test", response_class=HTMLResponse)
-    async def offline_page(request: Request):
-        """Generate an offline test page."""
-        with open("web/snippets.json", "r", encoding="utf-8") as file:
-            profile = json.load(file)["sample"]
-            return prepare_html(request, profile)
-
-
 @app.get("/profile/{charid}", response_class=HTMLResponse)
 async def display_character_profile(request: Request, charid: str):
     """Display character biography detail."""

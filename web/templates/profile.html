@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>{{ name }} | Inconnu Character Profile</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="color-scheme" content="light dark">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap-dark-5@1.1.3/dist/css/bootstrap-dark.min.css" rel="stylesheet">
+	<link href="/web/style.css" rel="stylesheet">
+	<link rel="icon" type="image/x-icon" href="/web/favicon/favicon.ico">
+
+	<!-- Meta descriptions -->
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="{{ url }}">
+	<meta property="og:title" content="{{ name }} | Inconnu Character Profile">
+	<meta property="og:description" content="Profile for {name}, a Vampire: The Masquerade character.">
+	{% if profile.images %}
+	<meta property="og:image" content="{{ profile.images[0] }}">
+	{% endif %}
+</head>
+
+<body>
+	<nav class="navbar bg-dark">
+		<div class="container">
+			<a class="navbar-brand" href="https://www.inconnu.app" title="Inconnu Dice Bot">
+				<img height="64" src="https://assets.inconnu.app/inconnu-logo-full.webp">
+			</a>
+			<div class="navbar-nav">
+				<strong><a class="btn btn-outline-secondary" style="color:#fff" href="https://www.patreon.com/tiltowait" title="Patreon">Patreon</a></strong>
+			</div>
+		</div>
+	</nav>
+	<div class="container" style="padding-top:1em;padding-bottom:1em">
+		<div class="row">
+			<div class="col-sm-6">
+				<div class="card">
+					<div class="card-body">
+						<div class="well">
+							<h5 class="text-muted">Character Profile</h5>
+							<h1>{{ name }}</h1>
+							<span class="text-muted">
+								{% if guild %}
+									{% if spc %}
+									An <strong>SPC</strong> on <strong>{{ guild.name }}</strong>.
+									{% else %}
+										{% if owner %}
+										Played by <strong>{{ owner }}</strong> on <strong>{{ guild }}</strong>.
+										{% else %}
+										A character on <strong>{{ guild }}</strong>.
+										{% endif %}
+									{% endif %}
+								{% else %}
+								A character floating in the <strong>void</strong>.
+								{% endif %}
+
+								{% if owner and not spc %}
+								<img src="{{ owner.guild_avatar or owner.display_avatar }}" class="rounded-circle" width="32" alt="{{ owner.name }}">
+								{% endif %}
+								{% if guild %}
+								<img src="{{ guild.icon }}" class="rounded-circle" width="32" alt="{{ guild.name }}">
+								{% endif %}
+							</span>
+						</div>
+						<hr>
+						{% macro display_info(value) %}
+							{% if value %}
+							{{ value }}
+							{% else %}
+							<em class="text-muted">Not set.</em>
+							{% endif %}
+						{% endmacro %}
+						<h5 class="card-title">Description</h5>
+						<p class="card-text">{{ display_info(profile.description) }}</p>
+						<h5 class="card-title">Biography</h5>
+						<p class="card-text">{{ display_info(profile.biography) }}</p>
+					</div>
+					<div class="card-footer text-muted">
+						<em>
+							<p>
+								All content on this page is player-generated. Any views, materials, or images presented are solely the product of the player.
+							</p>
+							<p>
+								<strong>Is this your character?</strong> You can update profile data with <code>/character profile edit:{{ name }}</code>. Premium users can upload images with <code>/character image upload</code>!
+							</p>
+						</em>
+					</div>
+				</div>
+			</div>
+			<div class="col">
+				{% if profile.images %}
+				<div id="character-carousel" class="carousel slide rounded" data-bs-ride="carousel">
+					<div class="carousel-inner">
+						{% for image in profile.images %}
+						{% set section_classes = "carousel-item" %}
+						{% if loop.index0 == 0 %}
+						{% set section_classes = section_classes + " active" %}
+						{% endif %}
+						<div class="{{ section_classes }}">
+							<img src="{{ image }}" class="d-block w-100" alt="{{ name }}">
+						</div>
+						{% endfor %}
+					</div>
+				</div>
+				{% else %}
+				<p class="text-muted text-center"><em>No images set.</em></p>
+				{% endif %}
+			</div>
+		</div>
+		<div class="row">
+			<div class="col text-center text-muted">
+				<hr>
+				<strong>Inconnu</strong> is copyright &copy;2023 by tiltowait. All rights reserved.<br>
+				View the source code <a href="https://github.com/tiltowait/inconnu" title="Inconnu source code">here</a>.<br>
+				Want to support me? Join the <a href="https://www.patreon.com/tiltowait" title="Patreon">Patreon</a>!
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+</body>
+
+</html>

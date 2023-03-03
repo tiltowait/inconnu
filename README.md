@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Pycord-2.3-blue" alt="Requires Pycord 2.3" />
+  <img src="https://img.shields.io/badge/Pycord-2.4-blue" alt="Requires Pycord 2.4" />
   <img src="https://img.shields.io/badge/motor-3.1-yellow" alt="Requires motor 3.1" />
   <img src="https://img.shields.io/badge/python-3.10-green" alt="Uses Python 3.10" />
 </p>

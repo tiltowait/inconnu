@@ -52,9 +52,8 @@ async def display_character_profile(request: Request, charid: str):
     if not ObjectId.is_valid(charid):
         raise HTTPException(400, detail="Improper character ID.")
 
-    oid = ObjectId(charid)
     bio = await inconnu.db.characters.find_one(
-        {"_id": oid},
+        {"_id": ObjectId(charid)},
         {"name": 1, "user": 1, "guild": 1, "profile": 1},
     )
     if bio is None:
@@ -74,7 +73,7 @@ def prepare_html(request: Request, bio: dict[str, str | dict[str, str]]) -> str:
     user = guild.get_member(bio["user"]) if guild is not None else None
 
     return templates.TemplateResponse(
-        "profile.html",
+        "profile.html.jinja",
         {
             "request": request,
             "name": name,

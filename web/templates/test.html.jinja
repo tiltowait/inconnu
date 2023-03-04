@@ -1,0 +1,14 @@
+{% extends "base.html.jinja" %}
+{% macro profile_href(charid, title) %}
+  <a href="http://localhost:8000/profile/{{ charid }}" title="{{ title }}">{{ title }}</a>
+{% endmacro %}
+{% block title %}Inconnu Test Pages{% endblock %}
+{% block main %}
+  <h1>Inconnu Test Pages</h1>
+  <h2 class="text-muted">Character Profiles</h2>
+  <ul>
+  <li>{{ profile_href("613d3e4bba8a6a8dc0ee2a09", "Full Profile Test")}}</li>
+  <li>{{ profile_href("622f8dbc91023b0336b2d366", "No Profile Test")}}</li>
+  <li>{{ profile_href("6140d7d811c1853b3d42c1e9", "SPC Test")}}</li>
+  </ul>
+{% endblock %}

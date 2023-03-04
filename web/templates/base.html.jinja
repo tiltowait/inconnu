@@ -3,8 +3,7 @@
 
 <head>
 	{% block head %}
-		{% set title_s %}{% block title %}Inconnu{% endblock %}{% endset %}
-		<title>{{ title_s }}</title>
+		<title>{% block title %}Inconnu{% endblock %}</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta name="color-scheme" content="light dark">
@@ -20,8 +19,8 @@
 		<!-- Meta descriptions -->
 		<meta property="og:type" content="website">
 		<meta property="og:url" content="{{ url }}">
-		<meta property="og:title" content="{{ title_s }}">
-		<meta property="og:description" content="Profile for {name}, a Vampire: The Masquerade character.">
+		<meta property="og:title" content="{{ self.title() }}">
+		<meta property="og:description" content="{% block meta_description %}Inconnu, a dice bot and character manager for Vampire: The Masquerade 5th Edition.{% endblock %}">
 	{% endblock %}
 </head>
 

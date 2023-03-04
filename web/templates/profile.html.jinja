@@ -1,5 +1,6 @@
 {% extends "base.html.jinja" %}
 {% block title %}{{ name }} | Inconnu Character Profile{% endblock %}
+{% block meta_description %}Profile for {{ name }}, a Vampire: The Masquerade character.{% endblock %}
 {% block head %}
 	{{ super() }}
 	{% if profile.images %}

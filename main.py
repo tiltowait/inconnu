@@ -12,11 +12,12 @@ from fastapi.staticfiles import StaticFiles
 
 import bot
 from logger import Logger
-from web.routers import base, profiles
+from web.routers import base, posts, profiles
 
 app = FastAPI(openapi_url=None)
 app.mount("/public", StaticFiles(directory="./web/public"), name="public")
 app.include_router(base.router)
+app.include_router(posts.router)
 app.include_router(profiles.router)
 
 

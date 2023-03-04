@@ -1,3 +1,5 @@
+"""Character profile router."""
+
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Request
 from fastapi.exceptions import HTTPException

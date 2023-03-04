@@ -140,7 +140,10 @@ class RoleplayCog(commands.Cog):
         updates = interface.raw_bulk_delete_handler(
             payload,
             self.bot,
-            lambda id: UpdateOne({"message_id": id}, {"$set": {"deleted": True}}),
+            lambda id: UpdateOne(
+                {"message_id": id},
+                {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
+            ),
             author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
         if updates:
@@ -155,7 +158,8 @@ class RoleplayCog(commands.Cog):
             """Mark an RP post as deleted."""
             Logger.debug("POST: Marking potential RP post as deleted")
             await inconnu.db.rp_posts.update_one(
-                {"message_id": message_id}, {"$set": {"deleted": True}}
+                {"message_id": message_id},
+                {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
             )
 
         await interface.raw_message_delete_handler(
@@ -169,7 +173,10 @@ class RoleplayCog(commands.Cog):
     async def on_guild_channel_delete(self, channel):
         """Mark RP posts deleted in the deleted channel."""
         Logger.info("POST: Marking all RP posts in %s as deleted", channel.name)
-        await inconnu.db.rp_posts.update_many({"channel": channel.id}, {"$set": {"deleted": True}})
+        await inconnu.db.rp_posts.update_many(
+            {"channel": channel.id},
+            {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
+        )
 
 
 def setup(bot):

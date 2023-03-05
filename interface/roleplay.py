@@ -155,8 +155,10 @@ class RoleplayCog(commands.Cog):
     async def on_raw_message_delete(self, raw_message):
         """Mark an RP post as deleted and post a notice in the guild's deletion
         channel."""
-        if (cached_message := raw_message.cached_message) is not None:
-            if not cached_message.author.bot:
+        if (message := raw_message.cached_message) is not None:
+            if not message.author.bot:
+                return
+            if message.flags.ephemeral:
                 return
 
         # We can't rely on ensuring there's a webhook, so we fetch if it's a

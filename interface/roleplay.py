@@ -153,7 +153,7 @@ class RoleplayCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
-        """Mark an RP post as deleted and post a notice in the guild's changelog
+        """Mark an RP post as deleted and post a notice in the guild's deletion
         channel."""
         if (cached_message := raw_message.cached_message) is not None:
             if not cached_message.author.bot:
@@ -168,9 +168,9 @@ class RoleplayCog(commands.Cog):
         )
         if post is not None:
             Logger.debug("POST: Marked RP post as deleted")
-            changelog_id = await inconnu.settings.changelog_channel(post["guild"])
-            if changelog_id:
-                channel = self.bot.get_partial_messageable(changelog_id)
+            deletion_id = await inconnu.settings.deletion_channel(post["guild"])
+            if deletion_id:
+                channel = self.bot.get_partial_messageable(deletion_id)
 
                 embed = discord.Embed(
                     title="Post Deleted",
@@ -187,18 +187,18 @@ class RoleplayCog(commands.Cog):
                 try:
                     await channel.send(embed=embed)
                     Logger.info(
-                        "POST: Sent deletion notice to changelog at %s: %s",
+                        "POST: Sent deletion notice to deletion at %s: %s",
                         post["guild"],
-                        changelog_id,
+                        deletion_id,
                     )
                 except (discord.HTTPException, discord.Forbidden):
                     Logger.info(
-                        "POST: Unable to send changelog to %s: %s",
+                        "POST: Unable to send deletion notice to %s: %s",
                         post["guild"],
-                        changelog_id,
+                        deletion_id,
                     )
             else:
-                Logger.debug("POST: No changelog channel set on %s", post["guild"])
+                Logger.debug("POST: No deletion channel set on %s", post["guild"])
         else:
             Logger.debug("POST: Deleted message is not an RP post")
 

@@ -37,7 +37,7 @@
 			<div class="card-footer text-muted">
 				<small><strong>Posted:</strong> {{ date.strftime(date_fmt) }}</small>
 				{% if deleted %}
-					<br><small><strong>Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
+					<br><small><strong class="text-danger">Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
 				{% endif %}
 
 				{% if pages > 1 %}

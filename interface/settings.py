@@ -61,6 +61,11 @@ class SettingsCommands(commands.Cog):
         update_channel: Option(
             discord.TextChannel, "A channel where character updates will be posted", required=False
         ),
+        changelog_channel: Option(
+            discord.TextChannel,
+            "A channel where edited/deleted RP posts will be logged",
+            required=False,
+        ),
         add_empty_resonance: Option(
             int,
             "Whether to add Empty Resonance to the /resonance command (die result 11-12)",
@@ -99,6 +104,10 @@ class SettingsCommands(commands.Cog):
 
         if update_channel is not None:
             response = await inconnu.settings.set_update_channel(ctx, update_channel)
+            responses.append(response)
+
+        if changelog_channel is not None:
+            response = await inconnu.settings.set_changelog_channel(ctx, changelog_channel)
             responses.append(response)
 
         if add_empty_resonance is not None:

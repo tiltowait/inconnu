@@ -87,3 +87,8 @@ def get_avatar(user: discord.User | discord.Member):
 def profile_url(charid: str) -> str:
     """Generate a profile URL for the character."""
     return config.PROFILE_SITE + f"profile/{charid}"
+
+
+def post_url(post_id: str) -> str:
+    """Generate a post history URL."""
+    return config.PROFILE_SITE + f"post/{post_id}"

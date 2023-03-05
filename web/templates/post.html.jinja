@@ -4,7 +4,7 @@
 
 {% macro direction_button(title, target) %}
 	{% set li_class="page-item" %}
-	{% set prev_href = post_id + "?page=" + target|string %}
+	{% set prev_href = url + "?page=" + target|string %}
 	{% if target == 0 or target > pages %}
 		{% set li_class="page-item disabled" %}
 		{% set tabindex = "tabindex=\"-1\"" %}
@@ -32,7 +32,7 @@
 					{% endif %}
 				</div>
 				<hr>
-				{{ content }}
+				{% markdown %}{{ content }}{% endmarkdown %}
 			</div>
 			<div class="card-footer text-muted">
 				<small><strong>Posted:</strong> {{ date.strftime(date_fmt) }}</small>
@@ -40,26 +40,28 @@
 					<br><small><strong>Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
 				{% endif %}
 
-				<nav aria-label="Post history navigation" style="margin-top: 1em">
-					<ul class="pagination">
-						{{ direction_button("Previous", page - 1) }}
+				{% if pages > 1 %}
+					<nav aria-label="Post history navigation" style="margin-top: 1em">
+						<ul class="pagination">
+							{{ direction_button("Previous", page - 1) }}
 
-						{# Links #}
-						{% for n in range(1, pages + 1) %}
-							{% set li_class = "page-item" %}
-							{% if n == page %}{% set li_class = li_class + " active" %}{% endif %}
-							<li class="{{ li_class }}">
-								{% if n == page %}
-									<a class="page-link" href="#">{{ n }}</a>
-								{% else %}
-									<a class="page-link" href="{{ post_id }}?page={{ n }}">{{ n }}</a>
-								{% endif %}
-							</li>
-						{% endfor %}
+							{# Links #}
+							{% for n in range(1, pages + 1) %}
+								{% set li_class = "page-item" %}
+								{% if n == page %}{% set li_class = li_class + " active" %}{% endif %}
+								<li class="{{ li_class }}">
+									{% if n == page %}
+										<a class="page-link" href="#">{{ n }}</a>
+									{% else %}
+										<a class="page-link" href="{{ url }}?page={{ n }}">{{ n }}</a>
+									{% endif %}
+								</li>
+							{% endfor %}
 
-						{{ direction_button("Next", page + 1) }}
-					</ul>
-				</nav>
+							{{ direction_button("Next", page + 1) }}
+						</ul>
+					</nav>
+				{% endif %}
 			</div>
 		</div>
 	</div>

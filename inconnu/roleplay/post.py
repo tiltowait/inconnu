@@ -1,6 +1,5 @@
 """Tupperbox-style character posting."""
 
-import difflib
 import re
 
 import discord
@@ -106,8 +105,10 @@ class PostModal(discord.ui.Modal):
     async def _edit_rp_post(self, interaction: discord.Interaction):
         """Edit an existing post."""
         new_content = self._clean_post_content()
+        post_to_changelog = False
 
         if new_content != self.post_to_edit.content:
+            post_to_changelog = True
             # We have a WebhookMessage, so we need to fetch its originating
             # Webhook, which is the only entity that can edit it. We keep this
             # call outside of the try block so we can use our general Webhook
@@ -116,8 +117,6 @@ class PostModal(discord.ui.Modal):
             try:
                 await webhook.edit_message(self.message.id, content=new_content)
                 self.post_to_edit.edit_post(new_content)
-
-                await self._post_to_changelog(interaction)
 
             except discord.NotFound:
                 await inconnu.utils.error(
@@ -137,6 +136,9 @@ class PostModal(discord.ui.Modal):
 
         await interaction.response.send_message("Post updated!", ephemeral=True, delete_after=3)
         Logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
+
+        if post_to_changelog:
+            await self._post_to_changelog(interaction)
 
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new RP post."""
@@ -217,18 +219,13 @@ class PostModal(discord.ui.Modal):
         if changelog_id := await inconnu.settings.changelog_channel(interaction.guild):
             # Prep the diff
             post = self.post_to_edit
-            diff = difflib.Differ().compare(
-                post.history[0].content.splitlines(True),
-                post.content.splitlines(True),
-            )
-            diff = "".join(line + ("\n" if line[-1] != "\n" else "") for line in diff)
+            diff = inconnu.utils.diff(post.history[0].content, post.content)
 
             # Prep the embed
             description = (
                 f"{interaction.user.mention} edited a post in <#{post.channel}>."
                 "\n```diff\n"
                 f"{diff}\n"
-                "```"
             )
             description = description[:3996] + "```"  # Ensure we don't overflow
 

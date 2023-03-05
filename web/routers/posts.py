@@ -32,6 +32,13 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
         raise HTTPException(404, detail="Page out of range.")
 
     content, date = history[page - 1]
+
+    try:
+        previous = history[page][0]
+        diff = inconnu.utils.diff(previous, content, join=False)
+    except IndexError:
+        diff = False
+
     return templates.TemplateResponse(
         "post.html.jinja",
         {
@@ -42,6 +49,7 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
             "guild": guild,
             "header": post.header,
             "content": content,
+            "diff": diff,
             "date": date,
             "page": page,
             "pages": len(history),

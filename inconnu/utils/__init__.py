@@ -49,7 +49,7 @@ def diff(old: str, new: str, join=True, no_pos_markers=True) -> str:
         lines = [line for line in lines if line[0] != "?"]
     if join:
         return "".join(lines)
-    return [line for line in diff]
+    return lines
 
 
 def raw_command_options(interaction) -> str:

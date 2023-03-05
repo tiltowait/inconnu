@@ -1,5 +1,6 @@
 """Tupperbox-style character posting."""
 
+import difflib
 import re
 
 import discord
@@ -114,6 +115,9 @@ class PostModal(discord.ui.Modal):
             webhook = await self.bot.prep_webhook(interaction.channel)
             try:
                 await webhook.edit_message(self.message.id, content=new_content)
+                self.post_to_edit.edit_post(new_content)
+
+                await self._post_to_changelog(interaction)
 
             except discord.NotFound:
                 await inconnu.utils.error(
@@ -126,16 +130,13 @@ class PostModal(discord.ui.Modal):
                 )
                 return
 
-        # Update the RPPost object
-        self.post_to_edit.edit_post(new_content)
+        # Finish updating the post and inform the user
         self.post_to_edit.title = self._clean_title() or None
         self.post_to_edit.tags = self._clean_tags()
         await self.post_to_edit.commit()
 
-        Logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
-
-        # Inform the user
         await interaction.response.send_message("Post updated!", ephemeral=True, delete_after=3)
+        Logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
 
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new RP post."""
@@ -210,6 +211,58 @@ class PostModal(discord.ui.Modal):
         await db_rp_post.commit()
 
         Logger.info("POST: %s registered post", self.character.name)
+
+    async def _post_to_changelog(self, interaction: discord.Interaction):
+        """Post the edited message to the RP changelog."""
+        if changelog_id := await inconnu.settings.changelog_channel(interaction.guild):
+            # Prep the diff
+            post = self.post_to_edit
+            diff = difflib.Differ().compare(
+                post.history[0].content.splitlines(True),
+                post.content.splitlines(True),
+            )
+            diff = "".join(line + ("\n" if line[-1] != "\n" else "") for line in diff)
+
+            # Prep the embed
+            description = (
+                f"{interaction.user.mention} edited a post in <#{post.channel}>."
+                "\n```diff\n"
+                f"{diff}\n"
+                "```"
+            )
+            description = description[:3996] + "```"  # Ensure we don't overflow
+
+            embed = discord.Embed(
+                title="RP Post Edited",
+                description=description,
+                url=inconnu.post_url(post.pk),
+            )
+            embed.set_author(
+                name=post.header.char_name, icon_url=inconnu.get_avatar(interaction.user)
+            )
+            embed.set_thumbnail(url=self.character.profile_image_url)
+            embed.add_field(name=" ", value=f"[Jump to message.]({post.url})")
+            embed.timestamp = discord.utils.utcnow()
+
+            # Prep the channel and send
+            changelog = interaction.client.get_partial_messageable(changelog_id)
+            try:
+                await changelog.send(embed=embed)
+                Logger.info("POST: Sent changelog to %s: %s", interaction.guild.name, changelog_id)
+            except discord.HTTPException:
+                Logger.info(
+                    "POST: Changelog channel doesn't exist: %s: %s",
+                    interaction.guild.name,
+                    changelog_id,
+                )
+            except discord.Forbidden:
+                Logger.info(
+                    "POST: Unable to post changelog in %s: %s",
+                    interaction.guild.name,
+                    changelog_id,
+                )
+        else:
+            Logger.debug("POST: Changelog channel not set: %s", interaction.guild.name)
 
 
 @haven(__HELP_URL, errmsg="You have no characters!")

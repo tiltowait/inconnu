@@ -32,10 +32,9 @@ def respond(self, *args, **kwargs):
 discord.Interaction.respond = respond
 Logger.info("MAIN: Patched discord.Interaction")
 
-
 if __name__ == "__main__":
     # DEBUG MODE. Does not spin up the web server.
     bot.bot.run(os.environ["INCONNU_TOKEN"])
-else:
+elif "PYTEST" not in os.environ:
     # PRODUCTION. Called with inconnu.sh (or uvicorn main:app).
     asyncio.create_task(bot.run())

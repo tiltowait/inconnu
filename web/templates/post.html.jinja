@@ -22,6 +22,8 @@
 				<div class="well">
 					<h5 class="text-muted">Post History</h5>
 					<h3>{{ header.char_name }}</h3>
+
+					{# User info #}
 					{% if user %}
 						{% if channel %}
 							{% set channel = "#" + channel|string %}
@@ -30,6 +32,33 @@
 						{% endif %}
 						<small class="text-muted">By <strong>{{ user }}</strong> on <strong>{{ guild.name }}</strong> in <strong>{{ channel }}</strong>.</small>
 					{% endif %}
+					{# End user info #}
+
+					{# Pagination #}
+					{% if pages > 1 %}
+						<nav aria-label="Post history navigation" style="margin-top: 1em">
+							<ul class="pagination">
+								{{ direction_button("Previous", page - 1) }}
+
+								{# Links #}
+								{% for n in range(1, pages + 1) %}
+									{% set li_class = "page-item" %}
+									{% if n == page %}{% set li_class = li_class + " active" %}{% endif %}
+									<li class="{{ li_class }}">
+										{% if n == page %}
+											<a class="page-link" href="#">{{ n }}</a>
+										{% else %}
+											<a class="page-link" href="{{ url }}?page={{ n }}">{{ n }}</a>
+										{% endif %}
+									</li>
+								{% endfor %}
+
+								{{ direction_button("Next", page + 1) }}
+							</ul>
+						</nav>
+					{% endif %}
+					{# End pagination #}
+
 				</div>
 				<hr>
 				{% markdown %}{{ content }}{% endmarkdown %}
@@ -40,30 +69,6 @@
 					<br><small><strong class="text-danger">Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
 				{% endif %}
 
-				{% if pages > 1 %}
-					<nav aria-label="Post history navigation" style="margin-top: 1em">
-						<ul class="pagination">
-							{{ direction_button("Previous", page - 1) }}
-
-							{# Links #}
-							{% for n in range(1, pages + 1) %}
-								{% set li_class = "page-item" %}
-								{% if n == page %}{% set li_class = li_class + " active" %}{% endif %}
-								<li class="{{ li_class }}">
-									{% if n == page %}
-										<a class="page-link" href="#">{{ n }}</a>
-									{% else %}
-										<a class="page-link" href="{{ url }}?page={{ n }}">{{ n }}</a>
-									{% endif %}
-								</li>
-							{% endfor %}
-
-							{{ direction_button("Next", page + 1) }}
-						</ul>
-					</nav>
-				{% else %}
-					<br><br>
-				{% endif %}
 				<small>Content on this page is the sole responsibility of the user who posted it.<br></small>
 			</div>
 		</div>

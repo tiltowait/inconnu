@@ -68,15 +68,18 @@
 				{% if deleted %}
 					<br><small><strong class="text-danger">Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
 				{% endif %}
-
+				<br>
 				<small>Content on this page is the sole responsibility of the user who posted it.<br></small>
 			</div>
 		</div>
 	</div>
-	{% if diff %}
+
+	{# Diff pane #}
+	{% if pages > 1 %}
 		<div class="col-sm-6">
 			<div class="card">
 				<div class="card-body">
+				{% if diff %}
 					<div class="well">
 						<h5 class="text-muted">Differences from Previous Version</h5>
 					</div>
@@ -92,7 +95,12 @@
 						<br>
 					{% endfor %}
 				</div>
+			{% else %}
+				<h5 class="text-muted">Viewing first revision</h5>
+			{% endif %}
 			</div>
 		</div>
 	{% endif %}
+	{# End diff pane #}
+
 {% endblock %}

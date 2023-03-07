@@ -193,9 +193,15 @@ class RoleplayCog(commands.Cog):
                         post["guild"],
                         deletion_id,
                     )
-                except (discord.HTTPException, discord.Forbidden):
+                except discord.Forbidden:
                     Logger.info(
-                        "POST: Unable to send deletion notice to %s: %s",
+                        "POST: Unable to send deletion notice to %s: %s (Missing permissions)",
+                        post["guild"],
+                        deletion_id,
+                    )
+                except discord.HTTPException:
+                    Logger.info(
+                        "POST: Unable to send deletion notice to %s: %s (Channel not found)",
                         post["guild"],
                         deletion_id,
                     )

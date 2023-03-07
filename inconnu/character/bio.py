@@ -13,7 +13,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#pro
 @haven(__HELP_URL)
 async def edit_biography(ctx, character):
     """Edit a character bio."""
-    modal = _CharacterBio(character, title=f"Edit Biography: {character.name}")
+    modal = _CharacterBio(character, title=f"Edit Profile: {character.name}")
     await ctx.send_modal(modal)
 
 
@@ -43,20 +43,20 @@ def __biography_paginator(ctx, character, owner):
         ctx,
         character,
         owner,
-        title="Biography",
+        title="Character Profile",
         url=inconnu.profile_url(character.id),
         show_thumbnail=False,
     )
 
-    if character.profile.biography:
-        embed.add_field(
-            name="History", value=character.profile.biography or "*Not set.*", inline=False
-        )
     if character.profile.description:
         embed.add_field(
             name="Description & Personality",
             value=character.profile.description or "*Not set.*",
             inline=False,
+        )
+    if character.profile.biography:
+        embed.add_field(
+            name="History", value=character.profile.biography or "*Not set.*", inline=False
         )
 
     embeds = []
@@ -91,7 +91,7 @@ class _CharacterBio(discord.ui.Modal):
 
         self.add_item(
             discord.ui.InputText(
-                label="Biography",
+                label="History",
                 placeholder="Character biography and history. Will be publicly shown.",
                 value=character.profile.biography,
                 style=discord.InputTextStyle.long,

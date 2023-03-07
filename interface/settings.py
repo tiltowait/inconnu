@@ -61,6 +61,16 @@ class SettingsCommands(commands.Cog):
         update_channel: Option(
             discord.TextChannel, "A channel where character updates will be posted", required=False
         ),
+        changelog_channel: Option(
+            discord.TextChannel,
+            "A channel where edited RP posts will be logged",
+            required=False,
+        ),
+        deletion_channel: Option(
+            discord.TextChannel,
+            "A channel where deleted RP posts will be logged",
+            required=False,
+        ),
         add_empty_resonance: Option(
             int,
             "Whether to add Empty Resonance to the /resonance command (die result 11-12)",
@@ -101,6 +111,14 @@ class SettingsCommands(commands.Cog):
             response = await inconnu.settings.set_update_channel(ctx, update_channel)
             responses.append(response)
 
+        if changelog_channel is not None:
+            response = await inconnu.settings.set_changelog_channel(ctx, changelog_channel)
+            responses.append(response)
+
+        if deletion_channel is not None:
+            response = await inconnu.settings.set_deletion_channel(ctx, deletion_channel)
+            responses.append(response)
+
         if add_empty_resonance is not None:
             add_empty = bool(add_empty_resonance)
             response = await inconnu.settings.set_empty_resonance(ctx, add_empty)
@@ -135,12 +153,18 @@ class SettingsCommands(commands.Cog):
         experience_perms = await inconnu.settings.xp_permissions(ctx.guild)
         oblivion_stains = await inconnu.settings.oblivion_stains(ctx.guild) or ["Never"]
         update_channel = await inconnu.settings.update_channel(ctx.guild)
+        changelog_channel = await inconnu.settings.changelog_channel(ctx.guild)
+        deletion_channel = await inconnu.settings.deletion_channel(ctx.guild)
         add_empty = await inconnu.settings.add_empty_resonance(ctx.guild)
 
         msg = f"Accessibility mode: `{accessibility}`"
         msg += "\nOblivion Rouse stains: " + " or ".join(map(inconnu.fence, oblivion_stains))
         msg += "\n" + experience_perms
         msg += "\nUpdate channel: " + (update_channel.mention if update_channel else "`None`")
+        msg += "\nChangelog channel: " + (
+            f"<#{changelog_channel}>" if changelog_channel else "`None`"
+        )
+        msg += "\nDeletion channel: " + (f"<#{deletion_channel}>" if deletion_channel else "`None`")
         msg += "\nEmpty Resonance in `/resonance` command: " + ("`Yes`" if add_empty else "`No`")
 
         embed = discord.Embed(title="Server Settings", description=msg)

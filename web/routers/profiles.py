@@ -1,23 +1,22 @@
-from bson.objectid import ObjectId
-from fastapi import APIRouter, Request
+"""Character profile router."""
+
+from bson import ObjectId
+from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 
 import bot
 import inconnu
-from web import templates
+from web import object_id, templates
 
 router = APIRouter()
 
 
-@router.get("/profile/{charid}", response_class=HTMLResponse)
-async def display_character_profile(request: Request, charid: str):
+@router.get("/profile/{oid}", response_class=HTMLResponse)
+async def display_character_profile(request: Request, oid: ObjectId = Depends(object_id)):
     """Display character biography detail."""
-    if not ObjectId.is_valid(charid):
-        raise HTTPException(400, detail="Improper character ID.")
-
     bio = await inconnu.db.characters.find_one(
-        {"_id": ObjectId(charid)},
+        {"_id": ObjectId(oid)},
         {"name": 1, "user": 1, "guild": 1, "profile": 1},
     )
     if bio is None:

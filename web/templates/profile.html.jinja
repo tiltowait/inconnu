@@ -41,14 +41,16 @@
 			<hr>
 			{% macro display_info(value) %}
 				{% if value %}
-					{{ value }}
+					{% markdown %}
+						{{ value }}
+					{% endmarkdown %}
 				{% else %}
 					<em class="text-muted">Not set.</em>
 				{% endif %}
 			{% endmacro %}
-			<h5 class="card-title">Description</h5>
+			<h5 class="card-title">Description &amp; Personality</h5>
 			<p class="card-text">{{ display_info(profile.description) }}</p>
-			<h5 class="card-title">Biography</h5>
+			<h5 class="card-title">History</h5>
 			<p class="card-text">{{ display_info(profile.biography) }}</p>
 		</div>
 		<div class="card-footer text-muted">

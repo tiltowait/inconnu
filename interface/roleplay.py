@@ -2,6 +2,7 @@
 # pylint: disable=no-self-use
 
 import os
+from datetime import timezone
 
 import discord
 from discord import option
@@ -140,7 +141,10 @@ class RoleplayCog(commands.Cog):
         updates = interface.raw_bulk_delete_handler(
             payload,
             self.bot,
-            lambda id: UpdateOne({"message_id": id}, {"$set": {"deleted": True}}),
+            lambda id: UpdateOne(
+                {"message_id": id},
+                {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
+            ),
             author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
         if updates:
@@ -149,27 +153,71 @@ class RoleplayCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
-        """Set RP post deletion marker."""
+        """Mark an RP post as deleted and post a notice in the guild's deletion
+        channel."""
+        if (message := raw_message.cached_message) is not None:
+            if not message.author.bot:
+                return
+            if message.flags.ephemeral:
+                return
 
-        async def deletion_handler(message_id: int):
-            """Mark an RP post as deleted."""
-            Logger.debug("POST: Marking potential RP post as deleted")
-            await inconnu.db.rp_posts.update_one(
-                {"message_id": message_id}, {"$set": {"deleted": True}}
-            )
-
-        await interface.raw_message_delete_handler(
-            raw_message,
-            self.bot,
-            deletion_handler,
-            author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
+        # We can't rely on ensuring there's a webhook, so we fetch if it's a
+        # bot message or a message not in the cache. Hopefully it isn't too
+        # expensive ...
+        post = await inconnu.db.rp_posts.find_one_and_update(
+            {"message_id": raw_message.message_id},
+            {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
         )
+        if post is not None:
+            Logger.debug("POST: Marked RP post as deleted")
+            deletion_id = await inconnu.settings.deletion_channel(post["guild"])
+            if deletion_id:
+                channel = self.bot.get_partial_messageable(deletion_id)
+
+                embed = discord.Embed(
+                    title="Post Deleted",
+                    description=(
+                        f"**Poster:** <@{post['user']}>\n"
+                        f"**Channel:** <#{post['channel']}>\n"
+                        "**Content:**\n\n" + post["content"]
+                    ),
+                    url=inconnu.post_url(post["_id"]),
+                    color=discord.Color.red(),
+                )
+                embed.timestamp = post["date"].replace(tzinfo=timezone.utc)
+
+                try:
+                    await channel.send(embed=embed)
+                    Logger.info(
+                        "POST: Sent deletion notice to deletion at %s: %s",
+                        post["guild"],
+                        deletion_id,
+                    )
+                except discord.Forbidden:
+                    Logger.info(
+                        "POST: Unable to send deletion notice to %s: %s (Missing permissions)",
+                        post["guild"],
+                        deletion_id,
+                    )
+                except discord.HTTPException:
+                    Logger.info(
+                        "POST: Unable to send deletion notice to %s: %s (Channel not found)",
+                        post["guild"],
+                        deletion_id,
+                    )
+            else:
+                Logger.debug("POST: No deletion channel set on %s", post["guild"])
+        else:
+            Logger.debug("POST: Deleted message is not an RP post")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
         """Mark RP posts deleted in the deleted channel."""
         Logger.info("POST: Marking all RP posts in %s as deleted", channel.name)
-        await inconnu.db.rp_posts.update_many({"channel": channel.id}, {"$set": {"deleted": True}})
+        await inconnu.db.rp_posts.update_many(
+            {"channel": channel.id},
+            {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
+        )
 
 
 def setup(bot):

@@ -157,6 +157,26 @@ class Settings:
 
     # Update Channels
 
+    async def _set_channel(
+        self,
+        ctx: discord.ApplicationContext,
+        channel: discord.TextChannel,
+        key: str,
+    ):
+        """Set the guild channel for a given key."""
+        option_name = key.replace("_", " ")
+
+        if not ctx.user.guild_permissions.administrator:
+            raise PermissionError(f"Sorry, only admins can set the {option_name} channel.")
+
+        if channel:
+            await self._set_key(ctx.guild, key, channel.id)
+            return f"Set the {option_name} to {channel.mention}."
+
+        # Un-setting
+        await self._set_key(ctx.guild, key, None)
+        return f"Un-set the {option_name}."
+
     async def update_channel(self, guild: discord.Guild):
         """Retrieve the ID of the guild's update channel, if any."""
         guild_settings = await self._fetch_guild(guild)
@@ -167,16 +187,25 @@ class Settings:
 
     async def set_update_channel(self, ctx, channel: discord.TextChannel):
         """Set the guild's update channel."""
-        if not ctx.user.guild_permissions.administrator:
-            raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
+        return await self._set_channel(ctx, channel, "update_channel")
 
-        if channel:
-            await self._set_key(ctx.guild, "update_channel", channel.id)
-            return f"Set update channel to {channel.mention}."
+    async def changelog_channel(self, guild: discord.Guild) -> int | None:
+        """Retrieves the ID of the guild's RP changelog channel, if any."""
+        guild_settings = await self._fetch_guild(guild)
+        return guild_settings.changelog_channel
 
-        # Un-setting
-        await self._set_key(ctx.guild, "update_channel", None)
-        return "Un-set the update channel."
+    async def set_changelog_channel(self, ctx, channel: discord.TextChannel):
+        """Set the guild's RP changelog channel."""
+        return await self._set_channel(ctx, channel, "changelog_channel")
+
+    async def deletion_channel(self, guild: discord.Guild) -> int | None:
+        """Retrieves the ID of the guild's RP deletion channel, if any."""
+        guild_settings = await self._fetch_guild(guild)
+        return guild_settings.deletion_channel
+
+    async def set_deletion_channel(self, ctx, channel: discord.TextChannel):
+        """Set the guild's RP deletion channel."""
+        return await self._set_channel(ctx, channel, "deletion_channel")
 
     async def add_empty_resonance(self, guild: discord.Guild):
         """Whether to add Empty Resonance to the Resonance table."""
@@ -272,21 +301,26 @@ class Settings:
 
         return user_settings
 
-    async def _fetch_guild(self, guild: discord.Guild) -> GuildSettings:
+    async def _fetch_guild(self, guild: discord.Guild | int | None) -> GuildSettings:
         """Fetch a guild."""
         if guild is None:
             # We're in DMs
             return GuildSettings({})
 
-        if guild_settings := self._guild_cache.get(guild.id):
+        if isinstance(guild, discord.Guild):
+            guild_id = guild.id
+        else:
+            guild_id = guild
+
+        if guild_settings := self._guild_cache.get(guild_id):
             return guild_settings
 
-        guild_params = await inconnu.db.guilds.find_one({"guild": guild.id}) or {}
+        guild_params = await inconnu.db.guilds.find_one({"guild": guild_id}) or {}
         if not guild_params:
             # In case we missed them somehow
             await inconnu.stats.guild_joined(guild)
 
         guild_settings = GuildSettings(guild_params)
-        self._guild_cache[guild.id] = guild_settings
+        self._guild_cache[guild_id] = guild_settings
 
         return guild_settings

@@ -12,11 +12,12 @@ from fastapi.staticfiles import StaticFiles
 
 import bot
 from logger import Logger
-from web.routers import base, profiles
+from web.routers import base, posts, profiles
 
 app = FastAPI(openapi_url=None)
 app.mount("/public", StaticFiles(directory="./web/public"), name="public")
 app.include_router(base.router)
+app.include_router(posts.router)
 app.include_router(profiles.router)
 
 
@@ -31,10 +32,9 @@ def respond(self, *args, **kwargs):
 discord.Interaction.respond = respond
 Logger.info("MAIN: Patched discord.Interaction")
 
-
 if __name__ == "__main__":
     # DEBUG MODE. Does not spin up the web server.
     bot.bot.run(os.environ["INCONNU_TOKEN"])
-else:
+elif "PYTEST" not in os.environ:
     # PRODUCTION. Called with inconnu.sh (or uvicorn main:app).
     asyncio.create_task(bot.run())

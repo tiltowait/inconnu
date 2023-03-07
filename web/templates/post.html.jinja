@@ -1,0 +1,106 @@
+{% extends "base.html.jinja" %}
+{% block title %}Post History | Inconnu{% endblock %}
+{% set date_fmt = "%a, %b %d, %Y at %I:%M:%S %p (UTC)" %}
+
+{% macro direction_button(title, target) %}
+	{% set li_class="page-item" %}
+	{% set prev_href = url + "?page=" + target|string %}
+	{% if target == 0 or target > pages %}
+		{% set li_class="page-item disabled" %}
+		{% set tabindex = "tabindex=\"-1\"" %}
+		{% set prev_href = "#" %}
+	{% endif %}
+	<li class="{{ li_class }}">
+		<a class="page-link" href="{{ prev_href }}" {{ tabindex }} title="{{ title }} page">{{ title }}</a>
+	</li>
+{% endmacro %}
+
+{% block main %}
+	<div class="col-sm-6">
+		<div class="card">
+			<div class="card-body">
+				<div class="well">
+					<h5 class="text-muted">Post History</h5>
+					<h3>{{ header.char_name }}</h3>
+
+					{# User info #}
+					{% if user %}
+						{% if channel %}
+							{% set channel = "#" + channel|string %}
+						{% else %}
+							{% set channel = "an unknown channel." %}
+						{% endif %}
+						<small class="text-muted">By <strong>{{ user }}</strong> on <strong>{{ guild.name }}</strong> in <strong>{{ channel }}</strong>.</small>
+					{% endif %}
+					{# End user info #}
+
+					{# Pagination #}
+					{% if pages > 1 %}
+						<nav aria-label="Post history navigation" style="margin-top: 1em">
+							<ul class="pagination">
+								{{ direction_button("Previous", page - 1) }}
+
+								{# Links #}
+								{% for n in range(1, pages + 1) %}
+									{% set li_class = "page-item" %}
+									{% if n == page %}{% set li_class = li_class + " active" %}{% endif %}
+									<li class="{{ li_class }}">
+										{% if n == page %}
+											<a class="page-link" href="#">{{ n }}</a>
+										{% else %}
+											<a class="page-link" href="{{ url }}?page={{ n }}">{{ n }}</a>
+										{% endif %}
+									</li>
+								{% endfor %}
+
+								{{ direction_button("Next", page + 1) }}
+							</ul>
+						</nav>
+					{% endif %}
+					{# End pagination #}
+
+				</div>
+				<hr>
+				{% markdown %}{{ content }}{% endmarkdown %}
+			</div>
+			<div class="card-footer text-muted">
+				<small><strong>Posted:</strong> {{ date.strftime(date_fmt) }}</small>
+				{% if deleted %}
+					<br><small><strong class="text-danger">Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
+				{% endif %}
+				<br>
+				<small>Content on this page is the sole responsibility of the user who posted it.<br></small>
+			</div>
+		</div>
+	</div>
+
+	{# Diff pane #}
+	{% if pages > 1 %}
+		<div class="col-sm-6">
+			<div class="card">
+				<div class="card-body">
+				{% if diff %}
+					<div class="well">
+						<h5 class="text-muted">Differences from Previous Version</h5>
+					</div>
+					<hr>
+					{% for line in diff %}
+						{% if line[0] == "+" %}
+							<span class="text-success">{{ line }}</span>
+						{% elif line[0] == "-" %}
+							<span class="text-danger">{{ line }}</span>
+						{% else %}
+							{{ line }}
+						{% endif %}
+						<br>
+					{% endfor %}
+				</div>
+			{% else %}
+				<h5 class="text-muted">Viewing first revision</h5>
+			{% endif %}
+			</div>
+		</div>
+	{% endif %}
+	{# End diff pane #}
+
+{% endblock %}

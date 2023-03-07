@@ -1,8 +1,11 @@
 """Pytest configuration."""
 
 import asyncio
+import os
 
 import pytest
+
+os.environ["PYTEST"] = "1"
 
 
 @pytest.fixture(scope="session")

@@ -1,6 +1,7 @@
 """Commonly used utilities."""
 
 import re
+from difflib import Differ
 
 import discord
 from discord.ext import commands
@@ -27,6 +28,28 @@ def de_camel(text: str, de_underscore=True) -> str:
     if de_underscore:
         return temp.replace("_", " ")
     return temp
+
+
+def diff(old: str, new: str, join=True, no_pos_markers=True) -> str:
+    """Generate a diff between two strings."""
+
+    def normalize(lines: str) -> str:
+        """Normalize the lines to make more concise diffs."""
+        if len(lines) == 1 and lines[0][-1] != "\n":
+            lines[0] += "\n"
+        return lines
+
+    old = normalize(old.splitlines(True))
+    new = normalize(new.splitlines(True))
+
+    diff = Differ().compare(old, new)
+    lines = [line + ("\n" if line[-1] != "\n" else "") for line in diff]
+
+    if no_pos_markers:
+        lines = [line for line in lines if line[0] != "?"]
+    if join:
+        return "".join(lines)
+    return lines
 
 
 def raw_command_options(interaction) -> str:

@@ -94,7 +94,6 @@ def __partition_traits(character, traits):
 
     for trait, rating in traits.items():
         if character.has_trait(trait):
-            print("have", trait)
             owned[trait] = rating
         else:
             unowned[trait] = rating

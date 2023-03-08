@@ -1,5 +1,6 @@
 {% extends "base.html.jinja" %}
 {% block title %}Post History | Inconnu{% endblock %}
+{% block meta_description %}Version history for one of {{ header.char_name }}'s posts.{% endblock %}
 {% set date_fmt = "%a, %b %d, %Y at %I:%M:%S %p (UTC)" %}
 
 {% macro direction_button(title, target) %}

@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 
+import api
 import inconnu
 from logger import Logger
 
@@ -35,6 +36,7 @@ async def cull(days=30):
     )
 
     async for character in characters:
+        await api.delete_character_faceclaims(character)
         if await inconnu.char_mgr.remove(character):
             Logger.info("CULLER: Culling %s", character.name)
         else:

@@ -5,7 +5,7 @@ import asyncio
 from datetime import timedelta
 
 import discord
-from discord.commands import Option, SlashCommandGroup
+from discord.commands import Option
 from discord.ext import commands
 
 import inconnu

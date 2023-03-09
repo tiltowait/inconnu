@@ -10,20 +10,17 @@ from logger import Logger
 async def cull(days=30):
     """Cull inactive guilds, characters, and macros."""
     Logger.info("CULLER: Initiating culling run.")
-
-    guild_col = inconnu.db.guilds
-
     past = datetime.utcnow() - timedelta(days=days)
 
     # Remove old guilds
 
     removed_guilds = []
-    guilds = guild_col.find({"active": False, "left": {"$lt": past}}, {"guild": 1})
+    guilds = inconnu.db.guilds.find({"active": False, "left": {"$lt": past}}, {"guild": 1})
 
     async for guild in guilds:
         guild = guild["guild"]
         removed_guilds.append(guild)
-        await guild_col.delete_one({"guild": guild})
+        await inconnu.db.guilds.delete_one({"guild": guild})
 
     if guilds:
         Logger.info("CULLER: Culled %s guilds", len(removed_guilds))

@@ -5,8 +5,8 @@ from datetime import timedelta
 
 import discord
 
-import inconnu
 import api
+import inconnu
 from logger import Logger
 
 

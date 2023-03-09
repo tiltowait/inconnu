@@ -150,9 +150,12 @@ def pull_mentions(text: str) -> set[str]:
 class VCharEmbed(discord.Embed):
     """A standardized VChar display."""
 
-    def __init__(self, ctx, character, owner: discord.Member = None, **kwargs):
+    def __init__(self, ctx, character, owner: discord.Member = None, link=False, **kwargs):
         owner = owner or ctx.user
         show_thumbnail = kwargs.pop("show_thumbnail", True)
+
+        if link:
+            kwargs["url"] = inconnu.profile_url(character.pk)
 
         if "title" in kwargs:
             author_name = character.name

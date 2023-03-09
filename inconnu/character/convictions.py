@@ -21,6 +21,7 @@ async def convictions_show(ctx, character, player, ephemeral):
         ctx,
         character,
         player,
+        link=True,
         title="Convictions",
         description=char_convictions,
     )

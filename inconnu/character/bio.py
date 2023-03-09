@@ -43,8 +43,8 @@ def __biography_paginator(ctx, character, owner):
         ctx,
         character,
         owner,
+        link=True,
         title="Character Profile",
-        url=inconnu.profile_url(character.id),
         show_thumbnail=False,
     )
 
@@ -116,7 +116,10 @@ class _CharacterBio(discord.ui.Modal):
         description = inconnu.utils.clean_text(self.children[1].value)
 
         embed = inconnu.utils.VCharEmbed(
-            interaction, self.character, description="Profile updated!"
+            interaction,
+            self.character,
+            description="Profile updated!",
+            link=True,
         )
         embed.add_field(name="Want to set profile images?", value="Use `/character image upload`.")
 

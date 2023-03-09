@@ -1,12 +1,9 @@
 {% extends "base.html.jinja" %}
 {% block title %}{{ name }} | Inconnu Character Profile{% endblock %}
 {% block meta_description %}Profile for {{ name }}, a Vampire: The Masquerade character.{% endblock %}
-{% block head %}
-	{{ super() }}
-	{% if profile.images %}
-		<meta property="og:image" content="{{ profile.images[0] }}">
-	{% endif %}
-{% endblock %}
+{% if profile.images %}
+	{% block meta_image %}{{ profile.images[0] }}{% endblock %}
+{% endif %}
 
 {% block main %}
 <div class="col-sm-6">

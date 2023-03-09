@@ -49,7 +49,7 @@ async def __get_chunks(ctx, character):
         # We need the date/time to be TZ-aware
         date = event["date"]
         date = date.replace(tzinfo=timezone.utc)
-        date = inconnu.gen_timestamp(date, "d")
+        date = discord.utils.format_dt(date, "d")
 
         exp = event["amount"]
         reason = event["reason"]

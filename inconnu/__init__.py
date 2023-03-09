@@ -64,16 +64,6 @@ async def get_message(inter):
     return await inter.original_response()
 
 
-def gen_timestamp(date, style=None):
-    """Generate a Discord timestamp object."""
-    timestamp = int(date.timestamp())
-    if style:
-        terminator = ":" + style
-    else:
-        terminator = ""
-    return f"<t:{timestamp}{terminator}>"
-
-
 def get_avatar(user: discord.User | discord.Member):
     """Get the user's avatar."""
     if isinstance(user, discord.User):

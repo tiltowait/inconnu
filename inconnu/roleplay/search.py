@@ -43,7 +43,7 @@ async def search(
     async for post in RPPost.find(query).sort(*sort_key).limit(25):
         if summary:
             # Show only links to posts
-            timestamp = inconnu.gen_timestamp(post.utc_date, "d")
+            timestamp = discord.utils.format_dt(post.utc_date, "d")
             sanitized = re.sub(r"[^\w\s]", "", post.content).replace("\n", " ")
             preview = sanitized[:20].strip() + " ..."
 

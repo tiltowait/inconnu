@@ -86,7 +86,7 @@ class ErrorReporter:
             )
             return
         if isinstance(error, inconnu.errors.LockdownError):
-            timestamp = inconnu.gen_timestamp(ctx.bot.lockdown, "R")
+            timestamp = discord.utils.format_dt(ctx.bot.lockdown, "R")
             err = f"{ctx.bot.user.mention} is undergoing maintenance {timestamp}."
             embed = inconnu.utils.ErrorEmbed(
                 ctx.user,

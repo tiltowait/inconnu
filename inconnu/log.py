@@ -31,7 +31,7 @@ async def report_database_error(bot, ctx):
 
     # Send an error message to the support server
     if (db_error_channel := os.getenv("DB_ERROR_CHANNEL")) is not None:
-        timestamp = inconnu.gen_timestamp(discord.utils.utcnow())
+        timestamp = discord.utils.format_dt(discord.utils.utcnow())
 
         db_error_channel = bot.get_channel(int(db_error_channel))
         await db_error_channel.send(f"{timestamp}: Database error detected.")

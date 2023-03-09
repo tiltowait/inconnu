@@ -80,7 +80,7 @@ class AdminCog(commands.Cog):
     async def shutdown(self, ctx: discord.ApplicationContext):
         """Shuts down the bot after 15 minutes."""
         ctx.bot.lockdown = discord.utils.utcnow() + timedelta(minutes=15)
-        timestamp = inconnu.gen_timestamp(ctx.bot.lockdown, "R")
+        timestamp = discord.utils.format_dt(ctx.bot.lockdown, "R")
 
         await ctx.respond(
             (

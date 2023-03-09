@@ -27,7 +27,7 @@ async def show_bookmarks(ctx: discord.ApplicationContext):
     async for bookmark in inconnu.db.rp_posts.aggregate(pipeline):
         title = bookmark["title"]
         url = bookmark["url"]
-        date = inconnu.gen_timestamp(bookmark["date"].replace(tzinfo=timezone.utc), "d")
+        date = discord.utils.format_dt(bookmark["date"].replace(tzinfo=timezone.utc), "d")
         chunker.add_line(f"{date}: **[{title}]({url})**")
 
     post = ctx.bot.cmd_mention("post")

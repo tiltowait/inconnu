@@ -158,7 +158,12 @@ class RoleplayCog(commands.Cog):
         if (message := raw_message.cached_message) is not None:
             if not message.author.bot:
                 return
+            if message.author == self.bot.user:
+                return
             if message.flags.ephemeral:
+                # This shouldn't ever be true given ephemerals are only from
+                # the bot user. In case this ever changes in the future,
+                # though, we're ready!
                 return
 
         # We can't rely on ensuring there's a webhook, so we fetch if it's a

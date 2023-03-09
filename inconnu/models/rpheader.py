@@ -2,7 +2,7 @@
 
 import copy
 
-from bson.objectid import ObjectId
+from bson import ObjectId
 from umongo import EmbeddedDocument, fields
 
 import inconnu

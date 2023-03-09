@@ -3,7 +3,7 @@
 import re
 
 import discord
-from bson.objectid import ObjectId
+from bson import ObjectId
 from discord.ext.pages import Paginator
 from pymongo import DESCENDING
 

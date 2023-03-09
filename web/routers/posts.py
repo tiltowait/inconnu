@@ -1,6 +1,6 @@
 """RP post history route."""
 
-from bson.objectid import ObjectId
+from bson import ObjectId
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse

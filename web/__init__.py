@@ -1,6 +1,6 @@
 """Web package."""
 
-from bson.objectid import ObjectId
+from bson import ObjectId
 from fastapi.exceptions import HTTPException
 from fastapi.templating import Jinja2Templates
 

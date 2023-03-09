@@ -1,6 +1,6 @@
 """rollresult.py - Class for calculating the results of a roll."""
 
-import bson
+from bson import ObjectId
 
 import inconnu
 from inconnu.constants import ATTRIBUTES_AND_SKILLS
@@ -20,7 +20,7 @@ class Roll:
             difficulty (int): The target number of successes
             pool_str (Optional[int]): The pool's attribute + skill representation
         """
-        self.id = bson.objectid.ObjectId()  # pylint: disable=invalid-name
+        self.id = ObjectId()  # pylint: disable=invalid-name
 
         if not 0 <= hunger <= max_hunger:
             raise ValueError(f"Hunger must be between 0 and {max_hunger}. (Got `{hunger}`.)")

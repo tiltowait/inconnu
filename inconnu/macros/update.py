@@ -57,36 +57,6 @@ async def update(ctx, character, macro: str, syntax: str):
         )
 
 
-def __parameterize(parameters):
-    """Convert multi-word parameter/value pairs to a dictionary."""
-    parameters = re.sub(r"\s*=\s*", r"=", parameters)  # Remove gaps between keys and values
-    pattern = re.compile(r"([A-z]+)=")
-
-    params = {}
-
-    match = pattern.match(parameters)
-    while match is not None and parameters:
-        key = match.groups(0)[0]
-        parameters = parameters[match.span()[1] :]
-
-        # Get the value
-        match = pattern.search(parameters)
-        if match is None:
-            value = parameters
-            parameters = ""
-        else:
-            value = parameters[: match.span()[0]]
-            parameters = parameters[match.span()[0] :]
-
-        params[key] = value.strip()
-        match = pattern.match(parameters)
-
-    if parameters:
-        raise SyntaxError(f"Invalid syntax: `{parameters}`.")
-
-    return params
-
-
 def __validate_parameters(character: "VChar", parameters: dict):
     """Parse the update parameters."""
     macro_update = {}

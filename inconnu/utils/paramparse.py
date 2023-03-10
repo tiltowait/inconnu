@@ -14,17 +14,17 @@ def parse_parameters(syntax, rewrite_plus_minus):
         # replacer behavior.
         parameters = re.sub(r"(\w)\s*([+-])\s*(\w)", r"\g<1>=\g<2>\g<3>", parameters)
 
-    parameters = re.sub(r"\s*([+-])\s*=\s*", r"=\g<1>", parameters) # Allow +=, -=
-    parameters = re.sub(r"\s*=\s*([+-])\s*", r"=\g<1>", parameters) # Remove k, v gaps
+    parameters = re.sub(r"\s*([+-])\s*=\s*", r"=\g<1>", parameters)  # Allow +=, -=
+    parameters = re.sub(r"\s*=\s*([+-])\s*", r"=\g<1>", parameters)  # Remove k, v gaps
 
     params = {}
 
-    pattern = re.compile(r"([A-z]+)=")
+    pattern = re.compile(r"([A-Za-z_]+)=")
     match = pattern.match(parameters)
 
     while match is not None and parameters:
         key = match.groups(0)[0]
-        parameters = parameters[match.span()[1]:]
+        parameters = parameters[match.span()[1] :]
 
         # Get the value
         match = pattern.search(parameters)
@@ -32,8 +32,8 @@ def parse_parameters(syntax, rewrite_plus_minus):
             value = parameters
             parameters = ""
         else:
-            value = parameters[:match.span()[0]]
-            parameters = parameters[match.span()[0]:]
+            value = parameters[: match.span()[0]]
+            parameters = parameters[match.span()[0] :]
 
         if key in params:
             raise ValueError(f"You cannot use `{key}` more than once.")

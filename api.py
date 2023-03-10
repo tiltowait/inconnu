@@ -6,6 +6,7 @@ import os
 import re
 from datetime import datetime
 from json import dumps
+from urllib.parse import urlparse
 
 import aiohttp
 import async_timeout
@@ -54,10 +55,11 @@ async def upload_faceclaim(character: "VChar", image_url: str) -> str:
 
 async def delete_single_faceclaim(image: str) -> bool:
     """Delete a single faceclaim image."""
-    if not image.startswith("https://pcs.inconnu.app"):
+    url = urlparse(image)
+    if url.netloc != "pcs.inconnu.app":
         return False
 
-    if (match := re.search(r"([A-F0-9a-f]+/[A-F0-9a-f]+\.webp)$", image)) is None:
+    if (match := re.match(r"/([A-F0-9a-f]+/[A-F0-9a-f]+\.webp)$", url.path)) is None:
         return False
 
     key = match.group(1)

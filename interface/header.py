@@ -145,6 +145,7 @@ class HeaderCog(commands.Cog):
         self.bot = bot
 
     @slash_command()
+    @commands.guild_only()
     async def header(
         self,
         ctx: discord.ApplicationContext,
@@ -181,6 +182,7 @@ class HeaderCog(commands.Cog):
     header_update = SlashCommandGroup("update", "Update commands")
 
     @header_update.command(name="header")
+    @commands.guild_only()
     async def update_header(
         self,
         ctx: discord.ApplicationContext,

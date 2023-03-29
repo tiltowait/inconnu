@@ -62,7 +62,7 @@ class Gameplay(commands.Cog):
     @slash_command()
     @commands.guild_only()
     async def aggheal(self, ctx, character: inconnu.options.character("The character to heal")):
-        """Heal a character's Aggravated damage."""
+        """Heal a character's Aggravated damage, performing three Rouse checks."""
         await inconnu.misc.aggheal(ctx, character)
 
     @slash_command()

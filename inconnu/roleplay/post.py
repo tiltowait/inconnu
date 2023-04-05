@@ -85,7 +85,7 @@ class PostModal(discord.ui.Modal):
     def _clean_tags(self) -> list[str]:
         """Clean and separate the tags."""
         raw_tags = self.children[-1].value.lower().replace(",", ";")
-        tags = re.sub(r"[^\w\s;]+", "", raw_tags)
+        tags = re.sub(r"[^\w\s;\(\)]+", "", raw_tags)
         tags = tags.split(";")
 
         cleaned_tags = []

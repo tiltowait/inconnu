@@ -8,13 +8,12 @@ import inconnu
 async def delete_message_chain(ctx: discord.ApplicationContext, message: discord.Message):
     """Delete an RP post, its header, and its mentions."""
     # Uses the general WebhookError handler
-    webhook = await ctx.bot.prep_webhook(ctx.channel)
-
     try:
+        webhook = await ctx.bot.prep_webhook(ctx.channel)
         rp_post = await _fetch_rp_post(ctx, webhook, message)
         await ctx.send_modal(DeletionModal(webhook, rp_post))
 
-    except ValueError as err:
+    except (inconnu.errors.WebhookError, ValueError) as err:
         await inconnu.utils.error(ctx, err, title="Invalid message")
 
 

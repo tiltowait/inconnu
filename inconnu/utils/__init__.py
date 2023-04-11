@@ -5,6 +5,7 @@ from difflib import Differ
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import Paginator
 
 import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
@@ -145,6 +146,39 @@ def pull_mentions(text: str) -> set[str]:
     """Pulls mentions from text."""
     mentions = re.findall(r"(<(?:@|@&|#)\d{1,30}>)", text)
     return set(mentions)
+
+
+def re_paginate(strings: list[str], page_len=2000) -> list[str]:
+    """Adjusts the pages into the fewest number of <=2k pages possible.
+    It does so via three possible methods:
+      1. Newlines
+      2. Spaces
+      3. Individual characters
+    """
+    lines = sum([string.split("\n") for string in strings], [])
+    paginator = Paginator(prefix="", suffix="", max_size=page_len)
+
+    try:
+        for line in lines:
+            paginator.add_line(line)
+        return [page.strip() for page in paginator.pages]
+    except RuntimeError:
+        pass
+
+    # Newlines failed
+    words = sum([string.split(" ") for string in strings], [])
+    paginator = Paginator(prefix="", suffix="", linesep=" ", max_size=page_len)
+
+    try:
+        for word in words:
+            paginator.add_line(word)
+        return [page.strip() for page in paginator.pages]
+    except RuntimeError:
+        pass
+
+    # Final fallback; just go by characters
+    combined = "".join(strings)
+    return [combined[i : i + page_len] for i in range(0, len(combined), page_len)]
 
 
 class VCharEmbed(discord.Embed):

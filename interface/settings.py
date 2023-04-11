@@ -147,6 +147,7 @@ class SettingsCommands(commands.Cog):
         await ctx.respond(response)
 
     @settings.command(name="show")
+    @commands.guild_only()
     async def settings_show(self, ctx):
         """Display the settings in effect."""
         accessibility = "ON" if await inconnu.settings.accessible(ctx) else "OFF"

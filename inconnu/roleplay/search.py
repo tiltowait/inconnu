@@ -56,6 +56,7 @@ async def search(
                 icon_url=inconnu.get_avatar(user),
                 footer=" • ".join(footer),
             )
+            embed.add_field(name=" ", value=post.url)
             posts.append(embed)
 
     if posts:

@@ -238,7 +238,7 @@ class PostModal(discord.ui.Modal):
                 name=post.header.char_name, icon_url=inconnu.get_avatar(interaction.user)
             )
             embed.set_thumbnail(url=self.character.profile_image_url)
-            embed.add_field(name=" ", value=f"[Jump to message.]({post.url})")
+            embed.add_field(name=" ", value=post.url)
             embed.timestamp = self.post_to_edit.utc_date
 
             # Prep the channel and send

@@ -82,7 +82,8 @@ class RoleplayCog(commands.Cog):
 
     @slash_command(guild_ids=TEST_GUILDS)
     @option("user", description="The user who wrote the post")
-    @option("content", description="What to search for", default="")
+    @option("content", description="What to search for", required=False)
+    @option("character", description="The character name. Invalid names ignored.", required=False)
     @option("mentioning", description="A user mentioned in the post", required=False)
     @option(
         "hidden",
@@ -100,12 +101,13 @@ class RoleplayCog(commands.Cog):
         ctx: discord.ApplicationContext,
         user: discord.Member,
         content: str,
+        character: str,
         mentioning: discord.Member,
         hidden: bool,
         summary: bool,
     ):
         """Search for an RP post. Displays up to 5 results."""
-        await inconnu.roleplay.search(ctx, user, content, mentioning, hidden, summary)
+        await inconnu.roleplay.search(ctx, user, content, character, mentioning, hidden, summary)
 
     @slash_command(guild_ids=TEST_GUILDS)
     @commands.guild_only()

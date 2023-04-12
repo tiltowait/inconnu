@@ -239,7 +239,7 @@ class PostModal(discord.ui.Modal):
             )
             embed.set_thumbnail(url=self.character.profile_image_url)
             embed.add_field(name=" ", value=f"[Jump to message.]({post.url})")
-            embed.timestamp = discord.utils.utcnow()
+            embed.timestamp = self.post_to_edit.utc_date
 
             # Prep the channel and send
             changelog = interaction.client.get_partial_messageable(changelog_id)

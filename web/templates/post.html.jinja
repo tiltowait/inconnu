@@ -65,7 +65,14 @@
 				{% markdown %}{{ content }}{% endmarkdown %}
 			</div>
 			<div class="card-footer text-muted">
-				<small><strong>Posted:</strong> {{ date.strftime(date_fmt) }}</small>
+				<small>
+					<strong>Posted:</strong>
+					{% if not deleted %}
+						<a class="link-primary" href="{{ link }}" title="Go to Discord post">{{ date.strftime(date_fmt) }}</a>
+					{% else %}
+	   				{{ date.strftime(date_fmt) }}
+					{% endif %}
+				</small>
 				{% if deleted %}
 					<br><small><strong class="text-danger">Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
 				{% endif %}

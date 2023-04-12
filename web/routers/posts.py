@@ -49,6 +49,7 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
             "guild": guild,
             "header": post.header,
             "content": content,
+            "link": post.url,
             "diff": diff,
             "date": date,
             "page": page,

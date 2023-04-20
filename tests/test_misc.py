@@ -61,6 +61,14 @@ def test_re_paginate_fallback():
     assert len("".join(pages)) == total
 
 
+def test_re_paginate_preserves_newlines():
+    """Ensure re_paginate() preserves newline counts."""
+    text = "one\ntwo\n\nthree\nfour"
+    pages = re_paginate([text])
+
+    assert pages[0] == text
+
+
 def generate_random_word(length):
     letters = string.ascii_lowercase
     return "".join(random.choice(letters) for i in range(length))

@@ -158,6 +158,8 @@ class RoleplayCog(commands.Cog):
         """Mark an RP post as deleted and post a notice in the guild's deletion
         channel."""
         if (message := raw_message.cached_message) is not None:
+            if message.webhook_id is None:
+                return
             if not message.author.bot:
                 return
             if message.author == self.bot.user:

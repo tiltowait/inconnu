@@ -36,7 +36,6 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
     # Comments appear after the first # in a command
     if "#" in syntax:
         syntax, comment = syntax.split("#", 1)
-        comment = await stringify_mentions(ctx, comment)
 
     if RollParser.has_invalid_characters(syntax):
         if RollParser.possible_spec_use(syntax):
@@ -46,6 +45,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         await inconnu.utils.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
         return
 
+    comment = await stringify_mentions(ctx, comment)
     if comment is not None and (comment_len := len(comment)) > 300:
         Logger.debug("VR: Comment is too long")
         await inconnu.utils.error(ctx, f"Comment is too long by {comment_len - 300} characters.")

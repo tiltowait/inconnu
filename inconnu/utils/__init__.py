@@ -148,13 +148,21 @@ def pull_mentions(text: str) -> set[str]:
     return set(mentions)
 
 
-def re_paginate(strings: list[str], page_len=2000) -> list[str]:
+def re_paginate(strings: list[str], *, page_len=2000) -> list[str]:
     """Adjusts the pages into the fewest number of <=2k pages possible.
     It does so via three possible methods:
       1. Newlines
       2. Spaces
       3. Individual characters
     """
+    delimiter = ""
+    for i in range(1, len(strings) * 2, 2):
+        # Insert a newline between each page to make sure paragraphs are
+        # properly broken. It's fine if the last element ends up being a
+        # newline; it will be removed later.
+        strings.insert(i, delimiter)
+
+    # Default case: paginate by newlines
     lines = sum([string.split("\n") for string in strings], [])
     paginator = Paginator(prefix="", suffix="", max_size=page_len)
 
@@ -165,7 +173,7 @@ def re_paginate(strings: list[str], page_len=2000) -> list[str]:
     except RuntimeError:
         pass
 
-    # Newlines failed
+    # Newlines failed; split by words
     words = sum([string.split(" ") for string in strings], [])
     paginator = Paginator(prefix="", suffix="", linesep=" ", max_size=page_len)
 
@@ -176,9 +184,9 @@ def re_paginate(strings: list[str], page_len=2000) -> list[str]:
     except RuntimeError:
         pass
 
-    # Final fallback; just go by characters
+    # Spaces failed; split by characters
     combined = "".join(strings)
-    return [combined[i : i + page_len] for i in range(0, len(combined), page_len)]
+    return [combined[i : i + page_len].strip() for i in range(0, len(combined), page_len)]
 
 
 class VCharEmbed(discord.Embed):

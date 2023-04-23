@@ -14,7 +14,7 @@ __HELP_URL = "https://docs.inconnu.app/"
 class PostModal(discord.ui.Modal):
     """A modal for getting post details."""
 
-    DIVIDER = "\n" + " " * 30 + "\n\n"  # Ogham space mark: \u1680
+    SECTIONS = 2
 
     def __init__(self, character: inconnu.models.VChar, bot, *args, **kwargs):
         self.character = character
@@ -40,17 +40,30 @@ class PostModal(discord.ui.Modal):
             starting_tags = "; ".join(self.post_to_edit.tags)
 
         # Populate the modal
+        post_len = 2000 if self.post_to_edit else 4000
         super().__init__(*args, **kwargs)
         self.add_item(
             discord.ui.InputText(
                 label="Post details",
-                placeholder="Your RP post",
+                placeholder="Enter your post here.",
                 value=starting_value,
                 min_length=1,
-                max_length=2000,
+                max_length=post_len,
                 style=discord.InputTextStyle.long,
             )
         )
+        if self.post_to_edit is None:
+            for _ in range(PostModal.SECTIONS - 1):
+                self.add_item(
+                    discord.ui.InputText(
+                        label="Post details (cont)",
+                        placeholder="Use if your post is too long to fit the first textbox.",
+                        value=starting_value,
+                        max_length=post_len,
+                        required=False,
+                        style=discord.InputTextStyle.long,
+                    )
+                )
         self.add_item(
             discord.ui.InputText(
                 label="Bookmark title",
@@ -72,11 +85,14 @@ class PostModal(discord.ui.Modal):
             )
         )
 
-    def _clean_post_content(self) -> str:
+    def _clean_post_content(self) -> str | list[str]:
         """Clean and attempt to normalize the post content."""
-        lines = self.children[0].value.split("\n")
-        cleaned = [inconnu.utils.clean_text(line) for line in lines if line]
-        return "\n\n".join(cleaned)
+        if self.post_to_edit is None:
+            contents = [
+                child.value for child in self.children[0 : PostModal.SECTIONS] if child.value
+            ]
+            return inconnu.utils.re_paginate(contents)
+        return inconnu.utils.re_paginate([self.children[0].value])[0]
 
     def _clean_title(self) -> str:
         """Clean the title."""
@@ -162,15 +178,21 @@ class PostModal(discord.ui.Modal):
         else:
             header_message = None
 
-        content = self._clean_post_content()
-        content_message = await webhook.send(
-            content=content,
-            username=self.character.name,
-            avatar_url=webhook_avatar,
-            wait=True,
-        )
+        contents = self._clean_post_content()
+        post_messages = []
+        id_chain = []
+        for page in contents:
+            msg = await webhook.send(
+                content=page,
+                username=self.character.name,
+                avatar_url=webhook_avatar,
+                wait=True,
+            )
+            post_messages.append(msg)
 
-        id_chain = [content_message.id]
+            # The ID chain has all message IDs, not just the current post's ID
+            id_chain.append(msg.id)
+
         if self.show_header:
             id_chain.insert(0, header_message.id)
 
@@ -199,18 +221,19 @@ class PostModal(discord.ui.Modal):
                     continue
 
         # Register the RP post
-        db_rp_post = inconnu.models.RPPost.create(
-            interaction=interaction,
-            character=self.character,
-            header=self.header,
-            content=content,
-            message=content_message,
-            mentions=mention_ids,
-            title=self._clean_title() or None,
-            tags=self._clean_tags(),
-        )
-        db_rp_post.id_chain = id_chain
-        await db_rp_post.commit()
+        for content, message in zip(contents, post_messages):
+            db_rp_post = inconnu.models.RPPost.create(
+                interaction=interaction,
+                character=self.character,
+                header=self.header,
+                content=content,
+                message=message,
+                mentions=mention_ids,
+                title=self._clean_title() or None,
+                tags=self._clean_tags(),
+            )
+            db_rp_post.id_chain = id_chain
+            await db_rp_post.commit()
 
         Logger.info("POST: %s registered post", self.character.name)
 

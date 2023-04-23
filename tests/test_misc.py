@@ -26,7 +26,7 @@ def test_de_camel(text: str, de_underscore: bool, expected: str):
 
 def test_re_paginate_simple():
     pages = re_paginate(["one", "two", "three"])
-    assert pages == ["one\ntwo\nthree"]
+    assert pages == ["one\n\ntwo\n\nthree"]
 
 
 def test_re_paginate_on_spaces():
@@ -43,7 +43,7 @@ def test_re_paginate_on_spaces():
     pages = re_paginate(pages)
     assert all(len(page) <= 2000 for page in pages)
     assert len(pages) == ceil(total / 2000)
-    assert len("".join(pages)) == total - len(pages)
+    assert len("".join(pages)) == total - len(pages) / 2
 
 
 def test_re_paginate_fallback():

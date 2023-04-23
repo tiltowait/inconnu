@@ -88,6 +88,7 @@ class TagView(inconnu.views.DisablingView):
         select = discord.ui.Select(
             placeholder="Select a tag to view posts",
             options=[discord.SelectOption(label=tag[0]) for tag in tags],
+            max_values=len(tags),
         )
         select.callback = self.callback
 
@@ -95,7 +96,7 @@ class TagView(inconnu.views.DisablingView):
 
     async def callback(self, interaction: discord.Interaction):
         """Present the posts with the tag."""
-        selected = self.children[0].values[0]
+        selected = self.children[0].values
 
         query = {
             "deleted": False,
@@ -104,8 +105,9 @@ class TagView(inconnu.views.DisablingView):
             "tags": selected,
         }
         pages = []
+        footer = ("Tag: " if len(selected) == 1 else "Tags: ") + ", ".join(selected)
         async for post in inconnu.models.RPPost.find(query):
-            pages.append(inconnu.roleplay.post_embed(post, footer=f"Tag: {selected}"))
+            pages.append(inconnu.roleplay.post_embed(post, footer=footer))
 
         if pages:
             show_buttons = len(pages) > 1
@@ -117,6 +119,8 @@ class TagView(inconnu.views.DisablingView):
             )
             await paginator.respond(interaction, ephemeral=True)
         else:
+            tags = "tag" if len(selected) == 1 else "tags"
+            selection = inconnu.utils.oxford_list(map(inconnu.fence, selected))
             await inconnu.utils.error(
-                interaction, f"No posts with tag {selected} found.", title="No posts found!"
+                interaction, f"No posts with {tags} {selection} found.", title="No posts found!"
             )

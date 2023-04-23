@@ -2,6 +2,7 @@
 
 import re
 from difflib import Differ
+from typing import Any
 
 import discord
 from discord.ext import commands
@@ -187,6 +188,14 @@ def re_paginate(strings: list[str], *, page_len=2000) -> list[str]:
     # Spaces failed; split by characters
     combined = "".join(strings)
     return [combined[i : i + page_len].strip() for i in range(0, len(combined), page_len)]
+
+
+def oxford_list(seq: list[Any], conjunction="and") -> str:
+    """Return a grammatically correct human readable string (with an Oxford comma)."""
+    seq = [str(s) for s in seq]
+    if len(seq) < 3:
+        return f" {conjunction} ".join(seq)
+    return ", ".join(seq[:-1]) + f", {conjunction} " + seq[-1]
 
 
 class VCharEmbed(discord.Embed):

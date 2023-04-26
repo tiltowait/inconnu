@@ -294,8 +294,17 @@ class PostModal(discord.ui.Modal):
 @haven(__HELP_URL, errmsg="You have no characters!")
 async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs):
     """Create a modal that sends an RP post."""
-    modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
-    await ctx.send_modal(modal)
+    if ctx.bot.can_webhook(ctx.channel):
+        modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
+        await ctx.send_modal(modal)
+    elif isinstance(ctx.channel, discord.threads.Thread):
+        await inconnu.utils.error(ctx, "This command is unavailable in threads.")
+    else:
+        await inconnu.utils.error(
+            ctx,
+            "This feature requires `Manage Webhooks` permission.",
+            title="Missing permissions",
+        )
 
 
 async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):

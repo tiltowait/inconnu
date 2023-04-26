@@ -221,6 +221,8 @@ class PostModal(discord.ui.Modal):
                     continue
 
         # Register the RP post
+        title = self._clean_title() or None
+        tags = self._clean_tags()
         for content, message in zip(contents, post_messages):
             db_rp_post = inconnu.models.RPPost.create(
                 interaction=interaction,
@@ -229,11 +231,15 @@ class PostModal(discord.ui.Modal):
                 content=content,
                 message=message,
                 mentions=mention_ids,
-                title=self._clean_title() or None,
-                tags=self._clean_tags(),
+                title=title,
+                tags=tags,
             )
             db_rp_post.id_chain = id_chain
             await db_rp_post.commit()
+
+            # We only want to save the tags and bookmark for the first post
+            title = None
+            tags = []
 
         Logger.info("POST: %s registered post", self.character.name)
 

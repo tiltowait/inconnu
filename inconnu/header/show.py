@@ -35,7 +35,15 @@ async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
     except (inconnu.errors.NotPremium, inconnu.errors.WebhookError):
         embed = header_embed(header_doc, character, False)
         resp = await ctx.respond(embed=embed)
-        message = await resp.original_response()
+        if isinstance(resp, discord.WebhookMessage):
+            # This extreme edge case has come up exactly once. It's possible
+            # that webhook permissions were revoked mid-command (very unlikely
+            # timing), or maybe Discord had a glitch. (Assuming there isn't a
+            # bug in the code above.) Regardless, protect against the extremely
+            # unlikely edge case.
+            message = resp
+        else:
+            message = await resp.original_response()
     finally:
         if message is not None:
             await register_header(ctx, message, character)

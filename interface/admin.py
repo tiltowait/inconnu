@@ -38,7 +38,7 @@ class AdminCog(commands.Cog):
             return
 
         embed = discord.Embed(title=title, description=description)
-        embed.set_author(name=ctx.bot.user.display_name, icon_url=ctx.bot.user.display_avatar)
+        embed.set_author(name="Announcement", icon_url=ctx.bot.user.display_avatar)
         embed.set_footer(text="This is a one-time message. To see it again, use /motd.")
 
         try:

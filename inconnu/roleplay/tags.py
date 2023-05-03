@@ -102,10 +102,10 @@ class TagView(inconnu.views.DisablingView):
             "deleted": False,
             "guild": interaction.guild_id,
             "user": interaction.user.id,
-            "tags": selected,
+            "tags": {"$all": selected},
         }
         pages = []
-        footer = ("Tag: " if len(selected) == 1 else "Tags: ") + ", ".join(selected)
+        footer = ("Search tag: " if len(selected) == 1 else "Search tags: ") + "; ".join(selected)
         async for post in inconnu.models.RPPost.find(query):
             pages.append(inconnu.roleplay.post_embed(post, footer=footer))
 

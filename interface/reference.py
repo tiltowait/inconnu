@@ -113,10 +113,20 @@ class ReferenceCommands(commands.Cog):
             msg = f"[This roll]({message.jump_url}) **{will_or_not}** be included in statistics."
             embed = discord.Embed(description=msg)
 
-            await asyncio.gather(
-                message.edit(content=content),
-                ctx.respond(embed=embed, ephemeral=True),
-            )
+            try:
+                await message.edit(content=content)
+                await ctx.respond(embed=embed, ephemeral=True)
+            except discord.Forbidden:
+                await inconnu.utils.error(
+                    ctx,
+                    f"{ctx.bot.user.mention} needs the `View Messages` "
+                    "permission to edit the message. If this is a thread, then "
+                    "make sure it's unlocked.",
+                    (" ", f"[Jump to message.]({message.jump_url})"),
+                    footer="The roll statistics were still toggled! Running "
+                    "the command again will undo what you just did.",
+                    title="Roll stats toggled but unable to edit message",
+                )
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):

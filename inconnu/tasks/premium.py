@@ -33,19 +33,6 @@ async def remove_expired_images():
         len(api_tasks),
     )
     if api_tasks:
-        # We have to do the S3 tasks first, because the character tasks will
-        # erase all record of the image URLs
-
-        # Because we directly modified the database, we have to purge the cache
-        inconnu.char_mgr.purge()
-
         await asyncio.gather(*api_tasks)
+    if expired_user_ids:
         await inconnu.db.supporters.delete_many({"_id": {"$in": expired_user_ids}})
-
-        # There is a very rare but potential race condition: a former supporter
-        # might have loaded their character between purge begin and end.
-        # Ideally, we would do all this in the cache; failing that, we would
-        # somehow lock the cache until this task is complete. Until a better
-        # solution is found, we try to hedge our bets by purging the cache once
-        # more.
-        inconnu.char_mgr.purge()

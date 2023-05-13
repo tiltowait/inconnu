@@ -73,6 +73,7 @@ async def delete_character_faceclaims(character: "VChar"):
     """Delete all of a character's faceclaims."""
     res = await _delete(path=f"/faceclaim/delete/{character.id}/all")
     del character.profile.images[:]
+    await character.commit()
     Logger.info("API: %s", res)
 
 

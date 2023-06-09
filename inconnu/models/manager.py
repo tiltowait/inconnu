@@ -199,12 +199,10 @@ class CharacterManager:
             self.user_cache[new_key] = new_chars
 
         Logger.info(
-            "CHARACTER MANAGER: Transferred '%s' from %s#%s to %s#%s",
+            "CHARACTER MANAGER: Transferred '%s' from %s to %s",
             character.name,
             current_owner.name,
-            current_owner.discriminator,
             new_owner.name,
-            new_owner.discriminator,
         )
 
     async def mark_inactive(self, player):

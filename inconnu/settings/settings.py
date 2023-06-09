@@ -274,13 +274,7 @@ class Settings:
             await inconnu.db.users.insert_one({"user": user.id, "settings": {key: value}})
 
         # Update the cache
-        Logger.info(
-            "SETTINGS: %s#%s: %s=%s",
-            user.name,
-            user.discriminator,
-            key,
-            value,
-        )
+        Logger.info("SETTINGS: %s: %s=%s", user.name, key, value)
         user_settings = await self._fetch_user(user)
         user_settings.setdefault("settings", {})[key] = value
         self._user_cache[user.id] = user_settings

@@ -11,12 +11,7 @@ def not_on_lockdown():
 
     def predicate(ctx):
         if ctx.bot.lockdown is not None:
-            Logger.info(
-                "BOT: %s#%s (%s) attempted locked-down command",
-                ctx.user.name,
-                ctx.user.discriminator,
-                ctx.guild.name,
-            )
+            Logger.info("BOT: %s (%s) attempted locked-down command", ctx.user.name, ctx.guild.name)
             raise inconnu.errors.LockdownError()
         Logger.debug("BOT: Not on lockdown")
         return True

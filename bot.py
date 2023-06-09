@@ -109,14 +109,10 @@ class InconnuBot(discord.Bot):
             )
             embed.set_footer(text="Thank you for your support!")
             await member.send(embed=embed)
-            Logger.info(
-                "PREMIUM: Informed %s#%s about premium loss", member.name, member.discriminator
-            )
+            Logger.info("PREMIUM: Informed %s about premium loss", member.name)
 
         except (discord.errors.Forbidden, discord.errors.HTTPException):
-            Logger.info(
-                "PREMIUM: Could not DM %s#%s about premium loss", member.name, member.discriminator
-            )
+            Logger.info("PREMIUM: Could not DM %s about premium loss", member.name)
 
     async def inform_premium_features(self, member: discord.Member):
         """Inform the member of premium features."""
@@ -138,16 +134,10 @@ class InconnuBot(discord.Bot):
                 )
             )
             await member.send(embed=embed)
-            Logger.info(
-                "PREMIUM: Informed %s#%s about premium features", member.name, member.discriminator
-            )
+            Logger.info("PREMIUM: Informed %s about premium features", member.name)
 
         except discord.errors.Forbidden:
-            Logger.info(
-                "PREMIUM: Could not DM %s#%s about premium features",
-                member.name,
-                member.discriminator,
-            )
+            Logger.info("PREMIUM: Could not DM %s about premium features", member.name)
 
     def cmd_mention(
         self, name: str, type: type[discord.ApplicationCommand] = discord.ApplicationCommand
@@ -224,18 +214,13 @@ class InconnuBot(discord.Bot):
 
         if not await inconnu.db.supporters.find_one({"_id": character.user}):
             Logger.info(
-                "TRANSFER: Creating a supporter record for %s#%s, because %s has images",
+                "TRANSFER: Creating a supporter record for %s, because %s has images",
                 member.name,
-                member.discriminator,
                 character.name,
             )
             await self.mark_premium_loss(member, True)
         else:
-            Logger.info(
-                "TRANSFER: %s#%s has a supporter record; no action needed",
-                member.name,
-                member.discriminator,
-            )
+            Logger.info("TRANSFER: %s has a supporter record; no action needed", member.name)
 
     # Events
 
@@ -287,14 +272,12 @@ class InconnuBot(discord.Bot):
         if self.motd:
             try:
                 if ctx.user.id not in self.motd_given:
-                    Logger.debug(
-                        "MOTD: Showing MOTD to %s#%s", ctx.user.name, ctx.user.discriminator
-                    )
+                    Logger.debug("MOTD: Showing MOTD to %s", ctx.user.name)
                     await asyncio.sleep(1)
                     await inconnu.utils.cmd_replace(ctx, embed=self.motd, ephemeral=True)
                     self.motd_given.add(ctx.user.id)
             except discord.HTTPException:
-                Logger.warning("Could not show MotD to %s%s", ctx.user.name, ctx.user.discriminator)
+                Logger.warning("Could not show MotD to %s", ctx.user.name)
 
     async def on_connect(self):
         """Perform early setup."""
@@ -357,11 +340,11 @@ class InconnuBot(discord.Bot):
             return member.get_role(SUPPORTER_ROLE) is not None
 
         if is_supporter(before) and not is_supporter(after):
-            Logger.info("PREMIUM: %s#%s is no longer a supporter", after.name, after.discriminator)
+            Logger.info("PREMIUM: %s is no longer a supporter", after.name)
             await self.mark_premium_loss(after)
 
         elif is_supporter(after) and not is_supporter(before):
-            Logger.info("PREMIUM: %s#%s is now a supporter!", after.name, after.discriminator)
+            Logger.info("PREMIUM: %s is now a supporter!", after.name)
             await self.mark_premium_gain(after)
 
     @staticmethod

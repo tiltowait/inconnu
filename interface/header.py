@@ -233,27 +233,17 @@ class HeaderCog(commands.Cog):
                 owner = record["character"]["user"]
                 if ctx.user.id == owner:
                     # Modal gets the new location
-                    Logger.debug(
-                        "HEADER: %s#%s is updating an RP header",
-                        ctx.user.name,
-                        ctx.user.discriminator,
-                    )
+                    Logger.debug("HEADER: %s is updating an RP header", ctx.user.name)
                     modal = LocationChangeModal(message, webhook, title="Edit RP Header")
                     await ctx.send_modal(modal)
                 else:
                     Logger.debug(
-                        "HEADER: Unauthorized RP header update attempt by %s#%s",
-                        ctx.user.name,
-                        ctx.user.discriminator,
+                        "HEADER: Unauthorized RP header update attempt by %s", ctx.user.name
                     )
                     await ctx.respond("This isn't your RP header!", ephemeral=True)
                 return
 
-        Logger.debug(
-            "HEADER: %s#%s attempted to update a non-header post",
-            ctx.user.name,
-            ctx.user.discriminator,
-        )
+        Logger.debug("HEADER: %s attempted to update a non-header post", ctx.user.name)
         await ctx.respond("This message isn't an RP header!", ephemeral=True)
 
     @commands.message_command(name="Header: Delete")
@@ -299,11 +289,7 @@ class HeaderCog(commands.Cog):
                             ctx.guild.name,
                         )
                 else:
-                    Logger.debug(
-                        "HEADER: Unauthorized deletion attempt by %s#%s",
-                        ctx.user.name,
-                        ctx.user.discriminator,
-                    )
+                    Logger.debug("HEADER: Unauthorized deletion attempt by %s", ctx.user.name)
                     await ctx.respond(
                         "You don't have permission to delete this RP header.", ephemeral=True
                     )

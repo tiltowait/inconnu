@@ -250,21 +250,9 @@ def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
 
     # Players are allowed to look up themselves
     if ctx.user != player:
-        Logger.info(
-            "HAVEN: %s#%s looked up %s#%s (%s)",
-            ctx.user.name,
-            ctx.user.discriminator,
-            player.name,
-            player.discriminator,
-            ctx.guild.name,
-        )
+        Logger.info("HAVEN: %s looked up %s (%s)", ctx.user.name, player.name, ctx.guild.name)
         if not (is_admin(ctx.user) or allow_lookups):
-            Logger.info(
-                "HAVEN: Invalid player lookup by %s#%s (%s)",
-                ctx.user.name,
-                ctx.user.discriminator,
-                ctx.guild.name,
-            )
+            Logger.info("HAVEN: Invalid player lookup by %s (%s)", ctx.user.name, ctx.guild.name)
             raise LookupError("You don't have lookup permissions.")
 
     return player
@@ -276,9 +264,9 @@ def is_admin(member: discord.Member):
     # receive a PartialMessageable
     privileged = member.top_role.permissions.administrator or member.guild_permissions.administrator
     if not privileged:
-        Logger.debug("HAVEN: %s#%s is not an admin", member.name, member.discriminator)
+        Logger.debug("HAVEN: %s is not an admin", member.name)
     else:
-        Logger.debug("HAVEN: %s#%s is an admin", member.name, member.discriminator)
+        Logger.debug("HAVEN: %s is an admin", member.name)
     return privileged
 
 

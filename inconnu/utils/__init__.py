@@ -131,7 +131,7 @@ def _check_supporter(ctx, user: discord.Member = None):
     return True
 
 
-def has_premium():
+def premium():
     """A decorator for commands that only work for supporters."""
     return commands.check(_check_supporter)
 

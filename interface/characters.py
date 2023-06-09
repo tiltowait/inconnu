@@ -260,7 +260,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     @images.command(name="upload")
     @commands.guild_only()
-    @inconnu.utils.has_premium()
+    @inconnu.utils.premium()
     async def upload_image(
         self,
         ctx: discord.ApplicationContext,

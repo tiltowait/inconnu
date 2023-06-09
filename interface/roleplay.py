@@ -51,7 +51,7 @@ class RoleplayCog(commands.Cog):
         description="Display a header above the post (default true)",
         default=True,
     )
-    @inconnu.utils.has_premium()
+    @inconnu.utils.premium()
     @commands.guild_only()
     async def post(
         self,

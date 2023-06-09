@@ -115,27 +115,6 @@ def is_supporter(ctx, user: discord.Member = None) -> bool:
     return False
 
 
-def _check_supporter(ctx, user: discord.Member = None):
-    """Wraps is_supporter() to raise on failure."""
-    if not ctx.bot.welcomed:
-        command = ctx.bot.cmd_mention(ctx.command.qualified_name)
-        raise inconnu.errors.NotReady(
-            (
-                f"{ctx.bot.user.mention} is currently rebooting. "
-                f"{command} will be available in a few minutes."
-            )
-        )
-
-    if not is_supporter(ctx, user):
-        raise errors.NotPremium()
-    return True
-
-
-def premium():
-    """A decorator for commands that only work for supporters."""
-    return commands.check(_check_supporter)
-
-
 def format_join(collection: list, separator: str, f: str, alt="") -> str:
     """Join a collection by a separator, formatting each item."""
     return separator.join(map(lambda c: f"{f}{c}{f}", collection)) or alt

@@ -1,5 +1,6 @@
 """Command decorators."""
 
+import discord
 from discord.ext import commands
 
 import inconnu
@@ -17,3 +18,24 @@ def not_on_lockdown():
         return True
 
     return commands.check(predicate)
+
+
+def _check_supporter(ctx, user: discord.Member = None):
+    """Wraps is_supporter() to raise on failure."""
+    if not ctx.bot.welcomed:
+        command = ctx.bot.cmd_mention(ctx.command.qualified_name)
+        raise inconnu.errors.NotReady(
+            (
+                f"{ctx.bot.user.mention} is currently rebooting. "
+                f"{command} will be available in a few minutes."
+            )
+        )
+
+    if not inconnu.utils.is_supporter(ctx, user):
+        raise inconnu.errors.NotPremium()
+    return True
+
+
+def premium():
+    """A decorator for commands that only work for supporters."""
+    return commands.check(_check_supporter)

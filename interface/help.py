@@ -153,14 +153,11 @@ class Help(commands.Cog):
         embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
         embed.set_thumbnail(url=web_asset("darkpack_logo2.webp"))
 
+        embed.add_field(name="Author", value="`@tiltowait#8282`", inline=False)
         embed.add_field(
-            name="Framework", value="[Pycord 2.4](https://pycord.dev) using Python 3.10"
+            name="Source code", value="[GitHub](https://github.com/tiltowait/inconnu)", inline=False
         )
-        embed.add_field(
-            name="Additional Packages",
-            value="motor 3.0.0\nstatcord.py 3.1.0",
-        )
-        embed.add_field(name="Author", value="@tiltowait#8282", inline=False)
+        embed.add_field(name="License", value="MIT", inline=False)
 
         embed.set_footer(
             text=(

@@ -20,9 +20,18 @@ class MiscCommands(commands.Cog):
     @slash_command()
     async def invite(self, ctx):
         """Display Inconnu's invite link."""
+        link = discord.utils.oauth_url(
+            ctx.bot.user.id,
+            permissions=discord.Permissions(
+                send_messages=True,
+                use_external_emojis=True,
+                manage_webhooks=True,
+            ),
+            scopes=("applications.commands", "bot"),
+        )
         embed = discord.Embed(
             title="Invite Inconnu to your server",
-            url="https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147747840&scope=applications.commands%20bot",
+            url=link,
             description="Click the link above to invite Inconnu to your server!",
         )
         embed.set_author(name=ctx.bot.user.display_name)

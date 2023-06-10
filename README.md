@@ -12,7 +12,7 @@
 
 ## Getting Started
 
-* **Invite Inconnu to your server:** [Link](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147747840&scope=bot%20applications.commands)
+* **Invite Inconnu to your server:** [Link](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=537135104&scope=bot%20applications.commands)
 * **Demo/Support server:** [Link](https://discord.gg/QHnCdSPeEE)
 * **Full documentation:** [Link](https://docs.inconnu.app)
 
@@ -26,7 +26,7 @@ An **Inconnu** roll uses the following syntax: `/vr syntax:<pool> [hunger] [diff
 
 * **Send Messages:** Should be obvious, no?
 * **Use External Emoji:** For displaying individual dice throws and tracker boxes
-* **Use Slash Commands:** All of Inconnu's commands use slash commands.
+* **Manage Webhooks:** Necessary for the premium `/post` feature (upcoming)
 
 ## Troubleshooting
 

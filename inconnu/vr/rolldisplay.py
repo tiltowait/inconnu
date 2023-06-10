@@ -321,7 +321,7 @@ class RollDisplay:
                 name=f"Margin: {self.outcome.margin}", value="\n".join(lines), inline=False
             )
 
-        embed.add_field(name="Pool", value=str(self.outcome.pool))
+        embed.add_field(name="Dice", value=str(self.outcome.pool))
         embed.add_field(name="Hunger", value=self.hunger)
         embed.add_field(name="Difficulty", value=str(self.outcome.difficulty))
 

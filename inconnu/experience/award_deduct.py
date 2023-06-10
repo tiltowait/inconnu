@@ -39,15 +39,15 @@ async def award_or_deduct(ctx, character, amount, scope, reason, *, player):
 
 def __get_embed(ctx, player, character, amount, scope, reason):
     """Generate the embed."""
-    title = "Awarded " if amount > 0 else "Deducted "
-    title += f"{abs(amount)} {scope.title()} XP"
+    verb = "Awarded" if amount > 0 else "Deducted"
+    title = f"{verb} {abs(amount)} {scope.title()} XP"
 
     embed = discord.Embed(title=title)
     embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
     embed.set_footer(text="To view: /experience log")
 
     embed.add_field(name="Reason", value=reason, inline=False)
-    embed.add_field(name="Awarded By", value=ctx.user.mention, inline=False)
+    embed.add_field(name=f"{verb} by", value=ctx.user.mention, inline=False)
     embed.add_field(
         name="New Experience (Unspent / Lifetime)",
         value=f"```{character.experience.unspent} / {character.experience.lifetime}```",

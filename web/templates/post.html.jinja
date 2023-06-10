@@ -29,7 +29,7 @@
 						{% if channel %}
 							{% set channel = "#" + channel|string %}
 						{% else %}
-							{% set channel = "an unknown channel." %}
+							{% set channel = "an unknown channel" %}
 						{% endif %}
 						<small class="text-muted">By <strong>{{ user }}</strong> on <strong>{{ guild.name }}</strong> in <strong>{{ channel }}</strong>.</small>
 					{% endif %}

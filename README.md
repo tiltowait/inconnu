@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="images/inconnu_logo.png" alt="Inconnu Dicebot" width=125 height=125 />
+  <img src="images/inconnu_logo.png" alt="Inconnu Dicebot Logo" width=125 height=125 />
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Pycord-2.4-blue" alt="Requires Pycord 2.4" />
-  <img src="https://img.shields.io/badge/motor-3.1-yellow" alt="Requires motor 3.1" />
-  <img src="https://img.shields.io/badge/python-3.10-green" alt="Uses Python 3.10" />
+  <a href="https://discord.gg/QHnCdSPeEE" title="Join the Inconnu server"><img src="https://img.shields.io/discord/935219170176532580?color=5765F2&label=discord&logo=discord&logoColor=white" alt="Discord member count" /></a>
+  <img src="https://img.shields.io/github/v/release/tiltowait/inconnu" alt="Latest release" />
+  <img src="https://img.shields.io/github/license/tiltowait/inconnu" alt="MIT license" />
 </p>
 
 **Inconnu** is a Discord dicebot for Vampire: The Masquerade 5th Edition. In addition to basic rolls, it offers a number of advanced options and quality-of-life features, such as character integration, trait-based pools, and more. [For a full rundown of **Inconnu's** features, read the documentation.](https://www.inconnu.app)
@@ -24,7 +24,7 @@ An **Inconnu** roll uses the following syntax: `/vr syntax:<pool> [hunger] [diff
 
 ## Required Permissions
 
-* **Send Messages:** Should be obvious, no?
+* **Send Messages:** Necessary for sending messages
 * **Use External Emoji:** For displaying individual dice throws and tracker boxes
 * **Manage Webhooks:** Necessary for the premium `/post` feature (upcoming)
 

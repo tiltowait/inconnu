@@ -4,6 +4,8 @@
 
 <p align="center">
   <a href="https://discord.gg/QHnCdSPeEE" title="Join the Inconnu server"><img src="https://img.shields.io/discord/935219170176532580?color=5765F2&label=discord&logo=discord&logoColor=white" alt="Discord member count" /></a>
+  <a href="https://www.patreon.com/tiltowait" title="Support me on Patreon!"><img src="https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dtiltowait%26type%3Dpatrons&style=flat" alt="Patreon" /></a>
+  <br>
   <img src="https://img.shields.io/github/v/release/tiltowait/inconnu" alt="Latest release" />
   <img src="https://img.shields.io/github/license/tiltowait/inconnu" alt="MIT license" />
 </p>

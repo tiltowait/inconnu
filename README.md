@@ -12,13 +12,13 @@
 
 ## Getting Started
 
-* **Invite Inconnu to your server:** [Link](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=537135104&scope=bot%20applications.commands)
-* **Demo/Support server:** [Link](https://discord.gg/QHnCdSPeEE)
-* **Full documentation:** [Link](https://docs.inconnu.app)
+* [Invite Inconnu to your server](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=537135104&scope=bot%20applications.commands)
+* [Demo/Support server](https://discord.gg/QHnCdSPeEE)
+* [Full documentation](https://docs.inconnu.app)
 
 ### Basic Usage
 
-An **Inconnu** roll uses the following syntax: `/vr syntax:<pool> [hunger] [difficulty]`. While `pool` is required, `hunger` and `difficulty` are optional and default to `0` if omitted. (Alternatively, you may use the `/roll` command, which takes a little longer to type in but requires each parameter.)
+An **Inconnu** roll uses the following syntax: `/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`.
 
 *But that's not all!* **Inconnu** offers trait-based pools, allowing you to write human-readable pools, such as *"strength + brawl"* rather than a simple number. For more infomration, [check the documentation](https://www.inconnu.app).
 

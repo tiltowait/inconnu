@@ -17,6 +17,7 @@ _db = _client[_db_name]
 
 # The collections
 characters = _db.characters
+command_log = _db.command_log
 guilds = _db.guilds
 headers = _db.headers
 log = _db.log

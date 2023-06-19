@@ -1,6 +1,7 @@
 """interface/loggingcog.py - Log command events."""
 
 import os
+from datetime import datetime
 
 from discord.ext import commands
 
@@ -27,6 +28,20 @@ class LoggingCog(commands.Cog):
             location,
             ctx.guild_id,
             inconnu.utils.command_options(ctx.interaction),
+        )
+
+        # Log to the database
+        await inconnu.db.command_log.insert_one(
+            {
+                "guild": ctx.guild_id,
+                "user": ctx.user.id,
+                "command": ctx.command.qualified_name,
+                "options": [
+                    {"name": o["name"], "value": o["value"]}
+                    for o in ctx.interaction.data.get("options", [])
+                ],
+                "date": datetime.utcnow(),
+            }
         )
 
 

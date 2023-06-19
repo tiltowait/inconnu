@@ -1,9 +1,7 @@
 """interface/loggingcog.py - Log command events."""
 
 import os
-from logging import DEBUG
 
-import statcord
 from discord.ext import commands
 
 import inconnu.utils
@@ -12,20 +10,6 @@ from logger import Logger
 
 class LoggingCog(commands.Cog):
     """A simple cog for logging command events."""
-
-    def __init__(self, bot):
-        self.bot = bot
-        self.key = os.getenv("STATCORD_TOKEN")
-
-        if self.key is not None:
-            Logger.info("BOT: Establishing statcord connection")
-            self.api = statcord.Client(self.bot, self.key)
-            self.use_statcord = True
-            self.api.start_loop()
-        else:
-            Logger.warning("BOT: Statcord not configured")
-            self.api = None
-            self.use_statcord = False
 
     @commands.Cog.listener()
     async def on_application_command(self, ctx):
@@ -44,9 +28,6 @@ class LoggingCog(commands.Cog):
             ctx.guild_id,
             inconnu.utils.command_options(ctx.interaction),
         )
-
-        if self.use_statcord:
-            self.api.command_run(ctx)
 
 
 def setup(bot):

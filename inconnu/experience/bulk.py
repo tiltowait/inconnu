@@ -21,13 +21,16 @@ class _BulkModal(Modal):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.pattern = re.compile(r"^(?P<xp>\d+) xp <@!?(?P<user>\d+)> (?P<character>.*)$")
+        self.pattern = re.compile(r"^(?P<xp>\d+)\s*xp\s*<@!?(?P<user>\d+)> (?P<character>.*)$")
         self.xp_tasks = []
         self.would_award = []
         self.errors = []
 
-        instructions = "5 xp <@!495968276373733129> Nadea\n"
-        instructions += "3 xp <@!127623457834687236> Kimberly\n"
+        instructions = (
+            "N xp <@User ID> Character Name\n"
+            "3 xp <@127623457834687236> Jimmy Maxwell\n"
+            "(One entry per line)"
+        )
 
         self.add_item(
             InputText(

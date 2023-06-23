@@ -35,6 +35,7 @@ class LoggingCog(commands.Cog):
             {
                 "guild": ctx.guild_id,
                 "user": ctx.user.id,
+                "locale": ctx.interaction.locale,
                 "command": ctx.command.qualified_name,
                 "options": [
                     {"name": o["name"], "value": o["value"]}

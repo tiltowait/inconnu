@@ -46,6 +46,19 @@ class InconnuBot(discord.Bot):
                 Logger.debug("COGS: Loading %s", filename)
                 self.load_extension(f"interface.{filename[:-3]}")
 
+    @property
+    def invite_url(self) -> str:
+        """The bot's invite URL."""
+        return discord.utils.oauth_url(
+            self.user.id,
+            permissions=discord.Permissions(
+                send_messages=True,
+                use_external_emojis=True,
+                manage_webhooks=True,
+            ),
+            scopes=("applications.commands", "bot"),
+        )
+
     def set_motd(self, embed: discord.Embed | None):
         """Set the MOTD embed."""
         self.motd = embed

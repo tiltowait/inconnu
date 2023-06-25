@@ -18,6 +18,27 @@ class ErrorReporter:
         self.bot = None
         self.channel = None
 
+    @property
+    def reinvite_message(self) -> discord.Embed:
+        """Instructions for re-inviting the bot and submitting a bug report."""
+        invite = self.bot.invite_url
+        embed = discord.Embed(
+            title="Please re-invite Inconnu",
+            description=(
+                f"**Inconnu** has encountered an error. Please [re-invite]({invite}) "
+                "the bot and try again."
+            ),
+            color=discord.Color.red(),
+        )
+        embed.add_field(
+            name="If that doesn't work ...",
+            value=(
+                f"Please join [the support server]({inconnu.constants.SUPPORT_URL}) "
+                "and file a bug report. Thank you!"
+            ),
+        )
+        return embed
+
     async def prepare_channel(self, bot):
         """Attempt to get the error channel from the bot."""
         self.bot = bot
@@ -102,6 +123,9 @@ class ErrorReporter:
         if isinstance(error, discord.errors.DiscordServerError):
             # There's nothing we can do about these
             Logger.error("REPORTER: Discord server error detected")
+            return
+        if isinstance(error, AttributeError) and "PartialMessageable" in str(error):
+            await respond(embed=self.reinvite_message)
             return
 
         # Unknown errors and database errors are logged to a channel

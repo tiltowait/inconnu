@@ -23,6 +23,7 @@ class Section(str, Enum):
     DISCIPLINES = "Disciplines"
     SPECIALTIES = "Specialties"
     MACROS = "Macros"
+    POSTS = "RP Posts"
 
     @classmethod
     def all(cls) -> list[str]:
@@ -140,6 +141,8 @@ class Help(commands.Cog):
                 await self.show_specialties_help(ctx, False)
             case Section.MACROS:
                 await self.show_macros_help(ctx, False)
+            case Section.POSTS:
+                await self.show_rp_posts_help(ctx, False)
             case _:
                 raise NotImplementedError("Oops")
 
@@ -433,6 +436,66 @@ class Help(commands.Cog):
     async def show_character_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""
         await inconnu.character.update_help(ctx, ephemeral=ephemeral)
+
+    async def show_rp_posts_help(self, ctx, ephemeral=True):
+        """Show the RP posts help."""
+        embed = self._empty_embed(
+            title="RP Posts",
+            description=(
+                "This feature is for [premium users only]"
+                "(https://docs.inconnu.app/guides/premium)."
+            ),
+        )
+        embed.add_field(
+            name="WARNING!",
+            value=(
+                'This feature requires the "manage webhooks" permission. Use '
+                "`/invite` to re-invite **Inconnu** with this permission "
+                "enabled."
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="Post",
+            value=(
+                "Use `/post` to post messages from your character. You may set "
+                "tags and bookmarks in the modal window that pops up. Options "
+                "are the same as `/header`."
+            ),
+        )
+        embed.add_field(
+            name="Tags",
+            value="`/tags`\nShow your tags and view related posts.",
+            inline=False,
+        )
+        embed.add_field(
+            name="Bookmarks",
+            value="`/bookmarks`\nView bookmarked posts.",
+            inline=False,
+        )
+        embed.add_field(
+            name="Search",
+            value=(
+                "`/search`\nSearch for posts based on a number of parameters.\n"
+                "**Anyone may use `/search`!**"
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="Edit & Delete",
+            value="Right-click an RP post -> Apps -> Post: Edit/Delete",
+            inline=False,
+        )
+        embed.set_footer(text="If your membership lapses, you may still access your old posts.")
+
+        # TODO: Fix link
+        buttons = [
+            Button(label="Documentation", url="https://docs.inconnu.app/command-reference/macros"),
+            Button(label="Support", url=SUPPORT_URL),
+        ]
+        view = _HelpView(*buttons)
+
+        await inconnu.utils.cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
     def _empty_embed(self, *, title: str, description: str):
         """Create an empty help embed."""

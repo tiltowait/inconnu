@@ -37,6 +37,7 @@ class LoggingCog(commands.Cog):
                 "user": ctx.user.id,
                 "locale": ctx.interaction.locale,
                 "command": ctx.command.qualified_name,
+                "type": ctx.command.type,
                 "options": [
                     {"name": o["name"], "value": o["value"]}
                     for o in ctx.interaction.data.get("options", [])

@@ -23,7 +23,7 @@ class Section(str, Enum):
     DISCIPLINES = "Disciplines"
     SPECIALTIES = "Specialties"
     MACROS = "Macros"
-    POSTS = "RP Posts"
+    POSTS = "Roleposting"
 
     @classmethod
     def all(cls) -> list[str]:
@@ -438,9 +438,9 @@ class Help(commands.Cog):
         await inconnu.character.update_help(ctx, ephemeral=ephemeral)
 
     async def show_rp_posts_help(self, ctx, ephemeral=True):
-        """Show the RP posts help."""
+        """Show the Roleposting help."""
         embed = self._empty_embed(
-            title="RP Posts",
+            title="Roleposting",
             description=(
                 "This feature is for [premium users only]"
                 "(https://docs.inconnu.app/guides/premium)."
@@ -483,7 +483,7 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name="Edit & Delete",
-            value="Right-click an RP post -> Apps -> Post: Edit/Delete",
+            value="Right-click a Rolepost -> Apps -> Post: Edit/Delete",
             inline=False,
         )
         embed.set_footer(text="If your membership lapses, you may still access your old posts.")

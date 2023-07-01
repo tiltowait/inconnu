@@ -62,7 +62,7 @@ async def show_tags(ctx: discord.ApplicationContext):
 def _create_page(ctx: discord.ApplicationContext, tags: list[tuple[str, int]]) -> Page:
     """Creates a tag page."""
     embed = discord.Embed(
-        title="RP Post Tags",
+        title="Rolepost Tags",
         description="\n".join(map(lambda t: f"{t[1]}: `{t[0]}`", tags)),
     )
     embed.set_author(

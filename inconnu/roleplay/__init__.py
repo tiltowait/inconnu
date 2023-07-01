@@ -17,7 +17,7 @@ def post_embed(
     footer: str = None,
     icon_url=discord.Embed.Empty,
 ) -> discord.Embed:
-    """Generate an RP post embed."""
+    """Generate a Rolepost embed."""
     embed = discord.Embed(
         title=post_doc.header.char_name,
         description=post_doc.content,

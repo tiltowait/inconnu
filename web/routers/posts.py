@@ -1,4 +1,4 @@
-"""RP post history route."""
+"""Rolepost history route."""
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, Request
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get("/post/{oid}", response_class=HTMLResponse)
 async def display_post_history(request: Request, oid: ObjectId = Depends(object_id), page: int = 1):
-    """Display an RP post's history."""
+    """Display a Rolepost's history."""
     post = await inconnu.models.RPPost.find_one({"_id": oid})
     if not post:
         raise HTTPException(404, detail="Post not found.")

@@ -57,7 +57,7 @@ class WebhookCache:
         if channel.id not in self._webhooks:
             # Create the webhook
             self.just_created.add(channel.id)
-            webhook = await channel.create_webhook(name="Inconnuhook", reason="For RP posts")
+            webhook = await channel.create_webhook(name="Inconnuhook", reason="For Roleposts")
             self._webhooks[channel.id] = webhook
             self.webhook_ids.add(webhook.id)
             Logger.info(

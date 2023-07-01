@@ -1,4 +1,4 @@
-"""Delete an RP post message chain."""
+"""Rolepost deletion handlers."""
 
 import discord
 
@@ -6,7 +6,7 @@ import inconnu
 
 
 async def delete_message_chain(ctx: discord.ApplicationContext, message: discord.Message):
-    """Delete an RP post, its header, and its mentions."""
+    """Delete a Rolepost, its header, and its mentions."""
     # Uses the general WebhookError handler
     try:
         webhook = await ctx.bot.prep_webhook(ctx.channel)
@@ -25,10 +25,10 @@ async def _fetch_rp_post(
         raise ValueError("You can't delete a user's post.")
 
     if message.author.id == ctx.bot.user.id:
-        raise ValueError("This isn't an RP post!")
+        raise ValueError("This isn't a Rolepost!")
 
     if webhook.id != message.author.id:
-        raise ValueError("Either this isn't an RP post, or the original webhook was deleted.")
+        raise ValueError("Either this isn't a Rolepost, or the original webhook was deleted.")
 
     rp_post = await inconnu.models.RPPost.find_one({"id_chain": message.id})
     if rp_post is None:
@@ -36,9 +36,9 @@ async def _fetch_rp_post(
             raise ValueError("Use `Header: Delete` for this.")
         raise ValueError("Something went wrong. Ask a moderator to delete the message for you.")
 
-    # We found an RP post, but we need to check ownership
+    # We found a Rolepost, but we need to check ownership
     if rp_post.user != ctx.user.id:
-        raise ValueError("This isn't your RP post!")
+        raise ValueError("This isn't your Rolepost!")
 
     return rp_post
 
@@ -50,7 +50,7 @@ class DeletionModal(discord.ui.Modal):
         self.webhook = webhook
         self.rp_post = rp_post
 
-        super().__init__(title="Delete RP post?", *args, **kwargs)
+        super().__init__(title="Delete Rolepost?", *args, **kwargs)
 
         self.add_item(
             discord.ui.InputText(
@@ -74,7 +74,7 @@ class DeletionModal(discord.ui.Modal):
                     # chain was already deleted. We should have permission to
                     # delete our own messages, so we can just ignore this error.
                     pass
-            await interaction.respond("RP post deleted!", delete_after=3)
+            await interaction.respond("Rolepost deleted!", delete_after=3)
 
         else:
             await inconnu.utils.error(

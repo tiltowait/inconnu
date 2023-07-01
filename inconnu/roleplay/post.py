@@ -112,7 +112,7 @@ class PostModal(discord.ui.Modal):
         return sorted(list(set(cleaned_tags)))  # Make sure the tags are unique
 
     async def callback(self, interaction: discord.Interaction):
-        """Set the RP post content."""
+        """Set the Rolepost content."""
         if self.post_to_edit is None:
             await self._new_rp_post(interaction)
         else:
@@ -157,7 +157,7 @@ class PostModal(discord.ui.Modal):
             await self._post_to_changelog(interaction)
 
     async def _new_rp_post(self, interaction: discord.Interaction):
-        """Make a new RP post."""
+        """Make a new Rolepost."""
         # We need an interaction response, so make and delete this one
         await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
 
@@ -220,7 +220,7 @@ class PostModal(discord.ui.Modal):
                     # This shouldn't ever happen, but just in case
                     continue
 
-        # Register the RP post
+        # Register the Rolepost
         title = self._clean_title() or None
         tags = self._clean_tags()
         for content, message in zip(contents, post_messages):
@@ -259,7 +259,7 @@ class PostModal(discord.ui.Modal):
             description = description[:3996] + "```"  # Ensure we don't overflow
 
             embed = discord.Embed(
-                title="RP Post Edited",
+                title="Rolepost Edited",
                 description=description,
                 url=inconnu.post_url(post.pk),
             )
@@ -293,7 +293,7 @@ class PostModal(discord.ui.Modal):
 
 @haven(__HELP_URL, errmsg="You have no characters!")
 async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs):
-    """Create a modal that sends an RP post."""
+    """Create a modal that sends a Rolepost."""
     if ctx.bot.can_webhook(ctx.channel):
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
         await ctx.send_modal(modal)
@@ -308,7 +308,7 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
 
 
 async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
-    """Edit an RP post."""
+    """Edit a Rolepost."""
     rp_post = await inconnu.models.RPPost.find_one({"message_id": message.id})
 
     # Need to perform some checks to ensure we can edit the post

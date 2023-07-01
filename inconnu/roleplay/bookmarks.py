@@ -1,4 +1,4 @@
-"""RP post bookmarks."""
+"""Rolepost bookmarks."""
 
 from datetime import timezone
 

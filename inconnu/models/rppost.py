@@ -1,4 +1,4 @@
-"""An RP post."""
+"""Rolepost models."""
 
 from datetime import datetime, timezone
 
@@ -19,7 +19,7 @@ class PostHistoryEntry(EmbeddedDocument):
 
 @inconnu.db.instance.register
 class RPPost(Document):
-    """Represents an RP post with the ability to maintain deltas."""
+    """Represents a Rolepost with the ability to maintain deltas."""
 
     # Metadata
     date = fields.DateTimeField(default=datetime.utcnow)
@@ -64,7 +64,7 @@ class RPPost(Document):
         title: str | None,
         tags: list[str],
     ):
-        """Create an RP post."""
+        """Create a Rolepost."""
         return cls(
             guild=character.guild,
             channel=interaction.channel_id,

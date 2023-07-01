@@ -20,7 +20,7 @@ async def search(
     ephemeral: bool,
     summary: bool,
 ):
-    """Search RP posts for a given string."""
+    """Search Roleposts for a given string."""
     query = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
     footer = []
 

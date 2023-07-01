@@ -66,7 +66,7 @@ class RoleplayCog(commands.Cog):
         temporary: str,
         display_header: bool,
     ):
-        """Make an RP post as your character. Uses your current header."""
+        """Make a Rolepost as your character. Uses your current header."""
         await inconnu.roleplay.post(
             ctx,
             character,
@@ -106,13 +106,13 @@ class RoleplayCog(commands.Cog):
         hidden: bool,
         summary: bool,
     ):
-        """Search for an RP post. Displays up to 5 results."""
+        """Search for a Rolepost. Displays up to 5 results."""
         await inconnu.roleplay.search(ctx, user, content, character, mentioning, hidden, summary)
 
     @slash_command(guild_ids=TEST_GUILDS)
     @commands.guild_only()
     async def tags(self, ctx: discord.ApplicationContext):
-        """View your RP posts by tag."""
+        """View your Rolepost tags."""
         await inconnu.roleplay.tags.show_tags(ctx)
 
     # Message commands
@@ -120,26 +120,26 @@ class RoleplayCog(commands.Cog):
     @slash_command(guild_ids=TEST_GUILDS)
     @commands.guild_only()
     async def bookmarks(self, ctx: discord.ApplicationContext):
-        """View your RP post bookmarks."""
+        """View your Rolepost bookmarks."""
         await inconnu.roleplay.show_bookmarks(ctx)
 
     @commands.message_command(name="Post: Edit", guild_ids=TEST_GUILDS)
     @commands.guild_only()
     async def edit_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
-        """Edit the selected roleplay post."""
+        """Edit the selected Rolepost."""
         await inconnu.roleplay.edit_post(ctx, message)
 
     @commands.message_command(name="Post: Delete", guild_ids=TEST_GUILDS)
     @commands.guild_only()
     async def delete_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
-        """Delete the selected roleplay post."""
+        """Delete the selected Rolepost."""
         await inconnu.roleplay.delete_message_chain(ctx, message)
 
     # Listeners
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
-        """Bulk mark RP posts as deleted."""
+        """Bulk mark Roleposts as deleted."""
         updates = interface.raw_bulk_delete_handler(
             payload,
             self.bot,
@@ -150,12 +150,12 @@ class RoleplayCog(commands.Cog):
             author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
         if updates:
-            Logger.debug("POST: Marking %s potential RP posts as deleted", len(updates))
+            Logger.debug("POST: Marking %s potential Roleposts as deleted", len(updates))
             await inconnu.db.rp_posts.bulk_write(updates)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
-        """Mark an RP post as deleted and post a notice in the guild's deletion
+        """Mark a Rolepost as deleted and post a notice in the guild's deletion
         channel."""
         if (message := raw_message.cached_message) is not None:
             if message.webhook_id is None:
@@ -178,7 +178,7 @@ class RoleplayCog(commands.Cog):
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
         )
         if post is not None:
-            Logger.debug("POST: Marked RP post as deleted")
+            Logger.debug("POST: Marked Rolepost as deleted")
             deletion_id = await inconnu.settings.deletion_channel(post["guild"])
             if deletion_id:
                 channel = self.bot.get_partial_messageable(deletion_id)
@@ -217,12 +217,12 @@ class RoleplayCog(commands.Cog):
             else:
                 Logger.debug("POST: No deletion channel set on %s", post["guild"])
         else:
-            Logger.debug("POST: Deleted message is not an RP post")
+            Logger.debug("POST: Deleted message is not a Rolepost")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
-        """Mark RP posts deleted in the deleted channel."""
-        Logger.info("POST: Marking all RP posts in %s as deleted", channel.name)
+        """Mark Roleposts in the deleted channel."""
+        Logger.info("POST: Marking all Roleposts in %s as deleted", channel.name)
         await inconnu.db.rp_posts.update_many(
             {"channel": channel.id},
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},

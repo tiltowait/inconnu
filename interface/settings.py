@@ -63,12 +63,12 @@ class SettingsCommands(commands.Cog):
         ),
         changelog_channel: Option(
             discord.TextChannel,
-            "A channel where edited RP posts will be logged",
+            "A channel where edited Roleposts will be logged",
             required=False,
         ),
         deletion_channel: Option(
             discord.TextChannel,
-            "A channel where deleted RP posts will be logged",
+            "A channel where deleted Roleposts will be logged",
             required=False,
         ),
         add_empty_resonance: Option(

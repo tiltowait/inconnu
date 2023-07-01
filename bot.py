@@ -65,7 +65,7 @@ class InconnuBot(discord.Bot):
         self.motd_given = set()
 
     async def on_message(self, message: discord.Message):
-        """If the message is a reply to an RP post, ping the RP post's author."""
+        """If the message is a reply to a Rolepost, ping the Rolepost's author."""
         # TODO: Once satisfied with this method, remove most of the debug lines
         if message.author.bot:
             Logger.debug("BOT: Disregarding bot message")
@@ -92,13 +92,13 @@ class InconnuBot(discord.Bot):
                     # need to worry about an edge case where they disabled the
                     # reply ping and can safely ping the author.
                     if rp_post.user not in map(lambda m: m.id, message.mentions):
-                        Logger.debug("BOT: Pinging RP post's author")
+                        Logger.debug("BOT: Pinging Rolepost's author")
                         user = await self.get_or_fetch_user(rp_post.user)
                         await message.reply(user.mention, mention_author=False, delete_after=60)
                     else:
-                        Logger.debug("BOT: Replier pinged the RP post's author; doing nothing")
+                        Logger.debug("BOT: Replier pinged the Rolepost's author; doing nothing")
                 else:
-                    Logger.debug("BOT: RP post not found")
+                    Logger.debug("BOT: Rolepost not found")
             else:
                 Logger.debug("BOT: Disregarding reply that isn't to one of our webhooks")
 

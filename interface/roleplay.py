@@ -14,8 +14,6 @@ import inconnu
 import interface
 from logger import Logger
 
-TEST_GUILDS = [int(os.environ["TEST_SERVER"])]
-
 
 class RoleplayCog(commands.Cog):
     """A cog with roleplay commands."""
@@ -25,7 +23,7 @@ class RoleplayCog(commands.Cog):
 
     # Slash commands
 
-    @slash_command(guild_ids=TEST_GUILDS)
+    @slash_command()
     @inconnu.options.char_option("The character to post as")
     @option("mentions", description="Users, roles, and channels to mention", default="")
     @option(
@@ -80,7 +78,7 @@ class RoleplayCog(commands.Cog):
             show_header=display_header,
         )
 
-    @slash_command(guild_ids=TEST_GUILDS)
+    @slash_command()
     @option("user", description="The user who wrote the post")
     @option("content", description="What to search for", required=False)
     @option("character", description="The character name. Invalid names ignored.", required=False)
@@ -109,7 +107,7 @@ class RoleplayCog(commands.Cog):
         """Search for a Rolepost. Displays up to 5 results."""
         await inconnu.roleplay.search(ctx, user, content, character, mentioning, hidden, summary)
 
-    @slash_command(guild_ids=TEST_GUILDS)
+    @slash_command()
     @commands.guild_only()
     async def tags(self, ctx: discord.ApplicationContext):
         """View your Rolepost tags."""
@@ -117,19 +115,19 @@ class RoleplayCog(commands.Cog):
 
     # Message commands
 
-    @slash_command(guild_ids=TEST_GUILDS)
+    @slash_command()
     @commands.guild_only()
     async def bookmarks(self, ctx: discord.ApplicationContext):
         """View your Rolepost bookmarks."""
         await inconnu.roleplay.show_bookmarks(ctx)
 
-    @commands.message_command(name="Post: Edit", guild_ids=TEST_GUILDS)
+    @commands.message_command(name="Post: Edit")
     @commands.guild_only()
     async def edit_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
         """Edit the selected Rolepost."""
         await inconnu.roleplay.edit_post(ctx, message)
 
-    @commands.message_command(name="Post: Delete", guild_ids=TEST_GUILDS)
+    @commands.message_command(name="Post: Delete")
     @commands.guild_only()
     async def delete_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
         """Delete the selected Rolepost."""

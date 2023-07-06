@@ -488,7 +488,6 @@ class Help(commands.Cog):
         )
         embed.set_footer(text="If your membership lapses, you may still access your old posts.")
 
-        # TODO: Fix link
         buttons = [
             Button(label="Documentation", url="https://docs.inconnu.app/premium/roleposting"),
             Button(label="Support", url=SUPPORT_URL),

@@ -44,7 +44,7 @@ class PostModal(discord.ui.Modal):
         super().__init__(*args, **kwargs)
         self.add_item(
             discord.ui.InputText(
-                label="Post details",
+                label="Message",
                 placeholder="Enter your post here.",
                 value=starting_value,
                 min_length=1,
@@ -56,7 +56,7 @@ class PostModal(discord.ui.Modal):
             for _ in range(PostModal.SECTIONS - 1):
                 self.add_item(
                     discord.ui.InputText(
-                        label="Post details (cont)",
+                        label="Message (cont)",
                         placeholder="Use if your post is too long to fit the first textbox.",
                         value=starting_value,
                         max_length=post_len,

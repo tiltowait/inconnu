@@ -48,7 +48,7 @@ class _HelpView(View):
                     row=1,
                 )
             )
-            self.add_item(Button(label="Support", url=SUPPORT_URL, row=1))
+            self.add_item(Button(label="Server", url=SUPPORT_URL, row=1))
             self.add_item(Button(label="Patreon", url=PATREON, row=1))
 
 
@@ -289,7 +289,7 @@ class Help(commands.Cog):
 
         buttons = [
             Button(label="Documentation", url="https://docs.inconnu.app/command-reference/traits"),
-            Button(label="Support", url=SUPPORT_URL),
+            Button(label="Server", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
 
@@ -333,7 +333,7 @@ class Help(commands.Cog):
                 label="Documentation",
                 url="https://docs.inconnu.app/guides/quickstart/specialties",
             ),
-            Button(label="Support", url=SUPPORT_URL),
+            Button(label="Server", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
 
@@ -392,7 +392,7 @@ class Help(commands.Cog):
                 label="Documentation",
                 url="https://docs.inconnu.app/guides/quickstart/disciplines-and-powers",
             ),
-            Button(label="Support", url=SUPPORT_URL),
+            Button(label="Server", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
 
@@ -427,7 +427,7 @@ class Help(commands.Cog):
 
         buttons = [
             Button(label="Documentation", url="https://docs.inconnu.app/command-reference/macros"),
-            Button(label="Support", url=SUPPORT_URL),
+            Button(label="Server", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
 
@@ -490,7 +490,7 @@ class Help(commands.Cog):
 
         buttons = [
             Button(label="Documentation", url="https://docs.inconnu.app/premium/roleposting"),
-            Button(label="Support", url=SUPPORT_URL),
+            Button(label="Server", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
 

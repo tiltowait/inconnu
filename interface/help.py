@@ -490,7 +490,7 @@ class Help(commands.Cog):
 
         # TODO: Fix link
         buttons = [
-            Button(label="Documentation", url="https://docs.inconnu.app/command-reference/macros"),
+            Button(label="Documentation", url="https://docs.inconnu.app/premium/roleposting"),
             Button(label="Support", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)

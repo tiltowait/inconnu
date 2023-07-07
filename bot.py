@@ -282,7 +282,7 @@ class InconnuBot(discord.Bot):
                         # They tried to look up a character they don't have
                         pass
 
-        if self.motd:
+        if self.motd and ctx.command.qualified_name not in {"motd", "announce"}:
             try:
                 if ctx.user.id not in self.motd_given:
                     Logger.debug("MOTD: Showing MOTD to %s", ctx.user.name)

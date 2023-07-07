@@ -39,7 +39,7 @@
 					{% if pages > 1 %}
 						<nav aria-label="Post history navigation" style="margin-top: 1em">
 							<ul class="pagination">
-								{{ direction_button("Previous", page - 1) }}
+								{{ direction_button("Newer", page - 1) }}
 
 								{# Links #}
 								{% for n in range(1, pages + 1) %}
@@ -54,7 +54,7 @@
 									</li>
 								{% endfor %}
 
-								{{ direction_button("Next", page + 1) }}
+								{{ direction_button("Older", page + 1) }}
 							</ul>
 						</nav>
 					{% endif %}

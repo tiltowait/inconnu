@@ -231,12 +231,14 @@ class RollDisplay:
                     # actually 0 helps to assure onlookers that a Hunger rating of
                     # zero is correct.
                     return "*Sated*"
+                elif self.character.hunger == self.outcome.hunger_rating:
+                    return f"{self.outcome.hunger_rating} (Current)"
             else:
                 return "*Mortal*"
 
         # We were given a specific Hunger (or implicit 0), a character wasn't
         # given, or possibly both.
-        return self.outcome.hunger.count
+        return self.outcome.hunger_rating
 
     @property
     def comment(self):

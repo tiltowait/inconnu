@@ -21,6 +21,7 @@ class Roll:
             pool_str (Optional[int]): The pool's attribute + skill representation
         """
         self.id = ObjectId()  # pylint: disable=invalid-name
+        self.hunger_rating = hunger
 
         if not 0 <= hunger <= max_hunger:
             raise ValueError(f"Hunger must be between 0 and {max_hunger}. (Got `{hunger}`.)")

@@ -300,6 +300,11 @@ class VChar(Document):
         return self.splat in {"vampire", "thin-blood"}
 
     @property
+    def is_ghoul(self) -> bool:
+        """Whether the character is a bool."""
+        return self.splat == "ghoul"
+
+    @property
     def is_thin_blood(self):
         """Whether the character is thin-blooded."""
         return self.splat == "thin-blood"

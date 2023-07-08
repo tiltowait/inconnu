@@ -36,6 +36,8 @@ async def awaken(ctx, character):
                 message += f"Increase Hunger to **{character.hunger}**."
     else:
         stamina = character.find_trait("Stamina").rating
+        if character.is_ghoul:
+            stamina *= 2
         recovered = min(character.superficial_hp, stamina)
 
         if recovered > 0:

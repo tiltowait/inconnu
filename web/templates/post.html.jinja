@@ -22,7 +22,11 @@
 			<div class="card-body">
 				<div class="well">
 					<h5 class="text-muted">Post History</h5>
-					<h3>{{ header.char_name }}</h3>
+					<h3>
+						<a href="/profile/{{ header.charid }}" title="{{ header.char_name }}'s Profile">
+							{{ header.char_name }}
+						</a>
+					</h3>
 
 					{# User info #}
 					{% if user %}

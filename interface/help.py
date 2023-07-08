@@ -195,19 +195,26 @@ class Help(commands.Cog):
             name="Dice Rolls",
             value=(
                 "`/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`\n\n"
-                "Your `POOL` can be numbers or words. For `HUNGER`, select `Current Hunger`"
-                "if using a character in the bot; otherwise select a number. "
-                "`DIFFICULTY` can be any number 0 or higer. Defaults to 0 if omitted.\n\n"
-                "You must create a character to use traits.\n\n"
-                "**Example:** `/roll pool:manip+sub hunger:Current Hunger difficulty:3` "
-                "will roll Manipulation + Subterfuge, using current Hunger, at Difficulty 3."
+                "For `HUNGER`, select `Current Hunger` if using a character "
+                "in the bot; otherwise select a number.\n"
+                "**Example:** `/roll pool:5 hunger:2 difficulty:3`"
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="Rolling with traits",
+            value=(
+                "If you have a character, you can roll with trait names.\n"
+                "**Example:** `/roll pool:manipulation+subterfuge "
+                "hunger:Current Hunger difficulty:3`\n\n"
+                "Create a character with `/character create`."
             ),
             inline=False,
         )
         embed.add_field(
             name="Alternate roll syntax",
             value=(
-                "`/vr` - Combines roll elements into one line, similar to Thirst. Use "
+                "`/vr` - Combines roll elements into one line, similar to Thirst. Type "
                 "`hunger` to use your character's current Hunger, or give a number.\n"
                 "**Example:** `/vr syntax:manip+sub hunger 3`"
             ),

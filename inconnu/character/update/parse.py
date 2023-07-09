@@ -134,9 +134,9 @@ def __validate_parameters(parameters):
     """Validate the user's parameters."""
     validated = OrderedDict()
 
-    for key, value in parameters.items():
-        if (key := __MATCHES.get(key.lower())) is None:
-            raise ValueError(f"Unknown parameter: `{key}`.")
+    for key_, value in parameters.items():
+        if (key := __MATCHES.get(key_.lower())) is None:
+            raise ValueError(f"Unknown parameter: `{key_}`.")
 
         if key in validated:
             # We already checked with the raw input, but they may have used

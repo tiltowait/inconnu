@@ -264,12 +264,17 @@ class VChar(Document):
     @property
     def impairment(self):
         """A string for describing the character's physical/mental impairment."""
+        if self.health.count(Damage.AGGRAVATED) == len(self.health):
+            if self.is_vampire:
+                return "You are IN TORPOR!"
+            return "You are DEAD!"
+
         physical = self.health.count(Damage.NONE) == 0
         mental = self.willpower.count(Damage.NONE) == 0
         total = self.degeneration or (physical and mental)
 
         if total:
-            return "You are impaired. Remember to subtract 2 dice from all pools."
+            return "You are totally impaired. Remember to subtract 2 dice from all pools."
 
         if physical:
             return "You are physically impaired. Subtract 2 dice from physical pools."

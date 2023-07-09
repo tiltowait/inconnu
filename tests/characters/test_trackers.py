@@ -89,6 +89,27 @@ def test_humanity(character: VChar):
     assert character.stains == 0
 
 
+@pytest.mark.parametrize(
+    "tracker, damage, impairment",
+    [
+        ["health", Damage.AGGRAVATED, ""],  # Depends on char type
+        ["health", Damage.SUPERFICIAL, "physically"],
+        ["willpower", Damage.SUPERFICIAL, "mentally"],
+    ],
+)
+def test_impairment(tracker: str, damage: Damage, impairment: str, character: VChar):
+    assert character.impairment is None, "Character should start with no impairment"
+
+    character.set_damage(tracker, damage, 20)
+    if tracker == "health" and damage == Damage.AGGRAVATED:
+        if character.is_vampire:
+            assert "TORPOR" in character.impairment, "Vampire should be in torpor"
+        else:
+            assert "DEAD" in character.impairment, "Human should be dead"
+    else:
+        assert impairment in character.impairment
+
+
 @pytest.mark.parametrize("attribute", ["Resolve", "Composure", "Stamina"])
 def test_tracker_trait_update(attribute: str, character: VChar):
     """Ensure that trait updates properly update trackers."""

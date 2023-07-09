@@ -92,7 +92,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         thumbnail = web_asset("hunger-unfilled.webp")
 
     if outcome.frenzy:
-        custom = [("Hunger 5 Rouse Failure", "If awakening: Torpor. Otherwise: Roll for frenzy!")]
+        custom = [("Hunger 5 Rouse Check", "If awakening: Torpor. Otherwise: Roll for frenzy!")]
     else:
         custom = None
 
@@ -117,7 +117,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     footer = "\n".join(footer)
 
-    view = inconnu.views.FrenzyView(character, 4) if outcome.frenzy else None
+    view = inconnu.views.FrenzyView(character, 4, ctx.user.id) if outcome.frenzy else None
 
     return await inconnu.character.display(
         ctx,

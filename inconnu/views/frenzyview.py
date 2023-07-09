@@ -9,10 +9,11 @@ from inconnu.views.disablingview import DisablingView
 class FrenzyView(DisablingView):
     """A view that rolls frenzy."""
 
-    def __init__(self, character, difficulty):
+    def __init__(self, character, difficulty, owner_id: int):
         super().__init__(timeout=120)
         self.character = character
         self.difficulty = difficulty
+        self.owner_id = owner_id
 
         self.frenzy_button = discord.ui.Button(
             label=f"Hunger Frenzy (DC {difficulty})", style=discord.ButtonStyle.danger
@@ -28,7 +29,7 @@ class FrenzyView(DisablingView):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check that the user is the character's owner."""
-        if interaction.user.id == self.character.user:
+        if interaction.user.id == self.owner_id:
             return True
         await interaction.response.send_message(
             "This button doesn't belong to you!", ephemeral=True

@@ -68,7 +68,7 @@ async def __display_outcome(ctx, character, outcome):
 
         if outcome.frenzy:
             footer = "Rouse failure at Hunger 5!"
-            view = inconnu.views.FrenzyView(character, 4)
+            view = inconnu.views.FrenzyView(character, 4, ctx.user.id)
 
     return await inconnu.character.display(
         ctx, character, title=title, fields=fields, footer=footer, view=view, color=color

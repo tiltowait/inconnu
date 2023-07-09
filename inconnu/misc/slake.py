@@ -33,7 +33,7 @@ async def slake(ctx, character, amount: int, **kwargs):
         character.log("slake", slaked)
 
         if old_hunger >= 4:
-            view = inconnu.views.FrenzyView(character, 3)
+            view = inconnu.views.FrenzyView(character, 3, ctx.user.id)
         else:
             view = None
 

@@ -92,7 +92,12 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         thumbnail = web_asset("hunger-unfilled.webp")
 
     if outcome.frenzy:
-        custom = [("Hunger 5 Rouse Check", "If awakening: Torpor. Otherwise: Roll for frenzy!")]
+        if outcome.failures > 0:
+            custom = [
+                ("Hunger 5 Rouse Failure", "If awakening: Torpor. Otherwise: Roll for frenzy!")
+            ]
+        else:
+            custom = [("Hunger 5 Rouse Check", "Roll for frenzy!")]
     else:
         custom = None
 

@@ -29,7 +29,7 @@ class FrenzyView(DisablingView):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check that the user is the character's owner."""
-        if interaction.user.id == self.owner_id:
+        if interaction.user.id in [self.owner_id, self.character.user]:
             return True
         await interaction.response.send_message(
             "This button doesn't belong to you!", ephemeral=True

@@ -68,7 +68,9 @@ class CharacterManager:
         user_chars = await self.fetchall(guild, user)
 
         if (count := len(user_chars)) == 0:
-            raise inconnu.errors.NoCharactersError("You have no characters.")
+            raise inconnu.errors.NoCharactersError(
+                "You have no characters. Create one with `/character create`."
+            )
         if count == 1:
             return user_chars[0]
 

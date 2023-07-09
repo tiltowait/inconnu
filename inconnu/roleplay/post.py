@@ -291,7 +291,7 @@ class PostModal(discord.ui.Modal):
             Logger.debug("POST: Changelog channel not set: %s", interaction.guild.name)
 
 
-@haven(__HELP_URL, errmsg="You have no characters!")
+@haven(__HELP_URL)
 async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs):
     """Create a modal that sends a Rolepost."""
     if ctx.bot.can_webhook(ctx.channel):

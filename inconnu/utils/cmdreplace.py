@@ -46,4 +46,4 @@ async def cmd_replace(ctx: ApplicationContext, content: str = None, **kwargs):
             field.value = _sub(field.value)
 
     # Send the response
-    await ctx.respond(content, **kwargs)
+    return await ctx.respond(content, **kwargs)

@@ -19,8 +19,11 @@ async def error(ctx, err, *fields, **kwargs):
     else:
         view = kwargs.get("view", None)
 
-    msg = await ctx.respond(
-        embed=embed, view=view, ephemeral=kwargs.get("ephemeral", True)
+    msg = await inconnu.utils.cmd_replace(
+        ctx,
+        embed=embed,
+        view=view,
+        ephemeral=kwargs.get("ephemeral", True),
     )
 
     if view is not None:

@@ -2,6 +2,7 @@
 # pylint: disable=too-many-arguments
 
 import asyncio
+from collections import OrderedDict
 
 import discord
 from discord.ui import Button
@@ -131,7 +132,7 @@ async def update(
 
 def __validate_parameters(parameters):
     """Validate the user's parameters."""
-    validated = {}
+    validated = OrderedDict()
 
     for key, value in parameters.items():
         if (key := __MATCHES.get(key.lower())) is None:

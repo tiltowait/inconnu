@@ -1,6 +1,7 @@
 """paramparse.py - Universal parameter parser."""
 
 import re
+from collections import OrderedDict
 
 
 def parse_parameters(syntax, rewrite_plus_minus):
@@ -17,7 +18,7 @@ def parse_parameters(syntax, rewrite_plus_minus):
     parameters = re.sub(r"\s*([+-])\s*=\s*", r"=\g<1>", parameters)  # Allow +=, -=
     parameters = re.sub(r"\s*=\s*([+-])\s*", r"=\g<1>", parameters)  # Remove k, v gaps
 
-    params = {}
+    params = OrderedDict()
 
     pattern = re.compile(r"([A-Za-z_]+)=")
     match = pattern.match(parameters)

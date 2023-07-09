@@ -271,13 +271,12 @@ class InconnuBot(discord.Bot):
                         )
                         if character.is_pc:
                             await asyncio.sleep(1)  # Make sure it shows after the command
-                            await ctx.respond(
-                                (
-                                    "**Tip:** You only have one character, so you don't need "
-                                    f"the `character` option for `/{ctx.command.qualified_name}`."
-                                ),
-                                ephemeral=True,
+                            tip = (
+                                "**Tip:** You only have one character, so you don't need "
+                                f"the `character` option for `/{ctx.command.qualified_name}`."
                             )
+                            await inconnu.utils.cmd_replace(ctx, tip, ephemeral=True)
+
                     except inconnu.errors.CharacterNotFoundError:
                         # They tried to look up a character they don't have
                         pass

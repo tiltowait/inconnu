@@ -295,6 +295,11 @@ class VChar(Document):
         return self.user != VChar.SPC_OWNER
 
     @property
+    def is_spc(self) -> bool:
+        """Whether the character is an SPC."""
+        return not self.is_pc
+
+    @property
     def is_vampire(self):
         """Whether the character is a vampire."""
         return self.splat in {"vampire", "thin-blood"}

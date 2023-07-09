@@ -43,7 +43,7 @@ class Gameplay(commands.Cog):
         hunger: Option(
             str,
             "The character's Hunger level",
-            choices=[OptionChoice("Current Hunger", "current_hunger")]
+            choices=[OptionChoice("Use Current", "current_hunger")]
             + [OptionChoice(str(n), str(n)) for n in range(0, 6)],
         ),
         difficulty: Option(
@@ -57,7 +57,16 @@ class Gameplay(commands.Cog):
     ):
         """Roll the dice. Guided version of /vr."""
         syntax = f"{pool} {hunger} {difficulty}"
-        await inconnu.vr.parse(ctx, syntax, comment, character, player)
+        character = await inconnu.vr.parse(ctx, syntax, comment, character, player)
+        if character is not None:
+            if hunger != "current_hunger" and character.hunger == int(hunger):
+                await ctx.respond(
+                    (
+                        "**Tip:** Select `Current Hunger` so you don't "
+                        "have to remember the number yourself!"
+                    ),
+                    ephemeral=True,
+                )
 
     @slash_command()
     @commands.guild_only()

@@ -107,6 +107,8 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
 
         await asyncio.gather(log_task, error_task)
 
+    return character
+
 
 def _can_roll(character, syntax):
     """Raises an exception if the traits aren't found."""

@@ -51,7 +51,7 @@ async def roll(ctx, syntax: str, character=None):
 
             # Macros can contain hunger by default, but the user can override
             if hunger is None:
-                hunger = "hunger" if macro.hunger else "0"
+                hunger = "current_hunger" if macro.hunger else "0"
 
             parameters.append(hunger)
             parameters.append(difficulty or macro.difficulty)

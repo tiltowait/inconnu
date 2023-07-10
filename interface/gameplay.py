@@ -43,7 +43,7 @@ class Gameplay(commands.Cog):
         hunger: Option(
             str,
             "The character's Hunger level",
-            choices=[OptionChoice("Use Current", "current_hunger")]
+            choices=[OptionChoice("Use Current (or 0 for Mortals)", "current_hunger")]
             + [OptionChoice(str(n), str(n)) for n in range(0, 6)],
         ),
         difficulty: Option(
@@ -58,13 +58,19 @@ class Gameplay(commands.Cog):
         """Roll the dice. Guided version of /vr."""
         syntax = f"{pool} {hunger} {difficulty}"
         character = await inconnu.vr.parse(ctx, syntax, comment, character, player)
-        if character is not None:
-            if hunger != "current_hunger" and character.hunger == int(hunger):
+        if isinstance(character, inconnu.models.VChar):
+            if character.is_vampire:
+                if hunger != "current_hunger" and character.hunger == int(hunger):
+                    await ctx.respond(
+                        (
+                            "**Tip:** Select `Use Current` so you don't have "
+                            "to remember the number yourself!"
+                        ),
+                        ephemeral=True,
+                    )
+            elif hunger != "current_hunger":
                 await ctx.respond(
-                    (
-                        "**Tip:** Select `Current Hunger` so you don't "
-                        "have to remember the number yourself!"
-                    ),
+                    "**Tip:** You can select `Use Current` even for mortals.",
                     ephemeral=True,
                 )
 

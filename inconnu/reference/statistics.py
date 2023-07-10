@@ -9,6 +9,7 @@ import inconnu
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
+DT_ST = "D"
 
 
 async def statistics(ctx, character, style: str, date: datetime, *, player: discord.Member | None):
@@ -28,12 +29,14 @@ async def statistics(ctx, character, style: str, date: datetime, *, player: disc
         owner = await inconnu.common.player_lookup(ctx, player)
 
         # As Inconnu was originally made for Cape Town by Night, we will use
-        # that server's weekly reset time as the cutoff
-        date += timedelta(hours=19)
+        # that server's weekly reset time as the cutoff--but only if we aren't
+        # looking at the current date
+        if date.date() != datetime.utcnow().date():
+            date += timedelta(hours=19)
 
         if date > datetime.utcnow():
             # Can't get stats from the future
-            date_fmt = __format_date(date)
+            date_fmt = discord.utils.format_dt(date, DT_ST)
             await ctx.respond(f"{date_fmt} is in the future!", ephemeral=True)
             return
 
@@ -102,10 +105,8 @@ async def __traits_statistics(ctx, character, date, *, player):
             await ctx.respond(f"**{character.name}** has never made any trait rolls.")
         else:
             # Rolls since a given date
-            date_fmt = __format_date(date)
-            await ctx.respond(
-                f"**{character.name}** hasn't made any trait rolls since **{date_fmt}**."
-            )
+            date_fmt = discord.utils.format_dt(date, DT_ST)
+            await ctx.respond(f"**{character.name}** hasn't made any trait rolls since {date_fmt}.")
 
 
 async def __display_trait_statistics(ctx, character, stats, date, owner):
@@ -113,7 +114,7 @@ async def __display_trait_statistics(ctx, character, stats, date, owner):
     if date.year < 2021:
         title = f"{character.name}: Trait successes (Lifetime)"
     else:
-        title = f"{character.name}: Trait successes since {__format_date(date)}"
+        title = f"{character.name}: Trait successes since {discord.utils.format_dt(date, DT_ST)}"
 
     embed = discord.Embed(title=title)
     embed.set_author(name=owner.display_name, icon_url=inconnu.get_avatar(owner))
@@ -228,7 +229,7 @@ async def __display_text(ctx, results, date):
     if date.year < 2021:
         fmt_date = "(Lifetime)"
     else:
-        fmt_date = "Since " + __format_date(date)
+        fmt_date = "Since " + discord.utils.format_dt(date, DT_ST)
 
     msg = f"**Roll Statistics {fmt_date}**\n"
     for character in results:
@@ -254,7 +255,7 @@ async def __display_embed(ctx, results, date, owner):
     if date.year < 2021:
         fmt_date = "(Lifetime)"
     else:
-        fmt_date = "Since " + __format_date(date)
+        fmt_date = "Since " + discord.utils.format_dt(date, DT_ST)
 
     embed = discord.Embed(title=f"Roll Statistics {fmt_date}")
     embed.set_author(name=owner.display_name, icon_url=inconnu.get_avatar(owner))
@@ -275,8 +276,3 @@ async def __display_embed(ctx, results, date, owner):
         embed.add_field(name=character["name"], value="\n".join(lines))
 
     await ctx.respond(embed=embed)
-
-
-def __format_date(date):
-    """Format the date."""
-    return date.strftime("%B") + f" {date.day}, {date.year}"

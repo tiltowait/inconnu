@@ -35,8 +35,9 @@ async def update(ctx, character, macro: str, syntax: str):
         await character.commit()
 
     except (
-        inconnu.errors.MacroNotFoundError,
         inconnu.errors.AmbiguousTraitError,
+        inconnu.errors.HungerInPool,
+        inconnu.errors.MacroNotFoundError,
         inconnu.errors.TraitNotFound,
         SyntaxError,
         ValueError,

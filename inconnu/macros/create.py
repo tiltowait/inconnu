@@ -63,7 +63,8 @@ async def create(
     except (
         SyntaxError,
         inconnu.errors.AmbiguousTraitError,
-        inconnu.errors.TraitNotFound,
+        inconnu.errors.HungerInPool,
         inconnu.errors.MacroAlreadyExistsError,
+        inconnu.errors.TraitNotFound,
     ) as err:
         await inconnu.utils.error(ctx, err, help=__HELP_URL, character=character.name)

@@ -104,7 +104,10 @@ class VChar(Document):
 
     def pre_update(self):
         """Clamp values within required bounds."""
-        self.hunger = max(0, min(5, self.hunger))
+        if self.is_vampire:
+            self.hunger = max(0, min(5, self.hunger))
+        else:
+            self.hunger = 0
         self.potency = max(0, min(10, self.potency))
         self.stains = max(0, min(10, self.stains))
         self.experience.unspent = max(0, min(self.experience.unspent, self.experience.lifetime))

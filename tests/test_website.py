@@ -60,6 +60,6 @@ async def test_posts_page(postid: str, expected_status: int, deleted: bool, num_
             if deleted:
                 assert "Deleted" in r.text
             if num_posts == 1:
-                assert r.text.count("page-item") == 0
+                assert r.text.count("dropdown-item") == 0
             else:
-                assert r.text.count("page-item") == num_posts + 2  # Add 2 for prev/next
+                assert r.text.count("dropdown-item") == num_posts

@@ -7,7 +7,11 @@
 			height: 100%;
 		}
 
-		.card > .card-body p {
+		#original-pane p:last-child {
+			margin-bottom: 0px;
+		}
+
+		#diff-pane p {
 			margin-bottom: 0px;
 		}
 	</style>
@@ -64,7 +68,7 @@
 				{# Discord link #}
 				{% if deleted %}
 					<dt class="col-sm-2 text-danger">Deleted</dt>
-					<dd class="col-sm-10">{{ date.strftime(date_fmt) }}</dd>
+					<dd class="col-sm-10">{{ deleted.strftime(date_fmt) }}</dd>
 				{% else %}
 					<dt class="col-sm-2">Link</dd>
 					<dd class="col-sm-10">
@@ -81,7 +85,7 @@
 
 	<div class="row mt-3">
 		{# Selected revision #}
-		<div class="mb-2 col-sm-6">
+		<div class="mb-2 col-sm-6" id="original-pane">
 			<div class="card" style="height: 100%">
 				{# Card header #}
 				<div class="card-header">
@@ -126,7 +130,7 @@
 
 	{# Diff pane #}
 	{% if diff %}
-		<div class="mb-2 col-sm-6">
+		<div class="mb-2 col-sm-6" id="diff-pane">
 			<div class="card" style="height: 100%">
 				<div class="card-header">
 					<h5>Previous</h5>
@@ -137,10 +141,12 @@
 							<span class="text-success">{{ line }}</span>
 						{% elif line[0] == "-" %}
 							<span class="text-danger">{{ line }}</span>
+						{% elif not line %}
+							<p style="line-height:15px">&nbsp;</p>
 						{% else %}
-							{{ line }}
+							<p>{{ line }}</p>
 						{% endif %}
-						<br>
+						</p>
 					{% endfor %}
 				</div>
 			</div>

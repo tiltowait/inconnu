@@ -1,106 +1,156 @@
 {% extends "base.html.jinja" %}
 {% block title %}Post History | Inconnu{% endblock %}
 {% block meta_description %}Version history for one of {{ header.char_name }}'s posts.{% endblock %}
+{% block styles %}
+	<style>
+		.full-height {
+			height: 100%;
+		}
+
+		.card > .card-body p {
+			margin-bottom: 0px;
+		}
+	</style>
+{% endblock %}
+
+{# Global vars #}
 {% set date_fmt = "%a, %b %d, %Y at %I:%M:%S %p (UTC)" %}
 {% set dropdown_fmt = "%b %d, %Y - %H:%M:%S" %}
+{% set unknown = "<em>[Unknown]</em>" %}
+{# End global bars #}
 
 {% block main %}
+	{# Metadata #}
 	<div class="row">
-		<div class="mb-2 col-sm-6">
-			<div class="card">
-				<div class="card-body">
-					<div class="well">
-						<h5 class="text-muted">Post History</h5>
-						<h3>
-							<a href="/profile/{{ header.charid }}" title="{{ header.char_name }}'s Profile">
-								{{ header.char_name }}
-							</a>
-						</h3>
+		<div class="col">
+			<h1>Rolepost History</h1>
+			<dl class="row">
+				<dt class="col-sm-2">Character</dt>
+				<dd class="col-sm-4">
+					<a href="/profile/{{ header.charid }}" title="{{ header.char_name }}'s Profile">
+						<strong>{{ header.char_name }}</strong>
+					</a>
+				</dd>
 
-						{# User info #}
-						{% if user %}
-							{% if channel %}
-								{% set channel = "#" + channel|string %}
-							{% else %}
-								{% set channel = "an unknown channel" %}
-							{% endif %}
-							<small class="text-muted">By <strong>{{ user }}</strong> on <strong>{{ guild.name }}</strong> in <strong>{{ channel }}</strong>.</small>
-						{% endif %}
-						{# End user info #}
-
-						{# Dropdown #}
-						{% if pages > 1 %}
-							<div class="dropdown">
-								<button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-									{{ dates[page].strftime(dropdown_fmt) }}
-								</button>
-								<ul class="dropdown-menu">
-									{% for n in range(pages) %}
-										{% set date = dates[n].strftime(dropdown_fmt) %}
-										{% if n == page %}
-											<li><a class="dropdown-item active">{{ date }}</a></li>
-										{% else %}
-											{% if n == 0 %}
-												<li><a class="dropdown-item" href="{{ url }}">{{ date }}</a></li>
-											{% else %}
-												<li><a class="dropdown-item" href="{{ url}}?page={{ n }}">{{ date }}</a></li>
-											{% endif %}
-										{% endif %}
-									{% endfor %}
-								</ul>
-							</div>
-							{% endif %}
-						{# End dropdown #}
-
-					</div>
-					<hr>
-					{% markdown %}{{ content }}{% endmarkdown %}
-				</div>
-				<div class="card-footer text-muted">
-					<small>
-						<strong>Posted:</strong>
-						{% if not deleted %}
-							<a class="link-primary" href="{{ link }}" title="Go to Discord post">{{ date.strftime(date_fmt) }}</a>
-						{% else %}
-		   				{{ date.strftime(date_fmt) }}
-						{% endif %}
-					</small>
-					{% if deleted %}
-						<br><small><strong class="text-danger">Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
+				<dt class="col-sm-2">User</dt>
+				<dd class="col-sm-4">
+					{% if user %}
+						<img src="{{ user.guild_avatar or user.display_avatar }}" class="rounded-circle" width="32" alt="{{ user.name }}'s avatar">
+						{{ user }}
+					{% else %}
+						{{ unknown|safe }}
 					{% endif %}
-					<br>
-					<small>Content on this page is solely the responsibility of the user who posted it.<br></small>
+				</dd>
+
+				<dt class="col-sm-2">Server</dt>
+				<dd class="col-sm-4">
+					{% if guild %}
+						<img src="{{ guild.icon }}" class="rounded-circle" width="32" alt="{{ guild.name }}'s icon">
+						{{ guild.name }}
+					{% else %}
+						{{ unknown|safe }}
+					{% endif %}
+				</dd>
+
+				<dt class="col-sm-2">Channel</dt>
+				<dd class="col-sm-4">
+					{% if channel %}
+						<code>#{{ channel }}</code>
+					{% else %}
+						{{ unknown|safe }}
+					{% endif %}
+				</dd>
+
+				{# Discord link #}
+				{% if deleted %}
+					<dt class="col-sm-2 text-danger">Deleted</dt>
+					<dd class="col-sm-10">{{ date.strftime(date_fmt) }}</dd>
+				{% else %}
+					<dt class="col-sm-2">Link</dd>
+					<dd class="col-sm-10">
+						<a href="{{ link }}" title="Go to Discord post">
+							Open in Discord
+						</a>
+					</dd>
+				{% endif %}
+				{# End Discord link #}
+			</dl>
+		</div>
+	</div>
+	{# End metadata #}
+
+	<div class="row mt-3">
+		{# Selected revision #}
+		<div class="mb-2 col-sm-6">
+			<div class="card" style="height: 100%">
+				{# Card header #}
+				<div class="card-header">
+					<div class="dropdown">
+					<h5 class="my-auto">Revision &nbsp;
+						{% set dropdown_class = "btn btn-sm btn-secondary " %}
+						{% if pages == 1 %}
+							{% set dropdown_class = dropdown_class + "disabled" %}
+						{% else %}
+							{% set dropdown_class = dropdown_class + "dropdown-toggle" %}
+						{% endif %}
+						<button class="{{ dropdown_class }}" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+							{{ dates[page].strftime(dropdown_fmt) }}
+						</button>
+						{% if pages > 1 %}
+							<ul class="dropdown-menu">
+								{% for n in range(pages) %}
+									{% set date = dates[n].strftime(dropdown_fmt) %}
+									{% if n == page %}
+										<li><a class="dropdown-item active" title="Currently viewed revision">{{ date }}</a></li>
+									{% else %}
+										{% if n == 0 %}
+											<li><a class="dropdown-item" href="{{ url }}" title="Most recent revision">{{ date }}</a></li>
+										{% else %}
+											<li><a class="dropdown-item" href="{{ url}}?page={{ n }}" title="{{ date }} revision">{{ date }}</a></li>
+										{% endif %}
+									{% endif %}
+								{% endfor %}
+							</ul>
+						{% endif %}
+					</h5>
+					</div>
+				</div>
+				{# End card header #}
+
+			<div class="card-body">
+				{% markdown %}{{ content }}{% endmarkdown %}
+			</div>
+		</div>
+	</div>
+	{# End selected revision #}
+
+	{# Diff pane #}
+	{% if diff %}
+		<div class="mb-2 col-sm-6">
+			<div class="card" style="height: 100%">
+				<div class="card-header">
+					<h5>Previous</h5>
+				</div>
+				<div class="card-body">
+					{% for line in diff %}
+						{% if line[0] == "+" %}
+							<span class="text-success">{{ line }}</span>
+						{% elif line[0] == "-" %}
+							<span class="text-danger">{{ line }}</span>
+						{% else %}
+							{{ line }}
+						{% endif %}
+						<br>
+					{% endfor %}
 				</div>
 			</div>
 		</div>
+	{% else %}
+		<div class="mb-2 col-sm-6 border-start d-flex align-items-center justify-content-center">
+			<p class="text-muted text-center"><strong>Viewing first revision</strong></p>
+		</div>
+	{% endif %}
+	{# End diff pane #}
 
-		{# Diff pane #}
-		{% if pages > 1 %}
-			<div class="mb-2 col-sm-6">
-				<div class="card">
-					<div class="card-body">
-					{% if diff %}
-						<div class="well">
-							<h5 class="text-muted">Differences from Previous Version</h5>
-						</div>
-						<hr>
-						{% for line in diff %}
-							{% if line[0] == "+" %}
-								<span class="text-success">{{ line }}</span>
-							{% elif line[0] == "-" %}
-								<span class="text-danger">{{ line }}</span>
-							{% else %}
-								{{ line }}
-							{% endif %}
-							<br>
-						{% endfor %}
-					</div>
-				{% else %}
-					<h5 class="text-muted">Viewing first revision</h5>
-				{% endif %}
-				</div>
-			</div>
-		{% endif %}
-		{# End diff pane #}
-	</div>
+</div> <!-- End row -->
 {% endblock %}

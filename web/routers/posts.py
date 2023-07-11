@@ -34,7 +34,7 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
     content, date = history[page]
 
     try:
-        previous = history[page - 1][0]
+        previous = history[page + 1][0]
         diff = inconnu.utils.diff(previous, content, join=False)
     except IndexError:
         diff = False

@@ -32,7 +32,7 @@ def de_camel(text: str, de_underscore=True) -> str:
     return temp
 
 
-def diff(old: str, new: str, join=True, no_pos_markers=True) -> str:
+def diff(old: str, new: str, join=True, no_pos_markers=True, strip=False) -> str:
     """Generate a diff between two strings."""
 
     def normalize(lines: str) -> str:
@@ -49,6 +49,8 @@ def diff(old: str, new: str, join=True, no_pos_markers=True) -> str:
 
     if no_pos_markers:
         lines = [line for line in lines if line[0] != "?"]
+    if strip:
+        lines = [line.strip() for line in lines]
     if join:
         return "".join(lines)
     return lines

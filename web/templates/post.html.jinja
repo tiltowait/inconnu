@@ -2,19 +2,7 @@
 {% block title %}Post History | Inconnu{% endblock %}
 {% block meta_description %}Version history for one of {{ header.char_name }}'s posts.{% endblock %}
 {% set date_fmt = "%a, %b %d, %Y at %I:%M:%S %p (UTC)" %}
-
-{% macro direction_button(title, target) %}
-	{% set li_class="page-item" %}
-	{% set prev_href = url + "?page=" + target|string %}
-	{% if target == 0 or target > pages %}
-		{% set li_class="page-item disabled" %}
-		{% set tabindex = "tabindex=\"-1\"" %}
-		{% set prev_href = "#" %}
-	{% endif %}
-	<li class="{{ li_class }}">
-		<a class="page-link" href="{{ prev_href }}" {{ tabindex }} title="{{ title }} page">{{ title }}</a>
-	</li>
-{% endmacro %}
+{% set dropdown_fmt = "%b %d, %Y - %H:%M:%S" %}
 
 {% block main %}
 	<div class="mb-2 col-sm-6">
@@ -39,30 +27,29 @@
 					{% endif %}
 					{# End user info #}
 
-					{# Pagination #}
+					{# Dropdown #}
 					{% if pages > 1 %}
-						<nav aria-label="Post history navigation" style="margin-top: 1em">
-							<ul class="pagination">
-								{{ direction_button("Newer", page - 1) }}
-
-								{# Links #}
-								{% for n in range(1, pages + 1) %}
-									{% set li_class = "page-item" %}
-									{% if n == page %}{% set li_class = li_class + " active" %}{% endif %}
-									<li class="{{ li_class }}">
-										{% if n == page %}
-											<a class="page-link" href="#">{{ n }}</a>
+						<div class="dropdown">
+							<button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+								{{ dates[page].strftime(dropdown_fmt) }}
+							</button>
+							<ul class="dropdown-menu">
+								{% for n in range(pages) %}
+									{% set date = dates[n].strftime(dropdown_fmt) %}
+									{% if n == page %}
+										<li><a class="dropdown-item active">{{ date }}</a></li>
+									{% else %}
+										{% if n == 0 %}
+											<li><a class="dropdown-item" href="{{ url }}">{{ date }}</a></li>
 										{% else %}
-											<a class="page-link" href="{{ url }}?page={{ n }}">{{ n }}</a>
+											<li><a class="dropdown-item" href="{{ url}}?page={{ n }}">{{ date }}</a></li>
 										{% endif %}
-									</li>
+									{% endif %}
 								{% endfor %}
-
-								{{ direction_button("Older", page + 1) }}
 							</ul>
-						</nav>
-					{% endif %}
-					{# End pagination #}
+						</div>
+						{% endif %}
+					{# End dropdown #}
 
 				</div>
 				<hr>
@@ -81,7 +68,7 @@
 					<br><small><strong class="text-danger">Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
 				{% endif %}
 				<br>
-				<small>Content on this page is the sole responsibility of the user who posted it.<br></small>
+				<small>Content on this page is solely the responsibility of the user who posted it.<br></small>
 			</div>
 		</div>
 	</div>

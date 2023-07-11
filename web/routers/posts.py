@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.get("/post/{oid}", response_class=HTMLResponse)
-async def display_post_history(request: Request, oid: ObjectId = Depends(object_id), page: int = 1):
+async def display_post_history(request: Request, oid: ObjectId = Depends(object_id), page: int = 0):
     """Display a Rolepost's history."""
     post = await inconnu.models.RPPost.find_one({"_id": oid})
     if not post:
@@ -28,13 +28,13 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
     for event in post.history:
         history.append((event.content, event.date))
 
-    if not 0 <= page <= len(history) + 1:
+    if not 0 <= page <= len(history):
         raise HTTPException(404, detail="Page out of range.")
 
-    content, date = history[page - 1]
+    content, date = history[page]
 
     try:
-        previous = history[page][0]
+        previous = history[page - 1][0]
         diff = inconnu.utils.diff(previous, content, join=False)
     except IndexError:
         diff = False
@@ -53,6 +53,7 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
             "diff": diff,
             "date": date,
             "page": page,
+            "dates": [event[1] for event in history],
             "pages": len(history),
             "deleted": post.deletion_date,
         },

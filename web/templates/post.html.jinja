@@ -5,101 +5,102 @@
 {% set dropdown_fmt = "%b %d, %Y - %H:%M:%S" %}
 
 {% block main %}
-	<div class="mb-2 col-sm-6">
-		<div class="card">
-			<div class="card-body">
-				<div class="well">
-					<h5 class="text-muted">Post History</h5>
-					<h3>
-						<a href="/profile/{{ header.charid }}" title="{{ header.char_name }}'s Profile">
-							{{ header.char_name }}
-						</a>
-					</h3>
-
-					{# User info #}
-					{% if user %}
-						{% if channel %}
-							{% set channel = "#" + channel|string %}
-						{% else %}
-							{% set channel = "an unknown channel" %}
-						{% endif %}
-						<small class="text-muted">By <strong>{{ user }}</strong> on <strong>{{ guild.name }}</strong> in <strong>{{ channel }}</strong>.</small>
-					{% endif %}
-					{# End user info #}
-
-					{# Dropdown #}
-					{% if pages > 1 %}
-						<div class="dropdown">
-							<button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-								{{ dates[page].strftime(dropdown_fmt) }}
-							</button>
-							<ul class="dropdown-menu">
-								{% for n in range(pages) %}
-									{% set date = dates[n].strftime(dropdown_fmt) %}
-									{% if n == page %}
-										<li><a class="dropdown-item active">{{ date }}</a></li>
-									{% else %}
-										{% if n == 0 %}
-											<li><a class="dropdown-item" href="{{ url }}">{{ date }}</a></li>
-										{% else %}
-											<li><a class="dropdown-item" href="{{ url}}?page={{ n }}">{{ date }}</a></li>
-										{% endif %}
-									{% endif %}
-								{% endfor %}
-							</ul>
-						</div>
-						{% endif %}
-					{# End dropdown #}
-
-				</div>
-				<hr>
-				{% markdown %}{{ content }}{% endmarkdown %}
-			</div>
-			<div class="card-footer text-muted">
-				<small>
-					<strong>Posted:</strong>
-					{% if not deleted %}
-						<a class="link-primary" href="{{ link }}" title="Go to Discord post">{{ date.strftime(date_fmt) }}</a>
-					{% else %}
-	   				{{ date.strftime(date_fmt) }}
-					{% endif %}
-				</small>
-				{% if deleted %}
-					<br><small><strong class="text-danger">Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
-				{% endif %}
-				<br>
-				<small>Content on this page is solely the responsibility of the user who posted it.<br></small>
-			</div>
-		</div>
-	</div>
-
-	{# Diff pane #}
-	{% if pages > 1 %}
+	<div class="row">
 		<div class="mb-2 col-sm-6">
 			<div class="card">
 				<div class="card-body">
-				{% if diff %}
 					<div class="well">
-						<h5 class="text-muted">Differences from Previous Version</h5>
+						<h5 class="text-muted">Post History</h5>
+						<h3>
+							<a href="/profile/{{ header.charid }}" title="{{ header.char_name }}'s Profile">
+								{{ header.char_name }}
+							</a>
+						</h3>
+
+						{# User info #}
+						{% if user %}
+							{% if channel %}
+								{% set channel = "#" + channel|string %}
+							{% else %}
+								{% set channel = "an unknown channel" %}
+							{% endif %}
+							<small class="text-muted">By <strong>{{ user }}</strong> on <strong>{{ guild.name }}</strong> in <strong>{{ channel }}</strong>.</small>
+						{% endif %}
+						{# End user info #}
+
+						{# Dropdown #}
+						{% if pages > 1 %}
+							<div class="dropdown">
+								<button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+									{{ dates[page].strftime(dropdown_fmt) }}
+								</button>
+								<ul class="dropdown-menu">
+									{% for n in range(pages) %}
+										{% set date = dates[n].strftime(dropdown_fmt) %}
+										{% if n == page %}
+											<li><a class="dropdown-item active">{{ date }}</a></li>
+										{% else %}
+											{% if n == 0 %}
+												<li><a class="dropdown-item" href="{{ url }}">{{ date }}</a></li>
+											{% else %}
+												<li><a class="dropdown-item" href="{{ url}}?page={{ n }}">{{ date }}</a></li>
+											{% endif %}
+										{% endif %}
+									{% endfor %}
+								</ul>
+							</div>
+							{% endif %}
+						{# End dropdown #}
+
 					</div>
 					<hr>
-					{% for line in diff %}
-						{% if line[0] == "+" %}
-							<span class="text-success">{{ line }}</span>
-						{% elif line[0] == "-" %}
-							<span class="text-danger">{{ line }}</span>
-						{% else %}
-							{{ line }}
-						{% endif %}
-						<br>
-					{% endfor %}
+					{% markdown %}{{ content }}{% endmarkdown %}
 				</div>
-			{% else %}
-				<h5 class="text-muted">Viewing first revision</h5>
-			{% endif %}
+				<div class="card-footer text-muted">
+					<small>
+						<strong>Posted:</strong>
+						{% if not deleted %}
+							<a class="link-primary" href="{{ link }}" title="Go to Discord post">{{ date.strftime(date_fmt) }}</a>
+						{% else %}
+		   				{{ date.strftime(date_fmt) }}
+						{% endif %}
+					</small>
+					{% if deleted %}
+						<br><small><strong class="text-danger">Deleted:</strong> {{ deleted.strftime(date_fmt) }}</small>
+					{% endif %}
+					<br>
+					<small>Content on this page is solely the responsibility of the user who posted it.<br></small>
+				</div>
 			</div>
 		</div>
-	{% endif %}
-	{# End diff pane #}
 
+		{# Diff pane #}
+		{% if pages > 1 %}
+			<div class="mb-2 col-sm-6">
+				<div class="card">
+					<div class="card-body">
+					{% if diff %}
+						<div class="well">
+							<h5 class="text-muted">Differences from Previous Version</h5>
+						</div>
+						<hr>
+						{% for line in diff %}
+							{% if line[0] == "+" %}
+								<span class="text-success">{{ line }}</span>
+							{% elif line[0] == "-" %}
+								<span class="text-danger">{{ line }}</span>
+							{% else %}
+								{{ line }}
+							{% endif %}
+							<br>
+						{% endfor %}
+					</div>
+				{% else %}
+					<h5 class="text-muted">Viewing first revision</h5>
+				{% endif %}
+				</div>
+			</div>
+		{% endif %}
+		{# End diff pane #}
+	</div>
 {% endblock %}

@@ -10,15 +10,21 @@
 
 {% block title %}Inconnu Test Pages{% endblock %}
 {% block main %}
-  <h1>Inconnu Test Pages</h1>
-  <h2 class="text-muted">Character Profiles</h2>
-  <ul>
-  <li>{{ profile_href("613d3e4bba8a6a8dc0ee2a09", "Full Profile Test")}}</li>
-  <li>{{ profile_href("622f8dbc91023b0336b2d366", "No Profile Test")}}</li>
-  <li>{{ profile_href("6140d7d811c1853b3d42c1e9", "SPC Test")}}</li>
-  <li>{{ post_href("6367f1a0b541a5ddc1a8c379", "Post Changelog — Edited")}}</li>
-  <li>{{ post_href("6403dfa1ec59d8dc9a5fafdb", "Post Changelog — Deleted")}}</li>
-  <li>{{ post_href("6404dfafa9b47c1a4dd13294", "Post Changelog — Edited & Deleted")}}</li>
-
-  </ul>
+  <div class="row">
+    <div class="col">
+      <h1>Inconnu Test Pages</h1>
+      <h2 class="text-muted">Character Profiles</h2>
+      <ul>
+        <li>{{ profile_href("613d3e4bba8a6a8dc0ee2a09", "Full Profile Test")}}</li>
+        <li>{{ profile_href("622f8dbc91023b0336b2d366", "No Profile Test")}}</li>
+        <li>{{ profile_href("6140d7d811c1853b3d42c1e9", "SPC Test")}}</li>
+      </ul>
+      <h2 class="text-muted">Roleposts</h2>
+      <ul>
+        <li>{{ post_href("6367f1a0b541a5ddc1a8c379", "Post Changelog — Edited")}}</li>
+        <li>{{ post_href("6403dfa1ec59d8dc9a5fafdb", "Post Changelog — Deleted")}}</li>
+        <li>{{ post_href("6404dfafa9b47c1a4dd13294", "Post Changelog — Edited & Deleted")}}</li>
+      </ul>
+    </div>
+  </div>
 {% endblock %}

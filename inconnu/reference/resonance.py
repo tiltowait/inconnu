@@ -1,5 +1,7 @@
 """reference/resonance.py - Display a random resonance and temperament."""
 
+import sqlite3
+from types import SimpleNamespace
 from typing import Optional
 
 import discord
@@ -63,6 +65,14 @@ async def __display_embed(ctx, temperament, res, die, **kwargs):
     )
     embed.add_field(name="Disciplines", value=__DISCIPLINES.get(res, "None"))
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[res])
+
+    if temperament == "Acute":
+        if dys := get_dyscrasia(res):
+            embed.add_field(
+                name=f"Dyscrasia: {dys.name}",
+                value=f"{dys.description} `(p. {dys.page})`",
+                inline=False,
+            )
     if die:
         embed.set_footer(text=f"Rolled {die} for the Resonance")
 
@@ -105,3 +115,20 @@ def __get_resonance(add_empty: bool) -> tuple[int, str]:
         return (die, "Sanguine")
 
     return (die, "Empty")
+
+
+def get_dyscrasia(resonance: str) -> SimpleNamespace | None:
+    """Get a random dyscrasia for a resonance."""
+    conn = sqlite3.connect("inconnu/reference/dyscrasias.db")
+    cur = conn.cursor()
+
+    res = cur.execute(
+        "SELECT name, description, page FROM dyscrasias WHERE resonance=? ORDER BY RANDOM()",
+        (resonance,),
+    ).fetchone()
+
+    conn.close()
+
+    if res:
+        return SimpleNamespace(name=res[0], description=res[1], page=res[2])
+    return None

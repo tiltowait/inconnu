@@ -24,6 +24,22 @@ def test_de_camel(text: str, de_underscore: bool, expected: str):
     assert de_camel(text, de_underscore) == expected
 
 
+def test_standard_re_paginate():
+    """Tests re_paginate() on a long body of text."""
+    with open("./tests/scrambled.txt", "r") as f:
+        lines = f.readlines()
+        text = "\n".join(lines)
+
+    assert len(text) > 3000
+    texts = [text, text, text]  # Just make it extra extra long
+
+    pages = re_paginate(texts)
+    words = [word for text in texts for word in text.split()]
+    re_words = [word for page in pages for word in page.split()]
+
+    assert words == re_words
+
+
 def test_re_paginate_simple():
     """Ensure re_paginate() combines three small pages into one."""
     pages = re_paginate(["one", "two", "three"])

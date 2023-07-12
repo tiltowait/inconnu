@@ -25,18 +25,23 @@ def test_de_camel(text: str, de_underscore: bool, expected: str):
 
 
 def test_re_paginate_simple():
+    """Ensure re_paginate() combines three small pages into one."""
     pages = re_paginate(["one", "two", "three"])
     assert pages == ["one\n\ntwo\n\nthree"]
 
 
 def test_re_paginate_on_spaces():
+    """Ensure re_paginate correctly splits pages on space."""
+    words = []
     pages = []
     total = 0
 
     for _ in range(5):
         page = ""
         while len(page) < 3000:
-            page += " " + generate_random_word(random.randint(1, 10))
+            word = generate_random_word(random.randint(1, 10))
+            page += " " + word
+            words.append(word)
         pages.append(page[1:])
         total += len(page)
 
@@ -45,27 +50,33 @@ def test_re_paginate_on_spaces():
     assert len(pages) == ceil(total / 2000)
     assert len("".join(pages)) == total - len(pages) / 2
 
+    # Check that the pages contain all the words in the same order
+    rebuilt = [word for page in pages for word in page.split()]
+    for w1, w2 in zip(words, rebuilt):
+        assert w1 == w2, "Words don't all match"
+
 
 def test_re_paginate_fallback():
-    pages = []
     page_len = 3000
-    total = 0
+    pages = []
+    full_str = ""
 
     for _ in range(5):
-        pages.append("a" * page_len)
-        total += page_len
+        word = "a" * page_len
+        pages.append(word)
+        full_str += word
 
     pages = re_paginate(pages)
     assert all(len(page) <= 2000 for page in pages)
-    assert len(pages) == ceil(total / 2000)
-    assert len("".join(pages)) == total
+    assert len(pages) == ceil(len(full_str) / 2000)
+    assert "".join(pages) == full_str
 
 
 def test_re_paginate_preserves_newlines():
     """Ensure re_paginate() preserves newline counts."""
     text = "one\ntwo\n\nthree\nfour"
-    pages = re_paginate([text])
 
+    pages = re_paginate([text])
     assert pages[0] == text
 
 

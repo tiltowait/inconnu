@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/github/license/tiltowait/inconnu" alt="MIT license" />
 </p>
 
-**Inconnu** is a Discord dicebot for Vampire: The Masquerade 5th Edition. In addition to basic rolls, it offers a number of advanced options and quality-of-life features, such as character integration, trait-based pools, and more. [For a full rundown of **Inconnu's** features, read the documentation.](https://www.inconnu.app)
+**Inconnu** is a Discord dicebot for Vampire: The Masquerade 5th Edition. In addition to basic rolls, it offers a number of advanced options and quality-of-life features, such as character integration, trait-based pools, and more. [For a full rundown of **Inconnu's** features, read the documentation.](https://docs.inconnu.app)
 
 ## Getting Started
 
@@ -22,16 +22,16 @@
 
 An **Inconnu** roll uses the following syntax: `/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`.
 
-*But that's not all!* **Inconnu** offers trait-based pools, allowing you to write human-readable pools, such as *"strength + brawl"* rather than a simple number. For more infomration, [check the documentation](https://www.inconnu.app).
+*But that's not all!* **Inconnu** tracks character stats, allowing you to write human-readable pools, such as *"strength + brawl"* rather than a simple number. For more infomration, [check the documentation](https://docs.inconnu.app).
 
 ## Required Permissions
 
-* **Send Messages:** Necessary for sending messages
+* **Send Messages:** For sending update messages in server-configured channels
 * **Use External Emoji:** For displaying individual dice throws and tracker boxes
-* **Manage Webhooks:** Necessary for the premium `/post` feature (upcoming)
+* **Manage Webhooks:** Used by the [premium "Roleposting" feature](https://docs.inconnu.app/premium/roleposting)
 
 ## Troubleshooting
 
 * **Can't use commands?** Make sure **Inconnu** has the permissions above. Additionally, make sure the `@everyone` role has the *Use slash commands* permission.
-* **Emojis not working?** Make sure to enable the *Use External Emoji* permission. Alternatively, enable [accessibility mode](https://docs.inconnu.app/command-reference/miscellaneous#accessibility-mode).
-* **Can't see embeds?** You need the *Show website preview info from links pasted into chat* setting under *Text & Images* enabled in order to see **Inconnu's** embeds. Some AV software, such as McAfee, have also been known to block embeds.
+* **Emojis not working?** Make sure to enable the *Use External Emoji* permission. Alternatively, enable [accessibility mode](https://docs.inconnu.app/command-reference/miscellaneous#accessibility-mode) server-wide.
+* **Can't see embeds?** Users need Discord's *Show website preview info from links pasted into chat* setting under *Text & Images* enabled in order to see **Inconnu's** embeds. Some AV software, such as McAfee, have also been known to block embeds.

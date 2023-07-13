@@ -11,7 +11,6 @@
 # this is the fact they could theoretically supply a name despite not using a
 # trait-based roll, so we need to check for the character in either case.
 
-import asyncio
 import re
 from functools import partial
 
@@ -43,6 +42,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         else:
             fields = []
         await inconnu.utils.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
+        await __log_error(ctx, character, raw_syntax)
         return
 
     comment = await stringify_mentions(ctx, comment)
@@ -75,6 +75,9 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         except (SyntaxError, LookupError) as err:
             await inconnu.utils.error(ctx, err, help=__HELP_URL)
             return
+        except inconnu.errors.HandledError:
+            await __log_error(ctx, character, raw_syntax)
+            return
 
     # Attempt to parse the user's roll syntax
     try:
@@ -83,10 +86,6 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         await display_outcome(ctx, owner, character, outcome, comment)
 
     except (SyntaxError, ValueError, inconnu.errors.TraitError, inconnu.errors.RollError) as err:
-        log_task = inconnu.log.log_event(
-            "roll_error", user=ctx.user.id, charid=getattr(character, "id", None), syntax=raw_syntax
-        )
-
         if isinstance(err, inconnu.errors.TraitError):
             view = inconnu.views.TraitsView(character, ctx.user)
             ephemeral = True
@@ -94,7 +93,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             view = discord.MISSING
             ephemeral = False
 
-        error_task = inconnu.utils.error(
+        await inconnu.utils.error(
             ctx,
             err,
             ("Your Input", f"/vr syntax:`{raw_syntax}`"),
@@ -104,8 +103,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             view=view,
             ephemeral=ephemeral,
         )
-
-        await asyncio.gather(log_task, error_task)
+        await __log_error(ctx, character, raw_syntax)
 
     return character
 
@@ -115,7 +113,9 @@ def _can_roll(character, syntax):
     try:
         _ = RollParser(character, syntax)
     except (inconnu.errors.AmbiguousTraitError, inconnu.errors.HungerInPool):
-        # It's possible there's no ambiguity on another character
+        # It's possible there's no ambiguity on another character. We pass on
+        # HungerInPool so we can show the correct error message. Otherwise, we
+        # get "None of your characters can roll x + hunger".
         pass
     except inconnu.errors.TooManyParameters as err:
         # Vampires take the most parameters, so we always want to show the
@@ -213,3 +213,13 @@ async def stringify_mentions(ctx, sentence):
             sentence = sentence.replace(match, replacement)
 
     return " ".join(sentence.split())
+
+
+async def __log_error(ctx, character, raw_syntax):
+    """Logs a roll error."""
+    await inconnu.log.log_event(
+        "roll_error",
+        user=ctx.user.id,
+        charid=getattr(character, "id", None),
+        syntax=raw_syntax,
+    )

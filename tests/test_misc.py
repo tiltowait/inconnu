@@ -6,6 +6,7 @@ from math import ceil
 
 import pytest
 
+import inconnu
 from inconnu.utils import de_camel, re_paginate
 
 
@@ -99,3 +100,10 @@ def test_re_paginate_preserves_newlines():
 def generate_random_word(length):
     letters = string.ascii_lowercase
     return "".join(random.choice(letters) for i in range(length))
+
+
+@pytest.mark.asyncio
+async def test_changelog():
+    changelog = await inconnu.misc.fetch_changelog()
+    assert isinstance(changelog, str)
+    assert len(changelog) > 0

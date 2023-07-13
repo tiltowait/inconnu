@@ -3,6 +3,7 @@
 from inconnu.misc.aggheal import aggheal
 from inconnu.misc.awaken import awaken
 from inconnu.misc.bol import bol
+from inconnu.misc.changelog import fetch_changelog, show_changelog
 from inconnu.misc.coinflip import coinflip
 from inconnu.misc.frenzy import frenzy
 from inconnu.misc.mend import mend

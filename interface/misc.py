@@ -3,6 +3,7 @@
 import asyncio
 
 import discord
+from discord import option
 from discord.commands import Option, OptionChoice, slash_command
 from discord.ext import commands
 
@@ -11,6 +12,16 @@ import inconnu
 
 class MiscCommands(commands.Cog):
     """Miscellaneous commands."""
+
+    @slash_command()
+    @option(
+        "hidden",
+        description="Make the changelog only visible to you (default true).",
+        default=True,
+    )
+    async def changelog(self, ctx, hidden: bool):
+        """Show Inconnu's most recent changelog."""
+        await inconnu.misc.show_changelog(ctx, hidden)
 
     @slash_command()
     async def coinflip(self, ctx):

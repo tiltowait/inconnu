@@ -22,7 +22,7 @@
 
 An **Inconnu** roll uses the following syntax: `/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`.
 
-*But that's not all!* **Inconnu** tracks character stats, allowing you to write human-readable pools, such as *"strength + brawl"* rather than a simple number. For more infomration, [check the documentation](https://docs.inconnu.app).
+*But that's not all!* **Inconnu** tracks character stats, allowing you to write human-readable dice pools, such as *"strength + brawl"* rather than a simple number. For more infomration, [check the documentation](https://docs.inconnu.app).
 
 ## Required Permissions
 

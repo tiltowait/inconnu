@@ -1,7 +1,7 @@
 """reference/resonance.py - Display a random resonance and temperament."""
 
 import sqlite3
-from types import SimpleNamespace
+from types import SimpleNamespace as SN
 from typing import Optional
 
 import discord
@@ -117,9 +117,10 @@ def __get_resonance(add_empty: bool) -> tuple[int, str]:
     return (die, "Empty")
 
 
-def get_dyscrasia(resonance: str) -> SimpleNamespace | None:
+def get_dyscrasia(resonance: str) -> SN | None:
     """Get a random dyscrasia for a resonance."""
     conn = sqlite3.connect("inconnu/reference/dyscrasias.db")
+    conn.row_factory = lambda c, r: SN(**{col[0]: r[idx] for idx, col in enumerate(c.description)})
     cur = conn.cursor()
 
     res = cur.execute(
@@ -128,7 +129,4 @@ def get_dyscrasia(resonance: str) -> SimpleNamespace | None:
     ).fetchone()
 
     conn.close()
-
-    if res:
-        return SimpleNamespace(name=res[0], description=res[1], page=res[2])
-    return None
+    return res

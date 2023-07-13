@@ -109,3 +109,11 @@ async def test_changelog():
     assert tag[0] == "v"
     assert isinstance(changelog, str)
     assert len(changelog) > 0
+
+
+@pytest.mark.parametrize("res", ["Melancholy", "Choleric", "Phlegmatic", "Sanguine"])
+def test_dyscrasias(res):
+    dys = inconnu.reference.get_dyscrasia(res)
+    assert dys.name
+    assert dys.description
+    assert dys.page

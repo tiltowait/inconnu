@@ -14,7 +14,7 @@ CHANGELOG = "https://github.com/tiltowait/inconnu/releases/latest"
 async def show_changelog(ctx: discord.ApplicationContext, hidden: bool):
     """Display Inconnu's changelog."""
     try:
-        changelog = await fetch_changelog()
+        tag, changelog = await fetch_changelog()
 
         # Embeds can take 4000 characters in the description field, but we keep
         # it at 2000 for the sake of not scrolling forever.
@@ -25,7 +25,7 @@ async def show_changelog(ctx: discord.ApplicationContext, hidden: bool):
 
         embeds = []
         for page in paginator.pages:
-            embed = discord.Embed(title="Changelog", description=page, url=CHANGELOG)
+            embed = discord.Embed(title=f"Inconnu {tag}", description=page, url=CHANGELOG)
             embed.set_thumbnail(url=ctx.bot.user.display_avatar)
             embeds.append(embed)
 
@@ -42,7 +42,7 @@ async def show_changelog(ctx: discord.ApplicationContext, hidden: bool):
 
 
 @cached()
-async def fetch_changelog():
+async def fetch_changelog() -> tuple[str, str]:
     """Fetch the changelog from GitHub."""
     token = os.getenv("GITHUB_TOKEN", "")
     header = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
@@ -52,4 +52,4 @@ async def fetch_changelog():
             "https://api.github.com/repos/tiltowait/inconnu/releases/latest"
         ) as res:
             json = await res.json()
-            return json["body"]
+            return json["tag_name"], json["body"]

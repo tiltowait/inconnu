@@ -104,6 +104,8 @@ def generate_random_word(length):
 
 @pytest.mark.asyncio
 async def test_changelog():
-    changelog = await inconnu.misc.fetch_changelog()
+    tag, changelog = await inconnu.misc.fetch_changelog()
+    assert isinstance(tag, str)
+    assert tag[0] == "v"
     assert isinstance(changelog, str)
     assert len(changelog) > 0

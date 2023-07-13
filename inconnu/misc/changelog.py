@@ -15,10 +15,7 @@ async def show_changelog(ctx: discord.ApplicationContext, hidden: bool):
     """Display Inconnu's changelog."""
     try:
         tag, changelog = await fetch_changelog()
-
-        # Embeds can take 4000 characters in the description field, but we keep
-        # it at 2000 for the sake of not scrolling forever.
-        paginator = discord.ext.commands.Paginator(prefix="", suffix="")
+        paginator = discord.ext.commands.Paginator(prefix="", suffix="", max_size=4000)
 
         for line in changelog.split("\n"):
             paginator.add_line(line)
@@ -32,6 +29,7 @@ async def show_changelog(ctx: discord.ApplicationContext, hidden: bool):
         show_buttons = len(embeds) > 1
         paginator = discord.ext.pages.Paginator(
             embeds,
+            author_check=False,
             show_disabled=show_buttons,
             show_indicator=show_buttons,
         )

@@ -311,9 +311,7 @@ class RollDisplay:
             if self.outcome.normal.count > 0:
                 dice = sorted(self.outcome.normal.dice, reverse=True)
                 lines.append("**Normal Dice:** " + ", ".join(map(str, dice)))
-            if isinstance(self.hunger, str):
-                lines.append("**Hunger:** Mortal")
-            elif self.hunger > 0:
+            if self.outcome.hunger.count > 0:
                 dice = sorted(self.outcome.hunger.dice, reverse=True)
                 lines.append("**Hunger Dice:** " + ", ".join(map(str, dice)))
             else:

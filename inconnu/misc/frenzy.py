@@ -10,12 +10,12 @@ from inconnu.utils.haven import haven
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#frenzy-checks"
 
 __FRENZY_BONUSES = {
-    "The Dream": 3,
     "Jewel in the Garden": 4,
     "Cold Dead Hunger": 2,
     "Gentle Mind": 4,
+    "The Heart of Darkness": 2,
 }
-__FRENZY_BONUSES.update({str(n): n for n in range(1, 6)})
+__FRENZY_BONUSES.update({str(n): n for n in range(1, 8)})
 
 
 def _can_frenzy(character):
@@ -39,12 +39,20 @@ async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
 
     if bonus_dice := __FRENZY_BONUSES.get(bonus):
         frenzy_pool += bonus_dice
+        dice = "die" if bonus_dice == 1 else "dice"
         if bonus.isdigit():
-            footer.append(f"{bonus_dice:+} bonus dice.")
+            footer.append(f"{bonus_dice:+} bonus {dice}.")
         else:
-            footer.append(f"{bonus_dice:+} bonus dice from {bonus}.")
+            footer.append(f"{bonus_dice:+} bonus {dice} from {bonus}.")
 
     outcome = inconnu.Roll(frenzy_pool, 0, difficulty)
+
+    if bonus == "The Dream":
+        failures = min(outcome.normal.failures, 3)
+        outcome.reroll("reroll_failures")
+
+        dice = inconnu.common.pluralize(failures, "die")
+        footer.append(f"Re-rolled {dice} from {bonus}")
 
     if outcome.total_successes >= difficulty:
         if outcome.is_critical:

@@ -249,19 +249,20 @@ class VCharTrait(EmbeddedDocument):
                     # Zero or one match; golden path
                     spec_groups = spec_groups[0]
 
-                seen_groups = []
+                seen_groups = set()
                 for group in spec_groups:
                     if isinstance(group, str):
                         group = [group]
                     if len(set(group)) < len(group):
-                        # This group has at least one duplicate spec; skip
+                        # Don't add groups with duplicate elements
                         continue
 
-                    group = set(group)
+                    group = frozenset(group)
                     if group in seen_groups:
                         # Prevent (A, B) and (B, A) from both showing in the results
                         continue
 
+                    seen_groups.add(group)
                     matches.append([self.name] + sorted(group))
             else:
                 matches = [[self.name]]

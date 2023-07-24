@@ -18,6 +18,7 @@ from logger import Logger
 
 AUTH_HEADER = {"Authorization": os.environ["INCONNU_API_TOKEN"]}
 BASE_API = "https://api.inconnu.app/"
+BUCKET = "pcs.inconnu.app"  # The name of the bucket where the images live
 
 
 class ApiError(Exception):
@@ -47,6 +48,7 @@ async def upload_faceclaim(character: "VChar", image_url: str) -> str:
         "user": character.user,
         "charid": character.id,
         "image_url": image_url,
+        "bucket": BUCKET,
     }
     new_url = await _post(path="/faceclaim/upload", data=dumps(payload))
 
@@ -56,14 +58,14 @@ async def upload_faceclaim(character: "VChar", image_url: str) -> str:
 async def delete_single_faceclaim(image: str) -> bool:
     """Delete a single faceclaim image."""
     url = urlparse(image)
-    if url.netloc != "pcs.inconnu.app":
+    if url.netloc != BUCKET:
         return False
 
     if (match := re.match(r"/([A-F0-9a-f]+/[A-F0-9a-f]+\.webp)$", url.path)) is None:
         return False
 
     key = match.group(1)
-    res = await _delete(path=f"/faceclaim/delete/{key}")
+    res = await _delete(path=f"/faceclaim/delete/{BUCKET}/{key}")
     Logger.debug("API: %s", res)
 
     return True
@@ -71,7 +73,7 @@ async def delete_single_faceclaim(image: str) -> bool:
 
 async def delete_character_faceclaims(character: "VChar"):
     """Delete all of a character's faceclaims."""
-    res = await _delete(path=f"/faceclaim/delete/{character.id}/all")
+    res = await _delete(path=f"/faceclaim/delete/{BUCKET}/{character.id}/all")
     del character.profile.images[:]
     await character.commit()
     Logger.info("API: %s", res)

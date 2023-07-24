@@ -79,15 +79,8 @@ class AdminCog(commands.Cog):
     @commands.is_owner()
     async def shutdown(self, ctx: discord.ApplicationContext):
         """Shuts down the bot after 15 minutes."""
+        await ctx.respond("Preparing to shut down.", ephemeral=True)
         ctx.bot.lockdown = discord.utils.utcnow() + timedelta(minutes=15)
-        timestamp = discord.utils.format_dt(ctx.bot.lockdown, "R")
-
-        await ctx.respond(
-            (
-                f"**NOTICE:** {ctx.bot.user.mention} will shut down {timestamp}. "
-                "Certain commands may be unavailable."
-            )
-        )
 
         message = None
         while ctx.bot.wizards > 0:

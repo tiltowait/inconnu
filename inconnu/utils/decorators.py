@@ -25,7 +25,8 @@ def _check_supporter(ctx, user: discord.Member = None):
     """Wraps is_supporter() to raise on failure."""
 
     def raise_not_ready():
-        command = ctx.bot.cmd_mention(ctx.command.qualified_name)
+        cmd_name = ctx.command.qualified_name
+        command = ctx.bot.cmd_mention(cmd_name) or f"`{cmd_name}`"
         raise inconnu.errors.NotReady(
             (
                 f"{ctx.bot.user.mention} is currently rebooting. "

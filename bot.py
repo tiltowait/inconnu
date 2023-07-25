@@ -156,7 +156,9 @@ class InconnuBot(discord.Bot):
         self, name: str, type: type[discord.ApplicationCommand] = discord.ApplicationCommand
     ) -> str:
         """Shorthand for get_application_command(...).mention."""
-        return self.get_application_command(name, type=type).mention
+        if command := self.get_application_command(name, type=type):
+            return command.mention
+        return None
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
         """Look up a guild in the guild cache or fetches if not found."""

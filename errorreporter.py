@@ -45,7 +45,7 @@ class ErrorReporter:
         try:
             if (channel := os.getenv("REPORT_CHANNEL")) is not None:
                 Logger.info("REPORTER: Report channel ID: %s", channel)
-                if (channel := await bot.fetch_channel(int(channel))) is not None:
+                if (channel := await bot.fetch_channel(channel)) is not None:
                     Logger.info("REPORTER: Recording errors in #%s", channel.name)
                     self.channel = channel
                 else:

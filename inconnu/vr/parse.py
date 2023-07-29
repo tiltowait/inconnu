@@ -78,6 +78,9 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
         except inconnu.errors.HandledError:
             await __log_error(ctx, character, raw_syntax)
             return
+    else:
+        # Ignore the character parameter if the user gave it
+        character = None
 
     # Attempt to parse the user's roll syntax
     try:

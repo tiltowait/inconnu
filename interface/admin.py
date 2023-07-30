@@ -53,7 +53,7 @@ class AdminCog(commands.Cog):
 
             # Set the MotD
             ctx.bot.set_motd(embed)
-            await ctx.respond("Message of the Day set!", ephemeral=True)
+            await ctx.respond("Announcement set!", ephemeral=True)
 
         except AttributeError:
             await ctx.respond("A field must have an associated value!", ephemeral=True)

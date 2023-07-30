@@ -1,6 +1,8 @@
 """traits/show.py - Display character traits."""
 
 import discord
+from discord.ext.commands import Paginator as Chunker
+from discord.ext.pages import Paginator
 
 import inconnu
 from inconnu.utils.haven import haven
@@ -67,7 +69,16 @@ def traits_embed(
     nbsp = "*None*"
     embed.add_field(name="​", value="**USER-DEFINED**", inline=False)
     embed.add_field(name="Disciplines", value="\n".join(disciplines) or nbsp, inline=False)
-    embed.add_field(name="Specialties", value="\n".join(specialties) or nbsp, inline=False)
+
+    # If a character has many specialties, this can become too long. This fix
+    # is a kludge and needs to be replaced by something more robust.
+    chunker = Chunker(prefix="", suffix="", max_size=1024)
+    for spec in specialties:
+        chunker.add_line(spec)
+    embed.add_field(name="Specialties", value=chunker.pages[0] or nbsp, inline=False)
+    for page in chunker.pages[1:]:
+        embed.add_field(name=" ", value=page, inline=False)
+
     embed.add_field(name="Custom", value="\n".join(custom) or nbsp, inline=False)
 
     return embed

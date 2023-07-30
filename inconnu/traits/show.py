@@ -75,9 +75,11 @@ def traits_embed(
     chunker = Chunker(prefix="", suffix="", max_size=1024)
     for spec in specialties:
         chunker.add_line(spec)
-    embed.add_field(name="Specialties", value=chunker.pages[0] or nbsp, inline=False)
-    for page in chunker.pages[1:]:
-        embed.add_field(name=" ", value=page, inline=False)
+
+    if chunker.pages:
+        embed.add_field(name="Specialties", value=chunker.pages[0], inline=False)
+        for page in chunker.pages[1:]:
+            embed.add_field(name=" ", value=page, inline=False)
 
     embed.add_field(name="Custom", value="\n".join(custom) or nbsp, inline=False)
 

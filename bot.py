@@ -245,6 +245,9 @@ class InconnuBot(discord.Bot):
             # To speed up start times, we load emojis here rather than in on_ready
             await inconnu.emojis.load(bot)
 
+        if interaction.type == discord.InteractionType.application_command:
+            await inconnu.db.interactions.insert_one(interaction.data)
+
         await self.process_application_commands(interaction)
 
     async def on_application_command(self, ctx: discord.ApplicationContext):

@@ -20,6 +20,7 @@ characters = _db.characters
 command_log = _db.command_log
 guilds = _db.guilds
 headers = _db.headers
+interactions = _db.interactions
 log = _db.log
 probabilities = _db.probabilities
 rolls = _db.rolls

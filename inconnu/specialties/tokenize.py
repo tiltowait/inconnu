@@ -23,7 +23,7 @@ def tokenize(syntax: str) -> list[tuple[str, list[str]]]:
         for match in trait_group.parse_string(syntax, parse_all=True):
             match = match.as_dict()
             matches.append((match["trait"], match["subtraits"]))
+        return matches
+
     except ParseException as err:
         raise SyntaxError(err) from err
-
-    return matches

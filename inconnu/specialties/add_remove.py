@@ -95,6 +95,8 @@ async def _add_or_remove(
             ctx,
             err,
             ("Proper syntax", SYNTAX),
+            ("Given", "```" + syntax + "```"),
+            ("Reminder", "Don't leave a trailing `,`!"),
             title="Invalid syntax",
         )
     except inconnu.errors.TraitError as err:

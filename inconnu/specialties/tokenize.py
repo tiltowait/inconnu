@@ -1,27 +1,29 @@
 """Specialties input tokenizer."""
 
-import re
+from pyparsing import DelimitedList, Group, OneOrMore, ParseException, Word, alphas
 
-SYNTAX = "Proper syntax: `trait1=spec1 trait2=spec2,spec3 ...`"
+SYNTAX = "```trait1=spec1 trait2=spec2,spec3 ...```"
 
 
-def tokenize(syntax: str):
-    """Normalize and tokenize specialty syntax."""
-    if invalid := re.findall(r"[^A-Za-z_\s=,]", syntax):
-        invalid = ", ".join(map(lambda t: f"`{t}`", set(invalid)))
-        raise SyntaxError(f"Invalid character(s): {invalid}")
+def tokenize(syntax: str) -> list[tuple[str, list[str]]]:
+    """Tokenize subtrait syntax."""
+    alphascore = alphas + "_"
+    trait_group = OneOrMore(
+        Group(
+            Word(alphascore).set_results_name("trait")
+            + "="
+            + DelimitedList(Word(alphascore), allow_trailing_delim=True).set_results_name(
+                "subtraits"
+            )
+        )
+    )
 
-    # Remove spaces surrounding commas and equals signs
-    syntax = re.sub(r"\s*([,=])\s*", r"\1", syntax)
+    try:
+        matches = []
+        for match in trait_group.parse_string(syntax, parse_all=True):
+            match = match.as_dict()
+            matches.append((match["trait"], match["subtraits"]))
+    except ParseException as err:
+        raise SyntaxError(err) from err
 
-    raw_tokens = syntax.split()
-    tokens = []
-    for token in raw_tokens:
-        if re.match(r"^[A-Za-z_]+=([A-Za-z_]+,?)+$", token) is None:
-            raise SyntaxError(f"Invalid token: `{token}`")
-
-        trait, specs = token.split("=", 1)
-        specs = specs.strip(",").split(",")
-        tokens.append((trait, specs))
-
-    return tokens
+    return matches

@@ -60,7 +60,7 @@ async def __get_chunks(ctx, character):
         if (admin := ctx.guild.get_member(admin_id)) is None:
             admin = await ctx.guild.fetch_member(admin_id)
 
-        text = f"*{index + 1}.* **{exp:+} {scope}: {reason}** - {admin.mention} • {date}"
+        text = f"{index + 1}. **{exp:+} {scope}: {reason}** - {admin.mention} • {date}"
 
         chunker.add_line(text)
 

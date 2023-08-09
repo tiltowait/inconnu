@@ -27,7 +27,7 @@ class Gameplay(commands.Cog):
         character: inconnu.options.character(),
         player: inconnu.options.player,
     ):
-        """Roll the dice. Syntax: POOL HUNGER DIFFICULTY."""
+        """Roll the dice using Thirst syntax. Syntax: POOL HUNGER DIFFICULTY."""
         await inconnu.vr.parse(ctx, syntax, comment, character, player)
 
     # This beginner-friendly roll command is for users who find the main `/vr`
@@ -55,7 +55,7 @@ class Gameplay(commands.Cog):
         character: inconnu.options.character(),
         player: inconnu.options.player,
     ):
-        """Roll the dice. Guided version of /vr."""
+        """Roll the dice!"""
         syntax = f"{pool} {hunger} {difficulty}"
         character = await inconnu.vr.parse(ctx, syntax, comment, character, player)
         if isinstance(character, inconnu.models.VChar):

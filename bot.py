@@ -246,7 +246,12 @@ class InconnuBot(discord.Bot):
             await inconnu.emojis.load(bot)
 
         if interaction.type == discord.InteractionType.application_command:
-            await inconnu.db.interactions.insert_one(interaction.data)
+            # Insert the raw interaction data in case we get a crash before
+            # on_application_command() can perform its own insert. This creates
+            # duplicate data; in the future, these routines will be merged.
+            inter_data = {"guild": interaction.guild.id, "user": interaction.user.id}
+            inter_data.update(interaction.data)
+            await inconnu.db.interactions.insert_one(inter_data)
 
         await self.process_application_commands(interaction)
 

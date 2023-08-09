@@ -313,7 +313,7 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
 
     # Need to perform some checks to ensure we can edit the post
     if rp_post is None:
-        await inconnu.utils.error(ctx, "This isn't a roleplay post!", help=__HELP_URL)
+        await inconnu.utils.error(ctx, "This isn't a Rolepost!", help=__HELP_URL)
     elif ctx.user.id != rp_post.user:
         await inconnu.utils.error(ctx, "You can only edit your own posts!", help=__HELP_URL)
     else:

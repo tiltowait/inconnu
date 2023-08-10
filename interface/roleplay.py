@@ -1,7 +1,6 @@
 """Roleplay commands."""
 # pylint: disable=no-self-use
 
-import os
 from datetime import timezone
 
 import discord
@@ -83,6 +82,8 @@ class RoleplayCog(commands.Cog):
     @option("content", description="What to search for", required=False)
     @option("character", description="The character name. Invalid names ignored.", required=False)
     @option("mentioning", description="A user mentioned in the post", required=False)
+    @option("after", description="Only show posts after a date (YYYY-MM-DD)", required=False)
+    @option("before", description="Only show posts before a date (YYYY-MM-DD)", required=False)
     @option(
         "hidden",
         description="Whether to hide the search results from others (default true)",
@@ -101,11 +102,23 @@ class RoleplayCog(commands.Cog):
         content: str,
         character: str,
         mentioning: discord.Member,
+        after: str,
+        before: str,
         hidden: bool,
         summary: bool,
     ):
         """Search for a Rolepost. Displays up to 5 results."""
-        await inconnu.roleplay.search(ctx, user, content, character, mentioning, hidden, summary)
+        await inconnu.roleplay.search(
+            ctx,
+            user,
+            content,
+            character,
+            mentioning,
+            after,
+            before,
+            hidden,
+            summary,
+        )
 
     @slash_command()
     @commands.guild_only()

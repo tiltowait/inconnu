@@ -2,11 +2,13 @@
 
 import random
 import string
+from datetime import datetime as dt
 from math import ceil
 
 import pytest
 
 import inconnu
+from inconnu.roleplay.search import convert_dates
 from inconnu.utils import de_camel, re_paginate
 
 
@@ -117,3 +119,23 @@ def test_dyscrasias(res):
     assert dys.name
     assert dys.description
     assert dys.page
+
+
+@pytest.mark.parametrize(
+    "after,before,exp_b,exp_a,error",
+    [
+        ("2023-10-10", "2023-11-10", dt(2023, 10, 10), dt(2023, 11, 10), False),
+        ("2023-10-10", "2023-9-10", None, None, True),
+    ],
+)
+def test_convert_dates(after: str, before: str, exp_b: dt, exp_a: dt, error: bool):
+    if error:
+        with pytest.raises(ValueError):
+            b, a = convert_dates(after, before)
+    else:
+        b, a = convert_dates(after, before)
+        assert b == exp_b
+        assert a == exp_a
+
+        if before and after:
+            assert before > after

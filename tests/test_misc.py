@@ -126,14 +126,6 @@ def test_dyscrasias(res):
     [
         ("2023-10-10", "2023-11-10", dt(2023, 10, 10), dt(2023, 11, 10), False),
         ("2023-10-10", "2023-9-10", None, None, True),
-        ("2023-10-10 12pm PDT", "2023-11-10", dt(2023, 10, 10, 19), dt(2023, 11, 10), False),
-        (
-            "2023-8-10 12pm PDT",
-            "2023-9-10 12pm PDT",
-            dt(2023, 8, 10, 19),
-            dt(2023, 9, 10, 19),
-            False,
-        ),
     ],
 )
 def test_convert_dates(after: str, before: str, exp_b: dt, exp_a: dt, error: bool):

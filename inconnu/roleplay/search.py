@@ -1,8 +1,11 @@
 """Post search functionality."""
 
 import re
+from datetime import datetime, timezone
 
 import discord
+from dateutil.parser import ParserError
+from dateutil.parser import parse as parse_dt
 from discord.ext.pages import Paginator
 from pymongo import DESCENDING
 
@@ -17,6 +20,8 @@ async def search(
     needle: str | None,
     character: str | None,
     mentioning: discord.Member,
+    after: str,
+    before: str,
     ephemeral: bool,
     summary: bool,
 ):
@@ -40,6 +45,19 @@ async def search(
     if mentioning is not None:
         query["mentions"] = mentioning.id
         footer.append(f"Mentioning {user.display_name}")
+
+    try:
+        after, before = convert_dates(after, before)
+        dt_query = {}
+        if after:
+            dt_query["$gt"] = after
+        if before:
+            dt_query["$lt"] = before
+        if dt_query:
+            query["date"] = dt_query
+    except (ValueError, ParserError) as err:
+        await inconnu.utils.error(ctx, err, title="Invalid date")
+        return
 
     posts = []  # Will either contain strings or embeds
     async for post in RPPost.find(query).sort(*sort_key).limit(25):
@@ -75,15 +93,47 @@ async def search(
             await paginator.respond(ctx.interaction, ephemeral=ephemeral)
     else:
         # Construct the error message
-        err = f"No posts by {user.mention} found with the given search parameters."
+        err = f"No posts by {user.mention} found with the given search parameters:"
         conditions = []
         if needle:
-            conditions.append(f"matching `{needle}`")
+            conditions.append(f"* Matching `{needle}`")
         if mentioning is not None:
-            conditions.append(f"mentioning {mentioning.mention}")
+            conditions.append(f"* Mentioning {mentioning.mention}")
+        if after:
+            conditions.append(f"* After `{after}`")
+        if before:
+            conditions.append(f"* Before `{before}`")
 
         if conditions:
-            err += " " + " and ".join(conditions)
+            err += "\n" + "\n".join(conditions)
         err += "."
 
         await inconnu.utils.error(ctx, err, title="Not found")
+
+
+def convert_dates(after: str, before: str) -> tuple[datetime, datetime]:
+    """Convert the before and after strings to proper datetimes.
+    Removes timezone info.
+
+    Raises:
+        ValueError if before is after after.
+        ParserError if a datetime can't be inferred."""
+
+    def convert_tzs(dt: datetime) -> datetime:
+        """If the datetime has a timezone, convert it to UTC and remove it."""
+        if dt.tzinfo is None:
+            return dt
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+    # NOTE: In a future dateutil version, this will raise an exception if the
+    # timezone can't be inferred.
+    if after:
+        after = convert_tzs(parse_dt(after))
+    if before:
+        before = convert_tzs(parse_dt(before))
+
+    if before and after:
+        if before <= after:
+            raise ValueError("`before` must occur after `after`.")
+
+    return after, before

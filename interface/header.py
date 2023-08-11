@@ -199,10 +199,11 @@ class HeaderCog(commands.Cog):
             blush = int(blush)
         except ValueError:
             blush = blush.lower()
-            blush_options = {"yes": 1, "no": 0, "n/a - thin-blood": -1}
-            if (blush := blush_options.get(blush)) is None:
+            blush_options = {"yes": 1, "no": 0, "n/a - thin-blood": -1, "n/a - mortal": -1}
+            if blush not in blush_options:
                 await inconnu.utils.error(ctx, f"Unknown Blush of Life option: `{blush}`.")
                 return
+            blush = blush_options[blush]
 
         await inconnu.header.update_header(ctx, character, int(blush))
 

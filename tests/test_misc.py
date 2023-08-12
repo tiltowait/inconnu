@@ -124,13 +124,17 @@ def test_dyscrasias(res):
 @pytest.mark.parametrize(
     "after,before,exp_b,exp_a,error",
     [
-        ("2023-10-10", "2023-11-10", dt(2023, 10, 10), dt(2023, 11, 10), False),
-        ("2023-10-10", "2023-9-10", None, None, True),
+        (None, None, None, None, False),
+        (None, "20231110", None, dt(2023, 11, 10), False),
+        ("20231010", None, dt(2023, 10, 10), None, False),
+        ("20231010", "20231110", dt(2023, 10, 10), dt(2023, 11, 10), False),
+        ("20231010", "20230910", None, None, ValueError),  # Date mismatch
+        ("Bad date", "20231010", None, None, SyntaxError),
     ],
 )
-def test_convert_dates(after: str, before: str, exp_b: dt, exp_a: dt, error: bool):
+def test_convert_dates(after: str, before: str, exp_b: dt, exp_a: dt, error: Exception | None):
     if error:
-        with pytest.raises(ValueError):
+        with pytest.raises(error):
             b, a = convert_dates(after, before)
     else:
         b, a = convert_dates(after, before)

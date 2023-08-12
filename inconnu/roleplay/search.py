@@ -4,8 +4,6 @@ import re
 from datetime import datetime, timezone
 
 import discord
-from dateutil.parser import ParserError
-from dateutil.parser import parse as parse_dt
 from discord.ext.pages import Paginator
 from pymongo import DESCENDING
 
@@ -55,7 +53,7 @@ async def search(
             dt_query["$lt"] = before
         if dt_query:
             query["date"] = dt_query
-    except (ValueError, ParserError) as err:
+    except (ValueError, SyntaxError) as err:
         await inconnu.utils.error(ctx, err, title="Invalid date")
         return
 
@@ -119,18 +117,20 @@ def convert_dates(after: str, before: str) -> tuple[datetime, datetime]:
         ValueError if before is after after.
         ParserError if a datetime can't be inferred."""
 
-    def convert_tzs(dt: datetime) -> datetime:
+    def convert_tzs(dt: str | None) -> datetime:
         """If the datetime has a timezone, convert it to UTC and remove it."""
-        if dt.tzinfo is None:
-            return dt
-        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+        if dt is None:
+            return None
+        try:
+            dt = datetime.strptime(dt, "%Y%m%d")
+            if dt.tzinfo is None:
+                return dt
+            return dt.astimezone(timezone.utc).replace(tzinfo=None)
+        except ValueError as err:
+            raise SyntaxError(f"Invalid date: `{dt}`.\nAccepted format: YYYYMMDD.") from err
 
-    # NOTE: In a future dateutil version, this will raise an exception if the
-    # timezone can't be inferred.
-    if after:
-        after = convert_tzs(parse_dt(after))
-    if before:
-        before = convert_tzs(parse_dt(before))
+    after = convert_tzs(after)
+    before = convert_tzs(before)
 
     if before and after:
         if before <= after:

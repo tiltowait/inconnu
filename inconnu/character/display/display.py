@@ -140,7 +140,7 @@ async def __get_embed(
     )
 
     embed.set_author(
-        name=owner.display_name if title is None else character.name,
+        name=owner.display_name if title in (None, character.name) else character.name,
         icon_url=inconnu.get_avatar(owner),
     )
     embed.set_footer(text=footer or discord.Embed.Empty)

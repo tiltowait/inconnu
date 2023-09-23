@@ -53,14 +53,12 @@ async def __get_chunks(ctx, character):
 
         exp = event["amount"]
         reason = event["reason"]
-        admin_id = event["admin"]
         scope = event["event"].split("_")[-1]
 
-        # Get the admin discord.Member. Try the cache first.
-        if (admin := ctx.guild.get_member(admin_id)) is None:
-            admin = await ctx.guild.fetch_member(admin_id)
+        # Construct the admin mention rather than fetching it
+        admin = f"<@{event['admin']}>"
 
-        text = f"{index + 1}. **{exp:+} {scope}: {reason}** - {admin.mention} • {date}"
+        text = f"{index + 1}. **{exp:+} {scope}: {reason}** - {admin} • {date}"
 
         chunker.add_line(text)
 

@@ -168,7 +168,10 @@ async def perform_roll(character: "VChar", syntax, max_hunger=5):
 
 def needs_character(syntax: str):
     """Determines whether a roll needs a character."""
-    return re.search(r"[A-z_" + VCharTrait.DELIMITER + "]", syntax) is not None
+    if not syntax:
+        return False
+
+    return any(c.isalpha() or c in {"_", VCharTrait.DELIMITER} for c in syntax)
 
 
 async def stringify_mentions(ctx, sentence):

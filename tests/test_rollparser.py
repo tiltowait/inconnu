@@ -4,6 +4,7 @@ import pytest
 
 import inconnu.errors
 from inconnu.models.vchar import VChar
+from inconnu.vr.parse import needs_character
 from inconnu.vr.rollparser import RollParser
 from tests.characters import gen_char
 
@@ -137,3 +138,21 @@ def test_no_power_bonus(
     p = RollParser(character, syntax, power_bonus=add_bonus)
     assert p.pool_str == expected_str
     assert p.pool == expected_dice
+
+
+@pytest.mark.parametrize(
+    "syntax,needs",
+    [
+        ("3", False),
+        ("3 + 2", False),
+        ("3 4 5", False),
+        ("Strength", True),
+        ("3 + Strength", True),
+        ("Strength + Brawl hunger 3", True),
+        ("ü", True),
+        ("3 + .", True),
+        ("3 + _", True),
+    ],
+)
+def test_needs_character(syntax: str, needs: bool):
+    assert needs_character(syntax) == needs

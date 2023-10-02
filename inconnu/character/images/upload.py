@@ -1,5 +1,7 @@
 """Character image uploading."""
 
+from urllib.parse import urlparse
+
 import discord
 
 import api
@@ -62,10 +64,10 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
 
 def valid_url(url: str) -> bool:
     """Check whether a URL is a valid image URL."""
-    url = url.lower()
+    url = urlparse(url.lower())
     Logger.debug("IMAGES: Checking validity of %s", url)
 
     for extension in VALID_EXTENSIONS:
-        if url.endswith(extension):
+        if url.path.endswith(extension):
             return True
     return False

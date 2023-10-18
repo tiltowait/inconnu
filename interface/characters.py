@@ -49,8 +49,13 @@ class Characters(commands.Cog, name="Character Management"):
         spc: Option(str, "(Admin only) Make an SPC", autocomplete=_spc_options, default="0"),
     ):
         """Create a new character."""
-        spc = bool(strtobool(spc))
-        await inconnu.character.create(ctx, name, template, humanity, health, willpower, spc, False)
+        try:
+            spc = bool(strtobool(spc))
+            await inconnu.character.create(
+                ctx, name, template, humanity, health, willpower, spc, False
+            )
+        except ValueError:
+            await inconnu.utils.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
     @commands.slash_command(name="spc")
     @commands.guild_only()

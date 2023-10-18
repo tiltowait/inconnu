@@ -218,10 +218,17 @@ class VChar(Document):
     @property
     def willpower_recovery(self) -> int:
         """The amount of Superficial Willpower damage healed per night."""
-        resolve = self.find_trait("Resolve")
-        composure = self.find_trait("Composure")
+        try:
+            resolve = self.find_trait("Resolve").rating
+        except inconnu.errors.TraitNotFound:
+            resolve = 0
 
-        return max(resolve.rating, composure.rating)
+        try:
+            composure = self.find_trait("Composure").rating
+        except inconnu.errors.TraitNotFound:
+            composure = 0
+
+        return max(resolve, composure)
 
     @property
     def superficial_wp(self) -> int:

@@ -32,7 +32,7 @@ def emojify_die(die: int, hunger: bool):
     emoji_name = "h_" if hunger else "ln_"
 
     if die == 1:
-        emoji_name += "bestial" if hunger else "fail"
+        emoji_name += "bestial"
     elif die == 10:
         emoji_name += "crit"
     elif die >= 6:

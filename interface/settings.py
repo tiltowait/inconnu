@@ -16,14 +16,9 @@ class SettingsCommands(commands.Cog):
     async def accessibility(
         self,
         ctx: discord.ApplicationContext,
-        enable: Option(
-            int,
-            "Enable accessibility mode for yourself",
-            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0)],
-        ),
+        enable: Option(bool, "Enable accessibility mode for yourself"),
     ):
         """Enable or disable accessibility mode for yourself."""
-        enable = bool(enable)
         response = await inconnu.settings.set_accessibility(ctx, enable, "user")
 
         await ctx.respond(response)

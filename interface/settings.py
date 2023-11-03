@@ -20,7 +20,6 @@ class SettingsCommands(commands.Cog):
     ):
         """Enable or disable accessibility mode for yourself."""
         response = await inconnu.settings.set_accessibility(ctx, enable, "user")
-
         await ctx.respond(response)
 
     settings = SlashCommandGroup("settings", "Server settings commands.")

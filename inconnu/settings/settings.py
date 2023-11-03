@@ -4,6 +4,7 @@ import discord
 
 import inconnu
 from inconnu.settings import ExpPerms, GuildSettings
+from inconnu.settings.vuser import VUser
 from logger import Logger
 
 
@@ -19,7 +20,7 @@ class Settings:
         """Determine whether we should use accessibility mode."""
         # User accessibility trumps guild accessibility
         user_settings = await self._fetch_user(ctx.user)
-        if user_settings.get("settings", {}).get("accessibility", False):
+        if user_settings.settings.accessibility:
             return True
 
         if ctx.guild is None:
@@ -275,24 +276,27 @@ class Settings:
 
         # Update the cache
         Logger.info("SETTINGS: %s: %s=%s", user.name, key, value)
-        user_settings = await self._fetch_user(user)
-        user_settings.setdefault("settings", {})[key] = value
-        self._user_cache[user.id] = user_settings
 
-    async def _fetch_user(self, user: discord.User):
+        user_settings = await self._fetch_user(user)
+        setattr(user_settings.settings, key, value)
+        await user_settings.commit()
+
+    async def _fetch_user(self, user: discord.User) -> VUser:
         """Fetch a user."""
         if not isinstance(user, int):
             user = user.id
 
         if user_settings := self._user_cache.get(user):
+            # User is in the cache
             return user_settings
 
-        # See if it's in the database
-        if not (user_settings := await inconnu.db.users.find_one({"user": user})):
-            user_settings = {"user": user}
+        # User not in the cache
+        if (user_settings := await VUser.find_one({"user": user})) is None:
+            # User is not in the database, so we create a new one
+            user_settings = VUser(user=user)
 
+        # Add the user settings to the cache and return
         self._user_cache[user] = user_settings
-
         return user_settings
 
     async def _fetch_guild(self, guild: discord.Guild | int | None) -> GuildSettings:

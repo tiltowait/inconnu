@@ -2,14 +2,24 @@
 
 import re
 from datetime import datetime, timezone
+from enum import Enum
 
 import discord
 from discord.ext.pages import Paginator
-from pymongo import DESCENDING
+from pymongo import ASCENDING, DESCENDING
 
 import inconnu
 from inconnu.models import RPPost
 from logger import Logger
+
+
+class SortOrder(Enum):
+    """The search results sort order."""
+
+    MOST_RELEVANT = 0
+    LEAST_RELEVANT = 1
+    NEWEST = 2
+    OLDEST = 3
 
 
 async def search(
@@ -22,19 +32,38 @@ async def search(
     before: str,
     ephemeral: bool,
     summary: bool,
+    sort_order: int,
 ):
     """Search Roleposts for a given string."""
     query = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
     footer = []
+    reverse_results = False
+
+    match SortOrder(sort_order):
+        case SortOrder.MOST_RELEVANT:
+            if needle:
+                sort_key = ("content", {"$meta": "textScore"})
+            else:
+                # No needle means no text search
+                sort_key = ("date", DESCENDING)
+        case SortOrder.LEAST_RELEVANT:
+            if needle:
+                sort_key = ("content", {"$meta": "textScore"})
+                # MongoDB doesn't let us reverse this sort, so we have to do
+                # it manually
+                reverse_results = True
+            else:
+                sort_key = ("date", DESCENDING)
+        case SortOrder.NEWEST:
+            sort_key = ("date", DESCENDING)
+        case SortOrder.OLDEST:
+            sort_key = ("date", ASCENDING)
 
     if needle:
         needle = " ".join(needle.split())  # Normalize
         query["$text"] = {"$search": needle}
         footer.append(f"Search key: {needle}")
-        sort_key = ("content", {"$meta": "textScore"})
-    else:
-        # They're just getting recent posts
-        sort_key = ("date", DESCENDING)
+
     if character:
         if inconnu.character.valid_name(character):
             query["header.char_name"] = re.compile(character, re.I)
@@ -78,6 +107,9 @@ async def search(
             posts.append(embed)
 
     if posts:
+        if reverse_results:
+            posts = posts[::-1]
+
         if summary:
             # Still need to construct the embed
             embed = discord.Embed(title="Recent Posts", description="\n".join(posts))

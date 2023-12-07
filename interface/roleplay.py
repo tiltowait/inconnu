@@ -94,6 +94,17 @@ class RoleplayCog(commands.Cog):
         description="Whether to show a summary instead of full posts (default false)",
         default=False,
     )
+    @option(
+        "sort_order",
+        description="The sort order (default 'Most relevant' or 'Newest' if no search term)",
+        choices=[
+            OptionChoice("Most relevant", 0),
+            OptionChoice("Least relevant", 1),
+            OptionChoice("Newest", 2),
+            OptionChoice("Oldest", 3),
+        ],
+        default=0,
+    )
     @commands.guild_only()
     async def search(
         self,
@@ -106,6 +117,7 @@ class RoleplayCog(commands.Cog):
         before: str,
         hidden: bool,
         summary: bool,
+        sort_order: int,
     ):
         """Search for a Rolepost. Displays up to 5 results."""
         await inconnu.roleplay.search(
@@ -118,6 +130,7 @@ class RoleplayCog(commands.Cog):
             before,
             hidden,
             summary,
+            sort,
         )
 
     @slash_command()

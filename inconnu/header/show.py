@@ -1,7 +1,5 @@
 """header/display.py - RP header display facilities."""
 
-import copy
-
 import discord
 
 import inconnu
@@ -64,6 +62,7 @@ async def register_header(ctx, message, character):
                 "guild": ctx.guild.id,
                 "user": ctx.user.id,
                 "charid": character.pk,
+                "spc": character.is_spc,
             },
             "channel": ctx.channel.id,
             "message": message.id,

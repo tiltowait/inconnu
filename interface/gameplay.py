@@ -2,7 +2,8 @@
 # pylint: disable=no-self-use
 
 import discord
-from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
+from discord import option
+from discord.commands import Option, OptionChoice, slash_command
 from discord.ext import commands
 
 import inconnu
@@ -87,10 +88,21 @@ class Gameplay(commands.Cog):
         await inconnu.misc.awaken(ctx, character)
 
     @slash_command()
+    @option(
+        "ministry_alt",
+        description="Use the alternate Ministry bane, Cold-Blooded. (Default false)",
+        default=False,
+    )
+    @inconnu.options.char_option("The character to Blush")
     @commands.guild_only()
-    async def bol(self, ctx, character: inconnu.options.character("The character to Blush")):
+    async def bol(
+        self,
+        ctx: discord.ApplicationContext,
+        ministry_alt: bool,
+        character: str,
+    ):
         """Perform a Blush of Life check, taking Humanity into account."""
-        await inconnu.misc.bol(ctx, character)
+        await inconnu.misc.bol(ctx, character, ministry_alt)
 
     @slash_command()
     @commands.guild_only()

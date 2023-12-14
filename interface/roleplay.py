@@ -130,7 +130,7 @@ class RoleplayCog(commands.Cog):
             before,
             hidden,
             summary,
-            sort,
+            sort_order,
         )
 
     @slash_command()

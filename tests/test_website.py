@@ -1,22 +1,24 @@
 """Run tests against the website."""
 
 import pytest
+from bson import ObjectId
 from httpx import AsyncClient
 
+from inconnu import db
 from main import app
 
 
 @pytest.mark.parametrize(
-    "charid,expected_status,num_images",
+    "charid,expected_status",
     [
-        ("6140d7d811c1853b3d42c1e9", 200, 0),
-        ("613d3e4bba8a6a8dc0ee2a09", 200, 6),
-        ("Invalid", 400, 0),
-        ("613d3e4bba8a6a8dc0ee2a06", 404, 0),
+        ("6140d7d811c1853b3d42c1e9", 200),
+        ("613d3e4bba8a6a8dc0ee2a09", 200),
+        ("Invalid", 400),
+        ("613d3e4bba8a6a8dc0ee2a06", 404),
     ],
 )
 @pytest.mark.asyncio
-async def test_profile_page(charid: str, expected_status: int, num_images: int):
+async def test_profile_page(charid: str, expected_status: int):
     async with AsyncClient(app=app, base_url="http://test") as client:
         r = await client.get(f"/profile/{charid}")
         assert r.status_code == expected_status
@@ -30,7 +32,10 @@ async def test_profile_page(charid: str, expected_status: int, num_images: int):
             else:
                 pytest.fail(msg=f"Unexpected response code: {r.status_code}")
         else:
-            assert r.text.count("carousel-item") == num_images
+            char = await db.characters.find_one(
+                {"_id": ObjectId(charid)}, {"images": "$profile.images"}
+            )
+            assert r.text.count("carousel-item") == len(char["images"])
 
 
 @pytest.mark.parametrize(

@@ -92,7 +92,7 @@ _RATINGS = {
         "bonus": 2,
         "reroll": 2,
         "severity": 3,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 1 less Hunger per human",
+        "penalty": "* Animal and bagged blood slake no Hunger\n* Slake 1 less Hunger per human",
         "generations": [5, 11],
     },
     5: {
@@ -101,7 +101,7 @@ _RATINGS = {
         "bonus": 2,
         "reroll": 3,
         "severity": 4,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 1 less Hunger per human\nMust drain and kill a human to reduce Hunger below 2",
+        "penalty": "* Animal and bagged blood slake no Hunger\n* Slake 1 less Hunger per human\n* Must drain and kill a human to reduce Hunger below 2",
         "generations": [4, 9],
     },
     6: {
@@ -110,7 +110,7 @@ _RATINGS = {
         "bonus": 3,
         "reroll": 3,
         "severity": 4,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 2",
+        "penalty": "* Animal and bagged blood slake no Hunger\n* Slake 2 less Hunger per human\n* Must drain and kill a human to reduce Hunger below 2",
         "generations": [4, 8],
     },
     7: {
@@ -119,7 +119,7 @@ _RATINGS = {
         "bonus": 3,
         "reroll": 4,
         "severity": 5,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 2",
+        "penalty": "* Animal and bagged blood slake no Hunger\n* Slake 2 less Hunger per human\n* Must drain and kill a human to reduce Hunger below 2",
         "generations": [4, 7],
     },
     8: {
@@ -128,7 +128,7 @@ _RATINGS = {
         "bonus": 4,
         "reroll": 4,
         "severity": 5,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3",
+        "penalty": "* Animal and bagged blood slake no Hunger\n* Slake 2 less Hunger per human\n* Must drain and kill a human to reduce Hunger below 3",
         "generations": [4, 6],
     },
     9: {
@@ -137,7 +137,7 @@ _RATINGS = {
         "bonus": 4,
         "reroll": 5,
         "severity": 6,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 2 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3",
+        "penalty": "* Animal and bagged blood slake no Hunger\n* Slake 2 less Hunger per human\n* Must drain and kill a human to reduce Hunger below 3",
         "generations": [4, 5],
     },
     10: {
@@ -146,7 +146,7 @@ _RATINGS = {
         "bonus": 5,
         "reroll": 5,
         "severity": 6,
-        "penalty": "Animal and bagged blood slake no Hunger\nSlake 3 less Hunger per human\nMust drain and kill a human to reduce Hunger below 3",
+        "penalty": "* Animal and bagged blood slake no Hunger\n* Slake 3 less Hunger per human\n* Must drain and kill a human to reduce Hunger below 3",
         "generations": [4],
     },
 }

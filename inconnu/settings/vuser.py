@@ -1,20 +1,31 @@
 """Custom user settings."""
 
-from umongo import Document, EmbeddedDocument, fields
+from datetime import datetime
+from typing import Optional
 
-import inconnu
+from beanie import Document, Indexed, SaveChanges, before_event
+from pydantic import BaseModel, Field
 
 
-@inconnu.db.instance.register
-class VUserSettings(EmbeddedDocument):
+class VUserSettings(BaseModel):
     """Represents individual user settings."""
 
-    accessibility = fields.BoolField(default=False)
+    accessibility: bool = Field(default=False)
+    last_modified: Optional[datetime] = None
 
 
-@inconnu.db.instance.register
 class VUser(Document):
     """Represents a user and their settings."""
 
-    user = fields.IntField(required=True)
-    settings = fields.EmbeddedField(VUserSettings, default=VUserSettings)
+    user: Indexed(int, unique=True)
+    settings: VUserSettings = Field(default_factory=VUserSettings)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    @before_event(SaveChanges)
+    def update_modification_date(self):
+        """Update the settings modification date."""
+        self.settings.last_modified = datetime.utcnow()
+
+    class Settings:
+        name = "users"
+        use_state_management = True

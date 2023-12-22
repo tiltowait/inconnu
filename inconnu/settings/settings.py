@@ -19,7 +19,7 @@ class Settings:
     async def accessible(self, ctx: discord.ApplicationContext | discord.Interaction):
         """Determine whether we should use accessibility mode."""
         # User accessibility trumps guild accessibility
-        user_settings = await self._fetch_user(ctx.user)
+        user_settings = await self.find_user(ctx.user)
         if user_settings.settings.accessibility:
             return True
 
@@ -53,7 +53,9 @@ class Settings:
             scope (str): "user" or "server"
         """
         if scope == "user":
-            await self._set_key(ctx.user, "accessibility", enabled)
+            user = await self.find_user(ctx.user)
+            user.settings.accessibility = enabled
+            await user.save_changes()
 
             if enabled:
                 response = "**Accessibility mode** enabled."
@@ -246,8 +248,6 @@ class Settings:
         """
         if isinstance(scope, discord.Guild):
             await self._set_guild(scope, key, value)
-        elif isinstance(scope, discord.Member):
-            await self._set_user(scope, key, value)
         else:
             return ValueError(f"Unknown scope `{scope}`.")
 
@@ -265,39 +265,6 @@ class Settings:
         Logger.info("SETTINGS: %s (guild): %s=%s", guild.name, key, value)
         guild = await self._fetch_guild(guild)
         setattr(guild, key, value)
-
-    async def _set_user(self, user: discord.Member, key: str, value):
-        """Enable or disable a user setting."""
-        res = await inconnu.db.users.update_one(
-            {"user": user.id}, {"$set": {f"settings.{key}": value}}
-        )
-        if res.matched_count == 0:
-            await inconnu.db.users.insert_one({"user": user.id, "settings": {key: value}})
-
-        # Update the cache
-        Logger.info("SETTINGS: %s: %s=%s", user.name, key, value)
-
-        user_settings = await self._fetch_user(user)
-        setattr(user_settings.settings, key, value)
-        await user_settings.commit()
-
-    async def _fetch_user(self, user: discord.User) -> VUser:
-        """Fetch a user."""
-        if not isinstance(user, int):
-            user = user.id
-
-        if user_settings := self._user_cache.get(user):
-            # User is in the cache
-            return user_settings
-
-        # User not in the cache
-        if (user_settings := await VUser.find_one({"user": user})) is None:
-            # User is not in the database, so we create a new one
-            user_settings = VUser(user=user)
-
-        # Add the user settings to the cache and return
-        self._user_cache[user] = user_settings
-        return user_settings
 
     async def _fetch_guild(self, guild: discord.Guild | int | None) -> GuildSettings:
         """Fetch a guild."""
@@ -322,3 +289,22 @@ class Settings:
         self._guild_cache[guild_id] = guild_settings
 
         return guild_settings
+
+    # Cache management
+
+    async def find_user(self, user: discord.User | int) -> VUser:
+        """Fetches a user from the database or creates it if not found."""
+        user_id = user if isinstance(user, int) else user.id
+
+        if user := self._user_cache.get(user_id):
+            return user
+
+        # User not in cache
+        user = await VUser.find_one(VUser.user == user_id)
+        if user is None:
+            # User not in the database
+            user = VUser(user=user_id)
+            await user.insert()
+
+        self._user_cache[user_id] = user
+        return user

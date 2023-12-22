@@ -3,9 +3,12 @@
 import os
 from typing import Any
 
+from beanie import init_beanie
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 from umongo.frameworks import MotorAsyncIOInstance
+
+import inconnu
 
 load_dotenv()
 
@@ -37,3 +40,13 @@ async def server_info() -> dict[str, Any]:
     info = await _client.server_info()
     info["database"] = _db_name  # For logging purposes
     return info
+
+
+async def init_db(db_name: str, client: AsyncIOMotorClient | None = None):
+    """Initialize the database, collections and models."""
+    if client is None:
+        client = AsyncIOMotorClient(os.environ["MONGO_URL"])
+
+    db = client[db_name]
+
+    await init_beanie(db, document_models=[inconnu.VUser])

@@ -34,6 +34,7 @@ from inconnu.models import CharacterManager
 from inconnu.roll import Roll
 
 char_mgr = CharacterManager()
+VUser = settings.VUser
 settings = settings.Settings()
 bot = None
 

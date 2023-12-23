@@ -32,9 +32,9 @@ from inconnu import (
 from inconnu.emoji import emojis
 from inconnu.models import CharacterManager
 from inconnu.roll import Roll
+from inconnu.settings import VGuild, VUser
 
 char_mgr = CharacterManager()
-VUser = settings.VUser
 settings = settings.Settings()
 bot = None
 

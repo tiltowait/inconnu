@@ -42,11 +42,12 @@ async def server_info() -> dict[str, Any]:
     return info
 
 
-async def init_db(db_name: str, client: AsyncIOMotorClient | None = None):
+async def init_db(db=None):
     """Initialize the database, collections and models."""
-    if client is None:
-        client = AsyncIOMotorClient(os.environ["MONGO_URL"])
+    if db is None:
+        mongo_url = os.environ["MONGO_URL"]
+        db_name = _mongo_url.rsplit("/", 1)[-1]
+        client = AsyncIOMotorClient(mongo_url)
+        db = client[db_name]
 
-    db = client[db_name]
-
-    await init_beanie(db, document_models=[inconnu.VUser])
+    await init_beanie(db, document_models=[inconnu.VGuild, inconnu.VUser])

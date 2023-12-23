@@ -304,7 +304,7 @@ class InconnuBot(discord.Bot):
     async def on_connect(self):
         """Perform early setup."""
         if not self.connected:
-            await inconnu.db.init_db("dev")  # TODO: Update database
+            await inconnu.db.init_db()  # TODO: Update database
             inconnu.char_mgr.bot = self
             await reporter.prepare_channel(self)
             self.webhook_cache = inconnu.webhookcache.WebhookCache(self.user.id)

@@ -3,6 +3,7 @@
 
 import datetime
 
+import discord
 from pymongo import ReturnDocument, UpdateOne
 
 import inconnu
@@ -54,41 +55,30 @@ async def delete_rolls_in_channel(channel):
     await inconnu.db.rolls.update_many({"channel": channel.id}, {"$set": {"use_in_stats": False}})
 
 
-async def guild_joined(guild):
+async def guild_joined(guild: discord.Guild):
     """
     Log whenever a guild is joined.
     Args:
         guild (int): The guild's Discord ID
         name (str): The guild's name
     """
-    guilds = inconnu.db.guilds
-
-    await guilds.update_one(
-        {"guild": guild.id},
-        {
-            "$set": {
-                "guild": guild.id,
-                "name": guild.name,
-                "active": True,
-                "joined": datetime.datetime.utcnow(),
-                "left": None,
-            }
-        },
-        upsert=True,
-    )
+    guild = await inconnu.settings.find_guild(guild)
+    guild.active = True
+    guild.joined = datetime.datetime.utcnow()
+    guild.left = None
+    await guild.save_changes()
 
 
-async def guild_left(guild):
+async def guild_left(guild: discord.Guild):
     """
     Log whenever a guild is deleted or Inconnu is kicked from a guild.
     Args:
         guild (int): The guild's Discord ID
     """
-    guilds = inconnu.db.guilds
-
-    await guilds.update_one(
-        {"guild": guild}, {"$set": {"active": False, "left": datetime.datetime.utcnow()}}
-    )
+    guild = await inconnu.settings.find_guild(guild)
+    guild.active = False
+    guild.left = datetime.datetime.utcnow()
+    await guild.save_changes()
 
 
 async def guild_renamed(guild, new_name):

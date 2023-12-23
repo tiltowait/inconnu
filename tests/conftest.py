@@ -24,4 +24,4 @@ def event_loop():
 async def beanie_fixture():
     """Configures a mock beanie client for all tests."""
     client = AsyncMongoMockClient()
-    await inconnu.db.init_db("test", client)
+    await inconnu.db.init_db(client.testing)

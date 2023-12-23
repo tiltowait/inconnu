@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 class VUserSettings(BaseModel):
     """Represents individual user settings."""
 
-    accessibility: bool = Field(default=False)
+    accessibility: bool = False
     last_modified: Optional[datetime] = None
 
 

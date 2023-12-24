@@ -1,0 +1,101 @@
+[
+  {
+    "_id": "636d842dd9ba607e29f3a6d0",
+    "guild": 826628660450689074,
+    "channel": 1000188630070984725,
+    "user": 229736753676681230,
+    "message_id": 1040402331314962454,
+    "url": "https://discord.com/channels/826628660450689074/1000188630070984725/1040402331314962454",
+    "header": {
+      "charid": "613d3e4bba8a6a8dc0ee2a09",
+      "char_name": "Nadea Theron",
+      "blush": 1,
+      "hunger": 4,
+      "location": "Haven",
+      "merits": "Alien Perfection \u2022 Sense the Unseen \u2022 Semblance: Lamia",
+      "flaws": "Obvious Predator",
+      "temp": "",
+      "health": {
+        "superficial": 3,
+        "aggravated": 2
+      },
+      "willpower": {
+        "superficial": 1,
+        "aggravated": 0
+      }
+    },
+    "content": "This is a triumph\n\nI'm making a note here\n\nHuge success",
+    "date": "2022-11-10 23:07:25.750000",
+    "date_modified": null,
+    "deleted": false,
+    "id_chain": [
+      1040402330069241856,
+      1040402331314962454
+    ],
+    "history": []
+  },
+  {
+    "_id": "6404dfafa9b47c1a4dd13294",
+    "guild": 826628660450689074,
+    "channel": 1000188630070984725,
+    "user": 229736753676681230,
+    "message_id": 1082007149019922523,
+    "url": "https://discord.com/channels/826628660450689074/1000188630070984725/1082007149019922523",
+    "header": {
+      "charid": "613d3e4bba8a6a8dc0ee2a09",
+      "char_name": "Nadea Theron",
+      "blush": 0,
+      "hunger": 1,
+      "location": "Haven",
+      "merits": "Alien Perfection \u2022 Sense the Unseen \u2022 Semblance: Lamia",
+      "flaws": "Obvious Predator",
+      "temp": "",
+      "health": {
+        "superficial": 0,
+        "aggravated": 0
+      },
+      "willpower": {
+        "superficial": 1,
+        "aggravated": 0
+      }
+    },
+    "content": "This is a post",
+    "mentions": [],
+    "title": null,
+    "tags": [],
+    "date": "2023-03-05 18:30:07.054000",
+    "date_modified": "2023-03-05 18:58:30.831000",
+    "deleted": true,
+    "deletion_date": "2023-03-05 19:01:03.885000",
+    "id_chain": [
+      1082007147971350738,
+      1082007149019922523
+    ],
+    "history": [
+      {
+        "date": "2023-03-05 18:54:28.952000",
+        "content": "This is a post\n\nwith nothing special to it"
+      },
+      {
+        "date": "2023-03-05 18:53:36.462000",
+        "content": "This is a post\n\nthat I have edited\n\nbecause I am a monster"
+      },
+      {
+        "date": "2023-03-05 18:36:56.446000",
+        "content": "This is a post\n\nthat has been butchered beyond recognition"
+      },
+      {
+        "date": "2023-03-05 18:32:04.731000",
+        "content": "This is a post\n\nthat I have edited\n\nbecause I often lie"
+      },
+      {
+        "date": "2023-03-05 18:30:18.336000",
+        "content": "This is a post\n\nthat I will edit\n\nbecause I often lie"
+      },
+      {
+        "date": "2023-03-05 18:30:07.054000",
+        "content": "This is a post\n\nthat I will not edit\n\nbecause I never lie"
+      }
+    ]
+  }
+]

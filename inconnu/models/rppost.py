@@ -1,62 +1,59 @@
 """Rolepost models."""
 
 from datetime import datetime, timezone
+from typing import Optional
 
 import discord
-from umongo import Document, EmbeddedDocument, fields
+from beanie import Document
+from pydantic import BaseModel, Field, HttpUrl
 
-import inconnu
 from inconnu.models.rpheader import HeaderSubdoc
+from inconnu.models.vchar import VChar
 
 
-@inconnu.db.instance.register
-class PostHistoryEntry(EmbeddedDocument):
+class PostHistoryEntry(BaseModel):
     """Represents historic post content and a date of modification."""
 
-    date = fields.DateTimeField()
-    content = fields.StrField()
+    date: datetime
+    content: str
 
 
-@inconnu.db.instance.register
 class RPPost(Document):
     """Represents a Rolepost with the ability to maintain deltas."""
 
     # Metadata
-    date = fields.DateTimeField(default=datetime.utcnow)
-    date_modified = fields.DateTimeField(default=None)
-    guild = fields.IntField()
-    channel = fields.IntField()
-    user = fields.IntField()
-    message_id = fields.IntField()
-    url = fields.UrlField(allow_none=True)
-    deleted = fields.BoolField(default=False)
-    deletion_date = fields.DateTimeField(default=None)
-    id_chain = fields.ListField(fields.IntField, default=list)
+    date: datetime = Field(default_factory=datetime.utcnow)
+    date_modified: Optional[datetime] = None
+    guild: int
+    channel: int
+    user: int
+    message_id: int
+    url: Optional[HttpUrl]
+    deleted: bool = False
+    deletion_date: Optional[datetime] = None
+    id_chain: list[int] = []
 
     # Content
-    header = fields.EmbeddedField(HeaderSubdoc)
-    content = fields.StrField()
-    mentions = fields.ListField(fields.IntField, default=list)
-    history = fields.ListField(fields.EmbeddedField(PostHistoryEntry), default=list)
+    header: HeaderSubdoc
+    content: str
+    mentions: list[int] = []
+    history: list[PostHistoryEntry] = []
 
     # Custom
-    title = fields.StrField(default=None)
-    tags = fields.ListField(fields.StrField, default=list)
+    title: Optional[str] = None
+    tags: list[str] = []
 
     @property
     def utc_date(self) -> datetime:
         """The UTC-aware post date."""
         return self.date.replace(tzinfo=timezone.utc)
 
-    class Meta:
-        collection_name = "rp_posts"
-
     @classmethod
     def create(
         cls,
         *,
         interaction: discord.Interaction,
-        character: "VChar",
+        character: VChar,
         header: HeaderSubdoc,
         content: str,
         message: discord.Message,
@@ -89,3 +86,7 @@ class RPPost(Document):
             self.history.insert(0, entry)
             self.content = new_post
             self.date_modified = datetime.utcnow()
+
+    class Settings:
+        name = "rp_posts"
+        use_state_management = True

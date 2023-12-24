@@ -148,7 +148,7 @@ class PostModal(discord.ui.Modal):
         # Finish updating the post and inform the user
         self.post_to_edit.title = self._clean_title() or None
         self.post_to_edit.tags = self._clean_tags()
-        await self.post_to_edit.commit()
+        await self.post_to_edit.save_changes()
 
         await interaction.response.send_message("Post updated!", ephemeral=True, delete_after=3)
         Logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
@@ -235,7 +235,7 @@ class PostModal(discord.ui.Modal):
                 tags=tags,
             )
             db_rp_post.id_chain = id_chain
-            await db_rp_post.commit()
+            await db_rp_post.insert()
 
             # We only want to save the tags and bookmark for the first post
             title = None
@@ -261,7 +261,7 @@ class PostModal(discord.ui.Modal):
             embed = discord.Embed(
                 title="Rolepost Edited",
                 description=description,
-                url=inconnu.post_url(post.pk),
+                url=inconnu.post_url(post.id),
             )
             embed.set_author(
                 name=post.header.char_name, icon_url=inconnu.get_avatar(interaction.user)

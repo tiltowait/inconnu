@@ -3,6 +3,7 @@
 import discord
 
 import inconnu
+from inconnu.models.rppost import RPPost
 
 
 async def delete_message_chain(ctx: discord.ApplicationContext, message: discord.Message):
@@ -19,7 +20,7 @@ async def delete_message_chain(ctx: discord.ApplicationContext, message: discord
 
 async def _fetch_rp_post(
     ctx: discord.ApplicationContext, webhook: discord.Webhook, message: discord.Message
-) -> inconnu.models.rppost.RPPost:
+) -> RPPost:
     """Validate the message and ownership, displaying an error message if applicable."""
     if not message.author.bot:
         raise ValueError("You can't delete a user's post.")
@@ -30,7 +31,7 @@ async def _fetch_rp_post(
     if webhook.id != message.author.id:
         raise ValueError("Either this isn't a Rolepost, or the original webhook was deleted.")
 
-    rp_post = await inconnu.models.RPPost.find_one({"id_chain": message.id})
+    rp_post = await RPPost.find_one({"id_chain": message.id})
     if rp_post is None:
         if await inconnu.db.headers.find_one({"message": message.id}) is not None:
             raise ValueError("Use `Header: Delete` for this.")

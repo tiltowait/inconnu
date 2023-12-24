@@ -262,23 +262,24 @@ class Settings:
 
     # Cache management
 
-    async def find_guild(self, guild: discord.Guild | None) -> VGuild:
+    async def find_guild(self, guild: discord.Guild | int | None) -> VGuild:
         """Fetches a guild from the database or creates it if not found."""
         if guild is None:
             # We're in DMs
             return VGuild(id=0, name="DM")
 
-        if vguild := self._guild_cache.get(guild.id):
+        guild_id = guild if isinstance(guild, int) else guild.id
+        if vguild := self._guild_cache.get(guild_id):
             return vguild
 
         # Guild not in cache
-        vguild = await VGuild.find_one(VGuild.guild == guild.id)
+        vguild = await VGuild.find_one(VGuild.guild == guild_id)
         if vguild is None:
             # Guild doesn't exist!
             vguild = VGuild.from_guild(guild)
             await vguild.insert()
 
-        self._guild_cache[guild.id] = vguild
+        self._guild_cache[guild_id] = vguild
         return vguild
 
     async def find_user(self, user: discord.User | int) -> VUser:

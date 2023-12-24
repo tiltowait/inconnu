@@ -1,39 +1,40 @@
 """Header subdoc."""
 
 import copy
+from typing import Optional
 
-from bson import ObjectId
-from umongo import EmbeddedDocument, fields
+from beanie import PydanticObjectId
+from pydantic import BaseModel
 
-import inconnu
+from inconnu.models.vchar import VChar
 
 
-@inconnu.db.instance.register
-class DamageSubdoc(EmbeddedDocument):
+class DamageSubdoc(BaseModel):
     """Tracks aggravated and superficial damage."""
 
-    superficial = fields.IntField()
-    aggravated = fields.IntField()
+    superficial: int
+    aggravated: int
 
 
-@inconnu.db.instance.register
-class HeaderSubdoc(EmbeddedDocument):
+class HeaderSubdoc(BaseModel):
     """A subdocument for RP headers. It gets stored in the database for later editing.."""
 
-    MAX_TITLE_LEN = 256
+    charid: PydanticObjectId
+    char_name: str
 
-    charid: ObjectId = fields.ObjectIdField()
-    char_name: str = fields.StrField()
+    blush: int
+    hunger: Optional[int]
+    location: str
+    merits: str
+    flaws: str
+    temp: str
 
-    blush: int = fields.IntField()
-    hunger: int = fields.IntField(allow_none=True)
-    location: str = fields.StrField()
-    merits: str = fields.StrField()
-    flaws: str = fields.StrField()
-    temp: str = fields.StrField()
+    health: DamageSubdoc
+    willpower: DamageSubdoc
 
-    health = fields.EmbeddedField(DamageSubdoc)
-    willpower = fields.EmbeddedField(DamageSubdoc)
+    @property
+    def MAX_TITLE_LEN(self):
+        return 256
 
     @property
     def blush_str(self) -> str | None:
@@ -48,7 +49,7 @@ class HeaderSubdoc(EmbeddedDocument):
         title_fields = [self.location, self.blush_str]
         base = " • ".join(filter(lambda f: f, title_fields))
 
-        return base[: HeaderSubdoc.MAX_TITLE_LEN]
+        return base[: self.MAX_TITLE_LEN]
 
     @property
     def title(self) -> str:
@@ -57,7 +58,7 @@ class HeaderSubdoc(EmbeddedDocument):
         return full[: HeaderSubdoc.MAX_TITLE_LEN]
 
     @classmethod
-    def create(cls, character: "VChar", **kwargs):
+    def create(cls, character: VChar, **kwargs):
         """Prepare the header with any overrides."""
         header = copy.deepcopy(character.header)
 

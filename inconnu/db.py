@@ -50,4 +50,4 @@ async def init_db(db=None):
         client = AsyncIOMotorClient(mongo_url)
         db = client[db_name]
 
-    await init_beanie(db, document_models=[inconnu.VGuild, inconnu.VUser])
+    await init_beanie(db, document_models=[inconnu.VGuild, inconnu.VUser, inconnu.models.RPPost])

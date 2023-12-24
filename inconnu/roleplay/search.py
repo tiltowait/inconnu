@@ -42,22 +42,22 @@ async def search(
     match SortOrder(sort_order):
         case SortOrder.MOST_RELEVANT:
             if needle:
-                sort_key = ("content", {"$meta": "textScore"})
+                sort_key = [(RPPost.content, {"$meta": "textScore"})]
             else:
                 # No needle means no text search
-                sort_key = ("date", DESCENDING)
+                sort_key = [(RPPost.date, DESCENDING)]
         case SortOrder.LEAST_RELEVANT:
             if needle:
-                sort_key = ("content", {"$meta": "textScore"})
+                sort_key = [(RPPost.content, {"$meta": "textScore"})]
                 # MongoDB doesn't let us reverse this sort, so we have to do
                 # it manually
                 reverse_results = True
             else:
-                sort_key = ("date", DESCENDING)
+                sort_key = [(RPPost.date, DESCENDING)]
         case SortOrder.NEWEST:
-            sort_key = ("date", DESCENDING)
+            sort_key = [(RPPost.date, DESCENDING)]
         case SortOrder.OLDEST:
-            sort_key = ("date", ASCENDING)
+            sort_key = [(RPPost.date, ASCENDING)]
 
     if needle:
         needle = " ".join(needle.split())  # Normalize

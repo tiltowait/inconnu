@@ -58,6 +58,7 @@ class _RollControls(inconnu.views.DisablingView):
             # No clue what to do, since it shouldn't even be possible to get
             # here, so just shrug and disable everything.
             await self.disable_items(interaction)
+            return
 
         if self.owner != interaction.user:
             await interaction.response.send_message(

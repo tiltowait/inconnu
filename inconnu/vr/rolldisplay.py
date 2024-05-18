@@ -50,6 +50,15 @@ class _RollControls(inconnu.views.DisablingView):
 
     async def button_pressed(self, interaction):
         """Handle button presses."""
+        # I'm not sure why, but suddenly I'm getting IndexErrors when setting
+        # button states. No idea how this is possible, and it feels like a
+        # Discord bug. Nevertheless, here's a kludge to make the error go away
+        # for now.
+        if not self.children:
+            # No clue what to do, since it shouldn't even be possible to get
+            # here, so just shrug and disable everything.
+            await self.disable_items(interaction)
+
         if self.owner != interaction.user:
             await interaction.response.send_message(
                 "This button doesn't belong to you!", ephemeral=True

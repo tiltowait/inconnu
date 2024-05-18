@@ -68,19 +68,23 @@ def traits_embed(
     # Fill in the custom stuff
     nbsp = "*None*"
     embed.add_field(name="​", value="**USER-DEFINED**", inline=False)
-    embed.add_field(name="Disciplines", value="\n".join(disciplines) or nbsp, inline=False)
 
-    # If a character has many specialties, this can become too long. This fix
-    # is a kludge and needs to be replaced by something more robust.
-    chunker = Chunker(prefix="", suffix="", max_size=1024)
-    for spec in specialties:
-        chunker.add_line(spec)
-
-    if chunker.pages:
-        embed.add_field(name="Specialties", value=chunker.pages[0], inline=False)
-        for page in chunker.pages[1:]:
-            embed.add_field(name=" ", value=page, inline=False)
+    chunk_fields(embed, "Disciplines", disciplines)
+    chunk_fields(embed, "Specialties", specialties)
 
     embed.add_field(name="Custom", value="\n".join(custom) or nbsp, inline=False)
 
     return embed
+
+
+def chunk_fields(embed: discord.Embed, field_name: str, values):
+    """Pages large lists across multiple fields."""
+    """Adds chunked fields to the embed."""
+    chunker = Chunker(prefix="", suffix="", max_size=1024)
+    for sub in values:
+        chunker.add_line(sub)
+
+    if chunker.pages:
+        embed.add_field(name=field_name, value=chunker.pages[0], inline=False)
+        for page in chunker.pages[1:]:
+            embed.add_field(name=" ", value=page, inline=False)

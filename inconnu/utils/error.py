@@ -60,6 +60,6 @@ class ErrorEmbed(discord.Embed):
             self.add_field(name=name, value=value, inline=False)
 
         self.set_footer(
-            text=kwargs.get("footer", discord.Embed.Empty),
-            icon_url=kwargs.get("footer_icon", discord.Embed.Empty),
+            text=kwargs.get("footer", None),
+            icon_url=kwargs.get("footer_icon", None),
         )

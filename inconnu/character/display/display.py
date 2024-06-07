@@ -130,12 +130,12 @@ async def __get_embed(
     if title == character.name:
         profile_url = inconnu.profile_url(character.id)
     else:
-        profile_url = discord.Embed.Empty
+        profile_url = None
 
     embed = discord.Embed(
         title=title,
         description=message or "",
-        color=color or discord.Embed.Empty,
+        color=color or None,
         url=profile_url,
     )
 
@@ -143,8 +143,8 @@ async def __get_embed(
         name=owner.display_name if title in (None, character.name) else character.name,
         icon_url=inconnu.get_avatar(owner),
     )
-    embed.set_footer(text=footer or discord.Embed.Empty)
-    embed.set_thumbnail(url=thumbnail or discord.Embed.Empty)
+    embed.set_footer(text=footer or None)
+    embed.set_thumbnail(url=thumbnail or None)
 
     can_emoji = await inconnu.settings.can_emoji(ctx)
 

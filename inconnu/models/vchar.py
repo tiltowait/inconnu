@@ -195,11 +195,11 @@ class VChar(Document):
     @property
     def profile_image_url(self) -> str:
         """Get the URL of the first profile image."""
-        return self.profile.images[0] if self.profile.images else Embed.Empty
+        return self.profile.images[0] if self.profile.images else None
 
     def random_image_url(self) -> str:
         """Get a random image URL."""
-        return random.choice(self.profile.images) if self.profile.images else Embed.Empty
+        return random.choice(self.profile.images) if self.profile.images else None
 
     @property
     def aggravated_hp(self) -> int:

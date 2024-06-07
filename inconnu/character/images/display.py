@@ -147,12 +147,6 @@ class ImagePager(ReportingView):
         if self.character.user == self.ctx.user.id:
             self.add_item(self.manage_button)
 
-    def remove_all_items(self):
-        """Remove all buttons."""
-        children = list(self.children)
-        for child in children:
-            self.remove_item(child)
-
     async def respond(self):
         """Display the pager."""
         embed = inconnu.utils.VCharEmbed(
@@ -225,11 +219,11 @@ class ImagePager(ReportingView):
 
     async def mode_toggle(self, interaction: discord.Interaction | None):
         """Toggle between management and normal modes."""
+        self.clear_items()
+
         if self.management_mode:
-            self.remove_all_items()
             self.add_pager_buttons()
         else:
-            self.remove_all_items()
             self.add_item(self.promote_button)
             self.add_item(self.demote_button)
             self.add_item(self.delete_button)
@@ -304,6 +298,6 @@ class ImagePager(ReportingView):
         """Delete the components."""
         if self.children:
             Logger.debug("IMAGES: View timed out; deleting components")
-            await self.message.edit_original_response(view=None)
+            await self.message.edit(view=None)
         else:
             Logger.debug("IMAGES: View timed out, but no components")

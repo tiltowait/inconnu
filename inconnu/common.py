@@ -141,7 +141,7 @@ def __error_text(
 async def report_update(*, ctx, character, title, message, **kwargs):
     """Display character updates in the update channel."""
     if update_channel := await inconnu.settings.update_channel(ctx.guild):
-        msg = kwargs.pop("msg", discord.Embed.Empty)
+        msg = kwargs.pop("msg", None)
         if msg:
             msg = msg.jump_url
 
@@ -150,7 +150,7 @@ async def report_update(*, ctx, character, title, message, **kwargs):
                 title=title,
                 description=message,
                 url=msg,
-                color=kwargs.pop("color", discord.Embed.Empty),
+                color=kwargs.pop("color", None),
             )
             embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
             content = ""

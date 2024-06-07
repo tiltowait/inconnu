@@ -146,7 +146,7 @@ async def __results_embed(ctx, outcome, character: "VChar", disciplines: bool):
     # No color if no mistakes
     # Black if some mistakes
     # Red if only mistakes
-    color = discord.Embed.Empty
+    color = None
     if unassigned + errors:
         color = 0x000000 if assigned else 0xFF0000
 

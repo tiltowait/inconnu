@@ -39,7 +39,7 @@ async def __outcome_embed(ctx, character, outcome, disciplines: bool):
     if outcome.deleted:
         deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
         embed.add_field(name="Removed", value=deleted)
-        embed.color = discord.Embed.Empty
+        embed.color = None
 
     if outcome.errors:
         errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))

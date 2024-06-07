@@ -97,5 +97,5 @@ async def __report(ctx, inter, character, remorseful):
         character=character,
         title="Remorse Success" if remorseful else "Remorse Failure",
         message=f"**{character.name}** {verbed} a Remorse test.\n{humanity_str}",
-        color=0x5E005E if not remorseful else discord.Embed.Empty,
+        color=0x5E005E if not remorseful else None,
     )

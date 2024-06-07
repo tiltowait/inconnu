@@ -50,7 +50,7 @@ async def rouse(
         if character.hunger >= 4:
             color = inconnu.constants.ROUSE_FAIL_COLOR
         else:
-            color = discord.Embed.Empty
+            color = None
 
         await inconnu.common.report_update(
             ctx=ctx,

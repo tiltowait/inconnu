@@ -1,8 +1,6 @@
 """interface/reference.py - A cog for reference material."""
 # pylint: disable=no-self-use
 
-import asyncio
-
 import discord
 from discord.commands import Option, OptionChoice, slash_command
 from discord.ext import commands
@@ -83,7 +81,7 @@ class ReferenceCommands(commands.Cog):
     @slash_command()
     async def temperament(
         self,
-        ctx: discord.ApplicationCommand,
+        ctx: discord.ApplicationContext,
         resonance: Option(str, "The resonance being rolled", choices=inconnu.reference.RESONANCES),
     ):
         """Get a random temperament."""

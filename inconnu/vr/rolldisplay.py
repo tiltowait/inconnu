@@ -68,9 +68,11 @@ class _RollControls(inconnu.views.DisablingView):
             button_id = interaction.data["custom_id"].split()[0]  # Remove the unique ID
 
             if inconnu.common.contains_digit(button_id):
-                # This was the surge button, which is always last. Let's disable it
+                # This was a surge button, which are always last. Let's disable them
                 self.children[-1].disabled = True
                 self.children[-1].style = discord.ButtonStyle.secondary
+                self.children[-2].disabled = True
+                self.children[-2].style = discord.ButtonStyle.secondary
                 await interaction.response.edit_message(view=self)
             elif button_id == _ButtonID.WILLPOWER:
                 # Mark WP is always the first button
@@ -197,9 +199,15 @@ class RollDisplay:
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
             )
 
-        elif inconnu.common.contains_digit(button_id):  # Surge buttons are just charids
+        elif button_id == self.character.id:
+            # elif inconnu.common.contains_digit(button_id):  # Surge buttons are just charids
             self.surged = True
             await inconnu.misc.rouse(btn, self.character, 1, "Surge", False)
+
+        elif button_id == self.character.id + "-rr":
+            # Fluent X
+            self.surged = True
+            await inconnu.misc.rouse(btn, self.character, 1, "Surge", True)
 
         else:
             # We're rerolling
@@ -332,7 +340,7 @@ class RollDisplay:
             )
 
         embed.add_field(name="Dice", value=str(self.outcome.pool))
-        embed.add_field(name="Hunger", value=self.hunger)
+        embed.add_field(name="Hunger", value=str(self.hunger))
         embed.add_field(name="Difficulty", value=str(self.outcome.difficulty))
 
         if self.outcome.pool_str:
@@ -371,7 +379,7 @@ class RollDisplay:
         return match is not None
 
     @property
-    def buttons(self) -> list:
+    def buttons(self) -> list | None:
         """Generate the buttons for Willpower re-rolls and surging."""
         buttons = []
 
@@ -389,6 +397,13 @@ class RollDisplay:
                         Button(
                             label="Rouse",
                             custom_id=self.character.id,
+                            style=discord.ButtonStyle.danger,
+                        )
+                    )
+                    buttons.append(
+                        Button(
+                            label="Rouse w/ Reroll",
+                            custom_id=self.character.id + "-rr",
                             style=discord.ButtonStyle.danger,
                         )
                     )
@@ -449,6 +464,14 @@ class RollDisplay:
                 Button(
                     label="Rouse",
                     custom_id=self.character.id,
+                    style=discord.ButtonStyle.danger,
+                    row=1,
+                )
+            )
+            buttons.append(
+                Button(
+                    label="Rouse w/ Reroll",
+                    custom_id=self.character.id + "-rr",
                     style=discord.ButtonStyle.danger,
                     row=1,
                 )

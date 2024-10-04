@@ -150,20 +150,24 @@ class Gameplay(commands.Cog):
         await inconnu.misc.mend(ctx, character)
 
     @slash_command()
+    @option(
+        "min_override",
+        description="Override the minimum dice to roll (you probably don't want this)",
+        choices=inconnu.options.ratings(1, 5),
+        default=1,
+    )
+    @option("lasombra_alt", description="Whether to use Lasombra alt bane", default=False)
+    @inconnu.options.char_option("The character undergoing remorse")
     @commands.guild_only()
     async def remorse(
         self,
         ctx: discord.ApplicationContext,
-        min_override: Option(
-            int,
-            "Override the minimum dice to roll (you probably don't want this)",
-            choices=inconnu.options.ratings(1, 5),
-            default=1,
-        ),
-        character: inconnu.options.character("The character undergoing remorse"),
+        min_override: int,
+        lasombra_alt: bool,
+        character: str,
     ):
         """Perform a Remorse check."""
-        await inconnu.misc.remorse(ctx, character, min_override)
+        await inconnu.misc.remorse(ctx, character, min_override, lasombra_alt)
 
     @slash_command()
     @commands.guild_only()

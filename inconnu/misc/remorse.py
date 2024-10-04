@@ -2,8 +2,6 @@
 
 from types import SimpleNamespace as SN
 
-import discord
-
 import inconnu
 from inconnu.utils.haven import haven
 
@@ -17,13 +15,13 @@ def _can_remorse(character):
 
 
 @haven(__HELP_URL, _can_remorse, "None of your characters have any stains!")
-async def remorse(ctx, character, minimum=1):
+async def remorse(ctx, character, minimum=1, lasombra_alt=False):
     """Perform a remorse check on a given character."""
     if character.stains == 0:
         await ctx.respond(f"{character.name} has no stains! No remorse necessary.", ephemeral=True)
         return
 
-    outcome = __remorse_roll(character, minimum)
+    outcome = __remorse_roll(character, minimum, lasombra_alt)
     inter = await __display_outcome(ctx, character, outcome)
     await __report(ctx, inter, character, outcome.remorseful)
     await character.commit()
@@ -39,11 +37,14 @@ async def __display_outcome(ctx, character: "VChar", outcome):
         footer = "The downward spiral continues ..."
         color = 0x5C0700
 
-    footer += "\nDice: " + ", ".join(map(str, outcome.dice))
+    if outcome.lasombra_alt:
+        footer += f"\nLasombra alt bane: -{character.bane_severity} dice"
 
     if outcome.overrode:
         dice = inconnu.common.pluralize(outcome.minimum, "die")
         footer += f"\nOverride: Rolled {dice} instead of {outcome.nominal}"
+
+    footer += "\nDice: " + ", ".join(map(str, outcome.dice))
 
     return await inconnu.character.display(
         ctx,
@@ -55,10 +56,12 @@ async def __display_outcome(ctx, character: "VChar", outcome):
     )
 
 
-def __remorse_roll(character: "VChar", minimum: int) -> SN:
+def __remorse_roll(character: "VChar", minimum: int, lasombra_alt: bool) -> SN:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
     rolls = max(unfilled, minimum)
+    if lasombra_alt:
+        rolls = max(1, rolls - character.bane_severity)
     overrode = unfilled < minimum and minimum > 1
     nominal = unfilled if unfilled > 0 else 1
     successful = False
@@ -78,7 +81,14 @@ def __remorse_roll(character: "VChar", minimum: int) -> SN:
 
     character.log("remorse")
 
-    return SN(remorseful=successful, minimum=minimum, dice=dice, overrode=overrode, nominal=nominal)
+    return SN(
+        remorseful=successful,
+        minimum=minimum,
+        dice=dice,
+        overrode=overrode,
+        nominal=nominal,
+        lasombra_alt=lasombra_alt,
+    )
 
 
 async def __report(ctx, inter, character, remorseful):

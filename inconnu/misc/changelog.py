@@ -4,7 +4,6 @@ import os
 
 import aiohttp
 import discord
-from aiocache import cached
 
 import inconnu
 
@@ -39,7 +38,6 @@ async def show_changelog(ctx: discord.ApplicationContext, hidden: bool):
         await inconnu.utils.error(ctx, "Unable to fetch changelog.")
 
 
-@cached()
 async def fetch_changelog() -> tuple[str, str]:
     """Fetch the changelog from GitHub."""
     token = os.getenv("GITHUB_TOKEN", "")

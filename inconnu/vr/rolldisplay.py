@@ -199,15 +199,16 @@ class RollDisplay:
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
             )
 
-        elif button_id == self.character.id:
-            # elif inconnu.common.contains_digit(button_id):  # Surge buttons are just charids
-            self.surged = True
-            await inconnu.misc.rouse(btn, self.character, 1, "Surge", False)
+        elif inconnu.common.contains_digit(button_id):
+            if button_id == self.character.id:
+                # elif inconnu.common.contains_digit(button_id):  # Surge buttons are just charids
+                self.surged = True
+                await inconnu.misc.rouse(btn, self.character, 1, "Surge", False)
 
-        elif button_id == self.character.id + "-rr":
-            # Fluent X
-            self.surged = True
-            await inconnu.misc.rouse(btn, self.character, 1, "Surge", True)
+            elif button_id == self.character.id + "-rr":
+                # Fluent X
+                self.surged = True
+                await inconnu.misc.rouse(btn, self.character, 1, "Surge", True)
 
         else:
             # We're rerolling

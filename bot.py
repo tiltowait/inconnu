@@ -16,7 +16,7 @@ from errorreporter import reporter
 from logger import Logger
 
 
-class InconnuBot(discord.Bot):
+class InconnuBot(discord.AutoShardedBot):
     """Adds minor functionality over the superclass. All commands in cogs."""
 
     def __init__(self, *args, **kwargs):

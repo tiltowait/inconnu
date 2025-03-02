@@ -3,6 +3,8 @@
 import bisect
 import datetime
 
+from cachetools import TTLCache
+
 import inconnu
 from logger import Logger
 
@@ -12,22 +14,23 @@ class CharacterManager:
 
     def __init__(self):
         Logger.info("CHARACTER MANAGER: Initialized")
-        self.all_fetched = {}  # [user_id: bool]
-        self.user_cache = {}  # [guild: [user: [VChar]]]
-        self.id_cache = {}  # [char_id: VChar]
+        max_size = 100
+        ttl = 10
+        self.all_fetched: TTLCache[str, bool] = TTLCache(maxsize=max_size, ttl=ttl)
+        self.user_cache: TTLCache[str, list[inconnu.models.VChar]] = TTLCache(
+            maxsize=max_size,
+            ttl=ttl,
+        )
+        self.id_cache: TTLCache[str, inconnu.models.VChar] = TTLCache(
+            maxsize=max_size,
+            ttl=ttl,
+        )
 
         # Set after construction. Used to check whether a user is an admin
         self.bot = None
         self.collection = inconnu.db.characters
 
-    def purge(self):
-        """Purge the cache."""
-        Logger.info("CHARACTER MANAGER: Purging the cache")
-        self.all_fetched = {}  # [user_id: bool]
-        self.user_cache = {}  # [guild: [user: [VChar]]]
-        self.id_cache = {}  # [char_id: VChar]
-
-    async def fetchone(self, guild: int, user: int, name: str):
+    async def fetchone(self, guild: int, user: int, name: str | None):
         """
         Fetch a single character.
         Args:
@@ -104,7 +107,10 @@ class CharacterManager:
         self.all_fetched[key] = True
 
         Logger.debug(
-            "CHARACTER MANAGER: Found %s characters (%s on %s)", len(characters), user, guild
+            "CHARACTER MANAGER: Found %s characters (%s on %s)",
+            len(characters),
+            user,
+            guild,
         )
 
         return characters
@@ -189,7 +195,7 @@ class CharacterManager:
         if (new_chars := self.user_cache.get(new_key)) is not None:
             inserted = False
 
-            for (index, char) in enumerate(new_chars):
+            for index, char in enumerate(new_chars):
                 if char > character:
                     new_chars.insert(index, character)
                     inserted = True

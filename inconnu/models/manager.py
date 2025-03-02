@@ -15,7 +15,7 @@ class CharacterManager:
     def __init__(self):
         Logger.info("CHARACTER MANAGER: Initialized")
         max_size = 100
-        ttl = 10
+        ttl = 1800
         self.all_fetched: TTLCache[str, bool] = TTLCache(maxsize=max_size, ttl=ttl)
         self.user_cache: TTLCache[str, list[inconnu.models.VChar]] = TTLCache(
             maxsize=max_size,

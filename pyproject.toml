@@ -1,4 +1,4 @@
-[tool.black]
+[tool.ruff]
 line-length = 100
 
 [tool.isort]
@@ -30,6 +30,7 @@ jinja-markdown = "^1.210911"
 fastapi = "^0.100.0"
 py-cord = "^2.4.1"
 pyparsing = "^3.1.1"
+cachetools = "^5.5.2"
 
 [tool.poetry.dev-dependencies]
 debugpy = "^1.6.3"

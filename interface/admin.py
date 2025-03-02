@@ -42,12 +42,17 @@ class AdminCog(commands.Cog):
         embed.set_footer(text="This is a one-time message. To see it again, use /motd.")
 
         try:
-            for field, value in [(field1_name, field1_value), (field2_name, field2_value)]:
+            for field, value in [
+                (field1_name, field1_value),
+                (field2_name, field2_value),
+            ]:
                 if field:
                     field = " ".join(field.split())
                     value = " ".join(value.split())
                     if not (field and value):
-                        await ctx.respond("Field names and values can't be empty!", ephemeral=True)
+                        await ctx.respond(
+                            "Field names and values can't be empty!", ephemeral=True
+                        )
                         return
                     embed.add_field(name=field, value=value, inline=False)
 
@@ -106,14 +111,6 @@ class AdminCog(commands.Cog):
             await ctx.respond(msg, ephemeral=True)
 
         Logger.info("SHUTDOWN: Bot is ready for shutdown")
-
-    @discord.slash_command(guild_ids=[ADMIN_GUILD])
-    @discord.default_permissions(administrator=True)
-    @commands.is_owner()
-    async def purge(self, ctx: discord.ApplicationContext):
-        """Purge the character cache."""
-        inconnu.char_mgr.purge()
-        await ctx.respond("Character cache purged.", ephemeral=True)
 
 
 def setup(bot):

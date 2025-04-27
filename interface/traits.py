@@ -67,7 +67,11 @@ class Traits(commands.Cog, name="Trait Management"):
     # a 1-point trait, but "how do I add specialties" is a common friction
     # point among users. This command group simplifies the process.
 
-    disciplines = SlashCommandGroup("disciplines", "Character disciplines.")
+    disciplines = SlashCommandGroup(
+        "disciplines",
+        "Character disciplines.",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @disciplines.command(name="add")
     @option("disciplines", description="The Disciplines to add. Ex: Potence=3 Auspex=2")
@@ -104,7 +108,11 @@ class Traits(commands.Cog, name="Trait Management"):
         await inconnu.traits.update(ctx, character, disciplines, True)
 
     # SPECIALTIES
-    specialties = SlashCommandGroup("specialties", "Character specialties.")
+    specialties = SlashCommandGroup(
+        "specialties",
+        "Character specialties.",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @specialties.command(name="add")
     async def add_specialties(
@@ -137,7 +145,11 @@ class Traits(commands.Cog, name="Trait Management"):
         )
 
     # POWERS
-    powers = SlashCommandGroup("powers", "Character specialties.")
+    powers = SlashCommandGroup(
+        "powers",
+        "Character specialties.",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @powers.command(name="add")
     @option("powers", description="The powers to add. Ex: Auspex=Premonition,HeightenedSenses")

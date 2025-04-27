@@ -78,7 +78,11 @@ class ExperienceCommands(commands.Cog):
         """Display a character's experience log."""
         await inconnu.experience.list_events(ctx, character, False, player=player)
 
-    bulk = SlashCommandGroup("bulk", "Bulk experience awarding")
+    bulk = SlashCommandGroup(
+        "bulk",
+        "Bulk experience awarding",
+        contexts={discord.InteractionContextType.guild},
+    )
     bulk_award = bulk.create_subgroup(
         "award",
         "Bulk experience awarding",

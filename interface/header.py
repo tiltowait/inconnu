@@ -144,8 +144,7 @@ class HeaderCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def header(
         self,
         ctx: discord.ApplicationContext,
@@ -179,10 +178,13 @@ class HeaderCog(commands.Cog):
             temp=temporary,
         )
 
-    header_update = SlashCommandGroup("update", "Update commands")
+    header_update = SlashCommandGroup(
+        "update",
+        "Update commands",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @header_update.command(name="header")
-    @commands.guild_only()
     async def update_header(
         self,
         ctx: discord.ApplicationContext,
@@ -207,8 +209,7 @@ class HeaderCog(commands.Cog):
 
         await inconnu.header.update_header(ctx, character, int(blush))
 
-    @commands.message_command(name="Header: Edit")
-    @commands.guild_only()
+    @commands.message_command(name="Header: Edit", contexts={discord.InteractionContextType.guild})
     async def fix_rp_header(self, ctx, message: discord.Message):
         """Change an RP header's location."""
         proceed = False
@@ -247,8 +248,10 @@ class HeaderCog(commands.Cog):
         Logger.debug("HEADER: %s attempted to update a non-header post", ctx.user.name)
         await ctx.respond("This message isn't an RP header!", ephemeral=True)
 
-    @commands.message_command(name="Header: Delete")
-    @commands.guild_only()
+    @commands.message_command(
+        name="Header: Delete",
+        contexts={discord.InteractionContextType.guild},
+    )
     async def delete_rp_header(self, ctx, message: discord.Message):
         """Delete an RP header."""
         try:

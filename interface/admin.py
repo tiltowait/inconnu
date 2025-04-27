@@ -8,7 +8,6 @@ import discord
 from discord.commands import Option
 from discord.ext import commands
 
-import inconnu
 from config import ADMIN_GUILD
 from logger import Logger
 
@@ -50,9 +49,7 @@ class AdminCog(commands.Cog):
                     field = " ".join(field.split())
                     value = " ".join(value.split())
                     if not (field and value):
-                        await ctx.respond(
-                            "Field names and values can't be empty!", ephemeral=True
-                        )
+                        await ctx.respond("Field names and values can't be empty!", ephemeral=True)
                         return
                     embed.add_field(name=field, value=value, inline=False)
 

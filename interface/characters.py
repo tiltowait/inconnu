@@ -28,15 +28,18 @@ class Characters(commands.Cog, name="Character Management"):
         OptionChoice("Thin-Blood", "thinblood"),
     ]
 
-    @commands.user_command(name="Stats")
+    @commands.user_command(name="Stats", contexts={discord.InteractionContextType.guild})
     async def user_characters(self, ctx, member):
         """Display the user's character(s)."""
         await inconnu.character.display_requested(ctx, None, player=member, ephemeral=True)
 
-    character = SlashCommandGroup("character", "Character commands.")
+    character = SlashCommandGroup(
+        "character",
+        "Character commands.",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @character.command(name="create")
-    @commands.guild_only()
     @inconnu.utils.not_on_lockdown()
     async def character_create(
         self,
@@ -58,7 +61,6 @@ class Characters(commands.Cog, name="Character Management"):
             await inconnu.utils.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
     @commands.slash_command(name="spc")
-    @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def spc_create(
         self,
@@ -73,7 +75,6 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.create(ctx, name, template, humanity, health, willpower, True, True)
 
     @character.command(name="display")
-    @commands.guild_only()
     async def character_display(
         self,
         ctx: discord.ApplicationContext,
@@ -84,7 +85,6 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.display_requested(ctx, character, player=player)
 
     @character.command(name="update")
-    @commands.guild_only()
     async def character_update(
         self,
         ctx: discord.ApplicationContext,
@@ -96,7 +96,6 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.update(ctx, parameters, character, player=player)
 
     @character.command(name="adjust")
-    @commands.guild_only()
     async def adjust_character(
         self,
         ctx,
@@ -181,7 +180,6 @@ class Characters(commands.Cog, name="Character Management"):
             await ctx.respond(err, ephemeral=True)
 
     @character.command(name="delete")
-    @commands.guild_only()
     @inconnu.utils.not_on_lockdown()
     async def character_delete(
         self,
@@ -192,7 +190,6 @@ class Characters(commands.Cog, name="Character Management"):
         await inconnu.character.delete(ctx, character)
 
     @character.command(name="profile")
-    @commands.guild_only()
     async def character_profile(
         self,
         ctx: discord.ApplicationContext,
@@ -216,7 +213,6 @@ class Characters(commands.Cog, name="Character Management"):
     # Convictions
 
     @character.command(name="convictions")
-    @commands.guild_only()
     async def character_convictions(
         self,
         ctx: discord.ApplicationContext,
@@ -233,7 +229,6 @@ class Characters(commands.Cog, name="Character Management"):
             await inconnu.character.convictions_set(ctx, edit)
 
     @commands.user_command(name="Convictions")
-    @commands.guild_only()
     async def character_convictions_context(self, ctx, member):
         """Show a character's Convictions."""
         await inconnu.character.convictions_show(ctx, None, player=member, ephemeral=True)
@@ -249,7 +244,6 @@ class Characters(commands.Cog, name="Character Management"):
         choices=["Everyone", "Only me"],
         default="Everyone",
     )
-    @commands.guild_only()
     async def show_character_images(
         self,
         ctx: discord.ApplicationContext,
@@ -264,7 +258,6 @@ class Characters(commands.Cog, name="Character Management"):
     images = character.create_subgroup("image", "Character image commands")
 
     @images.command(name="upload")
-    @commands.guild_only()
     @inconnu.utils.decorators.premium()
     async def upload_image(
         self,

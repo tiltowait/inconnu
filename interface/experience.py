@@ -11,7 +11,11 @@ import inconnu
 class ExperienceCommands(commands.Cog):
     """A command group for tracking character experience. Only available to server admins."""
 
-    experience = SlashCommandGroup("experience", "Experience-tracking commands.")
+    experience = SlashCommandGroup(
+        "experience",
+        "Experience-tracking commands.",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @user_command(name="Experience Log")
     async def context_experience_list(self, ctx, member: discord.Member):
@@ -19,7 +23,6 @@ class ExperienceCommands(commands.Cog):
         await inconnu.experience.list_events(ctx, None, True, player=member)
 
     @experience.command()
-    @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def award(
         self,
@@ -36,7 +39,6 @@ class ExperienceCommands(commands.Cog):
         )
 
     @experience.command()
-    @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def deduct(
         self,
@@ -55,7 +57,6 @@ class ExperienceCommands(commands.Cog):
     experience_remove = experience.create_subgroup("remove", "Remove log entry")
 
     @experience_remove.command(name="entry")
-    @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def remove_entry(
         self,
@@ -68,7 +69,6 @@ class ExperienceCommands(commands.Cog):
         await inconnu.experience.remove_entry(ctx, character, log_index, player=player)
 
     @experience.command()
-    @commands.guild_only()
     async def log(
         self,
         ctx: discord.ApplicationContext,
@@ -79,10 +79,13 @@ class ExperienceCommands(commands.Cog):
         await inconnu.experience.list_events(ctx, character, False, player=player)
 
     bulk = SlashCommandGroup("bulk", "Bulk experience awarding")
-    bulk_award = bulk.create_subgroup("award", "Bulk experience awarding")
+    bulk_award = bulk.create_subgroup(
+        "award",
+        "Bulk experience awarding",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @bulk_award.command(name="xp")
-    @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def bulk_award_xp(self, ctx):
         """Award experience en masse."""

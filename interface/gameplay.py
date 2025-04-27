@@ -75,26 +75,23 @@ class Gameplay(commands.Cog):
                     ephemeral=True,
                 )
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def aggheal(self, ctx, character: inconnu.options.character("The character to heal")):
         """Heal a character's Aggravated damage, performing three Rouse checks."""
         await inconnu.misc.aggheal(ctx, character)
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def awaken(self, ctx, character: inconnu.options.character("The character to wake")):
         """Perform a Rouse check and heal Superficial Willpower damage."""
         await inconnu.misc.awaken(ctx, character)
 
-    @slash_command()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     @option(
         "ministry_alt",
         description="Use the alternate Ministry bane, Cold-Blooded. (Default false)",
         default=False,
     )
     @inconnu.options.char_option("The character to Blush")
-    @commands.guild_only()
     async def bol(
         self,
         ctx: discord.ApplicationContext,
@@ -104,8 +101,7 @@ class Gameplay(commands.Cog):
         """Perform a Blush of Life check, taking Humanity into account."""
         await inconnu.misc.bol(ctx, character, ministry_alt)
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def frenzy(
         self,
         ctx: discord.ApplicationContext,
@@ -143,13 +139,12 @@ class Gameplay(commands.Cog):
         """Perform a Frenzy check."""
         await inconnu.misc.frenzy(ctx, character, difficulty, penalty, bonus)
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def mend(self, ctx, character: inconnu.options.character("The character to heal")):
         """Mend Superficial damage. For vampires, amount is based on BP and costs a Rouse check."""
         await inconnu.misc.mend(ctx, character)
 
-    @slash_command()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     @option(
         "min_override",
         description="Override the minimum dice to roll (you probably don't want this)",
@@ -158,7 +153,6 @@ class Gameplay(commands.Cog):
     )
     @option("lasombra_alt", description="Whether to use Lasombra alt bane", default=False)
     @inconnu.options.char_option("The character undergoing remorse")
-    @commands.guild_only()
     async def remorse(
         self,
         ctx: discord.ApplicationContext,
@@ -169,8 +163,7 @@ class Gameplay(commands.Cog):
         """Perform a Remorse check."""
         await inconnu.misc.remorse(ctx, character, min_override, lasombra_alt)
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def rouse(
         self,
         ctx,
@@ -192,8 +185,7 @@ class Gameplay(commands.Cog):
         """Perform a Rouse check."""
         await inconnu.misc.rouse(ctx, character, count, purpose, bool(reroll))
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def slake(
         self,
         ctx: discord.ApplicationContext,
@@ -203,8 +195,7 @@ class Gameplay(commands.Cog):
         """Slake 1 or more Hunger."""
         await inconnu.misc.slake(ctx, character, amount)
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def stain(
         self,
         ctx: discord.ApplicationContext,

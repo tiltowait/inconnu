@@ -12,7 +12,6 @@ class SettingsCommands(commands.Cog):
     """Settings-related commands."""
 
     @slash_command()
-    @commands.guild_only()
     async def accessibility(
         self,
         ctx: discord.ApplicationContext,
@@ -22,10 +21,13 @@ class SettingsCommands(commands.Cog):
         response = await inconnu.settings.set_accessibility(ctx, enable, "user")
         await ctx.respond(response)
 
-    settings = SlashCommandGroup("settings", "Server settings commands.")
+    settings = SlashCommandGroup(
+        "settings",
+        "Server settings commands.",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @settings.command(name="set")
-    @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def set(
         self,
@@ -133,7 +135,6 @@ class SettingsCommands(commands.Cog):
             await ctx.respond("You didn't give me anything to set!", ephemeral=True)
 
     @settings.command(name="unset_update_channel")
-    @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def _unset_update_channel(self, ctx):
         """Un-sets the update channel."""
@@ -141,7 +142,6 @@ class SettingsCommands(commands.Cog):
         await ctx.respond(response)
 
     @settings.command(name="show")
-    @commands.guild_only()
     async def settings_show(self, ctx):
         """Display the settings in effect."""
         accessibility = "ON" if await inconnu.settings.accessible(ctx) else "OFF"

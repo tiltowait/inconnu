@@ -61,8 +61,7 @@ class ReferenceCommands(commands.Cog):
         """Generate a random Resonance."""
         await inconnu.reference.resonance(ctx)
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def statistics(
         self,
         ctx: discord.ApplicationContext,
@@ -89,8 +88,9 @@ class ReferenceCommands(commands.Cog):
 
     # Roll statistics
 
-    @commands.message_command(name="Toggle Roll Statistics")
-    @commands.guild_only()
+    @commands.message_command(
+        name="Toggle Roll Statistics", contexts={discord.InteractionContextType.guild}
+    )
     @commands.has_permissions(administrator=True)
     async def toggle_roll_statistics(self, ctx, message: discord.Message):
         """Toggle whether a roll should be counted for statistical purposes."""

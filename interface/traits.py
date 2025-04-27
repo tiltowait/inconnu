@@ -12,16 +12,18 @@ import inconnu
 class Traits(commands.Cog, name="Trait Management"):
     """Trait management commands."""
 
-    @commands.user_command(name="Traits")
-    @commands.guild_only()
+    @commands.user_command(name="Traits", contexts={discord.InteractionContextType.guild})
     async def user_traits(self, ctx, member):
         """Display character traits."""
         await inconnu.traits.show(ctx, None, player=member)
 
-    traits = SlashCommandGroup("traits", "Character traits commands.")
+    traits = SlashCommandGroup(
+        "traits",
+        "Character traits commands.",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @traits.command(name="add")
-    @commands.guild_only()
     async def traits_add(
         self,
         ctx: discord.ApplicationContext,
@@ -32,7 +34,6 @@ class Traits(commands.Cog, name="Trait Management"):
         await inconnu.traits.add(ctx, character, traits)
 
     @traits.command(name="list")
-    @commands.guild_only()
     async def traits_list(
         self,
         ctx: discord.ApplicationContext,
@@ -43,7 +44,6 @@ class Traits(commands.Cog, name="Trait Management"):
         await inconnu.traits.show(ctx, character, player=player)
 
     @traits.command(name="update")
-    @commands.guild_only()
     async def traits_update(
         self,
         ctx: discord.ApplicationContext,
@@ -54,7 +54,6 @@ class Traits(commands.Cog, name="Trait Management"):
         await inconnu.traits.update(ctx, character, traits)
 
     @traits.command(name="delete")
-    @commands.guild_only()
     async def delete_traits(
         self,
         ctx: discord.ApplicationContext,
@@ -71,7 +70,6 @@ class Traits(commands.Cog, name="Trait Management"):
     disciplines = SlashCommandGroup("disciplines", "Character disciplines.")
 
     @disciplines.command(name="add")
-    @commands.guild_only()
     @option("disciplines", description="The Disciplines to add. Ex: Potence=3 Auspex=2")
     @inconnu.options.char_option("The character to modify")
     async def add_disciplines(
@@ -83,7 +81,6 @@ class Traits(commands.Cog, name="Trait Management"):
         await inconnu.traits.add(ctx, character, disciplines, True)
 
     @disciplines.command(name="remove")
-    @commands.guild_only()
     @option("disciplines", description="The Disciplines to remove. Ex: Potence Auspex")
     @inconnu.options.char_option("The character to modify")
     async def remove_disciplines(
@@ -97,7 +94,6 @@ class Traits(commands.Cog, name="Trait Management"):
     @disciplines.command(name="update")
     @option("disciplines", description="The Disciplines to update. Ex: Potence=5")
     @inconnu.options.char_option("The character to modify")
-    @commands.guild_only()
     async def disciplines_update(
         self,
         ctx: discord.ApplicationContext,
@@ -111,7 +107,6 @@ class Traits(commands.Cog, name="Trait Management"):
     specialties = SlashCommandGroup("specialties", "Character specialties.")
 
     @specialties.command(name="add")
-    @commands.guild_only()
     async def add_specialties(
         self,
         ctx: discord.ApplicationContext,
@@ -127,7 +122,6 @@ class Traits(commands.Cog, name="Trait Management"):
         )
 
     @specialties.command(name="remove")
-    @commands.guild_only()
     async def remove_specialties(
         self,
         ctx: discord.ApplicationContext,
@@ -148,7 +142,6 @@ class Traits(commands.Cog, name="Trait Management"):
     @powers.command(name="add")
     @option("powers", description="The powers to add. Ex: Auspex=Premonition,HeightenedSenses")
     @inconnu.options.char_option("The character to modify")
-    @commands.guild_only()
     async def add_powers(
         self,
         ctx: discord.ApplicationContext,
@@ -166,7 +159,6 @@ class Traits(commands.Cog, name="Trait Management"):
     @powers.command(name="remove")
     @option("powers", description="The powers to remove. Ex: Auspex=Premonition")
     @inconnu.options.char_option("The character to modify")
-    @commands.guild_only()
     async def remove_specialties(
         self,
         ctx: discord.ApplicationContext,

@@ -11,8 +11,7 @@ import inconnu
 class Macros(commands.Cog, name="Macro Utilities"):
     """Macro manaagement and rolls."""
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     async def vm(
         self,
         ctx,
@@ -24,10 +23,13 @@ class Macros(commands.Cog, name="Macro Utilities"):
 
     # Macros command group
 
-    macro = SlashCommandGroup("macro", "Macro commands.")
+    macro = SlashCommandGroup(
+        "macro",
+        "Macro commands.",
+        contexts={discord.InteractionContextType.guild},
+    )
 
     @macro.command(name="create")
-    @commands.guild_only()
     async def macro_create(
         self,
         ctx,
@@ -84,13 +86,11 @@ class Macros(commands.Cog, name="Macro Utilities"):
         )
 
     @macro.command(name="list")
-    @commands.guild_only()
     async def macro_list(self, ctx, character: inconnu.options.character()):
         """List a character's macros."""
         await inconnu.macros.show(ctx, character)
 
     @macro.command(name="update")
-    @commands.guild_only()
     async def macro_update(
         self,
         ctx: discord.ApplicationContext,
@@ -102,7 +102,6 @@ class Macros(commands.Cog, name="Macro Utilities"):
         await inconnu.macros.update(ctx, character, macro, parameters)
 
     @macro.command(name="delete")
-    @commands.guild_only()
     async def macro_delete(
         self,
         ctx: discord.ApplicationContext,

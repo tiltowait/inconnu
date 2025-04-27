@@ -4,7 +4,7 @@ import asyncio
 
 import discord
 from discord import option
-from discord.commands import Option, OptionChoice, slash_command
+from discord.commands import Option, slash_command
 from discord.ext import commands
 
 import inconnu
@@ -52,8 +52,7 @@ class MiscCommands(commands.Cog):
         """Roll between 1 and a given ceiling (default 100)."""
         await inconnu.misc.percentile(ctx, ceiling)
 
-    @slash_command()
-    @commands.guild_only()
+    @slash_command(contexts={discord.InteractionContextType.guild})
     @commands.has_permissions(administrator=True)
     async def transfer(
         self,

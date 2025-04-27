@@ -249,7 +249,10 @@ class InconnuBot(discord.AutoShardedBot):
             # Insert the raw interaction data in case we get a crash before
             # on_application_command() can perform its own insert. This creates
             # duplicate data; in the future, these routines will be merged.
-            inter_data = {"guild": interaction.guild.id, "user": interaction.user.id}
+            inter_data = {
+                "guild": interaction.guild_id,
+                "user": interaction.user.id if interaction.user else None,
+            }
             inter_data.update(interaction.data)
             await inconnu.db.interactions.insert_one(inter_data)
 

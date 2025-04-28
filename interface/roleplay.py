@@ -134,7 +134,7 @@ class RoleplayCog(commands.Cog):
     @slash_command(contexts={discord.InteractionContextType.guild})
     async def tags(self, ctx: discord.ApplicationContext):
         """View your Rolepost tags."""
-        await inconnu.roleplay.tags.show_tags(ctx)
+        await inconnu.roleplay.show_tags(ctx)
 
     # Message commands
 

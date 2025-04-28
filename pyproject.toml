@@ -9,7 +9,7 @@ filterwarnings = ["ignore::marshmallow.warnings.RemovedInMarshmallow4Warning"]
 
 [tool.poetry]
 name = "inconnu"
-version = "7.0.6"
+version = "8.4.1"
 description = "An advanced Discord dice bot and character manager for V5"
 authors = ["tiltowait <208040+tiltowait@users.noreply.github.com>"]
 license = "MIT"
@@ -32,14 +32,12 @@ py-cord = "^2.4.1"
 pyparsing = "^3.1.1"
 cachetools = "^5.5.2"
 
-[tool.poetry.dev-dependencies]
-debugpy = "^1.6.3"
-mypy = "^0.982"
-pylint = "^2.15.3"
-
 [tool.poetry.group.dev.dependencies]
 pytest-asyncio = "^0.20.3"
 httpx = "^0.23.3"
+debugpy = "^1.6.3"
+mypy = "^0.982"
+pylint = "^2.15.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

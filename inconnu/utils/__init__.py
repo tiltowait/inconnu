@@ -133,7 +133,7 @@ async def get_or_fetch_supporter(
 
 def is_supporter(ctx, user: discord.Member | None = None) -> bool:
     """Returns True if the user invoking the command is a supporter."""
-    support_server = ctx.bot.get_guild(SUPPORTER_GUILD)
+    support_server = inconnu.bot.get_guild(SUPPORTER_GUILD)
     user = user or ctx.user
 
     # First, see if the invoker is on the support server

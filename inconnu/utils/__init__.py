@@ -109,9 +109,31 @@ def is_admin(ctx, owner_id=None):
     return ctx.channel.permissions_for(ctx.user).administrator
 
 
-def is_supporter(ctx, user: discord.Member = None) -> bool:
+async def get_or_fetch_supporter(
+    ctx: discord.ApplicationContext, user: discord.Member | None
+) -> bool:
+    """Returns True if the user or invoking user is a supporter."""
+    user = user or ctx.user
+    assert user is not None
+
+    guild = ctx.bot.get_guild(SUPPORTER_GUILD)
+    if guild:
+        member = guild.get_member(user.id)
+        if member:
+            return member.get_role(SUPPORTER_ROLE) is not None
+
+    # Fallback: Use the API instead of the cache
+    guild = await ctx.bot.fetch_guild(SUPPORTER_GUILD)
+    member = await guild.fetch_member(user.id)
+    if member:
+        return member.get_role(SUPPORTER_ROLE) is not None
+
+    return False
+
+
+def is_supporter(ctx, user: discord.Member | None = None) -> bool:
     """Returns True if the user invoking the command is a supporter."""
-    support_server = inconnu.bot.get_guild(SUPPORTER_GUILD)
+    support_server = ctx.bot.get_guild(SUPPORTER_GUILD)
     user = user or ctx.user
 
     # First, see if the invoker is on the support server

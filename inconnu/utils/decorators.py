@@ -4,7 +4,6 @@ import discord
 from discord.ext import commands
 
 import inconnu
-from config import SUPPORTER_GUILD
 from logger import Logger
 
 
@@ -21,34 +20,9 @@ def not_on_lockdown():
     return commands.check(predicate)
 
 
-def _check_supporter(ctx, user: discord.Member = None):
+async def _check_supporter(ctx: discord.ApplicationContext, user: discord.Member | None = None):
     """Wraps is_supporter() to raise on failure."""
-
-    def raise_not_ready():
-        cmd_name = ctx.command.qualified_name
-        command = ctx.bot.cmd_mention(cmd_name) or f"`/{cmd_name}`"
-        raise inconnu.errors.NotReady(
-            (
-                f"{ctx.bot.user.mention} is currently rebooting. "
-                f"{command} will be available in a few minutes."
-            )
-        )
-
-    # Waiting for the bot to be fully ready takes about 15 minutes. To speed
-    # this up, we try to fetch supporter status as soon as it's available
-    # instead of waiting for on_ready().
-    if ctx.bot.get_guild(SUPPORTER_GUILD) is None:
-        if not ctx.bot.welcomed:
-            raise_not_ready()
-        else:
-            raise LookupError("Inconnu's support server is not configured!")
-
-    if not inconnu.utils.is_supporter(ctx, user):
-        if not ctx.bot.welcomed:
-            # Support server members may still be fetching
-            raise_not_ready()
-
-        # User is definitively not a supporter
+    if not await inconnu.utils.get_or_fetch_supporter(ctx, user):
         raise inconnu.errors.NotPremium
 
     return True

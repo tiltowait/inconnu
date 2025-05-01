@@ -17,7 +17,7 @@ class ExperienceCommands(commands.Cog):
         contexts={discord.InteractionContextType.guild},
     )
 
-    @user_command(name="Experience Log")
+    @user_command(name="Experience Log", contexts={discord.InteractionContextType.guild})
     async def context_experience_list(self, ctx, member: discord.Member):
         """Display the given member's character XP logs."""
         await inconnu.experience.list_events(ctx, None, True, player=member)

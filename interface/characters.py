@@ -205,7 +205,7 @@ class Characters(commands.Cog, name="Character Management"):
         else:
             await inconnu.character.show_biography(ctx, character, player=player)
 
-    @commands.user_command(name="Profile")
+    @commands.user_command(name="Profile", contexts={discord.InteractionContextType.guild})
     async def character_bio_context(self, ctx, member):
         """View a character's profile."""
         await inconnu.character.show_biography(ctx, None, player=member, ephemeral=True)
@@ -228,7 +228,7 @@ class Characters(commands.Cog, name="Character Management"):
         else:
             await inconnu.character.convictions_set(ctx, edit)
 
-    @commands.user_command(name="Convictions")
+    @commands.user_command(name="Convictions", contexts={discord.InteractionContextType.guild})
     async def character_convictions_context(self, ctx, member):
         """Show a character's Convictions."""
         await inconnu.character.convictions_show(ctx, None, player=member, ephemeral=True)

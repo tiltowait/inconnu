@@ -76,6 +76,60 @@ class RoleplayCog(commands.Cog):
             show_header=display_header,
         )
 
+    @slash_command(name="pmnh", contexts={discord.InteractionContextType.guild})
+    @option("mentions", description="Users, roles, and channels to mention")
+    @inconnu.options.char_option("The character to post as")
+    @option(
+        "blush",
+        description="THIS POST ONLY: Is Blush of Life active?",
+        choices=[OptionChoice("Yes", 1), OptionChoice("No", 0), OptionChoice("N/A", -1)],
+        required=False,
+    )
+    @option(
+        "hunger",
+        description="THIS POST ONLY: The character's Hunger (vampires only)",
+        choices=[i for i in range(6)],
+        required=False,
+    )
+    @option(
+        "location", description="THIS POST ONLY: Where the scene is taking place", required=False
+    )
+    @option("merits", description="THIS POST ONLY: Obvious/important merits", required=False)
+    @option("flaws", description="THIS POST ONLY: Obvious/important flaws", required=False)
+    @option("temporary", descroption="THIS POST ONLY: Temporary effects", required=False)
+    @option(
+        "display_header",
+        description="Display a header above the post (default false)",
+        default=False,
+    )
+    @inconnu.utils.decorators.premium()
+    async def post_shortcut(
+        self,
+        ctx: discord.ApplicationContext,
+        mentions: str,
+        character: str,
+        blush: int,
+        hunger: int,
+        location: str,
+        merits: str,
+        flaws: str,
+        temporary: str,
+        display_header: bool,
+    ):
+        """Shortcut for /post with mandatory mentions and no header."""
+        await inconnu.roleplay.post(
+            ctx,
+            character,
+            mentions=mentions,
+            blush=blush,
+            hunger=hunger,
+            location=location,
+            merits=merits,
+            flaws=flaws,
+            temp=temporary,
+            show_header=display_header,
+        )
+
     @slash_command(contexts={discord.InteractionContextType.guild})
     @option("user", description="The user who wrote the post")
     @option("content", description="What to search for", required=False)

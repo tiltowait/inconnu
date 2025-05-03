@@ -1,7 +1,7 @@
 """character/display/display.py - Tools for displaying characters."""
 # pylint: disable=too-many-arguments
 
-from enum import Enum
+from enum import StrEnum
 
 import discord
 
@@ -15,7 +15,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 # Display fields
 
 
-class DisplayField(str, Enum):
+class DisplayField(StrEnum):
     """An enum for displaying character trackers."""
 
     HEALTH = "Health"

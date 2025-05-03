@@ -8,7 +8,7 @@ import math
 import random
 from collections import Counter
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from types import SimpleNamespace
 
 from discord import Embed
@@ -27,7 +27,7 @@ from inconnu.models.vchardocs import (
 from logger import Logger
 
 
-class _Properties(str, Enum):
+class _Properties(StrEnum):
     """An enum to avoid stringly typing database fields."""
 
     USER = "user"

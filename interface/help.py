@@ -1,7 +1,7 @@
 """interface/help.py - Help commands"""
 # TODO: Migrate to _empty_embed
 
-from enum import Enum
+from enum import StrEnum
 
 import discord
 from discord import option
@@ -14,7 +14,7 @@ from config import web_asset
 from inconnu.constants import PATREON, SUPPORT_URL
 
 
-class Section(str, Enum):
+class Section(StrEnum):
     """Represents a help section."""
 
     OVERVIEW = "Overview"
@@ -449,8 +449,7 @@ class Help(commands.Cog):
         embed = self._empty_embed(
             title="Roleposting",
             description=(
-                "This feature is for [premium users only]"
-                "(https://docs.inconnu.app/guides/premium)."
+                "This feature is for [premium users only](https://docs.inconnu.app/guides/premium)."
             ),
         )
         embed.add_field(

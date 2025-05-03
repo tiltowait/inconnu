@@ -3,7 +3,7 @@
 
 import re
 import uuid
-from enum import Enum
+from enum import StrEnum
 
 import discord
 from discord.ui import Button
@@ -13,7 +13,7 @@ from config import web_asset
 from inconnu.vr import dicemoji
 
 
-class _ButtonID(str, Enum):
+class _ButtonID(StrEnum):
     """Button IDs used in re-rolls."""
 
     REROLL_FAILURES = "reroll_failures"

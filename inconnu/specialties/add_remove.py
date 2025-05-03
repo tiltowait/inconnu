@@ -1,7 +1,7 @@
 """Specialties addition and removal."""
 
 import asyncio
-from enum import Enum
+from enum import Enum, StrEnum
 
 import discord
 
@@ -21,7 +21,7 @@ class Action(Enum):
     REMOVE = 1
 
 
-class Category(str, Enum):
+class Category(StrEnum):
     """An enum representing a trait category."""
 
     SPECIALTY = "Specialty"

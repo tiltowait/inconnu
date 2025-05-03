@@ -1,6 +1,6 @@
 """settings/guildsettings.py - Guild-wide settings class."""
 
-from enum import Enum
+from enum import StrEnum
 
 
 class GuildSettings:
@@ -24,7 +24,7 @@ class GuildSettings:
         self.max_hunger = settings.get("max_hunger", 5)
 
 
-class ExpPerms(str, Enum):
+class ExpPerms(StrEnum):
     """An enum for experience adjustment permissions."""
 
     UNRESTRICTED = "unrestricted"

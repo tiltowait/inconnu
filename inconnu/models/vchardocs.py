@@ -3,7 +3,7 @@
 
 import itertools
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from types import SimpleNamespace as SN
 
 from umongo import EmbeddedDocument, fields
@@ -75,7 +75,7 @@ class VCharTrait(EmbeddedDocument):
 
     DELIMITER = "."
 
-    class Type(str, Enum):
+    class Type(StrEnum):
         """The type of trait."""
 
         ATTRIBUTE = "attribute"

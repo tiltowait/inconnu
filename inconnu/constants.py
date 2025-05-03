@@ -1,7 +1,6 @@
 """constants.py - Define package-wide constants."""
 
-import os
-from enum import Enum
+from enum import StrEnum
 
 from dotenv import load_dotenv
 from flatdict import FlatDict
@@ -83,7 +82,7 @@ RESERVED_TRAITS = UNIVERSAL_TRAITS + ["current_hunger"]
 ROUSE_FAIL_COLOR = 0xC70F0F
 
 
-class Damage(str, Enum):
+class Damage(StrEnum):
     """An enum for damage types."""
 
     NONE = "."

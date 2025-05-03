@@ -15,7 +15,7 @@ authors = ["tiltowait <208040+tiltowait@users.noreply.github.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 flatdict = "^4.0.1"
 motor = "^3.0.0"
 numpy = "^1.23.3"

@@ -7,7 +7,7 @@ jobs:
   run-test-battery:
     executor:
       name: python/default
-      tag: 3.10.11
+      tag: '3.11'
     steps:
       - checkout
       - python/install-packages:

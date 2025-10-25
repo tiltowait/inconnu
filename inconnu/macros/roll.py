@@ -89,7 +89,7 @@ async def roll(ctx, syntax: str, character=None):
                 ctx, f"Your `{macro.name}` macro is empty!", character=character.name
             )
         elif macro.name.lower() == "bol":
-            logger.info("VM: %s's macro mimics Blush of Life", character.name)
+            logger.info("VM: {}'s macro mimics Blush of Life", character.name)
             character.set_blush(1)
             await character.commit()
 

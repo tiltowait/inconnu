@@ -49,10 +49,10 @@ async def awaken(ctx, character):
 
     # If a vampire awakens, we want to turn off its blush
     if character.is_vampire and not character.is_thin_blood:
-        logger.debug("AWAKEN: %s is no longer Blushed", character.name)
+        logger.debug("AWAKEN: {} is no longer Blushed", character.name)
         character.set_blush(0)
     else:
-        logger.debug("AWAKEN: %s is a mortal or Thin-Blood; header unchanged", character.name)
+        logger.debug("AWAKEN: {} is a mortal or Thin-Blood; header unchanged", character.name)
 
     if character.is_vampire:
         character.log("rouse")

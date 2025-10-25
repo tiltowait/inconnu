@@ -44,9 +44,9 @@ class ErrorReporter:
         self.bot = bot
         try:
             if (channel := os.getenv("REPORT_CHANNEL")) is not None:
-                logger.info("REPORTER: Report channel ID: %s", channel)
+                logger.info("REPORTER: Report channel ID: {}", channel)
                 if (channel := await bot.fetch_channel(channel)) is not None:
-                    logger.info("REPORTER: Recording errors in #%s", channel.name)
+                    logger.info("REPORTER: Recording errors in #{}", channel.name)
                     self.channel = channel
                 else:
                     logger.warning("REPORTER: Unhandled exceptions channel invalid")
@@ -146,7 +146,7 @@ class ErrorReporter:
         else:
             scope = "INTERACTION"
         formatted = "".join(traceback.format_exception(error))
-        logger.error("%s: %s", scope, formatted)
+        logger.error("{}: {}", scope, formatted)
 
     async def _report_unknown_error(self, respond, embed):
         """Report an unknown exception."""
@@ -155,7 +155,7 @@ class ErrorReporter:
         try:
             await respond(user_msg, ephemeral=True)
         except (discord.NotFound, discord.HTTPException) as err:
-            logger.error("REPORTER: Couldn't inform user of an error: %s", str(err))
+            logger.error("REPORTER: Couldn't inform user of an error: {}", str(err))
         finally:
             if self.channel is not None:
                 await self.channel.send(embed=embed)

@@ -31,7 +31,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
         await ctx.interaction.response.defer(ephemeral=True, invisible=False)
 
     processed_url = await api.upload_faceclaim(character, image.url)
-    logger.info("IMAGES: %s: Uploaded new image to %s", character.name, processed_url)
+    logger.info("IMAGES: {}: Uploaded new image to {}", character.name, processed_url)
 
     character.profile.images.append(processed_url)
 
@@ -65,7 +65,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
 def valid_url(url: str) -> bool:
     """Check whether a URL is a valid image URL."""
     url = urlparse(url.lower())
-    logger.debug("IMAGES: Checking validity of %s", url)
+    logger.debug("IMAGES: Checking validity of {}", url)
 
     for extension in VALID_EXTENSIONS:
         if url.path.endswith(extension):

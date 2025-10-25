@@ -38,7 +38,7 @@ class Wizard:
 
         self.assigned_traits = {}
         self.ctx.bot.wizards += 1
-        logger.info("CHARACTER CREATE: Chargen started by %s on %s", ctx.user.name, ctx.guild.name)
+        logger.info("CHARACTER CREATE: Chargen started by {} on {}", ctx.user.name, ctx.guild.name)
 
     async def begin_chargen(self):
         """Start the chargen wizard."""

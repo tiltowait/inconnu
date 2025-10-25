@@ -132,7 +132,7 @@ class ReferenceCommands(commands.Cog):
         # We only need the message IDs
         deletions = interface.raw_bulk_delete_handler(payload, self.bot, lambda id: id)
         if deletions:
-            logger.debug("REFERENCE: Deleting %s potential roll records", len(deletions))
+            logger.debug("REFERENCE: Deleting {} potential roll records", len(deletions))
             await inconnu.stats.roll_message_deleted(*deletions)
 
     @commands.Cog.listener()

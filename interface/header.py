@@ -235,7 +235,7 @@ class HeaderCog(commands.Cog):
                 owner = record["character"]["user"]
                 if ctx.user.id == owner:
                     # Modal gets the new location
-                    logger.debug("HEADER: %s is updating an RP header", ctx.user.name)
+                    logger.debug("HEADER: {} is updating an RP header", ctx.user.name)
                     modal = LocationChangeModal(message, webhook, title="Edit RP Header")
                     await ctx.send_modal(modal)
                 else:
@@ -245,7 +245,7 @@ class HeaderCog(commands.Cog):
                     await ctx.respond("This isn't your RP header!", ephemeral=True)
                 return
 
-        logger.debug("HEADER: %s attempted to update a non-header post", ctx.user.name)
+        logger.debug("HEADER: {} attempted to update a non-header post", ctx.user.name)
         await ctx.respond("This message isn't an RP header!", ephemeral=True)
 
     @commands.message_command(
@@ -293,7 +293,7 @@ class HeaderCog(commands.Cog):
                             ctx.guild.name,
                         )
                 else:
-                    logger.debug("HEADER: Unauthorized deletion attempt by %s", ctx.user.name)
+                    logger.debug("HEADER: Unauthorized deletion attempt by {}", ctx.user.name)
                     await ctx.respond(
                         "You don't have permission to delete this RP header.", ephemeral=True
                     )
@@ -314,7 +314,7 @@ class HeaderCog(commands.Cog):
             author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
         if deletions:
-            logger.debug("HEADER: Deleting %s potential header messages", len(deletions))
+            logger.debug("HEADER: Deleting {} potential header messages", len(deletions))
             await inconnu.db.headers.bulk_write(deletions)
 
     @commands.Cog.listener()
@@ -336,7 +336,7 @@ class HeaderCog(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
         """Remove header records from the deleted channel."""
-        logger.info("HEADER: Removing header records from deleted channel %s", channel.name)
+        logger.info("HEADER: Removing header records from deleted channel {}", channel.name)
         await inconnu.db.headers.delete_many({"channel": channel.id})
 
 

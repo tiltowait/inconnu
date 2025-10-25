@@ -30,7 +30,7 @@ async def cmd_replace(ctx: ApplicationContext, content: str = None, **kwargs):
             for cmd_str in command_strings:
                 if mention := _get_command_mention(cmd_str):
                     text = text.replace(cmd_str, mention)
-                    logger.debug("CMD REPLACER: Replaced %s with %s", cmd_str, mention)
+                    logger.debug("CMD REPLACER: Replaced {} with {}", cmd_str, mention)
 
         return text
 

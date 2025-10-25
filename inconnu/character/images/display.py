@@ -257,10 +257,10 @@ class ImagePager(ReportingView):
     async def _delete_image(self, interaction: discord.Interaction):
         """Delete the current image."""
         image_url = self.character.profile.images.pop(self.current_page)
-        logger.info("IMAGES: Removing %s from %s", image_url, self.character.name)
+        logger.info("IMAGES: Removing {} from {}", image_url, self.character.name)
 
         if self.num_pages == 0:
-            logger.debug("IMAGES: Deleted %s's last image", self.character.name)
+            logger.debug("IMAGES: Deleted {}'s last image", self.character.name)
             await self._display_no_images(interaction)
         else:
             page = min(self.current_page, self.num_pages - 1)
@@ -271,7 +271,7 @@ class ImagePager(ReportingView):
                 {"url": image_url}, {"$set": {"deleted": discord.utils.utcnow()}}
             )
         else:
-            logger.info("IMAGES: %s is not a managed resource", image_url)
+            logger.info("IMAGES: {} is not a managed resource", image_url)
 
         await self.character.commit()
 

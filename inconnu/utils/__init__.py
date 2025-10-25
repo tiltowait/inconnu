@@ -138,13 +138,13 @@ def is_supporter(ctx, user: discord.Member | None = None) -> bool:
 
     # First, see if the invoker is on the support server
     if (member := support_server.get_member(user.id)) is not None:
-        logger.debug("SUPPORTER: %s is on %s", user.name, support_server.name)
+        logger.debug("SUPPORTER: {} is on {}", user.name, support_server.name)
         if member.get_role(SUPPORTER_ROLE) is not None:
-            logger.debug("SUPPORTER: %s is a supporter", user.name)
+            logger.debug("SUPPORTER: {} is a supporter", user.name)
             return True
-        logger.debug("SUPPORTER: %s is a not a supporter", user.name)
+        logger.debug("SUPPORTER: {} is a not a supporter", user.name)
         return False
-    logger.debug("SUPPORTER: %s is not on the support server", user.name)
+    logger.debug("SUPPORTER: {} is not on the support server", user.name)
     return False
 
 

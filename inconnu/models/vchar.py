@@ -99,7 +99,7 @@ class VChar(Document):
         else:
             self.header.blush = -1
 
-        logger.info("VCHAR: Created %s", self.name)
+        logger.info("VCHAR: Created {}", self.name)
 
     def pre_update(self):
         """Clamp values within required bounds."""
@@ -114,7 +114,7 @@ class VChar(Document):
         if self.splat == "thinblood":
             self.splat = "thin-blood"
 
-        logger.debug("VCHAR: %s will update", self.name)
+        logger.debug("VCHAR: {} will update", self.name)
 
     # Comparators
 
@@ -254,14 +254,14 @@ class VChar(Document):
     def set_blush(self, new_blush: int):
         """Toggle the character's Blush of Life."""
         if self.header.blush == new_blush:
-            logger.debug("VCHAR: %s's Blush of Life (%s) is unchanged", self.name, new_blush)
+            logger.debug("VCHAR: {}'s Blush of Life ({}) is unchanged", self.name, new_blush)
             return
         if self.header.blush >= 0:
             # We only want to update blush of full vampires
             self.header.blush = new_blush
-            logger.debug("VCHAR: Setting %s's Blush of Life to %s", self.name, new_blush)
+            logger.debug("VCHAR: Setting {}'s Blush of Life to {}", self.name, new_blush)
         else:
-            logger.warning("VCHAR: Can't set Blush of Life; %s is not a vampire", self.name)
+            logger.warning("VCHAR: Can't set Blush of Life; {} is not a vampire", self.name)
 
     # Derived attributes
 
@@ -565,7 +565,7 @@ class VChar(Document):
         macro = VCharMacro(**kwargs)
         bisect.insort(self.macros, macro, key=lambda m: m.name.casefold())
 
-        logger.debug("VCHAR: %s: Added new macro %s", self.name, macro.name)
+        logger.debug("VCHAR: {}: Added new macro {}", self.name, macro.name)
 
     def update_macro(self, search: str, update: dict[str, str | int | bool]):
         """Update a macro."""
@@ -708,7 +708,7 @@ class VChar(Document):
             event=f"{event}_{scope}", amount=amount, reason=reason, admin=admin
         )
         self.experience.log.append(event)
-        logger.info("VCHAR: %s: Experience event: %s", self.name, event)
+        logger.info("VCHAR: {}: Experience event: {}", self.name, event)
 
         if scope == "lifetime":
             self.set_lifetime_xp(self.experience.lifetime + amount)

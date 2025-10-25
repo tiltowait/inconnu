@@ -91,7 +91,7 @@ class CharacterManager:
         if self.all_fetched.get(key, False):
             return self.user_cache.get(key, [])
 
-        logger.info("CHARACTER MANAGER: Fetching %s's characters on %s from the db", user, guild)
+        logger.info("CHARACTER MANAGER: Fetching {}'s characters on {} from the db", user, guild)
 
         characters = []
         async for character in inconnu.models.VChar.find({"guild": guild, "user": user}):
@@ -171,11 +171,11 @@ class CharacterManager:
             if character.id in self.id_cache:
                 del self.id_cache[character.id]
 
-            logger.info("CHARACTER MANAGER: Removed %s", character.name)
+            logger.info("CHARACTER MANAGER: Removed {}", character.name)
 
             return True
 
-        logger.warning("CHARACTER MANAGER: Unable to remove %s", character.name)
+        logger.warning("CHARACTER MANAGER: Unable to remove {}", character.name)
         return False
 
     async def transfer(self, character, current_owner, new_owner):

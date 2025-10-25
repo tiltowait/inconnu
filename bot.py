@@ -34,16 +34,16 @@ class InconnuBot(discord.AutoShardedBot):
         if config.SHOW_TEST_ROUTES:
             logger.info("CONFIG: Showing test routes")
 
-        logger.info("CONFIG: Profile site set to %s", config.PROFILE_SITE)
-        logger.info("CONFIG: Admin guild: %s", config.ADMIN_GUILD)
+        logger.info("CONFIG: Profile site set to {}", config.PROFILE_SITE)
+        logger.info("CONFIG: Admin guild: {}", config.ADMIN_GUILD)
 
         if config.DEBUG_GUILDS:
-            logger.info("CONFIG: Debugging on %s", DEBUG_GUILDS)
+            logger.info("CONFIG: Debugging on {}", DEBUG_GUILDS)
 
         # Add the cogs
         for filename in os.listdir("./interface"):
             if filename[0] != "_" and filename.endswith(".py"):
-                logger.debug("COGS: Loading %s", filename)
+                logger.debug("COGS: Loading {}", filename)
                 self.load_extension(f"interface.{filename[:-3]}")
 
     @property
@@ -122,10 +122,10 @@ class InconnuBot(discord.AutoShardedBot):
             )
             embed.set_footer(text="Thank you for your support!")
             await member.send(embed=embed)
-            logger.info("PREMIUM: Informed %s about premium loss", member.name)
+            logger.info("PREMIUM: Informed {} about premium loss", member.name)
 
         except (discord.errors.Forbidden, discord.errors.HTTPException):
-            logger.info("PREMIUM: Could not DM %s about premium loss", member.name)
+            logger.info("PREMIUM: Could not DM {} about premium loss", member.name)
 
     async def inform_premium_features(self, member: discord.Member):
         """Inform the member of premium features."""
@@ -147,10 +147,10 @@ class InconnuBot(discord.AutoShardedBot):
                 )
             )
             await member.send(embed=embed)
-            logger.info("PREMIUM: Informed %s about premium features", member.name)
+            logger.info("PREMIUM: Informed {} about premium features", member.name)
 
         except discord.errors.Forbidden:
-            logger.info("PREMIUM: Could not DM %s about premium features", member.name)
+            logger.info("PREMIUM: Could not DM {} about premium features", member.name)
 
     def cmd_mention(
         self, name: str, type: type[discord.ApplicationCommand] = discord.ApplicationCommand
@@ -164,7 +164,7 @@ class InconnuBot(discord.AutoShardedBot):
         """Look up a guild in the guild cache or fetches if not found."""
         if guild := self.get_guild(guild_id):
             return guild
-        logger.debug("BOT: Guild %s not found in cache; attempting fetch", guild_id)
+        logger.debug("BOT: Guild {} not found in cache; attempting fetch", guild_id)
         return await self.fetch_guild(guild_id)
 
     def can_webhook(self, channel: discord.TextChannel) -> bool:
@@ -224,7 +224,7 @@ class InconnuBot(discord.AutoShardedBot):
         status if the character has images.
         """
         if not character.profile.images:
-            logger.info("TRANSFER: %s has no images", character.name)
+            logger.info("TRANSFER: {} has no images", character.name)
             return
 
         if not await inconnu.db.supporters.find_one({"_id": character.user}):
@@ -235,7 +235,7 @@ class InconnuBot(discord.AutoShardedBot):
             )
             await self.mark_premium_loss(member, True)
         else:
-            logger.info("TRANSFER: %s has a supporter record; no action needed", member.name)
+            logger.info("TRANSFER: {} has a supporter record; no action needed", member.name)
 
     # Events
 
@@ -297,12 +297,12 @@ class InconnuBot(discord.AutoShardedBot):
         if self.motd and ctx.command.qualified_name not in {"motd", "announce"}:
             try:
                 if ctx.user.id not in self.motd_given:
-                    logger.debug("MOTD: Showing MOTD to %s", ctx.user.name)
+                    logger.debug("MOTD: Showing MOTD to {}", ctx.user.name)
                     await asyncio.sleep(1)
                     await inconnu.utils.cmd_replace(ctx, embed=self.motd, ephemeral=True)
                     self.motd_given.add(ctx.user.id)
             except discord.HTTPException:
-                logger.warning("Could not show MotD to %s", ctx.user.name)
+                logger.warning("Could not show MotD to {}", ctx.user.name)
 
     async def on_connect(self):
         """Perform early setup."""
@@ -311,10 +311,10 @@ class InconnuBot(discord.AutoShardedBot):
             await reporter.prepare_channel(self)
             self.webhook_cache = inconnu.webhookcache.WebhookCache(self.user.id)
 
-            logger.info("CONNECT: Logged in as %s!", str(self.user))
-            logger.info("CONNECT: Playing on %s servers", len(self.guilds))
-            logger.info("CONNECT: %s", discord.version_info)
-            logger.info("CONNECT: Latency: %s ms", self.latency * 1000)
+            logger.info("CONNECT: Logged in as {}!", str(self.user))
+            logger.info("CONNECT: Playing on {} servers", len(self.guilds))
+            logger.info("CONNECT: {}", discord.version_info)
+            logger.info("CONNECT: Latency: {} ms", self.latency * 1000)
 
             inconnu.models.VChar.SPC_OWNER = self.user.id
             logger.info("CONNECT: Registered SPC owner")
@@ -365,11 +365,11 @@ class InconnuBot(discord.AutoShardedBot):
             return member.get_role(SUPPORTER_ROLE) is not None
 
         if is_supporter(before) and not is_supporter(after):
-            logger.info("PREMIUM: %s is no longer a supporter", after.name)
+            logger.info("PREMIUM: {} is no longer a supporter", after.name)
             await self.mark_premium_loss(after)
 
         elif is_supporter(after) and not is_supporter(before):
-            logger.info("PREMIUM: %s is now a supporter!", after.name)
+            logger.info("PREMIUM: {} is now a supporter!", after.name)
             await self.mark_premium_gain(after)
 
     @staticmethod
@@ -394,19 +394,19 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_guild_join(self, guild: discord.Guild):
         """Log whenever a guild is joined."""
-        logger.info("BOT: Joined %s!", guild.name)
+        logger.info("BOT: Joined {}!", guild.name)
         await asyncio.gather(inconnu.stats.guild_joined(guild), self._set_presence())
 
     async def on_guild_remove(self, guild: discord.Guild):
         """Log guild removals."""
-        logger.info("BOT: Left %s :(", guild.name)
+        logger.info("BOT: Left {} :(", guild.name)
         await asyncio.gather(inconnu.stats.guild_left(guild.id), self._set_presence())
 
     @staticmethod
     async def on_guild_update(before: discord.Guild, after: discord.Guild):
         """Log guild name changes."""
         if before.name != after.name:
-            logger.info("BOT: Renamed %s => %s", before.name, after.name)
+            logger.info("BOT: Renamed {} => {}", before.name, after.name)
             await inconnu.stats.guild_renamed(after.id, after.name)
 
     async def on_webhooks_update(self, channel: discord.TextChannel):

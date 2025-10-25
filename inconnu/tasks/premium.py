@@ -20,12 +20,12 @@ async def remove_expired_images():
     async for supporter in inconnu.db.supporters.find({"discontinued": {"$lt": expiration}}):
         user_id = supporter["_id"]
         expired_user_ids.append(user_id)
-        logger.info("TASK: Removing %s's profile images", user_id)
+        logger.info("TASK: Removing {}'s profile images", user_id)
 
         # The cache doesn't have a facility for fetching cross-guild, so we
         # have to fetch them manually
         async for character in inconnu.models.VChar.find({"user": user_id}):
-            logger.info("TASK: Removing images from %s", character.name)
+            logger.info("TASK: Removing images from {}", character.name)
             api_tasks.append(api.delete_character_faceclaims(character))
 
     logger.info(

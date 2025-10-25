@@ -24,7 +24,7 @@ async def cull(days=30):
         await inconnu.db.guilds.delete_one({"guild": guild})
 
     if guilds:
-        logger.info("CULLER: Culled %s guilds", len(removed_guilds))
+        logger.info("CULLER: Culled {} guilds", len(removed_guilds))
 
     # We remove characters separately so as to make only one database call
     # rather than potentially many
@@ -36,8 +36,8 @@ async def cull(days=30):
     async for character in characters:
         await api.delete_character_faceclaims(character)
         if await inconnu.char_mgr.remove(character):
-            logger.info("CULLER: Culling %s", character.name)
+            logger.info("CULLER: Culling {}", character.name)
         else:
-            logger.info("CULLER: Unable to cull %s", character.name)
+            logger.info("CULLER: Unable to cull {}", character.name)
 
     logger.info("CULLER: Done culling")

@@ -71,7 +71,7 @@ def __biography_paginator(ctx, character, owner):
         # There weren't any valid images, so just use the original embed
         embeds.append(embed)
 
-    logger.debug("PROFILE: Created %s page(s) for %s", len(embeds), character.name)
+    logger.debug("PROFILE: Created {} page(s) for {}", len(embeds), character.name)
 
     if len(embeds) > 1:
         paginator = pages.Paginator(embeds, loop_pages=True, author_check=False)

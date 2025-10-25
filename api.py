@@ -36,7 +36,7 @@ def measure(func):
         val = await func(*args, **kwargs)
         end = datetime.now()
 
-        logger.info("API: %s finished in %s", kwargs["path"], end - start)
+        logger.info("API: {} finished in {}", kwargs["path"], end - start)
 
         return val
 
@@ -68,7 +68,7 @@ async def delete_single_faceclaim(image: str) -> bool:
 
     key = match.group(1)
     res = await _delete(path=f"/faceclaim/delete/{BUCKET}/{key}")
-    logger.debug("API: %s", res)
+    logger.debug("API: {}", res)
 
     return True
 
@@ -78,7 +78,7 @@ async def delete_character_faceclaims(character: "VChar"):
     res = await _delete(path=f"/faceclaim/delete/{BUCKET}/{character.id}/all")
     del character.profile.images[:]
     await character.commit()
-    logger.info("API: %s", res)
+    logger.info("API: {}", res)
 
 
 async def upload_logs():
@@ -90,12 +90,12 @@ async def upload_logs():
             with open(log, "rb") as handle:
                 payload = {"log_file": handle}
                 res = await _post(path="/log/upload", data=payload)
-                logger.info("API: %s", res)
+                logger.info("API: {}", res)
 
         if len(logs) > 1:
             # Remove all but the most recent log file
             for log in logs[:-1]:
-                logger.info("API: Deleting old log: %s", log)
+                logger.info("API: Deleting old log: {}", log)
                 os.unlink(log)
         elif not logs:
             logger.error("API: No log files found")
@@ -105,14 +105,14 @@ async def upload_logs():
         return True
 
     except ApiError as err:
-        logger.error("API: %s", str(err))
+        logger.error("API: {}", str(err))
         return False
 
 
 @measure
 async def _post(*, path: str, data: dict) -> str:
     """Send an API POST request."""
-    logger.debug("API: POST to %s with %s", path, str(data))
+    logger.debug("API: POST to {} with {}", path, str(data))
     url = BASE_API + path.lstrip("/")
 
     async with async_timeout.timeout(60):
@@ -128,7 +128,7 @@ async def _post(*, path: str, data: dict) -> str:
 @measure
 async def _delete(*, path: str) -> str:
     """Send an API DELETE request."""
-    logger.debug("API: DELETE to %s", path)
+    logger.debug("API: DELETE to {}", path)
     url = BASE_API + path.lstrip("/")
 
     async with async_timeout.timeout(60):

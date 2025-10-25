@@ -222,7 +222,7 @@ class RoleplayCog(commands.Cog):
             author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
         if updates:
-            logger.debug("POST: Marking %s potential Roleposts as deleted", len(updates))
+            logger.debug("POST: Marking {} potential Roleposts as deleted", len(updates))
             await inconnu.db.rp_posts.bulk_write(updates)
 
     @commands.Cog.listener()
@@ -287,14 +287,14 @@ class RoleplayCog(commands.Cog):
                         deletion_id,
                     )
             else:
-                logger.debug("POST: No deletion channel set on %s", post["guild"])
+                logger.debug("POST: No deletion channel set on {}", post["guild"])
         else:
             logger.debug("POST: Deleted message is not a Rolepost")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
         """Mark Roleposts in the deleted channel."""
-        logger.info("POST: Marking all Roleposts in %s as deleted", channel.name)
+        logger.info("POST: Marking all Roleposts in {} as deleted", channel.name)
         await inconnu.db.rp_posts.update_many(
             {"channel": channel.id},
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},

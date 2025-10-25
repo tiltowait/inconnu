@@ -262,7 +262,7 @@ class Settings:
             await inconnu.db.guilds.insert_one({"guild": guild.id, "settings": {key: value}})
 
         # Update the cache
-        logger.info("SETTINGS: %s (guild): %s=%s", guild.name, key, value)
+        logger.info("SETTINGS: {} (guild): {}={}", guild.name, key, value)
         guild = await self._fetch_guild(guild)
         setattr(guild, key, value)
 
@@ -275,7 +275,7 @@ class Settings:
             await inconnu.db.users.insert_one({"user": user.id, "settings": {key: value}})
 
         # Update the cache
-        logger.info("SETTINGS: %s: %s=%s", user.name, key, value)
+        logger.info("SETTINGS: {}: {}={}", user.name, key, value)
 
         user_settings = await self._fetch_user(user)
         setattr(user_settings.settings, key, value)

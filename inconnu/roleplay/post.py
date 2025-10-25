@@ -151,7 +151,7 @@ class PostModal(discord.ui.Modal):
         await self.post_to_edit.commit()
 
         await interaction.response.send_message("Post updated!", ephemeral=True, delete_after=3)
-        logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
+        logger.info("POST: {} edited a post ({})", self.character.name, self.message.id)
 
         if post_to_changelog:
             await self._post_to_changelog(interaction)
@@ -208,7 +208,7 @@ class PostModal(discord.ui.Modal):
         # Register the messages
         if self.show_header:
             await inconnu.header.register(interaction, header_message, self.character)
-            logger.info("POST: %s registered header", self.character.name)
+            logger.info("POST: {} registered header", self.character.name)
 
         # Extract the user mentions as pure ints
         mention_ids = []
@@ -241,7 +241,7 @@ class PostModal(discord.ui.Modal):
             title = None
             tags = []
 
-        logger.info("POST: %s registered post", self.character.name)
+        logger.info("POST: {} registered post", self.character.name)
 
     async def _post_to_changelog(self, interaction: discord.Interaction):
         """Post the edited message to the RP changelog."""
@@ -272,7 +272,7 @@ class PostModal(discord.ui.Modal):
             changelog = interaction.client.get_partial_messageable(changelog_id)
             try:
                 await changelog.send(embed=embed)
-                logger.info("POST: Sent changelog to %s: %s", interaction.guild.name, changelog_id)
+                logger.info("POST: Sent changelog to {}: {}", interaction.guild.name, changelog_id)
             except discord.HTTPException:
                 logger.info(
                     "POST: Changelog channel doesn't exist: %s: %s",
@@ -286,7 +286,7 @@ class PostModal(discord.ui.Modal):
                     changelog_id,
                 )
         else:
-            logger.debug("POST: Changelog channel not set: %s", interaction.guild.name)
+            logger.debug("POST: Changelog channel not set: {}", interaction.guild.name)
 
 
 @haven(__HELP_URL)

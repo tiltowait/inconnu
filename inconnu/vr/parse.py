@@ -209,7 +209,7 @@ async def stringify_mentions(ctx, sentence):
             # Realistically, there should be no failed lookups. If there are,
             # the user is probably trying to lock up the bot. Give them three
             # tries in case there's something weird going on before bailing.
-            if not match in replacements:
+            if match not in replacements:
                 failed_lookups += 1
                 if failed_lookups == 3:
                     break

@@ -1,6 +1,5 @@
 """macros/update.py - Macro update commands."""
 
-import re
 from distutils.util import strtobool
 
 import inconnu

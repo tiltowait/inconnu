@@ -2,7 +2,6 @@
 
 from types import SimpleNamespace
 
-import discord
 
 import inconnu
 from inconnu.traits import traitcommon

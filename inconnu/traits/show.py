@@ -2,7 +2,6 @@
 
 import discord
 from discord.ext.commands import Paginator as Chunker
-from discord.ext.pages import Paginator
 
 import inconnu
 from inconnu.utils.haven import haven

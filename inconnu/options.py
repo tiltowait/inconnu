@@ -1,7 +1,5 @@
 """options.py - Various options for command parameters."""
 
-import os
-
 import discord
 from discord.commands import Option, OptionChoice
 

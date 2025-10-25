@@ -622,9 +622,9 @@ class VChar(Document):
             severity (str): Damage.SUPERFICIAL or Damage.AGGRAVATED
             amount (int): The amount to set it to
         """
-        if not severity in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
+        if severity not in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
             raise SyntaxError("Severity must be superficial or aggravated.")
-        if not tracker in [_Properties.HEALTH, _Properties.WILLPOWER]:
+        if tracker not in [_Properties.HEALTH, _Properties.WILLPOWER]:
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = getattr(self, tracker)
@@ -678,9 +678,9 @@ class VChar(Document):
         Damage won't be applied if delta is 0 or if we are subtracting damage when
             there is none.
         """
-        if not severity in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
+        if severity not in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
             raise SyntaxError("Severity must be superficial or aggravated.")
-        if not tracker in [_Properties.HEALTH, _Properties.WILLPOWER]:
+        if tracker not in [_Properties.HEALTH, _Properties.WILLPOWER]:
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = getattr(self, tracker)

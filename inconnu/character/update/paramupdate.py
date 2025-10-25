@@ -56,7 +56,7 @@ def __update_hunger_potency(character: "VChar", delta: str, key: str, maximum: i
     if not character.is_vampire:
         raise ValueError(f"Mortals and ghouls do not have {key.title()}.")
 
-    setting = not delta[0] in ["+", "-"]
+    setting = delta[0] not in ["+", "-"]
     try:
         delta = int(delta)
     except ValueError:
@@ -171,7 +171,7 @@ def __update_damage(character: "VChar", tracker: str, dtype: str, delta_str: int
     """
     if tracker not in {"health", "willpower"}:
         raise SyntaxError(f"Unknown tracker {tracker}")
-    if not dtype in {Damage.SUPERFICIAL, Damage.AGGRAVATED}:
+    if dtype not in {Damage.SUPERFICIAL, Damage.AGGRAVATED}:
         raise SyntaxError(f"Unknown damage type: {dtype}")
 
     # If the user doesn't supply a sign, they are setting the damage total rather
@@ -262,7 +262,7 @@ def __update_xp(character: "VChar", xp_type: str, delta: str) -> str:
         if delta[0] not in ["+", "-"]:
             setting = True
 
-    if not xp_type in {"lifetime", "unspent"}:
+    if xp_type not in {"lifetime", "unspent"}:
         raise SyntaxError(f"Unknown XP type: {xp_type}.")  # Should never be seen
 
     delta = int(delta)

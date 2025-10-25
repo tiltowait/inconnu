@@ -8,12 +8,15 @@ import os
 
 import discord
 import uvloop
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 import bot
 from web.routers import base, posts, profiles
+
+load_dotenv()
 
 app = FastAPI(openapi_url=None)
 app.mount("/public", StaticFiles(directory="./web/public"), name="public")

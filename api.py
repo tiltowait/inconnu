@@ -10,7 +10,10 @@ from urllib.parse import urlparse
 
 import aiohttp
 import async_timeout
+from dotenv import load_dotenv
 from loguru import logger
+
+load_dotenv()
 
 # An argument can be made that these should simply live with their appropriate
 # command counterparts, but I see a value in keeping them together.

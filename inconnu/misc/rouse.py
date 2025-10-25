@@ -3,7 +3,6 @@
 
 from types import SimpleNamespace
 
-import discord
 
 import inconnu
 from config import web_asset

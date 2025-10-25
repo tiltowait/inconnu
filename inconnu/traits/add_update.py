@@ -4,7 +4,6 @@ import asyncio
 import re
 from types import SimpleNamespace
 
-import discord
 
 import inconnu
 from inconnu.models.vchardocs import VCharTrait

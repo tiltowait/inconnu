@@ -5,13 +5,13 @@ from uuid import uuid4
 
 import discord
 from discord.ui import Button, View
+from loguru import logger
 
 import inconnu
 from inconnu import common
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
 from inconnu.vr import display_outcome, perform_roll
-from logger import Logger
 
 __HUNT_LISTENERS = {}
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/rolling"
@@ -89,7 +89,7 @@ async def roll(ctx, syntax: str, character=None):
                 ctx, f"Your `{macro.name}` macro is empty!", character=character.name
             )
         elif macro.name.lower() == "bol":
-            Logger.info("VM: %s's macro mimics Blush of Life", character.name)
+            logger.info("VM: %s's macro mimics Blush of Life", character.name)
             character.set_blush(1)
             await character.commit()
 

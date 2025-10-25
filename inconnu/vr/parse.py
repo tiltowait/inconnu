@@ -15,13 +15,13 @@ import re
 from functools import partial
 
 import discord
+from loguru import logger
 
 import inconnu
 from inconnu.models.vchardocs import VCharTrait
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
-from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
@@ -47,7 +47,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
 
     comment = await stringify_mentions(ctx, comment)
     if comment is not None and (comment_len := len(comment)) > 300:
-        Logger.debug("VR: Comment is too long")
+        logger.debug("VR: Comment is too long")
         await inconnu.utils.error(ctx, f"Comment is too long by {comment_len - 300} characters.")
         return
 
@@ -215,7 +215,7 @@ async def stringify_mentions(ctx, sentence):
                     break
 
         # Replace the items in the original string
-        for (match, replacement) in replacements.items():
+        for match, replacement in replacements.items():
             sentence = sentence.replace(match, replacement)
 
     return " ".join(sentence.split())

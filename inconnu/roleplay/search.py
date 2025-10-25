@@ -6,11 +6,11 @@ from enum import Enum
 
 import discord
 from discord.ext.pages import Paginator
+from loguru import logger
 from pymongo import ASCENDING, DESCENDING
 
 import inconnu
 from inconnu.models import RPPost
-from logger import Logger
 
 
 class SortOrder(Enum):
@@ -68,7 +68,7 @@ async def search(
         if inconnu.character.valid_name(character):
             query["header.char_name"] = re.compile(character, re.I)
         else:
-            Logger.debug("RP SEARCH: Ignoring invalid character name")
+            logger.debug("RP SEARCH: Ignoring invalid character name")
     if mentioning is not None:
         query["mentions"] = mentioning.id
         footer.append(f"Mentioning {user.display_name}")

@@ -3,12 +3,12 @@
 from typing import Optional
 
 import discord
+from loguru import logger
 
 import api
 import inconnu
 from inconnu.utils.haven import haven
 from inconnu.views import ReportingView
-from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 
@@ -257,10 +257,10 @@ class ImagePager(ReportingView):
     async def _delete_image(self, interaction: discord.Interaction):
         """Delete the current image."""
         image_url = self.character.profile.images.pop(self.current_page)
-        Logger.info("IMAGES: Removing %s from %s", image_url, self.character.name)
+        logger.info("IMAGES: Removing %s from %s", image_url, self.character.name)
 
         if self.num_pages == 0:
-            Logger.debug("IMAGES: Deleted %s's last image", self.character.name)
+            logger.debug("IMAGES: Deleted %s's last image", self.character.name)
             await self._display_no_images(interaction)
         else:
             page = min(self.current_page, self.num_pages - 1)
@@ -271,7 +271,7 @@ class ImagePager(ReportingView):
                 {"url": image_url}, {"$set": {"deleted": discord.utils.utcnow()}}
             )
         else:
-            Logger.info("IMAGES: %s is not a managed resource", image_url)
+            logger.info("IMAGES: %s is not a managed resource", image_url)
 
         await self.character.commit()
 
@@ -297,7 +297,7 @@ class ImagePager(ReportingView):
     async def on_timeout(self):
         """Delete the components."""
         if self.children:
-            Logger.debug("IMAGES: View timed out; deleting components")
+            logger.debug("IMAGES: View timed out; deleting components")
             await self.message.edit(view=None)
         else:
-            Logger.debug("IMAGES: View timed out, but no components")
+            logger.debug("IMAGES: View timed out, but no components")

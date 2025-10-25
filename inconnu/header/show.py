@@ -1,11 +1,11 @@
 """header/display.py - RP header display facilities."""
 
 import discord
+from loguru import logger
 
 import inconnu
 from inconnu.models.rpheader import HeaderSubdoc
 from inconnu.utils.haven import haven
-from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
@@ -46,7 +46,7 @@ async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
         if message is not None:
             await register_header(ctx, message, character)
         else:
-            Logger.warning(
+            logger.warning(
                 "Unable to register %s's header (%s: %s)",
                 ctx.user.name,
                 ctx.guild.name,

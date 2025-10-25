@@ -3,11 +3,11 @@
 from urllib.parse import urlparse
 
 import discord
+from loguru import logger
 
 import api
 import inconnu
 from inconnu.utils.haven import haven
-from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
@@ -31,7 +31,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
         await ctx.interaction.response.defer(ephemeral=True, invisible=False)
 
     processed_url = await api.upload_faceclaim(character, image.url)
-    Logger.info("IMAGES: %s: Uploaded new image to %s", character.name, processed_url)
+    logger.info("IMAGES: %s: Uploaded new image to %s", character.name, processed_url)
 
     character.profile.images.append(processed_url)
 
@@ -65,7 +65,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
 def valid_url(url: str) -> bool:
     """Check whether a URL is a valid image URL."""
     url = urlparse(url.lower())
-    Logger.debug("IMAGES: Checking validity of %s", url)
+    logger.debug("IMAGES: Checking validity of %s", url)
 
     for extension in VALID_EXTENSIONS:
         if url.path.endswith(extension):

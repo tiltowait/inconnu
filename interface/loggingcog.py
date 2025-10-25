@@ -1,12 +1,11 @@
 """interface/loggingcog.py - Log command events."""
 
-import os
 from datetime import datetime
 
 from discord.ext import commands
+from loguru import logger
 
 import inconnu.utils
-from logger import Logger
 
 
 class LoggingCog(commands.Cog):
@@ -20,7 +19,7 @@ class LoggingCog(commands.Cog):
         else:
             location = "DMs"
 
-        Logger.info(
+        logger.info(
             "COMMAND: `/%s` invoked by %s (%s) in %s (%s). Options: %s",
             ctx.command.qualified_name,
             ctx.user.name,

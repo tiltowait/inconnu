@@ -10,9 +10,9 @@ import discord
 import uvloop
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from loguru import logger
 
 import bot
-from logger import Logger
 from web.routers import base, posts, profiles
 
 app = FastAPI(openapi_url=None)
@@ -33,7 +33,7 @@ def respond(self, *args, **kwargs):
 
 
 discord.Interaction.respond = respond
-Logger.info("MAIN: Patched discord.Interaction")
+logger.info("MAIN: Patched discord.Interaction")
 
 if __name__ == "__main__":
     # DEBUG MODE. Does not spin up the web server.

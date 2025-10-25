@@ -1,10 +1,9 @@
 """Miscellaneous shared interface functions."""
 
-from typing import Any, Awaitable, Callable
+from typing import Awaitable, Callable
 
+from loguru import logger
 from pymongo import DeleteOne, UpdateOne
-
-from logger import Logger
 
 
 async def raw_message_delete_handler(
@@ -19,17 +18,17 @@ async def raw_message_delete_handler(
     # the record.
     if (message := raw_message.cached_message) is not None:
         if message.flags.ephemeral:
-            Logger.debug("RAW DELETER: Ignoring ephemeral message")
+            logger.debug("RAW DELETER: Ignoring ephemeral message")
             return
         # Got a cached message, so we can be a little more efficient and
         # only call the database if it belongs to the bot
         if author_comparator(message.author) or message.author == bot.user:
-            Logger.debug("RAW DELETER: Handling bot message")
+            logger.debug("RAW DELETER: Handling bot message")
             await handler(message.id)
     else:
         # The message isn't in the cache; blindly delete the record
         # if it exists
-        Logger.debug("RAW DELETER: Blindly handling potential bot message")
+        logger.debug("RAW DELETER: Blindly handling potential bot message")
         await handler(raw_message.message_id)
 
 
@@ -45,17 +44,17 @@ def raw_bulk_delete_handler(
 
     for message in payload.cached_messages:
         if message.flags.ephemeral:
-            Logger.debug("RAW BULK HANDLER: Ignoring ephemeral message")
+            logger.debug("RAW BULK HANDLER: Ignoring ephemeral message")
             continue
 
         raw_ids.discard(message.id)  # Prevent double updates
 
         if author_comparator(message.author) or message.author == bot.user:
-            Logger.debug("RAW BULK DELETER: Adding potential bot message to queue")
+            logger.debug("RAW BULK DELETER: Adding potential bot message to queue")
             write_ops.append(gen_update(message.id))
 
     for message_id in raw_ids:
-        Logger.debug("RAW BULK DELETER: Blindly adding potential bot message to queue")
+        logger.debug("RAW BULK DELETER: Blindly adding potential bot message to queue")
         write_ops.append(gen_update(message_id))
 
     return write_ops

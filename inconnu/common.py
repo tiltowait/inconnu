@@ -1,14 +1,12 @@
 """common.py - Commonly used functions."""
 
 import re
-from types import SimpleNamespace
-from uuid import uuid4
 
 import discord
 from discord.ui import Button
+from loguru import logger
 
 import inconnu
-from logger import Logger
 
 
 def pluralize(value: int, noun: str) -> str:
@@ -163,7 +161,7 @@ async def report_update(*, ctx, character, title, message, **kwargs):
         try:
             await update_channel.send(content, embed=embed, allowed_mentions=mentions)
         except discord.errors.Forbidden:
-            Logger.warning(
+            logger.warning(
                 "UPDATE REPORT: No access to post in #%s on %s",
                 update_channel.name,
                 update_channel.guild.name,

@@ -6,6 +6,7 @@ from datetime import time, timezone
 
 import discord
 from discord.ext import tasks
+from loguru import logger
 
 import api
 import config
@@ -13,7 +14,6 @@ import config.logging
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from errorreporter import reporter
-from logger import Logger
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -29,21 +29,21 @@ class InconnuBot(discord.AutoShardedBot):
         self.motd = None
         self.motd_given = set()
         self.webhook_cache = None
-        Logger.info("BOT: Instantiated")
+        logger.info("BOT: Instantiated")
 
         if config.SHOW_TEST_ROUTES:
-            Logger.info("CONFIG: Showing test routes")
+            logger.info("CONFIG: Showing test routes")
 
-        Logger.info("CONFIG: Profile site set to %s", config.PROFILE_SITE)
-        Logger.info("CONFIG: Admin guild: %s", config.ADMIN_GUILD)
+        logger.info("CONFIG: Profile site set to %s", config.PROFILE_SITE)
+        logger.info("CONFIG: Admin guild: %s", config.ADMIN_GUILD)
 
         if config.DEBUG_GUILDS:
-            Logger.info("CONFIG: Debugging on %s", DEBUG_GUILDS)
+            logger.info("CONFIG: Debugging on %s", DEBUG_GUILDS)
 
         # Add the cogs
         for filename in os.listdir("./interface"):
             if filename[0] != "_" and filename.endswith(".py"):
-                Logger.debug("COGS: Loading %s", filename)
+                logger.debug("COGS: Loading %s", filename)
                 self.load_extension(f"interface.{filename[:-3]}")
 
     @property
@@ -68,13 +68,13 @@ class InconnuBot(discord.AutoShardedBot):
         """If the message is a reply to a Rolepost, ping the Rolepost's author."""
         # TODO: Once satisfied with this method, remove most of the debug lines
         if message.author.bot:
-            Logger.debug("BOT: Disregarding bot message")
+            logger.debug("BOT: Disregarding bot message")
             return
         if message.type != discord.MessageType.reply:
-            Logger.debug("BOT: Disregarding non-reply message.")
+            logger.debug("BOT: Disregarding non-reply message.")
             return
         if message.reference is None:
-            Logger.debug("BOT: Disregarding message with no reference.")
+            logger.debug("BOT: Disregarding message with no reference.")
             return
 
         # It's possible for the backend to not fill in this property, which is
@@ -83,7 +83,7 @@ class InconnuBot(discord.AutoShardedBot):
         if message.reference.resolved is not None:
             # This routine only works if the webhooks have already been fetched
             if message.reference.resolved.author.id in self.webhook_cache.webhook_ids:
-                Logger.debug("BOT: Received a reply to one of our webhooks")
+                logger.debug("BOT: Received a reply to one of our webhooks")
                 rp_post = await inconnu.models.RPPost.find_one(
                     {"id_chain": message.reference.message_id}
                 )
@@ -92,15 +92,15 @@ class InconnuBot(discord.AutoShardedBot):
                     # need to worry about an edge case where they disabled the
                     # reply ping and can safely ping the author.
                     if rp_post.user not in map(lambda m: m.id, message.mentions):
-                        Logger.debug("BOT: Pinging Rolepost's author")
+                        logger.debug("BOT: Pinging Rolepost's author")
                         user = await self.get_or_fetch_user(rp_post.user)
                         await message.reply(user.mention, mention_author=False, delete_after=60)
                     else:
-                        Logger.debug("BOT: Replier pinged the Rolepost's author; doing nothing")
+                        logger.debug("BOT: Replier pinged the Rolepost's author; doing nothing")
                 else:
-                    Logger.debug("BOT: Rolepost not found")
+                    logger.debug("BOT: Rolepost not found")
             else:
-                Logger.debug("BOT: Disregarding reply that isn't to one of our webhooks")
+                logger.debug("BOT: Disregarding reply that isn't to one of our webhooks")
 
     @staticmethod
     async def inform_premium_loss(member: discord.Member, title="You are no longer a supporter!"):
@@ -122,10 +122,10 @@ class InconnuBot(discord.AutoShardedBot):
             )
             embed.set_footer(text="Thank you for your support!")
             await member.send(embed=embed)
-            Logger.info("PREMIUM: Informed %s about premium loss", member.name)
+            logger.info("PREMIUM: Informed %s about premium loss", member.name)
 
         except (discord.errors.Forbidden, discord.errors.HTTPException):
-            Logger.info("PREMIUM: Could not DM %s about premium loss", member.name)
+            logger.info("PREMIUM: Could not DM %s about premium loss", member.name)
 
     async def inform_premium_features(self, member: discord.Member):
         """Inform the member of premium features."""
@@ -147,10 +147,10 @@ class InconnuBot(discord.AutoShardedBot):
                 )
             )
             await member.send(embed=embed)
-            Logger.info("PREMIUM: Informed %s about premium features", member.name)
+            logger.info("PREMIUM: Informed %s about premium features", member.name)
 
         except discord.errors.Forbidden:
-            Logger.info("PREMIUM: Could not DM %s about premium features", member.name)
+            logger.info("PREMIUM: Could not DM %s about premium features", member.name)
 
     def cmd_mention(
         self, name: str, type: type[discord.ApplicationCommand] = discord.ApplicationCommand
@@ -164,7 +164,7 @@ class InconnuBot(discord.AutoShardedBot):
         """Look up a guild in the guild cache or fetches if not found."""
         if guild := self.get_guild(guild_id):
             return guild
-        Logger.debug("BOT: Guild %s not found in cache; attempting fetch", guild_id)
+        logger.debug("BOT: Guild %s not found in cache; attempting fetch", guild_id)
         return await self.fetch_guild(guild_id)
 
     def can_webhook(self, channel: discord.TextChannel) -> bool:
@@ -189,7 +189,7 @@ class InconnuBot(discord.AutoShardedBot):
         servers = len(self.guilds)
         message = f"/help | {servers} chronicles"
 
-        Logger.info("BOT: Setting presence")
+        logger.info("BOT: Setting presence")
         await self.change_presence(
             activity=discord.Activity(type=discord.ActivityType.watching, name=message)
         )
@@ -224,18 +224,18 @@ class InconnuBot(discord.AutoShardedBot):
         status if the character has images.
         """
         if not character.profile.images:
-            Logger.info("TRANSFER: %s has no images", character.name)
+            logger.info("TRANSFER: %s has no images", character.name)
             return
 
         if not await inconnu.db.supporters.find_one({"_id": character.user}):
-            Logger.info(
+            logger.info(
                 "TRANSFER: Creating a supporter record for %s, because %s has images",
                 member.name,
                 character.name,
             )
             await self.mark_premium_loss(member, True)
         else:
-            Logger.info("TRANSFER: %s has a supporter record; no action needed", member.name)
+            logger.info("TRANSFER: %s has a supporter record; no action needed", member.name)
 
     # Events
 
@@ -297,12 +297,12 @@ class InconnuBot(discord.AutoShardedBot):
         if self.motd and ctx.command.qualified_name not in {"motd", "announce"}:
             try:
                 if ctx.user.id not in self.motd_given:
-                    Logger.debug("MOTD: Showing MOTD to %s", ctx.user.name)
+                    logger.debug("MOTD: Showing MOTD to %s", ctx.user.name)
                     await asyncio.sleep(1)
                     await inconnu.utils.cmd_replace(ctx, embed=self.motd, ephemeral=True)
                     self.motd_given.add(ctx.user.id)
             except discord.HTTPException:
-                Logger.warning("Could not show MotD to %s", ctx.user.name)
+                logger.warning("Could not show MotD to %s", ctx.user.name)
 
     async def on_connect(self):
         """Perform early setup."""
@@ -311,27 +311,27 @@ class InconnuBot(discord.AutoShardedBot):
             await reporter.prepare_channel(self)
             self.webhook_cache = inconnu.webhookcache.WebhookCache(self.user.id)
 
-            Logger.info("CONNECT: Logged in as %s!", str(self.user))
-            Logger.info("CONNECT: Playing on %s servers", len(self.guilds))
-            Logger.info("CONNECT: %s", discord.version_info)
-            Logger.info("CONNECT: Latency: %s ms", self.latency * 1000)
+            logger.info("CONNECT: Logged in as %s!", str(self.user))
+            logger.info("CONNECT: Playing on %s servers", len(self.guilds))
+            logger.info("CONNECT: %s", discord.version_info)
+            logger.info("CONNECT: Latency: %s ms", self.latency * 1000)
 
             inconnu.models.VChar.SPC_OWNER = self.user.id
-            Logger.info("CONNECT: Registered SPC owner")
+            logger.info("CONNECT: Registered SPC owner")
 
             self.connected = True
 
         await self.sync_commands()
-        Logger.info("CONNECT: Commands synced")
+        logger.info("CONNECT: Commands synced")
 
     async def on_ready(self):
         """Schedule a task to perform final setup."""
         await bot.wait_until_ready()
         if not bot.welcomed:
-            Logger.info("BOT: Internal cache built")
+            logger.info("BOT: Internal cache built")
 
             server_info = await inconnu.db.server_info()
-            Logger.info(
+            logger.info(
                 "MONGO: Version %s, using %s database",
                 server_info["version"],
                 server_info["database"],
@@ -346,7 +346,7 @@ class InconnuBot(discord.AutoShardedBot):
 
         # We always want to do these regardless of welcoming or not
         await self._set_presence()
-        Logger.info("BOT: Ready")
+        logger.info("BOT: Ready")
 
     @staticmethod
     async def on_application_command_error(context, exception):
@@ -365,11 +365,11 @@ class InconnuBot(discord.AutoShardedBot):
             return member.get_role(SUPPORTER_ROLE) is not None
 
         if is_supporter(before) and not is_supporter(after):
-            Logger.info("PREMIUM: %s is no longer a supporter", after.name)
+            logger.info("PREMIUM: %s is no longer a supporter", after.name)
             await self.mark_premium_loss(after)
 
         elif is_supporter(after) and not is_supporter(before):
-            Logger.info("PREMIUM: %s is now a supporter!", after.name)
+            logger.info("PREMIUM: %s is now a supporter!", after.name)
             await self.mark_premium_gain(after)
 
     @staticmethod
@@ -394,19 +394,19 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_guild_join(self, guild: discord.Guild):
         """Log whenever a guild is joined."""
-        Logger.info("BOT: Joined %s!", guild.name)
+        logger.info("BOT: Joined %s!", guild.name)
         await asyncio.gather(inconnu.stats.guild_joined(guild), self._set_presence())
 
     async def on_guild_remove(self, guild: discord.Guild):
         """Log guild removals."""
-        Logger.info("BOT: Left %s :(", guild.name)
+        logger.info("BOT: Left %s :(", guild.name)
         await asyncio.gather(inconnu.stats.guild_left(guild.id), self._set_presence())
 
     @staticmethod
     async def on_guild_update(before: discord.Guild, after: discord.Guild):
         """Log guild name changes."""
         if before.name != after.name:
-            Logger.info("BOT: Renamed %s => %s", before.name, after.name)
+            logger.info("BOT: Renamed %s => %s", before.name, after.name)
             await inconnu.stats.guild_renamed(after.id, after.name)
 
     async def on_webhooks_update(self, channel: discord.TextChannel):
@@ -433,12 +433,12 @@ async def check_premium_expiries():
 async def upload_logs():
     """Upload logs to S3."""
     if not config.logging.cloud_logging:
-        Logger.warning("TASK: Log uploading disabled. Unscheduling task")
+        logger.warning("TASK: Log uploading disabled. Unscheduling task")
         upload_logs.stop()
     elif not await api.upload_logs():
-        Logger.error("TASK: Unable to upload logs. Please see error console")
+        logger.error("TASK: Unable to upload logs. Please see error console")
     else:
-        Logger.info("TASK: Logs uploaded")
+        logger.info("TASK: Logs uploaded")
 
 
 # Set up the bot instance
@@ -452,5 +452,5 @@ async def run():
     try:
         await bot.start(os.environ["INCONNU_TOKEN"])
     except KeyboardInterrupt:
-        Logger.info("BOT: Logging out")
+        logger.info("BOT: Logging out")
         await bot.bot.logout()

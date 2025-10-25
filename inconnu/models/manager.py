@@ -4,16 +4,16 @@ import bisect
 import datetime
 
 from cachetools import TTLCache
+from loguru import logger
 
 import inconnu
-from logger import Logger
 
 
 class CharacterManager:
     """A class for maintaining a local copy of characters."""
 
     def __init__(self):
-        Logger.info("CHARACTER MANAGER: Initialized")
+        logger.info("CHARACTER MANAGER: Initialized")
         max_size = 100
         ttl = 1800
         self.all_fetched: TTLCache[str, bool] = TTLCache(maxsize=max_size, ttl=ttl)
@@ -91,7 +91,7 @@ class CharacterManager:
         if self.all_fetched.get(key, False):
             return self.user_cache.get(key, [])
 
-        Logger.info("CHARACTER MANAGER: Fetching %s's characters on %s from the db", user, guild)
+        logger.info("CHARACTER MANAGER: Fetching %s's characters on %s from the db", user, guild)
 
         characters = []
         async for character in inconnu.models.VChar.find({"guild": guild, "user": user}):
@@ -106,7 +106,7 @@ class CharacterManager:
         self.user_cache[key] = characters
         self.all_fetched[key] = True
 
-        Logger.debug(
+        logger.debug(
             "CHARACTER MANAGER: Found %s characters (%s on %s)",
             len(characters),
             user,
@@ -171,11 +171,11 @@ class CharacterManager:
             if character.id in self.id_cache:
                 del self.id_cache[character.id]
 
-            Logger.info("CHARACTER MANAGER: Removed %s", character.name)
+            logger.info("CHARACTER MANAGER: Removed %s", character.name)
 
             return True
 
-        Logger.warning("CHARACTER MANAGER: Unable to remove %s", character.name)
+        logger.warning("CHARACTER MANAGER: Unable to remove %s", character.name)
         return False
 
     async def transfer(self, character, current_owner, new_owner):
@@ -206,7 +206,7 @@ class CharacterManager:
 
             self.user_cache[new_key] = new_chars
 
-        Logger.info(
+        logger.info(
             "CHARACTER MANAGER: Transferred '%s' from %s to %s",
             character.name,
             current_owner.name,

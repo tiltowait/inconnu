@@ -7,11 +7,11 @@ import discord
 from discord import option
 from discord.commands import OptionChoice, slash_command
 from discord.ext import commands
+from loguru import logger
 from pymongo import UpdateOne
 
 import inconnu
 import interface
-from logger import Logger
 
 
 class RoleplayCog(commands.Cog):
@@ -222,7 +222,7 @@ class RoleplayCog(commands.Cog):
             author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
         if updates:
-            Logger.debug("POST: Marking %s potential Roleposts as deleted", len(updates))
+            logger.debug("POST: Marking %s potential Roleposts as deleted", len(updates))
             await inconnu.db.rp_posts.bulk_write(updates)
 
     @commands.Cog.listener()
@@ -250,7 +250,7 @@ class RoleplayCog(commands.Cog):
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
         )
         if post is not None:
-            Logger.debug("POST: Marked Rolepost as deleted")
+            logger.debug("POST: Marked Rolepost as deleted")
             deletion_id = await inconnu.settings.deletion_channel(post["guild"])
             if deletion_id:
                 channel = self.bot.get_partial_messageable(deletion_id)
@@ -269,32 +269,32 @@ class RoleplayCog(commands.Cog):
 
                 try:
                     await channel.send(embed=embed)
-                    Logger.info(
+                    logger.info(
                         "POST: Sent deletion notice to deletion at %s: %s",
                         post["guild"],
                         deletion_id,
                     )
                 except discord.Forbidden:
-                    Logger.info(
+                    logger.info(
                         "POST: Unable to send deletion notice to %s: %s (Missing permissions)",
                         post["guild"],
                         deletion_id,
                     )
                 except discord.HTTPException:
-                    Logger.info(
+                    logger.info(
                         "POST: Unable to send deletion notice to %s: %s (Channel not found)",
                         post["guild"],
                         deletion_id,
                     )
             else:
-                Logger.debug("POST: No deletion channel set on %s", post["guild"])
+                logger.debug("POST: No deletion channel set on %s", post["guild"])
         else:
-            Logger.debug("POST: Deleted message is not a Rolepost")
+            logger.debug("POST: Deleted message is not a Rolepost")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
         """Mark Roleposts in the deleted channel."""
-        Logger.info("POST: Marking all Roleposts in %s as deleted", channel.name)
+        logger.info("POST: Marking all Roleposts in %s as deleted", channel.name)
         await inconnu.db.rp_posts.update_many(
             {"channel": channel.id},
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},

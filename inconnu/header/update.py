@@ -3,9 +3,9 @@
 import asyncio
 
 import discord
+from loguru import logger
 
 import inconnu
-from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
@@ -40,8 +40,8 @@ class _RPHeader(discord.ui.Modal):
         mock_title = inconnu.header.header_title(character.name, "Not Blushed", "")
         max_location_len = 256 - len(mock_title)
 
-        Logger.debug("HEADER: Header length, minus location, is %s", len(mock_title))
-        Logger.debug("HEADER: Max location length: %s", max_location_len)
+        logger.debug("HEADER: Header length, minus location, is %s", len(mock_title))
+        logger.debug("HEADER: Max location length: %s", max_location_len)
 
         self.add_item(
             discord.ui.InputText(

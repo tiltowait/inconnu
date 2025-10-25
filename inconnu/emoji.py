@@ -3,9 +3,9 @@
 import os
 
 from dotenv import load_dotenv
+from loguru import logger
 
 import inconnu
-from logger import Logger
 
 load_dotenv()
 
@@ -46,8 +46,8 @@ class _EmojiManager:
         _emojis = await guild.fetch_emojis()
         self._emojis = {emoji.name: emoji for emoji in _emojis}
 
-        Logger.info("EMOJIS: Loaded emojis from %s", guild.name)
-        Logger.debug("EMOJIS: %s", list(map(lambda e: e.name, self._emojis.values())))
+        logger.info("EMOJIS: Loaded emojis from %s", guild.name)
+        logger.debug("EMOJIS: %s", list(map(lambda e: e.name, self._emojis.values())))
         self.loaded = True
 
 

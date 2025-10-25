@@ -2,10 +2,10 @@
 
 import discord
 from discord.ext import pages
+from loguru import logger
 
 import inconnu
 from inconnu.utils.haven import haven
-from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#profile"
 
@@ -71,7 +71,7 @@ def __biography_paginator(ctx, character, owner):
         # There weren't any valid images, so just use the original embed
         embeds.append(embed)
 
-    Logger.debug("PROFILE: Created %s page(s) for %s", len(embeds), character.name)
+    logger.debug("PROFILE: Created %s page(s) for %s", len(embeds), character.name)
 
     if len(embeds) > 1:
         paginator = pages.Paginator(embeds, loop_pages=True, author_check=False)

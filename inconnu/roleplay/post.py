@@ -3,10 +3,10 @@
 import re
 
 import discord
+from loguru import logger
 
 import inconnu
 from inconnu.utils.haven import haven
-from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/"
 
@@ -151,7 +151,7 @@ class PostModal(discord.ui.Modal):
         await self.post_to_edit.commit()
 
         await interaction.response.send_message("Post updated!", ephemeral=True, delete_after=3)
-        Logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
+        logger.info("POST: %s edited a post (%s)", self.character.name, self.message.id)
 
         if post_to_changelog:
             await self._post_to_changelog(interaction)
@@ -208,7 +208,7 @@ class PostModal(discord.ui.Modal):
         # Register the messages
         if self.show_header:
             await inconnu.header.register(interaction, header_message, self.character)
-            Logger.info("POST: %s registered header", self.character.name)
+            logger.info("POST: %s registered header", self.character.name)
 
         # Extract the user mentions as pure ints
         mention_ids = []
@@ -241,7 +241,7 @@ class PostModal(discord.ui.Modal):
             title = None
             tags = []
 
-        Logger.info("POST: %s registered post", self.character.name)
+        logger.info("POST: %s registered post", self.character.name)
 
     async def _post_to_changelog(self, interaction: discord.Interaction):
         """Post the edited message to the RP changelog."""
@@ -252,9 +252,7 @@ class PostModal(discord.ui.Modal):
 
             # Prep the embed
             description = (
-                f"{interaction.user.mention} edited a post in <#{post.channel}>."
-                "\n```diff\n"
-                f"{diff}\n"
+                f"{interaction.user.mention} edited a post in <#{post.channel}>.\n```diff\n{diff}\n"
             )
             description = description[:3996] + "```"  # Ensure we don't overflow
 
@@ -274,21 +272,21 @@ class PostModal(discord.ui.Modal):
             changelog = interaction.client.get_partial_messageable(changelog_id)
             try:
                 await changelog.send(embed=embed)
-                Logger.info("POST: Sent changelog to %s: %s", interaction.guild.name, changelog_id)
+                logger.info("POST: Sent changelog to %s: %s", interaction.guild.name, changelog_id)
             except discord.HTTPException:
-                Logger.info(
+                logger.info(
                     "POST: Changelog channel doesn't exist: %s: %s",
                     interaction.guild.name,
                     changelog_id,
                 )
             except discord.Forbidden:
-                Logger.info(
+                logger.info(
                     "POST: Unable to post changelog in %s: %s",
                     interaction.guild.name,
                     changelog_id,
                 )
         else:
-            Logger.debug("POST: Changelog channel not set: %s", interaction.guild.name)
+            logger.debug("POST: Changelog channel not set: %s", interaction.guild.name)
 
 
 @haven(__HELP_URL)

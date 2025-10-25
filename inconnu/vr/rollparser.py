@@ -4,9 +4,10 @@ import ast
 import operator as op
 import re
 
+from loguru import logger
+
 import inconnu
 from inconnu.models.vchardocs import VCharTrait
-from logger import Logger
 
 
 class RollParser:
@@ -139,7 +140,7 @@ class RollParser:
                 current_interpolated.append(str(trait.rating))
 
                 if trait.discipline:
-                    Logger.debug("ROLLPARSER: Discipline detected")
+                    logger.debug("ROLLPARSER: Discipline detected")
                     using_discipline = True
 
             expecting_operand = False
@@ -157,7 +158,7 @@ class RollParser:
         self._parameters["i_pool_stack"] = interpolated_stacks.pop(0)
 
         if self.power_bonus and using_discipline and self.character.power_bonus > 0:
-            Logger.debug("ROLLPARSER: Adding power bonus")
+            logger.debug("ROLLPARSER: Adding power bonus")
             self._parameters["q_pool_stack"].extend(["+", "PowerBonus"])
             self._parameters["i_pool_stack"].extend(["+", str(self.character.power_bonus)])
 

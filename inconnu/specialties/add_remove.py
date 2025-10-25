@@ -4,12 +4,12 @@ import asyncio
 from enum import Enum, StrEnum
 
 import discord
+from loguru import logger
 
 import inconnu
 from inconnu.models.vchar import VChar
 from inconnu.specialties.tokenize import SYNTAX, tokenize
 from inconnu.utils.haven import haven
-from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/specialties"
 
@@ -85,7 +85,7 @@ async def _add_or_remove(
                         color=0xFF9400,
                     )
                 )
-                Logger.debug("SPECIALTIES: Delta found")
+                logger.debug("SPECIALTIES: Delta found")
                 break
 
         await asyncio.gather(*tasks)

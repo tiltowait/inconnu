@@ -1,8 +1,9 @@
 """misc/awake.py - Automate the awakening bookkeeping."""
 
+from loguru import logger
+
 import inconnu
 from inconnu.utils.haven import haven
-from logger import Logger
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#awakening"
 
@@ -48,10 +49,10 @@ async def awaken(ctx, character):
 
     # If a vampire awakens, we want to turn off its blush
     if character.is_vampire and not character.is_thin_blood:
-        Logger.debug("AWAKEN: %s is no longer Blushed", character.name)
+        logger.debug("AWAKEN: %s is no longer Blushed", character.name)
         character.set_blush(0)
     else:
-        Logger.debug("AWAKEN: %s is a mortal or Thin-Blood; header unchanged", character.name)
+        logger.debug("AWAKEN: %s is a mortal or Thin-Blood; header unchanged", character.name)
 
     if character.is_vampire:
         character.log("rouse")

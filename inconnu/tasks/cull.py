@@ -2,14 +2,15 @@
 
 from datetime import datetime, timedelta
 
+from loguru import logger
+
 import api
 import inconnu
-from logger import Logger
 
 
 async def cull(days=30):
     """Cull inactive guilds, characters, and macros."""
-    Logger.info("CULLER: Initiating culling run.")
+    logger.info("CULLER: Initiating culling run.")
     past = datetime.utcnow() - timedelta(days=days)
 
     # Remove old guilds
@@ -23,7 +24,7 @@ async def cull(days=30):
         await inconnu.db.guilds.delete_one({"guild": guild})
 
     if guilds:
-        Logger.info("CULLER: Culled %s guilds", len(removed_guilds))
+        logger.info("CULLER: Culled %s guilds", len(removed_guilds))
 
     # We remove characters separately so as to make only one database call
     # rather than potentially many
@@ -35,8 +36,8 @@ async def cull(days=30):
     async for character in characters:
         await api.delete_character_faceclaims(character)
         if await inconnu.char_mgr.remove(character):
-            Logger.info("CULLER: Culling %s", character.name)
+            logger.info("CULLER: Culling %s", character.name)
         else:
-            Logger.info("CULLER: Unable to cull %s", character.name)
+            logger.info("CULLER: Unable to cull %s", character.name)
 
-    Logger.info("CULLER: Done culling")
+    logger.info("CULLER: Done culling")

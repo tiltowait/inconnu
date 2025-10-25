@@ -6,6 +6,7 @@ from typing import Any
 
 import discord
 from discord.ext.commands import Paginator
+from loguru import logger
 
 import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
@@ -15,7 +16,6 @@ from inconnu.utils.decorators import not_on_lockdown
 from inconnu.utils.error import ErrorEmbed, error
 from inconnu.utils.haven import Haven
 from inconnu.utils.paramparse import parse_parameters
-from logger import Logger
 
 __all__ = (
     "decorators",
@@ -138,13 +138,13 @@ def is_supporter(ctx, user: discord.Member | None = None) -> bool:
 
     # First, see if the invoker is on the support server
     if (member := support_server.get_member(user.id)) is not None:
-        Logger.debug("SUPPORTER: %s is on %s", user.name, support_server.name)
+        logger.debug("SUPPORTER: %s is on %s", user.name, support_server.name)
         if member.get_role(SUPPORTER_ROLE) is not None:
-            Logger.debug("SUPPORTER: %s is a supporter", user.name)
+            logger.debug("SUPPORTER: %s is a supporter", user.name)
             return True
-        Logger.debug("SUPPORTER: %s is a not a supporter", user.name)
+        logger.debug("SUPPORTER: %s is a not a supporter", user.name)
         return False
-    Logger.debug("SUPPORTER: %s is not on the support server", user.name)
+    logger.debug("SUPPORTER: %s is not on the support server", user.name)
     return False
 
 

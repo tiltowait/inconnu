@@ -4,10 +4,10 @@
 import discord
 from discord.commands import Option, OptionChoice, slash_command
 from discord.ext import commands
+from loguru import logger
 
 import inconnu
 import interface
-from logger import Logger
 
 
 class ReferenceCommands(commands.Cog):
@@ -132,7 +132,7 @@ class ReferenceCommands(commands.Cog):
         # We only need the message IDs
         deletions = interface.raw_bulk_delete_handler(payload, self.bot, lambda id: id)
         if deletions:
-            Logger.debug("REFERENCE: Deleting %s potential roll records", len(deletions))
+            logger.debug("REFERENCE: Deleting %s potential roll records", len(deletions))
             await inconnu.stats.roll_message_deleted(*deletions)
 
     @commands.Cog.listener()
@@ -141,7 +141,7 @@ class ReferenceCommands(commands.Cog):
 
         async def deletion_handler(message_id: int):
             """Handler that performs the actual database write."""
-            Logger.debug("REFERENCE: Deleting possible roll record")
+            logger.debug("REFERENCE: Deleting possible roll record")
             await inconnu.stats.roll_message_deleted(message_id)
 
         await interface.raw_message_delete_handler(raw_message, self.bot, deletion_handler)
@@ -149,7 +149,7 @@ class ReferenceCommands(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
         """Mark all rolls in the deleted channel as deleted."""
-        Logger.info(
+        logger.info(
             "REFERENCE: Deleting all roll records in deleted channel %s (%s)",
             channel.name,
             channel.id,

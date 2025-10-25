@@ -7,9 +7,9 @@ from datetime import timedelta
 import discord
 from discord.commands import Option
 from discord.ext import commands
+from loguru import logger
 
 from config import ADMIN_GUILD
-from logger import Logger
 
 
 class AdminCog(commands.Cog):
@@ -107,7 +107,7 @@ class AdminCog(commands.Cog):
         else:
             await ctx.respond(msg, ephemeral=True)
 
-        Logger.info("SHUTDOWN: Bot is ready for shutdown")
+        logger.info("SHUTDOWN: Bot is ready for shutdown")
 
 
 def setup(bot):

@@ -6,9 +6,9 @@ import traceback
 import discord
 import pymongo.errors
 from discord.ext import commands
+from loguru import logger
 
 import inconnu
-from logger import Logger
 
 
 class ErrorReporter:
@@ -44,16 +44,16 @@ class ErrorReporter:
         self.bot = bot
         try:
             if (channel := os.getenv("REPORT_CHANNEL")) is not None:
-                Logger.info("REPORTER: Report channel ID: %s", channel)
+                logger.info("REPORTER: Report channel ID: %s", channel)
                 if (channel := await bot.fetch_channel(channel)) is not None:
-                    Logger.info("REPORTER: Recording errors in #%s", channel.name)
+                    logger.info("REPORTER: Recording errors in #%s", channel.name)
                     self.channel = channel
                 else:
-                    Logger.warning("REPORTER: Unhandled exceptions channel invalid")
+                    logger.warning("REPORTER: Unhandled exceptions channel invalid")
             else:
-                Logger.warning("REPORTER: Unhandled exceptions report channel not set")
+                logger.warning("REPORTER: Unhandled exceptions report channel not set")
         except ValueError:
-            Logger.warning("REPORTER: Unhandled exceptions channel is not an int")
+            logger.warning("REPORTER: Unhandled exceptions channel is not an int")
 
     async def report_error(self, ctx: discord.ApplicationContext | discord.Interaction, error):
         """Report an error, switching between known and unknown."""
@@ -89,10 +89,7 @@ class ErrorReporter:
             cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
             await inconnu.utils.error(
                 ctx,
-                (
-                    f"Only patrons can use {cmd_mention}. "
-                    "Click the Patreon button to get started!"
-                ),
+                (f"Only patrons can use {cmd_mention}. Click the Patreon button to get started!"),
                 (
                     "Already a patron?",
                     f"[Check the troubleshooting page.]({troubleshoot_url})",
@@ -119,11 +116,11 @@ class ErrorReporter:
             await respond(embed=embed, ephemeral=True)
             return
         if isinstance(error, inconnu.errors.HandledError):
-            Logger.debug("REPORTER: Ignoring a HandledError")
+            logger.debug("REPORTER: Ignoring a HandledError")
             return
         if isinstance(error, discord.errors.DiscordServerError):
             # There's nothing we can do about these
-            Logger.error("REPORTER: Discord server error detected")
+            logger.error("REPORTER: Discord server error detected")
             return
         if isinstance(error, AttributeError) and "PartialMessageable" in str(error):
             await respond(embed=self.reinvite_message)
@@ -149,7 +146,7 @@ class ErrorReporter:
         else:
             scope = "INTERACTION"
         formatted = "".join(traceback.format_exception(error))
-        Logger.error("%s: %s", scope, formatted)
+        logger.error("%s: %s", scope, formatted)
 
     async def _report_unknown_error(self, respond, embed):
         """Report an unknown exception."""
@@ -158,7 +155,7 @@ class ErrorReporter:
         try:
             await respond(user_msg, ephemeral=True)
         except (discord.NotFound, discord.HTTPException) as err:
-            Logger.error("REPORTER: Couldn't inform user of an error: %s", str(err))
+            logger.error("REPORTER: Couldn't inform user of an error: %s", str(err))
         finally:
             if self.channel is not None:
                 await self.channel.send(embed=embed)

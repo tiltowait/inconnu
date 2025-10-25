@@ -6,9 +6,9 @@ import os
 
 import discord
 from discord.ui import Button
+from loguru import logger
 
 import inconnu
-from logger import Logger
 
 
 class Wizard:
@@ -38,7 +38,7 @@ class Wizard:
 
         self.assigned_traits = {}
         self.ctx.bot.wizards += 1
-        Logger.info("CHARACTER CREATE: Chargen started by %s on %s", ctx.user.name, ctx.guild.name)
+        logger.info("CHARACTER CREATE: Chargen started by %s on %s", ctx.user.name, ctx.guild.name)
 
     async def begin_chargen(self):
         """Start the chargen wizard."""
@@ -199,4 +199,4 @@ class Wizard:
         errmsg = f"Due to inactivity, your chargen on **{self.ctx.guild.name}** has been canceled."
         await self.edit_message(content=errmsg, embed=None, view=None)
         self.ctx.bot.wizards -= 1
-        Logger.info("CHARACTER CREATE: Timed out")
+        logger.info("CHARACTER CREATE: Timed out")

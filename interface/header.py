@@ -4,11 +4,11 @@
 import discord
 from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
+from loguru import logger
 from pymongo import DeleteOne
 
 import inconnu
 import interface
-from logger import Logger
 
 
 class LocationChangeModal(discord.ui.Modal):
@@ -70,10 +70,10 @@ class LocationChangeModal(discord.ui.Modal):
         # Some headers have a title; others use the author string
         if self.updating_title:
             # The title contains name, blush, location, but only name is guaranteed
-            Logger.debug("EDIT HEADER: Embed has a title")
+            logger.debug("EDIT HEADER: Embed has a title")
             elements = embed.title.split(" • ")
         else:
-            Logger.debug("EDIT HEADER: Embed does not have a title")
+            logger.debug("EDIT HEADER: Embed does not have a title")
             elements = embed.author.name.split(" • ")
 
         if self.get_location():
@@ -98,10 +98,10 @@ class LocationChangeModal(discord.ui.Modal):
         embed.set_footer(text=temp_effects)
 
         if self.webhook is None:
-            Logger.debug("EDIT HEADER: Updating with Message.edit()")
+            logger.debug("EDIT HEADER: Updating with Message.edit()")
             await self.header.edit(embed=embed)
         else:
-            Logger.debug("EDIT HEADER: Updating with Webhook.edit_message()")
+            logger.debug("EDIT HEADER: Updating with Webhook.edit_message()")
             await self.webhook.edit_message(self.header.id, embed=embed)
 
         # Inform the user
@@ -220,12 +220,12 @@ class HeaderCog(commands.Cog):
             try:
                 webhook = await self.bot.webhook_cache.fetch_webhook(ctx.channel, message.author.id)
                 if webhook is not None:
-                    Logger.info("EDIT HEADER: Editing a WebhookMessage")
+                    logger.info("EDIT HEADER: Editing a WebhookMessage")
                     proceed = True
                 else:
-                    Logger.debug("EDIT HEADER: Not a WebhookMessage")
+                    logger.debug("EDIT HEADER: Not a WebhookMessage")
             except discord.errors.Forbidden:
-                Logger.info("EDIT HEADER: No webhook permissions")
+                logger.info("EDIT HEADER: No webhook permissions")
 
         if proceed:
             # Make sure we have a header
@@ -235,17 +235,17 @@ class HeaderCog(commands.Cog):
                 owner = record["character"]["user"]
                 if ctx.user.id == owner:
                     # Modal gets the new location
-                    Logger.debug("HEADER: %s is updating an RP header", ctx.user.name)
+                    logger.debug("HEADER: %s is updating an RP header", ctx.user.name)
                     modal = LocationChangeModal(message, webhook, title="Edit RP Header")
                     await ctx.send_modal(modal)
                 else:
-                    Logger.debug(
+                    logger.debug(
                         "HEADER: Unauthorized RP header update attempt by %s", ctx.user.name
                     )
                     await ctx.respond("This isn't your RP header!", ephemeral=True)
                 return
 
-        Logger.debug("HEADER: %s attempted to update a non-header post", ctx.user.name)
+        logger.debug("HEADER: %s attempted to update a non-header post", ctx.user.name)
         await ctx.respond("This message isn't an RP header!", ephemeral=True)
 
     @commands.message_command(
@@ -269,13 +269,13 @@ class HeaderCog(commands.Cog):
                 # Make sure we are allowed to delete it
                 owner = record["character"]["user"]
                 if inconnu.utils.is_admin(ctx, owner_id=owner):
-                    Logger.debug("HEADER: Deleting RP header")
+                    logger.debug("HEADER: Deleting RP header")
                     try:
                         if is_bot_message:
-                            Logger.debug("HEADER: Calling message.delete()")
+                            logger.debug("HEADER: Calling message.delete()")
                             await message.delete()
                         else:
-                            Logger.debug("HEADER: Calling webhook.delete_message()")
+                            logger.debug("HEADER: Calling webhook.delete_message()")
                             await webhook.delete_message(message.id)
                         await ctx.respond("RP header deleted!", ephemeral=True, delete_after=3)
                     except discord.errors.Forbidden:
@@ -286,22 +286,22 @@ class HeaderCog(commands.Cog):
                             ),
                             ephemeral=True,
                         )
-                        Logger.warning(
+                        logger.warning(
                             "HEADER: Unable to delete %s in #%s on %s",
                             record["message"],
                             ctx.channel.name,
                             ctx.guild.name,
                         )
                 else:
-                    Logger.debug("HEADER: Unauthorized deletion attempt by %s", ctx.user.name)
+                    logger.debug("HEADER: Unauthorized deletion attempt by %s", ctx.user.name)
                     await ctx.respond(
                         "You don't have permission to delete this RP header.", ephemeral=True
                     )
             else:
-                Logger.debug("HEADER: Attempted to delete non-header post")
+                logger.debug("HEADER: Attempted to delete non-header post")
                 await ctx.respond("This is not an RP header.", ephemeral=True)
         else:
-            Logger.debug("HEADER: Attempted to delete someone else's post")
+            logger.debug("HEADER: Attempted to delete someone else's post")
             await ctx.respond("This is not an RP header.", ephemeral=True)
 
     @commands.Cog.listener()
@@ -314,7 +314,7 @@ class HeaderCog(commands.Cog):
             author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
         if deletions:
-            Logger.debug("HEADER: Deleting %s potential header messages", len(deletions))
+            logger.debug("HEADER: Deleting %s potential header messages", len(deletions))
             await inconnu.db.headers.bulk_write(deletions)
 
     @commands.Cog.listener()
@@ -323,7 +323,7 @@ class HeaderCog(commands.Cog):
 
         async def deletion_handler(message_id: int):
             """Delete the header record."""
-            Logger.debug("HEADER: Deleting possible header")
+            logger.debug("HEADER: Deleting possible header")
             await inconnu.db.headers.delete_one({"message": message_id})
 
         await interface.raw_message_delete_handler(
@@ -336,7 +336,7 @@ class HeaderCog(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
         """Remove header records from the deleted channel."""
-        Logger.info("HEADER: Removing header records from deleted channel %s", channel.name)
+        logger.info("HEADER: Removing header records from deleted channel %s", channel.name)
         await inconnu.db.headers.delete_many({"channel": channel.id})
 
 

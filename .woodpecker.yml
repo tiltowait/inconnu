@@ -4,6 +4,7 @@ when:
     event: push
   - event: tag
   - event: pull_request
+  - event: manual
 
 steps:
   - name: clone
@@ -12,21 +13,9 @@ steps:
       - git clone "$CI_REPO_CLONE_URL" .
       - git checkout "$CI_COMMIT_SHA"
 
-  - name: setup-envvars
-    image: sh
-    commands:
-      - echo 'export POETRY_CACHE_DIR=/var/cache/woodpecker/poetry' > envvars
-      - echo 'export PIP_CACHE_DIR=/var/cache/woodpecker/pip' >> envvars
-      - echo 'export POETRY_VIRTUALENVS_PATH=/var/cache/woodpecker/venvs' >> envvars
-      - echo 'export POETRY_PYTHON=python3.11' >> envvars
-      - mkdir -p /var/cache/woodpecker/poetry /var/cache/woodpecker/pip /var/cache/woodpecker/venvs
-
   - name: install-dev
     image: sh
     commands:
-      - . ./envvars
-      - export POETRY_VIRTUALENVS_IN_PROJECT=false
-      - poetry env use "$POETRY_PYTHON"
       - poetry install --no-interaction --no-ansi
 
   - name: unit tests
@@ -45,26 +34,14 @@ steps:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
     commands:
-      - . ./envvars
-      - export POETRY_VIRTUALENVS_IN_PROJECT=false
       - poetry run pytest -q
-
-  - name: build-production
-    image: sh
-    when:
-      - event: tag
-    commands:
-      - . ./envvars
-      - export POETRY_VIRTUALENVS_IN_PROJECT=true
-      - poetry env use "$POETRY_PYTHON"
-      - poetry sync --no-interaction --no-ansi --without dev
 
   - name: copy-artifacts
     image: sh
     when:
       - event: tag
+      - event: manual
     commands:
-      - . ./envvars
       - mkdir -p /mnt/artifacts/${CI_REPO_NAME}
       - rsync -a --delete --exclude '.git' . /mnt/build-artifacts/${CI_REPO_NAME}
 

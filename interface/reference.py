@@ -150,7 +150,7 @@ class ReferenceCommands(commands.Cog):
     async def on_guild_channel_delete(self, channel):
         """Mark all rolls in the deleted channel as deleted."""
         logger.info(
-            "REFERENCE: Deleting all roll records in deleted channel %s (%s)",
+            "REFERENCE: Deleting all roll records in deleted channel {} ({})",
             channel.name,
             channel.id,
         )

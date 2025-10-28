@@ -47,7 +47,7 @@ async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
             await register_header(ctx, message, character)
         else:
             logger.warning(
-                "Unable to register %s's header (%s: %s)",
+                "Unable to register {}'s header ({}: {})",
                 ctx.user.name,
                 ctx.guild.name,
                 ctx.guild.id,

@@ -88,7 +88,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                     logger.debug("HAVEN: Explicit character {} matches filter", character.name)
                 except inconnu.errors.InconnuError as err:
                     logger.debug(
-                        "HAVEN: Explicit character %s does not match filter", character.name
+                        "HAVEN: Explicit character {} does not match filter", character.name
                     )
                     await inconnu.utils.error(self.ctx, err, author=self.owner, help=self.help)
                     raise inconnu.errors.HandledError() from err

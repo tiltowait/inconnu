@@ -229,7 +229,7 @@ class InconnuBot(discord.AutoShardedBot):
 
         if not await inconnu.db.supporters.find_one({"_id": character.user}):
             logger.info(
-                "TRANSFER: Creating a supporter record for %s, because %s has images",
+                "TRANSFER: Creating a supporter record for {}, because {} has images",
                 member.name,
                 character.name,
             )
@@ -332,7 +332,7 @@ class InconnuBot(discord.AutoShardedBot):
 
             server_info = await inconnu.db.server_info()
             logger.info(
-                "MONGO: Version %s, using %s database",
+                "MONGO: Version {}, using {} database",
                 server_info["version"],
                 server_info["database"],
             )

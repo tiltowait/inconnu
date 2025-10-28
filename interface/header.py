@@ -240,7 +240,7 @@ class HeaderCog(commands.Cog):
                     await ctx.send_modal(modal)
                 else:
                     logger.debug(
-                        "HEADER: Unauthorized RP header update attempt by %s", ctx.user.name
+                        "HEADER: Unauthorized RP header update attempt by {}", ctx.user.name
                     )
                     await ctx.respond("This isn't your RP header!", ephemeral=True)
                 return
@@ -287,7 +287,7 @@ class HeaderCog(commands.Cog):
                             ephemeral=True,
                         )
                         logger.warning(
-                            "HEADER: Unable to delete %s in #%s on %s",
+                            "HEADER: Unable to delete {} in #{} on {}",
                             record["message"],
                             ctx.channel.name,
                             ctx.guild.name,

@@ -431,12 +431,3 @@ async def check_premium_expiries():
 intents = discord.Intents(guilds=True, members=True, messages=True, webhooks=True)
 bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
 inconnu.bot = bot
-
-
-async def run():
-    """Set up and run the bot."""
-    try:
-        await bot.start(os.environ["INCONNU_TOKEN"])
-    except KeyboardInterrupt:
-        logger.info("BOT: Logging out")
-        await bot.bot.logout()

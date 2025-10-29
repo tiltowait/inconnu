@@ -36,9 +36,9 @@ def prepare_profile_page(request: Request, bio: dict[str, str | dict[str, str]])
     user = guild.get_member(bio["user"]) if guild is not None else None
 
     return templates.TemplateResponse(
+        request,
         "profile.html.jinja",
         {
-            "request": request,
             "name": name,
             "profile": profile,
             "owner": user,

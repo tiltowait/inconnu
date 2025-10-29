@@ -10,7 +10,6 @@ from loguru import logger
 
 import api
 import config
-import config.logging
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from errorreporter import reporter
@@ -339,7 +338,6 @@ class InconnuBot(discord.AutoShardedBot):
 
             # Schedule tasks
             cull_inactive.start()
-            upload_logs.start()
             check_premium_expiries.start()
 
             self.welcomed = True
@@ -427,18 +425,6 @@ async def cull_inactive():
 async def check_premium_expiries():
     """Perform required actions on expired premium users."""
     await inconnu.tasks.premium.remove_expired_images()
-
-
-@tasks.loop(hours=1)
-async def upload_logs():
-    """Upload logs to S3."""
-    if not config.logging.cloud_logging:
-        logger.warning("TASK: Log uploading disabled. Unscheduling task")
-        upload_logs.stop()
-    elif not await api.upload_logs():
-        logger.error("TASK: Unable to upload logs. Please see error console")
-    else:
-        logger.info("TASK: Logs uploaded")
 
 
 # Set up the bot instance

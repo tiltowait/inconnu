@@ -8,7 +8,6 @@ import discord
 from discord.ext import tasks
 from loguru import logger
 
-import api
 import config
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE

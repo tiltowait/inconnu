@@ -107,7 +107,7 @@ class CharacterManager:
         self.all_fetched[key] = True
 
         logger.debug(
-            "CHARACTER MANAGER: Found %s characters (%s on %s)",
+            "CHARACTER MANAGER: Found {} characters ({} on {})",
             len(characters),
             user,
             guild,
@@ -207,7 +207,7 @@ class CharacterManager:
             self.user_cache[new_key] = new_chars
 
         logger.info(
-            "CHARACTER MANAGER: Transferred '%s' from %s to %s",
+            "CHARACTER MANAGER: Transferred '{}' from {} to {}",
             character.name,
             current_owner.name,
             new_owner.name,

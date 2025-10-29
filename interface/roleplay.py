@@ -270,19 +270,19 @@ class RoleplayCog(commands.Cog):
                 try:
                     await channel.send(embed=embed)
                     logger.info(
-                        "POST: Sent deletion notice to deletion at %s: %s",
+                        "POST: Sent deletion notice to deletion at {}: {}",
                         post["guild"],
                         deletion_id,
                     )
                 except discord.Forbidden:
                     logger.info(
-                        "POST: Unable to send deletion notice to %s: %s (Missing permissions)",
+                        "POST: Unable to send deletion notice to {}: {} (Missing permissions)",
                         post["guild"],
                         deletion_id,
                     )
                 except discord.HTTPException:
                     logger.info(
-                        "POST: Unable to send deletion notice to %s: %s (Channel not found)",
+                        "POST: Unable to send deletion notice to {}: {} (Channel not found)",
                         post["guild"],
                         deletion_id,
                     )

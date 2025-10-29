@@ -1,7 +1,6 @@
 """The Inconnu API endpoints."""
 
 import functools
-import glob
 import os
 import re
 from datetime import datetime
@@ -15,12 +14,23 @@ from loguru import logger
 
 load_dotenv()
 
+
+def normalize_url(url: str) -> str:
+    """Return a normalized URL with scheme and trailing slash."""
+    url = url.strip("/")
+    if not url.startswith(("http://", "https://")):
+        url = "http://" + url
+
+    return url + "/"
+
+
 # An argument can be made that these should simply live with their appropriate
 # command counterparts, but I see a value in keeping them together.
 
-AUTH_HEADER = {"Authorization": os.environ["INCONNU_API_TOKEN"]}
-BASE_API = "https://api.inconnu.app/"
-BUCKET = "pcs.inconnu.app"  # The name of the bucket where the images live
+HEADER = {"Content-Type": "application/json"}
+BASE_API = normalize_url(os.getenv("FC_API", "http://127.0.0.1:8080/"))
+# BUCKET = "pcs.inconnu.app"  # The name of the bucket where the images live
+BUCKET = "pcs1.tiltowait.dev"
 
 
 class ApiError(Exception):
@@ -50,10 +60,8 @@ async def upload_faceclaim(character: "VChar", image_url: str) -> str:
         "user": character.user,
         "charid": character.id,
         "image_url": image_url,
-        "bucket": BUCKET,
     }
-    new_url = await _post(path="/faceclaim/upload", data=dumps(payload))
-
+    new_url = await _post(path="/image/upload", data=dumps(payload))
     return new_url
 
 
@@ -67,7 +75,7 @@ async def delete_single_faceclaim(image: str) -> bool:
         return False
 
     key = match.group(1)
-    res = await _delete(path=f"/faceclaim/delete/{BUCKET}/{key}")
+    res = await _delete(path=f"/image/{key}")
     logger.debug("API: {}", res)
 
     return True
@@ -75,38 +83,10 @@ async def delete_single_faceclaim(image: str) -> bool:
 
 async def delete_character_faceclaims(character: "VChar"):
     """Delete all of a character's faceclaims."""
-    res = await _delete(path=f"/faceclaim/delete/{BUCKET}/{character.id}/all")
+    res = await _delete(path=f"/character/{character.id}")
     del character.profile.images[:]
     await character.commit()
     logger.info("API: {}", res)
-
-
-async def upload_logs():
-    """Upload log files."""
-    logger.info("API: Uploading logs")
-    try:
-        logs = sorted(glob.glob("./logs/*.txt"))
-        for log in logs:
-            with open(log, "rb") as handle:
-                payload = {"log_file": handle}
-                res = await _post(path="/log/upload", data=payload)
-                logger.info("API: {}", res)
-
-        if len(logs) > 1:
-            # Remove all but the most recent log file
-            for log in logs[:-1]:
-                logger.info("API: Deleting old log: {}", log)
-                os.unlink(log)
-        elif not logs:
-            logger.error("API: No log files found")
-            return False
-
-        # Logs all uploaded successfully
-        return True
-
-    except ApiError as err:
-        logger.error("API: {}", str(err))
-        return False
 
 
 @measure
@@ -116,7 +96,7 @@ async def _post(*, path: str, data: dict) -> str:
     url = BASE_API + path.lstrip("/")
 
     async with async_timeout.timeout(60):
-        async with aiohttp.ClientSession(headers=AUTH_HEADER) as session:
+        async with aiohttp.ClientSession(headers=HEADER) as session:
             async with session.post(url, data=data) as response:
                 json = await response.json()
 
@@ -132,7 +112,7 @@ async def _delete(*, path: str) -> str:
     url = BASE_API + path.lstrip("/")
 
     async with async_timeout.timeout(60):
-        async with aiohttp.ClientSession(headers=AUTH_HEADER) as session:
+        async with aiohttp.ClientSession(headers=HEADER) as session:
             async with session.delete(url) as response:
                 json = await response.json()
 

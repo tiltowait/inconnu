@@ -1,0 +1,47 @@
+skip_clone: true
+when:
+  - branch: master
+    event: push
+  - event: tag
+  - event: pull_request
+  - event: manual
+
+steps:
+  - name: clone
+    image: sh
+    commands:
+      - git clone "$CI_REPO_CLONE_URL" .
+      - git checkout "$CI_COMMIT_SHA"
+
+  - name: install-dev
+    image: sh
+    commands:
+      - poetry install --no-interaction --no-ansi
+
+  - name: unit tests
+    image: sh
+    environment:
+      ADMIN_SERVER:
+        from_secret: ADMIN_SERVER
+      MONGO_URL:
+        from_secret: MONGO_URL
+      SUPPORTER_GUILD:
+        from_secret: SUPPORTER_GUILD
+      SUPPORTER_ROLE:
+        from_secret: SUPPORTER_ROLE
+      INCONNU_API_TOKEN:
+        from_secret: INCONNU_API_TOKEN
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
+    commands:
+      - poetry run pytest -q
+
+  - name: copy-artifacts
+    image: sh
+    when:
+      - event: tag
+      - event: manual
+    commands:
+      - mkdir -p /mnt/artifacts/${CI_REPO_NAME}
+      - rsync -a --delete --exclude '.git' . /mnt/build-artifacts/${CI_REPO_NAME}
+

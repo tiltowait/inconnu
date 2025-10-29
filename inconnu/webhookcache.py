@@ -21,7 +21,7 @@ class WebhookCache:
         for _webhook in await channel.webhooks():
             if _webhook.user.id == self.bot_id:
                 logger.info(
-                    "WEBHOOK: %s found in #%s on %s",
+                    "WEBHOOK: {} found in #{} on {}",
                     _webhook.name,
                     channel.name,
                     channel.guild.name,
@@ -38,7 +38,7 @@ class WebhookCache:
         for webhook in await guild.webhooks():
             if webhook.user.id == self.bot_id and webhook.channel_id is not None:
                 logger.debug(
-                    "WEBHOOK: Webhook %s found in #%s (%s)",
+                    "WEBHOOK: Webhook {} found in #{} ({})",
                     webhook.name,
                     webhook.channel.name,
                     guild.name,
@@ -60,13 +60,13 @@ class WebhookCache:
             self._webhooks[channel.id] = webhook
             self.webhook_ids.add(webhook.id)
             logger.info(
-                "WEBHOOK: Created a webhook in #%s on %s",
+                "WEBHOOK: Created a webhook in #{} on {}",
                 channel.name,
                 channel.guild.name,
             )
         else:
             logger.info(
-                "WEBHOOK: Using CACHED webhook in #%s (%s)",
+                "WEBHOOK: Using CACHED webhook in #{} ({})",
                 channel.name,
                 channel.guild.name,
             )
@@ -104,7 +104,7 @@ class WebhookCache:
 
         if channel.id not in self._webhooks:
             logger.debug(
-                "WEBHOOK: Ignoring #%s (%s) (no webhooks loaded)", channel.name, channel.guild.name
+                "WEBHOOK: Ignoring #{} ({}) (no webhooks loaded)", channel.name, channel.guild.name
             )
             return
 

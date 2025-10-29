@@ -29,7 +29,7 @@ async def remove_expired_images():
             api_tasks.append(api.delete_character_faceclaims(character))
 
     logger.info(
-        "TASK: Removing images from %s characters due to expired supporter status",
+        "TASK: Removing images from {} characters due to expired supporter status",
         len(api_tasks),
     )
     if api_tasks:

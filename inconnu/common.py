@@ -162,7 +162,7 @@ async def report_update(*, ctx, character, title, message, **kwargs):
             await update_channel.send(content, embed=embed, allowed_mentions=mentions)
         except discord.errors.Forbidden:
             logger.warning(
-                "UPDATE REPORT: No access to post in #%s on %s",
+                "UPDATE REPORT: No access to post in #{} on {}",
                 update_channel.name,
                 update_channel.guild.name,
             )

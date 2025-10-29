@@ -6,6 +6,9 @@ import os
 import pytest
 
 os.environ["PYTEST"] = "1"
+os.environ["ADMIN_SERVER"] = "09876"
+os.environ["SUPPORTER_ROLE"] = "12345"
+os.environ["SUPPORTER_GUILD"] = "54321"
 
 
 @pytest.fixture(scope="session")

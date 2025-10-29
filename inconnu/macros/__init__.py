@@ -5,3 +5,5 @@ from inconnu.macros.delete import delete
 from inconnu.macros.roll import roll
 from inconnu.macros.show import show
 from inconnu.macros.update import update
+
+__all__ = ("create", "delete", "roll", "show", "update")

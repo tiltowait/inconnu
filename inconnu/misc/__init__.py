@@ -12,3 +12,19 @@ from inconnu.misc.remorse import remorse
 from inconnu.misc.rouse import rouse
 from inconnu.misc.slake import slake
 from inconnu.misc.stain import stain
+
+__all__ = (
+    "aggheal",
+    "awaken",
+    "bol",
+    "coinflip",
+    "fetch_changelog",
+    "frenzy",
+    "mend",
+    "percentile",
+    "remorse",
+    "rouse",
+    "show_changelog",
+    "slake",
+    "stain",
+)

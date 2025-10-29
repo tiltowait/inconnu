@@ -1,6 +1,5 @@
 """Primary Inconnu import."""
 
-import os
 from typing import List
 
 import discord

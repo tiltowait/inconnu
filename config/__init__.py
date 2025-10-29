@@ -5,7 +5,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from config import logging
+from config import logging as logging  # noqa: F401
 
 load_dotenv()
 

@@ -1,8 +1,5 @@
 """Set up the package."""
 
-import discord
-
-from errorreporter import reporter
 from inconnu.views.basicselector import BasicSelector
 from inconnu.views.convictionsmodal import ConvictionsModal
 from inconnu.views.disablingview import DisablingView

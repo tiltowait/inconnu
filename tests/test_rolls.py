@@ -2,7 +2,10 @@
 
 import unittest
 
+import pytest
+
 import inconnu
+from inconnu.roll.dicethrow import DiceThrow
 
 
 def gen_roll(
@@ -190,3 +193,104 @@ class TestRollOpportunities(unittest.TestCase):
         self.assertTrue(roll.is_messy)
         self.assertTrue(roll.can_avoid_messy_critical)
         self.assertFalse(roll.can_risky_messy_critical)
+
+
+# DiceThrow tests
+
+
+@pytest.mark.parametrize(
+    "dice,expected_count",
+    [
+        ([1, 5, 6, 8, 10], 5),
+        ([], 0),
+        ([10], 1),
+        ([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 10),
+    ],
+)
+def test_dicethrow_count(dice, expected_count):
+    """Test that count returns the number of dice."""
+    throw = DiceThrow(dice)
+    assert throw.count == expected_count
+
+
+@pytest.mark.parametrize(
+    "dice,expected_ones",
+    [
+        ([1, 1, 5, 6, 10], 2),
+        ([2, 3, 4, 5, 6], 0),
+        ([1, 1, 1], 3),
+        ([1], 1),
+        ([], 0),
+    ],
+)
+def test_dicethrow_ones(dice, expected_ones):
+    """Test counting ones in the dice."""
+    throw = DiceThrow(dice)
+    assert throw.ones == expected_ones
+
+
+@pytest.mark.parametrize(
+    "dice,expected_tens",
+    [
+        ([10, 10, 5, 6, 1], 2),
+        ([1, 2, 3, 4, 5], 0),
+        ([10, 10, 10, 10], 4),
+        ([10], 1),
+        ([], 0),
+    ],
+)
+def test_dicethrow_tens(dice, expected_tens):
+    """Test counting tens in the dice."""
+    throw = DiceThrow(dice)
+    assert throw.tens == expected_tens
+
+
+@pytest.mark.parametrize(
+    "dice,expected_failures",
+    [
+        ([1, 2, 3, 4, 5, 6, 10], 5),  # 1-5 are failures
+        ([6, 7, 8, 9, 10], 0),
+        ([1, 5], 2),
+        ([1, 2, 3, 4, 5], 5),
+        ([], 0),
+    ],
+)
+def test_dicethrow_failures(dice, expected_failures):
+    """Test counting failures (1-5)."""
+    throw = DiceThrow(dice)
+    assert throw.failures == expected_failures
+
+
+@pytest.mark.parametrize(
+    "dice,expected_successes",
+    [
+        ([1, 5, 6, 8, 10], 3),  # 6, 8, 10 are successes
+        ([1, 2, 3, 4, 5], 0),
+        ([6, 7, 8, 9, 10], 5),
+        ([6], 1),
+        ([], 0),
+    ],
+)
+def test_dicethrow_successes(dice, expected_successes):
+    """Test counting successes (6-10)."""
+    throw = DiceThrow(dice)
+    assert throw.successes == expected_successes
+
+
+def test_dicethrow_edge_cases():
+    """Test edge cases with all tens and all ones."""
+    # All tens
+    throw = DiceThrow([10, 10, 10])
+    assert throw.count == 3
+    assert throw.tens == 3
+    assert throw.successes == 3
+    assert throw.failures == 0
+    assert throw.ones == 0
+
+    # All ones
+    throw = DiceThrow([1, 1, 1])
+    assert throw.count == 3
+    assert throw.ones == 3
+    assert throw.failures == 3
+    assert throw.successes == 0
+    assert throw.tens == 0

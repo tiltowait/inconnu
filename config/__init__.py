@@ -5,8 +5,6 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from config import logging
-
 load_dotenv()
 
 DEBUG_GUILDS: Optional[list] = None

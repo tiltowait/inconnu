@@ -5,7 +5,7 @@ from bson import ObjectId
 from httpx import AsyncClient
 
 from inconnu import db
-from main import app
+from server import app
 
 
 @pytest.mark.parametrize(

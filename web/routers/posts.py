@@ -40,9 +40,9 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
         diff = False
 
     return templates.TemplateResponse(
+        request,
         "post.html.jinja",
         {
-            "request": request,
             "url": inconnu.post_url(post.pk),
             "user": user,
             "channel": channel,

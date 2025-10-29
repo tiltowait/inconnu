@@ -3,28 +3,16 @@ main.py - Start up the bot and perform any last-minute configuration.
 Invite: https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=2147829760&scope=bot%20applications.commands
 """
 
-import asyncio
 import os
 
 import discord
 import uvloop
 from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 import bot
-from web.routers import base, posts, profiles
 
 load_dotenv()
-
-app = FastAPI(openapi_url=None)
-app.mount("/public", StaticFiles(directory="./web/public"), name="public")
-app.include_router(base.router)
-app.include_router(posts.router)
-app.include_router(profiles.router)
-
-uvloop.install()
 
 
 # Patch discord.Interaction
@@ -35,12 +23,15 @@ def respond(self, *args, **kwargs):
     return self.response.send_message(*args, **kwargs)
 
 
-discord.Interaction.respond = respond
-logger.info("MAIN: Patched discord.Interaction")
+def main():
+    uvloop.install()
+    logger.info("Installed uvloop")
+
+    discord.Interaction.respond = respond
+    logger.info("Patched discord.Interaction")
+
+    bot.bot.run(os.environ["INCONNU_TOKEN"])
+
 
 if __name__ == "__main__":
-    # DEBUG MODE. Does not spin up the web server.
-    bot.bot.run(os.environ["INCONNU_TOKEN"])
-elif "PYTEST" not in os.environ:
-    # PRODUCTION. Called with inconnu.sh (or uvicorn main:app).
-    asyncio.create_task(bot.run())
+    main()

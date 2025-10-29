@@ -3,13 +3,16 @@
 from bson import ObjectId
 from fastapi.exceptions import HTTPException
 from fastapi.templating import Jinja2Templates
+from jinja2 import Environment, FileSystemLoader
 
-templates = Jinja2Templates(
-    directory="./web/templates",
+env = Environment(
+    loader=FileSystemLoader("./web/templates"),
     trim_blocks=True,
     lstrip_blocks=True,
     extensions=["jinja_markdown.MarkdownExtension"],
 )
+
+templates = Jinja2Templates(env=env)
 
 
 def object_id(oid: str) -> ObjectId:

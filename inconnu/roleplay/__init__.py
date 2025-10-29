@@ -10,7 +10,15 @@ from inconnu.roleplay.post import edit_post
 from inconnu.roleplay.search import search
 from inconnu.roleplay.tags import show_tags
 
-__all__ = ("show_bookmarks", "delete_message_chain", "post", "edit_post", "search", "show_tags")
+__all__ = (
+    "delete_message_chain",
+    "edit_post",
+    "post",
+    "post_embed",
+    "search",
+    "show_bookmarks",
+    "show_tags",
+)
 
 
 def post_embed(

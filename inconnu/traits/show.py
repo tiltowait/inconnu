@@ -22,7 +22,7 @@ def traits_embed(
     owner: discord.Member = None,
 ):
     """Display traits in an embed."""
-    embed = inconnu.utils.VCharEmbed(ctx, character, owner, title="Character Traits")
+    embed = inconnu.embeds.VCharEmbed(ctx, character, owner, title="Character Traits")
     embed.set_footer(text="To see HP, WP, etc., use /character display")
 
     char_traits = character.traits  # This is an automatic copy

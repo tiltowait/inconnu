@@ -10,7 +10,6 @@ from inconnu.utils.discord_helpers import (
     raw_command_options,
     re_paginate,
 )
-from inconnu.utils.embeds import VCharEmbed
 from inconnu.utils.error import ErrorEmbed, error
 from inconnu.utils.haven import Haven
 from inconnu.utils.paramparse import parse_parameters
@@ -54,5 +53,4 @@ __all__ = (
     "pull_mentions",
     "raw_command_options",
     "re_paginate",
-    "VCharEmbed",
 )

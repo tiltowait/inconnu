@@ -149,7 +149,7 @@ async def __results_embed(ctx, outcome, character: "VChar", disciplines: bool):
     if unassigned + errors:
         color = 0x000000 if assigned else 0xFF0000
 
-    embed = inconnu.utils.VCharEmbed(ctx, character, title=title, color=color)
+    embed = inconnu.embeds.VCharEmbed(ctx, character, title=title, color=color)
     embed.set_footer(text=outcome.track_adjustment)
 
     if outcome.assigned:

@@ -122,7 +122,7 @@ def _make_embed(
         entries.append(entry)
 
     content = "\n".join(entries).strip()
-    embed = inconnu.utils.VCharEmbed(ctx, character, title=title, description=content)
+    embed = inconnu.embeds.VCharEmbed(ctx, character, title=title, description=content)
     embed.set_footer(text="See all specialties, powers, traits, and Disciplines with /traits list.")
 
     return embed

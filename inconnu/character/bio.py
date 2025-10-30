@@ -39,7 +39,7 @@ async def show_biography(ctx, character, player, ephemeral=False):
 
 def __biography_paginator(ctx, character, owner):
     """Display the biography in an embed."""
-    embed = inconnu.utils.VCharEmbed(
+    embed = inconnu.embeds.VCharEmbed(
         ctx,
         character,
         owner,
@@ -115,7 +115,7 @@ class _CharacterBio(discord.ui.Modal):
         biography = inconnu.utils.clean_text(self.children[0].value)
         description = inconnu.utils.clean_text(self.children[1].value)
 
-        embed = inconnu.utils.VCharEmbed(
+        embed = inconnu.embeds.VCharEmbed(
             interaction,
             self.character,
             description="Profile updated!",

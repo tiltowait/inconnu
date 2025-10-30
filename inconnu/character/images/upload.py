@@ -35,7 +35,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
 
     character.profile.images.append(processed_url)
 
-    embed = inconnu.utils.VCharEmbed(
+    embed = inconnu.embeds.VCharEmbed(
         ctx,
         character,
         link=True,

@@ -17,7 +17,7 @@ async def convictions_set(ctx, character):
 async def convictions_show(ctx, character, player, ephemeral):
     """Show a character's Convictions."""
     char_convictions = "\n".join(character.convictions) if character.convictions else "*None*"
-    embed = inconnu.utils.VCharEmbed(
+    embed = inconnu.embeds.VCharEmbed(
         ctx,
         character,
         player,

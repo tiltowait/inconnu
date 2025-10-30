@@ -2,9 +2,10 @@
 
 from typing import overload
 
-from numpy.random import default_rng
+import pypcg
 
-_rng = default_rng()
+# PCG32 is better than Mersenne Twister
+RNG = pypcg.PCG32()
 
 
 @overload
@@ -20,10 +21,10 @@ def d10(count: int) -> list[int]:
 def d10(count: int | None = None) -> list[int] | int:
     """Generate one or a list of d10s."""
     if count is None:
-        return int(_rng.integers(1, 11))
-    return list(map(int, _rng.integers(1, 11, count)))
+        return RNG.randint(1, 10)
+    return [RNG.randint(1, 10) for _ in range(count)]
 
 
 def random(ceiling=100):
     """Get a random number between 1 and ceiling."""
-    return _rng.integers(1, ceiling + 1)
+    return RNG.randint(1, ceiling)

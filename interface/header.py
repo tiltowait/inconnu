@@ -203,7 +203,7 @@ class HeaderCog(commands.Cog):
             blush = blush.lower()
             blush_options = {"yes": 1, "no": 0, "n/a - thin-blood": -1, "n/a - mortal": -1}
             if blush not in blush_options:
-                await inconnu.utils.error(ctx, f"Unknown Blush of Life option: `{blush}`.")
+                await inconnu.embeds.error(ctx, f"Unknown Blush of Life option: `{blush}`.")
                 return
             blush = blush_options[blush]
 

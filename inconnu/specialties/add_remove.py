@@ -91,7 +91,7 @@ async def _add_or_remove(
         await asyncio.gather(*tasks)
 
     except SyntaxError as err:
-        await inconnu.utils.error(
+        await inconnu.embeds.error(
             ctx,
             err,
             ("Proper syntax", SYNTAX),
@@ -100,7 +100,7 @@ async def _add_or_remove(
             title="Invalid syntax",
         )
     except inconnu.errors.TraitError as err:
-        await inconnu.utils.error(ctx, err)
+        await inconnu.embeds.error(ctx, err)
 
 
 def _make_embed(

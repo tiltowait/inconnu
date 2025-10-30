@@ -25,7 +25,7 @@ async def remove_entry(ctx, character, index, *, player):
 
     except IndexError:
         err = f"{character.name} has no experience log entry at index `{index}`."
-        await inconnu.utils.error(ctx, err)
+        await inconnu.embeds.error(ctx, err)
 
 
 def _get_embed(player, character, entry):

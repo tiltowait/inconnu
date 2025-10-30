@@ -25,7 +25,7 @@ async def delete(ctx, character, traits: str, disciplines=False):
         await character.commit()
 
     except (ValueError, SyntaxError) as err:
-        await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL)
+        await inconnu.embeds.error(ctx, err, character=character, help=__HELP_URL)
 
 
 async def __outcome_embed(ctx, character, outcome, disciplines: bool):

@@ -91,23 +91,23 @@ class Haven:  # pylint: disable=too-few-public-methods
                     logger.debug(
                         "HAVEN: Explicit character {} does not match filter", character.name
                     )
-                    await inconnu.utils.error(self.ctx, err, author=self.owner, help=self.help)
+                    await inconnu.embeds.error(self.ctx, err, author=self.owner, help=self.help)
                     raise inconnu.errors.HandledError() from err
             else:
                 self.match = character
 
         except LookupError as err:
-            await inconnu.utils.error(self.ctx, err)
+            await inconnu.embeds.error(self.ctx, err)
             raise inconnu.errors.HandledError() from err
 
         except inconnu.errors.NoCharactersError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
-            await inconnu.utils.error(self.ctx, errmsg)
+            await inconnu.embeds.error(self.ctx, errmsg)
             raise inconnu.errors.HandledError() from err
 
         except inconnu.errors.CharacterNotFoundError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
-            await inconnu.utils.error(self.ctx, errmsg)
+            await inconnu.embeds.error(self.ctx, errmsg)
             raise inconnu.errors.HandledError() from err
 
         except inconnu.errors.UnspecifiedCharacterError as err:
@@ -140,7 +140,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                             logger.debug("HAVEN: Sole match: {}", char.name)
                             break
                 elif passed == 0:
-                    await inconnu.utils.error(
+                    await inconnu.embeds.error(
                         self.ctx,
                         _personalize_error(self.errmsg, self.ctx, self.owner),
                         author=self.owner,
@@ -164,7 +164,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         if view is None:
             err = "There are too many characters to display! Please use the `character` parameter."
 
-        await inconnu.utils.error(
+        await inconnu.embeds.error(
             self.ctx,
             err,
             # ("Proper syntax", self.tip),

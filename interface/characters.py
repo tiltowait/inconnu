@@ -58,7 +58,7 @@ class Characters(commands.Cog, name="Character Management"):
                 ctx, name, template, humanity, health, willpower, spc, False
             )
         except ValueError:
-            await inconnu.utils.error(ctx, f'Invalid value for `spc`: "{spc}".')
+            await inconnu.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
     @commands.slash_command(name="spc")
     @commands.has_permissions(administrator=True)

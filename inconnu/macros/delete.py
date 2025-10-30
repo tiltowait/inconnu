@@ -15,4 +15,4 @@ async def delete(ctx, character, macro_name: str):
         await character.commit()
 
     except inconnu.errors.MacroNotFoundError as err:
-        await inconnu.utils.error(ctx, err, character=character.name, help=__HELP_URL)
+        await inconnu.embeds.error(ctx, err, character=character.name, help=__HELP_URL)

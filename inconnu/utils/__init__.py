@@ -10,7 +10,6 @@ from inconnu.utils.discord_helpers import (
     raw_command_options,
     re_paginate,
 )
-from inconnu.utils.error import ErrorEmbed, error
 from inconnu.utils.haven import Haven
 from inconnu.utils.paramparse import parse_parameters
 from inconnu.utils.permissions import (
@@ -36,8 +35,6 @@ __all__ = (
     "de_camel",
     "decorators",
     "diff",
-    "ErrorEmbed",
-    "error",
     "fence",
     "format_join",
     "get_avatar",

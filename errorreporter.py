@@ -79,7 +79,7 @@ class ErrorReporter:
             # We don't care, and there's nothing we can do about it anyway.
             return
         if isinstance(error, inconnu.errors.NotReady):
-            await inconnu.utils.error(ctx, str(error), title="One moment, please")
+            await inconnu.embeds.error(ctx, str(error), title="One moment, please")
             return
         if isinstance(error, inconnu.errors.NotPremium):
             troubleshoot_url = (
@@ -87,7 +87,7 @@ class ErrorReporter:
             )
 
             cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
-            await inconnu.utils.error(
+            await inconnu.embeds.error(
                 ctx,
                 (f"Only patrons can use {cmd_mention}. Click the Patreon button to get started!"),
                 (
@@ -107,7 +107,7 @@ class ErrorReporter:
         if isinstance(error, inconnu.errors.LockdownError):
             timestamp = discord.utils.format_dt(ctx.bot.lockdown, "R")
             err = f"{ctx.bot.user.mention} is undergoing maintenance {timestamp}."
-            embed = inconnu.utils.ErrorEmbed(
+            embed = inconnu.embeds.ErrorEmbed(
                 ctx.user,
                 err,
                 title="Command temporarily unavailable",

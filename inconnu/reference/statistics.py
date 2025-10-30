@@ -46,9 +46,9 @@ async def statistics(ctx, character, style: str, date: datetime, *, player: disc
             await __traits_statistics(ctx, character, date, player=owner)
 
     except ValueError:
-        await inconnu.utils.error(ctx, f"`{date}` is not a valid date.")
+        await inconnu.embeds.error(ctx, f"`{date}` is not a valid date.")
     except LookupError as err:
-        await inconnu.utils.error(ctx, err, help_url=__HELP_URL)
+        await inconnu.embeds.error(ctx, err, help_url=__HELP_URL)
 
 
 @haven(__HELP_URL)

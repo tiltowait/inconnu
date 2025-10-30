@@ -44,7 +44,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str, disci
         await __display_results(ctx, outcome, character, disciplines)
 
     except (ValueError, SyntaxError) as err:
-        await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL[allow_overwrite])
+        await inconnu.embeds.error(ctx, err, character=character, help=__HELP_URL[allow_overwrite])
 
 
 async def __handle_traits(character: "VChar", traits: dict, overwriting: bool, disciplines: bool):

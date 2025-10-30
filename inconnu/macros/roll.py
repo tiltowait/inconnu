@@ -98,7 +98,7 @@ async def roll(ctx, syntax: str, character=None):
         err += "\n**Usage:** `/vm <macro_name> [hunger] [difficulty]`"
         err += "\n\nYou may add simple math after `macro_name`."
         err += "\n `hunger` and `difficulty` are optional."
-        await inconnu.utils.error(ctx, err, help=__HELP_URL)
+        await inconnu.embeds.error(ctx, err, help=__HELP_URL)
         return
 
 

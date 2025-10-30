@@ -135,7 +135,7 @@ class PostModal(discord.ui.Modal):
                 self.post_to_edit.edit_post(new_content)
 
             except discord.NotFound:
-                await inconnu.utils.error(
+                await inconnu.embeds.error(
                     interaction,
                     (
                         "The message wasn't found. Either someone deleted it while you "
@@ -296,9 +296,9 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
         await ctx.send_modal(modal)
     elif isinstance(ctx.channel, discord.threads.Thread):
-        await inconnu.utils.error(ctx, "This command is unavailable in threads.")
+        await inconnu.embeds.error(ctx, "This command is unavailable in threads.")
     else:
-        await inconnu.utils.error(
+        await inconnu.embeds.error(
             ctx,
             "This feature requires `Manage Webhooks` permission.",
             title="Missing permissions",
@@ -311,9 +311,9 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
 
     # Need to perform some checks to ensure we can edit the post
     if rp_post is None:
-        await inconnu.utils.error(ctx, "This isn't a Rolepost!", help=__HELP_URL)
+        await inconnu.embeds.error(ctx, "This isn't a Rolepost!", help=__HELP_URL)
     elif ctx.user.id != rp_post.user:
-        await inconnu.utils.error(ctx, "You can only edit your own posts!", help=__HELP_URL)
+        await inconnu.embeds.error(ctx, "You can only edit your own posts!", help=__HELP_URL)
     else:
         # It's a valid post, but we can only work our magic if the character
         # still exists. Otherwise, spit out an error.
@@ -333,7 +333,7 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
             await ctx.send_modal(modal)
 
         except inconnu.errors.CharacterNotFoundError:
-            await inconnu.utils.error(
+            await inconnu.embeds.error(
                 ctx,
                 "You can't edit the post of a deleted character!",
                 help=__HELP_URL,

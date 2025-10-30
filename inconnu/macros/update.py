@@ -52,7 +52,7 @@ async def update(ctx, character, macro: str, syntax: str):
             ("Valid Keys", "\n".join(keys)),
         ]
 
-        await inconnu.utils.error(
+        await inconnu.embeds.error(
             ctx, err, *instructions, help=__HELP_URL, character=character.name
         )
 

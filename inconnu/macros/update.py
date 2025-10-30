@@ -1,10 +1,10 @@
 """macros/update.py - Macro update commands."""
 
-from distutils.util import strtobool
 from typing import TYPE_CHECKING
 
 import inconnu
 from inconnu.macros import macro_common
+from inconnu.utils import strtobool
 from inconnu.utils.haven import haven
 
 if TYPE_CHECKING:

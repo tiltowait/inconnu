@@ -26,6 +26,7 @@ from inconnu.utils.text import (
     format_join,
     oxford_list,
     pull_mentions,
+    strtobool,
 )
 
 __all__ = (
@@ -50,4 +51,5 @@ __all__ = (
     "pull_mentions",
     "raw_command_options",
     "re_paginate",
+    "strtobool",
 )

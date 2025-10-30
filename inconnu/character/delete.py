@@ -4,17 +4,18 @@ import asyncio
 
 import discord
 from discord.ui import InputText, Modal
+from loguru import logger
 
-import inconnu
 import api
+import inconnu
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 
 
-async def delete(ctx, character: str):
+async def delete(ctx, character_name: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        character = await inconnu.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character)
+        character = await inconnu.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character_name)
         modal = _DeletionModal(title=f"Delete {character.name}", character=character)
         await ctx.send_modal(modal)
 
@@ -35,6 +36,9 @@ class _DeletionModal(Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Delete the character if its name was typed correctly."""
+        if interaction.user is None:
+            raise ValueError("Somehow don't have a user")
+
         user_input = self.children[0].value
 
         if user_input == self.character.name:
@@ -48,8 +52,12 @@ class _DeletionModal(Modal):
                     title="Character Deleted",
                     message=f"**{interaction.user.mention}** deleted **{self.character.name}**.",
                 ),
-                api.delete_character_faceclaims(self.character),
             )
+            try:
+                await api.delete_character_faceclaims(self.character)
+            except api.ApiError as err:
+                logger.error("Unable to delete {}: {}", self.character.name, err)
+
             await inconnu.char_mgr.remove(self.character)  # Has to be done after image deletion
         else:
             await inconnu.common.present_error(

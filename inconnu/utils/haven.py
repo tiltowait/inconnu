@@ -3,6 +3,7 @@
 import functools
 import uuid
 from collections import OrderedDict
+from typing import Callable, cast
 
 import discord
 from loguru import logger
@@ -38,12 +39,12 @@ class Haven:  # pylint: disable=too-few-public-methods
         self,
         ctx,
         *,
-        owner: discord.Member = None,
+        owner: discord.Member | None = None,
         allow_lookups=False,
-        character: str = None,
-        tip: str = None,
-        help: str = None,  # pylint: disable=redefined-builtin
-        char_filter: callable = None,
+        character: str | None = None,
+        tip: str | None = None,
+        help: str | None = None,  # pylint: disable=redefined-builtin
+        char_filter: Callable | None = None,
         errmsg: str = "None of your characters can perform this action.",
     ):
         self.uuid = uuid.uuid4().hex  # For ensuring button uniqueness
@@ -66,7 +67,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         self.new_interaction = None
 
     async def fetch(self):
-        """Fetch the character(s)."""
+        """Fetch the sole-matching character or raise a CharacterError."""
         try:
             # Confirm ownership. We weren't able to do so in a sync context,
             # but now that we're async, we can do so and send an error message
@@ -112,6 +113,7 @@ class Haven:  # pylint: disable=too-few-public-methods
 
         except inconnu.errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
+            assert self.owner is not None
             all_chars = await inconnu.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)
             if self.filter is not None:
                 # If we were given a filter, then we can only add those
@@ -154,7 +156,8 @@ class Haven:  # pylint: disable=too-few-public-methods
 
             if self.match is None:
                 await self._get_user_selection(err)
-        return self.match
+
+        return cast(inconnu.models.VChar, self.match)
 
     async def _get_user_selection(self, err):
         """Present the player's character options."""
@@ -238,7 +241,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         return view
 
 
-def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
+def player_lookup(ctx, player: discord.Member | None, allow_lookups: bool):
     """
     Look up a player.
     Returns the sought-after player OR the ctx author if player is None.
@@ -267,7 +270,7 @@ def _personalize_error(err, ctx, member):
     return err
 
 
-def haven(url, char_filter=None, errmsg=None, allow_lookups=False):
+def haven(url, char_filter=None, errmsg="", allow_lookups=False):
     """A decorator that handles character fetching duties."""
 
     def haven_decorator(func):

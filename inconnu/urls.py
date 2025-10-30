@@ -1,9 +1,11 @@
 """URL generation for web features."""
 
+from bson import ObjectId
+
 import config
 
 
-def profile_url(charid: str) -> str:
+def profile_url(charid: str | ObjectId) -> str:
     """Generate a profile URL for the character."""
     return config.PROFILE_SITE + f"profile/{charid}"
 

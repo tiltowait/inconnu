@@ -1,6 +1,8 @@
 """Header commands."""
 # pylint: disable=no-self-use
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
@@ -9,6 +11,9 @@ from pymongo import DeleteOne
 
 import inconnu
 import interface
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class LocationChangeModal(discord.ui.Modal):
@@ -141,7 +146,7 @@ async def _header_bol_options(ctx) -> str:
 class HeaderCog(commands.Cog):
     """A cog with header-related commands, including context menu commands."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: "InconnuBot"):
         self.bot = bot
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -212,22 +217,23 @@ class HeaderCog(commands.Cog):
     @commands.message_command(name="Header: Edit", contexts={discord.InteractionContextType.guild})
     async def fix_rp_header(self, ctx, message: discord.Message):
         """Change an RP header's location."""
-        proceed = False
+        possible_header = False
+        webhook: discord.Webhook | None = None
+
         if message.author == self.bot.user:
-            webhook = None
-            proceed = True
+            possible_header = True
         else:
             try:
                 webhook = await self.bot.webhook_cache.fetch_webhook(ctx.channel, message.author.id)
                 if webhook is not None:
                     logger.info("EDIT HEADER: Editing a WebhookMessage")
-                    proceed = True
+                    possible_header = True
                 else:
                     logger.debug("EDIT HEADER: Not a WebhookMessage")
             except discord.errors.Forbidden:
                 logger.info("EDIT HEADER: No webhook permissions")
 
-        if proceed:
+        if possible_header:
             # Make sure we have a header
             record = await inconnu.db.headers.find_one({"message": message.id})
             if record is not None:

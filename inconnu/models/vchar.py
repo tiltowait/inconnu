@@ -10,6 +10,7 @@ from collections import Counter
 from datetime import datetime
 from enum import StrEnum
 from types import SimpleNamespace
+from typing import Callable
 
 from loguru import logger
 from umongo import Document, fields
@@ -182,7 +183,7 @@ class VChar(Document):
         self.stains = 0
 
     @property
-    def traits(self) -> dict[str, int]:
+    def traits(self) -> list[VCharTrait]:
         """A copy of the character's traits."""
         return copy.deepcopy(self._traits)
 
@@ -425,13 +426,15 @@ class VChar(Document):
         # One single match found
         return found[0]
 
-    def assign_traits(self, traits: dict[str, int], category=VCharTrait.Type.CUSTOM) -> str:
+    def assign_traits(
+        self, traits: dict[str, int], category=VCharTrait.Type.CUSTOM
+    ) -> tuple[str, dict[str, int]]:
         """Add traits to the character. Overwrites old traits if they exist."""
         for name in traits:
             if name.lower() in map(str.lower, UNIVERSAL_TRAITS):
                 raise ValueError(f"`{name}` is a reserved trait and can't be added")
 
-        assignments = {}
+        assignments: dict[str, int] = {}
         counter = Counter()
 
         for input_name, input_rating in traits.items():
@@ -487,13 +490,13 @@ class VChar(Document):
 
         raise inconnu.errors.TraitNotFound(self, name)
 
-    def add_powers(self, trait_name: str, powers: list[str] | str) -> tuple[VCharTrait, set[str]]:
+    def add_powers(self, trait_name: str, powers: list[str] | str) -> tuple[VCharTrait, list[str]]:
         """Add powers to a Discipline and return a copy."""
         return self._add_subtraits(trait_name, powers, VCharTrait.add_powers)
 
     def add_specialties(
         self, trait_name: str, specialties: list[str] | str
-    ) -> tuple[VCharTrait, set[str]]:
+    ) -> tuple[VCharTrait, list[str]]:
         """Add specialties to a trait and return a copy of that trait."""
         return self._add_subtraits(trait_name, specialties, VCharTrait.add_specialties)
 
@@ -501,8 +504,8 @@ class VChar(Document):
         self,
         trait_name: str,
         specialties: list[str] | str,
-        action: callable,
-    ) -> tuple[VCharTrait, set[str]]:
+        action: Callable,
+    ) -> tuple[VCharTrait, list[str]]:
         """The actual work of adding subtraits."""
         for trait in self._traits:
             if trait.matching(trait_name, True):
@@ -517,7 +520,7 @@ class VChar(Document):
 
     def remove_specialties(
         self, trait_name: str, specialties: list[str] | str
-    ) -> tuple[VCharTrait, set[str]]:
+    ) -> tuple[VCharTrait, list[str]]:
         """Remove specialties from a trait."""
         for trait in self._traits:
             if trait.matching(trait_name, True):

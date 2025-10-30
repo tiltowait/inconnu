@@ -1,6 +1,7 @@
 """common.py - Commonly used functions."""
 
 import re
+from typing import Any
 
 import discord
 from discord.ui import Button
@@ -30,9 +31,9 @@ async def present_error(
     error,
     *fields,
     author=None,
-    character: str = None,
-    footer: str = None,
-    help_url: str = None,
+    character: str | None = None,
+    footer: str | None = None,
+    help_url: str | None = None,
     view=None,
     ephemeral=True,
 ):
@@ -48,6 +49,8 @@ async def present_error(
         help_url (str): The documentation URL for the error.
         components (list): Buttons or selection menus to add to the message.
     """
+    msg_contents: dict[str, Any] = {}
+
     if await inconnu.settings.accessible(ctx):
         content = __error_text(error, *fields, footer=footer)
         msg_contents = {"content": content}
@@ -90,8 +93,8 @@ def __error_embed(
     error,
     *fields,
     author=None,
-    character: str = None,
-    footer: str = None,
+    character: str | None = None,
+    footer: str | None = None,
 ):
     # Figure out the author
     if author is None:
@@ -122,7 +125,7 @@ def __error_embed(
 def __error_text(
     error,
     *fields,
-    footer: str = None,
+    footer: str | None = None,
 ):
     """Display the error as plaintext."""
     contents = ["**Error**", str(error) + "\n"]
@@ -168,7 +171,7 @@ async def report_update(*, ctx, character, title, message, **kwargs):
             )
 
 
-async def player_lookup(ctx, player: discord.Member):
+async def player_lookup(ctx, player: discord.Member | None):
     """
     Look up a player.
     Returns the sought-after player OR the ctx author if player_str is None.
@@ -217,7 +220,7 @@ def paginate(page_size: int, *contents) -> list:
     return pages
 
 
-def contains_digit(string: str):
+def contains_digit(string: str | None):
     """Determine whether a string contains a digit."""
     if string is None:
         return False

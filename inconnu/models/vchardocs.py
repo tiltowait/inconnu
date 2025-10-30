@@ -212,9 +212,11 @@ class VCharTrait(EmbeddedDocument):
 
         # The comparison function takes a token and an instance var
         if exact:
+
             def comp(t: str, i: str) -> bool:
                 return t == i.lower()
         else:
+
             def comp(t: str, i: str) -> bool:
                 return i.lower().startswith(t)
 

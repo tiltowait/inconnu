@@ -6,8 +6,10 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 from inconnu import (
     character,
+    common,
     constants,
     db,
+    embeds,
     errors,
     experience,
     header,
@@ -25,6 +27,7 @@ from inconnu import (
     traits,
     utils,
     views,
+    vr,
     webhookcache,
 )
 from inconnu.dice import d10, random
@@ -39,10 +42,12 @@ __all__ = (
     "char_mgr",
     "character",
     "CharacterManager",
+    "common",
     "constants",
     "d10",
     "db",
     "emojis",
+    "embeds",
     "errors",
     "experience",
     "fence",
@@ -67,6 +72,7 @@ __all__ = (
     "traits",
     "utils",
     "views",
+    "vr",
     "webhookcache",
 )
 

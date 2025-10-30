@@ -30,7 +30,7 @@ class InconnuBot(discord.AutoShardedBot):
         self.wizards = 0
         self.motd = None
         self.motd_given = set()
-        self.webhook_cache = None
+        self.webhook_cache: inconnu.webhookcache.WebhookCache = None  # type:ignore
         logger.info("BOT: Instantiated")
 
         if config.SHOW_TEST_ROUTES:

@@ -1,6 +1,6 @@
 """Primary Inconnu import."""
 
-from typing import List
+from typing import overload
 
 import discord
 from numpy.random import default_rng
@@ -74,7 +74,17 @@ bot = None
 _rng = default_rng()
 
 
-def d10(count: int = None) -> List[int] | int:
+@overload
+def d10(count: None = None) -> int:
+    pass
+
+
+@overload
+def d10(count: int) -> list[int]:
+    pass
+
+
+def d10(count: int | None = None) -> list[int] | int:
     """Generate one or a list of d10s."""
     if count is None:
         return int(_rng.integers(1, 11))

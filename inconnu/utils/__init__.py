@@ -2,7 +2,7 @@
 
 import re
 from difflib import Differ
-from typing import Any
+from typing import Any, Literal, overload
 
 import discord
 from discord.ext.commands import Paginator
@@ -41,19 +41,31 @@ def de_camel(text: str, de_underscore=True) -> str:
     return temp
 
 
-def diff(old: str, new: str, join=True, no_pos_markers=True, strip=False) -> str:
+@overload
+def diff(
+    old: str, new: str, join: Literal[True] = True, no_pos_markers: bool = True, strip: bool = False
+) -> str: ...
+
+
+@overload
+def diff(
+    old: str, new: str, join: Literal[False], no_pos_markers: bool = True, strip: bool = False
+) -> list[str]: ...
+
+
+def diff(old: str, new: str, join=True, no_pos_markers=True, strip=False) -> list[str] | str:
     """Generate a diff between two strings."""
 
-    def normalize(lines: str) -> str:
+    def normalize(lines: list[str]) -> list[str]:
         """Normalize the lines to make more concise diffs."""
         if len(lines) == 1 and lines[0][-1] != "\n":
             lines[0] += "\n"
         return lines
 
-    old = normalize(old.splitlines(True))
-    new = normalize(new.splitlines(True))
+    old_split = normalize(old.splitlines(True))
+    new_split = normalize(new.splitlines(True))
 
-    diff = Differ().compare(old, new)
+    diff = Differ().compare(old_split, new_split)
     lines = [line + ("\n" if line[-1] != "\n" else "") for line in diff]
 
     if no_pos_markers:
@@ -65,7 +77,7 @@ def diff(old: str, new: str, join=True, no_pos_markers=True, strip=False) -> str
     return lines
 
 
-def raw_command_options(interaction) -> str:
+def raw_command_options(interaction) -> dict[str, Any]:
     """Get the options in a command as a dict."""
     options = {}
     for option in interaction.data.get("options", []):
@@ -211,7 +223,7 @@ def oxford_list(seq: list[Any], conjunction="and") -> str:
 class VCharEmbed(discord.Embed):
     """A standardized VChar display."""
 
-    def __init__(self, ctx, character, owner: discord.Member = None, link=False, **kwargs):
+    def __init__(self, ctx, character, owner: discord.Member | None = None, link=False, **kwargs):
         owner = owner or ctx.user
         show_thumbnail = kwargs.pop("show_thumbnail", True)
 

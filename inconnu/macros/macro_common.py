@@ -7,5 +7,10 @@ COMMENT_LEN = 300
 
 
 def is_macro_name_valid(name: str) -> bool:
-    """Determines whether a macro name is valid."""
-    return re.match(r"^[A-Za-z_]+$", name) is not None and len(name) < NAME_LEN
+    """Validate macro name: letters and underscores only, must contain at least one letter."""
+    if len(name) >= NAME_LEN or not name:
+        return False
+    if not re.match(r"^[a-zA-Z_]+$", name):
+        return False
+
+    return any(c.isalpha() for c in name)

@@ -1,11 +1,14 @@
 """Primary Inconnu import."""
 
-from typing import overload
+from typing import TYPE_CHECKING, overload
 
 import discord
 from numpy.random import default_rng
 
 import config
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 from inconnu import (
     character,
     db,
@@ -69,7 +72,7 @@ __all__ = (
 
 char_mgr = CharacterManager()
 settings = settings.Settings()
-bot = None
+bot: "InconnuBot"  # Assigned in bot.py
 
 _rng = default_rng()
 

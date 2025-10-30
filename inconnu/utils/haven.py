@@ -8,6 +8,7 @@ import discord
 from loguru import logger
 
 import inconnu
+from inconnu.utils.permissions import is_admin
 from inconnu.views.basicselector import BasicSelector
 
 
@@ -251,23 +252,11 @@ def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
     # Players are allowed to look up themselves
     if ctx.user != player:
         logger.info("HAVEN: {} looked up {} ({})", ctx.user.name, player.name, ctx.guild.name)
-        if not (is_admin(ctx.user) or allow_lookups):
+        if not (is_admin(ctx) or allow_lookups):
             logger.info("HAVEN: Invalid player lookup by {} ({})", ctx.user.name, ctx.guild.name)
             raise LookupError("You don't have lookup permissions.")
 
     return player
-
-
-def is_admin(member: discord.Member):
-    """Check if a user has admin permissions."""
-    # We can't rely on ctx.channel.permissions_for, because sometimes we
-    # receive a PartialMessageable
-    privileged = member.top_role.permissions.administrator or member.guild_permissions.administrator
-    if not privileged:
-        logger.debug("HAVEN: {} is not an admin", member.name)
-    else:
-        logger.debug("HAVEN: {} is an admin", member.name)
-    return privileged
 
 
 def _personalize_error(err, ctx, member):

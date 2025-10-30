@@ -1,6 +1,7 @@
 """constants.py - Define package-wide constants."""
 
 from enum import StrEnum
+from typing import cast
 
 from dotenv import load_dotenv
 from flatdict import FlatDict
@@ -56,7 +57,6 @@ GROUPED_TRAITS = {
 ATTRIBUTES = set(sum(GROUPED_TRAITS["ATTRIBUTES"].values(), []))
 SKILLS = set(sum(GROUPED_TRAITS["SKILLS"].values(), []))
 ATTRIBUTES_AND_SKILLS = ATTRIBUTES.union(SKILLS)
-FLAT_TRAITS = lambda: sum(FlatDict(GROUPED_TRAITS).values(), [])
 DISCIPLINES = [
     "Animalism",
     "Auspex",
@@ -88,3 +88,10 @@ class Damage(StrEnum):
     NONE = "."
     SUPERFICIAL = "/"
     AGGRAVATED = "x"
+
+
+def get_standard_traits() -> list[str]:
+    """Generate a flattened list of all standard traits. We use a generator
+    function to remove any possibility of modifying the source list."""
+    trait_lists = cast(list[list[str]], FlatDict(GROUPED_TRAITS).values())
+    return sum(trait_lists, [])

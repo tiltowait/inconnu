@@ -171,7 +171,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @powers.command(name="remove")
     @option("powers", description="The powers to remove. Ex: Auspex=Premonition")
     @inconnu.options.char_option("The character to modify")
-    async def remove_specialties(
+    async def remove_powers(
         self,
         ctx: discord.ApplicationContext,
         powers: str,

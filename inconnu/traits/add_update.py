@@ -3,12 +3,15 @@
 import asyncio
 import re
 from types import SimpleNamespace
-
+from typing import TYPE_CHECKING
 
 import inconnu
 from inconnu.models.vchardocs import VCharTrait
 from inconnu.traits.parser import parse_traits
 from inconnu.utils.haven import haven
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = {
     False: "https://docs.inconnu.app/command-reference/traits/adding-traits",

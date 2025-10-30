@@ -1,11 +1,15 @@
 """Header subdoc."""
 
 import copy
+from typing import TYPE_CHECKING
 
 from bson import ObjectId
 from umongo import EmbeddedDocument, fields
 
 import inconnu
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 
 @inconnu.db.instance.register

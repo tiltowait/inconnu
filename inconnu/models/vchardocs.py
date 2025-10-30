@@ -210,11 +210,13 @@ class VCharTrait(EmbeddedDocument):
         """Expand the user's input to full skill:spec names. If join is False, return a list."""
         tokens = [token.lower() for token in identifier.split(VCharTrait.DELIMITER)]
 
-        # The "comp" lambda takes a token and an instance var
+        # The comparison function takes a token and an instance var
         if exact:
-            comp = lambda t, i: t == i.lower()
+            def comp(t: str, i: str) -> bool:
+                return t == i.lower()
         else:
-            comp = lambda t, i: i.lower().startswith(t)
+            def comp(t: str, i: str) -> bool:
+                return i.lower().startswith(t)
 
         if comp(tokens[0], self.name):
             # A token might match multiple specs in the same skill. Therefore,

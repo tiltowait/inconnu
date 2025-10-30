@@ -1,10 +1,15 @@
 """traits/show.py - Display character traits."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord.ext.commands import Paginator as Chunker
 
 import inconnu
 from inconnu.utils.haven import haven
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-traits"
 

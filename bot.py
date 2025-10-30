@@ -3,6 +3,7 @@
 import asyncio
 import os
 from datetime import time, timezone
+from typing import TYPE_CHECKING
 
 import discord
 from discord.ext import tasks
@@ -12,6 +13,9 @@ import config
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from errorreporter import reporter
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 
 class InconnuBot(discord.AutoShardedBot):

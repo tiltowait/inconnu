@@ -1,12 +1,16 @@
 """Rolepost models."""
 
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 import discord
 from umongo import Document, EmbeddedDocument, fields
 
 import inconnu
 from inconnu.models.rpheader import HeaderSubdoc
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 
 @inconnu.db.instance.register

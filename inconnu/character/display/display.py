@@ -2,6 +2,7 @@
 # pylint: disable=too-many-arguments
 
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 import discord
 
@@ -9,6 +10,9 @@ import inconnu
 from inconnu.character.display import trackmoji
 from inconnu.constants import Damage
 from inconnu.utils.haven import haven
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 

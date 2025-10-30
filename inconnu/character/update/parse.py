@@ -3,6 +3,7 @@
 
 import asyncio
 from collections import OrderedDict
+from typing import TYPE_CHECKING
 
 import discord
 from discord.ui import Button
@@ -10,6 +11,9 @@ from discord.ui import Button
 import inconnu
 from inconnu.character.display import display
 from inconnu.character.update import paramupdate
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __MATCHES = {}
 

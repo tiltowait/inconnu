@@ -13,6 +13,7 @@
 
 import re
 from functools import partial
+from typing import TYPE_CHECKING
 
 import discord
 from loguru import logger
@@ -22,6 +23,9 @@ from inconnu.models.vchardocs import VCharTrait
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 

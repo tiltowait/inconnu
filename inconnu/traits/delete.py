@@ -1,11 +1,14 @@
 """traits/delete.py - Delete character traits."""
 
 from types import SimpleNamespace
-
+from typing import TYPE_CHECKING
 
 import inconnu
 from inconnu.traits import traitcommon
 from inconnu.utils.haven import haven
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 
@@ -56,7 +59,7 @@ def __delete_traits(character: "VChar", *traits) -> list:
     """
     deleted = []
     errs = []
-    standard_traits = map(lambda t: t.lower(), inconnu.constants.FLAT_TRAITS())
+    standard_traits = map(lambda t: t.lower(), inconnu.constants.get_standard_traits())
 
     for trait in traits:
         if trait.lower() in standard_traits:

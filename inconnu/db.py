@@ -3,16 +3,19 @@
 import os
 from typing import Any
 
+from beanie import Document, init_beanie
 from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
-from umongo.frameworks import MotorAsyncIOInstance
+from loguru import logger
+from pymongo import AsyncMongoClient
+
+import inconnu
 
 load_dotenv()
 
 _mongo_url = os.environ["MONGO_URL"]
 _db_name = _mongo_url.rsplit("/", 1)[-1]
 
-_client = AsyncIOMotorClient(_mongo_url, serverSelectionTimeoutMS=1800)
+_client = AsyncMongoClient(_mongo_url, serverSelectionTimeoutMS=1800)
 _db = _client[_db_name]
 
 # The collections
@@ -29,7 +32,10 @@ supporters = _db.supporters
 upload_log = _db.upload_log
 users = _db.users
 
-instance = MotorAsyncIOInstance(_db)
+
+def models() -> list[type[Document]]:
+    """Beanie database models."""
+    return [inconnu.models.VChar, inconnu.models.RPPost, inconnu.VUser]
 
 
 async def server_info() -> dict[str, Any]:
@@ -37,3 +43,9 @@ async def server_info() -> dict[str, Any]:
     info = await _client.server_info()
     info["database"] = _db_name  # For logging purposes
     return info
+
+
+async def init():
+    """Initialize the database."""
+    await init_beanie(_db, document_models=models())
+    logger.info("Initialized beanie")

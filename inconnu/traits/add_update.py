@@ -78,7 +78,7 @@ async def __handle_traits(character: "VChar", traits: dict, overwriting: bool, d
 
     track_adjustment, assigned = character.assign_traits(to_assign, category)
     assigned = [f"{trait}: `{rating}`" for trait, rating in assigned.items()]
-    await character.commit()
+    await character.save()
 
     return SimpleNamespace(
         assigned=assigned,

@@ -33,7 +33,7 @@ async def award_or_deduct(ctx, character, amount, scope, reason, *, player):
     embed = __get_embed(ctx, player, character, amount, scope, reason)
     await asyncio.gather(
         ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none()),
-        character.commit(),
+        character.save(),
     )
 
 

@@ -59,7 +59,7 @@ class CharacterManager:
             # slower, so let's avoid code duplication
             for char in user_chars:
                 # Post editing sends an ObjectId, so we need to check that, too
-                if char.name.lower() == name.lower() or char.id == name:
+                if char.name.lower() == name.lower() or char.id_str == name:
                     self._validate(guild, user, char)
                     return char
 
@@ -96,13 +96,13 @@ class CharacterManager:
 
         characters = []
         async for character in VChar.find({"guild": guild, "user": user}):
-            if character.id not in self.id_cache:
+            if character.id_str not in self.id_cache:
                 bisect.insort(characters, character)
-                self.id_cache[character.id] = character
+                self.id_cache[character.id_str] = character
             else:
                 # Use the already cached character. This will probably never
                 # happen, but we'll put it here just in case
-                bisect.insort(characters, self.id_cache[character.id])
+                bisect.insort(characters, self.id_cache[character.id_str])
 
         self.user_cache[key] = characters
         self.all_fetched[key] = True
@@ -138,7 +138,7 @@ class CharacterManager:
 
     async def register(self, character):
         """Add the character to the database and the cache."""
-        self.id_cache[character.id] = character
+        self.id_cache[character.id_str] = character
 
         user_chars = await self.fetchall(character.guild, character.user)
         inserted = False
@@ -155,9 +155,8 @@ class CharacterManager:
 
         key = self._user_key(character)
         self.user_cache[key] = user_chars
-        await character.commit()
 
-    async def remove(self, character):
+    async def remove(self, character: "VChar"):
         """Remove a character from the database and the cache."""
         deletion = await character.delete()
 
@@ -169,8 +168,8 @@ class CharacterManager:
             key = self._user_key(character)
             self.user_cache[key] = user_chars
 
-            if character.id in self.id_cache:
-                del self.id_cache[character.id]
+            if character.id_str in self.id_cache:
+                del self.id_cache[character.id_str]
 
             logger.info("CHARACTER MANAGER: Removed {}", character.name)
 
@@ -189,7 +188,7 @@ class CharacterManager:
 
         # Make the transfer
         character.user = new_owner.id
-        await character.commit()
+        await character.save()
 
         # Only add it to the new owner's cache if they've already loaded
         new_key = self._user_key(character)

@@ -42,7 +42,7 @@ async def rouse(
         else:
             update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
-        await character.commit()
+        await character.save()
         inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
         msg = await inconnu.get_message(inter)
 
@@ -64,7 +64,7 @@ async def rouse(
         # within valid boundaries. Unfortunately, __display_outcome() runs
         # VChar.log(), which needs to be saved.
         # TODO: Move logging outside of __display_outcome()
-        await character.commit()
+        await character.save()
 
 
 def __make_title(outcome):
@@ -148,7 +148,7 @@ async def __damage_ghoul(ctx, ghoul):
         fields=[("Health", inconnu.character.DisplayField.HEALTH)],
         footer="V5 Core, p.234",
     )
-    await ghoul.commit()
+    await ghoul.save()
 
 
 async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):

@@ -35,7 +35,7 @@ async def update(ctx, character, macro: str, syntax: str):
 
         macro_name = character.update_macro(macro, macro_update)
         await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
-        await character.commit()
+        await character.save()
 
     except (
         inconnu.errors.AmbiguousTraitError,

@@ -71,7 +71,7 @@ async def __heal(character: "VChar"):
     if character.is_vampire:
         character.log("rouse", 3)
 
-    await character.commit()
+    await character.save()
     return SimpleNamespace(gain=hunger_gain, torpor=torpor)
 
 

@@ -35,7 +35,7 @@ async def delete(
         traitcommon.validate_trait_names(*traits, disciplines=disciplines)
         outcome = __delete_traits(character, *traits)
         await __outcome_embed(ctx, character, outcome, disciplines)
-        await character.commit()
+        await character.save()
 
     except (ValueError, SyntaxError) as err:
         await inconnu.embeds.error(ctx, err, character=character, help=__HELP_URL)

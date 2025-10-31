@@ -14,7 +14,7 @@ class VCharEmbed(discord.Embed):
         show_thumbnail = kwargs.pop("show_thumbnail", True)
 
         if link:
-            kwargs["url"] = inconnu.profile_url(character.pk)
+            kwargs["url"] = inconnu.profile_url(character.id)
 
         if "title" in kwargs:
             author_name = character.name

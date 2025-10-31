@@ -67,15 +67,15 @@ async def char_id() -> str:
     char = inconnu.models.VChar(
         guild=1,
         user=1,
-        _name="Test",
+        raw_name="Test",
         splat=splat,
-        _humanity=7,
+        raw_humanity=7,
         health=6 * inconnu.constants.Damage.NONE,
         willpower=5 * inconnu.constants.Damage.NONE,
         potency=splat == "vampire" and 1 or 0,
     )
-    await char.commit()
-    yield char.id
+    await char.save()
+    yield char.id_str
     await char.delete()
 
 

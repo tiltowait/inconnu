@@ -26,14 +26,15 @@ async def show_tags(ctx: discord.ApplicationContext):
 
     pages = []
     current_tags = []
-    async for tag in inconnu.db.rp_posts.aggregate(pipeline):
-        # A Discord select menu can only hold a maximum of 25 items, so we will
-        # make our pages hold no more than 25 tags each
-        current_tags.append((tag["_id"], tag["count"]))
+    async with await inconnu.db.rp_posts.aggregate(pipeline) as cursor:
+        async for tag in cursor:
+            # A Discord select menu can only hold a maximum of 25 items, so we will
+            # make our pages hold no more than 25 tags each
+            current_tags.append((tag["_id"], tag["count"]))
 
-        if len(current_tags) == 25:
-            pages.append(_create_page(ctx, current_tags))
-            current_tags = []
+            if len(current_tags) == 25:
+                pages.append(_create_page(ctx, current_tags))
+                current_tags = []
 
     if current_tags:
         # We have some leftovers

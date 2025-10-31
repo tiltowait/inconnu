@@ -58,38 +58,47 @@ def measure(func):
 
 async def upload_faceclaim(character: "VChar", image_url: str) -> str:
     """Uploads a faceclaim to cloud storage."""
-    payload = {
-        "guild": character.guild,
-        "user": character.user,
-        "charid": character.id,
-        "image_url": image_url,
-    }
-    new_url = await _post(path="/image/upload", data=dumps(payload))
-    return new_url
+    try:
+        payload = {
+            "guild": character.guild,
+            "user": character.user,
+            "charid": character.id_str,
+            "image_url": image_url,
+        }
+        new_url = await _post(path="/image/upload", data=dumps(payload))
+        return new_url
+    except Exception as err:
+        raise ApiError(str(err))
 
 
 async def delete_single_faceclaim(image: str) -> bool:
     """Delete a single faceclaim image."""
-    url = urlparse(image)
-    if url.netloc != BUCKET:
-        return False
+    try:
+        url = urlparse(image)
+        if url.netloc != BUCKET:
+            return False
 
-    if (match := re.match(r"/([A-F0-9a-f]+/[A-F0-9a-f]+\.webp)$", url.path)) is None:
-        return False
+        if (match := re.match(r"/([A-F0-9a-f]+/[A-F0-9a-f]+\.webp)$", url.path)) is None:
+            return False
 
-    key = match.group(1)
-    res = await _delete(path=f"/image/{key}")
-    logger.debug("API: {}", res)
+        key = match.group(1)
+        res = await _delete(path=f"/image/{key}")
+        logger.debug("API: {}", res)
 
-    return True
+        return True
+    except Exception as err:
+        raise ApiError(str(err))
 
 
 async def delete_character_faceclaims(character: "VChar"):
     """Delete all of a character's faceclaims."""
-    res = await _delete(path=f"/character/{character.id}")
-    del character.profile.images[:]
-    await character.commit()
-    logger.info("API: {}", res)
+    try:
+        res = await _delete(path=f"/character/{character.id_str}")
+        del character.profile.images[:]
+        await character.save()
+        logger.info("API: {}", res)
+    except Exception as err:
+        raise ApiError(str(err))
 
 
 @measure

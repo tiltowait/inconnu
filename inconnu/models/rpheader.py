@@ -1,43 +1,41 @@
 """Header subdoc."""
 
 import copy
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar, Optional
 
-from bson import ObjectId
-from umongo import EmbeddedDocument, fields
+from beanie import PydanticObjectId
+from pydantic import BaseModel
 
-import inconnu
+from inconnu.errors import CharacterError
 
 if TYPE_CHECKING:
     from inconnu.models import VChar
 
 
-@inconnu.db.instance.register
-class DamageSubdoc(EmbeddedDocument):
+class DamageSubdoc(BaseModel):
     """Tracks aggravated and superficial damage."""
 
-    superficial = fields.IntField()
-    aggravated = fields.IntField()
+    superficial: int
+    aggravated: int
 
 
-@inconnu.db.instance.register
-class HeaderSubdoc(EmbeddedDocument):
+class HeaderSubdoc(BaseModel):
     """A subdocument for RP headers. It gets stored in the database for later editing.."""
 
-    MAX_TITLE_LEN = 256
+    MAX_TITLE_LEN: ClassVar[int] = 256
 
-    charid: ObjectId = fields.ObjectIdField()
-    char_name: str = fields.StrField()
+    charid: PydanticObjectId
+    char_name: str
 
-    blush: int = fields.IntField()
-    hunger: int = fields.IntField(allow_none=True)
-    location: str = fields.StrField()
-    merits: str = fields.StrField()
-    flaws: str = fields.StrField()
-    temp: str = fields.StrField()
+    blush: int
+    hunger: Optional[int]
+    location: str
+    merits: str
+    flaws: str
+    temp: str
 
-    health = fields.EmbeddedField(DamageSubdoc)
-    willpower = fields.EmbeddedField(DamageSubdoc)
+    health: DamageSubdoc
+    willpower: DamageSubdoc
 
     @property
     def blush_str(self) -> str | None:
@@ -77,8 +75,11 @@ class HeaderSubdoc(EmbeddedDocument):
         else:
             hunger = None
 
+        if character.id is None:
+            raise CharacterError(f"{character.name} has somehow not been saved!")
+
         header_doc = cls(
-            charid=character.pk,
+            charid=character.id,
             char_name=character.name,
             blush=header.blush,
             hunger=hunger,

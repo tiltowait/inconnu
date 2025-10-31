@@ -5,75 +5,72 @@ import itertools
 from datetime import datetime
 from enum import StrEnum
 from types import SimpleNamespace as SN
+from typing import ClassVar, Optional
 
-from umongo import EmbeddedDocument, fields
+from pydantic import BaseModel, ConfigDict, Field
 
 import inconnu
 
 
-@inconnu.db.instance.register
-class VCharProfile(EmbeddedDocument):
+class VCharProfile(BaseModel):
     """Maintains character biographical info."""
 
-    biography: str = fields.StrField(default=str)
-    description: str = fields.StrField(default=str)
-    images: list[str] = fields.ListField(fields.StrField, default=list)
+    biography: str = ""
+    description: str = ""
+    images: list[str] = Field(default_factory=list)
 
 
-@inconnu.db.instance.register
-class VCharHeader(EmbeddedDocument):
+class VCharHeader(BaseModel):
     """Information for the /header command."""
 
-    blush: int = fields.IntField(default=0)
-    location: str = fields.StrField(default=str)
-    merits: str = fields.StrField(default=str)
-    flaws: str = fields.StrField(default=str)
-    temp: str = fields.StrField(default=str)
+    blush: int = Field(default=0)
+    location: str = ""
+    merits: str = ""
+    flaws: str = ""
+    temp: str = ""
 
 
-@inconnu.db.instance.register
-class VCharExperienceEntry(EmbeddedDocument):
+class VCharExperienceEntry(BaseModel):
     """An experience log entry."""
 
-    event: str = fields.StrField()
-    amount: int = fields.IntField()
-    reason: str = fields.StrField()
-    admin: int = fields.IntField()
-    date: datetime = fields.DateTimeField(default=datetime.utcnow)
+    event: str
+    amount: int
+    reason: str
+    admin: int
+    date: datetime = Field(default_factory=datetime.utcnow)
 
 
-@inconnu.db.instance.register
-class VCharExperience(EmbeddedDocument):
+class VCharExperience(BaseModel):
     """Current and lifetime experience."""
 
-    unspent: int = fields.IntField(default=0, attribute="current")
-    lifetime: int = fields.IntField(default=0, attribute="total")
-    log: list[VCharExperienceEntry] = fields.ListField(
-        fields.EmbeddedField(VCharExperienceEntry), default=list
-    )
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+
+    unspent: int = Field(default=0, alias="current")
+    lifetime: int = Field(default=0, alias="total")
+    log: list[VCharExperienceEntry] = Field(default_factory=list)
 
 
-@inconnu.db.instance.register
-class VCharMacro(EmbeddedDocument):
+class VCharMacro(BaseModel):
     """A roll macro."""
 
-    name: str = fields.StrField()
-    pool: list[str] = fields.ListField(fields.StrField)
-    hunger: bool = fields.BoolField()
-    difficulty: int = fields.IntField()
-    rouses: int = fields.IntField()
-    reroll_rouses: bool = fields.BoolField()
-    staining: str = fields.StrField()
-    hunt: bool = fields.BoolField()
-    comment: str = fields.StrField(allow_none=True, required=True)
+    name: str
+    pool: list[str]
+    hunger: bool
+    difficulty: int
+    rouses: int
+    reroll_rouses: bool
+    staining: str
+    hunt: bool
+    comment: Optional[str]
 
 
-@inconnu.db.instance.register
-class VCharTrait(EmbeddedDocument):
+class VCharTrait(BaseModel):
     """A character trait, which may be an attribute, skill, Discipline, or custom.
     They're called specialties because I'm too lazy to rename them to subtraits."""
 
-    DELIMITER = "."
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+
+    DELIMITER: ClassVar[str] = "."
 
     class Type(StrEnum):
         """The type of trait."""
@@ -85,10 +82,10 @@ class VCharTrait(EmbeddedDocument):
         SKILL = "skill"
 
     # Trait fields
-    name: str = fields.StrField(required=True)
-    rating: int = fields.IntField(required=True)
-    type: str = fields.StrField(required=True)
-    _specialties: list[str] = fields.ListField(fields.StrField, default=list, attribute="subtraits")
+    name: str
+    rating: int
+    type: str
+    raw_subtraits: list[str] = Field(default_factory=list, alias="subtraits")
 
     @property
     def is_attribute(self) -> bool:
@@ -123,12 +120,12 @@ class VCharTrait(EmbeddedDocument):
     @property
     def has_specialties(self) -> bool:
         """Whether the trait has any specialties."""
-        return len(self._specialties) > 0
+        return len(self.raw_subtraits) > 0
 
     @property
     def specialties(self) -> list[str]:
         """The trait's specialties."""
-        return self._specialties.copy()
+        return self.raw_subtraits.copy()
 
     def add_powers(self, powers: str | list[str]):
         """Add powers to the Discipline."""
@@ -145,7 +142,7 @@ class VCharTrait(EmbeddedDocument):
             )
         self._add_subtraits(specialties)
 
-    def _add_subtraits(self, specialties: str | list[str]):
+    def _add_subtraits(self, specialties: str | list[str] | set[str]):
         """Add a specialty or a power."""
         if isinstance(specialties, str):
             specialties = {specialties}
@@ -153,12 +150,12 @@ class VCharTrait(EmbeddedDocument):
             specialties = set(specialties)
 
         for specialty in specialties:
-            if specialty.lower() not in map(str.lower, self._specialties):
-                self._specialties.append(specialty)
+            if specialty.lower() not in map(str.lower, self.raw_subtraits):
+                self.raw_subtraits.append(specialty)
 
-        self._specialties.sort()
+        self.raw_subtraits.sort()
 
-    def remove_specialties(self, specialties: str | list[str]):
+    def remove_specialties(self, specialties: str | list[str] | set[str]):
         """Remove specialties from the trait."""
         if isinstance(specialties, str):
             specialties = {specialties}
@@ -166,10 +163,10 @@ class VCharTrait(EmbeddedDocument):
             specialties = set(specialties)
 
         for specialty in map(str.lower, specialties):
-            current = [spec.lower() for spec in self._specialties]
+            current = [spec.lower() for spec in self.raw_subtraits]
             try:
                 index = current.index(specialty)
-                del self._specialties[index]
+                del self.raw_subtraits[index]
             except ValueError:
                 continue
 
@@ -228,7 +225,7 @@ class VCharTrait(EmbeddedDocument):
             spec_groups = []
             for token in tokens[1:]:
                 found_specs = []
-                for specialty in self._specialties:
+                for specialty in self.raw_subtraits:
                     if comp(token, specialty):
                         found_specs.append(specialty)
                 spec_groups.append(found_specs)

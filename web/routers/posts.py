@@ -43,7 +43,7 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
         request,
         "post.html.jinja",
         {
-            "url": inconnu.post_url(post.pk),
+            "url": inconnu.post_url(post.id),
             "user": user,
             "channel": channel,
             "guild": guild,

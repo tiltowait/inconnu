@@ -279,7 +279,7 @@ class Settings:
 
         user_settings = await self._fetch_user(user)
         setattr(user_settings.settings, key, value)
-        await user_settings.commit()
+        await user_settings.save()
 
     async def _fetch_user(self, user: discord.User) -> VUser:
         """Fetch a user."""

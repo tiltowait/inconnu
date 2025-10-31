@@ -12,7 +12,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistic
 DT_ST = "D"
 
 
-async def statistics(ctx, character, style: str, date: datetime, *, player: discord.Member | None):
+async def statistics(ctx, character, style: str, date_rep: str, *, player: discord.Member | None):
     """
     View the roll statistics for the user's characters.
     Args:
@@ -25,7 +25,7 @@ async def statistics(ctx, character, style: str, date: datetime, *, player: disc
     across all of the user's characters on the server.
     """
     try:
-        date = datetime.strptime(date, "%Y%m%d")
+        date = datetime.strptime(date_rep, "%Y%m%d")
         owner = await inconnu.common.player_lookup(ctx, player)
 
         # As Inconnu was originally made for Cape Town by Night, we will use
@@ -46,7 +46,7 @@ async def statistics(ctx, character, style: str, date: datetime, *, player: disc
             await __traits_statistics(ctx, character, date, player=owner)
 
     except ValueError:
-        await inconnu.embeds.error(ctx, f"`{date}` is not a valid date.")
+        await inconnu.embeds.error(ctx, f"`{date_rep}` is not a valid date.")
     except LookupError as err:
         await inconnu.embeds.error(ctx, err, help_url=__HELP_URL)
 
@@ -57,7 +57,7 @@ async def __traits_statistics(ctx, character, date, *, player):
     pipeline = [
         {
             "$match": {
-                "charid": character.pk,
+                "charid": character.id,
                 "use_in_stats": True,
                 "date": {"$gte": date},
                 "pool": {"$ne": None},
@@ -85,7 +85,8 @@ async def __traits_statistics(ctx, character, date, *, player):
         {"$group": {"_id": "$_id.charid", "docs": {"$push": {"k": "$_id.pool", "v": "$count"}}}},
         {"$replaceRoot": {"newRoot": {"_id": "$_id", "traits": {"$arrayToObject": ["$docs"]}}}},
     ]
-    raw_stats = await inconnu.db.rolls.aggregate(pipeline).to_list(length=1)
+    async with await inconnu.db.rolls.aggregate(pipeline) as cursor:
+        raw_stats = await cursor.to_list(1)
 
     if raw_stats:
         stats = {}
@@ -207,7 +208,8 @@ async def __general_statistics(ctx, date, owner):
         },
         {"$sort": {"name": 1}},
     ]
-    results = await col.aggregate(pipeline).to_list(length=None)
+    async with await col.aggregate(pipeline) as cursor:
+        results = await cursor.to_list(length=None)
 
     if not results:
         if ctx.user == owner:

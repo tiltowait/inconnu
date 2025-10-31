@@ -1,20 +1,20 @@
 """Custom user settings."""
 
-from umongo import Document, EmbeddedDocument, fields
+from beanie import Document
+from pydantic import BaseModel, Field
 
-import inconnu
 
-
-@inconnu.db.instance.register
-class VUserSettings(EmbeddedDocument):
+class VUserSettings(BaseModel):
     """Represents individual user settings."""
 
-    accessibility = fields.BoolField(default=False)
+    accessibility: bool = False
 
 
-@inconnu.db.instance.register
 class VUser(Document):
     """Represents a user and their settings."""
 
-    user = fields.IntField(required=True)
-    settings = fields.EmbeddedField(VUserSettings, default=VUserSettings)
+    user: int
+    settings: VUserSettings = Field(default_factory=VUserSettings)
+
+    class Settings:
+        name = "v_user"

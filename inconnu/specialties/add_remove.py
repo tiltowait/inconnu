@@ -67,7 +67,7 @@ async def _add_or_remove(
         embed = _make_embed(ctx, character, additions, title)
         view = inconnu.views.TraitsView(character, ctx.user)
 
-        tasks = [ctx.respond(embed=embed, view=view, ephemeral=True), character.commit()]
+        tasks = [ctx.respond(embed=embed, view=view, ephemeral=True), character.save()]
 
         # Because the delta might be zero, only send an update report if
         # changes were actually made

@@ -1,62 +1,62 @@
 """Rolepost models."""
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import discord
-from umongo import Document, EmbeddedDocument, fields
+from beanie import Document
+from pydantic import AnyUrl, BaseModel, Field
 
-import inconnu
 from inconnu.models.rpheader import HeaderSubdoc
 
 if TYPE_CHECKING:
     from inconnu.models import VChar
 
 
-@inconnu.db.instance.register
-class PostHistoryEntry(EmbeddedDocument):
+class PostHistoryEntry(BaseModel):
     """Represents historic post content and a date of modification."""
 
-    date = fields.DateTimeField()
-    content = fields.StrField()
+    date: datetime
+    content: str
 
 
-@inconnu.db.instance.register
 class RPPost(Document):
     """Represents a Rolepost with the ability to maintain deltas."""
 
     # Metadata
-    date = fields.DateTimeField(default=datetime.utcnow)
-    date_modified = fields.DateTimeField(default=None)
-    guild = fields.IntField()
-    channel = fields.IntField()
-    user = fields.IntField()
-    message_id = fields.IntField()
-    url = fields.UrlField(allow_none=True)
-    deleted = fields.BoolField(default=False)
-    deletion_date = fields.DateTimeField(default=None)
-    id_chain = fields.ListField(fields.IntField, default=list)
+    date: datetime = Field(default_factory=datetime.utcnow)
+    date_modified: Optional[datetime] = None
+    guild: int
+    channel: int
+    user: int
+    message_id: int
+    url: Optional[AnyUrl]
+    deleted: bool = False
+    deletion_date: Optional[datetime] = None
+    id_chain: list[int] = Field(default_factory=list)
 
     # Content
-    header = fields.EmbeddedField(HeaderSubdoc)
-    content = fields.StrField()
-    mentions = fields.ListField(fields.IntField, default=list)
-    history = fields.ListField(fields.EmbeddedField(PostHistoryEntry), default=list)
+    header: HeaderSubdoc
+    content: str
+    mentions: list[int] = Field(default_factory=list)
+    history: list[PostHistoryEntry] = Field(default_factory=list)
 
     # Custom
-    title = fields.StrField(default=None)
-    tags = fields.ListField(fields.StrField, default=list)
+    title: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
 
     @property
     def utc_date(self) -> datetime:
         """The UTC-aware post date."""
         return self.date.replace(tzinfo=timezone.utc)
 
-    class Meta:
-        collection_name = "rp_posts"
+    class Settings:
+        name = "rp_posts"
+        use_state_management = True
+        validate_on_save = True
 
     @classmethod
-    def create(
+    def new(
         cls,
         *,
         interaction: discord.Interaction,
@@ -69,6 +69,11 @@ class RPPost(Document):
         tags: list[str],
     ):
         """Create a Rolepost."""
+        if interaction.channel_id is None:
+            raise ValueError(f"Interaction channel has no ID")
+        if interaction.user is None:
+            raise ValueError(f"Interaction user does not exist")
+
         return cls(
             guild=character.guild,
             channel=interaction.channel_id,
@@ -76,7 +81,7 @@ class RPPost(Document):
             message_id=message.id,
             header=header,
             content=content,
-            url=message.jump_url,
+            url=AnyUrl(message.jump_url),
             mentions=mentions,
             title=title,
             tags=tags,

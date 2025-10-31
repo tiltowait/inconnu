@@ -9,11 +9,13 @@ import random
 from collections import Counter
 from datetime import datetime
 from enum import StrEnum
+from functools import total_ordering
 from types import SimpleNamespace
-from typing import Callable
+from typing import Any, Callable, ClassVar
 
+from beanie import Document, Insert, Replace, Save, SaveChanges, before_event
 from loguru import logger
-from umongo import Document, fields
+from pydantic import ConfigDict, Field
 
 import inconnu
 from inconnu.constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
@@ -27,65 +29,53 @@ from inconnu.models.vchardocs import (
 )
 
 
-class _Properties(StrEnum):
+class _Tracker(StrEnum):
     """An enum to avoid stringly typing database fields."""
 
-    USER = "user"
-    NAME = "_name"
-    SPLAT = "splat"
-    HUMANITY = "humanity"
-    STAINS = "stains"
     HEALTH = "health"
     WILLPOWER = "willpower"
-    HUNGER = "hunger"
-    POTENCY = "potency"
-    TRAITS = "_traits"
-    PROFILE = "profile"
-    BIOGRAPHY = "biography"
-    DESCRIPTION = "description"
-    IMAGES = "images"
-    CONVICTIONS = "convictions"
-    RP_HEADER = "header"
-    MACROS = "macros"
 
 
-@inconnu.db.instance.register
+@total_ordering
 class VChar(Document):
     """A vampire, mortal, ghoul, or thin-blood character."""
 
-    VAMPIRE_TRAITS = ["Hunger", "Potency", "Surge", "Bane", "PowerBonus"]
-    SPC_OWNER = 0
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+
+    class Settings:
+        name = "characters"
+        use_state_management = True
+        validate_on_save = True
+
+    VAMPIRE_TRAITS: ClassVar[list[str]] = ["Hunger", "Potency", "Surge", "Bane", "PowerBonus"]
+    SPC_OWNER: ClassVar[int] = 0
 
     # Ownership
-    guild = fields.IntField()
-    user = fields.IntField()
+    guild: int
+    user: int
 
     # Basic stats used in trackers
-    _name = fields.StrField(attribute="name")
-    splat = fields.StrField()
-    health = fields.StrField()
-    willpower = fields.StrField()
-    _humanity = fields.IntField(attribute="humanity")
-    stains = fields.IntField(default=0)
-    _hunger = fields.IntField(default=1, attribute="hunger")
-    potency = fields.IntField()
-    _traits = fields.ListField(fields.EmbeddedField(VCharTrait), default=list, attribute="traits")
+    raw_name: str = Field(alias="name")
+    splat: str
+    health: str
+    willpower: str
+    raw_humanity: int = Field(alias="humanity")
+    stains: int = Field(default=0)
+    raw_hunger: int = Field(default=1, alias="hunger")
+    potency: int
+    raw_traits: list[VCharTrait] = Field(default_factory=list, alias="traits")
 
     # Biographical/profile data
-    profile = fields.EmbeddedField(VCharProfile, default=VCharProfile)
-    convictions = fields.ListField(fields.StrField, default=list)
-    header = fields.EmbeddedField(VCharHeader, default=VCharHeader)
+    profile: VCharProfile = Field(default_factory=VCharProfile)
+    convictions: list[str] = Field(default_factory=list)
+    header: VCharHeader = Field(default_factory=VCharHeader)
 
     # Misc/convenience
-    macros = fields.ListField(fields.EmbeddedField(VCharMacro), default=list)
-    experience = fields.EmbeddedField(VCharExperience, default=VCharExperience)
-    stat_log = fields.DictField(default=dict, attribute="log")
+    macros: list[VCharMacro] = Field(default_factory=list)
+    experience: VCharExperience = Field(default_factory=VCharExperience)
+    stat_log: dict[str, Any] = Field(alias="log", default_factory=dict)
 
-    class Meta:
-        collection_name = "characters"
-
-    # umongo methods
-
+    @before_event(Insert)
     def pre_insert(self):
         """Last-minute prep."""
         self.stat_log["created"] = datetime.utcnow()
@@ -102,6 +92,7 @@ class VChar(Document):
 
         logger.info("VCHAR: Created {}", self.name)
 
+    @before_event(Save, Replace, SaveChanges)
     def pre_update(self):
         """Clamp values within required bounds."""
         if self.is_vampire:
@@ -115,77 +106,65 @@ class VChar(Document):
         if self.splat == "thinblood":
             self.splat = "thin-blood"
 
-        logger.debug("VCHAR: {} will update", self.name)
+        logger.info("VCHAR: {} will update", self.name)
 
     # Comparators
 
     def __lt__(self, other):
         return self.name.lower() < other.name.lower()
 
-    def __gt__(self, other):
-        return self.name.lower() > other.name.lower()
-
     def __eq__(self, other):
         """Just check the IDs."""
-        return self.id == other.id
-
-    def __le__(self, other):
-        return self.name.lower() <= other.name.lower()
-
-    def __ge__(self, other):
-        return self.name.lower() >= other.name.lower()
-
-    def __ne__(self, other):
-        return self.id != other.id
+        return self.id_str == other.id
 
     # Synthetic properties
 
     @property
-    def id(self) -> str:
+    def id_str(self) -> str:
         """The ObjectId's string value."""
-        return str(self.pk)
+        return str(self.id)
 
     @property
     def name(self) -> str:
         """The character's name plus an indicator if it's an SPC."""
         if not self.is_pc:
-            return self._name + " (SPC)"
-        return self._name
+            return self.raw_name + " (SPC)"
+        return self.raw_name
 
     @name.setter
     def name(self, new_name: str):
         """Set the character's name."""
-        self._name = new_name
+        self.raw_name = new_name
 
     @property
     def hunger(self) -> int:
         """Get the character's Hunger rating."""
         if self.is_vampire:
-            return self._hunger
+            return self.raw_hunger
         return 0
 
     @hunger.setter
     def hunger(self, new_hunger: int):
         """Set the character's Hunger rating."""
         new_hunger = max(0, min(new_hunger, 5))
-        self._hunger = new_hunger
+        self.raw_hunger = new_hunger
 
     @property
     def humanity(self) -> int:
         """The character's Humanity rating."""
-        return self._humanity
+        return self.raw_humanity
 
     @humanity.setter
     def humanity(self, new_humanity: int):
         """Set the character's new Humanity rating, clamped, and wipe stains."""
         new_humanity = max(0, min(new_humanity, 10))
-        self._humanity = new_humanity
+        self.raw_humanity = new_humanity
         self.stains = 0
 
     @property
     def traits(self) -> list[VCharTrait]:
         """A copy of the character's traits."""
-        return copy.deepcopy(self._traits)
+        return copy.deepcopy(self.raw_traits)
 
     @property
     def has_biography(self) -> bool:
@@ -193,11 +172,11 @@ class VChar(Document):
         return any([self.profile.biography, self.profile.description])
 
     @property
-    def profile_image_url(self) -> str:
+    def profile_image_url(self) -> str | None:
         """Get the URL of the first profile image."""
         return self.profile.images[0] if self.profile.images else None
 
-    def random_image_url(self) -> str:
+    def random_image_url(self) -> str | None:
         """Get a random image URL."""
         return random.choice(self.profile.images) if self.profile.images else None
 
@@ -208,7 +187,7 @@ class VChar(Document):
 
     def set_aggravated_hp(self, new_value):
         """Set the Aggravated Health damage."""
-        self.set_damage(_Properties.HEALTH, Damage.AGGRAVATED, new_value, wrap=False)
+        self.set_damage(_Tracker.HEALTH, Damage.AGGRAVATED, new_value, wrap=False)
 
     @property
     def aggravated_wp(self) -> int:
@@ -237,7 +216,7 @@ class VChar(Document):
 
     def set_superficial_wp(self, new_value):
         """Set the Superficial Willpower damage."""
-        self.set_damage(_Properties.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)
+        self.set_damage(_Tracker.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)
 
     @property
     def superficial_hp(self) -> int:
@@ -397,7 +376,7 @@ class VChar(Document):
 
     def has_trait(self, name: str) -> bool:
         """Determine whether a character has a given trait."""
-        for trait in self._traits:
+        for trait in self.raw_traits:
             if trait.matching(name, True):
                 return True
         return False
@@ -439,7 +418,7 @@ class VChar(Document):
 
         for input_name, input_rating in traits.items():
             updated = False
-            for trait in self._traits:
+            for trait in self.raw_traits:
                 if trait.matching(input_name, True):
                     if trait.name in ["Resolve", "Composure"]:
                         counter["willpower"] += input_rating - trait.rating
@@ -460,7 +439,7 @@ class VChar(Document):
                     category = VCharTrait.Type.DISCIPLINE
 
                 new_trait = VCharTrait(name=input_name, rating=input_rating, type=category.value)
-                bisect.insort(self._traits, new_trait, key=lambda t: t.name.casefold())
+                bisect.insort(self.raw_traits, new_trait, key=lambda t: t.name.casefold())
                 assignments[input_name] = input_rating
 
         # Traits added; now adjust HP/WP
@@ -483,9 +462,9 @@ class VChar(Document):
 
     def delete_trait(self, name: str) -> str:
         """Delete a trait. Raises TraitNotFound if the trait doesn't exist."""
-        for index, trait in enumerate(self._traits):
+        for index, trait in enumerate(self.raw_traits):
             if trait.matching(name, True):
-                del self._traits[index]
+                del self.raw_traits[index]
                 return trait.name
 
         raise inconnu.errors.TraitNotFound(self, name)
@@ -507,7 +486,7 @@ class VChar(Document):
         action: Callable,
     ) -> tuple[VCharTrait, list[str]]:
         """The actual work of adding subtraits."""
-        for trait in self._traits:
+        for trait in self.raw_traits:
             if trait.matching(trait_name, True):
                 before = set(trait.specialties)
                 action(trait, specialties)
@@ -522,7 +501,7 @@ class VChar(Document):
         self, trait_name: str, specialties: list[str] | str
     ) -> tuple[VCharTrait, list[str]]:
         """Remove specialties from a trait."""
-        for trait in self._traits:
+        for trait in self.raw_traits:
             if trait.matching(trait_name, True):
                 before = set(trait.specialties)
                 trait.remove_specialties(specialties)
@@ -591,12 +570,12 @@ class VChar(Document):
 
     # Specialized mutators
 
-    def adjust_tracker_rating(self, track: _Properties, new_rating: int) -> bool:
+    def adjust_tracker_rating(self, track: _Tracker, new_rating: int) -> bool:
         """Adjust a character's Health or Willpower rating. Returns true if changed."""
-        if track == _Properties.HEALTH:
+        if track == _Tracker.HEALTH:
             current_rating = len(self.health)
             current_track = self.health
-        elif track == _Properties.WILLPOWER:
+        elif track == _Tracker.WILLPOWER:
             current_rating = len(self.willpower)
             current_track = self.willpower
         else:
@@ -617,7 +596,7 @@ class VChar(Document):
         setattr(self, track, new_track)
         return True
 
-    def set_damage(self, tracker: _Properties, severity: Damage, amount: int, wrap=False):
+    def set_damage(self, tracker: _Tracker, severity: Damage, amount: int, wrap=False):
         """
         Set the current damage level.
         Args:
@@ -627,7 +606,7 @@ class VChar(Document):
         """
         if severity not in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
             raise SyntaxError("Severity must be superficial or aggravated.")
-        if tracker not in [_Properties.HEALTH, _Properties.WILLPOWER]:
+        if tracker not in [_Tracker.HEALTH, _Tracker.WILLPOWER]:
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = getattr(self, tracker)
@@ -655,7 +634,7 @@ class VChar(Document):
             # No need to do anything if the track is unchanged
             return
 
-        if tracker == _Properties.HEALTH:
+        if tracker == _Tracker.HEALTH:
             self.health = new_track
         else:
             self.willpower = new_track
@@ -669,7 +648,7 @@ class VChar(Document):
         self.__update_log(f"{tracker}_superficial", old_sup, new_sup)
         self.__update_log(f"{tracker}_aggravated", old_agg, new_agg)
 
-    def apply_damage(self, tracker: _Properties, severity: Damage, delta: int) -> bool:
+    def apply_damage(self, tracker: _Tracker, severity: Damage, delta: int) -> bool:
         """
         Apply Superficial damage.
         Args:
@@ -683,7 +662,7 @@ class VChar(Document):
         """
         if severity not in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
             raise SyntaxError("Severity must be superficial or aggravated.")
-        if tracker not in [_Properties.HEALTH, _Properties.WILLPOWER]:
+        if tracker not in [_Tracker.HEALTH, _Tracker.WILLPOWER]:
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = getattr(self, tracker)

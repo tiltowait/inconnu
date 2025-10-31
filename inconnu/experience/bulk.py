@@ -124,7 +124,7 @@ class _BulkModal(Modal):
         commit_tasks = []
         for character, xp_args in self.xp_tasks:
             character.apply_experience(*xp_args)
-            commit_tasks.append(character.commit())
+            commit_tasks.append(character.save())
 
         send_embed = interaction.followup.send(embed=embed)
         await asyncio.gather(*commit_tasks, send_embed)

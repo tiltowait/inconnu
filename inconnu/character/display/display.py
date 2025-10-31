@@ -132,7 +132,7 @@ async def __get_embed(
     # Begin building the embed
     title = title or character.name
     if title == character.name:
-        profile_url = inconnu.profile_url(character.id)
+        profile_url = inconnu.profile_url(character.id_str)
     else:
         profile_url = None
 

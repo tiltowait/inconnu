@@ -99,5 +99,5 @@ async def __heal(character):
     if character.is_vampire:
         character.log("rouse")
 
-    await character.commit()
+    await character.save()
     return SimpleNamespace(mended=mending, rouse=rouse, frenzy=frenzy)

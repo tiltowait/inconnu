@@ -46,7 +46,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
     embed.set_footer(text="View your images with /character images.")
 
     await ctx.respond(embed=embed, ephemeral=True)
-    await character.commit()
+    await character.save()
 
     # We maintain a log of all image uploads to protect ourself against
     # potential legal claims if someone uploads something illegal
@@ -54,7 +54,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
         {
             "guild": ctx.guild.id,
             "user": ctx.user.id,
-            "charid": character.pk,
+            "charid": character.id,
             "url": processed_url,
             "deleted": None,
             "timestamp": discord.utils.utcnow(),

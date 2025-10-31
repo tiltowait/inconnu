@@ -12,7 +12,7 @@ async def delete(ctx, character, macro_name: str):
     try:
         character.delete_macro(macro_name)
         await ctx.respond(f"Deleted **{character.name}'s** `{macro_name}` macro.", ephemeral=True)
-        await character.commit()
+        await character.save()
 
     except inconnu.errors.MacroNotFoundError as err:
         await inconnu.embeds.error(ctx, err, character=character.name, help=__HELP_URL)

@@ -21,7 +21,7 @@ async def remove_entry(ctx, character, index, *, player):
         view = _ExperienceView(character, entry_to_delete)
 
         view.message = await ctx.respond(embed=embed, view=view)
-        await character.commit()
+        await character.save()
 
     except IndexError:
         err = f"{character.name} has no experience log entry at index `{index}`."

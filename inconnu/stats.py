@@ -27,7 +27,7 @@ async def log_roll(guild: int, channel: int, user: int, message: int, char, outc
         await rolls.update_one({"_id": outcome.id}, reroll)
 
 
-async def toggle_roll_stats(message: int) -> bool:
+async def toggle_roll_stats(message: int) -> bool | None:
     """Toggle whether a roll should be used in statistics."""
     ret = await inconnu.db.rolls.find_one_and_update(
         {"message": message},
@@ -115,7 +115,7 @@ def _gen_roll(guild: int, channel: int, user: int, message: int, char, outcome, 
         "channel": channel,
         "user": user,
         "message": message,
-        "charid": getattr(char, "pk", None),
+        "charid": getattr(char, "id", None),
         "raw": outcome.syntax,
         "normal": outcome.normal.dice,
         "hunger": outcome.hunger.dice,

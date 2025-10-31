@@ -126,11 +126,11 @@ class Haven:  # pylint: disable=too-few-public-methods
                     try:
                         self.filter(char)
                         logger.debug("HAVEN: Character {} matches filter", char.name)
-                        self.possibilities[self.uuid + char.id] = (char, False)
+                        self.possibilities[self.uuid + char.id_str] = (char, False)
                         passed += 1
                     except inconnu.errors.InconnuError:
                         logger.debug("HAVEN: Character {} does not match filter", char.name)
-                        self.possibilities[self.uuid + char.id] = (char, True)
+                        self.possibilities[self.uuid + char.id_str] = (char, True)
 
                 logger.debug("HAVEN: {} of {} character(s) match filter", passed, len(all_chars))
 
@@ -152,7 +152,7 @@ class Haven:  # pylint: disable=too-few-public-methods
 
             else:
                 logger.debug("HAVEN: Presenting {} character options", len(all_chars))
-                self.possibilities = {self.uuid + char.id: (char, False) for char in all_chars}
+                self.possibilities = {self.uuid + char.id_str: (char, False) for char in all_chars}
 
             if self.match is None:
                 await self._get_user_selection(err)
@@ -211,7 +211,9 @@ class Haven:  # pylint: disable=too-few-public-methods
                     )
                 )
         else:
-            options = [(char.name, self.uuid + char.id) for char, _ in self.possibilities.values()]
+            options = [
+                (char.name, self.uuid + char.id_str) for char, _ in self.possibilities.values()
+            ]
             logger.debug("HAVEN: {} characters are too many for buttons", len(options))
 
             # A very small number of users have more than 25 characters, so we

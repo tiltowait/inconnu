@@ -71,15 +71,15 @@ class Wizard:
         character = inconnu.models.VChar(
             guild=self.ctx.guild.id,
             user=owner,
-            _name=self.parameters.name,
+            raw_name=self.parameters.name,
             splat=self.parameters.splat,
-            _humanity=self.parameters.humanity,
+            raw_humanity=self.parameters.humanity,
             health=self.parameters.hp * inconnu.constants.Damage.NONE,
             willpower=self.parameters.wp * inconnu.constants.Damage.NONE,
             potency=self.assigned_traits.pop("Blood Potency", 0),
         )
         character.assign_traits(self.assigned_traits)
-        await character.commit()
+        await character.insert()
 
         tasks = []
         if self.assigned_traits:

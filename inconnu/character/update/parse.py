@@ -81,12 +81,12 @@ async def update(
             updates.append(impairment)
 
         tasks = [
-            character.commit(),
+            character.save(),
             inconnu.log.log_event(
                 "update",
                 user=ctx.user.id,
                 guild=ctx.guild.id,
-                charid=character.id,
+                charid=character.id_str,
                 syntax=human_readable,
             ),
         ]
@@ -126,7 +126,7 @@ async def update(
                 "update_error",
                 user=ctx.user.id,
                 guild=ctx.guild.id,
-                charid=character.id,
+                charid=character.id_str,
                 syntax=human_readable,
             ),
             update_help(ctx, err),

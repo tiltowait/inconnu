@@ -42,4 +42,4 @@ async def bol(ctx, character, ministry_alt):
         await inconnu.misc.rouse(
             ctx, character, count, msg, character.humanity == 8, oblivion=False
         )
-        await character.commit()
+        await character.save()

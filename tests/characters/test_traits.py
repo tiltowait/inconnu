@@ -166,7 +166,7 @@ def test_remove_traits(empty_vampire: VChar):
     empty_vampire.assign_traits({"Brawl": 3})
     empty_vampire.add_specialties("Brawl", ["Kindred", "StreetFighting"])
 
-    trait = empty_vampire._traits[0]  # This doesn't create a copy
+    trait = empty_vampire.raw_traits[0]  # This doesn't create a copy
     assert trait.specialties == ["Kindred", "StreetFighting"]
 
     empty_vampire.remove_specialties("Brawl", "Kindred")

@@ -1,17 +1,25 @@
 """interface/misc.py - Miscellaneous commands."""
 
 import asyncio
+from typing import TYPE_CHECKING
 
 import discord
 from discord import option
-from discord.commands import Option, slash_command
+from discord.commands import slash_command
 from discord.ext import commands
 
 import inconnu
+from inconnu.options import char_option
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class MiscCommands(commands.Cog):
     """Miscellaneous commands."""
+
+    def __init__(self, bot: "InconnuBot"):
+        self.bot = bot
 
     @slash_command()
     @option(
@@ -44,22 +52,26 @@ class MiscCommands(commands.Cog):
         await ctx.respond(embed=embed, view=inconnu.views.ReportingView(site, support))
 
     @slash_command()
+    @option("ceiling", description="The roll's highest possible value", min_value=2, default=100)
     async def random(
         self,
         ctx: discord.ApplicationContext,
-        ceiling: Option(int, "The roll's highest possible value", min_value=2, default=100),
+        ceiling: int,
     ):
         """Roll between 1 and a given ceiling (default 100)."""
         await inconnu.misc.percentile(ctx, ceiling)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
     @commands.has_permissions(administrator=True)
+    @option("current_owner", description="The character's owner (admin only)")
+    @char_option("The character to transfer", required=True)
+    @option("new_owner", description="The character's new owner")
     async def transfer(
         self,
         ctx: discord.ApplicationContext,
-        current_owner: Option(discord.Member, "The character's current owner"),
-        character: inconnu.options.character("The character to transfer", required=True),
-        new_owner: Option(discord.Member, "The character's new owner"),
+        current_owner: discord.Member,
+        character: str,
+        new_owner: discord.Member,
     ):
         """Reassign a character from one player to another."""
         if current_owner.id == new_owner.id:
@@ -69,21 +81,21 @@ class MiscCommands(commands.Cog):
             return
 
         try:
-            character = await inconnu.char_mgr.fetchone(ctx.guild, current_owner, character)
+            xfer = await inconnu.char_mgr.fetchone(ctx.guild, current_owner.id, character)
 
-            if ctx.guild.id == character.guild and current_owner.id == character.user:
+            if ctx.guild.id == xfer.guild and current_owner.id == xfer.user:
                 current_mention = current_owner.mention
                 new_mention = new_owner.mention
 
-                msg = f"Transferred **{character.name}** from {current_mention} to {new_mention}."
+                msg = f"Transferred **{xfer.name}** from {current_mention} to {new_mention}."
                 await asyncio.gather(
-                    inconnu.char_mgr.transfer(character, current_owner, new_owner), ctx.respond(msg)
+                    inconnu.char_mgr.transfer(xfer, current_owner, new_owner), ctx.respond(msg)
                 )
-                await ctx.bot.transfer_premium(new_owner, character)
+                await self.bot.transfer_premium(new_owner, xfer)
 
             else:
                 await inconnu.common.present_error(
-                    ctx, f"{current_owner.display_name} doesn't own {character.name}!"
+                    ctx, f"{current_owner.display_name} doesn't own {xfer.name}!"
                 )
 
         except inconnu.errors.CharacterNotFoundError:

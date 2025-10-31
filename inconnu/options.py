@@ -32,7 +32,7 @@ def char_option(description="The character to use", required=False, param="chara
     return decorator
 
 
-def player_option(param="player", description="The character's owner (admin only)"):
+def player_option(param="player", description="The character's owner (admin only)", required=False):
     """A command decorator letting users choose a user."""
 
     def decorator(func):
@@ -40,7 +40,7 @@ def player_option(param="player", description="The character's owner (admin only
             discord.Member,
             description,
             name=param,
-            required=False,
+            required=required,
         )
         return func
 

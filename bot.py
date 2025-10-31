@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from datetime import time, timezone
+from datetime import datetime, time, timezone
 from typing import TYPE_CHECKING
 
 import discord
@@ -26,7 +26,7 @@ class InconnuBot(discord.AutoShardedBot):
         self.persistent_views_added = False
         self.welcomed = False
         self.connected = False
-        self.lockdown = None
+        self.lockdown: datetime | None = None
         self.wizards = 0
         self.motd = None
         self.motd_given = set()

@@ -90,19 +90,19 @@ class Settings:
         guild = await self._fetch_guild(ctx.guild)
         return guild.experience_permissions in [ExpPerms.UNRESTRICTED, ExpPerms.LIFETIME_ONLY]
 
-    async def xp_permissions(self, guild):
+    async def xp_permissions(self, guild) -> str:
         """Get the XP permissions."""
         guild = await self._fetch_guild(guild)
 
         match guild.experience_permissions:
-            case ExpPerms.UNRESTRICTED:
-                return "Users may adjust unspent and lifetime XP."
             case ExpPerms.UNSPENT_ONLY:
                 return "Users may adjust unspent XP only."
             case ExpPerms.LIFETIME_ONLY:
                 return "Users may adjust lifetime XP only."
             case ExpPerms.ADMIN_ONLY:
                 return "Only admins may adjust XP totals."
+            case _:
+                return "Users may adjust unspent and lifetime XP."
 
     async def set_xp_permissions(self, ctx, permissions):
         """
@@ -161,7 +161,7 @@ class Settings:
     async def _set_channel(
         self,
         ctx: discord.ApplicationContext,
-        channel: discord.TextChannel,
+        channel: discord.TextChannel | None,
         key: str,
     ):
         """Set the guild channel for a given key."""
@@ -186,7 +186,7 @@ class Settings:
 
         return None
 
-    async def set_update_channel(self, ctx, channel: discord.TextChannel):
+    async def set_update_channel(self, ctx, channel: discord.TextChannel | None):
         """Set the guild's update channel."""
         return await self._set_channel(ctx, channel, "update_channel")
 

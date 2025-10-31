@@ -3,7 +3,7 @@
 
 import discord
 from discord import option
-from discord.commands import Option, SlashCommandGroup
+from discord.commands import SlashCommandGroup
 from discord.ext import commands
 
 import inconnu
@@ -24,41 +24,49 @@ class Traits(commands.Cog, name="Trait Management"):
     )
 
     @traits.command(name="add")
+    @option("traits", description="The traits to add. Ex: Oblivion=4 BloodSorcery=2")
+    @inconnu.options.char_option("The character to modify")
     async def traits_add(
         self,
         ctx: discord.ApplicationContext,
-        traits: Option(str, "The traits to add. Ex: Oblivion=4 BloodSorcery=2"),
-        character: inconnu.options.character("The character to modify"),
+        traits: str,
+        character: str,
     ):
         """Add one or more traits to a character. To update, use /traits update."""
         await inconnu.traits.add(ctx, character, traits)
 
     @traits.command(name="list")
+    @inconnu.options.char_option("The character to display")
+    @inconnu.options.player_option()
     async def traits_list(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character(),
-        player: inconnu.options.player,
+        character: str,
+        player: discord.Member,
     ):
         """Display a character's traits."""
         await inconnu.traits.show(ctx, character, player=player)
 
     @traits.command(name="update")
+    @option("traits", description="The traits to update. Ex: Oblivion=4 BloodSorcery=2")
+    @inconnu.options.char_option("The character to modify")
     async def traits_update(
         self,
         ctx: discord.ApplicationContext,
-        traits: Option(str, "The traits to update. Ex: Oblivion=3"),
-        character: inconnu.options.character("The character to modify"),
+        traits: str,
+        character: str,
     ):
         """Update one or more traits. Traits must already exist (use /traits add)."""
         await inconnu.traits.update(ctx, character, traits)
 
     @traits.command(name="delete")
+    @option("traits", description="The traits to delete. Ex: Oblivion BloodSorcery")
+    @inconnu.options.char_option("The character to modify")
     async def delete_traits(
         self,
         ctx: discord.ApplicationContext,
-        traits: Option(str, "The traits to delete"),
-        character: inconnu.options.character("The character to modify"),
+        traits: str,
+        character: str,
     ):
         """Remove traits from a character."""
         await inconnu.traits.delete(ctx, character, traits)
@@ -115,11 +123,13 @@ class Traits(commands.Cog, name="Trait Management"):
     )
 
     @specialties.command(name="add")
+    @option("specialties", description="The specialties to add. Ex: Performance=Piano,Singing")
+    @inconnu.options.char_option("The character to modify")
     async def add_specialties(
         self,
         ctx: discord.ApplicationContext,
-        specialties: Option(str, "The specialties to add. Ex: Performance=Piano,Singing"),
-        character: inconnu.options.character("The character to modify"),
+        specialties: str,
+        character: str,
     ):
         """Add specialties to a character. Can add multiple at a time."""
         await inconnu.specialties.add(
@@ -130,11 +140,13 @@ class Traits(commands.Cog, name="Trait Management"):
         )
 
     @specialties.command(name="remove")
+    @option("specialties", description="The specialties to remove. Ex: Brawl=Kindred,Kine")
+    @inconnu.options.char_option("The character to modify")
     async def remove_specialties(
         self,
         ctx: discord.ApplicationContext,
-        specialties: Option(str, "The specialties to remove. Ex: Brawl=Kindred,Kine"),
-        character: inconnu.options.character("The character to modify"),
+        specialties: str,
+        character: str,
     ):
         """Remove specialties from a character. Can remove multiple at a time."""
         await inconnu.specialties.remove(

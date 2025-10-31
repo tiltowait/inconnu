@@ -3,10 +3,11 @@
 
 import discord
 from discord import option
-from discord.commands import Option, OptionChoice, slash_command
+from discord.commands import OptionChoice, slash_command
 from discord.ext import commands
 
 import inconnu
+from inconnu.options import char_option, player_option
 
 
 class Gameplay(commands.Cog):
@@ -20,13 +21,17 @@ class Gameplay(commands.Cog):
     # hence, the `/roll` command (below) was made.
 
     @slash_command()
+    @option("syntax", description="The roll syntax: POOL HUNGER DIFFICULTY")
+    @option("comment", description="A description of the roll", required=False)
+    @char_option()
+    @player_option()
     async def vr(
         self,
         ctx: discord.ApplicationContext,
-        syntax: Option(str, "The roll syntax: POOL HUNGER DIFFICULTY"),
-        comment: Option(str, "A description of the roll", required=False),
-        character: inconnu.options.character(),
-        player: inconnu.options.player,
+        syntax: str,
+        comment: str,
+        character: str,
+        player: discord.Member,
     ):
         """Roll the dice using Thirst syntax. Syntax: POOL HUNGER DIFFICULTY."""
         await inconnu.vr.parse(ctx, syntax, comment, character, player)
@@ -37,31 +42,39 @@ class Gameplay(commands.Cog):
     # most users.
 
     @slash_command(name="roll")
+    @option(
+        "pool", description="May be Attribute+Skill or a raw number. Can surge by adding '+ Surge'"
+    )
+    @option(
+        "hunger",
+        description="The character's Hunger level",
+        choices=[OptionChoice("Use Current (or 0 for Mortals)", "current_hunger")]
+        + [OptionChoice(str(n), str(n)) for n in range(0, 6)],
+    )
+    @option(
+        "difficulty",
+        description="The target number of successes required",
+        choices=[OptionChoice(str(n), n) for n in range(11)],
+    )
+    @option("comment", description="A comment to display with the roll", required=False)
+    @char_option()
+    @player_option()
     async def easy_roll(
         self,
         ctx: discord.ApplicationContext,
-        pool: Option(str, "May be Attribute+Skill or a raw number. Can surge by adding '+ Surge'"),
-        hunger: Option(
-            str,
-            "The character's Hunger level",
-            choices=[OptionChoice("Use Current (or 0 for Mortals)", "current_hunger")]
-            + [OptionChoice(str(n), str(n)) for n in range(0, 6)],
-        ),
-        difficulty: Option(
-            int,
-            "The target number of successes required",
-            choices=[OptionChoice(str(n), n) for n in range(11)],
-        ),
-        comment: Option(str, "A comment to display with the roll", required=False),
-        character: inconnu.options.character(),
-        player: inconnu.options.player,
+        pool: str,
+        hunger: str,
+        difficulty: int,
+        comment: str,
+        character: str,
+        player: discord.Member,
     ):
         """Roll the dice!"""
         syntax = f"{pool} {hunger} {difficulty}"
-        character = await inconnu.vr.parse(ctx, syntax, comment, character, player)
-        if isinstance(character, inconnu.models.VChar):
-            if character.is_vampire:
-                if hunger != "current_hunger" and character.hunger == int(hunger):
+        char = await inconnu.vr.parse(ctx, syntax, comment, character, player)
+        if isinstance(char, inconnu.models.VChar):
+            if char.is_vampire:
+                if hunger != "current_hunger" and char.hunger == int(hunger):
                     await ctx.respond(
                         (
                             "**Tip:** Select `Use Current` so you don't have "
@@ -76,12 +89,22 @@ class Gameplay(commands.Cog):
                 )
 
     @slash_command(contexts={discord.InteractionContextType.guild})
-    async def aggheal(self, ctx, character: inconnu.options.character("The character to heal")):
+    @char_option("The character to heal")
+    async def aggheal(
+        self,
+        ctx: discord.ApplicationContext,
+        character: str,
+    ):
         """Heal a character's Aggravated damage, performing three Rouse checks."""
         await inconnu.misc.aggheal(ctx, character)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
-    async def awaken(self, ctx, character: inconnu.options.character("The character to wake")):
+    @char_option("The character to wake")
+    async def awaken(
+        self,
+        ctx: discord.ApplicationContext,
+        character: str,
+    ):
         """Perform a Rouse check and heal Superficial Willpower damage."""
         await inconnu.misc.awaken(ctx, character)
 
@@ -102,45 +125,56 @@ class Gameplay(commands.Cog):
         await inconnu.misc.bol(ctx, character, ministry_alt)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
+    @option(
+        "difficulty", description="The frenzy difficulty", choices=inconnu.options.ratings(1, 10)
+    )
+    @option(
+        "penalty",
+        description="A dice penalty to apply to the roll",
+        choices=[
+            OptionChoice("Brujah Fury", "brujah"),
+            OptionChoice("Malkavian Terror", "malkavian"),
+        ],
+        required=False,
+    )
+    @option(
+        "bonus",
+        description="A dice bonus to apply to the roll",
+        choices=[
+            "Cold Dead Hunger",
+            "The Dream",
+            "Gentle Mind",
+            "Jewel in the Garden",
+            "The Heart of Darkness",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+        ],
+        required=False,
+    )
+    @char_option("The frenzying character")
     async def frenzy(
         self,
         ctx: discord.ApplicationContext,
-        difficulty: Option(int, "The frenzy difficulty", choices=inconnu.options.ratings(1, 10)),
-        penalty: Option(
-            str,
-            "A dice penalty to apply to the roll",
-            choices=[
-                OptionChoice("Brujah Fury", "brujah"),
-                OptionChoice("Malkavian Terror", "malkavian"),
-            ],
-            required=False,
-        ),
-        bonus: Option(
-            str,
-            "A dice bonus to apply to the roll",
-            choices=[
-                "Cold Dead Hunger",
-                "The Dream",
-                "Gentle Mind",
-                "Jewel in the Garden",
-                "The Heart of Darkness",
-                "1",
-                "2",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-            ],
-            required=False,
-        ),
-        character: inconnu.options.character("The frenzying character"),
+        difficulty: int,
+        penalty: str,
+        bonus: str,
+        character: str,
     ):
         """Perform a Frenzy check."""
         await inconnu.misc.frenzy(ctx, character, difficulty, penalty, bonus)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
-    async def mend(self, ctx, character: inconnu.options.character("The character to heal")):
+    @char_option("The character to heal")
+    async def mend(
+        self,
+        ctx,
+        character: str,
+    ):
         """Mend Superficial damage. For vampires, amount is based on BP and costs a Rouse check."""
         await inconnu.misc.mend(ctx, character)
 
@@ -164,44 +198,53 @@ class Gameplay(commands.Cog):
         await inconnu.misc.remorse(ctx, character, min_override, lasombra_alt)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
+    @option(
+        "count",
+        description="The number of Rouse checks to make",
+        choices=inconnu.options.ratings(1, 5),
+        default=1,
+    )
+    @option(
+        "reroll",
+        description="Whether to re-roll failures",
+        choices=[OptionChoice("Yes", 1), OptionChoice("No", 0)],
+        required=False,
+    )
+    @option("purpose", description="The reason for the check", required=False)
+    @char_option("The character to Rouse")
     async def rouse(
         self,
-        ctx,
-        count: Option(
-            int,
-            "The number of Rouse checks to make",
-            choices=inconnu.options.ratings(1, 5),
-            default=1,
-        ),
-        reroll: Option(
-            int,
-            "Whether to re-roll failures",
-            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0)],
-            required=False,
-        ),
-        purpose: Option(str, "The reason for the check", required=False),
-        character: inconnu.options.character("The character to Rouse"),
+        ctx: discord.ApplicationContext,
+        count: int,
+        reroll: int,
+        purpose: str,
+        character: str,
     ):
         """Perform a Rouse check."""
         await inconnu.misc.rouse(ctx, character, count, purpose, bool(reroll))
 
     @slash_command(contexts={discord.InteractionContextType.guild})
+    @option("amount", description="amount", choices=inconnu.options.ratings(1, 5))
+    @char_option("The character feeding")
     async def slake(
         self,
         ctx: discord.ApplicationContext,
-        amount: Option(int, "amount", choices=inconnu.options.ratings(1, 5)),
-        character: inconnu.options.character("The character feeding"),
+        amount: int,
+        character: str,
     ):
         """Slake 1 or more Hunger."""
         await inconnu.misc.slake(ctx, character, amount)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
+    @option("delta", description="How many stains to add/subtract", min_value=-10, max_value=10)
+    @char_option("The character to stain")
+    @player_option()
     async def stain(
         self,
         ctx: discord.ApplicationContext,
-        delta: Option(int, "How many stains to add/subtract", min_value=-10, max_value=10),
-        character: inconnu.options.character("The character to stain"),
-        player: inconnu.options.player,
+        delta: int,
+        character: str,
+        player: discord.Member,
     ):
         """Apply or remove stains from a character."""
         await inconnu.misc.stain(ctx, character, delta, player=player)

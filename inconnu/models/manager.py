@@ -3,6 +3,7 @@
 import bisect
 import datetime
 
+import discord
 from cachetools import TTLCache
 from loguru import logger
 
@@ -31,7 +32,12 @@ class CharacterManager:
         self.bot = None
         self.collection = inconnu.db.characters
 
-    async def fetchone(self, guild: int, user: int, name: str | None | VChar):
+    async def fetchone(
+        self,
+        guild: discord.Guild | int,
+        user: discord.Member | int,
+        name: str | VChar | None,
+    ):
         """
         Fetch a single character.
         Args:
@@ -123,6 +129,9 @@ class CharacterManager:
 
     async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
         """Determine whether a user already has a named character."""
+        if self.bot is None:
+            raise ValueError("Bot is not set!")
+
         if is_spc:
             owner_id = self.bot.user.id
             name += " (SPC)"
@@ -246,7 +255,7 @@ class CharacterManager:
     # Private Methods
 
     @staticmethod
-    def _get_ids(guild, user):
+    def _get_ids(guild: discord.Guild | int, user: discord.Member | int):
         """Get the guild and user IDs."""
         if guild and not isinstance(guild, int):
             guild = guild.id

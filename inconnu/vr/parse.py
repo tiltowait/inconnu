@@ -30,7 +30,13 @@ if TYPE_CHECKING:
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
 
-async def parse(ctx, raw_syntax: str, comment: str, character: str, player: discord.Member):
+async def parse(
+    ctx: discord.ApplicationContext,
+    raw_syntax: str,
+    comment: str | None,
+    character: str | None,
+    player: discord.Member | None,
+):
     """Parse the user's arguments and attempt to roll the dice."""
     raw_syntax = " ".join(raw_syntax.split())
     syntax = raw_syntax  # Save the raw in case we get a character error

@@ -2,6 +2,7 @@
 
 import re
 
+from inconnu.character import images
 from inconnu.character.bio import edit_biography, show_biography
 from inconnu.character.convictions import convictions_set, convictions_show
 from inconnu.character.create import create
@@ -19,6 +20,7 @@ __all__ = (
     "DisplayField",
     "display_requested",
     "edit_biography",
+    "images",
     "show_biography",
     "update",
     "update_help",

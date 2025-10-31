@@ -3,30 +3,43 @@
 
 import asyncio
 from datetime import timedelta
+from typing import TYPE_CHECKING
 
 import discord
-from discord.commands import Option
+from discord import option
 from discord.ext import commands
 from loguru import logger
 
 from config import ADMIN_GUILD
 
+if TYPE_CHECKING:
+    from bot import InconnuBot
+
 
 class AdminCog(commands.Cog):
     """A cog with various administrative commands."""
 
+    def __init__(self, bot: "InconnuBot"):
+        self.bot = bot
+
     @discord.slash_command(guild_ids=[ADMIN_GUILD])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
+    @option("title", description="The message's title")
+    @option("description", description="The message's main content")
+    @option("field1_name", description="The name of the first field", required=False)
+    @option("field1_value", description="The first field's contents", required=False)
+    @option("field2_name", description="The name of the first field", required=False)
+    @option("field2_value", description="The first field's contents", required=False)
     async def announce(
         self,
         ctx: discord.ApplicationContext,
-        title: Option(str, "The message's title"),
-        description: Option(str, "The message's main content"),
-        field1_name: Option(str, "The name of the first field", required=False),
-        field1_value: Option(str, "The first field's contents", required=False),
-        field2_name: Option(str, "The name of the first field", required=False),
-        field2_value: Option(str, "The first field's contents", required=False),
+        title: str,
+        description: str,
+        field1_name: str,
+        field1_value: str,
+        field2_name: str,
+        field2_value: str,
     ):
         """Set the Message of the Day."""
         title = " ".join(title.split())
@@ -37,8 +50,9 @@ class AdminCog(commands.Cog):
             return
 
         embed = discord.Embed(title=title, description=description)
-        embed.set_author(name="Announcement", icon_url=ctx.bot.user.display_avatar)
         embed.set_footer(text="This is a one-time message. To see it again, use /motd.")
+        if self.bot.user is not None:
+            embed.set_author(name="Announcement", icon_url=self.bot.user.display_avatar)
 
         try:
             for field, value in [
@@ -54,7 +68,7 @@ class AdminCog(commands.Cog):
                     embed.add_field(name=field, value=value, inline=False)
 
             # Set the MotD
-            ctx.bot.set_motd(embed)
+            self.bot.set_motd(embed)
             await ctx.respond("Announcement set!", ephemeral=True)
 
         except AttributeError:
@@ -65,14 +79,14 @@ class AdminCog(commands.Cog):
     @commands.is_owner()
     async def unannounce(self, ctx: discord.ApplicationContext):
         """Unset the Message of the Day."""
-        ctx.bot.set_motd(None)
+        self.bot.set_motd(None)
         await ctx.respond("Message of the Day unset!", ephemeral=True)
 
     @discord.slash_command()
     async def motd(self, ctx: discord.ApplicationContext):
         """Show the Message of the Day."""
-        if ctx.bot.motd is not None:
-            await ctx.respond(embed=ctx.bot.motd, ephemeral=True)
+        if self.bot.motd is not None:
+            await ctx.respond(embed=self.bot.motd, ephemeral=True)
         else:
             await ctx.respond("No Message of the Day is set.", ephemeral=True)
 
@@ -82,18 +96,18 @@ class AdminCog(commands.Cog):
     async def shutdown(self, ctx: discord.ApplicationContext):
         """Shuts down the bot after 15 minutes."""
         await ctx.respond("Preparing to shut down.", ephemeral=True)
-        ctx.bot.lockdown = discord.utils.utcnow() + timedelta(minutes=15)
+        self.bot.lockdown = discord.utils.utcnow() + timedelta(minutes=15)
 
         message = None
-        while ctx.bot.wizards > 0:
-            if ctx.bot.wizards > 1:
+        while self.bot.wizards > 0:
+            if self.bot.wizards > 1:
                 # Properly pluralize the message
                 is_are = "are"
                 wizards = "chargen wizards"
             else:
                 is_are = "is"
                 wizards = "chargen wizard"
-            msg = f"There {is_are} **{ctx.bot.wizards}** {wizards} running."
+            msg = f"There {is_are} **{self.bot.wizards}** {wizards} running."
 
             if message is None:
                 message = await ctx.respond(msg, ephemeral=True)
@@ -101,11 +115,12 @@ class AdminCog(commands.Cog):
                 message.edit(content=msg)
             await asyncio.sleep(15)
 
-        msg = f"{ctx.bot.user.mention} can restart now. No chargen wizards are running."
-        if message is not None:
-            await message.edit(msg)
-        else:
-            await ctx.respond(msg, ephemeral=True)
+        if self.bot.user is not None:
+            msg = f"{self.bot.user.mention} can restart now. No chargen wizards are running."
+            if message is not None:
+                await message.edit(msg)
+            else:
+                await ctx.respond(msg, ephemeral=True)
 
         logger.info("SHUTDOWN: Bot is ready for shutdown")
 

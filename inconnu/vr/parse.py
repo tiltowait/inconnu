@@ -13,6 +13,7 @@
 
 import re
 from functools import partial
+from typing import TYPE_CHECKING
 
 import discord
 from loguru import logger
@@ -22,6 +23,9 @@ from inconnu.models.vchardocs import VCharTrait
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
@@ -41,18 +45,18 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             fields = [("Trying to roll a specialty?", "Use `skill.spec`, not `skill (spec)`.")]
         else:
             fields = []
-        await inconnu.utils.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
+        await inconnu.embeds.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
         await __log_error(ctx, character, raw_syntax)
         return
 
     comment = await stringify_mentions(ctx, comment)
     if comment is not None and (comment_len := len(comment)) > 300:
         logger.debug("VR: Comment is too long")
-        await inconnu.utils.error(ctx, f"Comment is too long by {comment_len - 300} characters.")
+        await inconnu.embeds.error(ctx, f"Comment is too long by {comment_len - 300} characters.")
         return
 
     if ctx.guild is None and needs_character(syntax):
-        await inconnu.utils.error(ctx, "You cannot roll traits in DMs!", help=__HELP_URL)
+        await inconnu.embeds.error(ctx, "You cannot roll traits in DMs!", help=__HELP_URL)
         return
 
     # Determine the character being used, if any
@@ -73,7 +77,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
                 owner = haven.owner
 
         except (SyntaxError, LookupError) as err:
-            await inconnu.utils.error(ctx, err, help=__HELP_URL)
+            await inconnu.embeds.error(ctx, err, help=__HELP_URL)
             return
         except inconnu.errors.HandledError:
             await __log_error(ctx, character, raw_syntax)
@@ -96,7 +100,7 @@ async def parse(ctx, raw_syntax: str, comment: str, character: str, player: disc
             view = discord.MISSING
             ephemeral = False
 
-        await inconnu.utils.error(
+        await inconnu.embeds.error(
             ctx,
             err,
             ("Your Input", f"/vr syntax:`{raw_syntax}`"),

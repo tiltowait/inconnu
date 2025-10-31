@@ -1,9 +1,13 @@
 """misc/remorse.py - Perform a remorse check."""
 
 from types import SimpleNamespace as SN
+from typing import TYPE_CHECKING
 
 import inconnu
 from inconnu.utils.haven import haven
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#remorse-checks"
 

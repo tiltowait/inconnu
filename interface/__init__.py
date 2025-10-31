@@ -6,12 +6,17 @@ from loguru import logger
 from pymongo import DeleteOne, UpdateOne
 
 
+def _no_author_match(_):
+    """Default author comparator that always returns False."""
+    return False
+
+
 async def raw_message_delete_handler(
     raw_message, bot, handler: Callable[[int], Awaitable], author_comparator=None
 ):
     """Handle raw message deletion."""
     if author_comparator is None:
-        author_comparator = lambda _: False
+        author_comparator = _no_author_match
 
     # We only have a raw message event, which may not be in the message
     # cache. If it isn't, then we just have to blindly attempt to remove
@@ -37,7 +42,7 @@ def raw_bulk_delete_handler(
 ):
     """Handle bulk message deletion."""
     if author_comparator is None:
-        author_comparator = lambda _: False
+        author_comparator = _no_author_match
 
     raw_ids = payload.message_ids
     write_ops = []

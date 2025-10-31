@@ -3,11 +3,13 @@
 import functools
 import uuid
 from collections import OrderedDict
+from typing import Callable, cast
 
 import discord
 from loguru import logger
 
 import inconnu
+from inconnu.utils.permissions import is_admin
 from inconnu.views.basicselector import BasicSelector
 
 
@@ -37,12 +39,12 @@ class Haven:  # pylint: disable=too-few-public-methods
         self,
         ctx,
         *,
-        owner: discord.Member = None,
+        owner: discord.Member | None = None,
         allow_lookups=False,
-        character: str = None,
-        tip: str = None,
-        help: str = None,  # pylint: disable=redefined-builtin
-        char_filter: callable = None,
+        character: str | None = None,
+        tip: str | None = None,
+        help: str | None = None,  # pylint: disable=redefined-builtin
+        char_filter: Callable | None = None,
         errmsg: str = "None of your characters can perform this action.",
     ):
         self.uuid = uuid.uuid4().hex  # For ensuring button uniqueness
@@ -65,7 +67,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         self.new_interaction = None
 
     async def fetch(self):
-        """Fetch the character(s)."""
+        """Fetch the sole-matching character or raise a CharacterError."""
         try:
             # Confirm ownership. We weren't able to do so in a sync context,
             # but now that we're async, we can do so and send an error message
@@ -90,27 +92,28 @@ class Haven:  # pylint: disable=too-few-public-methods
                     logger.debug(
                         "HAVEN: Explicit character {} does not match filter", character.name
                     )
-                    await inconnu.utils.error(self.ctx, err, author=self.owner, help=self.help)
+                    await inconnu.embeds.error(self.ctx, err, author=self.owner, help=self.help)
                     raise inconnu.errors.HandledError() from err
             else:
                 self.match = character
 
         except LookupError as err:
-            await inconnu.utils.error(self.ctx, err)
+            await inconnu.embeds.error(self.ctx, err)
             raise inconnu.errors.HandledError() from err
 
         except inconnu.errors.NoCharactersError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
-            await inconnu.utils.error(self.ctx, errmsg)
+            await inconnu.embeds.error(self.ctx, errmsg)
             raise inconnu.errors.HandledError() from err
 
         except inconnu.errors.CharacterNotFoundError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
-            await inconnu.utils.error(self.ctx, errmsg)
+            await inconnu.embeds.error(self.ctx, errmsg)
             raise inconnu.errors.HandledError() from err
 
         except inconnu.errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
+            assert self.owner is not None
             all_chars = await inconnu.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)
             if self.filter is not None:
                 # If we were given a filter, then we can only add those
@@ -139,7 +142,7 @@ class Haven:  # pylint: disable=too-few-public-methods
                             logger.debug("HAVEN: Sole match: {}", char.name)
                             break
                 elif passed == 0:
-                    await inconnu.utils.error(
+                    await inconnu.embeds.error(
                         self.ctx,
                         _personalize_error(self.errmsg, self.ctx, self.owner),
                         author=self.owner,
@@ -153,7 +156,8 @@ class Haven:  # pylint: disable=too-few-public-methods
 
             if self.match is None:
                 await self._get_user_selection(err)
-        return self.match
+
+        return cast(inconnu.models.VChar, self.match)
 
     async def _get_user_selection(self, err):
         """Present the player's character options."""
@@ -163,7 +167,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         if view is None:
             err = "There are too many characters to display! Please use the `character` parameter."
 
-        await inconnu.utils.error(
+        await inconnu.embeds.error(
             self.ctx,
             err,
             # ("Proper syntax", self.tip),
@@ -237,7 +241,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         return view
 
 
-def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
+def player_lookup(ctx, player: discord.Member | None, allow_lookups: bool):
     """
     Look up a player.
     Returns the sought-after player OR the ctx author if player is None.
@@ -251,23 +255,11 @@ def player_lookup(ctx, player: discord.Member, allow_lookups: bool):
     # Players are allowed to look up themselves
     if ctx.user != player:
         logger.info("HAVEN: {} looked up {} ({})", ctx.user.name, player.name, ctx.guild.name)
-        if not (is_admin(ctx.user) or allow_lookups):
+        if not (is_admin(ctx) or allow_lookups):
             logger.info("HAVEN: Invalid player lookup by {} ({})", ctx.user.name, ctx.guild.name)
             raise LookupError("You don't have lookup permissions.")
 
     return player
-
-
-def is_admin(member: discord.Member):
-    """Check if a user has admin permissions."""
-    # We can't rely on ctx.channel.permissions_for, because sometimes we
-    # receive a PartialMessageable
-    privileged = member.top_role.permissions.administrator or member.guild_permissions.administrator
-    if not privileged:
-        logger.debug("HAVEN: {} is not an admin", member.name)
-    else:
-        logger.debug("HAVEN: {} is an admin", member.name)
-    return privileged
 
 
 def _personalize_error(err, ctx, member):
@@ -278,7 +270,7 @@ def _personalize_error(err, ctx, member):
     return err
 
 
-def haven(url, char_filter=None, errmsg=None, allow_lookups=False):
+def haven(url, char_filter=None, errmsg="", allow_lookups=False):
     """A decorator that handles character fetching duties."""
 
     def haven_decorator(func):

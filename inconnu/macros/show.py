@@ -22,7 +22,7 @@ async def show(ctx, character=None):
     """Show all of a character's macros."""
     macros = character.macros
     if not macros:
-        await inconnu.utils.error(
+        await inconnu.embeds.error(
             ctx, f"{character.name} has no macros!", character=character.name, help=__HELP_URL
         )
         return

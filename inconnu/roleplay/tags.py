@@ -52,7 +52,7 @@ async def show_tags(ctx: discord.ApplicationContext):
         await paginator.respond(ctx.interaction, ephemeral=True)
     else:
         post = ctx.bot.cmd_mention("post")
-        await inconnu.utils.error(
+        await inconnu.embeds.error(
             ctx,
             f"Set tags in {post} or add to old posts via right-click.",
             title="You have no tags!",
@@ -121,6 +121,6 @@ class TagView(inconnu.views.DisablingView):
         else:
             tags = "tag" if len(selected) == 1 else "tags"
             selection = inconnu.utils.oxford_list(map(inconnu.fence, selected))
-            await inconnu.utils.error(
+            await inconnu.embeds.error(
                 interaction, f"No posts with {tags} {selection} found.", title="No posts found!"
             )

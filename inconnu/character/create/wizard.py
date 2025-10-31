@@ -26,7 +26,7 @@ class Wizard:
                 self.core_traits = ["Stamina", "Resolve", "Composure"]
             else:
                 # Make a character with full traits
-                self.core_traits = inconnu.constants.FLAT_TRAITS()
+                self.core_traits = inconnu.constants.get_standard_traits()
 
         self.ctx = ctx
         self.msg = None  # We will be editing this message instead of sending new ones

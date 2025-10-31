@@ -1,8 +1,13 @@
 """character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
 # pylint: disable=too-many-arguments
 
+from typing import TYPE_CHECKING
+
 import inconnu
 from inconnu.constants import Damage
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal", "thinblood"]
 

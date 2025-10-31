@@ -49,7 +49,7 @@ async def stain(ctx, character, delta, *, player):
 
     except ValueError as err:
         # Delta was 0
-        await inconnu.utils.error(ctx, err, help=__HELP_URL)
+        await inconnu.embeds.error(ctx, err, help=__HELP_URL)
 
 
 async def __report(ctx, inter, character, delta):

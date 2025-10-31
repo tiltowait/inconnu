@@ -1,11 +1,16 @@
 """header/display.py - RP header display facilities."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from loguru import logger
 
 import inconnu
 from inconnu.models.rpheader import HeaderSubdoc
 from inconnu.utils.haven import haven
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 

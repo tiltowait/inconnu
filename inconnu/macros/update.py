@@ -1,10 +1,14 @@
 """macros/update.py - Macro update commands."""
 
-from distutils.util import strtobool
+from typing import TYPE_CHECKING
 
 import inconnu
 from inconnu.macros import macro_common
+from inconnu.utils import strtobool
 from inconnu.utils.haven import haven
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"
 __VALID_KEYS = {
@@ -52,7 +56,7 @@ async def update(ctx, character, macro: str, syntax: str):
             ("Valid Keys", "\n".join(keys)),
         ]
 
-        await inconnu.utils.error(
+        await inconnu.embeds.error(
             ctx, err, *instructions, help=__HELP_URL, character=character.name
         )
 

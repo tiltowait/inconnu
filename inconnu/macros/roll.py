@@ -43,6 +43,8 @@ async def roll(ctx, syntax: str, character=None):
         empty_macro = True
 
         macro = character.find_macro(macro_name)
+        outcome: inconnu.Roll | None = None
+
         if macro.pool:
             # Only roll if the macro has a pool
             empty_macro = False
@@ -54,7 +56,7 @@ async def roll(ctx, syntax: str, character=None):
                 hunger = "current_hunger" if macro.hunger else "0"
 
             parameters.append(hunger)
-            parameters.append(difficulty or macro.difficulty)
+            parameters.append(difficulty or str(macro.difficulty))
 
             try:
                 outcome = await perform_roll(character, parameters)
@@ -67,7 +69,7 @@ async def roll(ctx, syntax: str, character=None):
         if await __rouse(ctx, character, macro):
             empty_macro = False
 
-        if macro.pool:
+        if outcome is not None:
             await display_outcome(
                 ctx,
                 ctx.user,
@@ -98,7 +100,7 @@ async def roll(ctx, syntax: str, character=None):
         err += "\n**Usage:** `/vm <macro_name> [hunger] [difficulty]`"
         err += "\n\nYou may add simple math after `macro_name`."
         err += "\n `hunger` and `difficulty` are optional."
-        await inconnu.utils.error(ctx, err, help=__HELP_URL)
+        await inconnu.embeds.error(ctx, err, help=__HELP_URL)
         return
 
 
@@ -169,7 +171,7 @@ async def __slake(ctx, character, outcome):
             __HUNT_LISTENERS[outcome.id] = view.message
 
 
-def __normalize_syntax(syntax: str):
+def __normalize_syntax(syntax: str) -> tuple[list[str], str | None, str | None]:
     syntax = re.sub(r"([+-])", r" \g<1> ", syntax)
     stack = syntax.split()
     params = []
@@ -254,7 +256,7 @@ class _SlakeView(View):
         cancel.callback = self.callback
         self.add_item(cancel)
 
-    async def callback(self, inter):
+    async def callback(self, inter: discord.Interaction):
         """Slake Hunger or cancel."""
         if inter.user != self.owner:
             await inter.response.send_message("This button doesn't belong to you!", ephemeral=True)

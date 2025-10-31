@@ -5,12 +5,16 @@ import os
 import re
 from datetime import datetime
 from json import dumps
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import aiohttp
 import async_timeout
 from dotenv import load_dotenv
 from loguru import logger
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 load_dotenv()
 

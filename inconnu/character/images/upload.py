@@ -17,7 +17,7 @@ VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
 async def upload_image(ctx: discord.ApplicationContext, character, image: discord.Attachment):
     """Upload an image. Only premium users can use this feature."""
     if not valid_url(image.url):
-        embed = inconnu.utils.ErrorEmbed(
+        embed = inconnu.embeds.ErrorEmbed(
             ctx.user,
             "This is not a valid image file!",
             ("Allowed extensions", ", ".join(VALID_EXTENSIONS)),
@@ -35,7 +35,7 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
 
     character.profile.images.append(processed_url)
 
-    embed = inconnu.utils.VCharEmbed(
+    embed = inconnu.embeds.VCharEmbed(
         ctx,
         character,
         link=True,

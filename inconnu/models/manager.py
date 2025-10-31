@@ -7,6 +7,7 @@ from cachetools import TTLCache
 from loguru import logger
 
 import inconnu
+from inconnu.models.vchar import VChar
 
 
 class CharacterManager:
@@ -17,11 +18,11 @@ class CharacterManager:
         max_size = 100
         ttl = 1800
         self.all_fetched: TTLCache[str, bool] = TTLCache(maxsize=max_size, ttl=ttl)
-        self.user_cache: TTLCache[str, list[inconnu.models.VChar]] = TTLCache(
+        self.user_cache: TTLCache[str, list[VChar]] = TTLCache(
             maxsize=max_size,
             ttl=ttl,
         )
-        self.id_cache: TTLCache[str, inconnu.models.VChar] = TTLCache(
+        self.id_cache: TTLCache[str, VChar] = TTLCache(
             maxsize=max_size,
             ttl=ttl,
         )
@@ -30,7 +31,7 @@ class CharacterManager:
         self.bot = None
         self.collection = inconnu.db.characters
 
-    async def fetchone(self, guild: int, user: int, name: str | None):
+    async def fetchone(self, guild: int, user: int, name: str | None | VChar):
         """
         Fetch a single character.
         Args:
@@ -40,7 +41,7 @@ class CharacterManager:
 
         If the name isn't given, return the user's sole character, if applicable.
         """
-        if isinstance(name, inconnu.models.VChar):
+        if isinstance(name, VChar):
             return name
 
         guild, user, _ = self._get_ids(guild, user)
@@ -94,7 +95,7 @@ class CharacterManager:
         logger.info("CHARACTER MANAGER: Fetching {}'s characters on {} from the db", user, guild)
 
         characters = []
-        async for character in inconnu.models.VChar.find({"guild": guild, "user": user}):
+        async for character in VChar.find({"guild": guild, "user": user}):
             if character.id not in self.id_cache:
                 bisect.insort(characters, character)
                 self.id_cache[character.id] = character

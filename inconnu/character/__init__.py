@@ -29,4 +29,7 @@ __all__ = (
 
 def valid_name(name: str) -> bool:
     """Determine whether a character name is valid."""
+    name = " ".join(name.split())
+    if not name:
+        return False
     return bool(re.match(r"^([^\W]|[-_\s\'])+$", name))

@@ -1,20 +1,33 @@
 """traits/delete.py - Delete character traits."""
 
-from types import SimpleNamespace
+from typing import TYPE_CHECKING, NamedTuple
 
+from discord import ApplicationContext, Interaction
 
 import inconnu
 from inconnu.traits import traitcommon
 from inconnu.utils.haven import haven
 
+if TYPE_CHECKING:
+    from inconnu.models import VChar
+
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 
 
+class DeletionResult(NamedTuple):
+    """Contains the list of deleted traits and traits not found."""
+
+    deleted: list[str]
+    errors: list[str]
+
+
 @haven(__HELP_URL)
-async def delete(ctx, character, traits: str, disciplines=False):
+async def delete(
+    ctx: Interaction | ApplicationContext, character, traits_input: str, disciplines=False
+):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
-        traits = traits.split()
+        traits = traits_input.split()
         if not traits:
             # Shouldn't be possible to reach here, but just in case Discord messes up
             raise SyntaxError("You must supply a list of traits or disciplines to delete.")
@@ -25,14 +38,16 @@ async def delete(ctx, character, traits: str, disciplines=False):
         await character.commit()
 
     except (ValueError, SyntaxError) as err:
-        await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL)
+        await inconnu.embeds.error(ctx, err, character=character, help=__HELP_URL)
 
 
-async def __outcome_embed(ctx, character, outcome, disciplines: bool):
+async def __outcome_embed(
+    ctx: Interaction | ApplicationContext, character, outcome, disciplines: bool
+):
     """Display the operation outcome in an embed."""
     term = "Trait" if not disciplines else "Discipline"
 
-    embed = inconnu.utils.VCharEmbed(ctx, character, title=f"{term} Removal")
+    embed = inconnu.embeds.VCharEmbed(ctx, character, title=f"{term} Removal")
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if outcome.deleted:
@@ -49,25 +64,25 @@ async def __outcome_embed(ctx, character, outcome, disciplines: bool):
     await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 
-def __delete_traits(character: "VChar", *traits) -> list:
+def __delete_traits(character: "VChar", *traits: str) -> DeletionResult:
     """
     Delete the validated traits. If the trait is a core trait, then it is set to 0.
     Returns (list): A list of traits that could not be found.
     """
     deleted = []
     errs = []
-    standard_traits = map(lambda t: t.lower(), inconnu.constants.FLAT_TRAITS())
+    standard_traits = map(lambda t: t.lower(), inconnu.constants.get_standard_traits())
 
-    for trait in traits:
-        if trait.lower() in standard_traits:
+    for trait_name in traits:
+        if trait_name.lower() in standard_traits:
             # Set attributes and skills to 0 for better UX
-            _, trait = character.assign_traits({trait: 0})
+            _, trait = character.assign_traits({trait_name: 0})
             deleted.extend(trait.keys())
         else:
             try:
-                trait = character.delete_trait(trait)
+                trait = character.delete_trait(trait_name)
                 deleted.append(trait)
             except inconnu.errors.TraitNotFound:
-                errs.append(trait)
+                errs.append(trait_name)
 
-    return SimpleNamespace(deleted=deleted, errors=errs)
+    return DeletionResult(deleted=deleted, errors=errs)

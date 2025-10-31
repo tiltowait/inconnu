@@ -1,5 +1,7 @@
 """Character profile router."""
 
+from typing import TypedDict
+
 from bson import ObjectId
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
@@ -10,6 +12,14 @@ import inconnu
 from web import object_id, templates
 
 router = APIRouter()
+
+
+class Bio(TypedDict):
+    _id: ObjectId
+    name: str
+    guild: int
+    user: int
+    profile: dict[str, str | list[str]]
 
 
 @router.get("/profile/{oid}", response_class=HTMLResponse)
@@ -26,13 +36,13 @@ async def display_character_profile(request: Request, oid: ObjectId = Depends(ob
     return prepare_profile_page(request, bio)
 
 
-def prepare_profile_page(request: Request, bio: dict[str, str | dict[str, str]]) -> str:
+def prepare_profile_page(request: Request, bio: Bio) -> str:
     """Prep the character HTML page."""
     name = bio["name"]
     profile = bio.get("profile", {})
 
     # Ownership data
-    guild = bot.bot.get_guild(bio["guild"])
+    guild = bot.bot.get_guild(int(bio["guild"]))
     user = guild.get_member(bio["user"]) if guild is not None else None
 
     return templates.TemplateResponse(

@@ -149,7 +149,7 @@ class ImagePager(ReportingView):
 
     async def respond(self):
         """Display the pager."""
-        embed = inconnu.utils.VCharEmbed(
+        embed = inconnu.embeds.VCharEmbed(
             self.ctx,
             self.character,
             self.owner,
@@ -203,7 +203,7 @@ class ImagePager(ReportingView):
 
     async def _display_no_images(self, interaction: discord.Interaction):
         """Inform the character has no images if the last image is deleted."""
-        embed = inconnu.utils.VCharEmbed(
+        embed = inconnu.embeds.VCharEmbed(
             self.ctx,
             self.character,
             self.owner,

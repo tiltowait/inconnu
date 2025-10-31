@@ -3,12 +3,15 @@
 import asyncio
 import re
 from types import SimpleNamespace
-
+from typing import TYPE_CHECKING
 
 import inconnu
 from inconnu.models.vchardocs import VCharTrait
 from inconnu.traits.parser import parse_traits
 from inconnu.utils.haven import haven
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = {
     False: "https://docs.inconnu.app/command-reference/traits/adding-traits",
@@ -44,7 +47,7 @@ async def __parse(ctx, allow_overwrite: bool, traits: str, character: str, disci
         await __display_results(ctx, outcome, character, disciplines)
 
     except (ValueError, SyntaxError) as err:
-        await inconnu.utils.error(ctx, err, character=character, help=__HELP_URL[allow_overwrite])
+        await inconnu.embeds.error(ctx, err, character=character, help=__HELP_URL[allow_overwrite])
 
 
 async def __handle_traits(character: "VChar", traits: dict, overwriting: bool, disciplines: bool):
@@ -149,7 +152,7 @@ async def __results_embed(ctx, outcome, character: "VChar", disciplines: bool):
     if unassigned + errors:
         color = 0x000000 if assigned else 0xFF0000
 
-    embed = inconnu.utils.VCharEmbed(ctx, character, title=title, color=color)
+    embed = inconnu.embeds.VCharEmbed(ctx, character, title=title, color=color)
     embed.set_footer(text=outcome.track_adjustment)
 
     if outcome.assigned:

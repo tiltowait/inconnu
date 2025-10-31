@@ -1,10 +1,15 @@
 """traits/show.py - Display character traits."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord.ext.commands import Paginator as Chunker
 
 import inconnu
 from inconnu.utils.haven import haven
+
+if TYPE_CHECKING:
+    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-traits"
 
@@ -22,7 +27,7 @@ def traits_embed(
     owner: discord.Member = None,
 ):
     """Display traits in an embed."""
-    embed = inconnu.utils.VCharEmbed(ctx, character, owner, title="Character Traits")
+    embed = inconnu.embeds.VCharEmbed(ctx, character, owner, title="Character Traits")
     embed.set_footer(text="To see HP, WP, etc., use /character display")
 
     char_traits = character.traits  # This is an automatic copy

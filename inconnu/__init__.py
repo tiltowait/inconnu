@@ -1,14 +1,15 @@
 """Primary Inconnu import."""
 
-from typing import List
+from typing import TYPE_CHECKING
 
-import discord
-from numpy.random import default_rng
-
-import config
+if TYPE_CHECKING:
+    from bot import InconnuBot
 from inconnu import (
     character,
+    common,
+    constants,
     db,
+    embeds,
     errors,
     experience,
     header,
@@ -26,20 +27,27 @@ from inconnu import (
     traits,
     utils,
     views,
+    vr,
     webhookcache,
 )
+from inconnu.dice import d10, random
 from inconnu.emoji import emojis
 from inconnu.models import CharacterManager
 from inconnu.roll import Roll
+from inconnu.urls import post_url, profile_url
+from inconnu.utils import fence, get_avatar, get_message
 
 __all__ = (
     "bot",
     "char_mgr",
     "character",
     "CharacterManager",
+    "common",
+    "constants",
     "d10",
     "db",
     "emojis",
+    "embeds",
     "errors",
     "experience",
     "fence",
@@ -64,55 +72,10 @@ __all__ = (
     "traits",
     "utils",
     "views",
+    "vr",
     "webhookcache",
 )
 
 char_mgr = CharacterManager()
 settings = settings.Settings()
-bot = None
-
-_rng = default_rng()
-
-
-def d10(count: int = None) -> List[int] | int:
-    """Generate one or a list of d10s."""
-    if count is None:
-        return int(_rng.integers(1, 11))
-    return list(map(int, _rng.integers(1, 11, count)))
-
-
-def random(ceiling=100):
-    """Get a random number between 1 and ceiling."""
-    return _rng.integers(1, ceiling + 1)
-
-
-def fence(string: str):
-    """Add a code fence around a string."""
-    return f"`{string}`"
-
-
-async def get_message(inter):
-    """Get the message from an interaction."""
-    if isinstance(inter, discord.Message):
-        return inter
-    return await inter.original_response()
-
-
-def get_avatar(user: discord.User | discord.Member):
-    """Get the user's avatar."""
-    if isinstance(user, discord.User):
-        # Users don't have a guild presence
-        return user.display_avatar
-
-    # Members can have a guild-specific avatar
-    return user.guild_avatar or user.display_avatar
-
-
-def profile_url(charid: str) -> str:
-    """Generate a profile URL for the character."""
-    return config.PROFILE_SITE + f"profile/{charid}"
-
-
-def post_url(post_id: str) -> str:
-    """Generate a post history URL."""
-    return config.PROFILE_SITE + f"post/{post_id}"
+bot: "InconnuBot"  # Assigned in bot.py

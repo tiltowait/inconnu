@@ -54,4 +54,4 @@ async def show_bookmarks(ctx: discord.ApplicationContext):
         )
         await paginator.respond(ctx.interaction, ephemeral=True)
     else:
-        await inconnu.utils.error(ctx, tip, title="You have no bookmarks!")
+        await inconnu.embeds.error(ctx, tip, title="You have no bookmarks!")

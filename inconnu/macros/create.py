@@ -67,4 +67,4 @@ async def create(
         inconnu.errors.MacroAlreadyExistsError,
         inconnu.errors.TraitNotFound,
     ) as err:
-        await inconnu.utils.error(ctx, err, help=__HELP_URL, character=character.name)
+        await inconnu.embeds.error(ctx, err, help=__HELP_URL, character=character.name)

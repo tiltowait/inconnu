@@ -35,7 +35,7 @@ async def show_changelog(ctx: discord.ApplicationContext, hidden: bool):
         await paginator.respond(ctx.interaction, ephemeral=hidden)
 
     except (aiohttp.ClientError, KeyError):
-        await inconnu.utils.error(ctx, "Unable to fetch changelog.")
+        await inconnu.embeds.error(ctx, "Unable to fetch changelog.")
 
 
 async def fetch_changelog() -> tuple[str, str]:

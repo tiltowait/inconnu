@@ -115,7 +115,7 @@ class ReferenceCommands(commands.Cog):
                 await message.edit(content=content)
                 await ctx.respond(embed=embed, ephemeral=True)
             except discord.Forbidden:
-                await inconnu.utils.error(
+                await inconnu.embeds.error(
                     ctx,
                     f"{ctx.bot.user.mention} needs the `View Messages` "
                     "permission to edit the message. If this is a thread, then "

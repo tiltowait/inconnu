@@ -1,14 +1,13 @@
 """interface/characters.py - Character management Cog."""
 # pylint: disable=no-self-use
 
-from distutils.util import strtobool
-
 import discord
 from discord import option
 from discord.commands import Option, OptionChoice, SlashCommandGroup
 from discord.ext import commands
 
 import inconnu
+from inconnu.utils import strtobool
 
 
 async def _spc_options(ctx):
@@ -58,7 +57,7 @@ class Characters(commands.Cog, name="Character Management"):
                 ctx, name, template, humanity, health, willpower, spc, False
             )
         except ValueError:
-            await inconnu.utils.error(ctx, f'Invalid value for `spc`: "{spc}".')
+            await inconnu.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
     @commands.slash_command(name="spc")
     @commands.has_permissions(administrator=True)

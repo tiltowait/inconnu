@@ -3,14 +3,18 @@
 import functools
 import uuid
 from collections import OrderedDict
-from typing import Callable, cast
+from typing import Awaitable, Callable, Concatenate, ParamSpec, TypeVar, cast
 
 import discord
 from loguru import logger
 
 import inconnu
+from inconnu.models import VChar
 from inconnu.utils.permissions import is_admin
 from inconnu.views.basicselector import BasicSelector
+
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 class Haven:  # pylint: disable=too-few-public-methods
@@ -272,17 +276,37 @@ def _personalize_error(err, ctx, member):
     return err
 
 
-def haven(url, char_filter=None, errmsg="", allow_lookups=False):
-    """A decorator that handles character fetching duties."""
+def haven(
+    url: str,
+    char_filter: Callable[[VChar], None] | None = None,
+    errmsg: str = "",
+    allow_lookups: bool = False,
+) -> Callable[
+    [Callable[Concatenate[discord.ApplicationContext, VChar, P], Awaitable[T]]],
+    Callable[Concatenate[discord.ApplicationContext, str | None, P], Awaitable[T]],
+]:
+    """A decorator that handles character fetching duties.
 
-    def haven_decorator(func):
+    Transforms functions that accept VChar into functions that accept str | None.
+    The decorator handles character lookup and validation automatically.
+    """
+
+    def haven_decorator(
+        func: Callable[Concatenate[discord.ApplicationContext, VChar, P], Awaitable[T]],
+    ) -> Callable[Concatenate[discord.ApplicationContext, str | None, P], Awaitable[T]]:
         @functools.wraps(func)
-        async def wrapper(ctx, character, *args, **kwargs):
+        async def wrapper(
+            ctx: discord.ApplicationContext,
+            character: str | None,
+            *args: P.args,
+            **kwargs: P.kwargs,
+        ) -> T:
             logger.debug("@HAVEN: Using @haven")
+            player: discord.Member | None
             if "player" in kwargs:
                 # Capture the player lookup
                 logger.debug("@HAVEN: Found 'player' in kwargs")
-                player = kwargs["player"]
+                player = kwargs["player"]  # type: ignore[assignment]
                 player_kwargs = True
             else:
                 player = None
@@ -298,17 +322,17 @@ def haven(url, char_filter=None, errmsg="", allow_lookups=False):
                 allow_lookups=allow_lookups,
                 help=url,
             )
-            character = await haven_.fetch()
+            fetched_character = await haven_.fetch()
 
             if player_kwargs:
                 logger.debug("@HAVEN: Replacing 'player' in kwargs")
-                kwargs["player"] = haven_.owner
+                kwargs["player"] = haven_.owner  # type: ignore[typeddict-item]
 
             if haven_.new_interaction is not None:
                 logger.debug("@HAVEN: Replacing the interaction with a new one")
                 ctx.interaction = haven_.new_interaction
 
-            return await func(ctx, character, *args, **kwargs)
+            return await func(ctx, fetched_character, *args, **kwargs)
 
         return wrapper
 

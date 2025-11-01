@@ -9,7 +9,7 @@ filterwarnings = ["ignore::marshmallow.warnings.RemovedInMarshmallow4Warning"]
 
 [tool.poetry]
 name = "inconnu"
-version = "8.4.1"
+version = "8.5.0"
 description = "An advanced Discord dice bot and character manager for V5"
 authors = ["tiltowait <208040+tiltowait@users.noreply.github.com>"]
 license = "MIT"

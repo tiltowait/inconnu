@@ -25,11 +25,12 @@ async def show_bookmarks(ctx: AppCtx):
         {"$project": {"_id": 1, "title": 1, "date": 1, "url": 1}},
         {"$sort": {"date": -1}},
     ]
-    async for bookmark in inconnu.db.rp_posts.aggregate(pipeline):
-        title = bookmark["title"]
-        url = bookmark["url"]
-        date = discord.utils.format_dt(bookmark["date"].replace(tzinfo=timezone.utc), "d")
-        chunker.add_line(f"{date}: **[{title}]({url})**")
+    async with await inconnu.db.rp_posts.aggregate(pipeline) as cursor:
+        async for bookmark in cursor:
+            title = bookmark["title"]
+            url = bookmark["url"]
+            date = discord.utils.format_dt(bookmark["date"].replace(tzinfo=timezone.utc), "d")
+            chunker.add_line(f"{date}: **[{title}]({url})**")
 
     post = ctx.bot.cmd_mention("post")
     tip = f"Set bookmarks in {post}. You may add bookmarks to old posts via right-click."

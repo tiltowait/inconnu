@@ -2,13 +2,15 @@
 
 import re
 
-from discord import ApplicationContext
+import discord
 from loguru import logger
 
+from ctx import AppCtx
 
-async def cmd_replace(ctx: ApplicationContext, content: str = None, **kwargs):
+
+async def cmd_replace(ctx: AppCtx | discord.Interaction, content: str | None = None, **kwargs):
     """Substitute command names for command mentions and respond."""
-    if isinstance(ctx, ApplicationContext):
+    if isinstance(ctx, AppCtx):
         bot = ctx.bot
     else:
         bot = ctx.client
@@ -23,7 +25,7 @@ async def cmd_replace(ctx: ApplicationContext, content: str = None, **kwargs):
         cmd_name = cmd_str[2:-1]
         return bot.cmd_mention(cmd_name)
 
-    def _sub(text: str):
+    def _sub(text: str | None):
         """Perform the substitution on the text."""
         if text:
             command_strings = _get_command_strings(text)
@@ -43,5 +45,7 @@ async def cmd_replace(ctx: ApplicationContext, content: str = None, **kwargs):
         for field in embed.fields:
             field.value = _sub(field.value)
 
-    # Send the response
-    return await ctx.respond(content, **kwargs)
+    try:
+        return await ctx.respond(content, **kwargs)
+    except discord.errors.InteractionResponded:
+        return None

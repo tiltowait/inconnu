@@ -2,8 +2,12 @@
 
 import asyncio
 import os
+from typing import cast
 
 import pytest
+from beanie import init_beanie
+from mongomock_motor import AsyncMongoMockClient
+from pymongo import AsyncMongoClient
 
 import inconnu.db
 
@@ -16,7 +20,9 @@ os.environ["SUPPORTER_GUILD"] = "54321"
 @pytest.fixture(autouse=True, scope="session")
 async def beanie_fixture():
     """Configures a mock beanie client for all tests."""
-    await inconnu.db.init()
+    client = cast(AsyncMongoClient, AsyncMongoMockClient())
+    db = client.test
+    await init_beanie(db, document_models=inconnu.db.models())
 
 
 @pytest.fixture(scope="session")

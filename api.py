@@ -33,8 +33,7 @@ def normalize_url(url: str) -> str:
 
 HEADER = {"Content-Type": "application/json"}
 BASE_API = normalize_url(os.getenv("FC_API", "http://127.0.0.1:8080/"))
-# BUCKET = "pcs.inconnu.app"  # The name of the bucket where the images live
-BUCKET = "pcs1.tiltowait.dev"
+BUCKET = "pcs.inconnu.app"  # The name of the bucket where the images live
 
 
 class ApiError(Exception):

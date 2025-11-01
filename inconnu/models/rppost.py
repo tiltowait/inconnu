@@ -70,9 +70,9 @@ class RPPost(Document):
     ):
         """Create a Rolepost."""
         if interaction.channel_id is None:
-            raise ValueError(f"Interaction channel has no ID")
+            raise ValueError("Interaction channel has no ID")
         if interaction.user is None:
-            raise ValueError(f"Interaction user does not exist")
+            raise ValueError("Interaction user does not exist")
 
         return cls(
             guild=character.guild,

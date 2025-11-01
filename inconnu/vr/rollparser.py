@@ -264,8 +264,8 @@ def eval_expr(expr):
 
 def eval_(node):
     """Recursively evaluate a mathematical expression. Only handles +/-."""
-    if isinstance(node, ast.Num):
-        return node.n
+    if isinstance(node, ast.Constant):
+        return node.value
 
     if isinstance(node, ast.BinOp):
         return OPERATORS[type(node.op)](eval_(node.left), eval_(node.right))

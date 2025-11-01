@@ -19,7 +19,7 @@ license = "MIT"
 inconnu = "main:main"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.12"
+python = ">=3.11,<3.13"
 flatdict = "^4.0.1"
 pymongo = {extras = ["srv"], version = "^4.2.0"}
 python-dotenv = "^0.21.0"
@@ -38,7 +38,7 @@ pypcg = "^0.0.4"
 beanie = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest-asyncio = "^0.20.3"
+pytest-asyncio = "^1.2.0"
 httpx = "^0.23.3"
 pytest-cov = "^7.0.0"
 mongomock-motor = "^0.0.36"

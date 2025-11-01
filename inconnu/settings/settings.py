@@ -4,6 +4,7 @@ import discord
 from loguru import logger
 
 import inconnu
+from ctx import AppCtx
 from inconnu.settings import ExpPerms, GuildSettings
 from inconnu.settings.vuser import VUser
 
@@ -16,7 +17,7 @@ class Settings:
 
     # Accessibility
 
-    async def accessible(self, ctx: discord.ApplicationContext | discord.Interaction):
+    async def accessible(self, ctx: AppCtx | discord.Interaction):
         """Determine whether we should use accessibility mode."""
         # User accessibility trumps guild accessibility
         user_settings = await self._fetch_user(ctx.user)
@@ -40,7 +41,7 @@ class Settings:
             # We somehow received a PartialMessageable or something else
             return True  # Fallback
 
-    async def can_emoji(self, ctx: discord.ApplicationContext | discord.Interaction) -> bool:
+    async def can_emoji(self, ctx: AppCtx | discord.Interaction) -> bool:
         """Wrapper for accessible() that simply inverts the logic."""
         return not await self.accessible(ctx)
 
@@ -160,7 +161,7 @@ class Settings:
 
     async def _set_channel(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         channel: discord.TextChannel | None,
         key: str,
     ):

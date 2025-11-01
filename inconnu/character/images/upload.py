@@ -7,6 +7,8 @@ from loguru import logger
 
 import api
 import inconnu
+from ctx import AppCtx
+from inconnu.models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
@@ -14,7 +16,7 @@ VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
 
 
 @haven(__HELP_URL)
-async def upload_image(ctx: discord.ApplicationContext, character, image: discord.Attachment):
+async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment):
     """Upload an image. Only premium users can use this feature."""
     if not valid_url(image.url):
         embed = inconnu.embeds.ErrorEmbed(
@@ -64,10 +66,10 @@ async def upload_image(ctx: discord.ApplicationContext, character, image: discor
 
 def valid_url(url: str) -> bool:
     """Check whether a URL is a valid image URL."""
-    url = urlparse(url.lower())
+    parsed = urlparse(url.lower())
     logger.debug("IMAGES: Checking validity of {}", url)
 
     for extension in VALID_EXTENSIONS:
-        if url.path.endswith(extension):
+        if parsed.path.endswith(extension):
             return True
     return False

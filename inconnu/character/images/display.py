@@ -7,6 +7,8 @@ from loguru import logger
 
 import api
 import inconnu
+from ctx import AppCtx
+from inconnu.models import VChar
 from inconnu.utils.haven import haven
 from inconnu.views import ReportingView
 
@@ -31,10 +33,10 @@ def _has_image(character):
     True,
 )
 async def display_images(
-    ctx: discord.ApplicationContext,
-    character: Optional[str],
+    ctx: AppCtx,
+    character: VChar,
     invoker_controls: bool,
-    player: Optional[discord.Member],
+    player: discord.Member | None,
 ):
     """Display a character's images inside a paginator."""
     pager = ImagePager(ctx, character, player, invoker_controls)

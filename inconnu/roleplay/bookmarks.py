@@ -7,9 +7,10 @@ from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
 import inconnu
+from ctx import AppCtx
 
 
-async def show_bookmarks(ctx: discord.ApplicationContext):
+async def show_bookmarks(ctx: AppCtx):
     """Show the users's bookmarks."""
     chunker = Chunker(prefix="", suffix="")
     pipeline = [

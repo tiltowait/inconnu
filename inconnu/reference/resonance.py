@@ -2,11 +2,11 @@
 
 import sqlite3
 from types import SimpleNamespace as SN
-from typing import Optional
 
 import discord
 
 import inconnu
+from ctx import AppCtx
 
 __DISCIPLINES = {
     "Choleric": "Celerity, Potence",
@@ -30,7 +30,7 @@ __EMOTIONS = {
 RESONANCES = list(__DISCIPLINES)
 
 
-async def random_temperament(ctx, res: Optional[str]):
+async def random_temperament(ctx: AppCtx, res: str | None):
     """Generate a random temperament for a given resonance."""
     temperament = __get_temperament()
     if temperament == "Negligible":

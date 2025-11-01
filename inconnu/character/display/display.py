@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import discord
 
 import inconnu
+from ctx import AppCtx
 from inconnu.character.display import trackmoji
 from inconnu.constants import Damage
 from inconnu.utils.haven import haven
@@ -37,7 +38,13 @@ class DisplayField(StrEnum):
 
 
 @haven(__HELP_URL)
-async def display_requested(ctx, character, message=None, player=None, ephemeral=False):
+async def display_requested(
+    ctx: AppCtx,
+    character: "VChar",
+    message: str | None = None,
+    player: discord.Member | None = None,
+    ephemeral=False,
+):
     """Display a character as directly requested by a user."""
     await display(
         ctx,
@@ -52,17 +59,17 @@ async def display_requested(ctx, character, message=None, player=None, ephemeral
 
 
 async def display(
-    ctx,
+    ctx: AppCtx,
     character: "VChar",
-    title: str = None,
-    message: str = None,
-    footer: str = None,
-    owner: discord.Member = None,
-    fields: list = None,
-    custom: list = None,
-    color: int = None,
-    thumbnail: str = None,
-    view: discord.ui.View = None,
+    title: str | None = None,
+    message: str | None = None,
+    footer: str | None = None,
+    owner: discord.Member | None = None,
+    fields: list | None = None,
+    custom: list | None = None,
+    color: int | None = None,
+    thumbnail: str | None = None,
+    view: discord.ui.View | None = None,
     ephemeral: bool = False,
     **kwargs,
 ):
@@ -116,14 +123,14 @@ async def display(
 async def __get_embed(
     ctx,
     character: "VChar",
-    title: str = None,
-    message: str = None,
-    footer: str = None,
-    owner: discord.Member = None,
-    fields: list = None,
-    custom: list = None,
-    color: int = None,
-    thumbnail: str = None,
+    title: str | None = None,
+    message: str | None = None,
+    footer: str | None = None,
+    owner: discord.Member | None = None,
+    fields: list | None = None,
+    custom: list | None = None,
+    color: int | None = None,
+    thumbnail: str | None = None,
 ):
     # Set the default values
     owner = owner or ctx.user

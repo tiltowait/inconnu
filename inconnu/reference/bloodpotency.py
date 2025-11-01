@@ -4,10 +4,10 @@
 import discord
 
 import inconnu.common
-import inconnu.settings
+from ctx import AppCtx
 
 
-async def blood_potency(ctx, rating: int):
+async def blood_potency(ctx: AppCtx, rating: int):
     """Display the Blood Potency rating."""
     potency = _RATINGS[rating]
     generations = potency["generations"]

@@ -2,7 +2,9 @@
 # pylint: disable=too-many-arguments
 
 import inconnu
+from ctx import AppCtx
 from inconnu.macros import macro_common
+from inconnu.models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/creation"
@@ -10,8 +12,8 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/macros/creation"
 
 @haven(__HELP_URL)
 async def create(
-    ctx,
-    character: str,
+    ctx: AppCtx,
+    character: VChar,
     name: str,
     pool: str,
     hunger: bool,

@@ -6,6 +6,7 @@ from types import SimpleNamespace as SN
 import discord
 
 import inconnu
+from ctx import AppCtx
 from inconnu import vr as roll
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
@@ -17,7 +18,7 @@ __STRATEGIES = {
 }
 
 
-async def probability(ctx, syntax: str, strategy=None, character=None):
+async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
     """Calculate the probabilities surrounding a roll."""
     try:
         if roll.needs_character(syntax):

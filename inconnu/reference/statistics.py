@@ -6,13 +6,16 @@ from datetime import datetime, timedelta
 import discord
 
 import inconnu
+from ctx import AppCtx
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
 DT_ST = "D"
 
 
-async def statistics(ctx, character, style: str, date_rep: str, *, player: discord.Member | None):
+async def statistics(
+    ctx: AppCtx, character, style: str, date_rep: str, *, player: discord.Member | None
+):
     """
     View the roll statistics for the user's characters.
     Args:

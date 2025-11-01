@@ -1,14 +1,11 @@
 """macros/update.py - Macro update commands."""
 
-from typing import TYPE_CHECKING
-
 import inconnu
+from ctx import AppCtx
 from inconnu.macros import macro_common
+from inconnu.models import VChar
 from inconnu.utils import strtobool
 from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"
 __VALID_KEYS = {
@@ -25,7 +22,7 @@ __VALID_KEYS = {
 
 
 @haven(__HELP_URL)
-async def update(ctx, character, macro: str, syntax: str):
+async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
     """Update a macro."""
     try:
         syntax = " ".join(syntax.split())

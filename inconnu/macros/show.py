@@ -6,19 +6,21 @@ import discord
 from discord.ext import pages
 
 import inconnu
+from ctx import AppCtx
+from inconnu.models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/listing"
 
 
-def _has_macros(character):
+def _has_macros(character: VChar):
     """Raises an error if the character has no macros."""
     if not character.macros:
         raise inconnu.errors.MacroError(f"{character.name} has no macros!")
 
 
 @haven(__HELP_URL, _has_macros, "None of your characters have any macros!")
-async def show(ctx, character=None):
+async def show(ctx: AppCtx, character: VChar):
     """Show all of a character's macros."""
     macros = character.macros
     if not macros:

@@ -12,14 +12,11 @@ from loguru import logger
 import config
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
+from ctx import AppCtx
 from errorreporter import reporter
 
 if TYPE_CHECKING:
     from inconnu.models import VChar
-
-
-class AppCtx(discord.ApplicationContext):
-    bot: "InconnuBot"
 
 
 class InconnuBot(discord.AutoShardedBot):

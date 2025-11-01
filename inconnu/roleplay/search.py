@@ -10,6 +10,7 @@ from loguru import logger
 from pymongo import ASCENDING, DESCENDING
 
 import inconnu
+from ctx import AppCtx
 from inconnu.models import RPPost
 
 
@@ -23,7 +24,7 @@ class SortOrder(Enum):
 
 
 async def search(
-    ctx,
+    ctx: AppCtx,
     user: discord.Member,
     needle: str | None,
     character: str | None,

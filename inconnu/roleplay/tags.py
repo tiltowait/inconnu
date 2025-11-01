@@ -4,9 +4,10 @@ import discord
 from discord.ext.pages import Page, Paginator
 
 import inconnu
+from ctx import AppCtx
 
 
-async def show_tags(ctx: discord.ApplicationContext):
+async def show_tags(ctx: AppCtx):
     """Show the user's tags with an option to select and view messages."""
     pipeline = [
         {
@@ -60,7 +61,7 @@ async def show_tags(ctx: discord.ApplicationContext):
         )
 
 
-def _create_page(ctx: discord.ApplicationContext, tags: list[tuple[str, int]]) -> Page:
+def _create_page(ctx: AppCtx, tags: list[tuple[str, int]]) -> Page:
     """Creates a tag page."""
     embed = discord.Embed(
         title="Rolepost Tags",

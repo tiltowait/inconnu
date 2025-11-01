@@ -9,6 +9,7 @@ import discord
 from loguru import logger
 
 import inconnu
+from ctx import AppCtx
 from inconnu.models import VChar
 from inconnu.utils.permissions import is_admin
 from inconnu.views.basicselector import BasicSelector
@@ -282,8 +283,8 @@ def haven(
     errmsg: str = "",
     allow_lookups: bool = False,
 ) -> Callable[
-    [Callable[Concatenate[discord.ApplicationContext, VChar, P], Awaitable[T]]],
-    Callable[Concatenate[discord.ApplicationContext, str | None, P], Awaitable[T]],
+    [Callable[Concatenate[AppCtx, VChar, P], Awaitable[T]]],
+    Callable[Concatenate[AppCtx, str | None, P], Awaitable[T]],
 ]:
     """A decorator that handles character fetching duties.
 
@@ -292,11 +293,11 @@ def haven(
     """
 
     def haven_decorator(
-        func: Callable[Concatenate[discord.ApplicationContext, VChar, P], Awaitable[T]],
-    ) -> Callable[Concatenate[discord.ApplicationContext, str | None, P], Awaitable[T]]:
+        func: Callable[Concatenate[AppCtx, VChar, P], Awaitable[T]],
+    ) -> Callable[Concatenate[AppCtx, str | None, P], Awaitable[T]]:
         @functools.wraps(func)
         async def wrapper(
-            ctx: discord.ApplicationContext,
+            ctx: AppCtx,
             character: str | None,
             *args: P.args,
             **kwargs: P.kwargs,

@@ -3,7 +3,7 @@
 import asyncio
 import os
 from datetime import datetime, time, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ext import tasks
@@ -16,6 +16,10 @@ from errorreporter import reporter
 
 if TYPE_CHECKING:
     from inconnu.models import VChar
+
+
+class AppCtx(discord.ApplicationContext):
+    bot: "InconnuBot"
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -65,6 +69,10 @@ class InconnuBot(discord.AutoShardedBot):
         """Set the MOTD embed."""
         self.motd = embed
         self.motd_given = set()
+
+    async def get_application_context(self, interaction: discord.Interaction, cls=AppCtx) -> AppCtx:
+        ctx = await super().get_application_context(interaction, cls)
+        return cast(AppCtx, ctx)
 
     async def on_message(self, message: discord.Message):
         """If the message is a reply to a Rolepost, ping the Rolepost's author."""

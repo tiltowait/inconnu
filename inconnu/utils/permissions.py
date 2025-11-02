@@ -1,26 +1,36 @@
 """Permission and supporter status checks."""
 
+from typing import cast
+
 import discord
 from loguru import logger
 
 import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
 
+AppInteraction = discord.ApplicationContext | discord.Interaction
 
-def is_approved_user(ctx, owner_id=None):
+
+def is_approved_user(ctx: AppInteraction, owner_id: discord.User | None = None):
     """Check if the user owns the object or is an admin."""
+    if ctx.user is None:
+        raise ValueError("Unexpectedly got null user")
+
     if owner_id == ctx.user.id:
         return True
     return is_admin(ctx)
 
 
-def is_admin(ctx):
+def is_admin(ctx: AppInteraction):
     """Check if the ctx user is a server admin."""
+    if ctx.channel is None:
+        raise ValueError("Unexpectedly got null channel")
+
+    user = cast(discord.Member, ctx.user)
     if isinstance(ctx.channel, discord.PartialMessageable):
         # We can't use permissions_for
-        user = ctx.user
         return user.top_role.permissions.administrator or user.guild_permissions.administrator
-    return ctx.channel.permissions_for(ctx.user).administrator
+    return ctx.channel.permissions_for(user).administrator
 
 
 async def get_or_fetch_supporter(

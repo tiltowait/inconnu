@@ -11,6 +11,7 @@ from pymongo import DeleteOne
 
 import inconnu
 import interface
+from inconnu.utils.permissions import is_approved_user
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -274,7 +275,7 @@ class HeaderCog(commands.Cog):
             if record is not None:
                 # Make sure we are allowed to delete it
                 owner = record["character"]["user"]
-                if inconnu.utils.is_admin(ctx, owner_id=owner):
+                if inconnu.utils.is_approved_user(ctx, owner_id=owner):
                     logger.debug("HEADER: Deleting RP header")
                     try:
                         if is_bot_message:

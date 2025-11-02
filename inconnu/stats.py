@@ -6,9 +6,18 @@ import datetime
 from pymongo import ReturnDocument, UpdateOne
 
 import inconnu
+from inconnu.models import VChar
 
 
-async def log_roll(guild: int, channel: int, user: int, message: int, char, outcome, comment):
+async def log_roll(
+    guild: int,
+    channel: int,
+    user: int,
+    message: int | None,
+    char: VChar | None,
+    outcome,
+    comment,
+):
     """
     Log a roll and its outcome. If the roll is a reroll, simply replace it.
     Args:
@@ -106,7 +115,15 @@ async def guild_renamed(guild, new_name):
 # Roll logging helpers
 
 
-def _gen_roll(guild: int, channel: int, user: int, message: int, char, outcome, comment: str):
+def _gen_roll(
+    guild: int,
+    channel: int,
+    user: int,
+    message: int | None,
+    char: VChar | None,
+    outcome,
+    comment: str,
+):
     """Add a new roll outcome entry to the database."""
     return {
         "_id": outcome.id,

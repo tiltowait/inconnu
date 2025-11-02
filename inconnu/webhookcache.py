@@ -19,7 +19,7 @@ class WebhookCache:
     async def _fetch_webhook(self, channel: discord.TextChannel):
         """Find the appropriate webhook in the channel."""
         for _webhook in await channel.webhooks():
-            if _webhook.user.id == self.bot_id:
+            if _webhook.user is not None and _webhook.user.id == self.bot_id:
                 logger.info(
                     "WEBHOOK: {} found in #{} on {}",
                     _webhook.name,
@@ -36,11 +36,15 @@ class WebhookCache:
         """Get all of the guild's webhooks."""
         logger.info("WEBHOOK: Pulling {}'s webhooks", guild.name)
         for webhook in await guild.webhooks():
-            if webhook.user.id == self.bot_id and webhook.channel_id is not None:
+            if (
+                webhook.user is not None
+                and webhook.user.id == self.bot_id
+                and webhook.channel_id is not None
+            ):
                 logger.debug(
                     "WEBHOOK: Webhook {} found in #{} ({})",
                     webhook.name,
-                    webhook.channel.name,
+                    webhook.channel.name if webhook.channel is not None else "UNKNOWN",
                     guild.name,
                 )
                 self._webhooks[webhook.channel_id] = webhook

@@ -1,7 +1,5 @@
 """Full-size character image display."""
 
-from typing import Optional
-
 import discord
 from loguru import logger
 

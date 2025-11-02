@@ -5,10 +5,10 @@ from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
-from beanie import init_beanie
-from bson import ObjectId
+from beanie import PydanticObjectId, init_beanie
 from httpx import AsyncClient
 from mongomock_motor import AsyncMongoMockClient
+from pydantic import AnyUrl
 from pymongo import AsyncMongoClient
 
 import inconnu.db
@@ -20,12 +20,12 @@ from server import app
 
 # Static test data IDs
 
-CHAR_ID_1 = ObjectId("6140d7d811c1853b3d42c1e9")
-CHAR_ID_2 = ObjectId("613d3e4bba8a6a8dc0ee2a09")
-CHAR_ID_MISSING = ObjectId("613d3e4bba8a6a8dc0ee2a06")
+CHAR_ID_1 = PydanticObjectId("6140d7d811c1853b3d42c1e9")
+CHAR_ID_2 = PydanticObjectId("613d3e4bba8a6a8dc0ee2a09")
+CHAR_ID_MISSING = PydanticObjectId("613d3e4bba8a6a8dc0ee2a06")
 
-POST_ID_1 = ObjectId("6404dfafa9b47c1a4dd13294")
-POST_ID_MISSING = ObjectId("6367ee5eaa29004c72953016")
+POST_ID_1 = PydanticObjectId("6404dfafa9b47c1a4dd13294")
+POST_ID_MISSING = PydanticObjectId("6367ee5eaa29004c72953016")
 
 
 @pytest.fixture(autouse=True, scope="function")
@@ -126,7 +126,7 @@ async def rolepost(request):
         date=base_date,
         date_modified=datetime(2023, 3, 5, 18, 0, 0),
         header=header,
-        url="https://discord.com/channels/123456789/111111111/222222222",
+        url=AnyUrl("https://discord.com/channels/123456789/111111111/222222222"),
         deleted=use_deleted,
         deletion_date=datetime(2023, 3, 6, 10, 0, 0) if use_deleted else None,
         history=history,
@@ -195,7 +195,7 @@ async def test_profile_page(
                 elif expected_status == 404:
                     assert res["detail"] == "Character not found."
                 else:
-                    pytest.fail(msg=f"Unexpected response code: {r.status_code}")
+                    pytest.fail(f"Unexpected response code: {r.status_code}")
             else:
                 # Verify carousel items match image count
                 if use_char1:
@@ -238,7 +238,7 @@ async def test_posts_page(
                 elif expected_status == 404:
                     assert res["detail"] == "Post not found."
                 else:
-                    pytest.fail(msg=f"Unexpected response code: {r.status_code}")
+                    pytest.fail(f"Unexpected response code: {r.status_code}")
             else:
                 use_deleted = rolepost.deleted if rolepost else False
                 if use_deleted:

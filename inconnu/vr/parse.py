@@ -16,6 +16,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 
 import discord
+import discord.ext.commands
 from loguru import logger
 
 import inconnu

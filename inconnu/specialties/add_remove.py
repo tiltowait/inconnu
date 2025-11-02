@@ -3,7 +3,6 @@
 import asyncio
 from enum import Enum, StrEnum
 
-import discord
 from loguru import logger
 
 import inconnu

@@ -284,25 +284,36 @@ def haven(
     allow_lookups: bool = False,
 ) -> Callable[
     [Callable[Concatenate[AppCtx, VChar, P], Awaitable[T]]],
-    Callable[Concatenate[AppCtx, str | None, P], Awaitable[T]],
+    Callable[Concatenate[AppCtx, str | VChar | None, P], Awaitable[T]],
 ]:
     """A decorator that handles character fetching duties.
 
-    Transforms functions that accept VChar into functions that accept str | None.
-    The decorator handles character lookup and validation automatically.
+    Transforms functions that accept VChar into functions that accept str | VChar | None.
+    The decorator handles character lookup and validation automatically. If a VChar is
+    passed directly (e.g., in tests), it bypasses the lookup logic.
     """
 
     def haven_decorator(
         func: Callable[Concatenate[AppCtx, VChar, P], Awaitable[T]],
-    ) -> Callable[Concatenate[AppCtx, str | None, P], Awaitable[T]]:
+    ) -> Callable[Concatenate[AppCtx, str | VChar | None, P], Awaitable[T]]:
         @functools.wraps(func)
         async def wrapper(
             ctx: AppCtx,
-            character: str | None,
+            character: str | VChar | None,
             *args: P.args,
             **kwargs: P.kwargs,
         ) -> T:
             logger.debug("@HAVEN: Using @haven")
+
+            # If a VChar is passed directly (e.g., in tests), skip Haven lookup
+            # but still apply the character filter if present
+            if isinstance(character, VChar):
+                logger.debug("@HAVEN: VChar passed directly, skipping lookup")
+                if char_filter is not None:
+                    logger.debug("@HAVEN: Applying filter to directly-passed VChar")
+                    char_filter(character)
+                return await func(ctx, character, *args, **kwargs)
+
             player: discord.Member | None
             if "player" in kwargs:
                 # Capture the player lookup

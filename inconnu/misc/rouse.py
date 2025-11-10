@@ -3,7 +3,6 @@
 
 from types import SimpleNamespace
 
-
 import inconnu
 from config import web_asset
 from inconnu.models import VChar
@@ -20,7 +19,13 @@ def _can_rouse(character):
 
 @haven(__HELP_URL, _can_rouse)
 async def rouse(
-    ctx, character: str, count: int, purpose: str, reroll: bool, oblivion="show", message=None
+    ctx,
+    character: VChar,
+    count: int,
+    purpose: str,
+    reroll: bool,
+    oblivion: str | bool = "show",
+    message=None,
 ):
     """
     Perform a remorse check on a given character and display the results.

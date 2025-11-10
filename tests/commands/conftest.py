@@ -146,3 +146,24 @@ async def mock_emoji_manager():
 
     with patch("inconnu.emojis", mock_emojis):
         yield mock_emojis
+
+
+@pytest.fixture(autouse=True)
+async def mock_character_display() -> AsyncGenerator[AsyncMock, None]:
+    """Mock character display to avoid rendering."""
+    with patch("inconnu.character.display", new_callable=AsyncMock) as mock:
+        yield mock
+
+
+@pytest.fixture(autouse=True)
+async def mock_common_report() -> AsyncGenerator[AsyncMock, None]:
+    """Mock common report_update to avoid Discord API calls."""
+    with patch("inconnu.common.report_update", new_callable=AsyncMock) as mock:
+        yield mock
+
+
+@pytest.fixture(autouse=True)
+async def mock_get_message() -> AsyncGenerator[AsyncMock, None]:
+    """Mock get_message to avoid fetching Discord messages."""
+    with patch("inconnu.get_message", new_callable=AsyncMock) as mock:
+        yield mock

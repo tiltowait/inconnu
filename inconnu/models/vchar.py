@@ -314,7 +314,7 @@ class VChar(Document):
         return math.ceil(self.potency / 2) + 1
 
     @property
-    def mend_amount(self):
+    def mend_amount(self) -> int:
         """The amount of Superficial damage recovered when mending."""
         if self.is_vampire:
             mends = {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 5}

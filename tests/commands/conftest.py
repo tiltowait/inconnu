@@ -110,6 +110,7 @@ def char(guild: discord.Guild, user: discord.Member) -> VChar:
         stains=0,
         potency=3,
     )
+    char.assign_traits({"Stamina": 3, "Composure": 2, "Resolve": 1})
     return char
 
 

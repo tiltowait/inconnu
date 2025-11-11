@@ -127,7 +127,7 @@ async def update(
 
     except (SyntaxError, ValueError) as err:
         if isinstance(character, VChar):
-            character.clear_modified()
+            character.rollback()
 
             await asyncio.gather(
                 inconnu.log.log_event(
@@ -138,7 +138,7 @@ async def update(
                     syntax=human_readable,
                 ),
                 update_help(ctx, err),
-                character.reload(),  # clear_modified() doesn't reset the fields
+                # character.reload(),  # clear_modified() doesn't reset the fields
             )
 
 

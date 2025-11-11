@@ -67,7 +67,7 @@ async def display(
     owner: discord.Member | None = None,
     fields: list | None = None,
     custom: list | None = None,
-    color: int | None = None,
+    color: discord.Color | int | None = None,
     thumbnail: str | None = None,
     view: discord.ui.View | None = None,
     ephemeral: bool = False,
@@ -129,7 +129,7 @@ async def __get_embed(
     owner: discord.Member | None = None,
     fields: list | None = None,
     custom: list | None = None,
-    color: int | None = None,
+    color: discord.Color | int | None = None,
     thumbnail: str | None = None,
 ):
     # Set the default values

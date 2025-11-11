@@ -46,7 +46,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         *,
         owner: discord.Member | None = None,
         allow_lookups=False,
-        character: str | None = None,
+        character: VChar | str | None = None,
         tip: str | None = None,
         help: str | None = None,  # pylint: disable=redefined-builtin
         char_filter: Callable | None = None,

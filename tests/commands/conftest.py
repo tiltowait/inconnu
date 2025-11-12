@@ -31,6 +31,12 @@ def user() -> discord.Member:
 def bot() -> InconnuBot:
     bot = InconnuBot()
 
+    # Mock the bot user for tests that access inconnu.bot.user
+    bot_user = MagicMock()
+    bot_user.display_name = "Inconnu"
+    bot_user.avatar = "https://example.com/avatar.png"
+    type(bot).user = PropertyMock(return_value=bot_user)
+
     return bot
 
 
@@ -168,3 +174,10 @@ async def mock_get_message() -> AsyncGenerator[AsyncMock, None]:
     """Mock get_message to avoid fetching Discord messages."""
     with patch("inconnu.get_message", new_callable=AsyncMock) as mock:
         yield mock
+
+
+@pytest.fixture(autouse=True)
+def mock_inconnu_bot(bot: InconnuBot):
+    """Patch the global inconnu.bot with our test bot."""
+    with patch("inconnu.bot", bot):
+        yield bot

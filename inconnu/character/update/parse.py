@@ -41,7 +41,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/updates"
 async def update(
     ctx: AppCtx,
     parameters: str,
-    character: VChar | str | None = None,
+    character: "VChar | str | None" = None,
     fields: list[DisplayField] | None = None,
     color: discord.Color | None = None,
     update_message: str | None = None,
@@ -126,7 +126,7 @@ async def update(
             )
 
     except (SyntaxError, ValueError) as err:
-        if isinstance(character, VChar):
+        if isinstance(character, inconnu.models.VChar):
             character.rollback()
 
             await asyncio.gather(

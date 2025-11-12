@@ -181,3 +181,10 @@ def mock_inconnu_bot(bot: InconnuBot):
     """Patch the global inconnu.bot with our test bot."""
     with patch("inconnu.bot", bot):
         yield bot
+
+
+@pytest.fixture(autouse=True)
+async def mock_log_event() -> AsyncGenerator[AsyncMock, None]:
+    """Mock log_event to avoid database writes during tests."""
+    with patch("inconnu.log.log_event", new_callable=AsyncMock) as mock:
+        yield mock

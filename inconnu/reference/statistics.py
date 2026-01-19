@@ -1,7 +1,7 @@
 """reference/statistics.py - View character roll statistics"""
 
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import discord
 
@@ -34,10 +34,10 @@ async def statistics(
         # As Inconnu was originally made for Cape Town by Night, we will use
         # that server's weekly reset time as the cutoff--but only if we aren't
         # looking at the current date
-        if date.date() != datetime.utcnow().date():
+        if date.date() != datetime.now(UTC).date():
             date += timedelta(hours=19)
 
-        if date > datetime.utcnow():
+        if date > datetime.now(UTC):
             # Can't get stats from the future
             date_fmt = discord.utils.format_dt(date, DT_ST)
             await ctx.respond(f"{date_fmt} is in the future!", ephemeral=True)

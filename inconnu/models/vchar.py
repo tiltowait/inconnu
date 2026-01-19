@@ -7,7 +7,7 @@ import copy
 import math
 import random
 from collections import Counter
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from functools import total_ordering
 from types import SimpleNamespace
@@ -78,7 +78,7 @@ class VChar(Document):
     @before_event(Insert)
     def pre_insert(self):
         """Last-minute prep."""
-        self.stat_log["created"] = datetime.utcnow()
+        self.stat_log["created"] = datetime.now(UTC)
 
         if self.splat == "thinblood":
             self.splat = "thin-blood"

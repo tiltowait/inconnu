@@ -1,6 +1,6 @@
 """Rolepost models."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
 import discord
@@ -97,4 +97,4 @@ class RPPost(Document):
             )
             self.history.insert(0, entry)
             self.content = new_post
-            self.date_modified = datetime.utcnow()
+            self.date_modified = datetime.now(UTC)

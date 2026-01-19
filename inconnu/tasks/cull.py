@@ -1,6 +1,6 @@
 """inconnu/cull.py - Cull inactive players and guilds."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from loguru import logger
 
@@ -11,7 +11,7 @@ import inconnu
 async def cull(days=30):
     """Cull inactive guilds, characters, and macros."""
     logger.info("CULLER: Initiating culling run.")
-    past = datetime.utcnow() - timedelta(days=days)
+    past = datetime.now(UTC) - timedelta(days=days)
 
     # Remove old guilds
 

@@ -1,7 +1,7 @@
 """vchar/manager.py - Character cache/in-memory database."""
 
 import bisect
-import datetime
+from datetime import UTC, datetime
 
 import discord
 from cachetools import TTLCache
@@ -229,7 +229,7 @@ class CharacterManager:
         """
         await self.collection.update_many(
             {"guild": player.guild.id, "user": player.id},
-            {"$set": {"log.left": datetime.datetime.utcnow()}},
+            {"$set": {"log.left": datetime.now(UTC)}},
         )
 
     async def mark_active(self, player):

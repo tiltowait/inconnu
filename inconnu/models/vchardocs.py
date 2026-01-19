@@ -2,7 +2,7 @@
 # pylint: disable=abstract-method, too-few-public-methods
 
 import itertools
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from types import SimpleNamespace as SN
 from typing import ClassVar, Optional
@@ -37,7 +37,7 @@ class VCharExperienceEntry(BaseModel):
     amount: int
     reason: str
     admin: int
-    date: datetime = Field(default_factory=datetime.utcnow)
+    date: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class VCharExperience(BaseModel):

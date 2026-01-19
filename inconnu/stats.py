@@ -1,7 +1,7 @@
 """stats.py - Various packages for user statistics."""
 # pylint: disable=too-many-arguments
 
-import datetime
+from datetime import UTC, datetime
 
 from pymongo import ReturnDocument, UpdateOne
 
@@ -79,7 +79,7 @@ async def guild_joined(guild):
                 "guild": guild.id,
                 "name": guild.name,
                 "active": True,
-                "joined": datetime.datetime.utcnow(),
+                "joined": datetime.now(UTC),
                 "left": None,
             }
         },
@@ -96,7 +96,7 @@ async def guild_left(guild):
     guilds = inconnu.db.guilds
 
     await guilds.update_one(
-        {"guild": guild}, {"$set": {"active": False, "left": datetime.datetime.utcnow()}}
+        {"guild": guild}, {"$set": {"active": False, "left": datetime.now(UTC)}}
     )
 
 
@@ -127,7 +127,7 @@ def _gen_roll(
     """Add a new roll outcome entry to the database."""
     return {
         "_id": outcome.id,
-        "date": datetime.datetime.utcnow(),
+        "date": datetime.now(UTC),
         "guild": guild,  # We use the guild and user keys for easier lookups
         "channel": channel,
         "user": user,

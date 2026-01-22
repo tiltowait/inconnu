@@ -17,4 +17,4 @@ class VUser(Document):
     settings: VUserSettings = Field(default_factory=VUserSettings)
 
     class Settings:
-        name = "v_user"
+        name = "users"

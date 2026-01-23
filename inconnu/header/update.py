@@ -16,7 +16,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 @haven(__HELP_URL)
 async def update_header(ctx: AppCtx, character: VChar):
     """Update the character's RP header."""
-    title = f"Set RP Header: {character.name}"
+    title = f"RP Header: {character.name}"
     modal = _RPHeader(character, title=title[:45])
     await ctx.send_modal(modal)
 
@@ -58,8 +58,8 @@ class _RPHeader(discord.ui.DesignerModal):
         # a ModalItem, we have to get a little tricky with our blush options:
         # we will filter the available options based on the splat. "N/A" must
         # always be default (it's the only option when present), and "Off" is
-        # default if not blushed (0 or -1) in case the character was previously
-        # a mortal, TB, or humanity > 8.
+        # default if not blushed (0 or -1) in case the character was PREVIOUSLY
+        # a Mortal, Thin-Blood, or Humanity > 8.
         blush_options = [
             discord.SelectOption(label="On", value="1", default=self.character.header.blush == 1),
             discord.SelectOption(label="Off", value="0", default=self.character.header.blush < 1),
@@ -74,9 +74,9 @@ class _RPHeader(discord.ui.DesignerModal):
 
         self.add_item(
             discord.ui.Label(
-                "Relevant Merits",
+                "Apparent Merits",
                 discord.ui.InputText(
-                    placeholder="Merits characters would know or your scene partner SHOULD know.",
+                    placeholder="Merits visible/known to other characters.",
                     value=character.header.merits,
                     min_length=0,
                     max_length=300,
@@ -86,9 +86,9 @@ class _RPHeader(discord.ui.DesignerModal):
         )
         self.add_item(
             discord.ui.Label(
-                "Relevant Flaws",
+                "Apparent Flaws",
                 discord.ui.InputText(
-                    placeholder="Flaws characters would know or your scene partner SHOULD know.",
+                    placeholder="Flaws visible/known to other characters.",
                     value=character.header.flaws,
                     min_length=0,
                     max_length=300,
@@ -110,6 +110,7 @@ class _RPHeader(discord.ui.DesignerModal):
 
     async def callback(self, interaction: discord.Interaction):
         """Set the header and tell the user."""
+        # TODO: Find out if ModalItem.item is the intended attribute (checker complains)
         self.character.header.location = inconnu.utils.clean_text(self.children[0].item.value)
         self.character.header.blush = int(self.children[1].item.values[0])
         self.character.header.merits = inconnu.utils.clean_text(self.children[2].item.value)

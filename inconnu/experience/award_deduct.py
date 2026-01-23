@@ -5,13 +5,23 @@ import asyncio
 import discord
 
 import inconnu
+from ctx import AppCtx
+from inconnu.models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
 
 @haven(__HELP_URL)
-async def award_or_deduct(ctx, character, amount, scope, reason, *, player):
+async def award_or_deduct(
+    ctx: AppCtx,
+    character: VChar,
+    amount: int,
+    scope: str,
+    reason: str,
+    *,
+    player: discord.Member,
+):
     """Award or deduct XP from a character."""
     scope = scope.lower()
 
@@ -33,7 +43,7 @@ async def award_or_deduct(ctx, character, amount, scope, reason, *, player):
     embed = __get_embed(ctx, player, character, amount, scope, reason)
     await asyncio.gather(
         ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none()),
-        character.commit(),
+        character.save(),
     )
 
 

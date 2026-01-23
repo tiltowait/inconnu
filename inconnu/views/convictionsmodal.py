@@ -68,7 +68,7 @@ class ConvictionsModal(Modal):
 
         self.character.convictions = new_convictions
 
-        tasks = [self.character.commit()]
+        tasks = [self.character.save()]
         if self.report:
             tasks.append(
                 interaction.response.send_message(

@@ -32,7 +32,7 @@ def char_option(description="The character to use", required=False, param="chara
     return decorator
 
 
-def player_option(param="player", description="The character's owner (admin only)"):
+def player_option(param="player", description="The character's owner (admin only)", required=False):
     """A command decorator letting users choose a user."""
 
     def decorator(func):
@@ -40,7 +40,7 @@ def player_option(param="player", description="The character's owner (admin only
             discord.Member,
             description,
             name=param,
-            required=False,
+            required=required,
         )
         return func
 
@@ -71,10 +71,10 @@ async def _available_characters(ctx):
         if user.guild_permissions.administrator:
             # Add SPCs
             spcs = await inconnu.char_mgr.fetchall(guild.id, ctx.bot.user.id)
-            spcs = [(spc.name, spc.id) for spc in spcs]
+            spcs = [(spc.name, spc.id_str) for spc in spcs]
 
     chars = await inconnu.char_mgr.fetchall(guild.id, int(owner))
-    chars = [(char.name, char.id) for char in chars]
+    chars = [(char.name, char.id_str) for char in chars]
     chars.extend(spcs)
 
     name_search = ctx.value.casefold()

@@ -10,6 +10,7 @@ from loguru import logger
 from pymongo import ASCENDING, DESCENDING
 
 import inconnu
+from ctx import AppCtx
 from inconnu.models import RPPost
 
 
@@ -23,7 +24,7 @@ class SortOrder(Enum):
 
 
 async def search(
-    ctx,
+    ctx: AppCtx,
     user: discord.Member,
     needle: str | None,
     character: str | None,
@@ -87,7 +88,7 @@ async def search(
         return
 
     posts = []  # Will either contain strings or embeds
-    async for post in RPPost.find(query).sort(*sort_key).limit(25):
+    async for post in RPPost.find(query).sort(sort_key).limit(25):
         if summary:
             # Show only links to posts
             timestamp = discord.utils.format_dt(post.utc_date, "d")
@@ -103,7 +104,7 @@ async def search(
                 icon_url=inconnu.get_avatar(user),
                 footer=" • ".join(footer),
             )
-            embed.add_field(name=" ", value=post.url)
+            embed.add_field(name=" ", value=str(post.url))
             posts.append(embed)
 
     if posts:
@@ -149,7 +150,7 @@ def convert_dates(after: str, before: str) -> tuple[datetime, datetime]:
         ValueError if before is after after.
         ParserError if a datetime can't be inferred."""
 
-    def convert_tzs(dt: str | None) -> datetime:
+    def convert_tzs(dt: str | None) -> datetime | None:
         """If the datetime has a timezone, convert it to UTC and remove it."""
         if dt is None:
             return None

@@ -1,21 +1,17 @@
 """traits/show.py - Display character traits."""
 
-from typing import TYPE_CHECKING
-
 import discord
 from discord.ext.commands import Paginator as Chunker
 
 import inconnu
+from inconnu.models import VChar
 from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-traits"
 
 
 @haven(__HELP_URL)
-async def show(ctx, character: str, *, player: discord.Member):
+async def show(ctx: discord.ApplicationContext, character: VChar, *, player: discord.Member):
     """Present a character's traits to its owner."""
     embed = traits_embed(ctx, character, player)
     await ctx.respond(embed=embed, ephemeral=True)
@@ -23,8 +19,8 @@ async def show(ctx, character: str, *, player: discord.Member):
 
 def traits_embed(
     ctx: discord.ApplicationContext | discord.Interaction,
-    character: "VChar",
-    owner: discord.Member = None,
+    character: VChar,
+    owner: discord.Member | None = None,
 ):
     """Display traits in an embed."""
     embed = inconnu.embeds.VCharEmbed(ctx, character, owner, title="Character Traits")

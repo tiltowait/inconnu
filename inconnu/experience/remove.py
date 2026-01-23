@@ -3,6 +3,9 @@
 import discord
 
 import inconnu
+from ctx import AppCtx
+from inconnu.models import VChar
+from inconnu.utils import is_admin
 from inconnu.utils.haven import haven
 from inconnu.views import DisablingView
 
@@ -10,7 +13,13 @@ __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-manage
 
 
 @haven(__HELP_URL)
-async def remove_entry(ctx, character, index, *, player):
+async def remove_entry(
+    ctx: AppCtx,
+    character: VChar,
+    index: int,
+    *,
+    player: discord.Member,
+):
     """Award or deduct XP from a character."""
     try:
         # Log entries are presented to the user in reverse, so we need the
@@ -21,7 +30,7 @@ async def remove_entry(ctx, character, index, *, player):
         view = _ExperienceView(character, entry_to_delete)
 
         view.message = await ctx.respond(embed=embed, view=view)
-        await character.commit()
+        await character.save()
 
     except IndexError:
         err = f"{character.name} has no experience log entry at index `{index}`."
@@ -89,7 +98,7 @@ class _ExperienceView(DisablingView):
 
     async def interaction_check(self, interaction) -> bool:
         """Check whether the user is an admin."""
-        if not interaction.user.guild_permissions.administrator:
+        if not is_admin(interaction):
             await interaction.response.send_message("Only an admin can do this.", ephemeral=True)
             return False
 

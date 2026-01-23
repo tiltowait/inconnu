@@ -189,7 +189,7 @@ class RollDisplay:
             if self.character is not None:
                 sup_wp = self.character.superficial_wp + 1
                 self.character.set_superficial_wp(sup_wp)
-                await self.character.commit()
+                await self.character.save()
 
             await inconnu.character.display(
                 btn,
@@ -200,12 +200,12 @@ class RollDisplay:
             )
 
         elif inconnu.common.contains_digit(button_id):
-            if button_id == self.character.id:
+            if button_id == self.character.id_str:
                 # elif inconnu.common.contains_digit(button_id):  # Surge buttons are just charids
                 self.surged = True
                 await inconnu.misc.rouse(btn, self.character, 1, "Surge", False)
 
-            elif button_id == self.character.id + "-rr":
+            elif button_id == self.character.id_str + "-rr":
                 # Fluent X
                 self.surged = True
                 await inconnu.misc.rouse(btn, self.character, 1, "Surge", True)
@@ -397,14 +397,14 @@ class RollDisplay:
                     buttons.append(
                         Button(
                             label="Rouse",
-                            custom_id=self.character.id,
+                            custom_id=self.character.id_str,
                             style=discord.ButtonStyle.danger,
                         )
                     )
                     buttons.append(
                         Button(
                             label="Rouse w/ Reroll",
-                            custom_id=self.character.id + "-rr",
+                            custom_id=self.character.id_str + "-rr",
                             style=discord.ButtonStyle.danger,
                         )
                     )
@@ -464,7 +464,7 @@ class RollDisplay:
             buttons.append(
                 Button(
                     label="Rouse",
-                    custom_id=self.character.id,
+                    custom_id=self.character.id_str,
                     style=discord.ButtonStyle.danger,
                     row=1,
                 )
@@ -472,7 +472,7 @@ class RollDisplay:
             buttons.append(
                 Button(
                     label="Rouse w/ Reroll",
-                    custom_id=self.character.id + "-rr",
+                    custom_id=self.character.id_str + "-rr",
                     style=discord.ButtonStyle.danger,
                     row=1,
                 )

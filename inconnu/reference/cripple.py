@@ -5,11 +5,12 @@ from types import SimpleNamespace
 import discord
 
 import inconnu
+from ctx import AppCtx
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#crippling-injuries"
 
 
-async def cripple(ctx, damage: int):
+async def cripple(ctx: AppCtx, damage: int):
     """Roll against the crippling injury chart."""
     injuries = __get_injury(damage)
     await __display_injury(ctx, damage, injuries)

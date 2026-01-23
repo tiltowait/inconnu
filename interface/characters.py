@@ -3,10 +3,11 @@
 
 import discord
 from discord import option
-from discord.commands import Option, OptionChoice, SlashCommandGroup
+from discord.commands import OptionChoice, SlashCommandGroup
 from discord.ext import commands
 
 import inconnu
+from inconnu.options import char_option, player_option
 from inconnu.utils import strtobool
 
 
@@ -40,86 +41,135 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="create")
     @inconnu.utils.not_on_lockdown()
+    @option("name", description="The character's name")
+    @option("template", description="The character type", choices=_TEMPLATES)
+    @option("health", description="Health levels (4-15)", choices=inconnu.options.ratings(3, 15))
+    @option(
+        "willpower", description="Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)
+    )
+    @option(
+        "humanity", description="Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)
+    )
+    @option("spc", description="(Admin only) Make an SPC", autocomplete=_spc_options, default="0")
     async def character_create(
         self,
         ctx: discord.ApplicationContext,
-        name: Option(str, "The character's name"),
-        template: Option(str, "The character type", choices=_TEMPLATES),
-        health: Option(int, "Health levels (4-15)", choices=inconnu.options.ratings(3, 15)),
-        willpower: Option(int, "Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)),
-        humanity: Option(int, "Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)),
-        spc: Option(str, "(Admin only) Make an SPC", autocomplete=_spc_options, default="0"),
+        name: str,
+        template: str,
+        health: int,
+        willpower: int,
+        humanity: int,
+        spc: str,
     ):
         """Create a new character."""
         try:
-            spc = bool(strtobool(spc))
+            is_spc = bool(strtobool(spc))
             await inconnu.character.create(
-                ctx, name, template, humanity, health, willpower, spc, False
+                ctx, name, template, humanity, health, willpower, is_spc, False
             )
         except ValueError:
             await inconnu.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
     @commands.slash_command(name="spc")
     @commands.has_permissions(administrator=True)
+    @option("name", description="The SPC's name")
+    @option("template", description="The character type", choices=_TEMPLATES)
+    @option("health", description="Health levels (4-15)", choices=inconnu.options.ratings(4, 15))
+    @option(
+        "willpower", description="Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)
+    )
+    @option(
+        "humanity", description="Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)
+    )
     async def spc_create(
         self,
         ctx: discord.ApplicationContext,
-        name: Option(str, "The SPC's name"),
-        template: Option(str, "The character type", choices=_TEMPLATES),
-        health: Option(int, "Health levels (4-15)", choices=inconnu.options.ratings(4, 15)),
-        willpower: Option(int, "Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)),
-        humanity: Option(int, "Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)),
+        name: str,
+        template: str,
+        health: int,
+        willpower: int,
+        humanity: int,
     ):
         """Create an SPC character with no traits."""
         await inconnu.character.create(ctx, name, template, humanity, health, willpower, True, True)
 
     @character.command(name="display")
+    @char_option("The character to display")
+    @player_option()
     async def character_display(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to display"),
-        player: inconnu.options.player,
+        character: str,
+        player: discord.Member,
     ):
         """Display a character's trackers."""
         await inconnu.character.display_requested(ctx, character, player=player)
 
     @character.command(name="update")
+    @option("parameters", description="KEY=VALUE parameters (see /help characters)")
+    @char_option("The character to update")
+    @player_option()
     async def character_update(
         self,
         ctx: discord.ApplicationContext,
-        parameters: Option(str, "KEY=VALUE parameters (see /help characters)"),
-        character: inconnu.options.character("The character to update"),
-        player: inconnu.options.player,
+        parameters: str,
+        character: str,
+        player: discord.Member,
     ):
         """Update a character's parameters but not the traits."""
         await inconnu.character.update(ctx, parameters, character, player=player)
 
     @character.command(name="adjust")
+    @option("new_name", description="The character's new name", required=False)
+    @option(
+        "health",
+        description="The new Health rating",
+        choices=inconnu.options.ratings(4, 20),
+        required=False,
+    )
+    @option(
+        "willpower",
+        description="The new Willpower rating",
+        choices=inconnu.options.ratings(3, 20),
+        required=False,
+    )
+    @option(
+        "humanity",
+        description="The new Humanity rating",
+        choices=inconnu.options.ratings(0, 10),
+        required=False,
+    )
+    @option("template", description="The character's new type", choices=_TEMPLATES, required=False)
+    @option("sup_hp", description="Superficial Health (Tip: Use +X/-X)", required=False)
+    @option("agg_hp", description="Aggravated Health (Tip: Use +X/-X)", required=False)
+    @option("sup_wp", description="Superficial Willpower (Tip: Use +X/-X)", required=False)
+    @option("agg_wp", description="Aggravated Willpower (Tip: Use +X/-X)", required=False)
+    @option("stains", description="Stains (Tip: Use +X/-X)", required=False)
+    @option("unspent_xp", description="Unspent XP (Tip: Use +X/-X)", required=False)
+    @option("lifetime_xp", description="Lifetime XP (Tip: Use +X/-X)", required=False)
+    @option("hunger", description="Adjust Hunger", required=False)
+    @option("potency", description="Adjust Blood Potency", required=False)
+    @char_option("The character to adjust")
+    @player_option()
     async def adjust_character(
         self,
         ctx,
-        new_name: Option(str, "The character's new name", required=False),
-        health: Option(
-            int, "The new Health rating", choices=inconnu.options.ratings(4, 20), required=False
-        ),
-        willpower: Option(
-            int, "The new Willpower rating", choices=inconnu.options.ratings(3, 20), required=False
-        ),
-        humanity: Option(
-            int, "The new Humanity rating", choices=inconnu.options.ratings(0, 10), required=False
-        ),
-        template: Option(str, "The character's new type", choices=_TEMPLATES, required=False),
-        sup_hp: Option(str, "Superficial Health (Tip: Use +X/-X)", required=False),
-        agg_hp: Option(str, "Aggravated Health (Tip: Use +X/-X)", required=False),
-        sup_wp: Option(str, "Superficial Willpower (Tip: Use +X/-X)", required=False),
-        agg_wp: Option(str, "Aggravated Willpower (Tip: Use +X/-X)", required=False),
-        stains: Option(str, "Stains (Tip: Use +X/-X)", required=False),
-        unspent_xp: Option(str, "Unspent XP (Tip: Use +X/-X)", required=False),
-        lifetime_xp: Option(str, "Lifetime XP (Tip: Use +X/-X)", required=False),
-        hunger: Option(str, "Adjust Hunger", required=False),
-        potency: Option(str, "Adjust Blood Potency", required=False),
-        character: inconnu.options.character("The character to adjust"),
-        player: inconnu.options.player,
+        new_name: str,
+        health: int,
+        willpower: int,
+        humanity: int,
+        template: str,
+        sup_hp: str,
+        agg_hp: str,
+        sup_wp: str,
+        agg_wp: str,
+        stains: str,
+        unspent_xp: str,
+        lifetime_xp: str,
+        hunger: str,
+        potency: str,
+        character: str,
+        player: discord.Member,
     ):
         """Adjust a character's trackers. For skills and attributes, see /traits help."""
 
@@ -180,26 +230,28 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="delete")
     @inconnu.utils.not_on_lockdown()
+    @char_option("The character to delete")
     async def character_delete(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to delete", required=True),
+        character: str,
     ):
         """Delete a character."""
         await inconnu.character.delete(ctx, character)
 
     @character.command(name="profile")
+    @player_option(description="The character's owner (does not work with EDIT)")
+    @char_option("The character to show")
+    @char_option("The character whose profile to edit", param="edit")
     async def character_profile(
         self,
         ctx: discord.ApplicationContext,
-        player: Option(
-            discord.Member, "The character's owner (does not work with EDIT)", required=False
-        ),
-        character: inconnu.options.character("The character to show"),
-        edit: inconnu.options.character("The character whose profile to edit"),
+        player: discord.Member,
+        character: str,
+        edit: str,
     ):
         """Show or edit a character profile."""
-        if edit is not None:
+        if edit:
             await inconnu.character.edit_biography(ctx, edit)
         else:
             await inconnu.character.show_biography(ctx, character, player=player)
@@ -212,17 +264,18 @@ class Characters(commands.Cog, name="Character Management"):
     # Convictions
 
     @character.command(name="convictions")
+    @char_option("The character to show")
+    @player_option(description="The character's owner (does not work with EDIT)")
+    @char_option("The character whose convictions to edit", param="edit")
     async def character_convictions(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character to show"),
-        player: Option(
-            discord.Member, "The character's owner (does not work with EDIT)", required=False
-        ),
-        edit: inconnu.options.character("The character whose convictions to set"),
+        character: str,
+        player: discord.Member,
+        edit: str,
     ):
         """Show a character's Convictions."""
-        if edit is None:
+        if not edit:
             await inconnu.character.convictions_show(ctx, character, player=player, ephemeral=False)
         else:
             await inconnu.character.convictions_set(ctx, edit)
@@ -258,11 +311,13 @@ class Characters(commands.Cog, name="Character Management"):
 
     @images.command(name="upload")
     @inconnu.utils.decorators.premium()
+    @option("image", description="The image file to upload")
+    @char_option()
     async def upload_image(
         self,
         ctx: discord.ApplicationContext,
-        image: Option(discord.Attachment, "The image file to upload"),
-        character: inconnu.options.character(),
+        image: discord.Attachment,
+        character: str,
     ):
         """Upload an image for your character's profile."""
         await inconnu.character.images.upload(ctx, character, image)

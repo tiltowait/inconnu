@@ -2,7 +2,7 @@
 
 import re
 from difflib import Differ
-from typing import Any, Literal, overload
+from typing import Any, Iterable, Literal, overload
 
 
 def clean_text(text: str) -> str:
@@ -65,7 +65,7 @@ def pull_mentions(text: str) -> set[str]:
     return set(mentions)
 
 
-def oxford_list(seq: list[Any], conjunction="and") -> str:
+def oxford_list(seq: Iterable[Any], conjunction="and") -> str:
     """Return a grammatically correct human readable string (with an Oxford comma)."""
     seq = [str(s) for s in seq]
     if len(seq) < 3:

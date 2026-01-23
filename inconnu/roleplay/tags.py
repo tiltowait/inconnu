@@ -4,9 +4,10 @@ import discord
 from discord.ext.pages import Page, Paginator
 
 import inconnu
+from ctx import AppCtx
 
 
-async def show_tags(ctx: discord.ApplicationContext):
+async def show_tags(ctx: AppCtx):
     """Show the user's tags with an option to select and view messages."""
     pipeline = [
         {
@@ -26,14 +27,15 @@ async def show_tags(ctx: discord.ApplicationContext):
 
     pages = []
     current_tags = []
-    async for tag in inconnu.db.rp_posts.aggregate(pipeline):
-        # A Discord select menu can only hold a maximum of 25 items, so we will
-        # make our pages hold no more than 25 tags each
-        current_tags.append((tag["_id"], tag["count"]))
+    async with await inconnu.db.rp_posts.aggregate(pipeline) as cursor:
+        async for tag in cursor:
+            # A Discord select menu can only hold a maximum of 25 items, so we will
+            # make our pages hold no more than 25 tags each
+            current_tags.append((tag["_id"], tag["count"]))
 
-        if len(current_tags) == 25:
-            pages.append(_create_page(ctx, current_tags))
-            current_tags = []
+            if len(current_tags) == 25:
+                pages.append(_create_page(ctx, current_tags))
+                current_tags = []
 
     if current_tags:
         # We have some leftovers
@@ -59,7 +61,7 @@ async def show_tags(ctx: discord.ApplicationContext):
         )
 
 
-def _create_page(ctx: discord.ApplicationContext, tags: list[tuple[str, int]]) -> Page:
+def _create_page(ctx: AppCtx, tags: list[tuple[str, int]]) -> Page:
     """Creates a tag page."""
     embed = discord.Embed(
         title="Rolepost Tags",

@@ -92,7 +92,7 @@ def test_hunger_in_pool(syntax: str, should_fail: bool, character: VChar):
         try:
             _ = RollParser(character, syntax)
         except inconnu.errors.HungerInPool:
-            pytest.fail(msg="Should not have raised HungerInPool")
+            pytest.fail("Should not have raised HungerInPool")
 
 
 @pytest.mark.parametrize(

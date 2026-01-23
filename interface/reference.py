@@ -2,12 +2,14 @@
 # pylint: disable=no-self-use
 
 import discord
-from discord.commands import Option, OptionChoice, slash_command
+from discord import option
+from discord.commands import OptionChoice, slash_command
 from discord.ext import commands
 from loguru import logger
 
 import inconnu
 import interface
+from inconnu.options import char_option, player_option
 
 
 class ReferenceCommands(commands.Cog):
@@ -18,40 +20,47 @@ class ReferenceCommands(commands.Cog):
         self.bot = bot
 
     @slash_command()
+    @option(
+        "rating", description="The Blood Potency rating", choices=inconnu.options.ratings(1, 10)
+    )
     async def bp(
         self,
-        ctx,
-        rating: Option(int, "The Blood Potency rating", choices=inconnu.options.ratings(1, 10)),
+        ctx: discord.ApplicationContext,
+        rating: int,
     ):
         """Look up Blood Potency effects."""
         await inconnu.reference.blood_potency(ctx, rating)
 
     @slash_command()
+    @option("damage", description="The total Aggravated damage sustained", min_value=1)
     async def cripple(
         self,
         ctx: discord.ApplicationContext,
-        damage: Option(int, "The total Aggravated damage sustained", min_value=1),
+        damage: int,
     ):
         """Generate a random crippling injury based on Aggravated damage."""
         await inconnu.reference.cripple(ctx, damage)
 
     @slash_command()
+    @option("roll", description="The pool, hunger, and difficulty")
+    @option(
+        "reroll",
+        description="The re-roll strategy to use",
+        choices=[
+            OptionChoice("Re-Roll Failures", "reroll_failures"),
+            OptionChoice("Maximize Crits", "maximize_criticals"),
+            OptionChoice("Avoid Messy", "avoid_messy"),
+            OptionChoice("Risky Avoid Messy", "risky"),
+        ],
+        required=False,
+    )
+    @char_option("The character (if using traits)")
     async def probability(
         self,
         ctx: discord.ApplicationContext,
-        roll: Option(str, "The pool, hunger, and difficulty"),
-        reroll: Option(
-            str,
-            "The re-roll strategy to use",
-            choices=[
-                OptionChoice("Re-Roll Failures", "reroll_failures"),
-                OptionChoice("Maximize Crits", "maximize_criticals"),
-                OptionChoice("Avoid Messy", "avoid_messy"),
-                OptionChoice("Risky Avoid Messy", "risky"),
-            ],
-            required=False,
-        ),
-        character: inconnu.options.character("The character (if using traits)"),
+        roll: str,
+        reroll: str,
+        character: str,
     ):
         """Calculate outcome probabilities for a given roll."""
         await inconnu.reference.probability(ctx, roll, reroll, character)
@@ -62,26 +71,33 @@ class ReferenceCommands(commands.Cog):
         await inconnu.reference.resonance(ctx)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
+    @option(
+        "style",
+        description="Whether to display general success rates or trait successes",
+        choices=["Traits", "General"],
+    )
+    @option("date", description="(Optional) YYYYMMDD date to count from", default="19700101")
+    @char_option("The character whose statistics will be looked up")
+    @player_option()
     async def statistics(
         self,
         ctx: discord.ApplicationContext,
-        style: Option(
-            str,
-            "Whether to display general success rates or trait successes",
-            choices=["Traits", "General"],
-        ),
-        date: Option(str, "(Optional) YYYYMMDD date to count from", default="19700101"),
-        character: inconnu.options.character("The character whose statistics will be looked up"),
-        player: inconnu.options.player,
+        style: str,
+        date: str,
+        character: str,
+        player: discord.Member,
     ):
         """View roll statistics for your characters."""
         await inconnu.reference.statistics(ctx, character, style, date, player=player)
 
     @slash_command()
+    @option(
+        "resonance", description="The resonance being rolled", choices=inconnu.reference.RESONANCES
+    )
     async def temperament(
         self,
         ctx: discord.ApplicationContext,
-        resonance: Option(str, "The resonance being rolled", choices=inconnu.reference.RESONANCES),
+        resonance: str,
     ):
         """Get a random temperament."""
         await inconnu.reference.random_temperament(ctx, resonance)

@@ -49,7 +49,7 @@ async def slake(ctx, character, amount: int, **kwargs):
         )
         msg = await inconnu.get_message(inter)
         await asyncio.gather(
-            character.commit(),
+            character.save(),
             inconnu.common.report_update(
                 ctx=ctx,
                 msg=msg,

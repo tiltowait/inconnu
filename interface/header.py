@@ -4,13 +4,15 @@
 from typing import TYPE_CHECKING
 
 import discord
-from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
+from discord import option
+from discord.commands import OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 from loguru import logger
 from pymongo import DeleteOne
 
 import inconnu
 import interface
+from inconnu.options import char_option
 from inconnu.utils.permissions import is_approved_user
 
 if TYPE_CHECKING:
@@ -119,7 +121,7 @@ class LocationChangeModal(discord.ui.Modal):
         await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=5)
 
 
-async def _header_bol_options(ctx) -> str:
+async def _header_bol_options(ctx) -> list[OptionChoice]:
     """Generate options for the BoL portion of the header update command."""
     if (charid := ctx.options.get("character")) is None:
         return []
@@ -151,26 +153,35 @@ class HeaderCog(commands.Cog):
         self.bot = bot
 
     @slash_command(contexts={discord.InteractionContextType.guild})
+    @char_option("The character whose header to post")
+    @option(
+        "blush",
+        description="THIS POST ONLY: Is Blush of Life active?",
+        choices=[OptionChoice("Yes", 1), OptionChoice("No", 0), OptionChoice("N/A", -1)],
+        required=False,
+    )
+    @option(
+        "hunger",
+        description="THIS POST ONLY: The character's Hunger (vampires only)",
+        choices=[i for i in range(6)],
+        required=False,
+    )
+    @option(
+        "location", description="THIS POST ONLY: Where the scene is taking place", required=False
+    )
+    @option("merits", description="THIS POST ONLY: Obvious/important merits", required=False)
+    @option("flaws", description="THIS POST ONLY: Obvious/important flaws", required=False)
+    @option("temporary", description="THIS POST ONLY: Temporary effects", required=False)
     async def header(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character whose header to post"),
-        blush: Option(
-            int,
-            "THIS POST ONLY: Is Blush of Life active?",
-            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0), OptionChoice("N/A", -1)],
-            required=False,
-        ),
-        hunger: Option(
-            int,
-            "THIS POST ONLY: The character's Hunger (vampires only)",
-            choices=[i for i in range(6)],
-            required=False,
-        ),
-        location: Option(str, "THIS POST ONLY: Where the scene is taking place", required=False),
-        merits: Option(str, "THIS POST ONLY: Obvious/important merits", required=False),
-        flaws: Option(str, "THIS POST ONLY: Obvious/important flaws", required=False),
-        temporary: Option(str, "THIS POST ONLY: Temporary effects", required=False),
+        character: str,
+        blush: int,
+        hunger: int,
+        location: str,
+        merits: str,
+        flaws: str,
+        temporary: str,
     ):
         """Display your character's RP header."""
         await inconnu.header.show_header(
@@ -191,29 +202,34 @@ class HeaderCog(commands.Cog):
     )
 
     @header_update.command(name="header")
+    @char_option("The character whose header to update", required=True)
+    @option(
+        "blush",
+        description="Is Blush of Life active?",
+        autocomplete=_header_bol_options,
+        required=True,
+    )
     async def update_header(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character whose header to update", required=True),
-        blush: Option(
-            str, "Is Blush of Life active?", autocomplete=_header_bol_options, required=True
-        ),
+        character: str,
+        blush: str,
     ):
         """Update your character's RP header."""
         # If the user selects a Blush option, then leaves channels, then comes
         # back and hits enter, Discord will send "Yes" instead of "1" (as an
         # example). Therefore, we need to check their response.
         try:
-            blush = int(blush)
+            blush_val = int(blush)
         except ValueError:
             blush = blush.lower()
             blush_options = {"yes": 1, "no": 0, "n/a - thin-blood": -1, "n/a - mortal": -1}
             if blush not in blush_options:
                 await inconnu.embeds.error(ctx, f"Unknown Blush of Life option: `{blush}`.")
                 return
-            blush = blush_options[blush]
+            blush_val = blush_options[blush]
 
-        await inconnu.header.update_header(ctx, character, int(blush))
+        await inconnu.header.update_header(ctx, character, blush_val)
 
     @commands.message_command(name="Header: Edit", contexts={discord.InteractionContextType.guild})
     async def fix_rp_header(self, ctx, message: discord.Message):
@@ -259,10 +275,10 @@ class HeaderCog(commands.Cog):
         name="Header: Delete",
         contexts={discord.InteractionContextType.guild},
     )
-    async def delete_rp_header(self, ctx, message: discord.Message):
+    async def delete_rp_header(self, ctx: discord.ApplicationContext, message: discord.Message):
         """Delete an RP header."""
         try:
-            webhook = await ctx.bot.prep_webhook(message.channel)
+            webhook = await self.bot.prep_webhook(message.channel)
             is_bot_message = message.author == self.bot.user
             is_webhook_message = message.author.id == webhook.id
         except inconnu.errors.WebhookError:
@@ -275,7 +291,7 @@ class HeaderCog(commands.Cog):
             if record is not None:
                 # Make sure we are allowed to delete it
                 owner = record["character"]["user"]
-                if inconnu.utils.is_approved_user(ctx, owner_id=owner):
+                if is_approved_user(ctx, owner_id=owner):
                     logger.debug("HEADER: Deleting RP header")
                     try:
                         if is_bot_message:

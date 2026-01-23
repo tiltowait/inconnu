@@ -3,9 +3,10 @@
 import discord
 
 import inconnu
+from ctx import AppCtx
 
 
-async def delete_message_chain(ctx: discord.ApplicationContext, message: discord.Message):
+async def delete_message_chain(ctx: AppCtx, message: discord.Message):
     """Delete a Rolepost, its header, and its mentions."""
     # Uses the general WebhookError handler
     try:
@@ -19,7 +20,7 @@ async def delete_message_chain(ctx: discord.ApplicationContext, message: discord
 
 async def _fetch_rp_post(
     ctx: discord.ApplicationContext, webhook: discord.Webhook, message: discord.Message
-) -> inconnu.models.rppost.RPPost:
+) -> inconnu.models.RPPost:
     """Validate the message and ownership, displaying an error message if applicable."""
     if not message.author.bot:
         raise ValueError("You can't delete a user's post.")

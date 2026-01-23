@@ -3,14 +3,19 @@
 import functools
 import uuid
 from collections import OrderedDict
-from typing import Callable, cast
+from typing import Awaitable, Callable, Concatenate, ParamSpec, TypeVar, cast
 
 import discord
 from loguru import logger
 
 import inconnu
+from ctx import AppCtx
+from inconnu.models import VChar
 from inconnu.utils.permissions import is_admin
 from inconnu.views.basicselector import BasicSelector
+
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 class Haven:  # pylint: disable=too-few-public-methods
@@ -41,7 +46,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         *,
         owner: discord.Member | None = None,
         allow_lookups=False,
-        character: str | None = None,
+        character: VChar | str | None = None,
         tip: str | None = None,
         help: str | None = None,  # pylint: disable=redefined-builtin
         char_filter: Callable | None = None,
@@ -126,11 +131,11 @@ class Haven:  # pylint: disable=too-few-public-methods
                     try:
                         self.filter(char)
                         logger.debug("HAVEN: Character {} matches filter", char.name)
-                        self.possibilities[self.uuid + char.id] = (char, False)
+                        self.possibilities[self.uuid + char.id_str] = (char, False)
                         passed += 1
                     except inconnu.errors.InconnuError:
                         logger.debug("HAVEN: Character {} does not match filter", char.name)
-                        self.possibilities[self.uuid + char.id] = (char, True)
+                        self.possibilities[self.uuid + char.id_str] = (char, True)
 
                 logger.debug("HAVEN: {} of {} character(s) match filter", passed, len(all_chars))
 
@@ -152,7 +157,7 @@ class Haven:  # pylint: disable=too-few-public-methods
 
             else:
                 logger.debug("HAVEN: Presenting {} character options", len(all_chars))
-                self.possibilities = {self.uuid + char.id: (char, False) for char in all_chars}
+                self.possibilities = {self.uuid + char.id_str: (char, False) for char in all_chars}
 
             if self.match is None:
                 await self._get_user_selection(err)
@@ -211,7 +216,9 @@ class Haven:  # pylint: disable=too-few-public-methods
                     )
                 )
         else:
-            options = [(char.name, self.uuid + char.id) for char, _ in self.possibilities.values()]
+            options = [
+                (char.name, self.uuid + char.id_str) for char, _ in self.possibilities.values()
+            ]
             logger.debug("HAVEN: {} characters are too many for buttons", len(options))
 
             # A very small number of users have more than 25 characters, so we
@@ -270,17 +277,48 @@ def _personalize_error(err, ctx, member):
     return err
 
 
-def haven(url, char_filter=None, errmsg="", allow_lookups=False):
-    """A decorator that handles character fetching duties."""
+def haven(
+    url: str,
+    char_filter: Callable[[VChar], None] | None = None,
+    errmsg: str = "",
+    allow_lookups: bool = False,
+) -> Callable[
+    [Callable[Concatenate[AppCtx, VChar, P], Awaitable[T]]],
+    Callable[Concatenate[AppCtx, str | VChar | None, P], Awaitable[T]],
+]:
+    """A decorator that handles character fetching duties.
 
-    def haven_decorator(func):
+    Transforms functions that accept VChar into functions that accept str | VChar | None.
+    The decorator handles character lookup and validation automatically. If a VChar is
+    passed directly (e.g., in tests), it bypasses the lookup logic.
+    """
+
+    def haven_decorator(
+        func: Callable[Concatenate[AppCtx, VChar, P], Awaitable[T]],
+    ) -> Callable[Concatenate[AppCtx, str | VChar | None, P], Awaitable[T]]:
         @functools.wraps(func)
-        async def wrapper(ctx, character, *args, **kwargs):
+        async def wrapper(
+            ctx: AppCtx,
+            character: str | VChar | None,
+            *args: P.args,
+            **kwargs: P.kwargs,
+        ) -> T:
             logger.debug("@HAVEN: Using @haven")
+
+            # If a VChar is passed directly (e.g., in tests), skip Haven lookup
+            # but still apply the character filter if present
+            if isinstance(character, VChar):
+                logger.debug("@HAVEN: VChar passed directly, skipping lookup")
+                if char_filter is not None:
+                    logger.debug("@HAVEN: Applying filter to directly-passed VChar")
+                    char_filter(character)
+                return await func(ctx, character, *args, **kwargs)
+
+            player: discord.Member | None
             if "player" in kwargs:
                 # Capture the player lookup
                 logger.debug("@HAVEN: Found 'player' in kwargs")
-                player = kwargs["player"]
+                player = kwargs["player"]  # type: ignore[assignment]
                 player_kwargs = True
             else:
                 player = None
@@ -296,17 +334,17 @@ def haven(url, char_filter=None, errmsg="", allow_lookups=False):
                 allow_lookups=allow_lookups,
                 help=url,
             )
-            character = await haven_.fetch()
+            fetched_character = await haven_.fetch()
 
             if player_kwargs:
                 logger.debug("@HAVEN: Replacing 'player' in kwargs")
-                kwargs["player"] = haven_.owner
+                kwargs["player"] = haven_.owner  # type: ignore[typeddict-item]
 
             if haven_.new_interaction is not None:
                 logger.debug("@HAVEN: Replacing the interaction with a new one")
                 ctx.interaction = haven_.new_interaction
 
-            return await func(ctx, character, *args, **kwargs)
+            return await func(ctx, fetched_character, *args, **kwargs)
 
         return wrapper
 

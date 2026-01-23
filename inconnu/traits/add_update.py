@@ -22,27 +22,27 @@ __HELP_UPDATE = "https://docs.inconnu.app/command-reference/traits/updating-trai
 
 
 @haven(__HELP_ADD)
-async def add(ctx, character, traits: str, disciplines=False):
+async def add(ctx, character: "VChar", traits: str, disciplines=False):
     """Add traits to a character. Wrapper for add_update."""
     await __parse(ctx, False, traits, character, disciplines)
 
 
 @haven(__HELP_UPDATE)
-async def update(ctx, character, traits: str, disciplines=False):
+async def update(ctx, character: "VChar", traits: str, disciplines=False):
     """Update a character's traits. Wrapper for add_update."""
     await __parse(ctx, True, traits, character, disciplines)
 
 
-async def __parse(ctx, allow_overwrite: bool, traits: str, character: str, disciplines: bool):
+async def __parse(ctx, allow_overwrite: bool, traits: str, character: "VChar", disciplines: bool):
     """Add traits to a character."""
     try:
         # Allow the user to input "trait rating", not only "trait=rating"
         traits = re.sub(r"\s*=\s*", r"=", traits)
         traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
-        traits = traits.split()
+        traits_list = traits.split()
 
-        traits = parse_traits(*traits, disciplines=disciplines)
-        outcome = await __handle_traits(character, traits, allow_overwrite, disciplines)
+        traits_dict = parse_traits(*traits_list, disciplines=disciplines)
+        outcome = await __handle_traits(character, traits_dict, allow_overwrite, disciplines)
 
         await __display_results(ctx, outcome, character, disciplines)
 
@@ -78,7 +78,7 @@ async def __handle_traits(character: "VChar", traits: dict, overwriting: bool, d
 
     track_adjustment, assigned = character.assign_traits(to_assign, category)
     assigned = [f"{trait}: `{rating}`" for trait, rating in assigned.items()]
-    await character.commit()
+    await character.save()
 
     return SimpleNamespace(
         assigned=assigned,
@@ -175,30 +175,3 @@ async def __results_embed(ctx, outcome, character: "VChar", disciplines: bool):
 
     view = inconnu.views.TraitsView(character, ctx.user)
     await ctx.respond(embed=embed, view=view, ephemeral=True)
-
-
-async def __results_text(ctx, outcome, character: "VChar"):
-    """Display the results in plain text."""
-    contents = [f"**{character.name}: Trait Assignment**\n"]
-
-    if outcome.assigned:
-        assigned = ", ".join(outcome.assigned)
-        action = "Updated" if outcome.updating else "Assigned"
-        contents.append(f"**{action}:** {assigned}")
-
-    if outcome.unassigned:
-        unassigned = ", ".join(map(lambda trait: f"`{trait}`", outcome.unassigned))
-        contents.append(f"**No value given:** {unassigned}")
-
-    if outcome.errors:
-        errs = ", ".join(map(lambda trait: f"`{trait}`", outcome.errors))
-        if outcome.updating:
-            err_field = "**Error!** You don't have " + errs
-        else:
-            err_field = "**Error!** You already have " + errs
-        contents.append(err_field)
-
-    contents.append(f"```{outcome.track_adjustment}```")
-
-    view = inconnu.views.TraitsView(character, ctx.user)
-    await ctx.respond("\n".join(contents), view=view, ephemeral=True)

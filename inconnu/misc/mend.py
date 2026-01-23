@@ -1,15 +1,23 @@
 """misc/mend.py - Mend Superficial damage."""
 
-from types import SimpleNamespace
+from typing import NamedTuple
 
 import inconnu
+from ctx import AppCtx
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
+from inconnu.models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
 
 
-def _can_mend(character):
+class MendOutcome(NamedTuple):
+    mended: int
+    rouse: bool
+    frenzy: bool
+
+
+def _can_mend(character: VChar):
     """Raises an error if the character has no superficial health damage."""
     if character.superficial_hp == 0:
         raise inconnu.errors.CharacterError(f"{character.name} has no damage to mend.")
@@ -20,7 +28,7 @@ def _can_mend(character):
     _can_mend,
     "None of your characters have any damage to mend! Did you mean `/aggheal`?",
 )
-async def mend(ctx, character):
+async def mend(ctx: AppCtx, character: VChar):
     """Mend damage on a character OR the user's only character."""
     outcome = await __heal(character)
 
@@ -47,7 +55,7 @@ async def mend(ctx, character):
         )
 
 
-async def __display_outcome(ctx, character, outcome):
+async def __display_outcome(ctx: AppCtx, character: VChar, outcome: MendOutcome):
     """Display the results of the mend."""
     title = f"Mended {outcome.mended} damage"
     fields = [("Health", inconnu.character.DisplayField.HEALTH)]
@@ -75,7 +83,7 @@ async def __display_outcome(ctx, character, outcome):
     )
 
 
-async def __heal(character):
+async def __heal(character: VChar) -> MendOutcome | str:
     """Heal the character and perform the Rouse check."""
     superficial = character.superficial_hp
     if superficial == 0:
@@ -99,5 +107,5 @@ async def __heal(character):
     if character.is_vampire:
         character.log("rouse")
 
-    await character.commit()
-    return SimpleNamespace(mended=mending, rouse=rouse, frenzy=frenzy)
+    await character.save()
+    return MendOutcome(mended=mending, rouse=rouse, frenzy=frenzy)

@@ -6,11 +6,13 @@ import discord
 from loguru import logger
 
 import inconnu
+from ctx import AppCtx
+from inconnu.models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
 
-async def update_header(ctx: discord.ApplicationContext, character, blush: int):
+async def update_header(ctx: AppCtx, character: VChar, blush: int):
     """Update the character's RP header."""
     try:
         character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
@@ -94,5 +96,5 @@ class _RPHeader(discord.ui.Modal):
             interaction.response.send_message(
                 f"Updated **{self.character.name}'s** RP header!", ephemeral=True
             ),
-            self.character.commit(),
+            self.character.save(),
         )

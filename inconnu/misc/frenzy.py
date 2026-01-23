@@ -85,7 +85,7 @@ async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
     inter = await ctx.respond(**msg_content)
     msg = await inconnu.get_message(inter)
     await __generate_report_task(ctx, msg, character, outcome)
-    await character.commit()
+    await character.save()
 
 
 def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, footer: str, color: int):

@@ -16,7 +16,7 @@ router = APIRouter()
 async def display_post_history(request: Request, oid: ObjectId = Depends(object_id), page: int = 0):
     """Display a Rolepost's history."""
     post = await inconnu.models.RPPost.find_one({"_id": oid})
-    if not post:
+    if not post or post.id is None:
         raise HTTPException(404, detail="Post not found.")
 
     guild = bot.bot.get_guild(post.guild)
@@ -43,7 +43,7 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
         request,
         "post.html.jinja",
         {
-            "url": inconnu.post_url(post.pk),
+            "url": inconnu.post_url(post.id),
             "user": user,
             "channel": channel,
             "guild": guild,

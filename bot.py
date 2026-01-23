@@ -2,8 +2,8 @@
 
 import asyncio
 import os
-from datetime import time, timezone
-from typing import TYPE_CHECKING
+from datetime import datetime, time, timezone
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ext import tasks
@@ -12,6 +12,7 @@ from loguru import logger
 import config
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
+from ctx import AppCtx
 from errorreporter import reporter
 
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ class InconnuBot(discord.AutoShardedBot):
         self.persistent_views_added = False
         self.welcomed = False
         self.connected = False
-        self.lockdown = None
+        self.lockdown: datetime | None = None
         self.wizards = 0
         self.motd = None
         self.motd_given = set()
@@ -65,6 +66,10 @@ class InconnuBot(discord.AutoShardedBot):
         """Set the MOTD embed."""
         self.motd = embed
         self.motd_given = set()
+
+    async def get_application_context(self, interaction: discord.Interaction, cls=AppCtx) -> AppCtx:
+        ctx = await super().get_application_context(interaction, cls)
+        return cast(AppCtx, ctx)
 
     async def on_message(self, message: discord.Message):
         """If the message is a reply to a Rolepost, ping the Rolepost's author."""
@@ -322,6 +327,7 @@ class InconnuBot(discord.AutoShardedBot):
             logger.info("CONNECT: Registered SPC owner")
 
             self.connected = True
+            await inconnu.db.init()
 
         await self.sync_commands()
         logger.info("CONNECT: Commands synced")

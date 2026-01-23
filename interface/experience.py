@@ -2,10 +2,12 @@
 # pylint: disable=no-self-use, too-many-arguments
 
 import discord
-from discord.commands import Option, SlashCommandGroup, user_command
+from discord import option
+from discord.commands import SlashCommandGroup, user_command
 from discord.ext import commands
 
 import inconnu
+from inconnu.options import char_option, player_option
 
 
 class ExperienceCommands(commands.Cog):
@@ -24,14 +26,19 @@ class ExperienceCommands(commands.Cog):
 
     @experience.command()
     @commands.has_permissions(administrator=True)
+    @player_option(description="The character's owner", required=True)
+    @char_option("The character receiving the XP", required=True)
+    @option("amount", description="The amount of XP to give", min_value=1)
+    @option("scope", description="Unspent or lifetime XP", choices=["Lifetime", "Unspent"])
+    @option("reason", description="The reason for the grant")
     async def award(
         self,
         ctx: discord.ApplicationContext,
-        player: Option(discord.Member, "The character's owner"),
-        character: inconnu.options.character("The character receiving the XP", required=True),
-        amount: Option(int, "The amount of XP to give", min_value=1),
-        scope: Option(str, "Unspent or lifetime XP", choices=["Lifetime", "Unspent"]),
-        reason: Option(str, "The reason for the grant"),
+        player: discord.Member,
+        character: str,
+        amount: int,
+        scope: str,
+        reason: str,
     ):
         """Give experience points to a character."""
         await inconnu.experience.award_or_deduct(
@@ -40,14 +47,19 @@ class ExperienceCommands(commands.Cog):
 
     @experience.command()
     @commands.has_permissions(administrator=True)
+    @player_option(required=True)
+    @char_option("The character from whom to deduct XP", required=True)
+    @option("amount", description="The amount of XP to deduct", min_value=1)
+    @option("scope", description="Unspent or lifetime XP", choices=["Unspent", "Lifetime"])
+    @option("reason", description="The reason for the deduction")
     async def deduct(
         self,
         ctx: discord.ApplicationContext,
-        player: Option(discord.Member, "The character's owner"),
-        character: inconnu.options.character("The character from whom to deduct XP", required=True),
-        amount: Option(int, "The amount of XP to deduct", min_value=1),
-        scope: Option(str, "Unspent or lifetime XP", choices=["Unspent", "Lifetime"]),
-        reason: Option(str, "The reason for the deduction"),
+        player: discord.Member,
+        character: str,
+        amount: int,
+        scope: str,
+        reason: str,
     ):
         """Deduct experience points from a character."""
         await inconnu.experience.award_or_deduct(
@@ -58,22 +70,29 @@ class ExperienceCommands(commands.Cog):
 
     @experience_remove.command(name="entry")
     @commands.has_permissions(administrator=True)
+    @player_option(required=True)
+    @char_option("The character whose log to modify", required=True)
+    @option(
+        "log_index", description="The log entry number (find with /experience log)", min_value=1
+    )
     async def remove_entry(
         self,
         ctx: discord.ApplicationContext,
-        player: Option(discord.Member, "The character's owner"),
-        character: inconnu.options.character("The character whose log to modify", required=True),
-        log_index: Option(int, "The log entry number (find with /experience log)", min_value=1),
+        player: discord.Member,
+        character: str,
+        log_index: int,
     ):
         """Remove an experience log entry."""
         await inconnu.experience.remove_entry(ctx, character, log_index, player=player)
 
     @experience.command()
+    @char_option("The character whose experience log to show")
+    @player_option()
     async def log(
         self,
         ctx: discord.ApplicationContext,
-        character: inconnu.options.character("The character whose experience log to show"),
-        player: inconnu.options.player,
+        character: str,
+        player: discord.Member,
     ):
         """Display a character's experience log."""
         await inconnu.experience.list_events(ctx, character, False, player=player)

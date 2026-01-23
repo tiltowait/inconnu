@@ -5,7 +5,12 @@ line-length = 100
 profile = "black"
 
 [tool.pytest.ini_options]
-filterwarnings = ["ignore::marshmallow.warnings.RemovedInMarshmallow4Warning"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::pydantic.warnings.PydanticDeprecatedSince211",
+    "ignore:'audioop' is deprecated:DeprecationWarning",
+    "ignore:the imp module is deprecated:DeprecationWarning",
+]
 
 [tool.poetry]
 name = "inconnu"
@@ -18,16 +23,14 @@ license = "MIT"
 inconnu = "main:main"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.12"
+python = ">=3.11,<3.13"
 flatdict = "^4.0.1"
-motor = "^3.0.0"
 pymongo = {extras = ["srv"], version = "^4.2.0"}
 python-dotenv = "^0.21.0"
-umongo = "^3.1.0"
 uvicorn = "^0.37.0"
 jinja2 = "^3.1.2"
 jinja-markdown = "^1.210911"
-fastapi = "^0.119.0"
+fastapi = "^0.120.3"
 py-cord = {extras = ["speed"], version = "^2.6.1"}
 pyparsing = "^3.1.1"
 cachetools = "^5.5.2"
@@ -36,14 +39,13 @@ async-timeout = "^5.0.1"
 idna = "^3.11"
 loguru = "^0.7.3"
 pypcg = "^0.0.4"
+beanie = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest-asyncio = "^0.20.3"
+pytest-asyncio = "^1.2.0"
 httpx = "^0.23.3"
-debugpy = "^1.6.3"
-mypy = "^0.982"
-pylint = "^2.15.3"
 pytest-cov = "^7.0.0"
+mongomock-motor = "^0.0.36"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

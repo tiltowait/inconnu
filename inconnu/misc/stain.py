@@ -45,7 +45,7 @@ async def stain(ctx, character, delta, *, player):
             ctx, character, title, message=message, owner=player, fields=fields, footer=footer
         )
         await __report(ctx, inter, character, delta)
-        await character.commit()
+        await character.save()
 
     except ValueError as err:
         # Delta was 0

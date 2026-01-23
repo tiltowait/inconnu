@@ -9,7 +9,8 @@ import discord
 from discord.ui import Button
 
 import inconnu
-from inconnu.character.display import display
+from ctx import AppCtx
+from inconnu.character.display import DisplayField, display
 from inconnu.character.update import paramupdate
 
 if TYPE_CHECKING:
@@ -38,7 +39,13 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/updates"
 
 
 async def update(
-    ctx, parameters: str, character=None, fields=None, color=None, update_message=None, player=None
+    ctx: AppCtx,
+    parameters: str,
+    character: "VChar | str | None" = None,
+    fields: list[DisplayField] | None = None,
+    color: discord.Color | None = None,
+    update_message: str | None = None,
+    player: discord.Member | None = None,
 ):
     """
     Process the user's arguments.
@@ -81,12 +88,12 @@ async def update(
             updates.append(impairment)
 
         tasks = [
-            character.commit(),
+            character.save(),
             inconnu.log.log_event(
                 "update",
                 user=ctx.user.id,
                 guild=ctx.guild.id,
-                charid=character.id,
+                charid=character.id_str,
                 syntax=human_readable,
             ),
         ]
@@ -119,19 +126,20 @@ async def update(
             )
 
     except (SyntaxError, ValueError) as err:
-        character.clear_modified()
+        if isinstance(character, inconnu.models.VChar):
+            character.rollback()
 
-        await asyncio.gather(
-            inconnu.log.log_event(
-                "update_error",
-                user=ctx.user.id,
-                guild=ctx.guild.id,
-                charid=character.id,
-                syntax=human_readable,
-            ),
-            update_help(ctx, err),
-            character.reload(),  # clear_modified() doesn't reset the fields
-        )
+            await asyncio.gather(
+                inconnu.log.log_event(
+                    "update_error",
+                    user=ctx.user.id,
+                    guild=ctx.guild.id,
+                    charid=character.id_str,
+                    syntax=human_readable,
+                ),
+                update_help(ctx, err),
+                # character.reload(),  # clear_modified() doesn't reset the fields
+            )
 
 
 def __validate_parameters(parameters):

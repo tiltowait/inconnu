@@ -6,6 +6,7 @@ import discord
 from loguru import logger
 
 import inconnu
+from ctx import AppCtx
 from inconnu.models.rpheader import HeaderSubdoc
 from inconnu.utils.haven import haven
 
@@ -16,7 +17,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
 
 @haven(__HELP_URL)
-async def show_header(ctx: discord.ApplicationContext, character, **kwargs):
+async def show_header(ctx: AppCtx, character: "VChar", **kwargs):
     """Display the character's header in an embed."""
     header_doc = HeaderSubdoc.create(character, **kwargs)
     message = None
@@ -66,7 +67,7 @@ async def register_header(ctx, message, character):
             "character": {
                 "guild": ctx.guild.id,
                 "user": ctx.user.id,
-                "charid": character.pk,
+                "charid": character.id,
                 "spc": character.is_spc,
             },
             "channel": ctx.channel.id,
@@ -103,10 +104,10 @@ def header_embed(
     embed.set_thumbnail(url=character.random_image_url())
 
     if webhook:
-        embed.set_author(name=header.base_title, url=inconnu.profile_url(character.id))
+        embed.set_author(name=header.base_title, url=inconnu.profile_url(character.id_str))
     else:
         embed.title = header.title
-        embed.url = inconnu.profile_url(character.id)
+        embed.url = inconnu.profile_url(character.id_str)
 
     if header.temp:
         embed.set_footer(text=header.temp)

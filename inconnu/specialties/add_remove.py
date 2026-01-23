@@ -3,10 +3,10 @@
 import asyncio
 from enum import Enum, StrEnum
 
-import discord
 from loguru import logger
 
 import inconnu
+from ctx import AppCtx
 from inconnu.models.vchar import VChar
 from inconnu.specialties.tokenize import SYNTAX, tokenize
 from inconnu.utils.haven import haven
@@ -36,20 +36,20 @@ class Category(StrEnum):
 
 
 @haven(__HELP_URL)
-async def add(ctx: discord.ApplicationContext, character, syntax: str, category: Category):
+async def add(ctx: AppCtx, character: VChar, syntax: str, category: Category):
     """Add specialties to one or more of the character's traits."""
     await _add_or_remove(ctx, character, syntax, Action.ADD, category)
 
 
 @haven(__HELP_URL)
-async def remove(ctx: discord.ApplicationContext, character, syntax: str, category: Category):
+async def remove(ctx: AppCtx, character: VChar, syntax: str, category: Category):
     """Remove specialties from one or more of the character's traits."""
     await _add_or_remove(ctx, character, syntax, Action.REMOVE, category)
 
 
 async def _add_or_remove(
-    ctx: discord.ApplicationContext,
-    character,
+    ctx: AppCtx,
+    character: VChar,
     syntax: str,
     action: Action,
     category: Category,
@@ -67,7 +67,7 @@ async def _add_or_remove(
         embed = _make_embed(ctx, character, additions, title)
         view = inconnu.views.TraitsView(character, ctx.user)
 
-        tasks = [ctx.respond(embed=embed, view=view, ephemeral=True), character.commit()]
+        tasks = [ctx.respond(embed=embed, view=view, ephemeral=True), character.save()]
 
         # Because the delta might be zero, only send an update report if
         # changes were actually made
@@ -104,7 +104,7 @@ async def _add_or_remove(
 
 
 def _make_embed(
-    ctx: discord.ApplicationContext,
+    ctx: AppCtx,
     character: VChar,
     additions: list,
     title: str,
@@ -138,7 +138,7 @@ def remove_specialties(character: VChar, syntax: str, _=None) -> list:
     return _mod_specialties(character, syntax, False, None)
 
 
-def _mod_specialties(character: VChar, syntax: str, adding: bool, category: Category):
+def _mod_specialties(character: VChar, syntax: str, adding: bool, category: Category | None):
     """Do the actual work of adding or removing specialties."""
     tokens = tokenize(syntax)
     validate_tokens(character, tokens)

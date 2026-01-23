@@ -7,15 +7,23 @@ from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
 import inconnu
+from ctx import AppCtx
+from inconnu.models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
 
 @haven(__HELP_URL)
-async def list_events(ctx, character, ephemeral, *, player):
+async def list_events(
+    ctx: AppCtx | discord.Interaction,
+    character: VChar,
+    ephemeral: bool,
+    *,
+    player: discord.Member | None,
+):
     """List a character's XP events."""
-    embeds = await __get_embeds(ctx, character, player)
+    embeds = await __get_embeds(character, player)
     paginator = Paginator(embeds, show_disabled=False)
 
     if isinstance(ctx, discord.ApplicationContext):
@@ -24,9 +32,9 @@ async def list_events(ctx, character, ephemeral, *, player):
         await paginator.respond(ctx, ephemeral=ephemeral)
 
 
-async def __get_embeds(ctx, character, player):
+async def __get_embeds(character: VChar, player):
     """Make an embed in which to display the XP events."""
-    chunks = await __get_chunks(ctx, character)
+    chunks = await __get_chunks(character)
 
     embeds = []
     for page in chunks.pages:
@@ -41,22 +49,22 @@ async def __get_embeds(ctx, character, player):
     return embeds
 
 
-async def __get_chunks(ctx, character):
+async def __get_chunks(character: VChar):
     """Get the event contents used by both embeds and text."""
     chunker = Chunker(prefix="", suffix="")
 
-    for index, event in enumerate(reversed(character.experience.log)):
+    for index, entry in enumerate(reversed(character.experience.log)):
         # We need the date/time to be TZ-aware
-        date = event["date"]
+        date = entry.date
         date = date.replace(tzinfo=timezone.utc)
         date = discord.utils.format_dt(date, "d")
 
-        exp = event["amount"]
-        reason = event["reason"]
-        scope = event["event"].split("_")[-1]
+        exp = entry.amount
+        reason = entry.reason
+        scope = entry.event.split("_")[-1]
 
         # Construct the admin mention rather than fetching it
-        admin = f"<@{event['admin']}>"
+        admin = f"<@{entry.admin}>"
 
         text = f"{index + 1}. **{exp:+} {scope}: {reason}** - {admin} • {date}"
 

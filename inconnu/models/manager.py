@@ -1,8 +1,9 @@
 """vchar/manager.py - Character cache/in-memory database."""
 
 import bisect
-import datetime
+from datetime import UTC, datetime
 
+import discord
 from cachetools import TTLCache
 from loguru import logger
 
@@ -15,8 +16,8 @@ class CharacterManager:
 
     def __init__(self):
         logger.info("CHARACTER MANAGER: Initialized")
-        max_size = 100
-        ttl = 1800
+        max_size = 200
+        ttl = 7200
         self.all_fetched: TTLCache[str, bool] = TTLCache(maxsize=max_size, ttl=ttl)
         self.user_cache: TTLCache[str, list[VChar]] = TTLCache(
             maxsize=max_size,
@@ -31,7 +32,12 @@ class CharacterManager:
         self.bot = None
         self.collection = inconnu.db.characters
 
-    async def fetchone(self, guild: int, user: int, name: str | None | VChar):
+    async def fetchone(
+        self,
+        guild: discord.Guild | int,
+        user: discord.Member | int,
+        name: str | VChar | None,
+    ):
         """
         Fetch a single character.
         Args:
@@ -59,7 +65,7 @@ class CharacterManager:
             # slower, so let's avoid code duplication
             for char in user_chars:
                 # Post editing sends an ObjectId, so we need to check that, too
-                if char.name.lower() == name.lower() or char.id == name:
+                if char.name.lower() == name.lower() or char.id_str == name:
                     self._validate(guild, user, char)
                     return char
 
@@ -96,13 +102,13 @@ class CharacterManager:
 
         characters = []
         async for character in VChar.find({"guild": guild, "user": user}):
-            if character.id not in self.id_cache:
+            if character.id_str not in self.id_cache:
                 bisect.insort(characters, character)
-                self.id_cache[character.id] = character
+                self.id_cache[character.id_str] = character
             else:
                 # Use the already cached character. This will probably never
                 # happen, but we'll put it here just in case
-                bisect.insort(characters, self.id_cache[character.id])
+                bisect.insort(characters, self.id_cache[character.id_str])
 
         self.user_cache[key] = characters
         self.all_fetched[key] = True
@@ -123,6 +129,9 @@ class CharacterManager:
 
     async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
         """Determine whether a user already has a named character."""
+        if self.bot is None:
+            raise ValueError("Bot is not set!")
+
         if is_spc:
             owner_id = self.bot.user.id
             name += " (SPC)"
@@ -138,7 +147,7 @@ class CharacterManager:
 
     async def register(self, character):
         """Add the character to the database and the cache."""
-        self.id_cache[character.id] = character
+        self.id_cache[character.id_str] = character
 
         user_chars = await self.fetchall(character.guild, character.user)
         inserted = False
@@ -155,9 +164,8 @@ class CharacterManager:
 
         key = self._user_key(character)
         self.user_cache[key] = user_chars
-        await character.commit()
 
-    async def remove(self, character):
+    async def remove(self, character: "VChar"):
         """Remove a character from the database and the cache."""
         deletion = await character.delete()
 
@@ -169,8 +177,8 @@ class CharacterManager:
             key = self._user_key(character)
             self.user_cache[key] = user_chars
 
-            if character.id in self.id_cache:
-                del self.id_cache[character.id]
+            if character.id_str in self.id_cache:
+                del self.id_cache[character.id_str]
 
             logger.info("CHARACTER MANAGER: Removed {}", character.name)
 
@@ -189,7 +197,7 @@ class CharacterManager:
 
         # Make the transfer
         character.user = new_owner.id
-        await character.commit()
+        await character.save()
 
         # Only add it to the new owner's cache if they've already loaded
         new_key = self._user_key(character)
@@ -221,7 +229,7 @@ class CharacterManager:
         """
         await self.collection.update_many(
             {"guild": player.guild.id, "user": player.id},
-            {"$set": {"log.left": datetime.datetime.utcnow()}},
+            {"$set": {"log.left": datetime.now(UTC)}},
         )
 
     async def mark_active(self, player):
@@ -247,7 +255,7 @@ class CharacterManager:
     # Private Methods
 
     @staticmethod
-    def _get_ids(guild, user):
+    def _get_ids(guild: discord.Guild | int, user: discord.Member | int):
         """Get the guild and user IDs."""
         if guild and not isinstance(guild, int):
             guild = guild.id

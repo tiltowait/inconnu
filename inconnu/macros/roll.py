@@ -8,6 +8,7 @@ from discord.ui import Button, View
 from loguru import logger
 
 import inconnu
+from ctx import AppCtx
 from inconnu import common
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
@@ -17,7 +18,7 @@ __HUNT_LISTENERS = {}
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/rolling"
 
 
-async def roll(ctx, syntax: str, character=None):
+async def roll(ctx: AppCtx, syntax: str, character=None):
     """Roll a macro."""
     try:
         # Get the basic macro details
@@ -93,7 +94,7 @@ async def roll(ctx, syntax: str, character=None):
         elif macro.name.lower() == "bol":
             logger.info("VM: {}'s macro mimics Blush of Life", character.name)
             character.set_blush(1)
-            await character.commit()
+            await character.save()
 
     except (ValueError, SyntaxError):
         err = f"**Unknown syntax:** `{syntax}`"

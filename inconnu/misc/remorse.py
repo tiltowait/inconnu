@@ -28,7 +28,7 @@ async def remorse(ctx, character, minimum=1, lasombra_alt=False):
     outcome = __remorse_roll(character, minimum, lasombra_alt)
     inter = await __display_outcome(ctx, character, outcome)
     await __report(ctx, inter, character, outcome.remorseful)
-    await character.commit()
+    await character.save()
 
 
 async def __display_outcome(ctx, character: "VChar", outcome):

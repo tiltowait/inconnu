@@ -4,6 +4,7 @@ import discord
 from loguru import logger
 
 import inconnu
+from ctx import AppCtx
 from inconnu.settings import ExpPerms, GuildSettings
 from inconnu.settings.vuser import VUser
 
@@ -16,7 +17,7 @@ class Settings:
 
     # Accessibility
 
-    async def accessible(self, ctx: discord.ApplicationContext | discord.Interaction):
+    async def accessible(self, ctx: AppCtx | discord.Interaction):
         """Determine whether we should use accessibility mode."""
         # User accessibility trumps guild accessibility
         user_settings = await self._fetch_user(ctx.user)
@@ -40,7 +41,7 @@ class Settings:
             # We somehow received a PartialMessageable or something else
             return True  # Fallback
 
-    async def can_emoji(self, ctx: discord.ApplicationContext | discord.Interaction) -> bool:
+    async def can_emoji(self, ctx: AppCtx | discord.Interaction) -> bool:
         """Wrapper for accessible() that simply inverts the logic."""
         return not await self.accessible(ctx)
 
@@ -90,19 +91,19 @@ class Settings:
         guild = await self._fetch_guild(ctx.guild)
         return guild.experience_permissions in [ExpPerms.UNRESTRICTED, ExpPerms.LIFETIME_ONLY]
 
-    async def xp_permissions(self, guild):
+    async def xp_permissions(self, guild) -> str:
         """Get the XP permissions."""
         guild = await self._fetch_guild(guild)
 
         match guild.experience_permissions:
-            case ExpPerms.UNRESTRICTED:
-                return "Users may adjust unspent and lifetime XP."
             case ExpPerms.UNSPENT_ONLY:
                 return "Users may adjust unspent XP only."
             case ExpPerms.LIFETIME_ONLY:
                 return "Users may adjust lifetime XP only."
             case ExpPerms.ADMIN_ONLY:
                 return "Only admins may adjust XP totals."
+            case _:
+                return "Users may adjust unspent and lifetime XP."
 
     async def set_xp_permissions(self, ctx, permissions):
         """
@@ -160,8 +161,8 @@ class Settings:
 
     async def _set_channel(
         self,
-        ctx: discord.ApplicationContext,
-        channel: discord.TextChannel,
+        ctx: AppCtx,
+        channel: discord.TextChannel | None,
         key: str,
     ):
         """Set the guild channel for a given key."""
@@ -186,7 +187,7 @@ class Settings:
 
         return None
 
-    async def set_update_channel(self, ctx, channel: discord.TextChannel):
+    async def set_update_channel(self, ctx, channel: discord.TextChannel | None):
         """Set the guild's update channel."""
         return await self._set_channel(ctx, channel, "update_channel")
 
@@ -279,7 +280,7 @@ class Settings:
 
         user_settings = await self._fetch_user(user)
         setattr(user_settings.settings, key, value)
-        await user_settings.commit()
+        await user_settings.save()
 
     async def _fetch_user(self, user: discord.User) -> VUser:
         """Fetch a user."""

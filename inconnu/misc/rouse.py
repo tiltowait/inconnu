@@ -3,7 +3,6 @@
 
 from types import SimpleNamespace
 
-
 import inconnu
 from config import web_asset
 from inconnu.models import VChar
@@ -20,7 +19,13 @@ def _can_rouse(character):
 
 @haven(__HELP_URL, _can_rouse)
 async def rouse(
-    ctx, character: str, count: int, purpose: str, reroll: bool, oblivion="show", message=None
+    ctx,
+    character: VChar,
+    count: int,
+    purpose: str,
+    reroll: bool,
+    oblivion: str | bool = "show",
+    message=None,
 ):
     """
     Perform a remorse check on a given character and display the results.
@@ -42,7 +47,7 @@ async def rouse(
         else:
             update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
-        await character.commit()
+        await character.save()
         inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
         msg = await inconnu.get_message(inter)
 
@@ -64,7 +69,7 @@ async def rouse(
         # within valid boundaries. Unfortunately, __display_outcome() runs
         # VChar.log(), which needs to be saved.
         # TODO: Move logging outside of __display_outcome()
-        await character.commit()
+        await character.save()
 
 
 def __make_title(outcome):
@@ -148,7 +153,7 @@ async def __damage_ghoul(ctx, ghoul):
         fields=[("Health", inconnu.character.DisplayField.HEALTH)],
         footer="V5 Core, p.234",
     )
-    await ghoul.commit()
+    await ghoul.save()
 
 
 async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):

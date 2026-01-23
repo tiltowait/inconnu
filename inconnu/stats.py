@@ -1,14 +1,23 @@
 """stats.py - Various packages for user statistics."""
 # pylint: disable=too-many-arguments
 
-import datetime
+from datetime import UTC, datetime
 
 from pymongo import ReturnDocument, UpdateOne
 
 import inconnu
+from inconnu.models import VChar
 
 
-async def log_roll(guild: int, channel: int, user: int, message: int, char, outcome, comment):
+async def log_roll(
+    guild: int,
+    channel: int,
+    user: int,
+    message: int | None,
+    char: VChar | None,
+    outcome,
+    comment,
+):
     """
     Log a roll and its outcome. If the roll is a reroll, simply replace it.
     Args:
@@ -27,7 +36,7 @@ async def log_roll(guild: int, channel: int, user: int, message: int, char, outc
         await rolls.update_one({"_id": outcome.id}, reroll)
 
 
-async def toggle_roll_stats(message: int) -> bool:
+async def toggle_roll_stats(message: int) -> bool | None:
     """Toggle whether a roll should be used in statistics."""
     ret = await inconnu.db.rolls.find_one_and_update(
         {"message": message},
@@ -70,7 +79,7 @@ async def guild_joined(guild):
                 "guild": guild.id,
                 "name": guild.name,
                 "active": True,
-                "joined": datetime.datetime.utcnow(),
+                "joined": datetime.now(UTC),
                 "left": None,
             }
         },
@@ -87,7 +96,7 @@ async def guild_left(guild):
     guilds = inconnu.db.guilds
 
     await guilds.update_one(
-        {"guild": guild}, {"$set": {"active": False, "left": datetime.datetime.utcnow()}}
+        {"guild": guild}, {"$set": {"active": False, "left": datetime.now(UTC)}}
     )
 
 
@@ -106,16 +115,24 @@ async def guild_renamed(guild, new_name):
 # Roll logging helpers
 
 
-def _gen_roll(guild: int, channel: int, user: int, message: int, char, outcome, comment: str):
+def _gen_roll(
+    guild: int,
+    channel: int,
+    user: int,
+    message: int | None,
+    char: VChar | None,
+    outcome,
+    comment: str,
+):
     """Add a new roll outcome entry to the database."""
     return {
         "_id": outcome.id,
-        "date": datetime.datetime.utcnow(),
+        "date": datetime.now(UTC),
         "guild": guild,  # We use the guild and user keys for easier lookups
         "channel": channel,
         "user": user,
         "message": message,
-        "charid": getattr(char, "pk", None),
+        "charid": getattr(char, "id", None),
         "raw": outcome.syntax,
         "normal": outcome.normal.dice,
         "hunger": outcome.hunger.dice,

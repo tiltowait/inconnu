@@ -1,6 +1,6 @@
 """interface/loggingcog.py - Log command events."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from discord.ext import commands
 from loguru import logger
@@ -41,7 +41,7 @@ class LoggingCog(commands.Cog):
                     {"name": o["name"], "value": o["value"]}
                     for o in ctx.interaction.data.get("options", [])
                 ],
-                "date": datetime.utcnow(),
+                "date": datetime.now(UTC),
             }
         )
 

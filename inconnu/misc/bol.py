@@ -1,6 +1,7 @@
 """misc/bol.py - Blush of Life shortcut command."""
 
 import inconnu
+from inconnu.models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#blush-of-life"
@@ -13,7 +14,7 @@ def _can_blush(character):
 
 
 @haven(__HELP_URL, _can_blush, "None of your characters need to Blush.")
-async def bol(ctx, character, ministry_alt):
+async def bol(ctx, character: VChar, ministry_alt):
     """Perform a Blush of Life check based on the character's Humanity."""
     if character.is_thin_blood:
         # Thin-Bloods don't need to Blush. Their appearance depends on Humanity
@@ -42,4 +43,4 @@ async def bol(ctx, character, ministry_alt):
         await inconnu.misc.rouse(
             ctx, character, count, msg, character.humanity == 8, oblivion=False
         )
-        await character.commit()
+        await character.save()

@@ -1,4 +1,4 @@
-"""Specialties UI test. (Everything but Discord stuff."""
+"""Specialties UI test. (Everything but Discord stuff.)"""
 
 from contextlib import nullcontext as does_not_raise
 

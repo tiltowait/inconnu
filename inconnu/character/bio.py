@@ -127,4 +127,4 @@ class _CharacterBio(discord.ui.Modal):
 
         self.character.profile.biography = biography
         self.character.profile.description = description
-        await self.character.commit()
+        await self.character.save()

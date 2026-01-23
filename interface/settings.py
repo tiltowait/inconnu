@@ -2,7 +2,8 @@
 # pylint: disable=no-self-use
 
 import discord
-from discord.commands import Option, OptionChoice, SlashCommandGroup, slash_command
+from discord import option
+from discord.commands import OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 
 import inconnu
@@ -12,10 +13,11 @@ class SettingsCommands(commands.Cog):
     """Settings-related commands."""
 
     @slash_command()
+    @option("enable", description="Enable accessibility mode for yourself")
     async def accessibility(
         self,
         ctx: discord.ApplicationContext,
-        enable: Option(bool, "Enable accessibility mode for yourself"),
+        enable: bool,
     ):
         """Enable or disable accessibility mode for yourself."""
         response = await inconnu.settings.set_accessibility(ctx, enable, "user")
@@ -29,68 +31,78 @@ class SettingsCommands(commands.Cog):
 
     @settings.command(name="set")
     @commands.has_permissions(administrator=True)
+    @option(
+        "experience_permissions",
+        description="Whether users should be allowed to edit their XP totals.",
+        choices=[
+            OptionChoice("Unrestricted", "unrestricted"),
+            OptionChoice("Unspent XP only", "unspent_only"),
+            OptionChoice("Lifetime XP only", "lifetime_only"),
+            OptionChoice("Restricted (admins only)", "admin_only"),
+        ],
+        required=False,
+    )
+    @option(
+        "oblivion_stains",
+        description="Which Rouse results should give Oblivion stain warnings",
+        choices=[
+            OptionChoice("1s and 10s (RAW)", 100),
+            OptionChoice("1s only", 1),
+            OptionChoice("10s only", 10),
+            OptionChoice("Never", 0),
+        ],
+        required=False,
+    )
+    @option(
+        "update_channel",
+        description="A channel where character updates will be posted",
+        required=False,
+    )
+    @option(
+        "changelog_channel",
+        description="A channel where edited Roleposts will be logged",
+        required=False,
+    )
+    @option(
+        "deletion_channel",
+        description="A channel where deleted Roleposts will be logged",
+        required=False,
+    )
+    @option(
+        "add_empty_resonance",
+        description="Whether to add Empty Resonance to the /resonance command (die result 11-12)",
+        choices=[
+            OptionChoice("Yes", 1),
+            OptionChoice("No", 0),
+        ],
+        required=False,
+    )
+    @option(
+        "max_hunger",
+        description=(
+            "Maximum Hunger rating in rolls (Only affects /vr. Characters still "
+            "max out at Hunger 5.)"
+        ),
+        choices=[5, 10],
+        required=False,
+    )
+    @option(
+        "accessibility",
+        description="Whether to enable or disable accessibility",
+        choices=[OptionChoice("Yes", 1), OptionChoice("No", 0)],
+        required=False,
+    )
     async def set(
         self,
         ctx: discord.ApplicationContext,
-        experience_permissions: Option(
-            str,
-            "Whether users should be allowed to edit their XP totals.",
-            choices=[
-                OptionChoice("Unrestricted", "unrestricted"),
-                OptionChoice("Unspent XP only", "unspent_only"),
-                OptionChoice("Lifetime XP only", "lifetime_only"),
-                OptionChoice("Restricted (admins only)", "admin_only"),
-            ],
-            required=False,
-        ),
-        oblivion_stains: Option(
-            int,
-            "Which Rouse results should give Oblivion stain warnings",
-            choices=[
-                OptionChoice("1s and 10s (RAW)", 100),
-                OptionChoice("1s only", 1),
-                OptionChoice("10s only", 10),
-                OptionChoice("Never", 0),
-            ],
-            required=False,
-        ),
-        update_channel: Option(
-            discord.TextChannel, "A channel where character updates will be posted", required=False
-        ),
-        changelog_channel: Option(
-            discord.TextChannel,
-            "A channel where edited Roleposts will be logged",
-            required=False,
-        ),
-        deletion_channel: Option(
-            discord.TextChannel,
-            "A channel where deleted Roleposts will be logged",
-            required=False,
-        ),
-        add_empty_resonance: Option(
-            int,
-            "Whether to add Empty Resonance to the /resonance command (die result 11-12)",
-            choices=[
-                OptionChoice("Yes", 1),
-                OptionChoice("No", 0),
-            ],
-            required=False,
-        ),
-        max_hunger: Option(
-            int,
-            (
-                "Maximum Hunger rating in rolls (Only affects /vr. Characters still "
-                "max out at Hunger 5.)"
-            ),
-            choices=[5, 10],
-            required=False,
-        ),
-        accessibility: Option(
-            int,
-            "Whether to enable or disable accessibility",
-            choices=[OptionChoice("Yes", 1), OptionChoice("No", 0)],
-            required=False,
-        ),
+        experience_permissions: str,
+        oblivion_stains: int,
+        update_channel: discord.TextChannel,
+        changelog_channel: discord.TextChannel,
+        deletion_channel: discord.TextChannel,
+        add_empty_resonance: int,
+        max_hunger: int,
+        accessibility: int,
     ):
         """(Admin-only) Assign server-wide settings."""
         responses = []

@@ -37,6 +37,14 @@ steps:
     commands:
       - poetry run pytest -q
 
+  - name: uninstall-dev
+    image: sh
+    when:
+      - event: tag
+      - event: manual
+    commands:
+      - poetry sync --without=dev
+
   - name: copy-artifacts
     image: sh
     when:

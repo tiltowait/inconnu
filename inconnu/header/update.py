@@ -24,10 +24,10 @@ async def update_header(ctx: AppCtx, character: VChar, blush: int):
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
 
 
-class _RPHeader(discord.ui.Modal):
+class _RPHeader(discord.ui.DesignerModal):
     """A modal for setting character RP header details."""
 
-    def __init__(self, character, blush, *args, **kwargs):
+    def __init__(self, character: VChar, blush, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.character = character
         self.blush = blush
@@ -46,41 +46,68 @@ class _RPHeader(discord.ui.Modal):
         logger.debug("HEADER: Max location length: {}", max_location_len)
 
         self.add_item(
-            discord.ui.InputText(
-                label="Scene Location",
-                placeholder="The location of the current scene",
-                value=character.header.location,
-                min_length=1,
-                max_length=max_location_len,
+            discord.ui.Label(
+                "Scene Location",
+                discord.ui.InputText(
+                    placeholder="The location of the current scene",
+                    value=character.header.location,
+                    min_length=1,
+                    max_length=max_location_len,
+                ),
             ),
         )
+
+        if self.character.is_vampire and self.character.humanity < 9:
+            blush_options = [
+                discord.SelectOption(
+                    label="On", value="1", default=self.character.header.blush == 1
+                ),
+                discord.SelectOption(
+                    label="Off", value="0", default=self.character.header.blush == 0
+                ),
+            ]
+            if self.character.is_vampire:
+                blush_options = blush_options[:-1]
+            else:
+                blush_options = blush_options[-1:]
+
+            self.add_item(
+                discord.ui.Label("Blush of Life", discord.ui.Select(options=blush_options))
+            )
+
         self.add_item(
-            discord.ui.InputText(
-                label="Relevant Merits",
-                placeholder="Merits characters would know or your scene partner SHOULD know.",
-                value=character.header.merits,
-                min_length=0,
-                max_length=300,
-                required=False,
+            discord.ui.Label(
+                "Relevant Merits",
+                discord.ui.InputText(
+                    placeholder="Merits characters would know or your scene partner SHOULD know.",
+                    value=character.header.merits,
+                    min_length=0,
+                    max_length=300,
+                    required=False,
+                ),
             )
         )
         self.add_item(
-            discord.ui.InputText(
-                label="Relevant Flaws",
-                placeholder="Flaws characters would know or your scene partner SHOULD know.",
-                value=character.header.flaws,
-                min_length=0,
-                max_length=300,
-                required=False,
+            discord.ui.Label(
+                "Relevant Flaws",
+                discord.ui.InputText(
+                    placeholder="Flaws characters would know or your scene partner SHOULD know.",
+                    value=character.header.flaws,
+                    min_length=0,
+                    max_length=300,
+                    required=False,
+                ),
             )
         )
         self.add_item(
-            discord.ui.InputText(
-                label="Temporary Effects",
-                placeholder="Temporary effects currently affecting your character.",
-                value=character.header.temp,
-                max_length=512,
-                required=False,
+            discord.ui.Label(
+                "Temporary Effects",
+                discord.ui.InputText(
+                    placeholder="Temporary effects currently affecting your character.",
+                    value=character.header.temp,
+                    max_length=512,
+                    required=False,
+                ),
             )
         )
 

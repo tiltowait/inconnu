@@ -60,5 +60,5 @@ steps:
       - event: tag
       - event: manual
     commands:
-      - ssh inconnu
+      - ssh -tt inconnu
 

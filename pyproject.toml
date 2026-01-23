@@ -14,7 +14,7 @@ filterwarnings = [
 
 [tool.poetry]
 name = "inconnu"
-version = "8.5.1"
+version = "8.7.0"
 description = "An advanced Discord dice bot and character manager for V5"
 authors = ["tiltowait <208040+tiltowait@users.noreply.github.com>"]
 license = "MIT"
@@ -23,7 +23,7 @@ license = "MIT"
 inconnu = "main:main"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.11,<3.14"
 flatdict = "^4.0.1"
 pymongo = {extras = ["srv"], version = "^4.2.0"}
 python-dotenv = "^0.21.0"
@@ -31,7 +31,7 @@ uvicorn = "^0.37.0"
 jinja2 = "^3.1.2"
 jinja-markdown = "^1.210911"
 fastapi = "^0.120.3"
-py-cord = {extras = ["speed"], version = "^2.6.1"}
+py-cord = {extras = ["speed"], version = "^2.7.0"}
 pyparsing = "^3.1.1"
 cachetools = "^5.5.2"
 uvloop = "^0.21.0"

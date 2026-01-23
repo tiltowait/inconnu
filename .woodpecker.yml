@@ -16,6 +16,7 @@ steps:
   - name: install-dev
     image: sh
     commands:
+      - poetry env use 3.13
       - poetry install --no-interaction --no-ansi
 
   - name: unit tests
@@ -36,13 +37,21 @@ steps:
     commands:
       - poetry run pytest -q
 
+  - name: uninstall-dev
+    image: sh
+    when:
+      - event: tag
+      - event: manual
+    commands:
+      - poetry sync --without=dev
+
   - name: copy-artifacts
     image: sh
     when:
       - event: tag
       - event: manual
     commands:
-      - mkdir -p /mnt/artifacts/${CI_REPO_NAME}
+      - mkdir -p /mnt/build-artifacts/${CI_REPO_NAME}
       - rsync -a --delete --exclude '.git' . /mnt/build-artifacts/${CI_REPO_NAME}
 
   - name: redeploy

@@ -57,23 +57,24 @@ class _RPHeader(discord.ui.DesignerModal):
             ),
         )
 
+        # Always presenting the select, even if the character isn't a vampire,
+        # is more consistent and simplifies callback(). Since we can't disable
+        # a ModalItem, we have to get a little tricky with our blush options:
+        # we will filter the available options based on the splat. "N/A" must
+        # always be default (it's the only option when present), and "Off" is
+        # default if not blushed (0 or -1) in case the character was previously
+        # a mortal, TB, or humanity > 8.
+        blush_options = [
+            discord.SelectOption(label="On", value="1", default=self.character.header.blush == 1),
+            discord.SelectOption(label="Off", value="0", default=self.character.header.blush < 1),
+            discord.SelectOption(label="N/A", value="-1", default=True),
+        ]
         if self.character.is_vampire and self.character.humanity < 9:
-            blush_options = [
-                discord.SelectOption(
-                    label="On", value="1", default=self.character.header.blush == 1
-                ),
-                discord.SelectOption(
-                    label="Off", value="0", default=self.character.header.blush == 0
-                ),
-            ]
-            if self.character.is_vampire:
-                blush_options = blush_options[:-1]
-            else:
-                blush_options = blush_options[-1:]
+            blush_options = blush_options[:-1]
+        else:
+            blush_options = blush_options[-1:]
 
-            self.add_item(
-                discord.ui.Label("Blush of Life", discord.ui.Select(options=blush_options))
-            )
+        self.add_item(discord.ui.Label("Blush of Life", discord.ui.Select(options=blush_options)))
 
         self.add_item(
             discord.ui.Label(
@@ -113,11 +114,11 @@ class _RPHeader(discord.ui.DesignerModal):
 
     async def callback(self, interaction: discord.Interaction):
         """Set the header and tell the user."""
-        self.character.header.location = inconnu.utils.clean_text(self.children[0].value)
-        self.character.header.merits = inconnu.utils.clean_text(self.children[1].value)
-        self.character.header.blush = self.blush
-        self.character.header.flaws = inconnu.utils.clean_text(self.children[2].value)
-        self.character.header.temp = inconnu.utils.clean_text(self.children[3].value)
+        self.character.header.location = inconnu.utils.clean_text(self.children[0].item.value)
+        self.character.header.blush = int(self.children[1].item.values[0])
+        self.character.header.merits = inconnu.utils.clean_text(self.children[2].item.value)
+        self.character.header.flaws = inconnu.utils.clean_text(self.children[3].item.value)
+        self.character.header.temp = inconnu.utils.clean_text(self.children[4].item.value)
 
         await asyncio.gather(
             interaction.response.send_message(

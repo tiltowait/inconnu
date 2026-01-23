@@ -12,6 +12,7 @@ from pymongo import DeleteOne
 
 import inconnu
 import interface
+from ctx import AppCtx
 from inconnu.options import char_option
 from inconnu.utils.permissions import is_approved_user
 
@@ -174,7 +175,7 @@ class HeaderCog(commands.Cog):
     @option("temporary", description="THIS POST ONLY: Temporary effects", required=False)
     async def header(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
         blush: int,
         hunger: int,
@@ -202,34 +203,14 @@ class HeaderCog(commands.Cog):
     )
 
     @header_update.command(name="header")
-    @char_option("The character whose header to update", required=True)
-    @option(
-        "blush",
-        description="Is Blush of Life active?",
-        autocomplete=_header_bol_options,
-        required=True,
-    )
+    @char_option("The character whose header to update")
     async def update_header(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
-        blush: str,
     ):
         """Update your character's RP header."""
-        # If the user selects a Blush option, then leaves channels, then comes
-        # back and hits enter, Discord will send "Yes" instead of "1" (as an
-        # example). Therefore, we need to check their response.
-        try:
-            blush_val = int(blush)
-        except ValueError:
-            blush = blush.lower()
-            blush_options = {"yes": 1, "no": 0, "n/a - thin-blood": -1, "n/a - mortal": -1}
-            if blush not in blush_options:
-                await inconnu.embeds.error(ctx, f"Unknown Blush of Life option: `{blush}`.")
-                return
-            blush_val = blush_options[blush]
-
-        await inconnu.header.update_header(ctx, character, blush_val)
+        await inconnu.header.update_header(ctx, character)
 
     @commands.message_command(name="Header: Edit", contexts={discord.InteractionContextType.guild})
     async def fix_rp_header(self, ctx, message: discord.Message):
@@ -275,7 +256,7 @@ class HeaderCog(commands.Cog):
         name="Header: Delete",
         contexts={discord.InteractionContextType.guild},
     )
-    async def delete_rp_header(self, ctx: discord.ApplicationContext, message: discord.Message):
+    async def delete_rp_header(self, ctx: AppCtx, message: discord.Message):
         """Delete an RP header."""
         try:
             webhook = await self.bot.prep_webhook(message.channel)

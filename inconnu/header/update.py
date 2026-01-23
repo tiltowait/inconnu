@@ -8,29 +8,25 @@ from loguru import logger
 import inconnu
 from ctx import AppCtx
 from inconnu.models import VChar
+from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
 
-async def update_header(ctx: AppCtx, character: VChar, blush: int):
+@haven(__HELP_URL)
+async def update_header(ctx: AppCtx, character: VChar):
     """Update the character's RP header."""
-    try:
-        character = await inconnu.char_mgr.fetchone(ctx.guild, ctx.user, character)
-        title = f"Set RP Header: {character.name}"
-        modal = _RPHeader(character, blush, title=title[:45])
-        await ctx.send_modal(modal)
-
-    except inconnu.errors.CharacterNotFoundError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+    title = f"Set RP Header: {character.name}"
+    modal = _RPHeader(character, title=title[:45])
+    await ctx.send_modal(modal)
 
 
 class _RPHeader(discord.ui.DesignerModal):
     """A modal for setting character RP header details."""
 
-    def __init__(self, character: VChar, blush, *args, **kwargs):
+    def __init__(self, character: VChar, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.character = character
-        self.blush = blush
 
         # Since the location field is the embed title, we have to ensure that
         # we don't exceed the maximum length of 256. We use the non-blush text

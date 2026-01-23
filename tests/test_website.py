@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from beanie import PydanticObjectId, init_beanie
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 from pydantic import AnyUrl
 from pymongo import AsyncMongoClient
@@ -184,7 +184,7 @@ async def test_profile_page(
 ):
     """Test character profile page rendering."""
     with patch("bot.bot", mock_discord):
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             r = await client.get(f"/profile/{charid}")
             assert r.status_code == expected_status
 
@@ -227,7 +227,7 @@ async def test_posts_page(
 ):
     """Test rolepost history page rendering."""
     with patch("bot.bot", mock_discord):
-        async with AsyncClient(app=app, base_url="http://test") as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             r = await client.get(f"/post/{postid}")
             assert r.status_code == expected_status
 

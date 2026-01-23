@@ -37,7 +37,7 @@ async def statistics(
         if date.date() != datetime.now(UTC).date():
             date += timedelta(hours=19)
 
-        if date > datetime.now(UTC):
+        if date > datetime.now(UTC).replace(tzinfo=None):
             # Can't get stats from the future
             date_fmt = discord.utils.format_dt(date, DT_ST)
             await ctx.respond(f"{date_fmt} is in the future!", ephemeral=True)

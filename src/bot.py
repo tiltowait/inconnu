@@ -44,7 +44,7 @@ class InconnuBot(discord.AutoShardedBot):
             logger.info("CONFIG: Debugging on {}", DEBUG_GUILDS)
 
         # Add the cogs
-        for filename in os.listdir("./interface"):
+        for filename in os.listdir("./src/interface"):
             if filename[0] != "_" and filename.endswith(".py"):
                 logger.debug("COGS: Loading {}", filename)
                 self.load_extension(f"interface.{filename[:-3]}")

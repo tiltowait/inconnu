@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from jinja2 import Environment, FileSystemLoader
 
 env = Environment(
-    loader=FileSystemLoader("./web/templates"),
+    loader=FileSystemLoader("./src/web/templates"),
     trim_blocks=True,
     lstrip_blocks=True,
     extensions=["jinja_markdown.MarkdownExtension"],

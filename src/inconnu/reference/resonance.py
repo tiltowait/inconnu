@@ -119,7 +119,7 @@ def __get_resonance(add_empty: bool) -> tuple[int, str]:
 
 def get_dyscrasia(resonance: str) -> SN | None:
     """Get a random dyscrasia for a resonance."""
-    conn = sqlite3.connect("inconnu/reference/dyscrasias.db")
+    conn = sqlite3.connect("src/inconnu/reference/dyscrasias.db")
     conn.row_factory = lambda c, r: SN(**{col[0]: r[idx] for idx, col in enumerate(c.description)})
     cur = conn.cursor()
 

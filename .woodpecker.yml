@@ -51,7 +51,7 @@ steps:
       - event: manual
     commands:
       - mkdir -p /mnt/build-artifacts/${CI_REPO_NAME}
-      - rsync -a --delete --exclude '.git' . /mnt/build-artifacts/${CI_REPO_NAME}
+      - rsync -a --delete --exclude '.git' --exclude '.venv' . /mnt/build-artifacts/${CI_REPO_NAME}
 
   - name: redeploy
     image: sh

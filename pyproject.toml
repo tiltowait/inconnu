@@ -48,6 +48,7 @@ filterwarnings = [
     "ignore::pydantic.warnings.PydanticDeprecatedSince211",
     "ignore:'audioop' is deprecated:DeprecationWarning",
     "ignore:the imp module is deprecated:DeprecationWarning",
+    "ignore:There is no current event loop:DeprecationWarning:discord.client",
 ]
 
 [build-system]

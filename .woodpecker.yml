@@ -16,8 +16,7 @@ steps:
   - name: install-dev
     image: sh
     commands:
-      - poetry env use 3.13
-      - poetry install --no-interaction --no-ansi
+      - uv sync
 
   - name: unit tests
     image: sh
@@ -35,7 +34,7 @@ steps:
       GITHUB_TOKEN:
         from_secret: GITHUB_TOKEN
     commands:
-      - poetry run pytest -q
+      - uv run pytest -q
 
   - name: uninstall-dev
     image: sh
@@ -43,7 +42,7 @@ steps:
       - event: tag
       - event: manual
     commands:
-      - poetry sync --without=dev
+      - uv sync --no-dev
 
   - name: copy-artifacts
     image: sh
@@ -61,4 +60,3 @@ steps:
       - event: manual
     commands:
       - ssh -tt inconnu
-

@@ -1,3 +1,41 @@
+[project]
+name = "inconnu"
+version = "8.7.0"
+description = "An advanced Discord dice bot and character manager for V5"
+authors = [{ name = "tiltowait", email = "208040+tiltowait@users.noreply.github.com" }]
+license = "MIT"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "flatdict>=4.0.1,<5",
+    "pymongo>=4.2.0,<5",
+    "python-dotenv>=0.21.0,<2",
+    "uvicorn>=0.37.0,<1",
+    "jinja2>=3.1.2,<4",
+    "jinja-markdown>=1.210911,<2",
+    "fastapi>=0.120.3,<1",
+    "py-cord[speed]>=2.7.0,<3",
+    "pyparsing>=3.1.1,<4",
+    "cachetools>=5.5.2,<6",
+    "uvloop>=0.21.0,<1",
+    "async-timeout>=5.0.1,<6",
+    "idna>=3.11,<4",
+    "loguru>=0.7.3,<1",
+    "pypcg>=0.0.4,<1",
+    "beanie>=2.0.0,<3",
+]
+
+[project.scripts]
+inconnu = "main:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0,<9",
+    "pytest-asyncio>=1.2.0,<2",
+    "httpx>=0.28.1,<1",
+    "pytest-cov>=7.0.0,<8",
+    "mongomock-motor>=0.0.36,<1",
+]
+
 [tool.ruff]
 line-length = 100
 
@@ -12,41 +50,6 @@ filterwarnings = [
     "ignore:the imp module is deprecated:DeprecationWarning",
 ]
 
-[tool.poetry]
-name = "inconnu"
-version = "8.7.0"
-description = "An advanced Discord dice bot and character manager for V5"
-authors = ["tiltowait <208040+tiltowait@users.noreply.github.com>"]
-license = "MIT"
-
-[tool.poetry.scripts]
-inconnu = "main:main"
-
-[tool.poetry.dependencies]
-python = ">=3.11,<3.14"
-flatdict = "^4.0.1"
-pymongo = {extras = ["srv"], version = "^4.2.0"}
-python-dotenv = "^0.21.0"
-uvicorn = "^0.37.0"
-jinja2 = "^3.1.2"
-jinja-markdown = "^1.210911"
-fastapi = "^0.120.3"
-py-cord = {extras = ["speed"], version = "^2.7.0"}
-pyparsing = "^3.1.1"
-cachetools = "^5.5.2"
-uvloop = "^0.21.0"
-async-timeout = "^5.0.1"
-idna = "^3.11"
-loguru = "^0.7.3"
-pypcg = "^0.0.4"
-beanie = "^2.0.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest-asyncio = "^1.2.0"
-httpx = "^0.28.1"
-pytest-cov = "^7.0.0"
-mongomock-motor = "^0.0.36"
-
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -7,6 +7,7 @@ from discord.commands import OptionChoice, SlashCommandGroup
 from discord.ext import commands
 
 import inconnu
+from ctx import AppCtx
 from inconnu.options import char_option, player_option
 from inconnu.utils import strtobool
 
@@ -53,7 +54,7 @@ class Characters(commands.Cog, name="Character Management"):
     @option("spc", description="(Admin only) Make an SPC", autocomplete=_spc_options, default="0")
     async def character_create(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         name: str,
         template: str,
         health: int,
@@ -70,7 +71,7 @@ class Characters(commands.Cog, name="Character Management"):
         except ValueError:
             await inconnu.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
-    @commands.slash_command(name="spc")
+    @commands.slash_command(name="spc", contexts={discord.InteractionContextType.guild})
     @commands.has_permissions(administrator=True)
     @option("name", description="The SPC's name")
     @option("template", description="The character type", choices=_TEMPLATES)
@@ -83,7 +84,7 @@ class Characters(commands.Cog, name="Character Management"):
     )
     async def spc_create(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         name: str,
         template: str,
         health: int,
@@ -98,7 +99,7 @@ class Characters(commands.Cog, name="Character Management"):
     @player_option()
     async def character_display(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
         player: discord.Member,
     ):
@@ -111,7 +112,7 @@ class Characters(commands.Cog, name="Character Management"):
     @player_option()
     async def character_update(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         parameters: str,
         character: str,
         player: discord.Member,
@@ -233,7 +234,7 @@ class Characters(commands.Cog, name="Character Management"):
     @char_option("The character to delete")
     async def character_delete(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
     ):
         """Delete a character."""
@@ -245,7 +246,7 @@ class Characters(commands.Cog, name="Character Management"):
     @char_option("The character whose profile to edit", param="edit")
     async def character_profile(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         player: discord.Member,
         character: str,
         edit: str,
@@ -269,7 +270,7 @@ class Characters(commands.Cog, name="Character Management"):
     @char_option("The character whose convictions to edit", param="edit")
     async def character_convictions(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
         player: discord.Member,
         edit: str,
@@ -298,7 +299,7 @@ class Characters(commands.Cog, name="Character Management"):
     )
     async def show_character_images(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
         player: discord.Member,
         controls: str,
@@ -315,7 +316,7 @@ class Characters(commands.Cog, name="Character Management"):
     @char_option()
     async def upload_image(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         image: discord.Attachment,
         character: str,
     ):

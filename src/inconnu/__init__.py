@@ -34,7 +34,7 @@ from inconnu.dice import d10, random
 from inconnu.emoji import emojis
 from inconnu.models import CharacterManager
 from inconnu.roll import Roll
-from inconnu.settings import VUser
+from inconnu.settings import VGuild, VUser, edit_settings
 from inconnu.urls import post_url, profile_url
 from inconnu.utils import fence, get_avatar, get_message
 
@@ -47,6 +47,7 @@ __all__ = (
     "constants",
     "d10",
     "db",
+    "edit_settings",
     "emojis",
     "embeds",
     "errors",
@@ -74,6 +75,7 @@ __all__ = (
     "utils",
     "views",
     "vr",
+    "VGuild",
     "VUser",
     "webhookcache",
 )

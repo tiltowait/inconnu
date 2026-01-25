@@ -1,12 +1,97 @@
 """settings.py - User- and server-wide settings."""
 
+from enum import IntEnum, auto
+from typing import cast
+
 import discord
+from discord import ButtonStyle, ComponentType, SelectOption
+from discord.ui import Button, TextDisplay
 from loguru import logger
 
 import inconnu
 from ctx import AppCtx
-from inconnu.settings import ExpPerms, GuildSettings
+from inconnu.settings import ExpPerms, VGuild
 from inconnu.settings.vuser import VUser
+
+
+class SettingsIDs(IntEnum):
+    EMOJIS = auto()
+    OBLIVION = auto()
+
+
+class SettingsMenu(discord.ui.DesignerView):
+    """The settings menu."""
+
+    def __init__(self, scope: VGuild | VUser):
+        super().__init__(timeout=300, disable_on_timeout=True)
+        self.scope = scope
+
+        container = discord.ui.Container(TextDisplay("## Settings"))
+        self.container = container
+        self.add_item(container)
+
+        # Accessibility settings
+        button = Button(
+            label="Yes" if self.scope.settings.use_emojis else "No",
+            style=self.button_style(self.scope.settings.use_emojis),
+            id=SettingsIDs.EMOJIS,
+        )
+        button.callback = self.toggle_emojis
+        container.add_section(
+            TextDisplay("### Use emojis?\nUse custom emojis for dice, damage, etc."),
+            accessory=button,
+        )
+
+        if isinstance(self.scope, VGuild):
+            # Oblivion stains settings
+            oblivion_raw = "100"
+            if not self.scope.settings.oblivion_stains:
+                oblivion_raw = "0"
+            elif self.scope.settings.oblivion_stains[0] == 10:
+                oblivion_raw = "10"
+            else:
+                oblivion_raw = "1"
+            options = [
+                SelectOption(label="1, 10", value="100", default=oblivion_raw == "100"),
+                SelectOption(label="10s only", value="10", default=oblivion_raw == "10"),
+                SelectOption(label="1s only", value="1", default=oblivion_raw == "1"),
+                SelectOption(label="Never", value="0", default=oblivion_raw == "0"),
+            ]
+            select = discord.ui.Select(
+                select_type=ComponentType.string_select,
+                options=options,
+                id=SettingsIDs.OBLIVION,
+            )
+            select.callback = self.set_oblivion_stains
+            container.add_text("### Oblivion stains\nWhen to apply Stains for Oblivion rolls.")
+            container.add_row(select)
+
+    @staticmethod
+    def button_style(setting: bool) -> ButtonStyle:
+        """The button style based on the value for the current setting."""
+        return ButtonStyle.primary if setting else ButtonStyle.secondary
+
+    async def toggle_emojis(self, interaction: discord.Interaction):
+        """Toggle emoji display (server/user)."""
+        self.scope.settings.accessibility = not self.scope.settings.accessibility
+
+        button = cast(Button, self.get_item(SettingsIDs.EMOJIS))
+        button.style = self.button_style(self.scope.settings.use_emojis)
+        button.label = "Yes" if self.scope.settings.use_emojis else "No"
+
+        await interaction.edit(view=self)
+
+    async def set_oblivion_stains(self, interaction: discord.Interaction):
+        """Set Oblivion stains mode."""
+        pass
+
+
+async def edit_settings(ctx: AppCtx):
+    """Present the settings menu."""
+    guild = await VGuild.get_or_fetch(ctx.guild)
+
+    view = SettingsMenu(guild)
+    await ctx.respond(view=view)
 
 
 class Settings:
@@ -300,11 +385,11 @@ class Settings:
         self._user_cache[user] = user_settings
         return user_settings
 
-    async def _fetch_guild(self, guild: discord.Guild | int | None) -> GuildSettings:
+    async def _fetch_guild(self, guild: discord.Guild | int | None) -> VGuild:
         """Fetch a guild."""
         if guild is None:
             # We're in DMs
-            return GuildSettings({})
+            return VGuild({})
 
         if isinstance(guild, discord.Guild):
             guild_id = guild.id
@@ -319,7 +404,7 @@ class Settings:
             # In case we missed them somehow
             await inconnu.stats.guild_joined(guild)
 
-        guild_settings = GuildSettings(guild_params)
+        guild_settings = VGuild(guild_params)
         self._guild_cache[guild_id] = guild_settings
 
         return guild_settings

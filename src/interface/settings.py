@@ -6,10 +6,16 @@ from discord.commands import OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 
 import inconnu
+from ctx import AppCtx
 
 
 class SettingsCommands(commands.Cog):
     """Settings-related commands."""
+
+    @slash_command()
+    async def seppuku(self, ctx: AppCtx):
+        """Adjust user/server settings."""
+        await inconnu.edit_settings(ctx)
 
     @slash_command()
     @option("enable", description="Enable accessibility mode for yourself")

@@ -1,5 +1,4 @@
 """reference/bloodpotency.py - Look up Blood Potency ratings."""
-# pylint: disable=line-too-long
 
 import discord
 

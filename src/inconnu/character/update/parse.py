@@ -1,5 +1,4 @@
 """character/update/parse.py - Defines an interface for updating character traits."""
-# pylint: disable=too-many-arguments
 
 import asyncio
 from collections import OrderedDict

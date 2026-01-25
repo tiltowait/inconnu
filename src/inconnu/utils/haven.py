@@ -18,7 +18,7 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-class Haven:  # pylint: disable=too-few-public-methods
+class Haven:
     """
     A class for fetching a desired character.
 
@@ -48,7 +48,7 @@ class Haven:  # pylint: disable=too-few-public-methods
         allow_lookups=False,
         character: VChar | str | None = None,
         tip: str | None = None,
-        help: str | None = None,  # pylint: disable=redefined-builtin
+        help: str | None = None,
         char_filter: Callable | None = None,
         errmsg: str = "None of your characters can perform this action.",
     ):

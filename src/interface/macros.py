@@ -1,5 +1,4 @@
 """interface/macros.py - Macro command interface."""
-# pylint: disable=too-many-arguments
 
 import discord
 from discord import option

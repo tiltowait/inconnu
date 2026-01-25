@@ -1,5 +1,4 @@
 """interface/reference.py - A cog for reference material."""
-# pylint: disable=no-self-use
 
 import discord
 from discord import option

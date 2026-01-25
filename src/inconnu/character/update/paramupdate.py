@@ -1,5 +1,4 @@
 """character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
-# pylint: disable=too-many-arguments
 
 from typing import TYPE_CHECKING
 
@@ -65,7 +64,7 @@ def __update_hunger_potency(character: "VChar", delta: str, key: str, maximum: i
     try:
         delta = int(delta)
     except ValueError:
-        raise ValueError(f"{key.title()} must be a number.")  # pylint: disable=raise-missing-from
+        raise ValueError(f"{key.title()} must be a number.") from None
 
     new_value = delta if setting else getattr(character, key) + delta
     if not 0 <= new_value <= maximum:

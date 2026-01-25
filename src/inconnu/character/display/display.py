@@ -1,5 +1,4 @@
 """character/display/display.py - Tools for displaying characters."""
-# pylint: disable=too-many-arguments
 
 from enum import StrEnum
 from typing import TYPE_CHECKING

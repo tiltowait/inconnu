@@ -1,5 +1,4 @@
 """interface/characters.py - Character management Cog."""
-# pylint: disable=no-self-use
 
 import discord
 from discord import option

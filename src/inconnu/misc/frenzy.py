@@ -1,5 +1,4 @@
 """misc/frenzy.py - Perform a frenzy check."""
-# pylint: disable=too-many-arguments
 
 import discord
 

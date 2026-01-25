@@ -1,5 +1,4 @@
 """misc/rouse.py - Perform rouse checks."""
-# pylint: disable=too-many-arguments
 
 from types import SimpleNamespace
 

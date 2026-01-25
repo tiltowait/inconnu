@@ -1,5 +1,4 @@
 """Header commands."""
-# pylint: disable=no-self-use
 
 from typing import TYPE_CHECKING
 

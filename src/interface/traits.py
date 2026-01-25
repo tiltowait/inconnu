@@ -1,5 +1,4 @@
 """interface/traits.py - Traits command interface."""
-# pylint: disable=no-self-use
 
 import discord
 from discord import option

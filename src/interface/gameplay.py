@@ -1,5 +1,4 @@
 """interface/gameplay.py - Command interface directly related to gameplay."""
-# pylint: disable=no-self-use
 
 import discord
 from discord import option

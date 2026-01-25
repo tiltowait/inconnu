@@ -1,5 +1,4 @@
 """Sub-documents used in VChars."""
-# pylint: disable=abstract-method, too-few-public-methods
 
 import itertools
 from datetime import UTC, datetime

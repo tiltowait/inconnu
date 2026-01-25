@@ -22,10 +22,10 @@ async def test_no_superficial_damage_fails(vamp: VChar, ctx: AppCtx):
 @pytest.mark.parametrize(
     "die_result,expected_hunger",
     [
-        (6, 1),   # Rouse success - hunger stays at 1
+        (6, 1),  # Rouse success - hunger stays at 1
         (10, 1),  # Critical success - hunger stays at 1
-        (5, 2),   # Rouse failure - hunger increases to 2
-        (1, 2),   # Critical failure - hunger increases to 2
+        (5, 2),  # Rouse failure - hunger increases to 2
+        (1, 2),  # Critical failure - hunger increases to 2
     ],
 )
 async def test_vamp_mend_rouse_check(

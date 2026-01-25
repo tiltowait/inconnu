@@ -1,5 +1,4 @@
 """Test character manager fetching."""
-# pylint: disable=too-few-public-methods
 
 from types import SimpleNamespace
 
@@ -55,7 +54,7 @@ class MockUser:
     """Mock user object that has fake permissions."""
 
     def __init__(self, user_id: int, admin: bool):
-        self.id = user_id  # pylint: disable=invalid-name
+        self.id = user_id
         self.top_role = SimpleNamespace(permissions=MockPermissions(admin))
         self.guild_permissions = MockPermissions(admin)
 

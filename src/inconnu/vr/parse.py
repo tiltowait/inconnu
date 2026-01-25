@@ -1,5 +1,4 @@
 """parse.py - Handles parsing and execution of roll commands."""
-# pylint: disable=too-many-arguments
 
 # When a user rolls, they have two options:
 #    * Roll straight numbers (7 3 2 == pool 7, hunger 3, diff 2)

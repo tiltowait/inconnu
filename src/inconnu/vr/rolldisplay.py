@@ -1,5 +1,4 @@
 """rolldisplay.py - A class for managing the display of roll outcomes and rerolls."""
-# pylint: disable=too-many-arguments, too-many-instance-attributes
 
 import re
 import uuid

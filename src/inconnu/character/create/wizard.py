@@ -1,5 +1,4 @@
 """character/create/wizard.py - The new character wizard."""
-# pylint: disable=too-few-public-methods
 
 import asyncio
 import os

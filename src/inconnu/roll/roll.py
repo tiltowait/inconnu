@@ -20,7 +20,7 @@ class Roll:
             difficulty (int): The target number of successes
             pool_str (Optional[int]): The pool's attribute + skill representation
         """
-        self.id = ObjectId()  # pylint: disable=invalid-name
+        self.id = ObjectId()
         self.hunger_rating = hunger
 
         if not 0 <= hunger <= max_hunger:

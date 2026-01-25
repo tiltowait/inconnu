@@ -599,7 +599,9 @@ async def test_update_xp_without_permission_error(
     original_xp = vamp.experience.unspent
 
     # Mock permission check to return False
-    with patch.object(inconnu.settings, "can_adjust_current_xp", new_callable=AsyncMock, return_value=False):
+    with patch.object(
+        inconnu.settings, "can_adjust_current_xp", new_callable=AsyncMock, return_value=False
+    ):
         # Should fail permission check
         await update(ctx, "unspent_xp+2", character=vamp)
 
@@ -608,5 +610,7 @@ async def test_update_xp_without_permission_error(
         # Character should have no pending changes
         assert not vamp.is_changed
         # Should log error
-        error_calls = [call for call in mock_log_event.call_args_list if call.args[0] == "update_error"]
+        error_calls = [
+            call for call in mock_log_event.call_args_list if call.args[0] == "update_error"
+        ]
         assert len(error_calls) == 1

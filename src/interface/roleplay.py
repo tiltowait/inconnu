@@ -1,5 +1,4 @@
 """Roleplay commands."""
-# pylint: disable=no-self-use
 
 from datetime import timezone
 

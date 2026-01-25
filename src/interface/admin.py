@@ -1,5 +1,4 @@
 """Admin commands."""
-# pylint: disable=no-self-use
 
 import asyncio
 from datetime import timedelta

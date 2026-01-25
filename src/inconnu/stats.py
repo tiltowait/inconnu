@@ -1,5 +1,4 @@
 """stats.py - Various packages for user statistics."""
-# pylint: disable=too-many-arguments
 
 from datetime import UTC, datetime
 

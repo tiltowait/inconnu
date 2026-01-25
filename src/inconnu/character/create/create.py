@@ -1,5 +1,4 @@
 """character/create/create.py - Handle new character creation."""
-# pylint: disable=too-many-arguments
 
 import re
 from types import SimpleNamespace as SN

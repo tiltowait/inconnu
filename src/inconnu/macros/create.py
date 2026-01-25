@@ -1,5 +1,4 @@
 """macros/create.py - Creating user macros."""
-# pylint: disable=too-many-arguments
 
 import inconnu
 from ctx import AppCtx

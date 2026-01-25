@@ -1,5 +1,4 @@
 """experience.py - Commands for tracking XP."""
-# pylint: disable=no-self-use, too-many-arguments
 
 import discord
 from discord import option

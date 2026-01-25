@@ -1,5 +1,4 @@
 """interface/settings.py - Settings-related commands."""
-# pylint: disable=no-self-use
 
 import discord
 from discord import option

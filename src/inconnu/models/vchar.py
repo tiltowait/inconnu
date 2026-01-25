@@ -1,6 +1,4 @@
 """Player-character model."""
-# pylint: disable=missing-class-docstring, too-few-public-methods, abstract-method
-# pylint: disable=too-many-public-methods
 
 import bisect
 import copy

@@ -9,8 +9,6 @@ class GuildSettings:
     NOTE: It does *NOT* handle any database manipulation!
     """
 
-    # pylint: disable=too-few-public-methods
-
     def __init__(self, parameters):
         settings = parameters.get("settings", {})
 

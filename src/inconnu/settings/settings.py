@@ -5,7 +5,7 @@ from typing import cast
 
 import discord
 from discord import ButtonStyle, ComponentType, SelectOption
-from discord.ui import Button, TextDisplay
+from discord.ui import Button, Select, TextDisplay
 from loguru import logger
 
 import inconnu
@@ -44,20 +44,21 @@ class SettingsMenu(discord.ui.DesignerView):
 
         if isinstance(self.scope, VGuild):
             # Oblivion stains settings
-            oblivion_raw = "100"
             if not self.scope.settings.oblivion_stains:
                 oblivion_raw = "0"
+            elif len(self.scope.settings.oblivion_stains) == 2:
+                oblivion_raw = "100"
             elif self.scope.settings.oblivion_stains[0] == 10:
                 oblivion_raw = "10"
             else:
                 oblivion_raw = "1"
             options = [
-                SelectOption(label="1, 10", value="100", default=oblivion_raw == "100"),
-                SelectOption(label="10s only", value="10", default=oblivion_raw == "10"),
+                SelectOption(label="1s and 10s (RAW)", value="100", default=oblivion_raw == "100"),
                 SelectOption(label="1s only", value="1", default=oblivion_raw == "1"),
+                SelectOption(label="10s only", value="10", default=oblivion_raw == "10"),
                 SelectOption(label="Never", value="0", default=oblivion_raw == "0"),
             ]
-            select = discord.ui.Select(
+            select = Select(
                 select_type=ComponentType.string_select,
                 options=options,
                 id=SettingsIDs.OBLIVION,
@@ -84,7 +85,33 @@ class SettingsMenu(discord.ui.DesignerView):
 
     async def set_oblivion_stains(self, interaction: discord.Interaction):
         """Set Oblivion stains mode."""
-        pass
+        select = cast(Select, self.get_item(SettingsIDs.OBLIVION))
+
+        if select.values[0] == "100":
+            stains = [1, 10]
+            _update_select_default(select, 0)
+        elif select.values[0] == "1":
+            stains = [1]
+            _update_select_default(select, 1)
+        elif select.values[0] == "10":
+            stains = [10]
+            _update_select_default(select, 2)
+        else:
+            stains = []
+            _update_select_default(select, 3)
+
+        vguild = cast(VGuild, self.scope)
+        vguild.settings.oblivion_stains = stains
+        print(vguild.settings.oblivion_stains)
+
+        await interaction.edit(view=self)
+        await vguild.save()
+
+
+def _update_select_default(select: Select, idx: int):
+    """Update a Select's default."""
+    for i, option in enumerate(select.options):
+        option.default = i == idx
 
 
 async def edit_settings(ctx: AppCtx):

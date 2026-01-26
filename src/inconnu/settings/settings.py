@@ -17,12 +17,13 @@ from inconnu.settings.vuser import VUser
 class SettingsIDs(IntEnum):
     EMOJIS = auto()
     OBLIVION = auto()
+    RESONANCE = auto()
 
 
 class SettingsMenu(discord.ui.DesignerView):
     """The settings menu."""
 
-    def __init__(self, scope: VGuild | VUser):
+    def __init__(self, ctx: AppCtx, scope: VGuild | VUser):
         super().__init__(timeout=300, disable_on_timeout=True)
         self.scope = scope
 
@@ -67,6 +68,32 @@ class SettingsMenu(discord.ui.DesignerView):
             container.add_text("### Oblivion stains\nWhen to apply Stains for Oblivion rolls.")
             container.add_row(select)
 
+            # TODO: Update channel
+            # TODO: Changelog channel
+            # TODO: Deletion channel
+
+            # Empty resonance toggle
+            button = Button(
+                label="Yes" if self.scope.settings.add_empty_resonance else "No",
+                style=self.button_style(self.scope.settings.add_empty_resonance),
+                id=SettingsIDs.RESONANCE,
+            )
+            button.callback = self.toggle_add_empty_resonance
+            resonance_cmd = ctx.bot.cmd_mention("resonance")
+            container.add_section(
+                TextDisplay(
+                    f"### Add empty resonance?\n16.7% chance to appear in {resonance_cmd}."
+                ),
+                accessory=button,
+            )
+
+            # TODO: Max hunger
+
+    @staticmethod
+    def button_label(setting: bool) -> str:
+        """The button label (Yes/No) for the setting."""
+        return "Yes" if setting else "No"
+
     @staticmethod
     def button_style(setting: bool) -> ButtonStyle:
         """The button style based on the value for the current setting."""
@@ -107,6 +134,18 @@ class SettingsMenu(discord.ui.DesignerView):
         await interaction.edit(view=self)
         await vguild.save()
 
+    async def toggle_add_empty_resonance(self, interaction: discord.Interaction):
+        """Toggle the add empty resonance setting."""
+        vguild = cast(VGuild, self.scope)
+        vguild.settings.add_empty_resonance = not vguild.settings.add_empty_resonance
+
+        button = cast(Button, self.get_item(SettingsIDs.RESONANCE))
+        button.label = self.button_label(vguild.settings.add_empty_resonance)
+        button.style = self.button_style(vguild.settings.add_empty_resonance)
+
+        await interaction.edit(view=self)
+        await vguild.save()
+
 
 def _update_select_default(select: Select, idx: int):
     """Update a Select's default."""
@@ -118,7 +157,7 @@ async def edit_settings(ctx: AppCtx):
     """Present the settings menu."""
     guild = await VGuild.get_or_fetch(ctx.guild)
 
-    view = SettingsMenu(guild)
+    view = SettingsMenu(ctx, guild)
     await ctx.respond(view=view)
 
 

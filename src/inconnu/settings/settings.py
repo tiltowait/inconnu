@@ -27,9 +27,17 @@ class SettingsMenu(discord.ui.DesignerView):
         super().__init__(timeout=300, disable_on_timeout=True)
         self.scope = scope
 
-        container = discord.ui.Container(TextDisplay("## Settings"))
+        if isinstance(self.scope, VUser):
+            title = "User Settings"
+            description = "Update your personal settings. These follow you across servers."
+        else:
+            title = "Server Settings"
+            description = f"Update settings for **{self.scope.name}**."
+
+        container = discord.ui.Container(TextDisplay(f"## {title}\n{description}"))
         self.container = container
         self.add_item(container)
+        container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
 
         # Accessibility settings
         button = Button(
@@ -44,6 +52,8 @@ class SettingsMenu(discord.ui.DesignerView):
         )
 
         if isinstance(self.scope, VGuild):
+            container.add_item(discord.ui.Separator())
+
             # Oblivion stains settings
             if not self.scope.settings.oblivion_stains:
                 oblivion_raw = "0"
@@ -65,8 +75,12 @@ class SettingsMenu(discord.ui.DesignerView):
                 id=SettingsIDs.OBLIVION,
             )
             select.callback = self.set_oblivion_stains
-            container.add_text("### Oblivion stains\nWhen to apply Stains for Oblivion rolls.")
+            container.add_text(
+                "### Oblivion stains\nWhen to apply Stains for Oblivion Rouse checks."
+            )
             container.add_row(select)
+
+            container.add_item(discord.ui.Separator())
 
             # TODO: Update channel
             # TODO: Changelog channel

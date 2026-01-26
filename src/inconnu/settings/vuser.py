@@ -26,7 +26,7 @@ class VUser(Document):
     @alru_cache(maxsize=1024)
     async def get_or_fetch(cls, id: int) -> "VUser":
         """Return a cached VUser, fetch it from the database, or create a new one."""
-        vuser = await VUser.find_one(user=int)
+        vuser = await VUser.find_one({"user": id})
         if vuser is None:
             vuser = cls(user=id)
         return vuser

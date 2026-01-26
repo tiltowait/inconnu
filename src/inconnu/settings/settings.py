@@ -80,6 +80,7 @@ class SettingsMenu(discord.ui.DesignerView):
         button.label = "Yes" if self.scope.settings.use_emojis else "No"
 
         await interaction.edit(view=self)
+        await self.scope.save()
 
     async def set_oblivion_stains(self, interaction: discord.Interaction):
         """Set Oblivion stains mode."""
@@ -97,7 +98,6 @@ async def edit_settings(ctx: AppCtx):
 class Settings:
     """A class for managing individual and server-wide settings."""
 
-    _guild_cache = {}
     _user_cache = {}
 
     # Accessibility
@@ -105,17 +105,13 @@ class Settings:
     async def accessible(self, ctx: AppCtx | discord.Interaction):
         """Determine whether we should use accessibility mode."""
         # User accessibility trumps guild accessibility
-        user_settings = await self._fetch_user(ctx.user)
+        user_settings = await VUser.get_or_fetch(ctx.user.id)
         if user_settings.settings.accessibility:
             return True
 
-        if ctx.guild is None:
-            # This is in a DM, so there is no server to check
-            return False
-
         # Check guild accessibility
-        guild = await self._fetch_guild(ctx.guild)
-        if guild.accessibility:
+        guild = await VGuild.get_or_fetch(ctx.guild)
+        if guild.settings.accessibility:
             return True
 
         # Finally, make sure we have emoji permission
@@ -165,22 +161,28 @@ class Settings:
         if ctx.user.guild_permissions.administrator:
             return True
 
-        guild = await self._fetch_guild(ctx.guild)
-        return guild.experience_permissions in [ExpPerms.UNRESTRICTED, ExpPerms.UNSPENT_ONLY]
+        guild = await VGuild.get_or_fetch(ctx.guild)
+        return guild.settings.experience_permissions in [
+            ExpPerms.UNRESTRICTED,
+            ExpPerms.UNSPENT_ONLY,
+        ]
 
     async def can_adjust_lifetime_xp(self, ctx) -> bool:
         """Whether the user has permission to adjust lifetime XP."""
         if ctx.user.guild_permissions.administrator:
             return True
 
-        guild = await self._fetch_guild(ctx.guild)
-        return guild.experience_permissions in [ExpPerms.UNRESTRICTED, ExpPerms.LIFETIME_ONLY]
+        guild = await VGuild.get_or_fetch(ctx.guild)
+        return guild.settings.experience_permissions in [
+            ExpPerms.UNRESTRICTED,
+            ExpPerms.LIFETIME_ONLY,
+        ]
 
     async def xp_permissions(self, guild) -> str:
         """Get the XP permissions."""
-        guild = await self._fetch_guild(guild)
+        guild = await VGuild.get_or_fetch(guild)
 
-        match guild.experience_permissions:
+        match guild.settings.experience_permissions:
             case ExpPerms.UNSPENT_ONLY:
                 return "Users may adjust unspent XP only."
             case ExpPerms.LIFETIME_ONLY:
@@ -219,8 +221,8 @@ class Settings:
 
     async def oblivion_stains(self, guild) -> list:
         """Retrieve the Rouse results that grant Oblivion stains."""
-        guild = await self._fetch_guild(guild)
-        return guild.oblivion_stains
+        guild = await VGuild.get_or_fetch(guild)
+        return guild.settings.oblivion_stains
 
     async def set_oblivion_stains(self, ctx, stains: int):
         """Set which dice outcomes will give stains for Oblivion rouse checks."""
@@ -266,8 +268,8 @@ class Settings:
 
     async def update_channel(self, guild: discord.Guild):
         """Retrieve the ID of the guild's update channel, if any."""
-        guild_settings = await self._fetch_guild(guild)
-        if update_channel := guild_settings.update_channel:
+        vguild = await VGuild.get_or_fetch(guild)
+        if update_channel := vguild.settings.update_channel:
             return guild.get_channel(update_channel)
 
         return None
@@ -278,8 +280,8 @@ class Settings:
 
     async def changelog_channel(self, guild: discord.Guild) -> int | None:
         """Retrieves the ID of the guild's RP changelog channel, if any."""
-        guild_settings = await self._fetch_guild(guild)
-        return guild_settings.changelog_channel
+        vguild = await VGuild.get_or_fetch(guild)
+        return vguild.settings.changelog_channel
 
     async def set_changelog_channel(self, ctx, channel: discord.TextChannel):
         """Set the guild's RP changelog channel."""
@@ -287,8 +289,8 @@ class Settings:
 
     async def deletion_channel(self, guild: discord.Guild) -> int | None:
         """Retrieves the ID of the guild's RP deletion channel, if any."""
-        guild_settings = await self._fetch_guild(guild)
-        return guild_settings.deletion_channel
+        vguild = await VGuild.get_or_fetch(guild)
+        return vguild.settings.deletion_channel
 
     async def set_deletion_channel(self, ctx, channel: discord.TextChannel):
         """Set the guild's RP deletion channel."""
@@ -296,8 +298,8 @@ class Settings:
 
     async def add_empty_resonance(self, guild: discord.Guild):
         """Whether to add Empty Resonance to the Resonance table."""
-        guild = await self._fetch_guild(guild)
-        return guild.add_empty_resonance
+        vguild = await VGuild.get_or_fetch(guild)
+        return vguild.settings.add_empty_resonance
 
     async def set_empty_resonance(self, ctx, add_empty: bool) -> str:
         """Set whether to add Empty Resonance to the Resonance table."""
@@ -311,8 +313,8 @@ class Settings:
 
     async def max_hunger(self, guild: discord.Guild):
         """Get the max Hunger rating allowed in rolls."""
-        guild = await self._fetch_guild(guild)
-        return guild.max_hunger
+        vguild = await VGuild.get_or_fetch(guild)
+        return vguild.settings.max_hunger
 
     async def set_max_hunger(self, ctx, max_hunger: int) -> str:
         """Set the max Hunger rating to 5 or 10."""
@@ -349,7 +351,7 @@ class Settings:
 
         # Update the cache
         logger.info("SETTINGS: {} (guild): {}={}", guild.name, key, value)
-        guild = await self._fetch_guild(guild)
+        guild = await VGuild.get_or_fetch(guild)
         setattr(guild, key, value)
 
     async def _set_user(self, user: discord.Member, key: str, value):
@@ -384,27 +386,3 @@ class Settings:
         # Add the user settings to the cache and return
         self._user_cache[user] = user_settings
         return user_settings
-
-    async def _fetch_guild(self, guild: discord.Guild | int | None) -> VGuild:
-        """Fetch a guild."""
-        if guild is None:
-            # We're in DMs
-            return VGuild({})
-
-        if isinstance(guild, discord.Guild):
-            guild_id = guild.id
-        else:
-            guild_id = guild
-
-        if guild_settings := self._guild_cache.get(guild_id):
-            return guild_settings
-
-        guild_params = await inconnu.db.guilds.find_one({"guild": guild_id}) or {}
-        if not guild_params:
-            # In case we missed them somehow
-            await inconnu.stats.guild_joined(guild)
-
-        guild_settings = VGuild(guild_params)
-        self._guild_cache[guild_id] = guild_settings
-
-        return guild_settings

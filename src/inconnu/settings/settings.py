@@ -1,10 +1,17 @@
 """settings.py - User- and server-wide settings."""
 
 from enum import IntEnum, auto
-from typing import cast
+from typing import Callable, cast
 
 import discord
-from discord import ButtonStyle, ComponentType, SelectOption
+from discord import (
+    ButtonStyle,
+    ChannelType,
+    ComponentType,
+    SelectDefaultValue,
+    SelectDefaultValueType,
+    SelectOption,
+)
 from discord.ui import Button, Select, TextDisplay
 from loguru import logger
 
@@ -18,6 +25,7 @@ class SettingsIDs(IntEnum):
     EMOJIS = auto()
     OBLIVION = auto()
     RESONANCE = auto()
+    UPDATES = auto()
 
 
 class SettingsMenu(discord.ui.DesignerView):
@@ -82,7 +90,16 @@ class SettingsMenu(discord.ui.DesignerView):
 
             container.add_item(discord.ui.Separator())
 
-            # TODO: Update channel
+            # Updates channel
+            self._add_channel_select(
+                container,
+                "### Updates channel\nDisplay character updates across the server.",
+                self.scope.settings.update_channel,
+                self.set_update_channel,
+            )
+
+            container.add_item(discord.ui.Separator())
+
             # TODO: Changelog channel
             # TODO: Deletion channel
 
@@ -130,16 +147,16 @@ class SettingsMenu(discord.ui.DesignerView):
 
         if select.values[0] == "100":
             stains = [1, 10]
-            _update_select_default(select, 0)
+            self._update_select_default(select, 0)
         elif select.values[0] == "1":
             stains = [1]
-            _update_select_default(select, 1)
+            self._update_select_default(select, 1)
         elif select.values[0] == "10":
             stains = [10]
-            _update_select_default(select, 2)
+            self._update_select_default(select, 2)
         else:
             stains = []
-            _update_select_default(select, 3)
+            self._update_select_default(select, 3)
 
         vguild = cast(VGuild, self.scope)
         vguild.settings.oblivion_stains = stains
@@ -160,11 +177,56 @@ class SettingsMenu(discord.ui.DesignerView):
         await interaction.edit(view=self)
         await vguild.save()
 
+    async def set_update_channel(self, interaction: discord.Interaction):
+        """Set the update channel by calling the shared setter."""
+        await self._set_channel(interaction, SettingsIDs.UPDATES, "update_channel")
 
-def _update_select_default(select: Select, idx: int):
-    """Update a Select's default."""
-    for i, option in enumerate(select.options):
-        option.default = i == idx
+    async def _set_channel(
+        self,
+        interaction: discord.Interaction,
+        component: SettingsIDs,
+        channel_key: str,
+    ):
+        """Set the channel and update the select to the new default."""
+        if not isinstance(self.scope, VGuild):
+            raise ValueError("Expected a VGuild")
+
+        select = cast(Select, self.get_item(component))
+        channel = select.values[0]
+
+        setattr(self.scope.settings, channel_key, channel.id)
+        select.default_values = [
+            SelectDefaultValue(id=channel.id, type=SelectDefaultValueType.channel)
+        ]
+
+        await interaction.edit(view=self)
+        await self.scope.save()
+
+    @staticmethod
+    def _update_select_default(select: Select, idx: int):
+        """Update a Select's default."""
+        for i, option in enumerate(select.options):
+            option.default = i == idx
+
+    @staticmethod
+    def _add_channel_select(
+        container: discord.ui.Container,
+        text: str,
+        default: int | None,
+        callback: Callable,
+    ):
+        """Add a channel select to the container."""
+        select = Select(
+            select_type=ComponentType.channel_select,
+            channel_types=[ChannelType.text],
+            id=SettingsIDs.UPDATES,
+        )
+        if default is not None:
+            select.add_default_value(id=default, type=SelectDefaultValueType.channel)
+        select.callback = callback
+
+        container.add_text(text)
+        container.add_row(select)
 
 
 async def edit_settings(ctx: AppCtx):

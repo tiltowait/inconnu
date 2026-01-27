@@ -143,7 +143,16 @@ class SettingsMenu(discord.ui.DesignerView):
                 accessory=button,
             )
 
-            # TODO: Max hunger
+            # Max hunger select
+            current_max_hunger = str(self.scope.settings.max_hunger)
+            options = [
+                SelectOption(label="5 (RAW)", value="5", default=current_max_hunger == "5"),
+                SelectOption(label="10", value="10", default=current_max_hunger == "10"),
+            ]
+            select = Select(options=options, id=SettingsIDs.MAX_HUNGER)
+            select.callback = self.set_max_hunger
+            container.add_text("### Max hunger\nOverride standard maximum Hunger rating.")
+            container.add_row(select)
 
     @staticmethod
     def button_label(setting: bool) -> str:
@@ -185,7 +194,6 @@ class SettingsMenu(discord.ui.DesignerView):
 
         vguild = cast(VGuild, self.scope)
         vguild.settings.oblivion_stains = stains
-        print(vguild.settings.oblivion_stains)
 
         await interaction.edit(view=self)
         await vguild.save()
@@ -213,6 +221,19 @@ class SettingsMenu(discord.ui.DesignerView):
     async def set_deletion_channel(self, interaction: discord.Interaction):
         """Set the rolepost deletion channel by calling the shared setter."""
         await self._set_channel(interaction, SettingsIDs.DELETION, "deletion_channel")
+
+    async def set_max_hunger(self, interaction: discord.Interaction):
+        """Set the server's max Hunger rating."""
+        select = cast(Select, self.get_item(SettingsIDs.MAX_HUNGER))
+        new_max_hunger = int(select.values[0])
+
+        self._update_select_default(select, 0 if new_max_hunger == 5 else 1)
+
+        vguild = cast(VGuild, self.scope)
+        vguild.settings.max_hunger = new_max_hunger
+
+        await interaction.edit(view=self)
+        await vguild.save()
 
     async def _set_channel(
         self,

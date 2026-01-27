@@ -18,6 +18,19 @@ class ExpPerms(StrEnum):
     LIFETIME_ONLY = "lifetime_only"
     ADMIN_ONLY = "admin_only"
 
+    @property
+    def description(self) -> str:
+        """Human-readable description."""
+        match self:
+            case ExpPerms.UNRESTRICTED:
+                return "Players can adjust unspent and lifetime XP"
+            case ExpPerms.UNSPENT_ONLY:
+                return "Players can adjust unspent XP only"
+            case ExpPerms.LIFETIME_ONLY:
+                return "Players can adjust lifetime XP only"
+            case ExpPerms.ADMIN_ONLY:
+                return "Only admins can adjust XP"
+
 
 class VGuildSettings(BaseModel):
     """Represents an individual guild's settings."""

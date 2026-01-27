@@ -28,6 +28,7 @@ class SettingsIDs(IntEnum):
     EMOJIS = auto()
     OBLIVION = auto()
     RESONANCE = auto()
+    EXPERIENCE = auto()
     UPDATES = auto()
     CHANGELOG = auto()
     DELETION = auto()
@@ -68,6 +69,7 @@ class SettingsMenu(discord.ui.DesignerView):
         )
 
         if isinstance(self.scope, VGuild):
+            # GAMEPLAY SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
             container.add_text("## Gameplay")
 
@@ -129,6 +131,21 @@ class SettingsMenu(discord.ui.DesignerView):
             container.add_text("### Max hunger\nOverride standard maximum Hunger rating.")
             container.add_row(select)
 
+            # Experience permissions
+            options = [
+                SelectOption(
+                    label=perm.description,
+                    value=perm,
+                    default=self.scope.settings.experience_permissions == perm,
+                )
+                for perm in ExpPerms
+            ]
+            select = Select(options=options, id=SettingsIDs.EXPERIENCE, disabled=not admin)
+            select.callback = self.set_experience_permissions
+            container.add_text("### Experience\nSet user permissions for adjusting XP.")
+            container.add_row(select)
+
+            # MONITORING SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
             container.add_text("## Monitoring")
 
@@ -265,6 +282,22 @@ class SettingsMenu(discord.ui.DesignerView):
         await vguild.save()
 
         self._log_update(interaction, "Max hunger", new_max_hunger)
+
+    async def set_experience_permissions(self, interaction: discord.Interaction):
+        """Set experience permissions."""
+        select = cast(Select, self.get_item(SettingsIDs.EXPERIENCE))
+        perms = select.values[0]
+
+        for option in select.options:
+            option.default = option.value == perms
+
+        vguild = cast(VGuild, self.scope)
+        vguild.settings.experience_permissions = ExpPerms(perms)
+
+        await interaction.edit(view=self)
+        await vguild.save()
+
+        self._log_update(interaction, "Experience permissions", perms)
 
     async def _set_channel(
         self,

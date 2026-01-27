@@ -13,9 +13,17 @@ class SettingsCommands(commands.Cog):
     """Settings-related commands."""
 
     @slash_command()
-    async def seppuku(self, ctx: AppCtx):
+    @option(
+        "scope",
+        description="Show/edit settings for yourself or the server.",
+        choices=[
+            OptionChoice("Yourself", "self"),
+            OptionChoice("Server", "guild"),
+        ],
+    )
+    async def seppuku(self, ctx: AppCtx, scope: str):
         """Adjust user/server settings."""
-        await inconnu.edit_settings(ctx)
+        await inconnu.edit_settings(ctx, scope)
 
     @slash_command()
     @option("enable", description="Enable accessibility mode for yourself")

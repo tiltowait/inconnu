@@ -284,11 +284,14 @@ class SettingsMenu(discord.ui.DesignerView):
         container.add_row(select)
 
 
-async def edit_settings(ctx: AppCtx):
+async def edit_settings(ctx: AppCtx, scope: str):
     """Present the settings menu."""
-    guild = await VGuild.get_or_fetch(ctx.guild)
+    if scope == "guild":
+        obj = await VGuild.get_or_fetch(ctx.guild)
+    else:
+        obj = await VUser.get_or_fetch(ctx.user.id)
 
-    view = SettingsMenu(ctx, guild)
+    view = SettingsMenu(ctx, obj)
     await ctx.respond(view=view)
 
 

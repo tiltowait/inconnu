@@ -150,6 +150,8 @@ class SettingsMenu(discord.ui.DesignerView):
                 accessory=button,
             )
 
+            container.add_item(discord.ui.Separator())
+
             # Max hunger select
             current_max_hunger = str(self.scope.settings.max_hunger)
             options = [

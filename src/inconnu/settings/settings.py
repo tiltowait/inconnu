@@ -22,10 +22,15 @@ from inconnu.settings.vuser import VUser
 
 
 class SettingsIDs(IntEnum):
+    """Menu item IDs."""
+
     EMOJIS = auto()
     OBLIVION = auto()
     RESONANCE = auto()
     UPDATES = auto()
+    CHANGELOG = auto()
+    DELETION = auto()
+    MAX_HUNGER = auto()
 
 
 class SettingsMenu(discord.ui.DesignerView):
@@ -90,18 +95,38 @@ class SettingsMenu(discord.ui.DesignerView):
 
             container.add_item(discord.ui.Separator())
 
-            # Updates channel
+            # Character updates channel
             self._add_channel_select(
                 container,
-                "### Updates channel\nDisplay character updates across the server.",
+                "### Character updates channel\nDisplay character updates across the server.",
+                SettingsIDs.UPDATES,
                 self.scope.settings.update_channel,
                 self.set_update_channel,
             )
 
             container.add_item(discord.ui.Separator())
 
-            # TODO: Changelog channel
-            # TODO: Deletion channel
+            # Rolepost changelog channel
+            self._add_channel_select(
+                container,
+                "### Rolepost changelog channel\nWhere to notify about Rolepost edits.",
+                SettingsIDs.CHANGELOG,
+                self.scope.settings.changelog_channel,
+                self.set_changelog_channel,
+            )
+
+            container.add_item(discord.ui.Separator())
+
+            # Rolepost deletion channel
+            self._add_channel_select(
+                container,
+                "### Rolepost deletion channel\nWhere to notify about Rolepost deletions.",
+                SettingsIDs.DELETION,
+                self.scope.settings.deletion_channel,
+                self.set_deletion_channel,
+            )
+
+            container.add_item(discord.ui.Separator())
 
             # Empty resonance toggle
             button = Button(
@@ -181,6 +206,14 @@ class SettingsMenu(discord.ui.DesignerView):
         """Set the update channel by calling the shared setter."""
         await self._set_channel(interaction, SettingsIDs.UPDATES, "update_channel")
 
+    async def set_changelog_channel(self, interaction: discord.Interaction):
+        """Set the rolepost changelog channel by calling the shared setter."""
+        await self._set_channel(interaction, SettingsIDs.CHANGELOG, "changelog_channel")
+
+    async def set_deletion_channel(self, interaction: discord.Interaction):
+        """Set the rolepost deletion channel by calling the shared setter."""
+        await self._set_channel(interaction, SettingsIDs.DELETION, "deletion_channel")
+
     async def _set_channel(
         self,
         interaction: discord.Interaction,
@@ -212,6 +245,7 @@ class SettingsMenu(discord.ui.DesignerView):
     def _add_channel_select(
         container: discord.ui.Container,
         text: str,
+        id: SettingsIDs,
         default: int | None,
         callback: Callable,
     ):
@@ -219,7 +253,7 @@ class SettingsMenu(discord.ui.DesignerView):
         select = Select(
             select_type=ComponentType.channel_select,
             channel_types=[ChannelType.text],
-            id=SettingsIDs.UPDATES,
+            id=id,
         )
         if default is not None:
             select.add_default_value(id=default, type=SelectDefaultValueType.channel)

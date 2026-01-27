@@ -48,12 +48,13 @@ class SettingsMenu(discord.ui.DesignerView):
             title = "Server Settings"
             description = f"Update settings for **{self.scope.name}**."
 
-        container = discord.ui.Container(TextDisplay(f"## {title}\n{description}"))
+        container = discord.ui.Container(TextDisplay(f"# {title}\n{description}"))
         self.container = container
         self.add_item(container)
         container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
 
         # Accessibility settings
+        container.add_text("## Accessibility")
         button = Button(
             label="Yes" if self.scope.settings.use_emojis else "No",
             style=self.button_style(self.scope.settings.use_emojis),
@@ -67,6 +68,25 @@ class SettingsMenu(discord.ui.DesignerView):
         )
 
         if isinstance(self.scope, VGuild):
+            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
+            container.add_text("## Gameplay")
+
+            # Empty resonance toggle
+            button = Button(
+                label="Yes" if self.scope.settings.add_empty_resonance else "No",
+                style=self.button_style(self.scope.settings.add_empty_resonance),
+                id=SettingsIDs.RESONANCE,
+                disabled=not admin,
+            )
+            button.callback = self.toggle_add_empty_resonance
+            resonance_cmd = ctx.bot.cmd_mention("resonance")
+            container.add_section(
+                TextDisplay(
+                    f"### Add empty resonance?\n16.7% chance to appear in {resonance_cmd}."
+                ),
+                accessory=button,
+            )
+
             container.add_item(discord.ui.Separator())
 
             # Oblivion stains settings
@@ -97,6 +117,20 @@ class SettingsMenu(discord.ui.DesignerView):
             container.add_row(select)
 
             container.add_item(discord.ui.Separator())
+
+            # Max hunger select
+            current_max_hunger = str(self.scope.settings.max_hunger)
+            options = [
+                SelectOption(label="5 (RAW)", value="5", default=current_max_hunger == "5"),
+                SelectOption(label="10", value="10", default=current_max_hunger == "10"),
+            ]
+            select = Select(options=options, id=SettingsIDs.MAX_HUNGER, disabled=not admin)
+            select.callback = self.set_max_hunger
+            container.add_text("### Max hunger\nOverride standard maximum Hunger rating.")
+            container.add_row(select)
+
+            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
+            container.add_text("## Monitoring")
 
             # Character updates channel
             self._add_channel_select(
@@ -131,37 +165,6 @@ class SettingsMenu(discord.ui.DesignerView):
                 self.set_deletion_channel,
                 admin,
             )
-
-            container.add_item(discord.ui.Separator())
-
-            # Empty resonance toggle
-            button = Button(
-                label="Yes" if self.scope.settings.add_empty_resonance else "No",
-                style=self.button_style(self.scope.settings.add_empty_resonance),
-                id=SettingsIDs.RESONANCE,
-                disabled=not admin,
-            )
-            button.callback = self.toggle_add_empty_resonance
-            resonance_cmd = ctx.bot.cmd_mention("resonance")
-            container.add_section(
-                TextDisplay(
-                    f"### Add empty resonance?\n16.7% chance to appear in {resonance_cmd}."
-                ),
-                accessory=button,
-            )
-
-            container.add_item(discord.ui.Separator())
-
-            # Max hunger select
-            current_max_hunger = str(self.scope.settings.max_hunger)
-            options = [
-                SelectOption(label="5 (RAW)", value="5", default=current_max_hunger == "5"),
-                SelectOption(label="10", value="10", default=current_max_hunger == "10"),
-            ]
-            select = Select(options=options, id=SettingsIDs.MAX_HUNGER, disabled=not admin)
-            select.callback = self.set_max_hunger
-            container.add_text("### Max hunger\nOverride standard maximum Hunger rating.")
-            container.add_row(select)
 
     @staticmethod
     def button_label(setting: bool) -> str:

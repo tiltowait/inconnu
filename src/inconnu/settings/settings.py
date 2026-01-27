@@ -364,34 +364,6 @@ class Settings:
         """Wrapper for accessible() that simply inverts the logic."""
         return not await self.accessible(ctx)
 
-    async def set_accessibility(self, ctx, enabled: bool, scope: str):
-        """
-        Set the accessibility mode.
-        Args:
-            ctx: Discord context
-            enabled (bool): The accessibility toggle
-            scope (str): "user" or "server"
-        """
-        if scope == "user":
-            await self._set_key(ctx.user, "accessibility", enabled)
-
-            if enabled:
-                response = "**Accessibility mode** enabled."
-            else:
-                response = "**Accessibility mode** disabled. Note: the server may override."
-        else:  # Server-wide setting
-            if not ctx.user.guild_permissions.administrator:
-                raise PermissionError("Sorry, only admins can set server-wide accessibility mode.")
-
-            await self._set_key(ctx.guild, "accessibility", enabled)
-
-            if enabled:
-                response = "**Accessibility mode** enabled server-wide."
-            else:
-                response = "**Accessibility mode** disabled server-wide. Users may override."
-
-        return response
-
     # XP Permissions
 
     async def can_adjust_current_xp(self, ctx) -> bool:
@@ -462,47 +434,7 @@ class Settings:
         guild = await VGuild.get_or_fetch(guild)
         return guild.settings.oblivion_stains
 
-    async def set_oblivion_stains(self, ctx, stains: int):
-        """Set which dice outcomes will give stains for Oblivion rouse checks."""
-        if not ctx.user.guild_permissions.administrator:
-            raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
-
-        response = "**Rouse checks:** Warn for Oblivion stains when rolling "
-
-        if stains == 100:
-            stains = [1, 10]
-            response += "`1` or `10`."
-        elif stains == 0:
-            stains = []
-            response = "**Rouse checks:** Oblivion Rouses never give stains."
-        else:
-            response += f"`{stains}`."
-            stains = [stains]
-
-        await self._set_key(ctx.guild, "oblivion_stains", stains)
-        return response
-
     # Update Channels
-
-    async def _set_channel(
-        self,
-        ctx: AppCtx,
-        channel: discord.TextChannel | None,
-        key: str,
-    ):
-        """Set the guild channel for a given key."""
-        option_name = key.replace("_", " ")
-
-        if not ctx.user.guild_permissions.administrator:
-            raise PermissionError(f"Sorry, only admins can set the {option_name} channel.")
-
-        if channel:
-            await self._set_key(ctx.guild, key, channel.id)
-            return f"Set the {option_name} to {channel.mention}."
-
-        # Un-setting
-        await self._set_key(ctx.guild, key, None)
-        return f"Un-set the {option_name}."
 
     async def update_channel(self, guild: discord.Guild):
         """Retrieve the ID of the guild's update channel, if any."""
@@ -512,55 +444,25 @@ class Settings:
 
         return None
 
-    async def set_update_channel(self, ctx, channel: discord.TextChannel | None):
-        """Set the guild's update channel."""
-        return await self._set_channel(ctx, channel, "update_channel")
-
     async def changelog_channel(self, guild: discord.Guild) -> int | None:
         """Retrieves the ID of the guild's RP changelog channel, if any."""
         vguild = await VGuild.get_or_fetch(guild)
         return vguild.settings.changelog_channel
-
-    async def set_changelog_channel(self, ctx, channel: discord.TextChannel):
-        """Set the guild's RP changelog channel."""
-        return await self._set_channel(ctx, channel, "changelog_channel")
 
     async def deletion_channel(self, guild: discord.Guild) -> int | None:
         """Retrieves the ID of the guild's RP deletion channel, if any."""
         vguild = await VGuild.get_or_fetch(guild)
         return vguild.settings.deletion_channel
 
-    async def set_deletion_channel(self, ctx, channel: discord.TextChannel):
-        """Set the guild's RP deletion channel."""
-        return await self._set_channel(ctx, channel, "deletion_channel")
-
     async def add_empty_resonance(self, guild: discord.Guild):
         """Whether to add Empty Resonance to the Resonance table."""
         vguild = await VGuild.get_or_fetch(guild)
         return vguild.settings.add_empty_resonance
 
-    async def set_empty_resonance(self, ctx, add_empty: bool) -> str:
-        """Set whether to add Empty Resonance to the Resonance table."""
-        if not ctx.user.guild_permissions.administrator:
-            raise PermissionError("Sorry, only admins can set Oblivion rouse check stains.")
-
-        await self._set_key(ctx.guild, "add_empty_resonance", add_empty)
-        will_or_not = "will" if add_empty else "will not"
-
-        return f"Empty Resonance **{will_or_not}** be added to the Resonance table."
-
     async def max_hunger(self, guild: discord.Guild):
         """Get the max Hunger rating allowed in rolls."""
         vguild = await VGuild.get_or_fetch(guild)
         return vguild.settings.max_hunger
-
-    async def set_max_hunger(self, ctx, max_hunger: int) -> str:
-        """Set the max Hunger rating to 5 or 10."""
-        if not ctx.user.guild_permissions.administrator:
-            raise PermissionError("Sorry, only admins can set the max Hunger rating.")
-
-        await self._set_key(ctx.guild, "max_hunger", max_hunger)
-        return f"Max Hunger rating is now `{max_hunger}`."
 
     async def _set_key(self, scope, key: str, value):
         """

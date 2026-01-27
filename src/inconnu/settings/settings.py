@@ -19,6 +19,7 @@ import inconnu
 from ctx import AppCtx
 from inconnu.settings import ExpPerms, VGuild
 from inconnu.settings.vuser import VUser
+from inconnu.utils import is_admin
 
 
 class SettingsIDs(IntEnum):
@@ -36,7 +37,7 @@ class SettingsIDs(IntEnum):
 class SettingsMenu(discord.ui.DesignerView):
     """The settings menu."""
 
-    def __init__(self, ctx: AppCtx, scope: VGuild | VUser):
+    def __init__(self, ctx: AppCtx, scope: VGuild | VUser, admin: bool):
         super().__init__(timeout=300, disable_on_timeout=True)
         self.scope = scope
 
@@ -57,6 +58,7 @@ class SettingsMenu(discord.ui.DesignerView):
             label="Yes" if self.scope.settings.use_emojis else "No",
             style=self.button_style(self.scope.settings.use_emojis),
             id=SettingsIDs.EMOJIS,
+            disabled=isinstance(self.scope, VGuild) and not admin,
         )
         button.callback = self.toggle_emojis
         container.add_section(
@@ -86,6 +88,7 @@ class SettingsMenu(discord.ui.DesignerView):
                 select_type=ComponentType.string_select,
                 options=options,
                 id=SettingsIDs.OBLIVION,
+                disabled=not admin,
             )
             select.callback = self.set_oblivion_stains
             container.add_text(
@@ -102,6 +105,7 @@ class SettingsMenu(discord.ui.DesignerView):
                 SettingsIDs.UPDATES,
                 self.scope.settings.update_channel,
                 self.set_update_channel,
+                admin,
             )
 
             container.add_item(discord.ui.Separator())
@@ -113,6 +117,7 @@ class SettingsMenu(discord.ui.DesignerView):
                 SettingsIDs.CHANGELOG,
                 self.scope.settings.changelog_channel,
                 self.set_changelog_channel,
+                admin,
             )
 
             container.add_item(discord.ui.Separator())
@@ -124,6 +129,7 @@ class SettingsMenu(discord.ui.DesignerView):
                 SettingsIDs.DELETION,
                 self.scope.settings.deletion_channel,
                 self.set_deletion_channel,
+                admin,
             )
 
             container.add_item(discord.ui.Separator())
@@ -133,6 +139,7 @@ class SettingsMenu(discord.ui.DesignerView):
                 label="Yes" if self.scope.settings.add_empty_resonance else "No",
                 style=self.button_style(self.scope.settings.add_empty_resonance),
                 id=SettingsIDs.RESONANCE,
+                disabled=not admin,
             )
             button.callback = self.toggle_add_empty_resonance
             resonance_cmd = ctx.bot.cmd_mention("resonance")
@@ -149,7 +156,7 @@ class SettingsMenu(discord.ui.DesignerView):
                 SelectOption(label="5 (RAW)", value="5", default=current_max_hunger == "5"),
                 SelectOption(label="10", value="10", default=current_max_hunger == "10"),
             ]
-            select = Select(options=options, id=SettingsIDs.MAX_HUNGER)
+            select = Select(options=options, id=SettingsIDs.MAX_HUNGER, disabled=not admin)
             select.callback = self.set_max_hunger
             container.add_text("### Max hunger\nOverride standard maximum Hunger rating.")
             container.add_row(select)
@@ -269,12 +276,14 @@ class SettingsMenu(discord.ui.DesignerView):
         id: SettingsIDs,
         default: int | None,
         callback: Callable,
+        admin: bool,
     ):
         """Add a channel select to the container."""
         select = Select(
             select_type=ComponentType.channel_select,
             channel_types=[ChannelType.text],
             id=id,
+            disabled=not admin,
         )
         if default is not None:
             select.add_default_value(id=default, type=SelectDefaultValueType.channel)
@@ -282,6 +291,14 @@ class SettingsMenu(discord.ui.DesignerView):
 
         container.add_text(text)
         container.add_row(select)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """Check that the user is authorized for settings changes."""
+        if isinstance(self.scope, VGuild):
+            return is_admin(interaction)
+
+        # Users can always change their settings
+        return True
 
 
 async def edit_settings(ctx: AppCtx, scope: str):
@@ -291,7 +308,7 @@ async def edit_settings(ctx: AppCtx, scope: str):
     else:
         obj = await VUser.get_or_fetch(ctx.user.id)
 
-    view = SettingsMenu(ctx, obj)
+    view = SettingsMenu(ctx, obj, is_admin(ctx))
     await ctx.respond(view=view)
 
 

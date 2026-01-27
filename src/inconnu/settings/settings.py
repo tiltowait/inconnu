@@ -15,7 +15,6 @@ from discord import (
 from discord.ui import Button, Select, TextDisplay
 from loguru import logger
 
-import inconnu
 from ctx import AppCtx
 from inconnu.settings import ExpPerms, VGuild
 from inconnu.settings.vuser import VUser
@@ -23,7 +22,10 @@ from inconnu.utils import is_admin
 
 
 class SettingsIDs(IntEnum):
-    """Menu item IDs."""
+    """Menu item IDs used for quick lookups.
+
+    The order here doesn't matter, as the menu doesn't need stable IDs across
+    invocations/processes."""
 
     EMOJIS = auto()
     OBLIVION = auto()
@@ -379,7 +381,10 @@ class Settings:
     # Accessibility
 
     async def accessible(self, ctx: AppCtx | discord.Interaction):
-        """Determine whether we should use accessibility mode."""
+        """Determine whether we should use accessibility mode.
+
+        Accessibility mode disables emojis. Recommended to instead use can_emoji()
+        instead, as it's easier to reason about."""
         # User accessibility trumps guild accessibility
         user_settings = await VUser.get_or_fetch(ctx.user.id)
         if user_settings.settings.accessibility:
@@ -426,45 +431,6 @@ class Settings:
             ExpPerms.LIFETIME_ONLY,
         ]
 
-    async def xp_permissions(self, guild) -> str:
-        """Get the XP permissions."""
-        guild = await VGuild.get_or_fetch(guild)
-
-        match guild.settings.experience_permissions:
-            case ExpPerms.UNSPENT_ONLY:
-                return "Users may adjust unspent XP only."
-            case ExpPerms.LIFETIME_ONLY:
-                return "Users may adjust lifetime XP only."
-            case ExpPerms.ADMIN_ONLY:
-                return "Only admins may adjust XP totals."
-            case _:
-                return "Users may adjust unspent and lifetime XP."
-
-    async def set_xp_permissions(self, ctx, permissions):
-        """
-        Set the XP settings:
-            • User can modify current and lifetime
-            • User can modify current
-            • User can modify lifetime
-            • User can't modify any
-        """
-        if not ctx.user.guild_permissions.administrator:
-            raise PermissionError("Sorry, only admins can set user experience permissions.")
-
-        await self._set_key(ctx.guild, "experience_permissions", permissions)
-
-        match ExpPerms(permissions):
-            case ExpPerms.UNRESTRICTED:
-                response = "Users have unrestricted XP access."
-            case ExpPerms.UNSPENT_ONLY:
-                response = "Users may only adjust unspent XP."
-            case ExpPerms.LIFETIME_ONLY:
-                response = "Users may only adjust lifetime XP."
-            case ExpPerms.ADMIN_ONLY:
-                response = "Only admins may adjust user XP."
-
-        return response
-
     # Oblivion stains
 
     async def oblivion_stains(self, guild) -> list:
@@ -501,66 +467,3 @@ class Settings:
         """Get the max Hunger rating allowed in rolls."""
         vguild = await VGuild.get_or_fetch(guild)
         return vguild.settings.max_hunger
-
-    async def _set_key(self, scope, key: str, value):
-        """
-        Enable or disable a setting.
-        Args:
-            scope (discord.Guild | discord.Member): user or guild
-            key (str): The setting key
-            value: The value to set
-        """
-        if isinstance(scope, discord.Guild):
-            await self._set_guild(scope, key, value)
-        elif isinstance(scope, discord.Member):
-            await self._set_user(scope, key, value)
-        else:
-            return ValueError(f"Unknown scope `{scope}`.")
-
-        return True
-
-    async def _set_guild(self, guild: discord.Guild, key: str, value):
-        """Enable or disable a guild setting."""
-        res = await inconnu.db.guilds.update_one(
-            {"guild": guild.id}, {"$set": {f"settings.{key}": value}}
-        )
-        if res.matched_count == 0:
-            await inconnu.db.guilds.insert_one({"guild": guild.id, "settings": {key: value}})
-
-        # Update the cache
-        logger.info("SETTINGS: {} (guild): {}={}", guild.name, key, value)
-        guild = await VGuild.get_or_fetch(guild)
-        setattr(guild, key, value)
-
-    async def _set_user(self, user: discord.Member, key: str, value):
-        """Enable or disable a user setting."""
-        res = await inconnu.db.users.update_one(
-            {"user": user.id}, {"$set": {f"settings.{key}": value}}
-        )
-        if res.matched_count == 0:
-            await inconnu.db.users.insert_one({"user": user.id, "settings": {key: value}})
-
-        # Update the cache
-        logger.info("SETTINGS: {}: {}={}", user.name, key, value)
-
-        user_settings = await self._fetch_user(user)
-        setattr(user_settings.settings, key, value)
-        await user_settings.save()
-
-    async def _fetch_user(self, user: discord.User) -> VUser:
-        """Fetch a user."""
-        if not isinstance(user, int):
-            user = user.id
-
-        if user_settings := self._user_cache.get(user):
-            # User is in the cache
-            return user_settings
-
-        # User not in the cache
-        if (user_settings := await VUser.find_one({"user": user})) is None:
-            # User is not in the database, so we create a new one
-            user_settings = VUser(user=user)
-
-        # Add the user settings to the cache and return
-        self._user_cache[user] = user_settings
-        return user_settings

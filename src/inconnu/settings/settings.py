@@ -1,7 +1,7 @@
 """settings.py - User- and server-wide settings."""
 
 from enum import IntEnum, auto
-from typing import Callable, cast
+from typing import Any, Callable, cast
 
 import discord
 from discord import (
@@ -171,6 +171,17 @@ class SettingsMenu(discord.ui.DesignerView):
         """The button style based on the value for the current setting."""
         return ButtonStyle.primary if setting else ButtonStyle.secondary
 
+    def _log_update(self, interaction: discord.Interaction, text: str, val: Any):
+        """Log an update event."""
+        if interaction.guild is None or interaction.user is None:
+            logger.warning("Unable to log: {} -> {}", text, val)
+        elif isinstance(self.scope, VGuild):
+            logger.info(
+                "{} ({}): {} -> {}", interaction.guild.name, interaction.user.name, text, val
+            )
+        else:
+            logger.info("{}: {} -> {}", interaction.user.name, text, val)
+
     async def toggle_emojis(self, interaction: discord.Interaction):
         """Toggle emoji display (server/user)."""
         self.scope.settings.accessibility = not self.scope.settings.accessibility
@@ -181,6 +192,8 @@ class SettingsMenu(discord.ui.DesignerView):
 
         await interaction.edit(view=self)
         await self.scope.save()
+
+        self._log_update(interaction, "Use emojis", not self.scope.settings.accessibility)
 
     async def set_oblivion_stains(self, interaction: discord.Interaction):
         """Set Oblivion stains mode."""
@@ -205,6 +218,8 @@ class SettingsMenu(discord.ui.DesignerView):
         await interaction.edit(view=self)
         await vguild.save()
 
+        self._log_update(interaction, "Oblivion stains", stains)
+
     async def toggle_add_empty_resonance(self, interaction: discord.Interaction):
         """Toggle the add empty resonance setting."""
         vguild = cast(VGuild, self.scope)
@@ -216,6 +231,8 @@ class SettingsMenu(discord.ui.DesignerView):
 
         await interaction.edit(view=self)
         await vguild.save()
+
+        self._log_update(interaction, "Add empty resonance", vguild.settings.add_empty_resonance)
 
     async def set_update_channel(self, interaction: discord.Interaction):
         """Set the update channel by calling the shared setter."""
@@ -242,6 +259,8 @@ class SettingsMenu(discord.ui.DesignerView):
         await interaction.edit(view=self)
         await vguild.save()
 
+        self._log_update(interaction, "Max hunger", new_max_hunger)
+
     async def _set_channel(
         self,
         interaction: discord.Interaction,
@@ -253,7 +272,7 @@ class SettingsMenu(discord.ui.DesignerView):
             raise ValueError("Expected a VGuild")
 
         select = cast(Select, self.get_item(component))
-        channel = select.values[0]
+        channel = cast(discord.TextChannel, select.values[0])
 
         setattr(self.scope.settings, channel_key, channel.id)
         select.default_values = [
@@ -262,6 +281,8 @@ class SettingsMenu(discord.ui.DesignerView):
 
         await interaction.edit(view=self)
         await self.scope.save()
+
+        self._log_update(interaction, channel_key, f"#{channel.name}")
 
     @staticmethod
     def _update_select_default(select: Select, idx: int):

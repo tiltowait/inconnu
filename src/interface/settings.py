@@ -22,7 +22,7 @@ class SettingsCommands(commands.Cog):
     )
     async def settings(self, ctx: AppCtx, scope: str):
         """Adjust user/server settings."""
-        await inconnu.edit_settings(ctx, scope)
+        await inconnu.menu(ctx, scope)
 
 
 def setup(bot):

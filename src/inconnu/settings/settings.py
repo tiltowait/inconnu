@@ -324,7 +324,7 @@ class SettingsMenu(discord.ui.DesignerView):
         return True
 
 
-async def edit_settings(ctx: AppCtx, scope: str):
+async def menu(ctx: AppCtx, scope: str):
     """Present the settings menu."""
     if scope == "guild":
         obj = await VGuild.get_or_fetch(ctx.guild)

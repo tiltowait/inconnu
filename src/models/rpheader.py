@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar, Optional
 from beanie import PydanticObjectId
 from pydantic import BaseModel
 
-from inconnu.errors import CharacterError
+from errors import CharacterError
 
 if TYPE_CHECKING:
     from models import VChar

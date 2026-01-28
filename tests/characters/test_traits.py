@@ -2,7 +2,7 @@
 
 import pytest
 
-import inconnu.errors
+import errors
 import tests.characters
 from inconnu.constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS
 from models import VChar
@@ -47,14 +47,14 @@ def test_find_trait(vampire: VChar, custom_traits: dict[str, int]):
         assert found.name == trait
         assert found.rating == rating
 
-    with pytest.raises(inconnu.errors.TraitNotFound):
+    with pytest.raises(errors.TraitNotFound):
         _ = vampire.find_trait("fake")
 
 
 def test_ambiguous_trait(vampire: VChar):
     trait = vampire.traits[0].name
     vampire.assign_traits({f"{trait}{trait}": 5})
-    with pytest.raises(inconnu.errors.AmbiguousTraitError):
+    with pytest.raises(errors.AmbiguousTraitError):
         _ = vampire.find_trait(trait[0])
 
 
@@ -66,7 +66,7 @@ def test_find_exact_trait(vampire: VChar):
     assert trait.rating == found.rating
     assert found.exact
 
-    with pytest.raises(inconnu.errors.TraitNotFound):
+    with pytest.raises(errors.TraitNotFound):
         _ = vampire.find_trait(trait.name[0], True)
 
 
@@ -81,7 +81,7 @@ def test_delete_trait(vampire: VChar):
 
     vampire.delete_trait(trait.name)
     assert len(vampire.traits) == trait_count - 1
-    with pytest.raises(inconnu.errors.TraitNotFound):
+    with pytest.raises(errors.TraitNotFound):
         _ = vampire.find_trait(trait.name)
 
     # Hard check of traits
@@ -118,10 +118,10 @@ def test_add_specialties(vampire: VChar):
             assert "StreetFighting" in trait.specialties
             break
 
-    with pytest.raises(inconnu.errors.TraitNotFound):
+    with pytest.raises(errors.TraitNotFound):
         vampire.add_specialties("FakeSkill", ["FakeTrait"])
 
-    with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+    with pytest.raises(errors.SpecialtiesNotAllowed):
         vampire.assign_traits({"Strength": 1}, VCharTrait.Type.ATTRIBUTE)
         vampire.add_specialties("Strength", ["ShouldNotWork"])
 
@@ -135,7 +135,7 @@ def test_add_disciplines(vampire: VChar):
             break
 
     vampire.add_powers("Auspex", ["Premonition"])
-    with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+    with pytest.raises(errors.SpecialtiesNotAllowed):
         vampire.add_powers("one", "kindred")
 
 
@@ -146,7 +146,7 @@ def test_attribute_adding(attribute: str, empty_vampire: VChar):
     assert trait.type == VCharTrait.Type.ATTRIBUTE
     assert empty_vampire.traits[0].is_attribute
 
-    with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+    with pytest.raises(errors.SpecialtiesNotAllowed):
         empty_vampire.add_specialties(attribute, ["One"])
     assert not empty_vampire.traits[0].has_specialties
 
@@ -191,7 +191,7 @@ def test_exact_trait_find(vampire: VChar):
     trait = vampire.find_trait("brawl", True)
     assert trait.name == "Brawl"
 
-    with pytest.raises(inconnu.errors.TraitNotFound):
+    with pytest.raises(errors.TraitNotFound):
         _ = vampire.find_trait("b", True)
 
 

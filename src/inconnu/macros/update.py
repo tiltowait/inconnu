@@ -1,5 +1,6 @@
 """macros/update.py - Macro update commands."""
 
+import errors
 import inconnu
 from ctx import AppCtx
 from inconnu.macros import macro_common
@@ -35,10 +36,10 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         await character.save()
 
     except (
-        inconnu.errors.AmbiguousTraitError,
-        inconnu.errors.HungerInPool,
-        inconnu.errors.MacroNotFoundError,
-        inconnu.errors.TraitNotFound,
+        errors.AmbiguousTraitError,
+        errors.HungerInPool,
+        errors.MacroNotFoundError,
+        errors.TraitNotFound,
         SyntaxError,
         ValueError,
     ) as err:

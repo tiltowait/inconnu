@@ -18,6 +18,7 @@ import discord
 import discord.ext.commands
 from loguru import logger
 
+import errors
 import inconnu
 from models.vchardocs import VCharTrait
 from inconnu.roll import Roll
@@ -85,7 +86,7 @@ async def parse(
         except (SyntaxError, LookupError) as err:
             await inconnu.embeds.error(ctx, err, help=__HELP_URL)
             return
-        except inconnu.errors.HandledError:
+        except errors.HandledError:
             await __log_error(ctx, character, raw_syntax)
             return
     else:
@@ -98,8 +99,8 @@ async def parse(
         outcome = await perform_roll(character, syntax, max_hunger)
         await display_outcome(ctx, owner, character, outcome, comment)
 
-    except (SyntaxError, ValueError, inconnu.errors.TraitError, inconnu.errors.RollError) as err:
-        if isinstance(err, inconnu.errors.TraitError):
+    except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
+        if isinstance(err, errors.TraitError):
             view = inconnu.views.TraitsView(character, ctx.user)
             ephemeral = True
         else:
@@ -125,12 +126,12 @@ def _can_roll(character, syntax):
     """Raises an exception if the traits aren't found."""
     try:
         _ = RollParser(character, syntax)
-    except (inconnu.errors.AmbiguousTraitError, inconnu.errors.HungerInPool):
+    except (errors.AmbiguousTraitError, errors.HungerInPool):
         # It's possible there's no ambiguity on another character. We pass on
         # HungerInPool so we can show the correct error message. Otherwise, we
         # get "None of your characters can roll x + hunger".
         pass
-    except inconnu.errors.TooManyParameters as err:
+    except errors.TooManyParameters as err:
         # Vampires take the most parameters, so we always want to show the
         # error message if it's too many for a vampire. Mortals, however, have
         # a Hunger 0 inserted, so their parameter count is always one higher.
@@ -153,7 +154,7 @@ def _can_roll(character, syntax):
             # a user with only mortals will get the most generic error message,
             # but that can't be helped for now.
             msg += "\n\nRemember: Mortals only need `POOL` and `DIFFICULTY`."
-            raise inconnu.errors.TooManyParameters(4, msg) from err
+            raise errors.TooManyParameters(4, msg) from err
 
         # There are too many parameters even for a vampire, so we'll just fail.
         # This works, because SyntaxErrors aren't handled by Haven.

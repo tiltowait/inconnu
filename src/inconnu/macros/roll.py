@@ -7,6 +7,7 @@ import discord
 from discord.ui import Button, View
 from loguru import logger
 
+import errors
 import inconnu
 from ctx import AppCtx
 from inconnu import common
@@ -61,7 +62,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
 
             try:
                 outcome = await perform_roll(character, parameters)
-            except inconnu.errors.TraitNotFound as err:
+            except errors.TraitNotFound as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
                 await common.present_error(ctx, msg, character=character.name)
                 return

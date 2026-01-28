@@ -2,6 +2,7 @@
 
 import asyncio
 
+import errors
 import inconnu
 from inconnu.utils.haven import haven
 
@@ -11,9 +12,9 @@ __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"
 def _can_slake(character):
     """Raises an exception if the character isn't a vampire or is at Hunger 0."""
     if not character.is_vampire:
-        raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
+        raise errors.CharacterError(f"{character.name} isn't a vampire!")
     if character.hunger == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no Hunger!")
+        raise errors.CharacterError(f"{character.name} has no Hunger!")
 
 
 @haven(__HELP_URL, _can_slake, "None of your characters have Hunger to slake.")

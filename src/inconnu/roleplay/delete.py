@@ -3,6 +3,7 @@
 import discord
 
 import db
+import errors
 import inconnu
 from ctx import AppCtx
 from models import RPPost
@@ -16,7 +17,7 @@ async def delete_message_chain(ctx: AppCtx, message: discord.Message):
         rp_post = await _fetch_rp_post(ctx, webhook, message)
         await ctx.send_modal(DeletionModal(webhook, rp_post))
 
-    except (inconnu.errors.WebhookError, ValueError) as err:
+    except (errors.WebhookError, ValueError) as err:
         await inconnu.embeds.error(ctx, err, title="Invalid message")
 
 

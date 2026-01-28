@@ -4,7 +4,7 @@ from contextlib import nullcontext as does_not_raise
 
 import pytest
 
-import inconnu.errors
+import errors
 from models.vchar import VChar
 from inconnu.specialties.add_remove import (
     Category,
@@ -117,7 +117,7 @@ def test_add_specialties_intersection(syntax: str, expected: list[str], characte
     ],
 )
 def test_fail_add_specialties(syntax: str, character: VChar):
-    with pytest.raises(inconnu.errors.TraitError):
+    with pytest.raises(errors.TraitError):
         _ = add_specialties(character, syntax, Category.SPECIALTY)
 
 
@@ -158,10 +158,10 @@ def test_add_powers(character: VChar):
     [
         (does_not_raise(), "Brawl", ["Kindred"]),
         (does_not_raise(), "Brawl", ["Kindred", "Kine"]),
-        (pytest.raises(inconnu.errors.TraitError), "Brawl", ["Brawl"]),
-        (pytest.raises(inconnu.errors.TraitError), "Brawl", ["Kindred", "Brawl"]),
-        (pytest.raises(inconnu.errors.TraitError), "NotASkill", ["ShouldFail"]),
-        (pytest.raises(inconnu.errors.TraitError), "BRAWL", ["brawl"]),  # Test case-insensitivity
+        (pytest.raises(errors.TraitError), "Brawl", ["Brawl"]),
+        (pytest.raises(errors.TraitError), "Brawl", ["Kindred", "Brawl"]),
+        (pytest.raises(errors.TraitError), "NotASkill", ["ShouldFail"]),
+        (pytest.raises(errors.TraitError), "BRAWL", ["brawl"]),  # Test case-insensitivity
     ],
 )
 def test_validate_tokens(exception, skill: str, specs: list[str], character: VChar):

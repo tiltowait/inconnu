@@ -3,6 +3,7 @@
 from types import SimpleNamespace as SN
 from typing import TYPE_CHECKING
 
+import errors
 import inconnu
 from inconnu.utils.haven import haven
 
@@ -15,7 +16,7 @@ __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#remorse-checks"
 def _can_remorse(character):
     """Raise an exception if we have no stains."""
     if character.stains == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no stains.")
+        raise errors.CharacterError(f"{character.name} has no stains.")
 
 
 @haven(__HELP_URL, _can_remorse, "None of your characters have any stains!")

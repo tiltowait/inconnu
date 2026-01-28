@@ -6,7 +6,7 @@ import pytest
 import pytest_asyncio
 
 import inconnu
-from inconnu.errors import CharacterNotFoundError
+from errors import CharacterNotFoundError
 from models import VChar
 
 GUILD = 1

@@ -8,6 +8,7 @@ from discord import option
 from discord.commands import slash_command
 from discord.ext import commands
 
+import errors
 import inconnu
 from inconnu.options import char_option
 
@@ -98,7 +99,7 @@ class MiscCommands(commands.Cog):
                     ctx, f"{current_owner.display_name} doesn't own {xfer.name}!"
                 )
 
-        except inconnu.errors.CharacterNotFoundError:
+        except errors.CharacterNotFoundError:
             await inconnu.common.present_error(ctx, "Character not found.")
         except (LookupError, ValueError) as err:
             await inconnu.common.present_error(ctx, err)

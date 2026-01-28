@@ -2,6 +2,7 @@
 
 from typing import NamedTuple
 
+import errors
 import inconnu
 from ctx import AppCtx
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
@@ -20,7 +21,7 @@ class MendOutcome(NamedTuple):
 def _can_mend(character: VChar):
     """Raises an error if the character has no superficial health damage."""
     if character.superficial_hp == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no damage to mend.")
+        raise errors.CharacterError(f"{character.name} has no damage to mend.")
 
 
 @haven(

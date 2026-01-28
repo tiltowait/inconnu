@@ -8,10 +8,10 @@ from typing import Awaitable, Callable, Concatenate, ParamSpec, TypeVar, cast
 import discord
 from loguru import logger
 
+import errors
 import inconnu
 from models import VChar
 from ctx import AppCtx
-from models import VChar
 from inconnu.utils.permissions import is_admin
 from inconnu.views.basicselector import BasicSelector
 
@@ -94,30 +94,30 @@ class Haven:
                     self.filter(character)
                     self.match = character
                     logger.debug("HAVEN: Explicit character {} matches filter", character.name)
-                except inconnu.errors.InconnuError as err:
+                except errors.InconnuError as err:
                     logger.debug(
                         "HAVEN: Explicit character {} does not match filter", character.name
                     )
                     await inconnu.embeds.error(self.ctx, err, author=self.owner, help=self.help)
-                    raise inconnu.errors.HandledError() from err
+                    raise errors.HandledError() from err
             else:
                 self.match = character
 
         except LookupError as err:
             await inconnu.embeds.error(self.ctx, err)
-            raise inconnu.errors.HandledError() from err
+            raise errors.HandledError() from err
 
-        except inconnu.errors.NoCharactersError as err:
+        except errors.NoCharactersError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await inconnu.embeds.error(self.ctx, errmsg)
-            raise inconnu.errors.HandledError() from err
+            raise errors.HandledError() from err
 
-        except inconnu.errors.CharacterNotFoundError as err:
+        except errors.CharacterNotFoundError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await inconnu.embeds.error(self.ctx, errmsg)
-            raise inconnu.errors.HandledError() from err
+            raise errors.HandledError() from err
 
-        except inconnu.errors.UnspecifiedCharacterError as err:
+        except errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
             assert self.owner is not None
             all_chars = await inconnu.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)
@@ -134,7 +134,7 @@ class Haven:
                         logger.debug("HAVEN: Character {} matches filter", char.name)
                         self.possibilities[self.uuid + char.id_str] = (char, False)
                         passed += 1
-                    except inconnu.errors.InconnuError:
+                    except errors.InconnuError:
                         logger.debug("HAVEN: Character {} does not match filter", char.name)
                         self.possibilities[self.uuid + char.id_str] = (char, True)
 
@@ -154,7 +154,7 @@ class Haven:
                         author=self.owner,
                         help=self.help,
                     )
-                    raise inconnu.errors.HandledError()
+                    raise errors.HandledError()
 
             else:
                 logger.debug("HAVEN: Presenting {} character options", len(all_chars))
@@ -184,7 +184,7 @@ class Haven:
         )
 
         if view is None:
-            raise inconnu.errors.HandledError("Too many characters.")
+            raise errors.HandledError("Too many characters.")
 
         await view.wait()
         self.new_interaction = view.interaction
@@ -196,7 +196,7 @@ class Haven:
             logger.debug("HAVEN: {} selected", character.name)
         else:
             logger.debug("HAVEN: No character selected")
-            raise inconnu.errors.HandledError("No character was selected.")
+            raise errors.HandledError("No character was selected.")
 
     def _create_view(self) -> BasicSelector | None:
         """Create a character selector view."""

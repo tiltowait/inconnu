@@ -5,6 +5,7 @@ from enum import Enum, StrEnum
 
 from loguru import logger
 
+import errors
 import inconnu
 from ctx import AppCtx
 from models.vchar import VChar
@@ -99,7 +100,7 @@ async def _add_or_remove(
             ("Reminder", "Don't leave a trailing `,`!"),
             title="Invalid syntax",
         )
-    except inconnu.errors.TraitError as err:
+    except errors.TraitError as err:
         await inconnu.embeds.error(ctx, err)
 
 
@@ -181,4 +182,4 @@ def validate_tokens(character: VChar, tokens: list[tuple[str, list[str]]]):
             errs.insert(0, f"**{character.name}** doesn't have the following traits: {missing}.")
 
     if errs:
-        raise inconnu.errors.TraitError("\n\n".join(errs))
+        raise errors.TraitError("\n\n".join(errs))

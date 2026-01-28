@@ -6,7 +6,6 @@ import discord
 from pymongo import ReturnDocument, UpdateOne
 
 import db
-import inconnu
 from models import VChar
 from models import VGuild
 

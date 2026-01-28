@@ -2,7 +2,7 @@
 
 import pytest
 
-import inconnu.errors
+import errors
 from models.vchar import VChar
 from inconnu.vr.parse import needs_character
 from inconnu.vr.rollparser import RollParser
@@ -56,7 +56,7 @@ def test_solo_semicolon():
     _ = RollParser(char, ".")
 
     char.add_specialties("Brawl", ["Kine"])
-    with pytest.raises(inconnu.errors.AmbiguousTraitError):
+    with pytest.raises(errors.AmbiguousTraitError):
         _ = RollParser(char, ".")
 
 
@@ -86,12 +86,12 @@ def test_stack_expansion(syntax: str, stack: str, expand_only: bool, character: 
 )
 def test_hunger_in_pool(syntax: str, should_fail: bool, character: VChar):
     if should_fail:
-        with pytest.raises(inconnu.errors.HungerInPool):
+        with pytest.raises(errors.HungerInPool):
             _ = RollParser(character, syntax)
     else:
         try:
             _ = RollParser(character, syntax)
-        except inconnu.errors.HungerInPool:
+        except errors.HungerInPool:
             pytest.fail("Should not have raised HungerInPool")
 
 

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+import errors
 import inconnu
 from ctx import AppCtx
 from inconnu.misc.slake import slake
@@ -12,13 +13,13 @@ from models.vchar import VChar
 
 async def test_mortal_slake_fails(mortal: VChar, ctx: AppCtx):
     """Test that mortals cannot slake hunger."""
-    with pytest.raises(inconnu.errors.CharacterError, match="isn't a vampire"):
+    with pytest.raises(errors.CharacterError, match="isn't a vampire"):
         await slake(ctx, mortal, 1)
 
 
 async def test_ghoul_slake_fails(ghoul: VChar, ctx: AppCtx):
     """Test that ghouls cannot slake hunger."""
-    with pytest.raises(inconnu.errors.CharacterError, match="isn't a vampire"):
+    with pytest.raises(errors.CharacterError, match="isn't a vampire"):
         await slake(ctx, ghoul, 1)
 
 
@@ -26,7 +27,7 @@ async def test_vamp_hunger_zero_fails(vamp: VChar, ctx: AppCtx):
     """Test that vampires at hunger 0 cannot slake."""
     vamp.hunger = 0
 
-    with pytest.raises(inconnu.errors.CharacterError, match="has no Hunger"):
+    with pytest.raises(errors.CharacterError, match="has no Hunger"):
         await slake(ctx, vamp, 1)
 
 

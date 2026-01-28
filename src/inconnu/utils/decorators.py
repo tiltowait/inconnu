@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 from loguru import logger
 
+import errors
 import inconnu
 
 
@@ -13,7 +14,7 @@ def not_on_lockdown():
     def predicate(ctx):
         if ctx.bot.lockdown is not None:
             logger.info("BOT: {} ({}) attempted locked-down command", ctx.user.name, ctx.guild.name)
-            raise inconnu.errors.LockdownError()
+            raise errors.LockdownError()
         logger.debug("BOT: Not on lockdown")
         return True
 
@@ -23,7 +24,7 @@ def not_on_lockdown():
 async def _check_supporter(ctx: discord.ApplicationContext, user: discord.Member | None = None):
     """Wraps is_supporter() to raise on failure."""
     if not await inconnu.utils.get_or_fetch_supporter(ctx, user):
-        raise inconnu.errors.NotPremium
+        raise errors.NotPremium
 
     return True
 

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+import errors
 import inconnu
 from ctx import AppCtx
 from inconnu.misc.rouse import rouse
@@ -12,7 +13,7 @@ from models.vchar import VChar
 
 async def test_mortal_rouse_fails(mortal: VChar, ctx: AppCtx):
     """Test that mortals cannot make rouse checks."""
-    with pytest.raises(inconnu.errors.CharacterError, match="is a mortal"):
+    with pytest.raises(errors.CharacterError, match="is a mortal"):
         await rouse(ctx, mortal, 1, "Test", False)
 
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-import inconnu.errors
+import errors
 from inconnu.constants import Damage
 from models import VChar
 
@@ -122,7 +122,7 @@ def test_find_macro_case_insensitive(vampire):
 
 def test_find_macro_not_found(vampire):
     """Test that finding a non-existent macro raises MacroNotFoundError."""
-    with pytest.raises(inconnu.errors.MacroNotFoundError):
+    with pytest.raises(errors.MacroNotFoundError):
         vampire.find_macro("NonExistent")
 
 
@@ -167,7 +167,7 @@ def test_add_macro_duplicate_raises_error(vampire):
         comment=None,
     )
 
-    with pytest.raises(inconnu.errors.MacroAlreadyExistsError):
+    with pytest.raises(errors.MacroAlreadyExistsError):
         vampire.add_macro(
             name="Duplicate",
             pool=["Dexterity"],
@@ -298,7 +298,7 @@ def test_update_macro_name_resorts(vampire):
 
 def test_update_macro_not_found(vampire):
     """Test that updating a non-existent macro raises MacroNotFoundError."""
-    with pytest.raises(inconnu.errors.MacroNotFoundError):
+    with pytest.raises(errors.MacroNotFoundError):
         vampire.update_macro("NonExistent", {"difficulty": 5})
 
 
@@ -334,7 +334,7 @@ def test_delete_macro(vampire):
     assert vampire.macros[0].name == "KeepMe"
 
     # Verify it's really gone
-    with pytest.raises(inconnu.errors.MacroNotFoundError):
+    with pytest.raises(errors.MacroNotFoundError):
         vampire.find_macro("DeleteMe")
 
 
@@ -358,7 +358,7 @@ def test_delete_macro_case_insensitive(vampire):
 
 def test_delete_macro_not_found(vampire):
     """Test that deleting a non-existent macro raises MacroNotFoundError."""
-    with pytest.raises(inconnu.errors.MacroNotFoundError):
+    with pytest.raises(errors.MacroNotFoundError):
         vampire.delete_macro("NonExistent")
 
 
@@ -527,7 +527,7 @@ def test_willpower_recovery_trait_not_found_handled(vampire):
     try:
         recovery = vampire.willpower_recovery
         assert recovery == 0
-    except inconnu.errors.TraitNotFound:
+    except errors.TraitNotFound:
         pytest.fail("willpower_recovery should handle TraitNotFound gracefully")
 
 

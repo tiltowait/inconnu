@@ -5,6 +5,7 @@ from loguru import logger
 
 import api
 import db
+import errors
 import inconnu
 from ctx import AppCtx
 from models import VChar
@@ -20,7 +21,7 @@ def _has_image(character):
         # We need to make sure the image isn't an empty string.
         if image:
             return
-    raise inconnu.errors.CharacterError(
+    raise errors.CharacterError(
         f"{character.name} doesn't have any images! Upload via `/character image upload`."
     )
 

@@ -7,7 +7,6 @@ from datetime import UTC, datetime
 import discord
 
 import db
-import inconnu
 
 
 async def log_event(event_key, **context):

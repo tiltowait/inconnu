@@ -6,6 +6,7 @@ from types import SimpleNamespace as SN
 import discord
 
 import db
+import errors
 import inconnu
 from ctx import AppCtx
 from inconnu import vr as roll
@@ -47,7 +48,7 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
 
         await __display_embed(ctx, params, strategy, probabilities)
 
-    except (SyntaxError, ValueError, inconnu.errors.TraitError) as err:
+    except (SyntaxError, ValueError, errors.TraitError) as err:
         await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
 
 

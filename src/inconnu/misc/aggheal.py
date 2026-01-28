@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
+import errors
 import inconnu
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
 from inconnu.utils.haven import haven
@@ -16,7 +17,7 @@ __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#aggravated-heal
 def _can_aggheal(character):
     """Raise an error if the character can't agg heal."""
     if character.aggravated_hp == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no Aggravated Health damage!")
+        raise errors.CharacterError(f"{character.name} has no Aggravated Health damage!")
 
 
 @haven(__HELP_URL, _can_aggheal, "None of your characters have Aggravated Health damage.")

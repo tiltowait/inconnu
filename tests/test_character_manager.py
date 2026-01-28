@@ -6,7 +6,7 @@ import pytest
 import pytest_asyncio
 
 from inconnu.constants import Damage
-from inconnu.errors import (
+from errors import (
     NoCharactersError,
     UnspecifiedCharacterError,
 )

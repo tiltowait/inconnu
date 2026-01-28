@@ -5,6 +5,7 @@ import re
 import discord
 from loguru import logger
 
+import errors
 import inconnu
 from models import HeaderSubdoc, RPPost, VChar
 from inconnu.utils.haven import haven
@@ -333,7 +334,7 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
             )
             await ctx.send_modal(modal)
 
-        except inconnu.errors.CharacterNotFoundError:
+        except errors.CharacterNotFoundError:
             await inconnu.embeds.error(
                 ctx,
                 "You can't edit the post of a deleted character!",

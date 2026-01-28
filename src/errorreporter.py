@@ -8,6 +8,7 @@ import pymongo.errors
 from discord.ext import commands
 from loguru import logger
 
+import errors
 import inconnu
 
 
@@ -78,10 +79,10 @@ class ErrorReporter:
             # This just means a button tried to disable when its message no longer exists.
             # We don't care, and there's nothing we can do about it anyway.
             return
-        if isinstance(error, inconnu.errors.NotReady):
+        if isinstance(error, errors.NotReady):
             await inconnu.embeds.error(ctx, str(error), title="One moment, please")
             return
-        if isinstance(error, inconnu.errors.NotPremium):
+        if isinstance(error, errors.NotPremium):
             troubleshoot_url = (
                 "https://docs.inconnu.app/advanced/troubleshooting#you-arent-able-to-upload-images"
             )
@@ -104,7 +105,7 @@ class ErrorReporter:
                 ephemeral=True,
             )
             return
-        if isinstance(error, inconnu.errors.LockdownError):
+        if isinstance(error, errors.LockdownError):
             timestamp = discord.utils.format_dt(ctx.bot.lockdown, "R")
             err = f"{ctx.bot.user.mention} is undergoing maintenance {timestamp}."
             embed = inconnu.embeds.ErrorEmbed(
@@ -115,7 +116,7 @@ class ErrorReporter:
             )
             await respond(embed=embed, ephemeral=True)
             return
-        if isinstance(error, inconnu.errors.HandledError):
+        if isinstance(error, errors.HandledError):
             logger.debug("REPORTER: Ignoring a HandledError")
             return
         if isinstance(error, discord.errors.DiscordServerError):

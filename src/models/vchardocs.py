@@ -8,7 +8,7 @@ from typing import ClassVar, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-import inconnu
+import errors
 
 
 class VCharProfile(BaseModel):
@@ -129,14 +129,14 @@ class VCharTrait(BaseModel):
     def add_powers(self, powers: str | list[str]):
         """Add powers to the Discipline."""
         if not self.is_discipline:
-            raise inconnu.errors.SpecialtiesNotAllowed("Only Disciplines may have powers.")
+            raise errors.SpecialtiesNotAllowed("Only Disciplines may have powers.")
 
         self._add_subtraits(powers)
 
     def add_specialties(self, specialties: str | list[str]):
         """Add specialties to the trait."""
         if not self.specialties_allowed:
-            raise inconnu.errors.SpecialtiesNotAllowed(
+            raise errors.SpecialtiesNotAllowed(
                 "Only skills and custom traits may have specialties."
             )
         self._add_subtraits(specialties)

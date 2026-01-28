@@ -7,6 +7,7 @@ import discord
 from discord.ext.commands import Paginator
 from discord.ui import InputText, Modal
 
+import errors
 import inconnu
 
 
@@ -92,7 +93,7 @@ class _BulkModal(Modal):
                     # Prevent the character from being awarded again
                     seen.add(match)
 
-            except inconnu.errors.CharacterNotFoundError:
+            except errors.CharacterNotFoundError:
                 self.errors.append(f"**Not found:** {member}: `{char_name}`")
 
         # Finished parsing input

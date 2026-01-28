@@ -11,6 +11,7 @@ from loguru import logger
 
 import config
 import db
+import errors
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from models import RPPost, VChar
@@ -93,9 +94,7 @@ class InconnuBot(discord.AutoShardedBot):
             # This routine only works if the webhooks have already been fetched
             if message.reference.resolved.author.id in self.webhook_cache.webhook_ids:
                 logger.debug("BOT: Received a reply to one of our webhooks")
-                rp_post = await RPPost.find_one(
-                    {"id_chain": message.reference.message_id}
-                )
+                rp_post = await RPPost.find_one({"id_chain": message.reference.message_id})
                 if rp_post is not None:
                     # Users can't turn off reply pings to bots, so we don't
                     # need to worry about an edge case where they disabled the
@@ -187,11 +186,9 @@ class InconnuBot(discord.AutoShardedBot):
         try:
             return await self.webhook_cache.prep_webhook(channel)
         except discord.Forbidden:
-            raise inconnu.errors.WebhookError(
-                "Inconnu needs `Manage Webhook` permission for this command."
-            )
+            raise errors.WebhookError("Inconnu needs `Manage Webhook` permission for this command.")
         except AttributeError:
-            raise inconnu.errors.WebhookError("This feature isn't available in threads.")
+            raise errors.WebhookError("This feature isn't available in threads.")
 
     async def _set_presence(self):
         """Set the bot's presence message."""
@@ -299,7 +296,7 @@ class InconnuBot(discord.AutoShardedBot):
                             )
                             await inconnu.utils.cmd_replace(ctx, tip, ephemeral=True)
 
-                    except inconnu.errors.CharacterNotFoundError:
+                    except errors.CharacterNotFoundError:
                         # They tried to look up a character they don't have
                         pass
 

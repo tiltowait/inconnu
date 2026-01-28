@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+import errors
 import inconnu
 from ctx import AppCtx
 from inconnu.constants import Damage
@@ -15,7 +16,7 @@ async def test_no_superficial_damage_fails(vamp: VChar, ctx: AppCtx):
     """Test that mending with no superficial damage fails."""
     vamp.health = "..........."  # All healthy
 
-    with pytest.raises(inconnu.errors.CharacterError, match="has no damage to mend"):
+    with pytest.raises(errors.CharacterError, match="has no damage to mend"):
         await mend(ctx, vamp)
 
 

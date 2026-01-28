@@ -1,5 +1,6 @@
 """macros/create.py - Creating user macros."""
 
+import errors
 import inconnu
 from ctx import AppCtx
 from inconnu.macros import macro_common
@@ -63,9 +64,9 @@ async def create(
 
     except (
         SyntaxError,
-        inconnu.errors.AmbiguousTraitError,
-        inconnu.errors.HungerInPool,
-        inconnu.errors.MacroAlreadyExistsError,
-        inconnu.errors.TraitNotFound,
+        errors.AmbiguousTraitError,
+        errors.HungerInPool,
+        errors.MacroAlreadyExistsError,
+        errors.TraitNotFound,
     ) as err:
         await inconnu.embeds.error(ctx, err, help=__HELP_URL, character=character.name)

@@ -15,7 +15,7 @@ from beanie import Document, Insert, Replace, Save, SaveChanges, before_event
 from loguru import logger
 from pydantic import ConfigDict, Field
 
-import inconnu
+import errors
 from inconnu.constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
 from models.vchardocs import (
     VCharExperience,
@@ -197,12 +197,12 @@ class VChar(Document):
         """The amount of Superficial Willpower damage healed per night."""
         try:
             resolve = self.find_trait("Resolve").rating
-        except inconnu.errors.TraitNotFound:
+        except errors.TraitNotFound:
             resolve = 0
 
         try:
             composure = self.find_trait("Composure").rating
-        except inconnu.errors.TraitNotFound:
+        except errors.TraitNotFound:
             composure = 0
 
         return max(resolve, composure)
@@ -394,11 +394,11 @@ class VChar(Document):
             found.extend(matches)
 
         if not found:
-            raise inconnu.errors.TraitNotFound(self, name)
+            raise errors.TraitNotFound(self, name)
 
         if len(found) > 1:
             keys = map(lambda m: m.key, found)
-            raise inconnu.errors.AmbiguousTraitError(name, keys)
+            raise errors.AmbiguousTraitError(name, keys)
 
         # One single match found
         return found[0]
@@ -465,7 +465,7 @@ class VChar(Document):
                 del self.raw_traits[index]
                 return trait.name
 
-        raise inconnu.errors.TraitNotFound(self, name)
+        raise errors.TraitNotFound(self, name)
 
     def add_powers(self, trait_name: str, powers: list[str] | str) -> tuple[VCharTrait, list[str]]:
         """Add powers to a Discipline and return a copy."""
@@ -493,7 +493,7 @@ class VChar(Document):
 
                 return copy.deepcopy(trait), delta
 
-        raise inconnu.errors.TraitNotFound(self, trait_name)
+        raise errors.TraitNotFound(self, trait_name)
 
     def remove_specialties(
         self, trait_name: str, specialties: list[str] | str
@@ -508,7 +508,7 @@ class VChar(Document):
 
                 return copy.deepcopy(trait), delta
 
-        raise inconnu.errors.TraitNotFound(self, trait_name)
+        raise errors.TraitNotFound(self, trait_name)
 
     # Macros!
 
@@ -519,7 +519,7 @@ class VChar(Document):
             if macro.name.lower() == lower:
                 return index
 
-        raise inconnu.errors.MacroNotFoundError(f"**{self.name}** has no macro named `{search}`.")
+        raise errors.MacroNotFoundError(f"**{self.name}** has no macro named `{search}`.")
 
     def find_macro(self, search: str) -> VCharMacro:
         """
@@ -536,10 +536,10 @@ class VChar(Document):
         """
         try:
             _ = self._macro_index(kwargs["name"])
-            raise inconnu.errors.MacroAlreadyExistsError(
+            raise errors.MacroAlreadyExistsError(
                 f"You already have a macro named `{kwargs['name']}`."
             )
-        except inconnu.errors.MacroNotFoundError:
+        except errors.MacroNotFoundError:
             pass
 
         macro = VCharMacro(**kwargs)
@@ -718,7 +718,7 @@ class VChar(Document):
             "blush",
         }
         if key not in valid_keys:
-            raise inconnu.errors.InvalidLogKeyError(f"{key} is not a valid log key.")
+            raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
 
         if key in self.stat_log:
             self.stat_log[key] += increment

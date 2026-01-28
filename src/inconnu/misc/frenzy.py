@@ -2,6 +2,7 @@
 
 import discord
 
+import errors
 import inconnu
 from config import web_asset
 from inconnu.utils.haven import haven
@@ -20,7 +21,7 @@ __FRENZY_BONUSES.update({str(n): n for n in range(1, 8)})
 def _can_frenzy(character):
     """Raises an exception if the character can't frenzy."""
     if not character.is_vampire:
-        raise inconnu.errors.CharacterError("Only vampires can frenzy!")
+        raise errors.CharacterError("Only vampires can frenzy!")
 
 
 @haven(__HELP_URL, _can_frenzy, "None of your characters are capable of frenzying.")

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import discord
 from discord.ext import pages
 
+import errors
 import inconnu
 from ctx import AppCtx
 from models import VChar
@@ -16,7 +17,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/macros/listing"
 def _has_macros(character: VChar):
     """Raises an error if the character has no macros."""
     if not character.macros:
-        raise inconnu.errors.MacroError(f"{character.name} has no macros!")
+        raise errors.MacroError(f"{character.name} has no macros!")
 
 
 @haven(__HELP_URL, _has_macros, "None of your characters have any macros!")

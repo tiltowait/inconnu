@@ -2,6 +2,7 @@
 
 from types import SimpleNamespace
 
+import errors
 import inconnu
 from config import web_asset
 from models import VChar
@@ -13,7 +14,7 @@ __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 def _can_rouse(character):
     """Raises an error if the character is mortal."""
     if character.splat == "mortal":
-        raise inconnu.errors.CharacterError(f"{character.name} is a mortal.")
+        raise errors.CharacterError(f"{character.name} is a mortal.")
 
 
 @haven(__HELP_URL, _can_rouse)

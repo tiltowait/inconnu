@@ -9,7 +9,6 @@ from beanie import init_beanie
 from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
 
-import db
 
 os.environ["PYTEST"] = "1"
 os.environ["ADMIN_SERVER"] = "09876"

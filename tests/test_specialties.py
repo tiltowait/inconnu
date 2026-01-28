@@ -2,7 +2,7 @@
 
 import pytest
 
-import inconnu.errors
+import errors
 from models.vchardocs import VCharTrait
 
 
@@ -200,7 +200,7 @@ def test_specialties_allowed(category: str, allowed: bool):
     assert trait.specialties_allowed == allowed
 
     if not allowed:
-        with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+        with pytest.raises(errors.SpecialtiesNotAllowed):
             trait.add_specialties("spec")
 
 
@@ -208,7 +208,7 @@ def test_subtrait_delineation(skill: VCharTrait, discipline: VCharTrait):
     skill.add_specialties("Kindred")
     discipline.add_powers("Prowess")
 
-    with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+    with pytest.raises(errors.SpecialtiesNotAllowed):
         skill.add_powers("Prowess")
-    with pytest.raises(inconnu.errors.SpecialtiesNotAllowed):
+    with pytest.raises(errors.SpecialtiesNotAllowed):
         discipline.add_specialties("Kindred")

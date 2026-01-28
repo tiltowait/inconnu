@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, NamedTuple
 
 from discord import ApplicationContext, Interaction
 
+import errors
 import inconnu
 from inconnu.traits import traitcommon
 from inconnu.utils.haven import haven
@@ -82,7 +83,7 @@ def __delete_traits(character: "VChar", *traits: str) -> DeletionResult:
             try:
                 trait = character.delete_trait(trait_name)
                 deleted.append(trait)
-            except inconnu.errors.TraitNotFound:
+            except errors.TraitNotFound:
                 errs.append(trait_name)
 
     return DeletionResult(deleted=deleted, errors=errs)

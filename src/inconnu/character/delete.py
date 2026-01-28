@@ -7,6 +7,7 @@ from discord.ui import InputText, Modal
 from loguru import logger
 
 import api
+import errors
 import inconnu
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
@@ -19,7 +20,7 @@ async def delete(ctx, character_name: str):
         modal = _DeletionModal(title=f"Delete {character.name}", character=character)
         await ctx.send_modal(modal)
 
-    except inconnu.errors.CharacterError as err:
+    except errors.CharacterError as err:
         await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
 
 

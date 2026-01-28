@@ -6,7 +6,7 @@ import re
 
 from loguru import logger
 
-import inconnu
+import errors
 from models.vchardocs import VCharTrait
 
 
@@ -164,7 +164,7 @@ class RollParser:
 
         if "Hunger" in self.pool_stack:
             errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"
-            raise inconnu.errors.HungerInPool(errmsg)
+            raise errors.HungerInPool(errmsg)
 
         # Only the pool is required, so we need to provide defaults if the other
         # stacks aren't given
@@ -220,7 +220,7 @@ class RollParser:
             extra = f"**Unexpected extra parameter(s):** `{extra}`"
 
             err = "Too many roll parameters given. Interpretation based on input:"
-            raise inconnu.errors.TooManyParameters(
+            raise errors.TooManyParameters(
                 3 + len(qualified_stacks), f"{err}\n\n{interpretation}\n\n{extra}"
             )
 

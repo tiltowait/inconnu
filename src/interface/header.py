@@ -10,6 +10,7 @@ from loguru import logger
 from pymongo import DeleteOne
 
 import db
+import errors
 import inconnu
 import interface
 from ctx import AppCtx
@@ -143,7 +144,7 @@ async def _header_bol_options(ctx) -> list[OptionChoice]:
             ]
         return [OptionChoice("N/A - Mortal", "-1")]
 
-    except inconnu.errors.CharacterNotFoundError:
+    except errors.CharacterNotFoundError:
         return []
 
 
@@ -262,7 +263,7 @@ class HeaderCog(commands.Cog):
             webhook = await self.bot.prep_webhook(message.channel)
             is_bot_message = message.author == self.bot.user
             is_webhook_message = message.author.id == webhook.id
-        except inconnu.errors.WebhookError:
+        except errors.WebhookError:
             webhook = None
             is_bot_message = message.author == self.bot.user
             is_webhook_message = False

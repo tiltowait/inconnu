@@ -8,7 +8,6 @@ from loguru import logger
 
 import api
 import db
-import inconnu
 from models import VChar
 
 

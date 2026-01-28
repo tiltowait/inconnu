@@ -8,7 +8,7 @@ from cachetools import TTLCache
 from loguru import logger
 
 import db
-import inconnu
+import errors
 from models.vchar import VChar
 
 
@@ -71,7 +71,7 @@ class CharacterManager:
                     return char
 
             # The given name doesn't match any character ID or name
-            raise inconnu.errors.CharacterNotFoundError(f"You have no character named `{name}`.")
+            raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
 
         # No character name given. If the user only has one character, then we
         # can just return it. Otherwise, send an error message.
@@ -79,7 +79,7 @@ class CharacterManager:
         user_chars = await self.fetchall(guild, user)
 
         if (count := len(user_chars)) == 0:
-            raise inconnu.errors.NoCharactersError(
+            raise errors.NoCharactersError(
                 "You have no characters. Create one with `/character create`."
             )
         if count == 1:
@@ -87,7 +87,7 @@ class CharacterManager:
 
         # Two or more characters
         errmsg = f"You have {count} characters. Please specify which to use."
-        raise inconnu.errors.UnspecifiedCharacterError(errmsg)
+        raise errors.UnspecifiedCharacterError(errmsg)
 
     async def fetchall(self, guild: int, user: int):
         """

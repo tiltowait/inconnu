@@ -4,6 +4,7 @@ import discord
 from discord.ext import pages
 from loguru import logger
 
+import errors
 import inconnu
 from inconnu.utils.haven import haven
 
@@ -20,7 +21,7 @@ async def edit_biography(ctx, character):
 def _has_profile(character):
     """Raises an error if the character doesn't have a profile."""
     if not character.has_biography:
-        raise inconnu.errors.CharacterError(f"{character.name} doesn't have a profile!")
+        raise errors.CharacterError(f"{character.name} doesn't have a profile!")
 
 
 @haven(__HELP_URL, _has_profile, "None of your characters have a profile!", True)

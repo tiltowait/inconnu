@@ -6,6 +6,7 @@ import discord
 from loguru import logger
 
 import db
+import errors
 import inconnu
 from ctx import AppCtx
 from models.rpheader import HeaderSubdoc
@@ -13,7 +14,6 @@ from inconnu.utils.haven import haven
 
 if TYPE_CHECKING:
     from models import VChar
-    from models.rpheader import HeaderSubdoc as HeaderSubdocType
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
@@ -25,9 +25,9 @@ async def show_header(ctx: AppCtx, character: "VChar", **kwargs):
     message = None
     try:
         if not inconnu.utils.is_supporter(ctx):
-            raise inconnu.errors.NotPremium
+            raise errors.NotPremium
         if not ctx.bot.can_webhook(ctx.channel):
-            raise inconnu.errors.WebhookError
+            raise errors.WebhookError
 
         await ctx.respond("Generating header ...", ephemeral=True, delete_after=1)
 
@@ -38,7 +38,7 @@ async def show_header(ctx: AppCtx, character: "VChar", **kwargs):
         message = await webhook.send(
             embed=embed, username=character.name, avatar_url=webhook_avatar, wait=True
         )
-    except (inconnu.errors.NotPremium, inconnu.errors.WebhookError):
+    except (errors.NotPremium, errors.WebhookError):
         embed = header_embed(header_doc, character, False)
         resp = await ctx.respond(embed=embed)
         if isinstance(resp, discord.WebhookMessage):
@@ -79,9 +79,7 @@ async def register_header(ctx, message, character):
     )
 
 
-def header_embed(
-    header: HeaderSubdoc, character: "VChar", webhook: bool
-) -> discord.Embed:
+def header_embed(header: HeaderSubdoc, character: "VChar", webhook: bool) -> discord.Embed:
     """Generate the header embed from the document."""
     # Merits, flaws, and trackers go in the description field
     description_ = []

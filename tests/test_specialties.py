@@ -3,7 +3,7 @@
 import pytest
 
 import inconnu.errors
-from inconnu.models.vchardocs import VCharTrait
+from models.vchardocs import VCharTrait
 
 
 @pytest.fixture

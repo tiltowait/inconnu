@@ -6,7 +6,7 @@ import pytest
 
 from ctx import AppCtx
 from inconnu.misc.stain import stain
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 async def test_stain_delta_zero_fails(vamp: VChar, ctx: AppCtx):

@@ -9,7 +9,7 @@ from inconnu.traits import traitcommon
 from inconnu.utils.haven import haven
 
 if TYPE_CHECKING:
-    from inconnu.models import VChar
+    from models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 

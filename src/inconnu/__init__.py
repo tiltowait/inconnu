@@ -15,7 +15,6 @@ from inconnu import (
     log,
     macros,
     misc,
-    models,
     options,
     reference,
     roleplay,
@@ -29,9 +28,9 @@ from inconnu import (
     vr,
     webhookcache,
 )
+from inconnu.character_manager import CharacterManager
 from inconnu.dice import d10, random
 from inconnu.emoji import emojis
-from inconnu.models import CharacterManager
 from inconnu.roll import Roll
 from inconnu.settings import menu
 from inconnu.urls import post_url, profile_url
@@ -57,7 +56,6 @@ __all__ = (
     "log",
     "macros",
     "misc",
-    "models",
     "options",
     "post_url",
     "profile_url",

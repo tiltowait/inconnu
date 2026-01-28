@@ -7,7 +7,7 @@ import pytest
 import inconnu
 from ctx import AppCtx
 from inconnu.character.update.parse import update
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 @pytest.fixture

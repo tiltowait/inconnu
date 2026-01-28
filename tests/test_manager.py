@@ -7,6 +7,7 @@ import pytest_asyncio
 
 import inconnu
 from inconnu.errors import CharacterNotFoundError
+from models import VChar
 
 GUILD = 1
 USER = 1
@@ -63,7 +64,7 @@ class MockUser:
 async def char_id() -> str:
     """The ID of a dummy character inserted into the database."""
     splat = "vampire"
-    char = inconnu.models.VChar(
+    char = VChar(
         guild=1,
         user=1,
         raw_name="Test",

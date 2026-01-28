@@ -5,7 +5,7 @@ from contextlib import nullcontext as does_not_raise
 import pytest
 
 import inconnu.errors
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 from inconnu.specialties.add_remove import (
     Category,
     add_specialties,

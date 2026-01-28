@@ -13,11 +13,12 @@ import config
 import db
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
+from models import RPPost, VChar
 from ctx import AppCtx
 from errorreporter import reporter
 
 if TYPE_CHECKING:
-    from inconnu.models import VChar
+    from models import VChar
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -92,7 +93,7 @@ class InconnuBot(discord.AutoShardedBot):
             # This routine only works if the webhooks have already been fetched
             if message.reference.resolved.author.id in self.webhook_cache.webhook_ids:
                 logger.debug("BOT: Received a reply to one of our webhooks")
-                rp_post = await inconnu.models.RPPost.find_one(
+                rp_post = await RPPost.find_one(
                     {"id_chain": message.reference.message_id}
                 )
                 if rp_post is not None:
@@ -324,7 +325,7 @@ class InconnuBot(discord.AutoShardedBot):
             logger.info("CONNECT: {}", discord.version_info)
             logger.info("CONNECT: Latency: {} ms", self.latency * 1000)
 
-            inconnu.models.VChar.SPC_OWNER = self.user.id
+            VChar.SPC_OWNER = self.user.id
             logger.info("CONNECT: Registered SPC owner")
 
             self.connected = True

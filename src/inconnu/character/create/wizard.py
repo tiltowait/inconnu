@@ -8,6 +8,7 @@ from discord.ui import Button
 from loguru import logger
 
 import inconnu
+from models import VChar
 
 
 class Wizard:
@@ -67,7 +68,7 @@ class Wizard:
         """Add the character to the database and inform the user they are done."""
         owner = self.ctx.user.id if not self.parameters.spc else self.ctx.bot.user.id
 
-        character = inconnu.models.VChar(
+        character = VChar(
             guild=self.ctx.guild.id,
             user=owner,
             raw_name=self.parameters.name,

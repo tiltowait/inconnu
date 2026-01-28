@@ -3,7 +3,7 @@
 import pytest
 
 import inconnu.errors
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 from inconnu.vr.parse import needs_character
 from inconnu.vr.rollparser import RollParser
 from tests.characters import gen_char

@@ -9,8 +9,9 @@ import discord
 from loguru import logger
 
 import inconnu
+from models import VChar
 from ctx import AppCtx
-from inconnu.models import VChar
+from models import VChar
 from inconnu.utils.permissions import is_admin
 from inconnu.views.basicselector import BasicSelector
 
@@ -162,7 +163,7 @@ class Haven:
             if self.match is None:
                 await self._get_user_selection(err)
 
-        return cast(inconnu.models.VChar, self.match)
+        return cast(VChar, self.match)
 
     async def _get_user_selection(self, err):
         """Present the player's character options."""

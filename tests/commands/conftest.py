@@ -8,7 +8,7 @@ import pytest
 
 from bot import InconnuBot
 from ctx import AppCtx
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 @pytest.fixture
@@ -99,7 +99,7 @@ async def mock_defer() -> AsyncGenerator[AsyncMock, None]:
 
 @pytest.fixture
 def mock_char_save():
-    with patch("inconnu.models.vchar.VChar.save", new_callable=AsyncMock) as mocked:
+    with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mocked:
         yield mocked
 
 

@@ -8,7 +8,7 @@ import inconnu
 from ctx import AppCtx
 from inconnu.constants import Damage
 from inconnu.misc.mend import mend
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 async def test_no_superficial_damage_fails(vamp: VChar, ctx: AppCtx):

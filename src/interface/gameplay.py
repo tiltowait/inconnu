@@ -7,6 +7,7 @@ from discord.ext import commands
 
 import inconnu
 from inconnu.options import char_option, player_option
+from models import VChar
 
 
 class Gameplay(commands.Cog):
@@ -71,7 +72,7 @@ class Gameplay(commands.Cog):
         """Roll the dice!"""
         syntax = f"{pool} {hunger} {difficulty}"
         char = await inconnu.vr.parse(ctx, syntax, comment, character, player)
-        if isinstance(char, inconnu.models.VChar):
+        if isinstance(char, VChar):
             if char.is_vampire:
                 if hunger != "current_hunger" and char.hunger == int(hunger):
                     await ctx.respond(

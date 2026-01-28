@@ -4,7 +4,7 @@ import pytest
 
 import inconnu.errors
 from inconnu.constants import Damage
-from inconnu.models import VChar
+from models import VChar
 
 
 @pytest.fixture

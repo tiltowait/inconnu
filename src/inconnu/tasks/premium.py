@@ -9,6 +9,7 @@ from loguru import logger
 import api
 import db
 import inconnu
+from models import VChar
 
 
 async def remove_expired_images():
@@ -25,7 +26,7 @@ async def remove_expired_images():
 
         # The cache doesn't have a facility for fetching cross-guild, so we
         # have to fetch them manually
-        async for character in inconnu.models.VChar.find({"user": user_id}):
+        async for character in VChar.find({"user": user_id}):
             logger.info("TASK: Removing images from {}", character.name)
             api_tasks.append(api.delete_character_faceclaims(character))
 

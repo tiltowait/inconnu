@@ -5,7 +5,7 @@ from typing import NamedTuple
 import inconnu
 from ctx import AppCtx
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
-from inconnu.models import VChar
+from models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"

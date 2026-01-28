@@ -8,7 +8,7 @@ from inconnu.constants import ROUSE_FAIL_COLOR, Damage
 from inconnu.utils.haven import haven
 
 if TYPE_CHECKING:
-    from inconnu.models import VChar
+    from models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#aggravated-healing"
 

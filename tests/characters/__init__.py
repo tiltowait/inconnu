@@ -1,11 +1,12 @@
 """Character-related test package."""
 
 import inconnu
+from models import VChar
 
 
-def gen_char(splat: str) -> inconnu.models.VChar:
+def gen_char(splat: str) -> VChar:
     """Generate a character with no traits and basic stats."""
-    char = inconnu.models.VChar(
+    char = VChar(
         guild=0,
         user=0,
         raw_name="Dummy",

@@ -8,7 +8,7 @@ from discord.ext.pages import Paginator
 
 import inconnu
 from ctx import AppCtx
-from inconnu.models import VChar
+from models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"

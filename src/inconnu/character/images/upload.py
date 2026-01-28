@@ -9,7 +9,7 @@ import api
 import db
 import inconnu
 from ctx import AppCtx
-from inconnu.models import VChar
+from models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"

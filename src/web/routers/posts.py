@@ -4,6 +4,7 @@ from bson import ObjectId
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
+from models import RPPost
 
 import bot
 import inconnu
@@ -15,7 +16,7 @@ router = APIRouter()
 @router.get("/post/{oid}", response_class=HTMLResponse)
 async def display_post_history(request: Request, oid: ObjectId = Depends(object_id), page: int = 0):
     """Display a Rolepost's history."""
-    post = await inconnu.models.RPPost.find_one({"_id": oid})
+    post = await RPPost.find_one({"_id": oid})
     if not post or post.id is None:
         raise HTTPException(404, detail="Post not found.")
 

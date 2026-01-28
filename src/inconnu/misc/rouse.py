@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import inconnu
 from config import web_asset
-from inconnu.models import VChar
+from models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"

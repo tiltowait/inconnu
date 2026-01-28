@@ -10,8 +10,8 @@ from inconnu.errors import (
     NoCharactersError,
     UnspecifiedCharacterError,
 )
-from inconnu.models import VChar
-from inconnu.models.manager import CharacterManager
+from models import VChar
+from inconnu.character_manager import CharacterManager
 
 # Mock classes for admin testing
 

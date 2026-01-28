@@ -7,7 +7,7 @@ import pytest
 import inconnu
 from ctx import AppCtx
 from inconnu.misc.rouse import rouse
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 async def test_mortal_rouse_fails(mortal: VChar, ctx: AppCtx):

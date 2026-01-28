@@ -7,7 +7,7 @@ from loguru import logger
 
 import inconnu
 from ctx import AppCtx
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 from inconnu.specialties.tokenize import SYNTAX, tokenize
 from inconnu.utils.haven import haven
 

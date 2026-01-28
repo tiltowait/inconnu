@@ -7,7 +7,7 @@ import pytest
 import inconnu
 from ctx import AppCtx
 from inconnu.misc.slake import slake
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 async def test_mortal_slake_fails(mortal: VChar, ctx: AppCtx):

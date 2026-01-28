@@ -1,7 +1,7 @@
 """misc/bol.py - Blush of Life shortcut command."""
 
 import inconnu
-from inconnu.models import VChar
+from models import VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#blush-of-life"

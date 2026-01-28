@@ -8,11 +8,12 @@ from loguru import logger
 import db
 import inconnu
 from ctx import AppCtx
-from inconnu.models.rpheader import HeaderSubdoc
+from models.rpheader import HeaderSubdoc
 from inconnu.utils.haven import haven
 
 if TYPE_CHECKING:
-    from inconnu.models import VChar
+    from models import VChar
+    from models.rpheader import HeaderSubdoc as HeaderSubdocType
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
@@ -79,7 +80,7 @@ async def register_header(ctx, message, character):
 
 
 def header_embed(
-    header: inconnu.models.HeaderSubdoc, character: "VChar", webhook: bool
+    header: HeaderSubdoc, character: "VChar", webhook: bool
 ) -> discord.Embed:
     """Generate the header embed from the document."""
     # Merits, flaws, and trackers go in the description field

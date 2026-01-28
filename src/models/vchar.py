@@ -17,7 +17,7 @@ from pydantic import ConfigDict, Field
 
 import inconnu
 from inconnu.constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
-from inconnu.models.vchardocs import (
+from models.vchardocs import (
     VCharExperience,
     VCharExperienceEntry,
     VCharHeader,

@@ -7,10 +7,10 @@ import discord
 from beanie import Document
 from pydantic import AnyUrl, BaseModel, Field
 
-from inconnu.models.rpheader import HeaderSubdoc
+from models.rpheader import HeaderSubdoc
 
 if TYPE_CHECKING:
-    from inconnu.models import VChar
+    from models import VChar
 
 
 class PostHistoryEntry(BaseModel):

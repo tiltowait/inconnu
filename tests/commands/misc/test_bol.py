@@ -7,7 +7,7 @@ import pytest
 import inconnu
 from ctx import AppCtx
 from inconnu.misc.bol import bol
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 @pytest.mark.parametrize("humanity", [7, 8, 9, 10])

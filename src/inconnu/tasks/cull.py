@@ -7,6 +7,7 @@ from loguru import logger
 import api
 import db
 import inconnu
+from models import VChar
 
 
 async def cull(days=30):
@@ -30,7 +31,7 @@ async def cull(days=30):
     # We remove characters separately so as to make only one database call
     # rather than potentially many
 
-    characters = inconnu.models.VChar.find(
+    characters = VChar.find(
         {"$or": [{"guild": {"$in": removed_guilds}}, {"log.left": {"$lt": past}}]}
     )
 

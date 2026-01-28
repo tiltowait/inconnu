@@ -9,7 +9,7 @@ from loguru import logger
 
 import db
 import inconnu
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 class CharacterManager:

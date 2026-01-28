@@ -11,7 +11,7 @@ from pymongo import ASCENDING, DESCENDING
 
 import inconnu
 from ctx import AppCtx
-from inconnu.models import RPPost
+from models import RPPost
 
 
 class SortOrder(Enum):

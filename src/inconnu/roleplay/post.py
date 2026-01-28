@@ -6,6 +6,7 @@ import discord
 from loguru import logger
 
 import inconnu
+from models import HeaderSubdoc, RPPost, VChar
 from inconnu.utils.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/"
@@ -16,7 +17,7 @@ class PostModal(discord.ui.Modal):
 
     SECTIONS = 2
 
-    def __init__(self, character: inconnu.models.VChar, bot, *args, **kwargs):
+    def __init__(self, character: VChar, bot, *args, **kwargs):
         self.character = character
         self.bot = bot  # Used for webhook management
         self.post_to_edit = kwargs.pop("rp_post", None)
@@ -29,7 +30,7 @@ class PostModal(discord.ui.Modal):
                 param: kwargs.pop(param, None)
                 for param in ["blush", "location", "merits", "flaws", "temp", "hunger"]
             }
-            self.header = inconnu.models.HeaderSubdoc.create(character, **header_params)
+            self.header = HeaderSubdoc.create(character, **header_params)
             starting_value = ""
             starting_title = ""
             starting_tags = ""
@@ -224,7 +225,7 @@ class PostModal(discord.ui.Modal):
         title = self._clean_title() or None
         tags = self._clean_tags()
         for content, message in zip(contents, post_messages):
-            db_rp_post = inconnu.models.RPPost.new(
+            db_rp_post = RPPost.new(
                 interaction=interaction,
                 character=self.character,
                 header=self.header,
@@ -307,7 +308,7 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
 
 async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
     """Edit a Rolepost."""
-    rp_post = await inconnu.models.RPPost.find_one({"message_id": message.id})
+    rp_post = await RPPost.find_one({"message_id": message.id})
 
     # Need to perform some checks to ensure we can edit the post
     if rp_post is None:

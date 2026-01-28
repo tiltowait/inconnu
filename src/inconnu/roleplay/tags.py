@@ -6,6 +6,7 @@ from discord.ext.pages import Page, Paginator
 import db
 import inconnu
 from ctx import AppCtx
+from models import RPPost
 
 
 async def show_tags(ctx: AppCtx):
@@ -109,7 +110,7 @@ class TagView(inconnu.views.DisablingView):
         }
         pages = []
         footer = ("Search tag: " if len(selected) == 1 else "Search tags: ") + "; ".join(selected)
-        async for post in inconnu.models.RPPost.find(query):
+        async for post in RPPost.find(query):
             pages.append(inconnu.roleplay.post_embed(post, footer=footer))
 
         if pages:

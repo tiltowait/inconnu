@@ -2,7 +2,6 @@
 
 import asyncio
 from collections import OrderedDict
-from typing import TYPE_CHECKING
 
 import discord
 from discord.ui import Button
@@ -11,9 +10,7 @@ import inconnu
 from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
 from inconnu.character.update import paramupdate
-
-if TYPE_CHECKING:
-    from inconnu.models import VChar
+from models import VChar
 
 __MATCHES = {}
 
@@ -125,7 +122,7 @@ async def update(
             )
 
     except (SyntaxError, ValueError) as err:
-        if isinstance(character, inconnu.models.VChar):
+        if isinstance(character, VChar):
             character.rollback()
 
             await asyncio.gather(

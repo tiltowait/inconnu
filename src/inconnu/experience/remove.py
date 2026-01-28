@@ -4,7 +4,7 @@ import discord
 
 import inconnu
 from ctx import AppCtx
-from inconnu.models import VChar
+from models import VChar
 from inconnu.utils import is_admin
 from inconnu.utils.haven import haven
 from inconnu.views import DisablingView

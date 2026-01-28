@@ -19,13 +19,13 @@ import discord.ext.commands
 from loguru import logger
 
 import inconnu
-from inconnu.models.vchardocs import VCharTrait
+from models.vchardocs import VCharTrait
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
 
 if TYPE_CHECKING:
-    from inconnu.models import VChar
+    from models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 

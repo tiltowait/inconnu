@@ -13,9 +13,9 @@ from pymongo import AsyncMongoClient
 
 import db
 from inconnu.constants import Damage
-from inconnu.models.rpheader import DamageSubdoc, HeaderSubdoc
-from inconnu.models.rppost import PostHistoryEntry, RPPost
-from inconnu.models.vchar import VChar
+from models.rpheader import DamageSubdoc, HeaderSubdoc
+from models.rppost import PostHistoryEntry, RPPost
+from models.vchar import VChar
 from server import app
 
 # Static test data IDs

@@ -6,7 +6,7 @@ import inconnu
 from inconnu.constants import Damage
 
 if TYPE_CHECKING:
-    from inconnu.models import VChar
+    from models import VChar
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal", "thinblood"]
 

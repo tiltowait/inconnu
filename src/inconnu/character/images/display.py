@@ -7,7 +7,7 @@ import api
 import db
 import inconnu
 from ctx import AppCtx
-from inconnu.models import VChar
+from models import VChar
 from inconnu.utils.haven import haven
 from inconnu.views import ReportingView
 

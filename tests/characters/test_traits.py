@@ -5,8 +5,8 @@ import pytest
 import inconnu.errors
 import tests.characters
 from inconnu.constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS
-from inconnu.models import VChar
-from inconnu.models.vchardocs import VCharTrait
+from models import VChar
+from models.vchardocs import VCharTrait
 
 
 @pytest.fixture

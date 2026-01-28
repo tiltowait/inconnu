@@ -3,7 +3,7 @@
 import inconnu
 from ctx import AppCtx
 from inconnu.macros import macro_common
-from inconnu.models import VChar
+from models import VChar
 from inconnu.utils import strtobool
 from inconnu.utils.haven import haven
 

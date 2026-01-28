@@ -7,7 +7,7 @@ from pymongo import ReturnDocument, UpdateOne
 
 import db
 import inconnu
-from inconnu.models import VChar
+from models import VChar
 from models import VGuild
 
 

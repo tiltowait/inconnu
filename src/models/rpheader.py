@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from inconnu.errors import CharacterError
 
 if TYPE_CHECKING:
-    from inconnu.models import VChar
+    from models import VChar
 
 
 class DamageSubdoc(BaseModel):

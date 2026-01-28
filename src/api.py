@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 if TYPE_CHECKING:
-    from inconnu.models import VChar
+    from models import VChar
 
 load_dotenv()
 

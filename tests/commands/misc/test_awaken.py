@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 from ctx import AppCtx
 from inconnu.misc.awaken import awaken
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 async def test_vamp_awaken_rouse_success_no_wp(

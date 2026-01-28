@@ -7,7 +7,7 @@ import re
 from loguru import logger
 
 import inconnu
-from inconnu.models.vchardocs import VCharTrait
+from models.vchardocs import VCharTrait
 
 
 class RollParser:

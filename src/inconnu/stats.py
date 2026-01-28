@@ -2,10 +2,12 @@
 
 from datetime import UTC, datetime
 
+import discord
 from pymongo import ReturnDocument, UpdateOne
 
 import inconnu
 from inconnu.models import VChar
+from models import VGuild
 
 
 async def log_roll(
@@ -62,53 +64,28 @@ async def delete_rolls_in_channel(channel):
     await inconnu.db.rolls.update_many({"channel": channel.id}, {"$set": {"use_in_stats": False}})
 
 
-async def guild_joined(guild):
-    """
-    Log whenever a guild is joined.
-    Args:
-        guild (int): The guild's Discord ID
-        name (str): The guild's name
-    """
-    guilds = inconnu.db.guilds
+async def guild_joined(guild: discord.Guild):
+    """Log whenever a guild is joined."""
+    vguild = await VGuild.get_or_fetch(guild)
+    vguild.join()
 
-    await guilds.update_one(
-        {"guild": guild.id},
-        {
-            "$set": {
-                "guild": guild.id,
-                "name": guild.name,
-                "active": True,
-                "joined": datetime.now(UTC),
-                "left": None,
-            }
-        },
-        upsert=True,
-    )
+    await vguild.save()
 
 
-async def guild_left(guild):
-    """
-    Log whenever a guild is deleted or Inconnu is kicked from a guild.
-    Args:
-        guild (int): The guild's Discord ID
-    """
-    guilds = inconnu.db.guilds
+async def guild_left(guild: discord.Guild):
+    """Log whenever a guild is deleted or Inconnu is kicked from a guild."""
+    vguild = await VGuild.get_or_fetch(guild)
+    vguild.leave()
 
-    await guilds.update_one(
-        {"guild": guild}, {"$set": {"active": False, "left": datetime.now(UTC)}}
-    )
+    await vguild.save()
 
 
-async def guild_renamed(guild, new_name):
-    """
-    Log guild renames.
-    Args:
-        guild (int): The guild's Discord ID
-        name (str): The guild's name
-    """
-    guilds = inconnu.db.guilds
+async def guild_renamed(guild: discord.Guild, new_name: str):
+    """Log guild renames."""
+    vguild = await VGuild.get_or_fetch(guild)
+    vguild.name = new_name
 
-    await guilds.update_one({"guild": guild}, {"$set": {"name": new_name}})
+    await vguild.save()
 
 
 # Roll logging helpers

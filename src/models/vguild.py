@@ -10,6 +10,11 @@ from discord import Guild
 from pydantic import BaseModel, Field
 
 
+def utcnow() -> datetime:
+    """Gets the current UTC time as a naive datetime."""
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 class ExpPerms(StrEnum):
     """An enum for experience adjustment permissions."""
 
@@ -56,9 +61,17 @@ class VGuild(Document):
     guild: int
     name: str
     active: bool = True
-    joined: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    joined: datetime = Field(default_factory=utcnow)
     left: Optional[datetime] = None
     settings: VGuildSettings = Field(default_factory=VGuildSettings)
+
+    def join(self):
+        """Register the join date."""
+        self.joined = utcnow()
+
+    def leave(self):
+        """Register the left date."""
+        self.left = utcnow()
 
     @classmethod
     @alru_cache(maxsize=1024)

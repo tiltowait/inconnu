@@ -401,20 +401,20 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_guild_join(self, guild: discord.Guild):
         """Log whenever a guild is joined."""
-        logger.info("BOT: Joined {}!", guild.name)
+        logger.info("Joined {}!", guild.name)
         await asyncio.gather(inconnu.stats.guild_joined(guild), self._set_presence())
 
     async def on_guild_remove(self, guild: discord.Guild):
         """Log guild removals."""
         logger.info("BOT: Left {} :(", guild.name)
-        await asyncio.gather(inconnu.stats.guild_left(guild.id), self._set_presence())
+        await asyncio.gather(inconnu.stats.guild_left(guild), self._set_presence())
 
     @staticmethod
     async def on_guild_update(before: discord.Guild, after: discord.Guild):
         """Log guild name changes."""
         if before.name != after.name:
-            logger.info("BOT: Renamed {} => {}", before.name, after.name)
-            await inconnu.stats.guild_renamed(after.id, after.name)
+            logger.info("Renamed {} => {}", before.name, after.name)
+            await inconnu.stats.guild_renamed(after, after.name)
 
     async def on_webhooks_update(self, channel: discord.TextChannel):
         """Update the webhooks cache."""

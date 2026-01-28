@@ -35,7 +35,9 @@ users = _db.users
 
 def models() -> list[type[Document]]:
     """Beanie database models."""
-    return [inconnu.models.VChar, inconnu.models.RPPost, inconnu.VGuild, inconnu.VUser]
+    from models import VGuild, VUser
+
+    return [inconnu.models.VChar, inconnu.models.RPPost, VGuild, VUser]
 
 
 async def server_info() -> dict[str, Any]:

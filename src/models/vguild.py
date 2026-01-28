@@ -1,4 +1,4 @@
-"""settings/guildsettings.py - Guild-wide settings class."""
+"""models/vguild.py - Guild-wide settings class."""
 
 from datetime import UTC, datetime
 from enum import StrEnum

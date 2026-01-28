@@ -6,6 +6,7 @@ import discord
 from loguru import logger
 
 import api
+import db
 import inconnu
 from ctx import AppCtx
 from inconnu.models import VChar
@@ -52,7 +53,7 @@ async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment)
 
     # We maintain a log of all image uploads to protect ourself against
     # potential legal claims if someone uploads something illegal
-    await inconnu.db.upload_log.insert_one(
+    await db.upload_log.insert_one(
         {
             "guild": ctx.guild.id,
             "user": ctx.user.id,

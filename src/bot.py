@@ -10,6 +10,7 @@ from discord.ext import tasks
 from loguru import logger
 
 import config
+import db
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from ctx import AppCtx
@@ -203,7 +204,7 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def mark_premium_loss(self, member: discord.Member, transferral=False):
         """Mark premium loss in the database."""
-        await inconnu.db.supporters.update_one(
+        await db.supporters.update_one(
             {"_id": member.id},
             {"$set": {"_id": member.id, "discontinued": discord.utils.utcnow()}},
             upsert=True,
@@ -218,7 +219,7 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def mark_premium_gain(self, member: discord.Member):
         """Mark premium gain in the database."""
-        await inconnu.db.supporters.update_one(
+        await db.supporters.update_one(
             {"_id": member.id},
             {"$set": {"_id": member.id, "discontinued": None}},
             upsert=True,
@@ -234,7 +235,7 @@ class InconnuBot(discord.AutoShardedBot):
             logger.info("TRANSFER: {} has no images", character.name)
             return
 
-        if not await inconnu.db.supporters.find_one({"_id": character.user}):
+        if not await db.supporters.find_one({"_id": character.user}):
             logger.info(
                 "TRANSFER: Creating a supporter record for {}, because {} has images",
                 member.name,
@@ -261,7 +262,7 @@ class InconnuBot(discord.AutoShardedBot):
                 "user": interaction.user.id if interaction.user else None,
             }
             inter_data.update(interaction.data)
-            await inconnu.db.interactions.insert_one(inter_data)
+            await db.interactions.insert_one(inter_data)
 
         await self.process_application_commands(interaction)
 
@@ -327,7 +328,7 @@ class InconnuBot(discord.AutoShardedBot):
             logger.info("CONNECT: Registered SPC owner")
 
             self.connected = True
-            await inconnu.db.init()
+            await db.init()
 
         await self.sync_commands()
         logger.info("CONNECT: Commands synced")
@@ -338,7 +339,7 @@ class InconnuBot(discord.AutoShardedBot):
         if not bot.welcomed:
             logger.info("BOT: Internal cache built")
 
-            server_info = await inconnu.db.server_info()
+            server_info = await db.server_info()
             logger.info(
                 "MONGO: Version {}, using {} database",
                 server_info["version"],

@@ -5,6 +5,7 @@ from types import SimpleNamespace as SN
 
 import discord
 
+import db
 import inconnu
 from ctx import AppCtx
 from inconnu import vr as roll
@@ -120,7 +121,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
 
 async def __get_probabilities(params, strategy):
     """Retrieve the probabilities from storage or, if not calculated yet, generate them."""
-    col = inconnu.db.probabilities
+    col = db.probabilities
 
     probs = await col.find_one(
         {

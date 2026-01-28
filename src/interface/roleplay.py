@@ -9,6 +9,7 @@ from discord.ext import commands
 from loguru import logger
 from pymongo import UpdateOne
 
+import db
 import inconnu
 import interface
 
@@ -222,7 +223,7 @@ class RoleplayCog(commands.Cog):
         )
         if updates:
             logger.debug("POST: Marking {} potential Roleposts as deleted", len(updates))
-            await inconnu.db.rp_posts.bulk_write(updates)
+            await db.rp_posts.bulk_write(updates)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
@@ -244,7 +245,7 @@ class RoleplayCog(commands.Cog):
         # We can't rely on ensuring there's a webhook, so we fetch if it's a
         # bot message or a message not in the cache. Hopefully it isn't too
         # expensive ...
-        post = await inconnu.db.rp_posts.find_one_and_update(
+        post = await db.rp_posts.find_one_and_update(
             {"message_id": raw_message.message_id},
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
         )
@@ -294,7 +295,7 @@ class RoleplayCog(commands.Cog):
     async def on_guild_channel_delete(self, channel):
         """Mark Roleposts in the deleted channel."""
         logger.info("POST: Marking all Roleposts in {} as deleted", channel.name)
-        await inconnu.db.rp_posts.update_many(
+        await db.rp_posts.update_many(
             {"channel": channel.id},
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
         )

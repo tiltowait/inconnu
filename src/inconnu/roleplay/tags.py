@@ -3,6 +3,7 @@
 import discord
 from discord.ext.pages import Page, Paginator
 
+import db
 import inconnu
 from ctx import AppCtx
 
@@ -27,7 +28,7 @@ async def show_tags(ctx: AppCtx):
 
     pages = []
     current_tags = []
-    async with await inconnu.db.rp_posts.aggregate(pipeline) as cursor:
+    async with await db.rp_posts.aggregate(pipeline) as cursor:
         async for tag in cursor:
             # A Discord select menu can only hold a maximum of 25 items, so we will
             # make our pages hold no more than 25 tags each

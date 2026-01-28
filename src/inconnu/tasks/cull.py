@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from loguru import logger
 
 import api
+import db
 import inconnu
 
 
@@ -16,12 +17,12 @@ async def cull(days=30):
     # Remove old guilds
 
     removed_guilds = []
-    guilds = inconnu.db.guilds.find({"active": False, "left": {"$lt": past}}, {"guild": 1})
+    guilds = db.guilds.find({"active": False, "left": {"$lt": past}}, {"guild": 1})
 
     async for guild in guilds:
         guild = guild["guild"]
         removed_guilds.append(guild)
-        await inconnu.db.guilds.delete_one({"guild": guild})
+        await db.guilds.delete_one({"guild": guild})
 
     if guilds:
         logger.info("CULLER: Culled {} guilds", len(removed_guilds))

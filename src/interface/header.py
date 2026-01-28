@@ -9,6 +9,7 @@ from discord.ext import commands
 from loguru import logger
 from pymongo import DeleteOne
 
+import db
 import inconnu
 import interface
 from ctx import AppCtx
@@ -232,7 +233,7 @@ class HeaderCog(commands.Cog):
 
         if possible_header:
             # Make sure we have a header
-            record = await inconnu.db.headers.find_one({"message": message.id})
+            record = await db.headers.find_one({"message": message.id})
             if record is not None:
                 # Make sure we are allowed to update it
                 owner = record["character"]["user"]
@@ -267,7 +268,7 @@ class HeaderCog(commands.Cog):
             is_webhook_message = False
 
         if is_bot_message or is_webhook_message:
-            record = await inconnu.db.headers.find_one({"message": message.id})
+            record = await db.headers.find_one({"message": message.id})
             if record is not None:
                 # Make sure we are allowed to delete it
                 owner = record["character"]["user"]
@@ -318,7 +319,7 @@ class HeaderCog(commands.Cog):
         )
         if deletions:
             logger.debug("HEADER: Deleting {} potential header messages", len(deletions))
-            await inconnu.db.headers.bulk_write(deletions)
+            await db.headers.bulk_write(deletions)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
@@ -327,7 +328,7 @@ class HeaderCog(commands.Cog):
         async def deletion_handler(message_id: int):
             """Delete the header record."""
             logger.debug("HEADER: Deleting possible header")
-            await inconnu.db.headers.delete_one({"message": message_id})
+            await db.headers.delete_one({"message": message_id})
 
         await interface.raw_message_delete_handler(
             raw_message,
@@ -340,7 +341,7 @@ class HeaderCog(commands.Cog):
     async def on_guild_channel_delete(self, channel):
         """Remove header records from the deleted channel."""
         logger.info("HEADER: Removing header records from deleted channel {}", channel.name)
-        await inconnu.db.headers.delete_many({"channel": channel.id})
+        await db.headers.delete_many({"channel": channel.id})
 
 
 def setup(bot):

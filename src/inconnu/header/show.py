@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import discord
 from loguru import logger
 
+import db
 import inconnu
 from ctx import AppCtx
 from inconnu.models.rpheader import HeaderSubdoc
@@ -62,7 +63,7 @@ async def show_header(ctx: AppCtx, character: "VChar", **kwargs):
 
 async def register_header(ctx, message, character):
     """Register the header in the database."""
-    await inconnu.db.headers.insert_one(
+    await db.headers.insert_one(
         {
             "character": {
                 "guild": ctx.guild.id,

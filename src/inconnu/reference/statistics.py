@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 
 import discord
 
+import db
 import inconnu
 from ctx import AppCtx
 from inconnu.utils.haven import haven
@@ -88,7 +89,7 @@ async def __traits_statistics(ctx, character, date, *, player):
         {"$group": {"_id": "$_id.charid", "docs": {"$push": {"k": "$_id.pool", "v": "$count"}}}},
         {"$replaceRoot": {"newRoot": {"_id": "$_id", "traits": {"$arrayToObject": ["$docs"]}}}},
     ]
-    async with await inconnu.db.rolls.aggregate(pipeline) as cursor:
+    async with await db.rolls.aggregate(pipeline) as cursor:
         raw_stats = await cursor.to_list(1)
 
     if raw_stats:
@@ -149,7 +150,7 @@ async def __display_trait_statistics(ctx, character, stats, date, owner):
 
 async def __general_statistics(ctx, date, owner):
     """View the roll statistics for the user's characters."""
-    col = inconnu.db.characters
+    col = db.characters
     pipeline = [
         {
             "$match": {

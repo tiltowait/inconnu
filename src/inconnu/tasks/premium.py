@@ -7,6 +7,7 @@ import discord
 from loguru import logger
 
 import api
+import db
 import inconnu
 
 
@@ -17,7 +18,7 @@ async def remove_expired_images():
     expiration = discord.utils.utcnow() - timedelta(days=7)
     expired_user_ids = []
     api_tasks = []
-    async for supporter in inconnu.db.supporters.find({"discontinued": {"$lt": expiration}}):
+    async for supporter in db.supporters.find({"discontinued": {"$lt": expiration}}):
         user_id = supporter["_id"]
         expired_user_ids.append(user_id)
         logger.info("TASK: Removing {}'s profile images", user_id)
@@ -35,4 +36,4 @@ async def remove_expired_images():
     if api_tasks:
         await asyncio.gather(*api_tasks)
     if expired_user_ids:
-        await inconnu.db.supporters.delete_many({"_id": {"$in": expired_user_ids}})
+        await db.supporters.delete_many({"_id": {"$in": expired_user_ids}})

@@ -8,8 +8,6 @@ from dotenv import load_dotenv
 from loguru import logger
 from pymongo import AsyncMongoClient
 
-import inconnu
-
 load_dotenv()
 
 _mongo_url = os.environ["MONGO_URL"]
@@ -35,9 +33,10 @@ users = _db.users
 
 def models() -> list[type[Document]]:
     """Beanie database models."""
+    from inconnu.models import RPPost, VChar
     from models import VGuild, VUser
 
-    return [inconnu.models.VChar, inconnu.models.RPPost, VGuild, VUser]
+    return [VChar, RPPost, VGuild, VUser]
 
 
 async def server_info() -> dict[str, Any]:

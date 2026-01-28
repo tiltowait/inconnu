@@ -6,6 +6,7 @@ import discord
 from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
+import db
 import inconnu
 from ctx import AppCtx
 
@@ -25,7 +26,7 @@ async def show_bookmarks(ctx: AppCtx):
         {"$project": {"_id": 1, "title": 1, "date": 1, "url": 1}},
         {"$sort": {"date": -1}},
     ]
-    async with await inconnu.db.rp_posts.aggregate(pipeline) as cursor:
+    async with await db.rp_posts.aggregate(pipeline) as cursor:
         async for bookmark in cursor:
             title = bookmark["title"]
             url = bookmark["url"]

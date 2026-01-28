@@ -4,6 +4,7 @@ import discord
 from loguru import logger
 
 import api
+import db
 import inconnu
 from ctx import AppCtx
 from inconnu.models import VChar
@@ -267,7 +268,7 @@ class ImagePager(ReportingView):
             await self.goto_page(page, interaction)
 
         if await api.delete_single_faceclaim(image_url):
-            await inconnu.db.upload_log.update_one(
+            await db.upload_log.update_one(
                 {"url": image_url}, {"$set": {"deleted": discord.utils.utcnow()}}
             )
         else:

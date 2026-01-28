@@ -8,6 +8,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 
 import bot
+import db
 import inconnu
 from web import object_id, templates
 
@@ -25,7 +26,7 @@ class Bio(TypedDict):
 @router.get("/profile/{oid}", response_class=HTMLResponse)
 async def display_character_profile(request: Request, oid: ObjectId = Depends(object_id)):
     """Display character biography detail."""
-    bio = await inconnu.db.characters.find_one(
+    bio = await db.characters.find_one(
         {"_id": ObjectId(oid)},
         {"name": 1, "user": 1, "guild": 1, "profile": 1},
     )

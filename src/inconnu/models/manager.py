@@ -7,6 +7,7 @@ import discord
 from cachetools import TTLCache
 from loguru import logger
 
+import db
 import inconnu
 from inconnu.models.vchar import VChar
 
@@ -30,7 +31,7 @@ class CharacterManager:
 
         # Set after construction. Used to check whether a user is an admin
         self.bot = None
-        self.collection = inconnu.db.characters
+        self.collection = db.characters
 
     async def fetchone(
         self,

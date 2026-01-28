@@ -2,6 +2,7 @@
 
 import discord
 
+import db
 import inconnu
 from ctx import AppCtx
 
@@ -33,7 +34,7 @@ async def _fetch_rp_post(
 
     rp_post = await inconnu.models.RPPost.find_one({"id_chain": message.id})
     if rp_post is None:
-        if await inconnu.db.headers.find_one({"message": message.id}) is not None:
+        if await db.headers.find_one({"message": message.id}) is not None:
             raise ValueError("Use `Header: Delete` for this.")
         raise ValueError("Something went wrong. Ask a moderator to delete the message for you.")
 

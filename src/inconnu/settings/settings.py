@@ -1,7 +1,7 @@
 """settings.py - User- and server-wide settings."""
 
-from enum import IntEnum, auto
-from typing import Any, Callable, cast
+from enum import IntEnum, StrEnum, auto
+from typing import Any, Callable, Self, cast
 
 import discord
 from discord import (
@@ -35,6 +35,38 @@ class SettingsIDs(IntEnum):
     CHANGELOG = auto()
     DELETION = auto()
     MAX_HUNGER = auto()
+
+
+class OblivionOptions(StrEnum):
+    RAW = "1 10"
+    ONES = "1"
+    TENS = "10"
+    NONE = "0"
+
+    @property
+    def description(self) -> str:
+        """Text representation of the option."""
+        match self:
+            case OblivionOptions.RAW:
+                return "1s and 10s (RAW)"
+            case OblivionOptions.ONES:
+                return "1s only"
+            case OblivionOptions.TENS:
+                return "10s only"
+            case OblivionOptions.NONE:
+                return "Never"
+
+    def to_list(self) -> list[int]:
+        """The list value of the setting."""
+        if self == OblivionOptions.NONE:
+            return []
+        return list(map(int, self.split()))
+
+    @classmethod
+    def from_list(cls, val: list[int]) -> Self:
+        """Construct an OblivionOption from a list."""
+        str_val = " ".join(map(str, val))
+        return cls(str_val)
 
 
 class SettingsMenu(discord.ui.DesignerView):
@@ -94,19 +126,10 @@ class SettingsMenu(discord.ui.DesignerView):
             container.add_item(discord.ui.Separator())
 
             # Oblivion stains settings
-            if not self.scope.settings.oblivion_stains:
-                oblivion_raw = "0"
-            elif len(self.scope.settings.oblivion_stains) == 2:
-                oblivion_raw = "100"
-            elif self.scope.settings.oblivion_stains[0] == 10:
-                oblivion_raw = "10"
-            else:
-                oblivion_raw = "1"
+            current_oblivion = OblivionOptions.from_list(self.scope.settings.oblivion_stains)
             options = [
-                SelectOption(label="1s and 10s (RAW)", value="100", default=oblivion_raw == "100"),
-                SelectOption(label="1s only", value="1", default=oblivion_raw == "1"),
-                SelectOption(label="10s only", value="10", default=oblivion_raw == "10"),
-                SelectOption(label="Never", value="0", default=oblivion_raw == "0"),
+                SelectOption(label=opt.description, value=opt, default=opt == current_oblivion)
+                for opt in list(OblivionOptions)
             ]
             select = Select(
                 select_type=ComponentType.string_select,
@@ -222,20 +245,9 @@ class SettingsMenu(discord.ui.DesignerView):
     async def set_oblivion_stains(self, interaction: discord.Interaction):
         """Set Oblivion stains mode."""
         select = cast(Select, self.get_item(SettingsIDs.OBLIVION))
+        self._update_select_default(select, select.values[0])
 
-        if select.values[0] == "100":
-            stains = [1, 10]
-            self._update_select_default(select, 0)
-        elif select.values[0] == "1":
-            stains = [1]
-            self._update_select_default(select, 1)
-        elif select.values[0] == "10":
-            stains = [10]
-            self._update_select_default(select, 2)
-        else:
-            stains = []
-            self._update_select_default(select, 3)
-
+        stains = OblivionOptions(select.values[0]).to_list()
         vguild = cast(VGuild, self.scope)
         vguild.settings.oblivion_stains = stains
 
@@ -275,7 +287,7 @@ class SettingsMenu(discord.ui.DesignerView):
         select = cast(Select, self.get_item(SettingsIDs.MAX_HUNGER))
         new_max_hunger = int(select.values[0])
 
-        self._update_select_default(select, 0 if new_max_hunger == 5 else 1)
+        self._update_select_default(select, select.values[0])
 
         vguild = cast(VGuild, self.scope)
         vguild.settings.max_hunger = new_max_hunger
@@ -289,9 +301,7 @@ class SettingsMenu(discord.ui.DesignerView):
         """Set experience permissions."""
         select = cast(Select, self.get_item(SettingsIDs.EXPERIENCE))
         perms = select.values[0]
-
-        for option in select.options:
-            option.default = option.value == perms
+        self._update_select_default(select, perms)
 
         vguild = cast(VGuild, self.scope)
         vguild.settings.experience_permissions = ExpPerms(perms)
@@ -325,10 +335,10 @@ class SettingsMenu(discord.ui.DesignerView):
         self._log_update(interaction, channel_key, f"#{channel.name}")
 
     @staticmethod
-    def _update_select_default(select: Select, idx: int):
+    def _update_select_default(select: Select, val: str):
         """Update a Select's default."""
-        for i, option in enumerate(select.options):
-            option.default = i == idx
+        for option in select.options:
+            option.default = option.value == val
 
     @staticmethod
     def _add_channel_select(

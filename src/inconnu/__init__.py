@@ -81,5 +81,4 @@ __all__ = (
 )
 
 char_mgr = CharacterManager()
-settings = settings.Settings()
 bot: "InconnuBot"  # Assigned in bot.py

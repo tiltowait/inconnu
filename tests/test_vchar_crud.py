@@ -2,7 +2,7 @@
 
 import pytest_asyncio
 
-from inconnu.constants import Damage
+from constants import Damage
 from models import VChar
 from models.vchardocs import VCharTrait
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from inconnu.constants import Damage
+from constants import Damage
 from models import VChar
 
 

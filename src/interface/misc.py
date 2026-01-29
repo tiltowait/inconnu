@@ -8,6 +8,7 @@ from discord import option
 from discord.commands import slash_command
 from discord.ext import commands
 
+import constants
 import errors
 import inconnu
 import ui
@@ -49,7 +50,7 @@ class MiscCommands(commands.Cog):
         embed.set_author(name=ctx.bot.user.display_name)
         embed.set_thumbnail(url=ctx.bot.user.display_avatar)
         site = discord.ui.Button(label="Website", url="https://www.inconnu.app")
-        support = discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL)
+        support = discord.ui.Button(label="Support", url=constants.SUPPORT_URL)
 
         await ctx.respond(embed=embed, view=ui.views.ReportingView(site, support))
 

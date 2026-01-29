@@ -5,11 +5,11 @@ from types import SimpleNamespace
 import pytest
 import pytest_asyncio
 
+from constants import Damage
 from errors import (
     NoCharactersError,
     UnspecifiedCharacterError,
 )
-from inconnu.constants import Damage
 from models import VChar
 from services import CharacterManager
 

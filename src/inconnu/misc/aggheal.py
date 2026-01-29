@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import errors
 import inconnu
 import services
-from inconnu.constants import ROUSE_FAIL_COLOR, Damage
+from constants import ROUSE_FAIL_COLOR, Damage
 from models import VChar
 from services import haven
 from utils import get_message

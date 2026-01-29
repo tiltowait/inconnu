@@ -2,6 +2,7 @@
 
 from types import SimpleNamespace
 
+import constants
 import errors
 import inconnu
 import services
@@ -56,7 +57,7 @@ async def rouse(
         msg = await get_message(inter)
 
         if character.hunger >= 4:
-            color = inconnu.constants.ROUSE_FAIL_COLOR
+            color = constants.ROUSE_FAIL_COLOR
         else:
             color = None
 
@@ -93,7 +94,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
     title = __make_title(outcome)
 
     if "ailure" in title and "0 fail" not in title:
-        color = inconnu.constants.ROUSE_FAIL_COLOR
+        color = constants.ROUSE_FAIL_COLOR
         thumbnail = web_asset("hunger-filled.webp")
     else:
         color = None

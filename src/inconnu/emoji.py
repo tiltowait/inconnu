@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from loguru import logger
 
-import inconnu
+import constants
 
 load_dotenv()
 
@@ -20,9 +20,9 @@ class _EmojiManager:
     def __getitem__(self, emoji_name: str) -> str:
         standard = {"bp_filled": ":red_circle:​", "bp_unfilled": ":o:​"}
         emoji_map = {
-            inconnu.constants.Damage.NONE: "no_dmg",
-            inconnu.constants.Damage.SUPERFICIAL: "sup_dmg",
-            inconnu.constants.Damage.AGGRAVATED: "agg_dmg",
+            constants.Damage.NONE: "no_dmg",
+            constants.Damage.SUPERFICIAL: "sup_dmg",
+            constants.Damage.AGGRAVATED: "agg_dmg",
         }
 
         if emoji := standard.get(emoji_name):

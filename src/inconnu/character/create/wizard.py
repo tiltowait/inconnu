@@ -7,6 +7,7 @@ import discord
 from discord.ui import Button
 from loguru import logger
 
+import constants
 import inconnu
 import services
 import ui
@@ -28,7 +29,7 @@ class Wizard:
                 self.core_traits = ["Stamina", "Resolve", "Composure"]
             else:
                 # Make a character with full traits
-                self.core_traits = inconnu.constants.get_standard_traits()
+                self.core_traits = constants.get_standard_traits()
 
         self.ctx = ctx
         self.msg = None  # We will be editing this message instead of sending new ones
@@ -76,8 +77,8 @@ class Wizard:
             raw_name=self.parameters.name,
             splat=self.parameters.splat,
             raw_humanity=self.parameters.humanity,
-            health=self.parameters.hp * inconnu.constants.Damage.NONE,
-            willpower=self.parameters.wp * inconnu.constants.Damage.NONE,
+            health=self.parameters.hp * constants.Damage.NONE,
+            willpower=self.parameters.wp * constants.Damage.NONE,
             potency=self.assigned_traits.pop("Blood Potency", 0),
         )
         character.assign_traits(self.assigned_traits)

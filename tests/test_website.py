@@ -11,7 +11,7 @@ from mongomock_motor import AsyncMongoMockClient
 from pydantic import AnyUrl
 from pymongo import AsyncMongoClient
 
-from inconnu.constants import Damage
+from constants import Damage
 from models.rpheader import DamageSubdoc, HeaderSubdoc
 from models.rppost import PostHistoryEntry, RPPost
 from models.vchar import VChar

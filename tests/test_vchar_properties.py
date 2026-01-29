@@ -3,7 +3,7 @@
 import pytest
 
 import errors
-from inconnu.constants import Damage
+from constants import Damage
 from models import VChar
 
 

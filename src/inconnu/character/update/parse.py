@@ -6,6 +6,7 @@ from collections import OrderedDict
 import discord
 from discord.ui import Button
 
+import constants
 import inconnu
 import services
 import ui
@@ -213,7 +214,7 @@ async def update_help(ctx: AppCtx, err: str | None = None, ephemeral=True):
         label="Full Documentation",
         url="https://docs.inconnu.app/command-reference/characters/updates",
     )
-    support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
+    support = Button(label="Support", url=constants.SUPPORT_URL)
     view = ui.views.ReportingView(documentation, support)
 
     await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)

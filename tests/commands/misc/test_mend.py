@@ -5,10 +5,9 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 import errors
-import inconnu
 import ui
+from constants import ROUSE_FAIL_COLOR, Damage
 from ctx import AppCtx
-from inconnu.constants import Damage
 from inconnu.misc.mend import mend
 from models.vchar import VChar
 
@@ -250,7 +249,7 @@ async def test_vamp_mend_rouse_failure_color(
     assert call_args is not None
     color = call_args.kwargs.get("color")
     assert color is not None
-    assert color == inconnu.constants.ROUSE_FAIL_COLOR
+    assert color == ROUSE_FAIL_COLOR
 
 
 async def test_vamp_mend_rouse_success_no_color(

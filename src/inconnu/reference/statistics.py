@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 
 import discord
 
+import constants
 import db
 import inconnu
 import ui
@@ -126,7 +127,7 @@ async def __display_trait_statistics(ctx, character, stats, date, owner):
     embed = discord.Embed(title=title)
     embed.set_author(name=owner.display_name, icon_url=get_avatar(owner))
 
-    for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
+    for group, subgroups in constants.GROUPED_TRAITS.items():
         embed.add_field(name="​", value=f"**{group}**", inline=False)
         for subgroup, traits in subgroups.items():
             trait_list = []

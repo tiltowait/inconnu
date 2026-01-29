@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+import constants
 import errors
 import inconnu
 from ctx import AppCtx
@@ -396,4 +397,4 @@ async def test_vamp_rouse_high_hunger_color(vamp: VChar, ctx: AppCtx, mock_char_
         assert call_args is not None
         color = call_args.kwargs.get("color")
         assert color is not None
-        assert color == inconnu.constants.ROUSE_FAIL_COLOR
+        assert color == constants.ROUSE_FAIL_COLOR

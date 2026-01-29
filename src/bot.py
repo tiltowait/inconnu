@@ -10,6 +10,7 @@ from discord.ext import tasks
 from loguru import logger
 
 import config
+import constants
 import db
 import errors
 import inconnu
@@ -114,8 +115,8 @@ class InconnuBot(discord.AutoShardedBot):
     async def inform_premium_loss(member: discord.Member, title="You are no longer a supporter!"):
         """Inform a member if they lost premium status."""
         try:
-            server = f"[Inconnu server]({inconnu.constants.SUPPORT_URL})"
-            patreon = f"[patron]({inconnu.constants.PATREON})"
+            server = f"[Inconnu server]({constants.SUPPORT_URL})"
+            patreon = f"[patron]({constants.PATREON})"
             embed = discord.Embed(
                 title=title,
                 description=(

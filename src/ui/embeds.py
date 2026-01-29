@@ -2,6 +2,7 @@
 
 import discord
 
+import constants
 import inconnu
 import ui
 from utils import cmd_replace, get_avatar
@@ -78,8 +79,8 @@ async def error(ctx, err, *fields, **kwargs):
         view = kwargs.get("view") or ui.views.ReportingView()
 
         view.add_item(discord.ui.Button(label="Documentation", url=help_url, row=4))
-        view.add_item(discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=4))
-        view.add_item(discord.ui.Button(label="Patreon", url=inconnu.constants.PATREON, row=4))
+        view.add_item(discord.ui.Button(label="Support", url=constants.SUPPORT_URL, row=4))
+        view.add_item(discord.ui.Button(label="Patreon", url=constants.PATREON, row=4))
     else:
         view = kwargs.get("view", None)
 

@@ -8,6 +8,7 @@ import pymongo.errors
 from discord.ext import commands
 from loguru import logger
 
+import constants
 import errors
 import inconnu
 import ui
@@ -36,7 +37,7 @@ class ErrorReporter:
         embed.add_field(
             name="If that doesn't work ...",
             value=(
-                f"Please join [the support server]({inconnu.constants.SUPPORT_URL}) "
+                f"Please join [the support server]({constants.SUPPORT_URL}) "
                 "and file a bug report. Thank you!"
             ),
         )

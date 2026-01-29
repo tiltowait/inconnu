@@ -3,7 +3,7 @@
 import inconnu
 import services
 import ui
-from inconnu.constants import Damage
+from constants import Damage
 from services import haven
 from utils import get_message
 from utils.text import pluralize

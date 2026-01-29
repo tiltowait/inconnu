@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 import pytest_asyncio
 
+import constants
 import inconnu
 from errors import CharacterNotFoundError
 from models import VChar
@@ -70,8 +71,8 @@ async def char_id() -> str:
         raw_name="Test",
         splat=splat,
         raw_humanity=7,
-        health=6 * inconnu.constants.Damage.NONE,
-        willpower=5 * inconnu.constants.Damage.NONE,
+        health=6 * constants.Damage.NONE,
+        willpower=5 * constants.Damage.NONE,
         potency=splat == "vampire" and 1 or 0,
     )
     await char.save()

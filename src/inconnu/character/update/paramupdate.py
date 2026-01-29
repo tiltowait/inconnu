@@ -1,7 +1,7 @@
 """character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
 
 import inconnu
-from inconnu.constants import Damage
+from constants import Damage
 from models import VChar
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal", "thinblood"]

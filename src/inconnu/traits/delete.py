@@ -4,8 +4,8 @@ from typing import NamedTuple
 
 from discord import ApplicationContext, Interaction
 
+import constants
 import errors
-import inconnu
 import ui
 from inconnu.traits import traitcommon
 from models import VChar
@@ -71,7 +71,7 @@ def __delete_traits(character: VChar, *traits: str) -> DeletionResult:
     """
     deleted = []
     errs = []
-    standard_traits = map(lambda t: t.lower(), inconnu.constants.get_standard_traits())
+    standard_traits = map(lambda t: t.lower(), constants.get_standard_traits())
 
     for trait_name in traits:
         if trait_name.lower() in standard_traits:

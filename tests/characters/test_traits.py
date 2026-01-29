@@ -4,7 +4,7 @@ import pytest
 
 import errors
 import tests.characters
-from inconnu.constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS
+from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS
 from models import VChar
 from models.vchardocs import VCharTrait
 

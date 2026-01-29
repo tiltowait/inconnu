@@ -3,7 +3,7 @@
 import discord
 from discord.ext.commands import Paginator as Chunker
 
-import inconnu
+import constants
 import ui
 from models import VChar
 from services import haven
@@ -30,7 +30,7 @@ def traits_embed(
 
     char_traits = character.traits  # This is an automatic copy
     specialties = []
-    for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
+    for group, subgroups in constants.GROUPED_TRAITS.items():
         embed.add_field(name="​", value=f"**{group}**", inline=False)
         for subgroup, traits in subgroups.items():
             trait_list = []

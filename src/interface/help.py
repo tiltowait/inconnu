@@ -11,7 +11,7 @@ from discord.ui import Button, View
 
 import inconnu
 from config import web_asset
-from inconnu.constants import PATREON, SUPPORT_URL
+from constants import PATREON, SUPPORT_URL
 from utils import cmd_replace
 
 

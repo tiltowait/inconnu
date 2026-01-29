@@ -4,7 +4,7 @@ import asyncio
 
 import errors
 import inconnu
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"
 

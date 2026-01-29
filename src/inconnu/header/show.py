@@ -7,7 +7,7 @@ import db
 import errors
 import inconnu
 from ctx import AppCtx
-from inconnu.utils.haven import haven
+from services import haven
 from models import VChar
 from models.rpheader import HeaderSubdoc
 

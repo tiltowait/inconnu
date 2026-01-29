@@ -1,7 +1,7 @@
 """character/convictions.py - View or edit character convictions."""
 
 import inconnu
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#convictions"
 

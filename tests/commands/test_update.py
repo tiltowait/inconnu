@@ -35,7 +35,7 @@ def mock_haven(vamp: VChar):
     haven_instance.fetch = mock_fetch
     haven_instance.owner = MagicMock()
 
-    with patch("inconnu.utils.Haven", return_value=haven_instance):
+    with patch("services.Haven", return_value=haven_instance):
         yield haven_instance
 
 

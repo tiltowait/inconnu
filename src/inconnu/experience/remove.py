@@ -6,7 +6,7 @@ import inconnu
 from ctx import AppCtx
 from models import VChar
 from inconnu.utils import is_admin
-from inconnu.utils.haven import haven
+from services import haven
 from inconnu.views import DisablingView
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"

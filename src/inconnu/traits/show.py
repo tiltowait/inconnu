@@ -5,7 +5,7 @@ from discord.ext.commands import Paginator as Chunker
 
 import inconnu
 from models import VChar
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-traits"
 

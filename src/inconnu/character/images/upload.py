@@ -10,7 +10,7 @@ import db
 import inconnu
 from ctx import AppCtx
 from models import VChar
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]

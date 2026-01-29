@@ -2,7 +2,7 @@
 
 import inconnu
 from inconnu.constants import Damage
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#applying-stains"
 

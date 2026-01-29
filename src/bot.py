@@ -14,11 +14,11 @@ import db
 import errors
 import inconnu
 import tasks as bot_tasks
-from caches import WebhookCache
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
+from services import WebhookCache
 from ctx import AppCtx
-from errorreporter import reporter
 from models import RPPost, VChar
+from services.reporter import reporter
 
 
 class InconnuBot(discord.AutoShardedBot):

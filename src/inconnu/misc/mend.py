@@ -7,7 +7,7 @@ import inconnu
 from ctx import AppCtx
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
 from models import VChar
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
 

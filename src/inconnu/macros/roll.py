@@ -9,6 +9,7 @@ from loguru import logger
 
 import errors
 import inconnu
+import services
 from ctx import AppCtx
 from inconnu import common
 from inconnu.macros import macro_common
@@ -30,7 +31,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
             raise ValueError("Macro names may only contain letters and underscores.")
 
         # Get the character
-        haven = inconnu.utils.Haven(
+        haven = services.Haven(
             ctx,
             character=character,
             char_filter=lambda c: c.find_macro(macro_name),

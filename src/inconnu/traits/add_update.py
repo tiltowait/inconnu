@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import inconnu
 from inconnu.traits.parser import parse_traits
-from inconnu.utils.haven import haven
+from services import haven
 from models import VChar
 from models.vchardocs import VCharTrait
 

@@ -2,7 +2,7 @@
 
 import discord
 
-from errorreporter import reporter
+from services.reporter import reporter
 
 
 class ReportingView(discord.ui.View):

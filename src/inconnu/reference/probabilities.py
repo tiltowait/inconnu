@@ -8,6 +8,7 @@ import discord
 import db
 import errors
 import inconnu
+import services
 from ctx import AppCtx
 from inconnu import vr as roll
 
@@ -29,7 +30,7 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
                 return
 
             syntax = " ".join(syntax.split())
-            haven = inconnu.utils.Haven(
+            haven = services.Haven(
                 ctx,
                 character=character,
                 tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",

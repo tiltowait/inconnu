@@ -4,7 +4,7 @@ from types import SimpleNamespace as SN
 
 import errors
 import inconnu
-from inconnu.utils.haven import haven
+from services import haven
 from models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#remorse-checks"

@@ -25,7 +25,7 @@ from inconnu import (
     views,
     vr,
 )
-from caches import CharacterManager
+from services import CharacterManager
 from inconnu.dice import d10, random
 from inconnu.emoji import emojis
 from inconnu.roll import Roll

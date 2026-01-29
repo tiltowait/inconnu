@@ -8,7 +8,7 @@ from loguru import logger
 import errors
 import inconnu
 from models import HeaderSubdoc, RPPost, VChar
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/"
 

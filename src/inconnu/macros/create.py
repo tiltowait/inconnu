@@ -5,7 +5,7 @@ import inconnu
 from ctx import AppCtx
 from inconnu.macros import macro_common
 from models import VChar
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/creation"
 

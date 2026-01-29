@@ -10,7 +10,6 @@ from inconnu.utils.discord_helpers import (
     raw_command_options,
     re_paginate,
 )
-from inconnu.utils.haven import Haven
 from inconnu.utils.paramparse import parse_parameters
 from inconnu.utils.permissions import (
     get_or_fetch_supporter,
@@ -41,7 +40,6 @@ __all__ = (
     "get_avatar",
     "get_message",
     "get_or_fetch_supporter",
-    "Haven",
     "is_admin",
     "is_approved_user",
     "is_supporter",

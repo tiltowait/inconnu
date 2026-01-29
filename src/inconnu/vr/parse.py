@@ -19,6 +19,7 @@ from loguru import logger
 
 import errors
 import inconnu
+import services
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
@@ -68,7 +69,7 @@ async def parse(
         # Only guilds have characters
         try:
             if character is not None or needs_character(syntax):
-                haven = inconnu.utils.Haven(
+                haven = services.Haven(
                     ctx,
                     owner=player,
                     character=character,

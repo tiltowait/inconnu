@@ -7,6 +7,7 @@ import discord
 from discord.ui import Button
 
 import inconnu
+import services
 from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
 from inconnu.character.update import paramupdate
@@ -59,7 +60,7 @@ async def update(
     human_readable = parameters
 
     try:
-        haven = inconnu.utils.Haven(
+        haven = services.Haven(
             ctx,
             character=character,
             owner=player,

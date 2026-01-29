@@ -8,7 +8,7 @@ import discord
 import db
 import inconnu
 from ctx import AppCtx
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
 DT_ST = "D"

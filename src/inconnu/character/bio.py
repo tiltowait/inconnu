@@ -6,7 +6,7 @@ from loguru import logger
 
 import errors
 import inconnu
-from inconnu.utils.haven import haven
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#profile"
 

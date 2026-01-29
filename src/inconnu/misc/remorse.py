@@ -1,14 +1,11 @@
 """misc/remorse.py - Perform a remorse check."""
 
 from types import SimpleNamespace as SN
-from typing import TYPE_CHECKING
 
 import errors
 import inconnu
 from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from models import VChar
+from models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#remorse-checks"
 
@@ -32,7 +29,7 @@ async def remorse(ctx, character, minimum=1, lasombra_alt=False):
     await character.save()
 
 
-async def __display_outcome(ctx, character: "VChar", outcome):
+async def __display_outcome(ctx, character: VChar, outcome):
     """Process the remorse result and display to the user."""
     title = "Remorse Success" if outcome.remorseful else "Remorse Fail"
     if outcome.remorseful:
@@ -61,7 +58,7 @@ async def __display_outcome(ctx, character: "VChar", outcome):
     )
 
 
-def __remorse_roll(character: "VChar", minimum: int, lasombra_alt: bool) -> SN:
+def __remorse_roll(character: VChar, minimum: int, lasombra_alt: bool) -> SN:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
     rolls = max(unfilled, minimum)

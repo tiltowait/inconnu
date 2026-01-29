@@ -12,7 +12,6 @@
 
 import re
 from functools import partial
-from typing import TYPE_CHECKING
 
 import discord
 import discord.ext.commands
@@ -20,13 +19,11 @@ from loguru import logger
 
 import errors
 import inconnu
-from models.vchardocs import VCharTrait
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
-
-if TYPE_CHECKING:
-    from models import VChar
+from models import VChar
+from models.vchardocs import VCharTrait
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
@@ -163,7 +160,7 @@ def _can_roll(character, syntax):
 
 
 async def display_outcome(
-    ctx, player, character: "VChar", results, comment, listener=None, timeout=None
+    ctx, player, character: VChar, results, comment, listener=None, timeout=None
 ):
     """Display the roll results."""
     roll_display = RollDisplay(ctx, results, comment, character, player, listener, timeout)
@@ -171,7 +168,7 @@ async def display_outcome(
     await roll_display.display()
 
 
-async def perform_roll(character: "VChar", syntax, max_hunger=5):
+async def perform_roll(character: VChar, syntax, max_hunger=5):
     """Public interface for __evaluate_syntax() that returns a Roll."""
     parser = RollParser(character, syntax)
     return Roll(parser.pool, parser.hunger, parser.difficulty, max_hunger, parser.pool_str, syntax)

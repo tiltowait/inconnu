@@ -1,7 +1,6 @@
 """character/display/display.py - Tools for displaying characters."""
 
 from enum import StrEnum
-from typing import TYPE_CHECKING
 
 import discord
 
@@ -10,9 +9,7 @@ from ctx import AppCtx
 from inconnu.character.display import trackmoji
 from inconnu.constants import Damage
 from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from models import VChar
+from models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 
@@ -39,7 +36,7 @@ class DisplayField(StrEnum):
 @haven(__HELP_URL)
 async def display_requested(
     ctx: AppCtx,
-    character: "VChar",
+    character: VChar,
     message: str | None = None,
     player: discord.Member | None = None,
     ephemeral=False,
@@ -59,7 +56,7 @@ async def display_requested(
 
 async def display(
     ctx: AppCtx,
-    character: "VChar",
+    character: VChar,
     title: str | None = None,
     message: str | None = None,
     footer: str | None = None,
@@ -121,7 +118,7 @@ async def display(
 
 async def __get_embed(
     ctx,
-    character: "VChar",
+    character: VChar,
     title: str | None = None,
     message: str | None = None,
     footer: str | None = None,

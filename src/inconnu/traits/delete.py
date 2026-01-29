@@ -1,6 +1,6 @@
 """traits/delete.py - Delete character traits."""
 
-from typing import TYPE_CHECKING, NamedTuple
+from typing import NamedTuple
 
 from discord import ApplicationContext, Interaction
 
@@ -8,9 +8,7 @@ import errors
 import inconnu
 from inconnu.traits import traitcommon
 from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from models import VChar
+from models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 
@@ -65,7 +63,7 @@ async def __outcome_embed(
     await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 
-def __delete_traits(character: "VChar", *traits: str) -> DeletionResult:
+def __delete_traits(character: VChar, *traits: str) -> DeletionResult:
     """
     Delete the validated traits. If the trait is a core trait, then it is set to 0.
     Returns (list): A list of traits that could not be found.

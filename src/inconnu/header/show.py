@@ -1,7 +1,5 @@
 """header/display.py - RP header display facilities."""
 
-from typing import TYPE_CHECKING
-
 import discord
 from loguru import logger
 
@@ -9,17 +7,15 @@ import db
 import errors
 import inconnu
 from ctx import AppCtx
-from models.rpheader import HeaderSubdoc
 from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from models import VChar
+from models import VChar
+from models.rpheader import HeaderSubdoc
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
 
 @haven(__HELP_URL)
-async def show_header(ctx: AppCtx, character: "VChar", **kwargs):
+async def show_header(ctx: AppCtx, character: VChar, **kwargs):
     """Display the character's header in an embed."""
     header_doc = HeaderSubdoc.create(character, **kwargs)
     message = None
@@ -79,7 +75,7 @@ async def register_header(ctx, message, character):
     )
 
 
-def header_embed(header: HeaderSubdoc, character: "VChar", webhook: bool) -> discord.Embed:
+def header_embed(header: HeaderSubdoc, character: VChar, webhook: bool) -> discord.Embed:
     """Generate the header embed from the document."""
     # Merits, flaws, and trackers go in the description field
     description_ = []

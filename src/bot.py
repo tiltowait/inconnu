@@ -3,7 +3,7 @@
 import asyncio
 import os
 from datetime import datetime, time, timezone
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import discord
 from discord.ext import tasks
@@ -14,12 +14,9 @@ import db
 import errors
 import inconnu
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
-from models import RPPost, VChar
 from ctx import AppCtx
 from errorreporter import reporter
-
-if TYPE_CHECKING:
-    from models import VChar
+from models import RPPost, VChar
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -224,7 +221,7 @@ class InconnuBot(discord.AutoShardedBot):
         )
         await self.inform_premium_features(member)
 
-    async def transfer_premium(self, member: discord.Member, character: "VChar"):
+    async def transfer_premium(self, member: discord.Member, character: VChar):
         """
         When a character is transferred to a new user, mark that user's premium
         status if the character has images.

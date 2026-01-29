@@ -4,6 +4,8 @@ import inconnu
 import services
 import ui
 from inconnu.constants import Damage
+from inconnu.utils import get_message
+from inconnu.utils.text import pluralize
 from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#applying-stains"
@@ -41,7 +43,7 @@ async def stain(ctx, character, delta, *, player):
             footer = "Degeneration! -2 dice to all rolls. Remains until /remorse or auto-drop."
 
         title = "Added" if delta > 0 else "Removed"
-        title = f"{title} {inconnu.utils.pluralize(abs(delta), 'Stain')}"
+        title = f"{title} {pluralize(abs(delta), 'Stain')}"
 
         inter = await inconnu.character.display(
             ctx, character, title, message=message, owner=player, fields=fields, footer=footer
@@ -59,7 +61,7 @@ async def __report(ctx, inter, character, delta):
     delta = abs(delta)
     stains = "Stains" if delta > 1 else "Stain"
 
-    msg = await inconnu.get_message(inter)
+    msg = await get_message(inter)
 
     await services.character_update(
         ctx=ctx,

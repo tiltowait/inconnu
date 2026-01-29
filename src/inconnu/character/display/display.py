@@ -9,6 +9,8 @@ import ui
 from ctx import AppCtx
 from inconnu.character.display import trackmoji
 from inconnu.constants import Damage
+from inconnu.utils import get_avatar
+from inconnu.utils.text import pluralize
 from models import VChar
 from services import haven
 
@@ -149,7 +151,7 @@ async def __get_embed(
 
     embed.set_author(
         name=owner.display_name if title in (None, character.name) else character.name,
-        icon_url=inconnu.get_avatar(owner),
+        icon_url=get_avatar(owner),
     )
     embed.set_footer(text=footer or None)
     embed.set_thumbnail(url=thumbnail or None)
@@ -208,7 +210,7 @@ def __stat_repr(can_emoji, function, *stats):
         if can_emoji:
             return function(humanity, stains)
 
-        stains = inconnu.utils.pluralize(stains, "Stain")
+        stains = pluralize(stains, "Stain")
 
         return f"{humanity} ({stains})"
 

@@ -11,6 +11,7 @@ import services
 import ui
 from ctx import AppCtx
 from inconnu.specialties.tokenize import SYNTAX, tokenize
+from inconnu.utils.text import format_join
 from models.vchar import VChar
 from services import haven
 
@@ -115,11 +116,11 @@ def _make_embed(
     """Create the embed."""
     entries = []
     for trait, delta in additions:
-        delta_str = inconnu.utils.format_join(delta, ", ", "`", "*No change*")
+        delta_str = format_join(delta, ", ", "`", "*No change*")
 
         entry = f"**{trait.name}:** {delta_str}"
         if len(delta) != len(trait.specialties):
-            specs_str = inconnu.utils.format_join(trait.specialties, ", ", "*", "*None*")
+            specs_str = format_join(trait.specialties, ", ", "*", "*None*")
             entry += f"\n***All:*** {specs_str}\n"
             entry = "\n" + entry
         entries.append(entry)

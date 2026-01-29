@@ -7,6 +7,8 @@ import db
 import errors
 import inconnu
 from ctx import AppCtx
+from inconnu.utils import get_avatar
+from inconnu.utils.permissions import is_supporter
 from models import VChar
 from models.rpheader import HeaderSubdoc
 from services import haven
@@ -20,7 +22,7 @@ async def show_header(ctx: AppCtx, character: VChar, **kwargs):
     header_doc = HeaderSubdoc.create(character, **kwargs)
     message = None
     try:
-        if not inconnu.utils.is_supporter(ctx):
+        if not is_supporter(ctx):
             raise errors.NotPremium
         if not ctx.bot.can_webhook(ctx.channel):
             raise errors.WebhookError
@@ -28,7 +30,7 @@ async def show_header(ctx: AppCtx, character: VChar, **kwargs):
         await ctx.respond("Generating header ...", ephemeral=True, delete_after=1)
 
         webhook = await ctx.bot.prep_webhook(ctx.channel)
-        webhook_avatar = character.profile_image_url or inconnu.get_avatar(ctx.user)
+        webhook_avatar = character.profile_image_url or get_avatar(ctx.user)
         embed = header_embed(header_doc, character, True)
 
         message = await webhook.send(

@@ -7,6 +7,7 @@ import discord
 import inconnu
 import ui
 from ctx import AppCtx
+from inconnu.utils import get_avatar
 from models import VChar
 from services import haven
 
@@ -54,7 +55,7 @@ def __get_embed(ctx, player, character, amount, scope, reason):
     title = f"{verb} {abs(amount)} {scope.title()} XP"
 
     embed = discord.Embed(title=title)
-    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
+    embed.set_author(name=character.name, icon_url=get_avatar(player))
     embed.set_footer(text="To view: /experience log")
 
     embed.add_field(name="Reason", value=reason, inline=False)

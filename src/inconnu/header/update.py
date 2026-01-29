@@ -7,6 +7,7 @@ from loguru import logger
 
 import inconnu
 from ctx import AppCtx
+from inconnu.utils.text import clean_text
 from models import VChar
 from services import haven
 
@@ -111,11 +112,11 @@ class _RPHeader(discord.ui.DesignerModal):
     async def callback(self, interaction: discord.Interaction):
         """Set the header and tell the user."""
         # TODO: Find out if ModalItem.item is the intended attribute (checker complains)
-        self.character.header.location = inconnu.utils.clean_text(self.children[0].item.value)
+        self.character.header.location = clean_text(self.children[0].item.value)
         self.character.header.blush = int(self.children[1].item.values[0])
-        self.character.header.merits = inconnu.utils.clean_text(self.children[2].item.value)
-        self.character.header.flaws = inconnu.utils.clean_text(self.children[3].item.value)
-        self.character.header.temp = inconnu.utils.clean_text(self.children[4].item.value)
+        self.character.header.merits = clean_text(self.children[2].item.value)
+        self.character.header.flaws = clean_text(self.children[3].item.value)
+        self.character.header.temp = clean_text(self.children[4].item.value)
 
         await asyncio.gather(
             interaction.response.send_message(

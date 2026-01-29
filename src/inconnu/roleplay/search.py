@@ -12,6 +12,7 @@ from pymongo import ASCENDING, DESCENDING
 import inconnu
 import ui
 from ctx import AppCtx
+from inconnu.utils import get_avatar
 from models import RPPost
 
 
@@ -102,7 +103,7 @@ async def search(
             embed = inconnu.roleplay.post_embed(
                 post,
                 author=user.display_name,
-                icon_url=inconnu.get_avatar(user),
+                icon_url=get_avatar(user),
                 footer=" • ".join(footer),
             )
             embed.add_field(name=" ", value=str(post.url))
@@ -115,7 +116,7 @@ async def search(
         if summary:
             # Still need to construct the embed
             embed = discord.Embed(title="Recent Posts", description="\n".join(posts))
-            embed.set_author(name=user.display_name, icon_url=inconnu.get_avatar(user))
+            embed.set_author(name=user.display_name, icon_url=get_avatar(user))
             if footer:
                 embed.set_footer(text=" • ".join(footer))
 

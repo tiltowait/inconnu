@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse
 
 import bot
 import inconnu
+from inconnu.utils.text import diff as text_diff
 from models import RPPost
 from web import object_id, templates
 
@@ -36,7 +37,7 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
 
     try:
         previous = history[page + 1][0]
-        diff = inconnu.utils.diff(previous, content, join=False, strip=True)
+        diff = text_diff(previous, content, join=False, strip=True)
     except IndexError:
         diff = False
 

@@ -5,7 +5,7 @@ import inconnu
 import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
-from inconnu.utils import strtobool
+from inconnu.utils.text import strtobool
 from models import VChar
 from services import haven
 

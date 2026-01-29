@@ -4,6 +4,7 @@ import discord
 
 import inconnu
 from ctx import AppCtx
+from inconnu.utils.text import pluralize
 
 
 async def blood_potency(ctx: AppCtx, rating: int):
@@ -20,10 +21,10 @@ async def blood_potency(ctx: AppCtx, rating: int):
     embed.set_footer(text="V5 Core p.216")
 
     # Add the fields
-    surge = "Add " + inconnu.utils.pluralize(potency["surge"], "die")
+    surge = "Add " + pluralize(potency["surge"], "die")
     embed.add_field(name="Blood Surge", value=surge)
 
-    mend = inconnu.utils.pluralize(potency["mend"], "pt")
+    mend = pluralize(potency["mend"], "pt")
     embed.add_field(name="Damage Mended", value=f"{mend}. Superficial Damage")
 
     if (bonus := potency["bonus"]) == 0:

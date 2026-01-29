@@ -9,6 +9,7 @@ import db
 import inconnu
 import ui
 from ctx import AppCtx
+from inconnu.utils import get_avatar
 from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
@@ -123,7 +124,7 @@ async def __display_trait_statistics(ctx, character, stats, date, owner):
         title = f"{character.name}: Trait successes since {discord.utils.format_dt(date, DT_ST)}"
 
     embed = discord.Embed(title=title)
-    embed.set_author(name=owner.display_name, icon_url=inconnu.get_avatar(owner))
+    embed.set_author(name=owner.display_name, icon_url=get_avatar(owner))
 
     for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
         embed.add_field(name="​", value=f"**{group}**", inline=False)
@@ -265,7 +266,7 @@ async def __display_embed(ctx, results, date, owner):
         fmt_date = "Since " + discord.utils.format_dt(date, DT_ST)
 
     embed = discord.Embed(title=f"Roll Statistics {fmt_date}")
-    embed.set_author(name=owner.display_name, icon_url=inconnu.get_avatar(owner))
+    embed.set_author(name=owner.display_name, icon_url=get_avatar(owner))
 
     for character in results:
         outcomes = defaultdict(int)

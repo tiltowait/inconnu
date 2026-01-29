@@ -6,6 +6,8 @@ import errors
 import inconnu
 import services
 from config import web_asset
+from inconnu.utils import get_avatar, get_message
+from inconnu.utils.text import pluralize
 from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#frenzy-checks"
@@ -52,7 +54,7 @@ async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
         failures = min(outcome.normal.failures, 3)
         outcome.reroll("reroll_failures")
 
-        dice = inconnu.utils.pluralize(failures, "die")
+        dice = pluralize(failures, "die")
         footer.append(f"Re-rolled {dice} from {bonus}")
 
     if outcome.total_successes >= difficulty:
@@ -84,7 +86,7 @@ async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
         msg_content = {"embed": embed}
 
     inter = await ctx.respond(**msg_content)
-    msg = await inconnu.get_message(inter)
+    msg = await get_message(inter)
     await __generate_report_task(ctx, msg, character, outcome)
     await character.save()
 
@@ -93,7 +95,7 @@ def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, foote
     """Display the frenzy outcome in an embed."""
     embed = discord.Embed(title=title, description=message, colour=color)
     author_field = f"{name}: Frenzy vs DC {difficulty}"
-    embed.set_author(name=author_field, icon_url=inconnu.get_avatar(ctx.user))
+    embed.set_author(name=author_field, icon_url=get_avatar(ctx.user))
     embed.set_footer(text=footer)
 
     if title == "Failure!":

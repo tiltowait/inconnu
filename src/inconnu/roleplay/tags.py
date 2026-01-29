@@ -7,6 +7,8 @@ import db
 import inconnu
 import ui
 from ctx import AppCtx
+from inconnu.utils import get_avatar
+from inconnu.utils.text import fence, oxford_list
 from models import RPPost
 from ui.views import DisablingView
 
@@ -73,7 +75,7 @@ def _create_page(ctx: AppCtx, tags: list[tuple[str, int]]) -> Page:
     )
     embed.set_author(
         name=ctx.user.display_name,
-        icon_url=inconnu.get_avatar(ctx.user),
+        icon_url=get_avatar(ctx.user),
     )
 
     post = ctx.bot.cmd_mention("post")
@@ -126,7 +128,7 @@ class TagView(DisablingView):
             await paginator.respond(interaction, ephemeral=True)
         else:
             tags = "tag" if len(selected) == 1 else "tags"
-            selection = inconnu.utils.oxford_list(map(inconnu.fence, selected))
+            selection = oxford_list(map(fence, selected))
             await ui.embeds.error(
                 interaction, f"No posts with {tags} {selection} found.", title="No posts found!"
             )

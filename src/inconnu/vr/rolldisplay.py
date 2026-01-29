@@ -9,6 +9,8 @@ from discord.ui import Button
 
 import inconnu
 from config import web_asset
+from inconnu.utils import get_avatar, get_message
+from inconnu.utils.text import contains_digit, de_camel
 from inconnu.vr import dicemoji
 from ui.views import DisablingView
 
@@ -67,7 +69,7 @@ class _RollControls(DisablingView):
         else:
             button_id = interaction.data["custom_id"].split()[0]  # Remove the unique ID
 
-            if inconnu.utils.contains_digit(button_id):
+            if contains_digit(button_id):
                 # This was a surge button, which are always last. Let's disable them
                 self.children[-1].disabled = True
                 self.children[-1].style = discord.ButtonStyle.secondary
@@ -160,7 +162,7 @@ class RollDisplay:
 
         if ctx.guild is not None:
             if not self.rerolled:
-                msg = await inconnu.get_message(inter)
+                msg = await get_message(inter)
                 msg_id = msg.id
             else:
                 msg_id = None
@@ -199,9 +201,9 @@ class RollDisplay:
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
             )
 
-        elif inconnu.utils.contains_digit(button_id):
+        elif contains_digit(button_id):
             if button_id == self.character.id_str:
-                # elif inconnu.utils.contains_digit(button_id):  # Surge buttons are just charids
+                # elif contains_digit(button_id):  # Surge buttons are just charids
                 self.surged = True
                 await inconnu.misc.rouse(btn, self.character, 1, "Surge", False)
 
@@ -273,9 +275,9 @@ class RollDisplay:
         """The icon for the embed."""
         if self.character is not None:
             guild_icon = self.ctx.guild.icon or ""
-            icon = inconnu.get_avatar(self.owner) if self.character.is_pc else guild_icon
+            icon = get_avatar(self.owner) if self.character.is_pc else guild_icon
         else:
-            icon = inconnu.get_avatar(self.owner)
+            icon = get_avatar(self.owner)
 
         return icon
 
@@ -346,7 +348,7 @@ class RollDisplay:
 
         if self.outcome.pool_str:
             # Make pool strings nicer to read
-            splitted = inconnu.utils.de_camel(self.outcome.pool_str).split()
+            splitted = de_camel(self.outcome.pool_str).split()
 
             # Uppercase each word in the pool. We can't use .title(), because
             # .title() will make everything else lowercase. "XYZ" would become

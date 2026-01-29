@@ -5,6 +5,7 @@ from discord.ext.commands import Paginator as Chunker
 
 import inconnu
 import ui
+from inconnu.utils.text import format_join
 from models import VChar
 from services import haven
 
@@ -38,7 +39,7 @@ def traits_embed(
                 for index, char_trait in enumerate(char_traits):
                     if char_trait.matching(trait, True):
                         if char_trait.has_specialties:
-                            specs = inconnu.utils.format_join(char_trait.specialties, ", ", "`")
+                            specs = format_join(char_trait.specialties, ", ", "`")
                             spec = f"**{char_trait.name}:** {specs}"
                             specialties.append(spec)
 
@@ -60,7 +61,7 @@ def traits_embed(
         if trait.is_discipline:
             if trait.has_specialties:
                 # If it has any powers, show them
-                powers = inconnu.utils.format_join(trait.specialties, ", ", "`")
+                powers = format_join(trait.specialties, ", ", "`")
                 entry += f" ({powers})"
             disciplines.append(entry)
         else:

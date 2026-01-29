@@ -7,6 +7,7 @@ import discord
 
 import inconnu
 from ctx import AppCtx
+from inconnu.utils import get_avatar
 
 __DISCIPLINES = {
     "Choleric": "Celerity, Potence",
@@ -69,7 +70,7 @@ async def __display_embed(ctx: AppCtx, temperament: str, res: str | None, die: i
     embed = discord.Embed(title=title)
     embed.set_author(
         name=kwargs.get("character", ctx.user.display_name),
-        icon_url=inconnu.get_avatar(ctx.user),
+        icon_url=get_avatar(ctx.user),
     )
     embed.add_field(name="Disciplines", value=__DISCIPLINES.get(res, "None"))
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[res])

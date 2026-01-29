@@ -6,6 +6,7 @@ import errors
 import inconnu
 import services
 import ui
+from inconnu.utils import get_message
 from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"
@@ -50,7 +51,7 @@ async def slake(ctx, character, amount: int, **kwargs):
             view=view,
             **kwargs,
         )
-        msg = await inconnu.get_message(inter)
+        msg = await get_message(inter)
         await asyncio.gather(
             character.save(),
             services.character_update(

@@ -13,6 +13,7 @@ import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
+from inconnu.utils import get_avatar
 from inconnu.vr import display_outcome, perform_roll
 from services import Haven
 
@@ -161,7 +162,7 @@ async def __slake(ctx, character, outcome):
         )
         embed.set_author(
             name=ctx.user.display_name,
-            icon_url=inconnu.get_avatar(ctx.user),
+            icon_url=get_avatar(ctx.user),
         )
         embed.set_footer(
             text="Red indicates harmful drinks (p.212). Slaking to 0 Hunger kills the victim."

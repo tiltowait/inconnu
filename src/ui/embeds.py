@@ -4,6 +4,7 @@ import discord
 
 import inconnu
 import ui
+from inconnu.utils import get_avatar
 from inconnu.utils.permissions import is_supporter
 
 
@@ -29,7 +30,7 @@ class VCharEmbed(discord.Embed):
 
         super().__init__(**kwargs)
 
-        self.set_author(name=author_name, icon_url=inconnu.get_avatar(owner))
+        self.set_author(name=author_name, icon_url=get_avatar(owner))
 
         if show_thumbnail:
             self.set_thumbnail(url=character.profile_image_url)
@@ -46,7 +47,7 @@ class ErrorEmbed(discord.Embed):
         )
 
         # Get the data necessary for the author field
-        avatar = inconnu.get_avatar(author)
+        avatar = get_avatar(author)
         display_name = author.display_name
 
         if (character := kwargs.pop("character", None)) is not None:

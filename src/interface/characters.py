@@ -9,7 +9,7 @@ import inconnu
 import ui
 from ctx import AppCtx
 from inconnu.options import char_option, player_option
-from inconnu.utils import strtobool
+from inconnu.utils.text import strtobool
 
 
 async def _spc_options(ctx):

@@ -11,6 +11,7 @@ from loguru import logger
 import errors
 import inconnu
 import ui
+from inconnu.utils import get_avatar
 
 
 class ErrorReporter:
@@ -221,7 +222,7 @@ async def character_update(*, ctx, character, title, message, **kwargs):
                 url=msg,
                 color=kwargs.pop("color", None),
             )
-            embed.set_author(name=character.name, icon_url=inconnu.get_avatar(ctx.user))
+            embed.set_author(name=character.name, icon_url=get_avatar(ctx.user))
             content = ""
         else:
             embed = kwargs["embed"]

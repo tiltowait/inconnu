@@ -6,6 +6,7 @@ import errors
 import inconnu
 import services
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
+from inconnu.utils import get_message
 from models import VChar
 from services import haven
 
@@ -38,7 +39,7 @@ async def aggheal(ctx, character):
             update_msg += "."
 
     inter = await __display_outcome(ctx, character, outcome)
-    msg = await inconnu.get_message(inter)
+    msg = await get_message(inter)
     await services.character_update(
         ctx=ctx,
         msg=msg,

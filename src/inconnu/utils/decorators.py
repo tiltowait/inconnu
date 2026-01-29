@@ -6,6 +6,7 @@ from loguru import logger
 
 import errors
 import inconnu
+from inconnu.utils.permissions import get_or_fetch_supporter
 
 
 def not_on_lockdown():
@@ -23,7 +24,7 @@ def not_on_lockdown():
 
 async def _check_supporter(ctx: discord.ApplicationContext, user: discord.Member | None = None):
     """Wraps is_supporter() to raise on failure."""
-    if not await inconnu.utils.get_or_fetch_supporter(ctx, user):
+    if not await get_or_fetch_supporter(ctx, user):
         raise errors.NotPremium
 
     return True

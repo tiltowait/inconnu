@@ -10,6 +10,7 @@ import db
 import inconnu
 import ui
 from ctx import AppCtx
+from inconnu.utils import get_avatar
 
 
 async def show_bookmarks(ctx: AppCtx):
@@ -42,7 +43,7 @@ async def show_bookmarks(ctx: AppCtx):
         embed = discord.Embed(title="RP Bookmarks", description=chunk)
         embed.set_author(
             name=ctx.user.display_name,
-            icon_url=inconnu.get_avatar(ctx.user),
+            icon_url=get_avatar(ctx.user),
         )
         embed.add_field(name="\u200b", value=tip)
 

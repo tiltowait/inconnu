@@ -8,6 +8,7 @@ from discord.ext.pages import Paginator
 
 import inconnu
 from ctx import AppCtx
+from inconnu.utils import get_avatar
 from models import VChar
 from services import haven
 
@@ -39,7 +40,7 @@ async def __get_embeds(character: VChar, player):
     embeds = []
     for page in chunks.pages:
         embed = discord.Embed(title="Experience Log", description=page)
-        embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
+        embed.set_author(name=character.name, icon_url=get_avatar(player))
         embed.add_field(
             name="Experience (Unspent / Lifetime)",
             value=f"```{character.experience.unspent} / {character.experience.lifetime}```",

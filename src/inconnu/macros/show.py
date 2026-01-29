@@ -9,6 +9,8 @@ import errors
 import inconnu
 import ui
 from ctx import AppCtx
+from inconnu.utils import get_avatar
+from inconnu.utils.text import paginate
 from models import VChar
 from services import haven
 
@@ -37,12 +39,12 @@ async def show(ctx: AppCtx, character: VChar):
 async def __display_macros(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
     fields = __generate_fields(macros)
-    raw_pages = inconnu.utils.paginate(1200, *fields)
+    raw_pages = paginate(1200, *fields)
 
     _pages = []
     for page in raw_pages:
         embed = discord.Embed(title="Macros")
-        embed.set_author(name=char_name, icon_url=inconnu.get_avatar(ctx.user))
+        embed.set_author(name=char_name, icon_url=get_avatar(ctx.user))
         embed.set_footer(text="To roll a macro, use the /vm command.")
 
         for field in page:

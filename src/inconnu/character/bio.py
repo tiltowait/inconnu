@@ -7,6 +7,7 @@ from loguru import logger
 import errors
 import inconnu
 import ui
+from inconnu.utils.text import clean_text
 from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#profile"
@@ -114,8 +115,8 @@ class _CharacterBio(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Finalize the modal."""
-        biography = inconnu.utils.clean_text(self.children[0].value)
-        description = inconnu.utils.clean_text(self.children[1].value)
+        biography = clean_text(self.children[0].value)
+        description = clean_text(self.children[1].value)
 
         embed = ui.embeds.VCharEmbed(
             interaction,

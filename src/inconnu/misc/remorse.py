@@ -5,6 +5,8 @@ from types import SimpleNamespace as SN
 import errors
 import inconnu
 import services
+from inconnu.utils import get_message
+from inconnu.utils.text import pluralize
 from models import VChar
 from services import haven
 
@@ -44,7 +46,7 @@ async def __display_outcome(ctx, character: VChar, outcome):
         footer += f"\nLasombra alt bane: -{character.bane_severity} dice"
 
     if outcome.overrode:
-        dice = inconnu.utils.pluralize(outcome.minimum, "die")
+        dice = pluralize(outcome.minimum, "die")
         footer += f"\nOverride: Rolled {dice} instead of {outcome.nominal}"
 
     footer += "\nDice: " + ", ".join(map(str, outcome.dice))
@@ -103,7 +105,7 @@ async def __report(ctx, inter, character, remorseful):
         verbed = "failed"
         humanity_str = f"Humanity drops to `{character.humanity}`."
 
-    msg = await inconnu.get_message(inter)
+    msg = await get_message(inter)
     await services.character_update(
         ctx=ctx,
         msg=msg,

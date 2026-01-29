@@ -16,7 +16,7 @@ from discord.ui import Button, Select, TextDisplay
 from loguru import logger
 
 from ctx import AppCtx
-from inconnu.utils import is_admin
+from inconnu.utils.permissions import is_admin
 from models import ExpPerms, VGuild, VUser
 
 

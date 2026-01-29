@@ -5,7 +5,8 @@ import discord
 import inconnu
 import ui
 from ctx import AppCtx
-from inconnu.utils import is_admin
+from inconnu.utils import get_avatar
+from inconnu.utils.permissions import is_admin
 from models import VChar
 from services import haven
 from ui.views import DisablingView
@@ -41,7 +42,7 @@ async def remove_entry(
 def _get_embed(player, character, entry):
     """Generate an embed for displaying the deletion message."""
     embed = discord.Embed(title="Deleted Experience Log Entry", description=_format_entry(entry))
-    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
+    embed.set_author(name=character.name, icon_url=get_avatar(player))
     embed.set_footer(text="Be sure to adjust unspent/lifetime XP accordingly!")
 
     experience = f"```{character.experience.unspent} / {character.experience.lifetime}```"

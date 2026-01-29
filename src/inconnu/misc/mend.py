@@ -8,6 +8,7 @@ import services
 import ui
 from ctx import AppCtx
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
+from inconnu.utils import get_message
 from models import VChar
 from services import haven
 
@@ -52,7 +53,7 @@ async def mend(ctx: AppCtx, character: VChar):
             update_msg += "\nMust make a frenzy check at DC 4."
 
         inter = await __display_outcome(ctx, character, outcome)
-        msg = await inconnu.get_message(inter)
+        msg = await get_message(inter)
         await services.character_update(
             ctx=ctx, character=character, title="Damage Mended", message=update_msg, msg=msg
         )

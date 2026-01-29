@@ -8,6 +8,9 @@ from loguru import logger
 import errors
 import inconnu
 import ui
+from inconnu.utils import get_avatar
+from inconnu.utils.text import clean_text, pull_mentions
+from inconnu.utils.text import diff as text_diff
 from models import HeaderSubdoc, RPPost, VChar
 from services import haven
 
@@ -24,7 +27,7 @@ class PostModal(discord.ui.Modal):
         self.bot = bot  # Used for webhook management
         self.post_to_edit = kwargs.pop("rp_post", None)
         self.message = kwargs.pop("message", None)
-        self.mentions = " ".join(inconnu.utils.pull_mentions(kwargs.pop("mentions", "")))
+        self.mentions = " ".join(pull_mentions(kwargs.pop("mentions", "")))
         self.show_header = kwargs.pop("show_header", True)
 
         if self.post_to_edit is None:
@@ -99,7 +102,7 @@ class PostModal(discord.ui.Modal):
 
     def _clean_title(self) -> str:
         """Clean the title."""
-        return inconnu.utils.clean_text(self.children[-2].value)
+        return clean_text(self.children[-2].value)
 
     def _clean_tags(self) -> list[str]:
         """Clean and separate the tags."""
@@ -109,7 +112,7 @@ class PostModal(discord.ui.Modal):
 
         cleaned_tags = []
         for tag in tags:
-            if cleaned := inconnu.utils.clean_text(tag):
+            if cleaned := clean_text(tag):
                 cleaned_tags.append(cleaned)
 
         return sorted(list(set(cleaned_tags)))  # Make sure the tags are unique
@@ -165,7 +168,7 @@ class PostModal(discord.ui.Modal):
         await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
 
         webhook = await self.bot.prep_webhook(interaction.channel)
-        webhook_avatar = self.character.profile_image_url or inconnu.get_avatar(interaction.user)
+        webhook_avatar = self.character.profile_image_url or get_avatar(interaction.user)
 
         if self.show_header:
             # We take a regular header embed as a base, then modify it ... a lot
@@ -251,7 +254,7 @@ class PostModal(discord.ui.Modal):
         if changelog_id := await inconnu.settings.changelog_channel(interaction.guild):
             # Prep the diff
             post = self.post_to_edit
-            diff = inconnu.utils.diff(post.history[0].content, post.content)
+            diff = text_diff(post.history[0].content, post.content)
 
             # Prep the embed
             description = (
@@ -264,9 +267,7 @@ class PostModal(discord.ui.Modal):
                 description=description,
                 url=inconnu.post_url(post.id),
             )
-            embed.set_author(
-                name=post.header.char_name, icon_url=inconnu.get_avatar(interaction.user)
-            )
+            embed.set_author(name=post.header.char_name, icon_url=get_avatar(interaction.user))
             embed.set_thumbnail(url=self.character.profile_image_url)
             embed.add_field(name=" ", value=post.url)
             embed.timestamp = self.post_to_edit.utc_date

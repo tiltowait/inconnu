@@ -158,9 +158,7 @@ async def test_vamp_mend_all_damage(
     mock_char_save: AsyncMock,
 ):
     """Test mending when mend_amount >= superficial damage."""
-    mend_amount = vamp.mend_amount
-    # Set superficial less than or equal to mend_amount
-    vamp.health = "/......"  # 1 superficial (less than mend_amount)
+    vamp.health = "/......"
 
     with patch("inconnu.d10", return_value=7):  # Rouse success
         await mend(ctx, vamp)

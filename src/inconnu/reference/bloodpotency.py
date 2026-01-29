@@ -2,6 +2,7 @@
 
 import discord
 
+import inconnu
 from ctx import AppCtx
 
 

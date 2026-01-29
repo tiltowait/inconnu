@@ -312,8 +312,6 @@ async def test_vamp_awaken_partial_wp_recovery(
 ):
     """Test vampire awakening with partial WP recovery."""
     vamp.willpower = "....../"  # 6 healthy, 1 superficial
-    recovery_amount = vamp.willpower_recovery  # 2
-    initial_superficial = vamp.superficial_wp  # 1
 
     with patch("inconnu.d10", return_value=7):
         await awaken(ctx, vamp)
@@ -331,7 +329,6 @@ async def test_mortal_awaken_partial_health_recovery(
     """Test mortal awakening with partial health recovery."""
     mortal.health = "........./"  # 9 healthy, 1 superficial
     mortal.willpower = "......."
-    initial_superficial = mortal.superficial_hp  # 1
 
     await awaken(ctx, mortal)
 

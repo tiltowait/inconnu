@@ -5,11 +5,11 @@ import re
 from types import SimpleNamespace
 
 import inconnu
+import ui
 from inconnu.traits.parser import parse_traits
 from models import VChar
 from models.vchardocs import VCharTrait
 from services import haven
-import ui.views
 
 __HELP_URL = {
     False: "https://docs.inconnu.app/command-reference/traits/adding-traits",

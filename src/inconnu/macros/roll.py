@@ -9,12 +9,12 @@ from loguru import logger
 
 import errors
 import inconnu
-import services
 from ctx import AppCtx
 from inconnu import common
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
 from inconnu.vr import display_outcome, perform_roll
+from services import Haven
 
 __HUNT_LISTENERS = {}
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/rolling"
@@ -31,7 +31,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
             raise ValueError("Macro names may only contain letters and underscores.")
 
         # Get the character
-        haven = services.Haven(
+        haven = Haven(
             ctx,
             character=character,
             char_filter=lambda c: c.find_macro(macro_name),

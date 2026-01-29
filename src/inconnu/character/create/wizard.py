@@ -8,8 +8,8 @@ from discord.ui import Button
 from loguru import logger
 
 import inconnu
+import ui
 from models import VChar
-import ui.views
 
 
 class Wizard:

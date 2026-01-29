@@ -5,12 +5,12 @@ from enum import StrEnum
 import discord
 
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.character.display import trackmoji
 from inconnu.constants import Damage
 from models import VChar
 from services import haven
-import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 

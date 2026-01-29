@@ -4,11 +4,11 @@ from typing import NamedTuple
 
 import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
 from models import VChar
 from services import haven
-import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
 

@@ -19,13 +19,13 @@ from loguru import logger
 
 import errors
 import inconnu
-import services
+import ui
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
 from models import VChar
 from models.vchardocs import VCharTrait
-import ui.views
+from services import Haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
@@ -70,7 +70,7 @@ async def parse(
         # Only guilds have characters
         try:
             if character is not None or needs_character(syntax):
-                haven = services.Haven(
+                haven = Haven(
                     ctx,
                     owner=player,
                     character=character,

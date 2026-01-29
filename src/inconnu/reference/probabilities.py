@@ -8,9 +8,9 @@ import discord
 import db
 import errors
 import inconnu
-import services
 from ctx import AppCtx
 from inconnu import vr as roll
+from services import Haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
 __STRATEGIES = {
@@ -30,7 +30,7 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
                 return
 
             syntax = " ".join(syntax.split())
-            haven = services.Haven(
+            haven = Haven(
                 ctx,
                 character=character,
                 tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",

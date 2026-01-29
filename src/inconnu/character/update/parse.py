@@ -7,12 +7,12 @@ import discord
 from discord.ui import Button
 
 import inconnu
-import services
+import ui
 from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
 from inconnu.character.update import paramupdate
 from models import VChar
-import ui.views
+from services import Haven
 
 __MATCHES = {}
 
@@ -61,7 +61,7 @@ async def update(
     human_readable = parameters
 
     try:
-        haven = services.Haven(
+        haven = Haven(
             ctx,
             character=character,
             owner=player,

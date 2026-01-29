@@ -8,7 +8,7 @@ from discord.ui import Button
 from loguru import logger
 
 import inconnu
-import ui.views
+import ui
 
 
 def pluralize(value: int, noun: str) -> str:

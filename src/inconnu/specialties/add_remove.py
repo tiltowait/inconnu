@@ -7,11 +7,11 @@ from loguru import logger
 
 import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.specialties.tokenize import SYNTAX, tokenize
 from models.vchar import VChar
 from services import haven
-import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/specialties"
 

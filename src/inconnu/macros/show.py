@@ -37,7 +37,7 @@ async def show(ctx: AppCtx, character: VChar):
 async def __display_macros(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
     fields = __generate_fields(macros)
-    raw_pages = inconnu.common.paginate(1200, *fields)
+    raw_pages = inconnu.utils.paginate(1200, *fields)
 
     _pages = []
     for page in raw_pages:

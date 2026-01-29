@@ -92,3 +92,21 @@ def get_avatar(user: discord.User | discord.Member):
 
     # Members can have a guild-specific avatar
     return user.guild_avatar or user.display_avatar
+
+
+async def player_lookup(ctx, player: discord.Member | None):
+    """
+    Look up a player.
+    Returns the sought-after player OR the ctx author if player_str is None.
+
+    Raises PermissionError if the user doesn't have admin permissions.
+    Raises ValueError if player is not a valid player name.
+    """
+    if player is None:
+        return ctx.user
+
+    # Players are allowed to look up themselves
+    if (not ctx.user.guild_permissions.administrator) and ctx.user != player:
+        raise LookupError("You don't have lookup permissions.")
+
+    return player

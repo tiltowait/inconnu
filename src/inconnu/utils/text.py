@@ -115,3 +115,34 @@ def contains_digit(string: str | None):
     if string is None:
         return False
     return bool(re.search(r"\d", string))  # Much faster than using any()
+
+
+def paginate(page_size: int, *contents) -> list:
+    """Break the contents into pages to fit a Discord message."""
+    contents = list(contents)
+    pages = []
+
+    if isinstance(contents[0], str):
+        page = contents.pop(0)
+        for item in contents:
+            if len(page) >= page_size:
+                pages.append(page)
+                page = item
+            else:
+                page += "\n" + item
+
+    else:
+        # [[(header, contents), (header, contents), (header, contents)]]
+        page = [contents.pop(0)]
+        page_len = len(page[0].name) + len(page[0].value)
+        for item in contents:
+            if page_len >= page_size:
+                pages.append(page)
+                page = [item]
+                page_len = len(item.name) + len(item.value)
+            else:
+                page_len += len(item.name) + len(item.value)
+                page.append(item)
+
+    pages.append(page)
+    return pages

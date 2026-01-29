@@ -8,7 +8,6 @@ from math import ceil
 import pytest
 
 import inconnu
-from inconnu.common import paginate
 from inconnu.roleplay.search import convert_dates
 from inconnu.utils import (
     clean_text,
@@ -16,6 +15,7 @@ from inconnu.utils import (
     de_camel,
     format_join,
     oxford_list,
+    paginate,
     pluralize,
     pull_mentions,
     re_paginate,

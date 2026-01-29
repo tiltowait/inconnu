@@ -12,6 +12,7 @@ from pymongo import UpdateOne
 import db
 import inconnu
 import interface
+from utils.decorators import premium
 
 
 class RoleplayCog(commands.Cog):
@@ -48,7 +49,7 @@ class RoleplayCog(commands.Cog):
         description="Display a header above the post (default true)",
         default=True,
     )
-    @inconnu.utils.decorators.premium()
+    @premium()
     async def post(
         self,
         ctx: discord.ApplicationContext,
@@ -102,7 +103,7 @@ class RoleplayCog(commands.Cog):
         description="Display a header above the post (default false)",
         default=False,
     )
-    @inconnu.utils.decorators.premium()
+    @premium()
     async def post_shortcut(
         self,
         ctx: discord.ApplicationContext,

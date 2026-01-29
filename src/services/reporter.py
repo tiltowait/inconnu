@@ -11,7 +11,7 @@ from loguru import logger
 import errors
 import inconnu
 import ui
-from inconnu.utils import get_avatar
+from utils import get_avatar
 
 
 class ErrorReporter:

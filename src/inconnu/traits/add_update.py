@@ -4,14 +4,13 @@ import asyncio
 import re
 from types import SimpleNamespace
 
-import inconnu
 import services
 import ui
 from inconnu.traits.parser import parse_traits
-from inconnu.utils.text import pluralize
 from models import VChar
 from models.vchardocs import VCharTrait
 from services import haven
+from utils.text import pluralize
 
 __HELP_URL = {
     False: "https://docs.inconnu.app/command-reference/traits/adding-traits",

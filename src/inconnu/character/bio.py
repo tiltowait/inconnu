@@ -5,10 +5,9 @@ from discord.ext import pages
 from loguru import logger
 
 import errors
-import inconnu
 import ui
-from inconnu.utils.text import clean_text
 from services import haven
+from utils.text import clean_text
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#profile"
 

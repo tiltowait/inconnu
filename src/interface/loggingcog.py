@@ -6,7 +6,7 @@ from discord.ext import commands
 from loguru import logger
 
 import db
-import inconnu.utils
+from utils import command_options
 
 
 class LoggingCog(commands.Cog):
@@ -27,7 +27,7 @@ class LoggingCog(commands.Cog):
             ctx.user.id,
             location,
             ctx.guild_id,
-            inconnu.utils.command_options(ctx.interaction),
+            command_options(ctx.interaction),
         )
 
         # Log to the database

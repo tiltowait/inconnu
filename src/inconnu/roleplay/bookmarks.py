@@ -7,10 +7,9 @@ from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
 import db
-import inconnu
 import ui
 from ctx import AppCtx
-from inconnu.utils import get_avatar
+from utils import get_avatar
 
 
 async def show_bookmarks(ctx: AppCtx):

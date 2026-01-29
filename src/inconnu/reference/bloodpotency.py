@@ -2,9 +2,8 @@
 
 import discord
 
-import inconnu
 from ctx import AppCtx
-from inconnu.utils.text import pluralize
+from utils.text import pluralize
 
 
 async def blood_potency(ctx: AppCtx, rating: int):

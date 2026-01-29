@@ -172,7 +172,7 @@ async def mock_common_report() -> AsyncGenerator[AsyncMock, None]:
 @pytest.fixture(autouse=True)
 async def mock_get_message() -> AsyncGenerator[AsyncMock, None]:
     """Mock get_message to avoid fetching Discord messages."""
-    with patch("inconnu.utils.get_message", new_callable=AsyncMock) as mock:
+    with patch("utils.get_message", new_callable=AsyncMock) as mock:
         yield mock
 
 

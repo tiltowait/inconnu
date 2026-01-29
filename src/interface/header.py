@@ -15,7 +15,7 @@ import inconnu
 import interface
 from ctx import AppCtx
 from inconnu.options import char_option
-from inconnu.utils.permissions import is_approved_user
+from utils.permissions import is_approved_user
 
 if TYPE_CHECKING:
     from bot import InconnuBot

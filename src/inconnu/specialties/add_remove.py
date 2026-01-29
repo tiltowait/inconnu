@@ -6,14 +6,13 @@ from enum import Enum, StrEnum
 from loguru import logger
 
 import errors
-import inconnu
 import services
 import ui
 from ctx import AppCtx
 from inconnu.specialties.tokenize import SYNTAX, tokenize
-from inconnu.utils.text import format_join
 from models.vchar import VChar
 from services import haven
+from utils.text import format_join
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/specialties"
 

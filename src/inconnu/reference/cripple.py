@@ -6,7 +6,7 @@ import discord
 
 import inconnu
 from ctx import AppCtx
-from inconnu.utils import get_avatar
+from utils import get_avatar
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#crippling-injuries"
 

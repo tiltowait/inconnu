@@ -7,10 +7,10 @@ import inconnu
 import services
 import ui
 from config import web_asset
-from inconnu.utils import get_message
-from inconnu.utils.text import pluralize
 from models import VChar
 from services import haven
+from utils import get_message
+from utils.text import pluralize
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 

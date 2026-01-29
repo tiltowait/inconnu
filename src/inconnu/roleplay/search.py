@@ -12,8 +12,8 @@ from pymongo import ASCENDING, DESCENDING
 import inconnu
 import ui
 from ctx import AppCtx
-from inconnu.utils import get_avatar
 from models import RPPost
+from utils import get_avatar
 
 
 class SortOrder(Enum):

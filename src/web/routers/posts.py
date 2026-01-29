@@ -7,8 +7,8 @@ from fastapi.responses import HTMLResponse
 
 import bot
 import inconnu
-from inconnu.utils.text import diff as text_diff
 from models import RPPost
+from utils.text import diff as text_diff
 from web import object_id, templates
 
 router = APIRouter()

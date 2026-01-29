@@ -9,8 +9,8 @@ import db
 import inconnu
 import ui
 from ctx import AppCtx
-from inconnu.utils import get_avatar
 from services import haven
+from utils import get_avatar, player_lookup
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
 DT_ST = "D"
@@ -32,7 +32,7 @@ async def statistics(
     """
     try:
         date = datetime.strptime(date_rep, "%Y%m%d")
-        owner = await inconnu.utils.player_lookup(ctx, player)
+        owner = await player_lookup(ctx, player)
 
         # As Inconnu was originally made for Cape Town by Night, we will use
         # that server's weekly reset time as the cutoff--but only if we aren't

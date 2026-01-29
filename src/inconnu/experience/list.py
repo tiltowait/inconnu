@@ -6,11 +6,10 @@ import discord
 from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
-import inconnu
 from ctx import AppCtx
-from inconnu.utils import get_avatar
 from models import VChar
 from services import haven
+from utils import get_avatar
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 

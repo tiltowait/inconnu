@@ -9,10 +9,10 @@ import ui
 from ctx import AppCtx
 from inconnu.character.display import trackmoji
 from inconnu.constants import Damage
-from inconnu.utils import get_avatar
-from inconnu.utils.text import pluralize
 from models import VChar
 from services import haven
+from utils import get_avatar
+from utils.text import pluralize
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 

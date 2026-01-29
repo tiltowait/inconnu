@@ -7,11 +7,11 @@ import db
 import errors
 import inconnu
 from ctx import AppCtx
-from inconnu.utils import get_avatar
-from inconnu.utils.permissions import is_supporter
 from models import VChar
 from models.rpheader import HeaderSubdoc
 from services import haven
+from utils import get_avatar
+from utils.permissions import is_supporter
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 

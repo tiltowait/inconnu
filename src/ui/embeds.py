@@ -4,8 +4,8 @@ import discord
 
 import inconnu
 import ui
-from inconnu.utils import get_avatar
-from inconnu.utils.permissions import is_supporter
+from utils import cmd_replace, get_avatar
+from utils.permissions import is_supporter
 
 
 class VCharEmbed(discord.Embed):
@@ -83,7 +83,7 @@ async def error(ctx, err, *fields, **kwargs):
     else:
         view = kwargs.get("view", None)
 
-    msg = await inconnu.utils.cmd_replace(
+    msg = await cmd_replace(
         ctx,
         embed=embed,
         view=view,

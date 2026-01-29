@@ -19,7 +19,6 @@ from inconnu import (
     specialties,
     stats,
     traits,
-    utils,
     vr,
 )
 from inconnu.dice import d10, random
@@ -53,7 +52,6 @@ __all__ = (
     "specialties",
     "stats",
     "traits",
-    "utils",
     "vr",
 )
 

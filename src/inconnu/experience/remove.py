@@ -5,11 +5,11 @@ import discord
 import inconnu
 import ui
 from ctx import AppCtx
-from inconnu.utils import get_avatar
-from inconnu.utils.permissions import is_admin
 from models import VChar
 from services import haven
 from ui.views import DisablingView
+from utils import get_avatar
+from utils.permissions import is_admin
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 

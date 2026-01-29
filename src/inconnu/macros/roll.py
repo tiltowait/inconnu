@@ -13,9 +13,9 @@ import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
-from inconnu.utils import get_avatar
 from inconnu.vr import display_outcome, perform_roll
 from services import Haven
+from utils import get_avatar
 
 __HUNT_LISTENERS = {}
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/rolling"

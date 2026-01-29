@@ -8,11 +8,11 @@ from loguru import logger
 import errors
 import inconnu
 import ui
-from inconnu.utils import get_avatar
-from inconnu.utils.text import clean_text, pull_mentions
-from inconnu.utils.text import diff as text_diff
 from models import HeaderSubdoc, RPPost, VChar
 from services import haven
+from utils import get_avatar, re_paginate
+from utils.text import clean_text, pull_mentions
+from utils.text import diff as text_diff
 
 __HELP_URL = "https://docs.inconnu.app/"
 
@@ -97,8 +97,8 @@ class PostModal(discord.ui.Modal):
             contents = [
                 child.value for child in self.children[0 : PostModal.SECTIONS] if child.value
             ]
-            return inconnu.utils.re_paginate(contents)
-        return inconnu.utils.re_paginate([self.children[0].value])[0]
+            return re_paginate(contents)
+        return re_paginate([self.children[0].value])[0]
 
     def _clean_title(self) -> str:
         """Clean the title."""

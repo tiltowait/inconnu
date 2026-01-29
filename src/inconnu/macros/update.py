@@ -5,9 +5,10 @@ import inconnu
 import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
-from inconnu.utils.text import strtobool
 from models import VChar
 from services import haven
+from utils import parse_parameters
+from utils.text import strtobool
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"
 __VALID_KEYS = {
@@ -29,7 +30,7 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
     try:
         syntax = " ".join(syntax.split())
 
-        parameters = inconnu.utils.parse_parameters(syntax, False)
+        parameters = parse_parameters(syntax, False)
         macro_update = __validate_parameters(character, parameters)
 
         macro_name = character.update_macro(macro, macro_update)

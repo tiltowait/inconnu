@@ -5,8 +5,7 @@ from discord.ext import commands
 from loguru import logger
 
 import errors
-import inconnu
-from inconnu.utils.permissions import get_or_fetch_supporter
+from utils.permissions import get_or_fetch_supporter
 
 
 def not_on_lockdown():

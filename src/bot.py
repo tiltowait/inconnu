@@ -19,6 +19,7 @@ from ctx import AppCtx
 from models import RPPost, VChar
 from services import WebhookCache
 from services.reporter import reporter
+from utils import cmd_replace, raw_command_options
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -267,7 +268,7 @@ class InconnuBot(discord.AutoShardedBot):
         """General processing after application commands."""
         # If a user specifies a character but only has one, we want to inform
         # them it's unnecessary so they don't keep doing it.
-        options = inconnu.utils.raw_command_options(ctx.interaction)
+        options = raw_command_options(ctx.interaction)
         if "character" in options and "player" not in options:
             # Some commands do, in fact, need the character parameter
             if ctx.command.qualified_name not in {
@@ -293,7 +294,7 @@ class InconnuBot(discord.AutoShardedBot):
                                 "**Tip:** You only have one character, so you don't need "
                                 f"the `character` option for `/{ctx.command.qualified_name}`."
                             )
-                            await inconnu.utils.cmd_replace(ctx, tip, ephemeral=True)
+                            await cmd_replace(ctx, tip, ephemeral=True)
 
                     except errors.CharacterNotFoundError:
                         # They tried to look up a character they don't have
@@ -304,7 +305,7 @@ class InconnuBot(discord.AutoShardedBot):
                 if ctx.user.id not in self.motd_given:
                     logger.debug("MOTD: Showing MOTD to {}", ctx.user.name)
                     await asyncio.sleep(1)
-                    await inconnu.utils.cmd_replace(ctx, embed=self.motd, ephemeral=True)
+                    await cmd_replace(ctx, embed=self.motd, ephemeral=True)
                     self.motd_given.add(ctx.user.id)
             except discord.HTTPException:
                 logger.warning("Could not show MotD to {}", ctx.user.name)

@@ -8,9 +8,9 @@ import services
 import ui
 from ctx import AppCtx
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
-from inconnu.utils import get_message
 from models import VChar
 from services import haven
+from utils import get_message
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
 

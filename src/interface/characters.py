@@ -9,7 +9,8 @@ import inconnu
 import ui
 from ctx import AppCtx
 from inconnu.options import char_option, player_option
-from inconnu.utils.text import strtobool
+from utils import decorators, not_on_lockdown
+from utils.text import strtobool
 
 
 async def _spc_options(ctx):
@@ -41,7 +42,7 @@ class Characters(commands.Cog, name="Character Management"):
     )
 
     @character.command(name="create")
-    @inconnu.utils.not_on_lockdown()
+    @not_on_lockdown()
     @option("name", description="The character's name")
     @option("template", description="The character type", choices=_TEMPLATES)
     @option("health", description="Health levels (4-15)", choices=inconnu.options.ratings(3, 15))
@@ -230,7 +231,7 @@ class Characters(commands.Cog, name="Character Management"):
             await ctx.respond(err, ephemeral=True)
 
     @character.command(name="delete")
-    @inconnu.utils.not_on_lockdown()
+    @not_on_lockdown()
     @char_option("The character to delete")
     async def character_delete(
         self,
@@ -311,7 +312,7 @@ class Characters(commands.Cog, name="Character Management"):
     images = character.create_subgroup("image", "Character image commands")
 
     @images.command(name="upload")
-    @inconnu.utils.decorators.premium()
+    @decorators.premium()
     @option("image", description="The image file to upload")
     @char_option()
     async def upload_image(

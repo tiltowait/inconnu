@@ -12,9 +12,9 @@ import ui
 from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
 from inconnu.character.update import paramupdate
-from inconnu.utils import get_message
 from models import VChar
 from services import Haven
+from utils import get_message, parse_parameters
 
 __MATCHES = {}
 
@@ -72,7 +72,7 @@ async def update(
         )
         character = await haven.fetch()
 
-        parameters = inconnu.utils.parse_parameters(parameters, True)
+        parameters = parse_parameters(parameters, True)
         human_readable = " ".join([f"{k}={v}" for k, v in parameters.items()])
         parameters = __validate_parameters(parameters)
         updates = []

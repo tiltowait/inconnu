@@ -12,9 +12,9 @@ import errors
 import inconnu
 import ui
 from ctx import AppCtx
-from inconnu.utils.permissions import is_admin
 from models import VChar
 from ui.views.basicselector import BasicSelector
+from utils.permissions import is_admin
 
 P = ParamSpec("P")
 T = TypeVar("T")

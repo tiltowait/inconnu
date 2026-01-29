@@ -9,8 +9,8 @@ import pytest
 
 import inconnu
 from inconnu.roleplay.search import convert_dates
-from inconnu.utils import re_paginate
-from inconnu.utils.text import (
+from utils import re_paginate
+from utils.text import (
     clean_text,
     contains_digit,
     de_camel,

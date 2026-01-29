@@ -6,13 +6,12 @@ import discord
 from discord.ext import pages
 
 import errors
-import inconnu
 import ui
 from ctx import AppCtx
-from inconnu.utils import get_avatar
-from inconnu.utils.text import paginate
 from models import VChar
 from services import haven
+from utils import get_avatar
+from utils.text import paginate
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/listing"
 

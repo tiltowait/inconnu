@@ -7,10 +7,10 @@ import db
 import inconnu
 import ui
 from ctx import AppCtx
-from inconnu.utils import get_avatar
-from inconnu.utils.text import fence, oxford_list
 from models import RPPost
 from ui.views import DisablingView
+from utils import get_avatar
+from utils.text import fence, oxford_list
 
 
 async def show_tags(ctx: AppCtx):

@@ -7,7 +7,7 @@ import discord
 
 import inconnu
 from ctx import AppCtx
-from inconnu.utils import get_avatar
+from utils import get_avatar
 
 __DISCIPLINES = {
     "Choleric": "Celerity, Potence",

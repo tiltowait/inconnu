@@ -3,8 +3,8 @@
 import discord
 
 from ctx import AppCtx
-from inconnu.utils.permissions import is_admin
 from models import ExpPerms, VGuild, VUser
+from utils.permissions import is_admin
 
 # Accessibility
 

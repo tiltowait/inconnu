@@ -43,7 +43,7 @@ async def __display_outcome(ctx, character: VChar, outcome):
         footer += f"\nLasombra alt bane: -{character.bane_severity} dice"
 
     if outcome.overrode:
-        dice = inconnu.common.pluralize(outcome.minimum, "die")
+        dice = inconnu.utils.pluralize(outcome.minimum, "die")
         footer += f"\nOverride: Rolled {dice} instead of {outcome.nominal}"
 
     footer += "\nDice: " + ", ".join(map(str, outcome.dice))

@@ -78,8 +78,8 @@ def __make_title(outcome):
     if outcome.total == 1:
         title = "Rouse Success" if outcome.successes == 1 else "Rouse Failure"
     else:
-        successes = inconnu.common.pluralize(outcome.successes, "success")
-        failures = inconnu.common.pluralize(outcome.failures, "failure")
+        successes = inconnu.utils.pluralize(outcome.successes, "success")
+        failures = inconnu.utils.pluralize(outcome.failures, "failure")
         title = f"Rouse: {successes}, {failures}"
 
     return title
@@ -116,7 +116,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
     if outcome.reroll:
         footer.append("Re-rolling failures")
     if outcome.stains > 0:
-        stains_txt = inconnu.common.pluralize(outcome.stains, "stain")
+        stains_txt = inconnu.utils.pluralize(outcome.stains, "stain")
 
         if oblivion == "show":
             footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")

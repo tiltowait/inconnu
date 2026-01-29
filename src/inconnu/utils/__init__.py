@@ -19,11 +19,13 @@ from inconnu.utils.permissions import (
 )
 from inconnu.utils.text import (
     clean_text,
+    contains_digit,
     de_camel,
     diff,
     fence,
     format_join,
     oxford_list,
+    pluralize,
     pull_mentions,
     strtobool,
 )
@@ -32,6 +34,7 @@ __all__ = (
     "clean_text",
     "cmd_replace",
     "command_options",
+    "contains_digit",
     "de_camel",
     "decorators",
     "diff",
@@ -46,6 +49,7 @@ __all__ = (
     "not_on_lockdown",
     "oxford_list",
     "parse_parameters",
+    "pluralize",
     "pull_mentions",
     "raw_command_options",
     "re_paginate",

@@ -39,7 +39,7 @@ async def stain(ctx, character, delta, *, player):
             footer = "Degeneration! -2 dice to all rolls. Remains until /remorse or auto-drop."
 
         title = "Added" if delta > 0 else "Removed"
-        title = f"{title} {inconnu.common.pluralize(abs(delta), 'Stain')}"
+        title = f"{title} {inconnu.utils.pluralize(abs(delta), 'Stain')}"
 
         inter = await inconnu.character.display(
             ctx, character, title, message=message, owner=player, fields=fields, footer=footer

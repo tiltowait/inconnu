@@ -8,9 +8,18 @@ from math import ceil
 import pytest
 
 import inconnu
-from inconnu.common import contains_digit, paginate, pluralize
+from inconnu.common import paginate
 from inconnu.roleplay.search import convert_dates
-from inconnu.utils import clean_text, de_camel, format_join, oxford_list, pull_mentions, re_paginate
+from inconnu.utils import (
+    clean_text,
+    contains_digit,
+    de_camel,
+    format_join,
+    oxford_list,
+    pluralize,
+    pull_mentions,
+    re_paginate,
+)
 
 
 @pytest.mark.parametrize(

@@ -208,7 +208,7 @@ def __stat_repr(can_emoji, function, *stats):
         if can_emoji:
             return function(humanity, stains)
 
-        stains = inconnu.common.pluralize(stains, "Stain")
+        stains = inconnu.utils.pluralize(stains, "Stain")
 
         return f"{humanity} ({stains})"
 

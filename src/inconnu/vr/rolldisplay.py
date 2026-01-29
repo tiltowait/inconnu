@@ -67,7 +67,7 @@ class _RollControls(DisablingView):
         else:
             button_id = interaction.data["custom_id"].split()[0]  # Remove the unique ID
 
-            if inconnu.common.contains_digit(button_id):
+            if inconnu.utils.contains_digit(button_id):
                 # This was a surge button, which are always last. Let's disable them
                 self.children[-1].disabled = True
                 self.children[-1].style = discord.ButtonStyle.secondary
@@ -199,9 +199,9 @@ class RollDisplay:
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
             )
 
-        elif inconnu.common.contains_digit(button_id):
+        elif inconnu.utils.contains_digit(button_id):
             if button_id == self.character.id_str:
-                # elif inconnu.common.contains_digit(button_id):  # Surge buttons are just charids
+                # elif inconnu.utils.contains_digit(button_id):  # Surge buttons are just charids
                 self.surged = True
                 await inconnu.misc.rouse(btn, self.character, 1, "Surge", False)
 

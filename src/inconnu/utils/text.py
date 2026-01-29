@@ -92,3 +92,26 @@ def strtobool(val):
         return 0
     else:
         raise ValueError(f"invalid truth value {val!r}")
+
+
+def pluralize(value: int, noun: str) -> str:
+    """Pluralize a noun."""
+    nouns = {"success": "successes", "die": "dice", "specialty": "specialties"}
+
+    pluralized = f"{value} {noun}"
+    if value != 1:
+        if (plural := nouns.get(noun.lower())) is not None:
+            if noun[0].isupper():
+                plural = plural.capitalize()
+            pluralized = f"{value} {plural}"
+        else:
+            pluralized += "s"
+
+    return pluralized
+
+
+def contains_digit(string: str | None):
+    """Determine whether a string contains a digit."""
+    if string is None:
+        return False
+    return bool(re.search(r"\d", string))  # Much faster than using any()

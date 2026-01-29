@@ -51,7 +51,7 @@ async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
         failures = min(outcome.normal.failures, 3)
         outcome.reroll("reroll_failures")
 
-        dice = inconnu.common.pluralize(failures, "die")
+        dice = inconnu.utils.pluralize(failures, "die")
         footer.append(f"Re-rolled {dice} from {bonus}")
 
     if outcome.total_successes >= difficulty:

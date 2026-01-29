@@ -135,11 +135,11 @@ async def __results_embed(ctx, outcome, character: VChar, disciplines: bool):
     if not outcome.assigned and not outcome.unassigned and outcome.errors:
         title = f"Unable to {action_present} {term_plural}"
     elif outcome.assigned and not outcome.unassigned:
-        title = f"{action_past} " + inconnu.common.pluralize(assigned, term_singular)
+        title = f"{action_past} " + inconnu.utils.pluralize(assigned, term_singular)
     elif outcome.assigned and outcome.unassigned:
         title = f"{action_past}: {assigned} | Unassigned: {unassigned + errors}"
     else:
-        title = f"Couldn't {action_present} " + inconnu.common.pluralize(
+        title = f"Couldn't {action_present} " + inconnu.utils.pluralize(
             unassigned + errors, term_singular
         )
 

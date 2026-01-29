@@ -1,6 +1,5 @@
 """common.py - Commonly used functions."""
 
-import re
 from typing import Any
 
 import discord
@@ -9,22 +8,6 @@ from loguru import logger
 
 import inconnu
 import ui
-
-
-def pluralize(value: int, noun: str) -> str:
-    """Pluralize a noun."""
-    nouns = {"success": "successes", "die": "dice", "specialty": "specialties"}
-
-    pluralized = f"{value} {noun}"
-    if value != 1:
-        if (plural := nouns.get(noun.lower())) is not None:
-            if noun[0].isupper():
-                plural = plural.capitalize()
-            pluralized = f"{value} {plural}"
-        else:
-            pluralized += "s"
-
-    return pluralized
 
 
 async def present_error(
@@ -219,10 +202,3 @@ def paginate(page_size: int, *contents) -> list:
 
     pages.append(page)
     return pages
-
-
-def contains_digit(string: str | None):
-    """Determine whether a string contains a digit."""
-    if string is None:
-        return False
-    return bool(re.search(r"\d", string))  # Much faster than using any()

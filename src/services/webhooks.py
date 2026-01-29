@@ -16,8 +16,8 @@ class WebhookCache:
 
         logger.info("WEBHOOK: Created cache for bot ID {}", bot_id)
 
-    async def _fetch_webhook(self, channel: discord.TextChannel):
-        """Find the appropriate webhook in the channel."""
+    async def _check_webhook(self, channel: discord.TextChannel) -> bool:
+        """Check that we have a webhook in the channel."""
         for _webhook in await channel.webhooks():
             if _webhook.user is not None and _webhook.user.id == self.bot_id:
                 logger.info(
@@ -26,11 +26,10 @@ class WebhookCache:
                     channel.name,
                     channel.guild.name,
                 )
-                self.webhook_ids.add(_webhook.id)
-                return _webhook
+                return True
 
         logger.info("WEBHOOK: Not found in #{} on {}", channel.name, channel.guild.name)
-        return None
+        return False
 
     async def _poll_guild(self, guild: discord.Guild):
         """Get all of the guild's webhooks."""
@@ -77,7 +76,11 @@ class WebhookCache:
 
         return self._webhooks[channel.id]
 
-    async def fetch_webhook(self, channel: discord.TextChannel, webhook_id: int):
+    async def fetch_webhook(
+        self,
+        channel: discord.TextChannel,
+        webhook_id: int,
+    ) -> discord.Webhook | None:
         """Fetch a webhook for a particular guild."""
         if channel.guild.id not in self._guilds_polled:
             await self._poll_guild(channel.guild)
@@ -88,11 +91,10 @@ class WebhookCache:
                 return webhook
             else:
                 logger.debug("WEBHOOK: Webhook found, but the ID doesn't match")
-                return None
         else:
             logger.debug("WEBHOOK: No Webhook found with ID# {}", webhook_id)
 
-        return webhook
+        return None
 
     async def update_webhooks(self, channel: discord.TextChannel):
         """Check if the webhook was deleted or not."""
@@ -114,7 +116,6 @@ class WebhookCache:
 
         # We've previously fetched this channel's webhooks, so we need to check
         # if our webhook has been deleted
-        webhook = await self._fetch_webhook(channel)
-        if webhook is None:
+        if not await self._check_webhook(channel):
             del self._webhooks[channel.id]
             logger.info("WEBHOOK: Webhook deleted in #{} ({})", channel.name, channel.guild.name)

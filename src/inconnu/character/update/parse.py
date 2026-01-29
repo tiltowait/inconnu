@@ -162,7 +162,7 @@ def __validate_parameters(parameters):
     return validated
 
 
-async def __update_character(ctx, character: "VChar", param: str, value: str) -> str:
+async def __update_character(ctx: AppCtx, character: VChar, param: str, value: str) -> str:
     """
     Update one of a character's parameters.
     Args:
@@ -185,7 +185,7 @@ async def __update_character(ctx, character: "VChar", param: str, value: str) ->
     return func(character, value)
 
 
-async def update_help(ctx, err=None, ephemeral=True):
+async def update_help(ctx: AppCtx, err: str | None = None, ephemeral=True):
     """Display a help message that details the available keys."""
     color = None if err is None else 0xFF0000
     embed = discord.Embed(title="Character Tracking", color=color)

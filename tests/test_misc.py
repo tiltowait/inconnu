@@ -126,6 +126,7 @@ async def test_changelog():
 @pytest.mark.parametrize("res", ["Melancholy", "Choleric", "Phlegmatic", "Sanguine"])
 def test_dyscrasias(res):
     dys = inconnu.reference.get_dyscrasia(res)
+    assert dys is not None
     assert dys.name
     assert dys.description
     assert dys.page

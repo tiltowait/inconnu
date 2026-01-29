@@ -58,7 +58,7 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         await ui.embeds.error(ctx, err, *instructions, help=__HELP_URL, character=character.name)
 
 
-def __validate_parameters(character: "VChar", parameters: dict):
+def __validate_parameters(character: VChar, parameters: dict):
     """Parse the update parameters."""
     macro_update = {}
 

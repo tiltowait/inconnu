@@ -51,18 +51,18 @@ async def parse(
             fields = [("Trying to roll a specialty?", "Use `skill.spec`, not `skill (spec)`.")]
         else:
             fields = []
-        await inconnu.embeds.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
+        await ui.embeds.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
         await __log_error(ctx, character, raw_syntax)
         return
 
     comment = await stringify_mentions(ctx, comment)
     if comment is not None and (comment_len := len(comment)) > 300:
         logger.debug("VR: Comment is too long")
-        await inconnu.embeds.error(ctx, f"Comment is too long by {comment_len - 300} characters.")
+        await ui.embeds.error(ctx, f"Comment is too long by {comment_len - 300} characters.")
         return
 
     if ctx.guild is None and needs_character(syntax):
-        await inconnu.embeds.error(ctx, "You cannot roll traits in DMs!", help=__HELP_URL)
+        await ui.embeds.error(ctx, "You cannot roll traits in DMs!", help=__HELP_URL)
         return
 
     # Determine the character being used, if any
@@ -83,7 +83,7 @@ async def parse(
                 owner = haven.owner
 
         except (SyntaxError, LookupError) as err:
-            await inconnu.embeds.error(ctx, err, help=__HELP_URL)
+            await ui.embeds.error(ctx, err, help=__HELP_URL)
             return
         except errors.HandledError:
             await __log_error(ctx, character, raw_syntax)
@@ -106,7 +106,7 @@ async def parse(
             view = discord.MISSING
             ephemeral = False
 
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx,
             err,
             ("Your Input", f"/vr syntax:`{raw_syntax}`"),

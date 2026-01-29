@@ -4,7 +4,7 @@ import discord
 
 import db
 import errors
-import inconnu
+import ui
 from ctx import AppCtx
 from models import RPPost
 
@@ -18,7 +18,7 @@ async def delete_message_chain(ctx: AppCtx, message: discord.Message):
         await ctx.send_modal(DeletionModal(webhook, rp_post))
 
     except (errors.WebhookError, ValueError) as err:
-        await inconnu.embeds.error(ctx, err, title="Invalid message")
+        await ui.embeds.error(ctx, err, title="Invalid message")
 
 
 async def _fetch_rp_post(
@@ -81,6 +81,6 @@ class DeletionModal(discord.ui.Modal):
             await interaction.respond("Rolepost deleted!", delete_after=3)
 
         else:
-            await inconnu.embeds.error(
+            await ui.embeds.error(
                 interaction, "You must type `DELETE` to delete.", title="Invalid response"
             )

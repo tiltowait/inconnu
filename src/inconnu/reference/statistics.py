@@ -7,6 +7,7 @@ import discord
 
 import db
 import inconnu
+import ui
 from ctx import AppCtx
 from services import haven
 
@@ -50,9 +51,9 @@ async def statistics(
             await __traits_statistics(ctx, character, date, player=owner)
 
     except ValueError:
-        await inconnu.embeds.error(ctx, f"`{date_rep}` is not a valid date.")
+        await ui.embeds.error(ctx, f"`{date_rep}` is not a valid date.")
     except LookupError as err:
-        await inconnu.embeds.error(ctx, err, help_url=__HELP_URL)
+        await ui.embeds.error(ctx, err, help_url=__HELP_URL)
 
 
 @haven(__HELP_URL)

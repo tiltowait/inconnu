@@ -3,6 +3,7 @@
 import discord
 
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.utils import is_admin
 from models import VChar
@@ -34,7 +35,7 @@ async def remove_entry(
 
     except IndexError:
         err = f"{character.name} has no experience log entry at index `{index}`."
-        await inconnu.embeds.error(ctx, err)
+        await ui.embeds.error(ctx, err)
 
 
 def _get_embed(player, character, entry):

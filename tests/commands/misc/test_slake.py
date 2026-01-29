@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 import errors
-import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.misc.slake import slake
 from models.vchar import VChar
@@ -99,7 +99,7 @@ async def test_vamp_slake_high_hunger_frenzy_view(
     assert call_args is not None
     view = call_args.kwargs.get("view")
     assert view is not None
-    assert isinstance(view, inconnu.views.FrenzyView)
+    assert isinstance(view, ui.views.FrenzyView)
 
 
 @pytest.mark.parametrize("initial_hunger", [1, 2, 3])
@@ -211,7 +211,7 @@ async def test_vamp_slake_from_hunger_5(
     assert call_args is not None
     view = call_args.kwargs.get("view")
     assert view is not None
-    assert isinstance(view, inconnu.views.FrenzyView)
+    assert isinstance(view, ui.views.FrenzyView)
 
 
 async def test_vamp_slake_across_frenzy_threshold(
@@ -233,4 +233,4 @@ async def test_vamp_slake_across_frenzy_threshold(
     assert call_args is not None
     view = call_args.kwargs.get("view")
     assert view is not None
-    assert isinstance(view, inconnu.views.FrenzyView)
+    assert isinstance(view, ui.views.FrenzyView)

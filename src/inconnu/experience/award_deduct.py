@@ -5,6 +5,7 @@ import asyncio
 import discord
 
 import inconnu
+import ui
 from ctx import AppCtx
 from models import VChar
 from services import haven
@@ -32,7 +33,7 @@ async def award_or_deduct(
         else:
             errmsg = f"**{character.name}** only has `{character.experience.unspent}` xp to spend!"
 
-        await inconnu.embeds.error(ctx, errmsg)
+        await ui.embeds.error(ctx, errmsg)
         return
 
     character.apply_experience(amount, scope, reason, ctx.author.id)

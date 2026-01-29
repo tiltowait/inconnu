@@ -6,6 +6,7 @@ from loguru import logger
 
 import errors
 import inconnu
+import ui
 from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#profile"
@@ -40,7 +41,7 @@ async def show_biography(ctx, character, player, ephemeral=False):
 
 def __biography_paginator(ctx, character, owner):
     """Display the biography in an embed."""
-    embed = inconnu.embeds.VCharEmbed(
+    embed = ui.embeds.VCharEmbed(
         ctx,
         character,
         owner,
@@ -116,7 +117,7 @@ class _CharacterBio(discord.ui.Modal):
         biography = inconnu.utils.clean_text(self.children[0].value)
         description = inconnu.utils.clean_text(self.children[1].value)
 
-        embed = inconnu.embeds.VCharEmbed(
+        embed = ui.embeds.VCharEmbed(
             interaction,
             self.character,
             description="Profile updated!",

@@ -9,6 +9,7 @@ from loguru import logger
 import api
 import errors
 import inconnu
+import ui
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 
@@ -21,7 +22,7 @@ async def delete(ctx, character_name: str):
         await ctx.send_modal(modal)
 
     except errors.CharacterError as err:
-        await inconnu.embeds.error(ctx, err, help_url=__HELP_URL)
+        await ui.embeds.error(ctx, err, help_url=__HELP_URL)
 
 
 class _DeletionModal(Modal):
@@ -61,4 +62,4 @@ class _DeletionModal(Modal):
 
             await inconnu.char_mgr.remove(self.character)  # Has to be done after image deletion
         else:
-            await inconnu.embeds.error(interaction, "You must type the character's name exactly.")
+            await ui.embeds.error(interaction, "You must type the character's name exactly.")

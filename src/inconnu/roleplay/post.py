@@ -7,6 +7,7 @@ from loguru import logger
 
 import errors
 import inconnu
+import ui
 from models import HeaderSubdoc, RPPost, VChar
 from services import haven
 
@@ -137,7 +138,7 @@ class PostModal(discord.ui.Modal):
                 self.post_to_edit.edit_post(new_content)
 
             except discord.NotFound:
-                await inconnu.embeds.error(
+                await ui.embeds.error(
                     interaction,
                     (
                         "The message wasn't found. Either someone deleted it while you "
@@ -298,9 +299,9 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
         await ctx.send_modal(modal)
     elif isinstance(ctx.channel, discord.threads.Thread):
-        await inconnu.embeds.error(ctx, "This command is unavailable in threads.")
+        await ui.embeds.error(ctx, "This command is unavailable in threads.")
     else:
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx,
             "This feature requires `Manage Webhooks` permission.",
             title="Missing permissions",
@@ -313,9 +314,9 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
 
     # Need to perform some checks to ensure we can edit the post
     if rp_post is None:
-        await inconnu.embeds.error(ctx, "This isn't a Rolepost!", help=__HELP_URL)
+        await ui.embeds.error(ctx, "This isn't a Rolepost!", help=__HELP_URL)
     elif ctx.user.id != rp_post.user:
-        await inconnu.embeds.error(ctx, "You can only edit your own posts!", help=__HELP_URL)
+        await ui.embeds.error(ctx, "You can only edit your own posts!", help=__HELP_URL)
     else:
         # It's a valid post, but we can only work our magic if the character
         # still exists. Otherwise, spit out an error.
@@ -335,7 +336,7 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
             await ctx.send_modal(modal)
 
         except errors.CharacterNotFoundError:
-            await inconnu.embeds.error(
+            await ui.embeds.error(
                 ctx,
                 "You can't edit the post of a deleted character!",
                 help=__HELP_URL,

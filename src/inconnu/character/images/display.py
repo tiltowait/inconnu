@@ -6,7 +6,7 @@ from loguru import logger
 import api
 import db
 import errors
-import inconnu
+import ui
 from ctx import AppCtx
 from models import VChar
 from services import haven
@@ -151,7 +151,7 @@ class ImagePager(ReportingView):
 
     async def respond(self):
         """Display the pager."""
-        embed = inconnu.embeds.VCharEmbed(
+        embed = ui.embeds.VCharEmbed(
             self.ctx,
             self.character,
             self.owner,
@@ -205,7 +205,7 @@ class ImagePager(ReportingView):
 
     async def _display_no_images(self, interaction: discord.Interaction):
         """Inform the character has no images if the last image is deleted."""
-        embed = inconnu.embeds.VCharEmbed(
+        embed = ui.embeds.VCharEmbed(
             self.ctx,
             self.character,
             self.owner,

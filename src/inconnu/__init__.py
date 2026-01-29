@@ -30,7 +30,6 @@ from inconnu.settings import menu
 from inconnu.urls import post_url, profile_url
 from inconnu.utils import fence, get_avatar, get_message
 from services import CharacterManager
-from ui import embeds, views
 
 __all__ = (
     "bot",
@@ -41,7 +40,6 @@ __all__ = (
     "d10",
     "menu",
     "emojis",
-    "embeds",
     "experience",
     "fence",
     "get_avatar",
@@ -62,7 +60,6 @@ __all__ = (
     "stats",
     "traits",
     "utils",
-    "views",
     "vr",
 )
 

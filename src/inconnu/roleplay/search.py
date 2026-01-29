@@ -10,6 +10,7 @@ from loguru import logger
 from pymongo import ASCENDING, DESCENDING
 
 import inconnu
+import ui
 from ctx import AppCtx
 from models import RPPost
 
@@ -84,7 +85,7 @@ async def search(
         if dt_query:
             query["date"] = dt_query
     except (ValueError, SyntaxError) as err:
-        await inconnu.embeds.error(ctx, err, title="Invalid date")
+        await ui.embeds.error(ctx, err, title="Invalid date")
         return
 
     posts = []  # Will either contain strings or embeds
@@ -139,7 +140,7 @@ async def search(
             err += "\n" + "\n".join(conditions)
         err += "."
 
-        await inconnu.embeds.error(ctx, err, title="Not found")
+        await ui.embeds.error(ctx, err, title="Not found")
 
 
 def convert_dates(after: str, before: str) -> tuple[datetime, datetime]:

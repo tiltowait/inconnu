@@ -8,6 +8,7 @@ from discord.ext.pages import Paginator
 
 import db
 import inconnu
+import ui
 from ctx import AppCtx
 
 
@@ -57,4 +58,4 @@ async def show_bookmarks(ctx: AppCtx):
         )
         await paginator.respond(ctx.interaction, ephemeral=True)
     else:
-        await inconnu.embeds.error(ctx, tip, title="You have no bookmarks!")
+        await ui.embeds.error(ctx, tip, title="You have no bookmarks!")

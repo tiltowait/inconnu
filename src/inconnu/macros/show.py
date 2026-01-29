@@ -7,6 +7,7 @@ from discord.ext import pages
 
 import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from models import VChar
 from services import haven
@@ -25,7 +26,7 @@ async def show(ctx: AppCtx, character: VChar):
     """Show all of a character's macros."""
     macros = character.macros
     if not macros:
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx, f"{character.name} has no macros!", character=character.name, help=__HELP_URL
         )
         return

@@ -1,6 +1,5 @@
 """character/convictions.py - View or edit character convictions."""
 
-import inconnu
 import ui
 from services import haven
 
@@ -18,7 +17,7 @@ async def convictions_set(ctx, character):
 async def convictions_show(ctx, character, player, ephemeral):
     """Show a character's Convictions."""
     char_convictions = "\n".join(character.convictions) if character.convictions else "*None*"
-    embed = inconnu.embeds.VCharEmbed(
+    embed = ui.embeds.VCharEmbed(
         ctx,
         character,
         player,

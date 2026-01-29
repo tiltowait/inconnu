@@ -10,6 +10,7 @@ from discord.ext import commands
 
 import errors
 import inconnu
+import ui
 from inconnu.options import char_option
 
 if TYPE_CHECKING:
@@ -50,7 +51,7 @@ class MiscCommands(commands.Cog):
         site = discord.ui.Button(label="Website", url="https://www.inconnu.app")
         support = discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL)
 
-        await ctx.respond(embed=embed, view=inconnu.views.ReportingView(site, support))
+        await ctx.respond(embed=embed, view=ui.views.ReportingView(site, support))
 
     @slash_command()
     @option("ceiling", description="The roll's highest possible value", min_value=2, default=100)
@@ -76,7 +77,7 @@ class MiscCommands(commands.Cog):
     ):
         """Reassign a character from one player to another."""
         if current_owner.id == new_owner.id:
-            await inconnu.embeds.error(ctx, "`current_owner` and `new_owner` can't be the same.")
+            await ui.embeds.error(ctx, "`current_owner` and `new_owner` can't be the same.")
             return
 
         try:
@@ -93,14 +94,12 @@ class MiscCommands(commands.Cog):
                 await self.bot.transfer_premium(new_owner, xfer)
 
             else:
-                await inconnu.embeds.error(
-                    ctx, f"{current_owner.display_name} doesn't own {xfer.name}!"
-                )
+                await ui.embeds.error(ctx, f"{current_owner.display_name} doesn't own {xfer.name}!")
 
         except errors.CharacterNotFoundError:
-            await inconnu.embeds.error(ctx, "Character not found.")
+            await ui.embeds.error(ctx, "Character not found.")
         except (LookupError, ValueError) as err:
-            await inconnu.embeds.error(ctx, err)
+            await ui.embeds.error(ctx, err)
 
 
 def setup(bot):

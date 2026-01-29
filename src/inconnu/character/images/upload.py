@@ -7,7 +7,7 @@ from loguru import logger
 
 import api
 import db
-import inconnu
+import ui
 from ctx import AppCtx
 from models import VChar
 from services import haven
@@ -20,7 +20,7 @@ VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
 async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment):
     """Upload an image. Only premium users can use this feature."""
     if not valid_url(image.url):
-        embed = inconnu.embeds.ErrorEmbed(
+        embed = ui.embeds.ErrorEmbed(
             ctx.user,
             "This is not a valid image file!",
             ("Allowed extensions", ", ".join(VALID_EXTENSIONS)),
@@ -38,7 +38,7 @@ async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment)
 
     character.profile.images.append(processed_url)
 
-    embed = inconnu.embeds.VCharEmbed(
+    embed = ui.embeds.VCharEmbed(
         ctx,
         character,
         link=True,

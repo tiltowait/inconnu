@@ -93,7 +93,7 @@ async def _add_or_remove(
         await asyncio.gather(*tasks)
 
     except SyntaxError as err:
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx,
             err,
             ("Proper syntax", SYNTAX),
@@ -102,7 +102,7 @@ async def _add_or_remove(
             title="Invalid syntax",
         )
     except errors.TraitError as err:
-        await inconnu.embeds.error(ctx, err)
+        await ui.embeds.error(ctx, err)
 
 
 def _make_embed(
@@ -124,7 +124,7 @@ def _make_embed(
         entries.append(entry)
 
     content = "\n".join(entries).strip()
-    embed = inconnu.embeds.VCharEmbed(ctx, character, title=title, description=content)
+    embed = ui.embeds.VCharEmbed(ctx, character, title=title, description=content)
     embed.set_footer(text="See all specialties, powers, traits, and Disciplines with /traits list.")
 
     return embed

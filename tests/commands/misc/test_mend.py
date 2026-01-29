@@ -6,6 +6,7 @@ import pytest
 
 import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.constants import Damage
 from inconnu.misc.mend import mend
@@ -92,7 +93,7 @@ async def test_vamp_mend_at_hunger_5_rouse_failure(
     assert call_args is not None
     view = call_args.kwargs.get("view")
     assert view is not None
-    assert isinstance(view, inconnu.views.FrenzyView)
+    assert isinstance(view, ui.views.FrenzyView)
 
     # Verify footer mentions frenzy
     footer = call_args.kwargs.get("footer")

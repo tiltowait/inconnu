@@ -4,6 +4,7 @@ import discord
 from discord.ext.commands import Paginator as Chunker
 
 import inconnu
+import ui
 from models import VChar
 from services import haven
 
@@ -23,7 +24,7 @@ def traits_embed(
     owner: discord.Member | None = None,
 ):
     """Display traits in an embed."""
-    embed = inconnu.embeds.VCharEmbed(ctx, character, owner, title="Character Traits")
+    embed = ui.embeds.VCharEmbed(ctx, character, owner, title="Character Traits")
     embed.set_footer(text="To see HP, WP, etc., use /character display")
 
     char_traits = character.traits  # This is an automatic copy

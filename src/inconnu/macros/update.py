@@ -2,6 +2,7 @@
 
 import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
 from inconnu.utils import strtobool
@@ -54,9 +55,7 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
             ("Valid Keys", "\n".join(keys)),
         ]
 
-        await inconnu.embeds.error(
-            ctx, err, *instructions, help=__HELP_URL, character=character.name
-        )
+        await ui.embeds.error(ctx, err, *instructions, help=__HELP_URL, character=character.name)
 
 
 def __validate_parameters(character: "VChar", parameters: dict):

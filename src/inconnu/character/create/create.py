@@ -4,6 +4,7 @@ import re
 from types import SimpleNamespace as SN
 
 import inconnu
+import ui
 from inconnu.character.create import wizard
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/creation"
@@ -14,7 +15,7 @@ async def create(
 ):
     """Parse and handle character creation arguments."""
     if spc and not ctx.user.guild_permissions.administrator:
-        await inconnu.embeds.error(ctx, "You need Administrator permissions to make an SPC.")
+        await ui.embeds.error(ctx, "You need Administrator permissions to make an SPC.")
         return
 
     # Deferring is ugly, but there are multiple API calls we have to wait for:
@@ -52,7 +53,7 @@ async def create(
         await character_wizard.begin_chargen()
 
     except ValueError as err:
-        await inconnu.embeds.error(ctx, err, help_url=__HELP_URL)
+        await ui.embeds.error(ctx, err, help_url=__HELP_URL)
 
 
 def __validate_parameters(name, humanity, health, willpower):

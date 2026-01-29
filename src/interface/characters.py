@@ -6,6 +6,7 @@ from discord.commands import OptionChoice, SlashCommandGroup
 from discord.ext import commands
 
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.options import char_option, player_option
 from inconnu.utils import strtobool
@@ -68,7 +69,7 @@ class Characters(commands.Cog, name="Character Management"):
                 ctx, name, template, humanity, health, willpower, is_spc, False
             )
         except ValueError:
-            await inconnu.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
+            await ui.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
     @commands.slash_command(name="spc", contexts={discord.InteractionContextType.guild})
     @commands.has_permissions(administrator=True)

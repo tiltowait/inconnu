@@ -38,7 +38,7 @@ async def delete(
         await character.save()
 
     except (ValueError, SyntaxError) as err:
-        await inconnu.embeds.error(ctx, err, character=character, help=__HELP_URL)
+        await ui.embeds.error(ctx, err, character=character, help=__HELP_URL)
 
 
 async def __outcome_embed(
@@ -47,7 +47,7 @@ async def __outcome_embed(
     """Display the operation outcome in an embed."""
     term = "Trait" if not disciplines else "Discipline"
 
-    embed = inconnu.embeds.VCharEmbed(ctx, character, title=f"{term} Removal")
+    embed = ui.embeds.VCharEmbed(ctx, character, title=f"{term} Removal")
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if outcome.deleted:

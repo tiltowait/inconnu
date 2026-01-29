@@ -2,6 +2,7 @@
 
 import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
 from models import VChar
@@ -33,7 +34,7 @@ async def create(
             raise SyntaxError(f"Comments can't be longer than 300 characters. (Yours: {length})")
 
         if not macro_common.is_macro_name_valid(name):
-            await inconnu.embeds.error(
+            await ui.embeds.error(
                 ctx,
                 "Macro names can only contain letters and underscores.",
                 character=character.name,
@@ -69,4 +70,4 @@ async def create(
         errors.MacroAlreadyExistsError,
         errors.TraitNotFound,
     ) as err:
-        await inconnu.embeds.error(ctx, err, help=__HELP_URL, character=character.name)
+        await ui.embeds.error(ctx, err, help=__HELP_URL, character=character.name)

@@ -10,6 +10,7 @@ from loguru import logger
 
 import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.utils.permissions import is_admin
 from models import VChar
@@ -98,23 +99,23 @@ class Haven:
                     logger.debug(
                         "HAVEN: Explicit character {} does not match filter", character.name
                     )
-                    await inconnu.embeds.error(self.ctx, err, author=self.owner, help=self.help)
+                    await ui.embeds.error(self.ctx, err, author=self.owner, help=self.help)
                     raise errors.HandledError() from err
             else:
                 self.match = character
 
         except LookupError as err:
-            await inconnu.embeds.error(self.ctx, err)
+            await ui.embeds.error(self.ctx, err)
             raise errors.HandledError() from err
 
         except errors.NoCharactersError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
-            await inconnu.embeds.error(self.ctx, errmsg)
+            await ui.embeds.error(self.ctx, errmsg)
             raise errors.HandledError() from err
 
         except errors.CharacterNotFoundError as err:
             errmsg = _personalize_error(err, self.ctx, self.owner)
-            await inconnu.embeds.error(self.ctx, errmsg)
+            await ui.embeds.error(self.ctx, errmsg)
             raise errors.HandledError() from err
 
         except errors.UnspecifiedCharacterError as err:
@@ -148,7 +149,7 @@ class Haven:
                             logger.debug("HAVEN: Sole match: {}", char.name)
                             break
                 elif passed == 0:
-                    await inconnu.embeds.error(
+                    await ui.embeds.error(
                         self.ctx,
                         _personalize_error(self.errmsg, self.ctx, self.owner),
                         author=self.owner,
@@ -173,7 +174,7 @@ class Haven:
         if view is None:
             err = "There are too many characters to display! Please use the `character` parameter."
 
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             self.ctx,
             err,
             # ("Proper syntax", self.tip),
@@ -241,7 +242,7 @@ class Haven:
                         name_range = f" ({begin_letter}-{end_letter})"
                     placeholder += name_range
 
-                components.append(inconnu.views.Dropdown(placeholder, *selection))
+                components.append(ui.views.Dropdown(placeholder, *selection))
                 options = options[25:]
 
         logger.debug("HAVEN: Created {} component(s)", len(components))

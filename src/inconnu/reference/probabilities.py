@@ -8,6 +8,7 @@ import discord
 import db
 import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu import vr as roll
 from services import Haven
@@ -50,7 +51,7 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
         await __display_embed(ctx, params, strategy, probabilities)
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
-        await inconnu.embeds.error(ctx, err, character=character, help_url=__HELP_URL)
+        await ui.embeds.error(ctx, err, character=character, help_url=__HELP_URL)
 
 
 async def __display_embed(ctx, params, strategy: str, probs: dict):

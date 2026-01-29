@@ -3,6 +3,7 @@
 import discord
 
 import inconnu
+import ui
 from inconnu.utils.permissions import is_supporter
 
 
@@ -73,7 +74,7 @@ async def error(ctx, err, *fields, **kwargs):
 
     if (help_url := kwargs.get("help")) is not None:
         # If we have a help URL, we will add some links to the view
-        view = kwargs.get("view") or inconnu.views.ReportingView()
+        view = kwargs.get("view") or ui.views.ReportingView()
 
         view.add_item(discord.ui.Button(label="Documentation", url=help_url, row=4))
         view.add_item(discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=4))

@@ -1,7 +1,7 @@
 """macros/delete.py - Deleting character macros."""
 
 import errors
-import inconnu
+import ui
 from ctx import AppCtx
 from models import VChar
 from services import haven
@@ -22,4 +22,4 @@ async def delete(
         await character.save()
 
     except errors.MacroNotFoundError as err:
-        await inconnu.embeds.error(ctx, err, character=character.name, help=__HELP_URL)
+        await ui.embeds.error(ctx, err, character=character.name, help=__HELP_URL)

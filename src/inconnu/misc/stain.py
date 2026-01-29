@@ -1,6 +1,7 @@
 """misc/stain.py - Apply or remove stains from characters."""
 
 import inconnu
+import ui
 from inconnu.constants import Damage
 from services import haven
 
@@ -49,7 +50,7 @@ async def stain(ctx, character, delta, *, player):
 
     except ValueError as err:
         # Delta was 0
-        await inconnu.embeds.error(ctx, err, help=__HELP_URL)
+        await ui.embeds.error(ctx, err, help=__HELP_URL)
 
 
 async def __report(ctx, inter, character, delta):

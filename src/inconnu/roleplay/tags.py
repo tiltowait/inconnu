@@ -5,6 +5,7 @@ from discord.ext.pages import Page, Paginator
 
 import db
 import inconnu
+import ui
 from ctx import AppCtx
 from models import RPPost
 from ui.views import DisablingView
@@ -57,7 +58,7 @@ async def show_tags(ctx: AppCtx):
         await paginator.respond(ctx.interaction, ephemeral=True)
     else:
         post = ctx.bot.cmd_mention("post")
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx,
             f"Set tags in {post} or add to old posts via right-click.",
             title="You have no tags!",
@@ -126,6 +127,6 @@ class TagView(DisablingView):
         else:
             tags = "tag" if len(selected) == 1 else "tags"
             selection = inconnu.utils.oxford_list(map(inconnu.fence, selected))
-            await inconnu.embeds.error(
+            await ui.embeds.error(
                 interaction, f"No posts with {tags} {selection} found.", title="No posts found!"
             )

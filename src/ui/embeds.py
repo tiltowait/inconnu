@@ -86,6 +86,7 @@ async def error(ctx, err, *fields, **kwargs):
         embed=embed,
         view=view,
         ephemeral=kwargs.get("ephemeral", True),
+        allowed_mentions=discord.AllowedMentions.none(),
     )
 
     if view is not None:

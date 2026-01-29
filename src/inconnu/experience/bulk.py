@@ -102,7 +102,7 @@ class _BulkModal(Modal):
         elif self.xp_tasks:
             await self._award_xp(interaction)
         else:
-            await inconnu.common.present_error(interaction, "You didn't supply any input!")
+            await inconnu.embeds.error(interaction, "You didn't supply any input!")
 
     async def _present_errors(self, interaction):
         """Show the error message. No XP awarded."""
@@ -112,7 +112,7 @@ class _BulkModal(Modal):
         fields = [("Would Award", page) for page in self.would_award] if self.would_award else []
         fields.extend([("Errors", page) for page in self.errors])
 
-        await inconnu.common.present_error(interaction, contents, *fields, ephemeral=False)
+        await inconnu.embeds.error(interaction, contents, *fields, ephemeral=False)
 
     async def _award_xp(self, interaction):
         """Award the XP."""

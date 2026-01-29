@@ -33,7 +33,7 @@ async def create(
             raise SyntaxError(f"Comments can't be longer than 300 characters. (Yours: {length})")
 
         if not macro_common.is_macro_name_valid(name):
-            await inconnu.common.present_error(
+            await inconnu.embeds.error(
                 ctx,
                 "Macro names can only contain letters and underscores.",
                 character=character.name,

@@ -32,7 +32,7 @@ async def award_or_deduct(
         else:
             errmsg = f"**{character.name}** only has `{character.experience.unspent}` xp to spend!"
 
-        await inconnu.common.present_error(ctx, errmsg)
+        await inconnu.embeds.error(ctx, errmsg)
         return
 
     character.apply_experience(amount, scope, reason, ctx.author.id)

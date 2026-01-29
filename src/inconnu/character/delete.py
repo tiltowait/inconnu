@@ -21,7 +21,7 @@ async def delete(ctx, character_name: str):
         await ctx.send_modal(modal)
 
     except errors.CharacterError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+        await inconnu.embeds.error(ctx, err, help_url=__HELP_URL)
 
 
 class _DeletionModal(Modal):
@@ -61,6 +61,4 @@ class _DeletionModal(Modal):
 
             await inconnu.char_mgr.remove(self.character)  # Has to be done after image deletion
         else:
-            await inconnu.common.present_error(
-                interaction, "You must type the character's name exactly."
-            )
+            await inconnu.embeds.error(interaction, "You must type the character's name exactly.")

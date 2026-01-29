@@ -76,9 +76,7 @@ class MiscCommands(commands.Cog):
     ):
         """Reassign a character from one player to another."""
         if current_owner.id == new_owner.id:
-            await inconnu.common.present_error(
-                ctx, "`current_owner` and `new_owner` can't be the same."
-            )
+            await inconnu.embeds.error(ctx, "`current_owner` and `new_owner` can't be the same.")
             return
 
         try:
@@ -95,14 +93,14 @@ class MiscCommands(commands.Cog):
                 await self.bot.transfer_premium(new_owner, xfer)
 
             else:
-                await inconnu.common.present_error(
+                await inconnu.embeds.error(
                     ctx, f"{current_owner.display_name} doesn't own {xfer.name}!"
                 )
 
         except errors.CharacterNotFoundError:
-            await inconnu.common.present_error(ctx, "Character not found.")
+            await inconnu.embeds.error(ctx, "Character not found.")
         except (LookupError, ValueError) as err:
-            await inconnu.common.present_error(ctx, err)
+            await inconnu.embeds.error(ctx, err)
 
 
 def setup(bot):

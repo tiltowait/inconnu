@@ -10,7 +10,6 @@ from loguru import logger
 import errors
 import inconnu
 from ctx import AppCtx
-from inconnu import common
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
 from inconnu.vr import display_outcome, perform_roll
@@ -65,7 +64,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
                 outcome = await perform_roll(character, parameters)
             except errors.TraitNotFound as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
-                await common.present_error(ctx, msg, character=character.name)
+                await inconnu.embeds.error(ctx, msg, character=character.name)
                 return
 
         # We show the rouse check first, because display_outcome() is blocking
@@ -90,7 +89,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
                     __HUNT_LISTENERS[outcome.id] = None
 
         if empty_macro:
-            await common.present_error(
+            await inconnu.embeds.error(
                 ctx, f"Your `{macro.name}` macro is empty!", character=character.name
             )
         elif macro.name.lower() == "bol":

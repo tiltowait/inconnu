@@ -4,6 +4,7 @@ import asyncio
 
 import errors
 import inconnu
+import services
 import ui
 from services import haven
 
@@ -52,7 +53,7 @@ async def slake(ctx, character, amount: int, **kwargs):
         msg = await inconnu.get_message(inter)
         await asyncio.gather(
             character.save(),
-            inconnu.common.report_update(
+            services.character_update(
                 ctx=ctx,
                 msg=msg,
                 character=character,

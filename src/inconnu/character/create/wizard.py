@@ -8,6 +8,7 @@ from discord.ui import Button
 from loguru import logger
 
 import inconnu
+import services
 import ui
 from models import VChar
 
@@ -96,7 +97,7 @@ class Wizard:
 
         tasks.append(inconnu.char_mgr.register(character))
         tasks.append(
-            inconnu.common.report_update(
+            services.character_update(
                 ctx=self.ctx,
                 character=character,
                 title="Character Created",

@@ -4,6 +4,7 @@ from types import SimpleNamespace as SN
 
 import errors
 import inconnu
+import services
 from models import VChar
 from services import haven
 
@@ -103,7 +104,7 @@ async def __report(ctx, inter, character, remorseful):
         humanity_str = f"Humanity drops to `{character.humanity}`."
 
     msg = await inconnu.get_message(inter)
-    await inconnu.common.report_update(
+    await services.character_update(
         ctx=ctx,
         msg=msg,
         character=character,

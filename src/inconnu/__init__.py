@@ -6,7 +6,6 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 from inconnu import (
     character,
-    common,
     constants,
     experience,
     header,
@@ -35,7 +34,6 @@ __all__ = (
     "bot",
     "char_mgr",
     "character",
-    "common",
     "constants",
     "d10",
     "menu",

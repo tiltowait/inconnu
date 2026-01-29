@@ -7,6 +7,7 @@ from loguru import logger
 
 import errors
 import inconnu
+import services
 import ui
 from ctx import AppCtx
 from inconnu.specialties.tokenize import SYNTAX, tokenize
@@ -79,7 +80,7 @@ async def _add_or_remove(
                 msg = f"__{ctx.user.mention} updated {character.name}'s {cat}__\n"
                 msg += embed.description
                 tasks.append(
-                    inconnu.common.report_update(
+                    services.character_update(
                         ctx=ctx,
                         character=character,
                         title=title,

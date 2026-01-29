@@ -5,6 +5,7 @@ import re
 from types import SimpleNamespace
 
 import inconnu
+import services
 import ui
 from inconnu.traits.parser import parse_traits
 from models import VChar
@@ -112,7 +113,7 @@ async def __display_results(ctx, outcome, character: VChar, disciplines: bool):
         msg += ", ".join(outcome.assigned)
 
         tasks.append(
-            inconnu.common.report_update(
+            services.character_update(
                 ctx=ctx, character=character, title=f"{term} Updated", message=msg, color=0xFF9400
             )
         )

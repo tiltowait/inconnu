@@ -4,6 +4,7 @@ import discord
 
 import errors
 import inconnu
+import services
 from config import web_asset
 from services import haven
 
@@ -105,7 +106,7 @@ async def __generate_report_task(ctx, msg, character, outcome):
     """Generate a report for the update channel."""
     verbed = "passed" if outcome.is_successful else "failed"
 
-    await inconnu.common.report_update(
+    await services.character_update(
         ctx=ctx,
         msg=msg,
         character=character,

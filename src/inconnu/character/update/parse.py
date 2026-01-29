@@ -7,6 +7,7 @@ import discord
 from discord.ui import Button
 
 import inconnu
+import services
 import ui
 from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
@@ -115,7 +116,7 @@ async def update(
         _, _, inter = await asyncio.gather(*tasks)
         if update_message:  # May not always be true in the future
             msg = await inconnu.get_message(inter)
-            await inconnu.common.report_update(
+            await services.character_update(
                 ctx=ctx,
                 msg=msg,
                 character=character,

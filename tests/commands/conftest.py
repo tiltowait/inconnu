@@ -165,7 +165,7 @@ async def mock_character_display() -> AsyncGenerator[AsyncMock, None]:
 @pytest.fixture(autouse=True)
 async def mock_common_report() -> AsyncGenerator[AsyncMock, None]:
     """Mock common report_update to avoid Discord API calls."""
-    with patch("inconnu.common.report_update", new_callable=AsyncMock) as mock:
+    with patch("services.character_update", new_callable=AsyncMock) as mock:
         yield mock
 
 

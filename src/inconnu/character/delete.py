@@ -9,6 +9,7 @@ from loguru import logger
 import api
 import errors
 import inconnu
+import services
 import ui
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
@@ -48,7 +49,7 @@ class _DeletionModal(Modal):
 
             await asyncio.gather(
                 interaction.response.send_message(msg),
-                inconnu.common.report_update(
+                services.character_update(
                     ctx=interaction,
                     character=self.character,
                     title="Character Deleted",

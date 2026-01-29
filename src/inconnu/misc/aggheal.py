@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import errors
 import inconnu
+import services
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
 from models import VChar
 from services import haven
@@ -38,7 +39,7 @@ async def aggheal(ctx, character):
 
     inter = await __display_outcome(ctx, character, outcome)
     msg = await inconnu.get_message(inter)
-    await inconnu.common.report_update(
+    await services.character_update(
         ctx=ctx,
         msg=msg,
         character=character,

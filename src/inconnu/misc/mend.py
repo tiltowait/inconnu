@@ -4,6 +4,7 @@ from typing import NamedTuple
 
 import errors
 import inconnu
+import services
 import ui
 from ctx import AppCtx
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
@@ -52,7 +53,7 @@ async def mend(ctx: AppCtx, character: VChar):
 
         inter = await __display_outcome(ctx, character, outcome)
         msg = await inconnu.get_message(inter)
-        await inconnu.common.report_update(
+        await services.character_update(
             ctx=ctx, character=character, title="Damage Mended", message=update_msg, msg=msg
         )
 

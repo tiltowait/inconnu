@@ -4,7 +4,7 @@ import asyncio
 
 from discord.ui import InputText, Modal
 
-import inconnu
+import services
 
 
 class ConvictionsModal(Modal):
@@ -76,7 +76,7 @@ class ConvictionsModal(Modal):
                 )
             )
             tasks.append(
-                inconnu.common.report_update(
+                services.character_update(
                     ctx=interaction,
                     character=self.character,
                     title="Changed Convictions",

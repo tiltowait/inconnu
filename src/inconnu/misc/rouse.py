@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import errors
 import inconnu
+import services
 import ui
 from config import web_asset
 from models import VChar
@@ -57,7 +58,7 @@ async def rouse(
         else:
             color = None
 
-        await inconnu.common.report_update(
+        await services.character_update(
             ctx=ctx,
             msg=msg,
             character=character,

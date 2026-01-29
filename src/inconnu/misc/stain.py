@@ -1,6 +1,7 @@
 """misc/stain.py - Apply or remove stains from characters."""
 
 import inconnu
+import services
 import ui
 from inconnu.constants import Damage
 from services import haven
@@ -60,7 +61,7 @@ async def __report(ctx, inter, character, delta):
 
     msg = await inconnu.get_message(inter)
 
-    await inconnu.common.report_update(
+    await services.character_update(
         ctx=ctx,
         msg=msg,
         character=character,

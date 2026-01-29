@@ -9,6 +9,7 @@ import inconnu
 from inconnu.traits import traitcommon
 from models import VChar
 from services import haven
+import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 
@@ -59,7 +60,7 @@ async def __outcome_embed(
         embed.add_field(name="Do not exist", value=errs, inline=False)
         embed.color = 0x000000 if outcome.deleted else 0xFF0000
 
-    view = inconnu.views.TraitsView(character, ctx.user)
+    view = ui.views.TraitsView(character, ctx.user)
     await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 

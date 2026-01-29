@@ -8,6 +8,7 @@ from discord.ui import Button
 from loguru import logger
 
 import inconnu
+import ui.views
 
 
 def pluralize(value: int, noun: str) -> str:
@@ -71,7 +72,7 @@ async def present_error(
 
     if help_url is not None:
         # If we have a help URL, we will add some links to the view
-        view = view or inconnu.views.ReportingView()
+        view = view or ui.views.ReportingView()
 
         view.add_item(Button(label="Documentation", url=help_url, row=1))
         view.add_item(Button(label="Support", url=inconnu.constants.SUPPORT_URL, row=1))
@@ -81,7 +82,7 @@ async def present_error(
 
     msg = await ctx.respond(**msg_contents)
 
-    if isinstance(view, inconnu.views.DisablingView):
+    if isinstance(view, ui.views.DisablingView):
         # So it can automatically disable its buttons
         view.message = msg
 

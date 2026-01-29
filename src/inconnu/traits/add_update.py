@@ -9,6 +9,7 @@ from inconnu.traits.parser import parse_traits
 from models import VChar
 from models.vchardocs import VCharTrait
 from services import haven
+import ui.views
 
 __HELP_URL = {
     False: "https://docs.inconnu.app/command-reference/traits/adding-traits",
@@ -170,5 +171,5 @@ async def __results_embed(ctx, outcome, character: VChar, disciplines: bool):
             embed.set_footer(text="To update a trait, use /traits update")
         embed.add_field(name=field_name, value=errs, inline=False)
 
-    view = inconnu.views.TraitsView(character, ctx.user)
+    view = ui.views.TraitsView(character, ctx.user)
     await ctx.respond(embed=embed, view=view, ephemeral=True)

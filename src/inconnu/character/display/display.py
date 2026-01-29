@@ -10,6 +10,7 @@ from inconnu.character.display import trackmoji
 from inconnu.constants import Damage
 from models import VChar
 from services import haven
+import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 
@@ -48,7 +49,7 @@ async def display_requested(
         owner=player,
         message=message,
         footer=None,
-        view=inconnu.views.TraitsView(character, ctx.user),
+        view=ui.views.TraitsView(character, ctx.user),
         ephemeral=ephemeral,
         thumbnail=character.profile_image_url,
     )
@@ -102,7 +103,7 @@ async def display(
         msg_contents["ephemeral"] = ephemeral
         msg = await ctx.respond(**msg_contents)
 
-        if isinstance(view, inconnu.views.DisablingView):
+        if isinstance(view, ui.views.DisablingView):
             view.message = msg
 
         return msg
@@ -111,7 +112,7 @@ async def display(
     if view is None:
         # We need to remove the view
         msg_contents["view"] = None
-    elif isinstance(view, inconnu.views.DisablingView):
+    elif isinstance(view, ui.views.DisablingView):
         view.message = ctx.message
     return await ctx.message.edit(**msg_contents)
 

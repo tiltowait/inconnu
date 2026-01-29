@@ -5,6 +5,7 @@ import asyncio
 import errors
 import inconnu
 from services import haven
+import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"
 
@@ -34,7 +35,7 @@ async def slake(ctx, character, amount: int, **kwargs):
         character.log("slake", slaked)
 
         if old_hunger >= 4:
-            view = inconnu.views.FrenzyView(character, 3, ctx.user.id)
+            view = ui.views.FrenzyView(character, 3, ctx.user.id)
         else:
             view = None
 

@@ -2,6 +2,7 @@
 
 import inconnu
 from services import haven
+import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#convictions"
 
@@ -9,7 +10,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#con
 @haven(__HELP_URL)
 async def convictions_set(ctx, character):
     """Edit character Convictions."""
-    modal = inconnu.views.ConvictionsModal(character)
+    modal = ui.views.ConvictionsModal(character)
     await ctx.send_modal(modal)
 
 

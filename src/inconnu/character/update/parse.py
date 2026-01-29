@@ -12,6 +12,7 @@ from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
 from inconnu.character.update import paramupdate
 from models import VChar
+import ui.views
 
 __MATCHES = {}
 
@@ -211,7 +212,7 @@ async def update_help(ctx, err=None, ephemeral=True):
         url="https://docs.inconnu.app/command-reference/characters/updates",
     )
     support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
-    view = inconnu.views.ReportingView(documentation, support)
+    view = ui.views.ReportingView(documentation, support)
 
     await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 

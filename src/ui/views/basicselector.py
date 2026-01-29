@@ -2,7 +2,7 @@
 
 import discord
 
-from inconnu.views.disablingview import DisablingView
+from ui.views.disablingview import DisablingView
 
 
 class BasicSelector(DisablingView):

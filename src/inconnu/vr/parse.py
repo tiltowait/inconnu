@@ -25,6 +25,7 @@ from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
 from models import VChar
 from models.vchardocs import VCharTrait
+import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
@@ -99,7 +100,7 @@ async def parse(
 
     except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
         if isinstance(err, errors.TraitError):
-            view = inconnu.views.TraitsView(character, ctx.user)
+            view = ui.views.TraitsView(character, ctx.user)
             ephemeral = True
         else:
             view = discord.MISSING

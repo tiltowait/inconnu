@@ -5,7 +5,7 @@ import discord
 import inconnu
 from ctx import AppCtx
 from inconnu.utils import is_admin
-from inconnu.views import DisablingView
+from ui.views import DisablingView
 from models import VChar
 from services import haven
 

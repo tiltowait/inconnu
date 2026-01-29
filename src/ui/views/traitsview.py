@@ -3,7 +3,7 @@
 import discord
 
 import inconnu
-from inconnu.views.disablingview import DisablingView
+from ui.views.disablingview import DisablingView
 
 
 class TraitsView(DisablingView):

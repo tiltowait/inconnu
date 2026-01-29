@@ -8,6 +8,7 @@ from ctx import AppCtx
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
 from models import VChar
 from services import haven
+import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
 
@@ -77,7 +78,7 @@ async def __display_outcome(ctx: AppCtx, character: VChar, outcome: MendOutcome)
 
         if outcome.frenzy:
             footer = "Rouse failure at Hunger 5!"
-            view = inconnu.views.FrenzyView(character, 4, ctx.user.id)
+            view = ui.views.FrenzyView(character, 4, ctx.user.id)
 
     return await inconnu.character.display(
         ctx, character, title=title, fields=fields, footer=footer, view=view, color=color

@@ -7,6 +7,7 @@ import db
 import inconnu
 from ctx import AppCtx
 from models import RPPost
+from ui.views import DisablingView
 
 
 async def show_tags(ctx: AppCtx):
@@ -83,7 +84,7 @@ def _create_page(ctx: AppCtx, tags: list[tuple[str, int]]) -> Page:
     return Page(embeds=[embed], custom_view=TagView(tags))
 
 
-class TagView(inconnu.views.DisablingView):
+class TagView(DisablingView):
     """A View for selecting and displaying tags."""
 
     def __init__(self, tags: list[tuple[str, int]], *args, **kwargs):

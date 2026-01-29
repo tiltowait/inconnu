@@ -7,6 +7,7 @@ import inconnu
 from config import web_asset
 from models import VChar
 from services import haven
+import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 
@@ -126,7 +127,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     footer = "\n".join(footer)
 
-    view = inconnu.views.FrenzyView(character, 4, ctx.user.id) if outcome.frenzy else None
+    view = ui.views.FrenzyView(character, 4, ctx.user.id) if outcome.frenzy else None
 
     return await inconnu.character.display(
         ctx,

@@ -8,7 +8,6 @@ from inconnu import (
     character,
     common,
     constants,
-    embeds,
     experience,
     header,
     log,
@@ -22,9 +21,9 @@ from inconnu import (
     stats,
     traits,
     utils,
-    views,
     vr,
 )
+from ui import embeds, views
 from inconnu.dice import d10, random
 from inconnu.emoji import emojis
 from inconnu.roll import Roll

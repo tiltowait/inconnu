@@ -11,6 +11,7 @@ from ctx import AppCtx
 from inconnu.specialties.tokenize import SYNTAX, tokenize
 from models.vchar import VChar
 from services import haven
+import ui.views
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/specialties"
 
@@ -66,7 +67,7 @@ async def _add_or_remove(
     try:
         additions = action(character, syntax, category)
         embed = _make_embed(ctx, character, additions, title)
-        view = inconnu.views.TraitsView(character, ctx.user)
+        view = ui.views.TraitsView(character, ctx.user)
 
         tasks = [ctx.respond(embed=embed, view=view, ephemeral=True), character.save()]
 

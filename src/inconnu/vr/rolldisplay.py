@@ -10,6 +10,7 @@ from discord.ui import Button
 import inconnu
 from config import web_asset
 from inconnu.vr import dicemoji
+from ui.views import DisablingView
 
 
 class _ButtonID(StrEnum):
@@ -26,7 +27,7 @@ class _ButtonID(StrEnum):
         return f"{self} {uuid.uuid4()}"
 
 
-class _RollControls(inconnu.views.DisablingView):
+class _RollControls(DisablingView):
     """A View that has a dynamic number of roll buttons."""
 
     def __init__(self, has_character, callback, timeout_handler, owner, buttons):

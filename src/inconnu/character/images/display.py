@@ -8,7 +8,7 @@ import db
 import errors
 import inconnu
 from ctx import AppCtx
-from inconnu.views import ReportingView
+from ui.views import ReportingView
 from models import VChar
 from services import haven
 

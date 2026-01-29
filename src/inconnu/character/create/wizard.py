@@ -9,6 +9,7 @@ from loguru import logger
 
 import inconnu
 from models import VChar
+import ui.views
 
 
 class Wizard:
@@ -30,7 +31,7 @@ class Wizard:
 
         self.ctx = ctx
         self.msg = None  # We will be editing this message instead of sending new ones
-        self.view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
+        self.view = ui.views.RatingView(self._assign_next_trait, self._timeout)
         self.parameters = parameters
 
         if parameters.splat == "vampire":
@@ -105,7 +106,7 @@ class Wizard:
         )
 
         if not self.parameters.spc:
-            modal = inconnu.views.ConvictionsModal(character, False)
+            modal = ui.views.ConvictionsModal(character, False)
             tasks.append(self.view.last_interaction.response.send_modal(modal))
 
         self.view.stop()
@@ -139,7 +140,7 @@ class Wizard:
             label="Full Documentation", url="https://docs.inconnu.app/guides/quickstart"
         )
 
-        await self.edit_message(embed=embed, view=inconnu.views.ReportingView(button))
+        await self.edit_message(embed=embed, view=ui.views.ReportingView(button))
 
     async def __query_trait(self, *, interaction: discord.Interaction = None, message: str = None):
         """Query for the next trait."""

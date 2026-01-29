@@ -13,6 +13,7 @@ import config
 import db
 import errors
 import inconnu
+import tasks as bot_tasks
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from ctx import AppCtx
 from errorreporter import reporter
@@ -423,13 +424,13 @@ class InconnuBot(discord.AutoShardedBot):
 @tasks.loop(time=time(12, 0, tzinfo=timezone.utc))
 async def cull_inactive():
     """Cull inactive characters and guilds."""
-    await inconnu.tasks.cull()
+    await bot_tasks.cull()
 
 
 @tasks.loop(time=time(0, tzinfo=timezone.utc))
 async def check_premium_expiries():
     """Perform required actions on expired premium users."""
-    await inconnu.tasks.premium.remove_expired_images()
+    await bot_tasks.premium.remove_expired_images()
 
 
 # Set up the bot instance

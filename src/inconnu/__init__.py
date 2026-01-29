@@ -25,13 +25,13 @@ from inconnu import (
     views,
     vr,
 )
-from services import CharacterManager
 from inconnu.dice import d10, random
 from inconnu.emoji import emojis
 from inconnu.roll import Roll
 from inconnu.settings import menu
 from inconnu.urls import post_url, profile_url
 from inconnu.utils import fence, get_avatar, get_message
+from services import CharacterManager
 
 __all__ = (
     "bot",

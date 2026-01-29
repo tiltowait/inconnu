@@ -8,8 +8,8 @@ from loguru import logger
 import errors
 import inconnu
 from ctx import AppCtx
-from models.vchar import VChar
 from inconnu.specialties.tokenize import SYNTAX, tokenize
+from models.vchar import VChar
 from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/specialties"

@@ -5,8 +5,8 @@ from types import SimpleNamespace
 import errors
 import inconnu
 from inconnu.constants import ROUSE_FAIL_COLOR, Damage
-from services import haven
 from models import VChar
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#aggravated-healing"
 

@@ -8,8 +8,8 @@ import inconnu
 from ctx import AppCtx
 from inconnu.character.display import trackmoji
 from inconnu.constants import Damage
-from services import haven
 from models import VChar
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 

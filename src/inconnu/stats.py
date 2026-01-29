@@ -6,8 +6,7 @@ import discord
 from pymongo import ReturnDocument, UpdateOne
 
 import db
-from models import VChar
-from models import VGuild
+from models import VChar, VGuild
 
 
 async def log_roll(

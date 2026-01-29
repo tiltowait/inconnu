@@ -8,9 +8,9 @@ import db
 import errors
 import inconnu
 from ctx import AppCtx
+from inconnu.views import ReportingView
 from models import VChar
 from services import haven
-from inconnu.views import ReportingView
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 

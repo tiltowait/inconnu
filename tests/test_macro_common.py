@@ -4,7 +4,6 @@ import pytest
 
 from inconnu.macros import macro_common
 
-
 # Macro name validation tests
 
 

@@ -10,10 +10,10 @@ from loguru import logger
 
 import errors
 import inconnu
-from models import VChar
 from ctx import AppCtx
 from inconnu.utils.permissions import is_admin
 from inconnu.views.basicselector import BasicSelector
+from models import VChar
 
 P = ParamSpec("P")
 T = TypeVar("T")

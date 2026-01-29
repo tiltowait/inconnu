@@ -33,8 +33,7 @@ users = _db.users
 
 def models() -> list[type[Document]]:
     """Beanie database models."""
-    from models import RPPost, VChar
-    from models import VGuild, VUser
+    from models import RPPost, VChar, VGuild, VUser
 
     return [VChar, RPPost, VGuild, VUser]
 

@@ -7,8 +7,8 @@ from discord import ApplicationContext, Interaction
 import errors
 import inconnu
 from inconnu.traits import traitcommon
-from services import haven
 from models import VChar
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 

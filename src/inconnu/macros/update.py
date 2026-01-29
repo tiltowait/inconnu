@@ -4,8 +4,8 @@ import errors
 import inconnu
 from ctx import AppCtx
 from inconnu.macros import macro_common
-from models import VChar
 from inconnu.utils import strtobool
+from models import VChar
 from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"

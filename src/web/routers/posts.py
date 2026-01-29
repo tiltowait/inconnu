@@ -4,10 +4,10 @@ from bson import ObjectId
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
-from models import RPPost
 
 import bot
 import inconnu
+from models import RPPost
 from web import object_id, templates
 
 router = APIRouter()

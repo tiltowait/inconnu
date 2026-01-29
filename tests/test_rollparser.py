@@ -3,9 +3,9 @@
 import pytest
 
 import errors
-from models.vchar import VChar
 from inconnu.vr.parse import needs_character
 from inconnu.vr.rollparser import RollParser
+from models.vchar import VChar
 from tests.characters import gen_char
 
 

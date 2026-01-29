@@ -6,9 +6,9 @@ from types import SimpleNamespace
 
 import inconnu
 from inconnu.traits.parser import parse_traits
-from services import haven
 from models import VChar
 from models.vchardocs import VCharTrait
+from services import haven
 
 __HELP_URL = {
     False: "https://docs.inconnu.app/command-reference/traits/adding-traits",

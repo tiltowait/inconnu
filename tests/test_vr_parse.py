@@ -6,7 +6,6 @@ from inconnu.vr.parse import needs_character
 from inconnu.vr.rollparser import RollParser
 from models.vchardocs import VCharTrait
 
-
 # needs_character tests
 
 

@@ -7,9 +7,9 @@ import db
 import errors
 import inconnu
 from ctx import AppCtx
-from services import haven
 from models import VChar
 from models.rpheader import HeaderSubdoc
+from services import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 

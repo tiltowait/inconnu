@@ -5,7 +5,6 @@ from contextlib import nullcontext as does_not_raise
 import pytest
 
 import errors
-from models.vchar import VChar
 from inconnu.specialties.add_remove import (
     Category,
     add_specialties,
@@ -13,6 +12,7 @@ from inconnu.specialties.add_remove import (
     validate_tokens,
 )
 from inconnu.specialties.tokenize import tokenize
+from models.vchar import VChar
 from tests.characters import gen_char
 
 

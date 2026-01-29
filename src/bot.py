@@ -14,6 +14,7 @@ import db
 import errors
 import inconnu
 import tasks as bot_tasks
+from caches import WebhookCache
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from ctx import AppCtx
 from errorreporter import reporter
@@ -32,7 +33,7 @@ class InconnuBot(discord.AutoShardedBot):
         self.wizards = 0
         self.motd = None
         self.motd_given = set()
-        self.webhook_cache: inconnu.webhookcache.WebhookCache = None  # type:ignore
+        self.webhook_cache: WebhookCache = None  # type:ignore
         logger.info("BOT: Instantiated")
 
         if config.SHOW_TEST_ROUTES:
@@ -313,7 +314,7 @@ class InconnuBot(discord.AutoShardedBot):
         if not self.connected:
             inconnu.char_mgr.bot = self
             await reporter.prepare_channel(self)
-            self.webhook_cache = inconnu.webhookcache.WebhookCache(self.user.id)
+            self.webhook_cache = WebhookCache(self.user.id)
 
             logger.info("CONNECT: Logged in as {}!", str(self.user))
             logger.info("CONNECT: Playing on {} servers", len(self.guilds))

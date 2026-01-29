@@ -11,7 +11,7 @@ from errors import (
     UnspecifiedCharacterError,
 )
 from models import VChar
-from inconnu.character_manager import CharacterManager
+from caches import CharacterManager
 
 # Mock classes for admin testing
 

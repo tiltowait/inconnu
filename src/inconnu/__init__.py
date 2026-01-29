@@ -24,9 +24,8 @@ from inconnu import (
     utils,
     views,
     vr,
-    webhookcache,
 )
-from inconnu.character_manager import CharacterManager
+from caches import CharacterManager
 from inconnu.dice import d10, random
 from inconnu.emoji import emojis
 from inconnu.roll import Roll
@@ -38,7 +37,6 @@ __all__ = (
     "bot",
     "char_mgr",
     "character",
-    "CharacterManager",
     "common",
     "constants",
     "d10",
@@ -67,7 +65,6 @@ __all__ = (
     "utils",
     "views",
     "vr",
-    "webhookcache",
 )
 
 char_mgr = CharacterManager()

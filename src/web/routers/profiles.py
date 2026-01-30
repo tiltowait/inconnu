@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 
 import bot
 import db
-import inconnu
+from utils.urls import profile_url
 from web import object_id, templates
 
 router = APIRouter()
@@ -55,6 +55,6 @@ def prepare_profile_page(request: Request, bio: Bio) -> str:
             "owner": user,
             "guild": guild,
             "spc": user == bot.bot.user,
-            "url": inconnu.profile_url(bio["_id"]),
+            "url": profile_url(bio["_id"]),
         },
     )

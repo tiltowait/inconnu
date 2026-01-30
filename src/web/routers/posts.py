@@ -6,9 +6,9 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 
 import bot
-import inconnu
 from models import RPPost
 from utils.text import diff as text_diff
+from utils.urls import post_url
 from web import object_id, templates
 
 router = APIRouter()
@@ -45,7 +45,7 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
         request,
         "post.html.jinja",
         {
-            "url": inconnu.post_url(post.id),
+            "url": post_url(post.id),
             "user": user,
             "channel": channel,
             "guild": guild,

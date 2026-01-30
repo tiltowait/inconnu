@@ -1,6 +1,6 @@
 """Commonly used utilities."""
 
-from utils import decorators
+from utils import decorators, urls
 from utils.cmdreplace import cmd_replace
 from utils.decorators import not_on_lockdown
 from utils.discord_helpers import (
@@ -24,4 +24,5 @@ __all__ = (
     "player_lookup",
     "raw_command_options",
     "re_paginate",
+    "urls",
 )

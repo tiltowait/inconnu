@@ -3,10 +3,10 @@
 import discord
 
 import constants
-import inconnu
 import ui
 from utils import cmd_replace, get_avatar
 from utils.permissions import is_supporter
+from utils.urls import profile_url
 
 
 class VCharEmbed(discord.Embed):
@@ -17,7 +17,7 @@ class VCharEmbed(discord.Embed):
         show_thumbnail = kwargs.pop("show_thumbnail", True)
 
         if link:
-            kwargs["url"] = inconnu.profile_url(character.id)
+            kwargs["url"] = profile_url(character.id)
 
         if "title" in kwargs:
             author_name = character.name

@@ -5,13 +5,13 @@ from loguru import logger
 
 import db
 import errors
-import inconnu
 from ctx import AppCtx
 from models import VChar
 from models.rpheader import HeaderSubdoc
 from services.haven import haven
 from utils import get_avatar
 from utils.permissions import is_supporter
+from utils.urls import profile_url
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 
@@ -102,10 +102,10 @@ def header_embed(header: HeaderSubdoc, character: VChar, webhook: bool) -> disco
     embed.set_thumbnail(url=character.random_image_url())
 
     if webhook:
-        embed.set_author(name=header.base_title, url=inconnu.profile_url(character.id_str))
+        embed.set_author(name=header.base_title, url=profile_url(character.id_str))
     else:
         embed.title = header.title
-        embed.url = inconnu.profile_url(character.id_str)
+        embed.url = profile_url(character.id_str)
 
     if header.temp:
         embed.set_footer(text=header.temp)

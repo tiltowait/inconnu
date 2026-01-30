@@ -14,6 +14,7 @@ from services.haven import haven
 from utils import get_avatar, re_paginate
 from utils.text import clean_text, pull_mentions
 from utils.text import diff as text_diff
+from utils.urls import post_url
 
 __HELP_URL = "https://docs.inconnu.app/"
 
@@ -266,7 +267,7 @@ class PostModal(discord.ui.Modal):
             embed = discord.Embed(
                 title="Rolepost Edited",
                 description=description,
-                url=inconnu.post_url(post.id),
+                url=post_url(post.id),
             )
             embed.set_author(name=post.header.char_name, icon_url=get_avatar(interaction.user))
             embed.set_thumbnail(url=self.character.profile_image_url)

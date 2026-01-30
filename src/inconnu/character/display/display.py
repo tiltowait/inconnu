@@ -4,7 +4,6 @@ from enum import StrEnum
 
 import discord
 
-import inconnu
 import services
 import ui
 from constants import Damage
@@ -14,6 +13,7 @@ from models import VChar
 from services.haven import haven
 from utils import get_avatar
 from utils.text import pluralize
+from utils.urls import profile_url
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 
@@ -139,15 +139,15 @@ async def __get_embed(
     # Begin building the embed
     title = title or character.name
     if title == character.name:
-        profile_url = inconnu.profile_url(character.id_str)
+        profile = profile_url(character.id_str)
     else:
-        profile_url = None
+        profile = None
 
     embed = discord.Embed(
         title=title,
         description=message or "",
         color=color or None,
-        url=profile_url,
+        url=profile,
     )
 
     embed.set_author(

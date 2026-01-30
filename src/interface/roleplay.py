@@ -14,6 +14,7 @@ import inconnu
 import interface
 import services
 from utils.decorators import premium
+from utils.urls import post_url
 
 
 class RoleplayCog(commands.Cog):
@@ -264,7 +265,7 @@ class RoleplayCog(commands.Cog):
                         f"**Channel:** <#{post['channel']}>\n"
                         "**Content:**\n\n" + post["content"]
                     ),
-                    url=inconnu.post_url(post["_id"]),
+                    url=post_url(post["_id"]),
                     color=discord.Color.red(),
                 )
                 embed.timestamp = post["date"].replace(tzinfo=timezone.utc)

@@ -23,7 +23,6 @@ from inconnu.dice import d10, random
 from inconnu.emoji import emojis
 from inconnu.roll import Roll
 from inconnu.settings import menu
-from inconnu.urls import post_url, profile_url
 
 __all__ = (
     "bot",
@@ -36,8 +35,6 @@ __all__ = (
     "macros",
     "misc",
     "options",
-    "post_url",
-    "profile_url",
     "random",
     "reference",
     "Roll",

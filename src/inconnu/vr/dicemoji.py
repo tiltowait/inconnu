@@ -1,6 +1,6 @@
 """dicemoji.py - A tool for fetching emoji for representing dice rolls."""
 
-import inconnu
+import services
 
 
 def emojify(dice: list, hunger: bool):
@@ -40,4 +40,4 @@ def emojify_die(die: int, hunger: bool):
     else:
         emoji_name += "fail"
 
-    return inconnu.emojis[emoji_name]
+    return services.emojis[emoji_name]

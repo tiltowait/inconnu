@@ -133,7 +133,9 @@ class ErrorReporter:
         # Unknown errors and database errors are logged to a channel
 
         if isinstance(error, pymongo.errors.PyMongoError):
-            await inconnu.log.report_database_error(self.bot, ctx)
+            from services.log import report_database_error
+
+            await report_database_error(self.bot, ctx)
 
         # Unknown exceptions
         embed = await self.error_embed(ctx, error)

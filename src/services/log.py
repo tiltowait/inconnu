@@ -1,4 +1,4 @@
-"""log.py - Logging facilities."""
+"""log.py - Database error reporting."""
 
 import os
 import textwrap

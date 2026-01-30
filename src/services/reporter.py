@@ -11,6 +11,7 @@ from loguru import logger
 import constants
 import errors
 import ui
+from services.log import report_database_error
 from utils import get_avatar
 
 
@@ -132,8 +133,6 @@ class ErrorReporter:
         # Unknown errors and database errors are logged to a channel
 
         if isinstance(error, pymongo.errors.PyMongoError):
-            from services.log import report_database_error
-
             await report_database_error(self.bot, ctx)
 
         # Unknown exceptions

@@ -8,7 +8,6 @@ from loguru import logger
 
 import api
 import errors
-import inconnu
 import services
 import ui
 
@@ -18,7 +17,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 async def delete(ctx, character_name: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        character = await inconnu.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character_name)
+        character = await services.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character_name)
         modal = _DeletionModal(title=f"Delete {character.name}", character=character)
         await ctx.send_modal(modal)
 
@@ -61,6 +60,6 @@ class _DeletionModal(Modal):
             except api.ApiError as err:
                 logger.error("Unable to delete {}: {}", self.character.name, err)
 
-            await inconnu.char_mgr.remove(self.character)  # Has to be done after image deletion
+            await services.char_mgr.remove(self.character)  # Has to be done after image deletion
         else:
             await ui.embeds.error(interaction, "You must type the character's name exactly.")

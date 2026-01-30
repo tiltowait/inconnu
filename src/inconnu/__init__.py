@@ -24,11 +24,9 @@ from inconnu.emoji import emojis
 from inconnu.roll import Roll
 from inconnu.settings import menu
 from inconnu.urls import post_url, profile_url
-from services import CharacterManager
 
 __all__ = (
     "bot",
-    "char_mgr",
     "character",
     "d10",
     "menu",
@@ -51,5 +49,4 @@ __all__ = (
     "vr",
 )
 
-char_mgr = CharacterManager()
 bot: "InconnuBot"  # Assigned in bot.py

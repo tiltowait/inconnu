@@ -6,7 +6,7 @@ import pytest
 import pytest_asyncio
 
 import constants
-import inconnu
+import services
 from errors import CharacterNotFoundError
 from models import VChar
 
@@ -98,12 +98,12 @@ async def test_management(
 ):
     """Run a battery of CharManager tests."""
     user = MockUser(user_id, admin)
-    inconnu.char_mgr.bot = MockBot(user)  # Establish admin (or not)
+    services.char_mgr.bot = MockBot(user)  # Establish admin (or not)
     identifier = char_id if admin else CHAR_NAME
 
     if exception is not None:
         with pytest.raises(exception):
-            _ = await inconnu.char_mgr.fetchone(guild, user, identifier)
+            _ = await services.char_mgr.fetchone(guild, user, identifier)
     else:
-        char = await inconnu.char_mgr.fetchone(guild, user, identifier)
+        char = await services.char_mgr.fetchone(guild, user, identifier)
         assert char is not None

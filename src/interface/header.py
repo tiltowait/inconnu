@@ -13,6 +13,7 @@ import db
 import errors
 import inconnu
 import interface
+import services
 from ctx import AppCtx
 from inconnu.options import char_option
 from utils.permissions import is_approved_user
@@ -132,7 +133,7 @@ async def _header_bol_options(ctx) -> list[OptionChoice]:
     user = ctx.interaction.user
 
     try:
-        character = await inconnu.char_mgr.fetchone(guild, user, charid)
+        character = await services.char_mgr.fetchone(guild, user, charid)
 
         if character.is_thin_blood:
             return [OptionChoice("N/A - Thin-Blood", "-1")]

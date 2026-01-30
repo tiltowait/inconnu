@@ -4,6 +4,7 @@ import re
 from types import SimpleNamespace as SN
 
 import inconnu
+import services
 import ui
 from inconnu.character.create import wizard
 
@@ -40,7 +41,7 @@ async def create(
         # Remove extraenous spaces from the name
         name = re.sub(r"\s+", " ", name)
 
-        if await inconnu.char_mgr.exists(ctx.guild, ctx.user, name, spc):
+        if await services.char_mgr.exists(ctx.guild, ctx.user, name, spc):
             if spc:
                 raise ValueError(f"Sorry, there is already an SPC named `{name}`!")
             raise ValueError(f"Sorry, you have a character named `{name}` already!")

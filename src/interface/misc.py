@@ -11,6 +11,7 @@ from discord.ext import commands
 import constants
 import errors
 import inconnu
+import services
 import ui
 from inconnu.options import char_option
 
@@ -82,7 +83,7 @@ class MiscCommands(commands.Cog):
             return
 
         try:
-            xfer = await inconnu.char_mgr.fetchone(ctx.guild, current_owner.id, character)
+            xfer = await services.char_mgr.fetchone(ctx.guild, current_owner.id, character)
 
             if ctx.guild.id == xfer.guild and current_owner.id == xfer.user:
                 current_mention = current_owner.mention
@@ -90,7 +91,7 @@ class MiscCommands(commands.Cog):
 
                 msg = f"Transferred **{xfer.name}** from {current_mention} to {new_mention}."
                 await asyncio.gather(
-                    inconnu.char_mgr.transfer(xfer, current_owner, new_owner), ctx.respond(msg)
+                    services.char_mgr.transfer(xfer, current_owner, new_owner), ctx.respond(msg)
                 )
                 await self.bot.transfer_premium(new_owner, xfer)
 

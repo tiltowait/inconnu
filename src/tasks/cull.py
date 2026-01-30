@@ -6,7 +6,7 @@ from loguru import logger
 
 import api
 import db
-import inconnu
+import services
 from models import VChar
 
 
@@ -37,7 +37,7 @@ async def cull(days=30):
 
     async for character in characters:
         await api.delete_character_faceclaims(character)
-        if await inconnu.char_mgr.remove(character):
+        if await services.char_mgr.remove(character):
             logger.info("CULLER: Culling {}", character.name)
         else:
             logger.info("CULLER: Unable to cull {}", character.name)

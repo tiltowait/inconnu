@@ -5,10 +5,10 @@ from typing import cast
 import discord
 from loguru import logger
 
-import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
+from ctx import AppCtx
 
-AppInteraction = discord.ApplicationContext | discord.Interaction
+AppInteraction = AppCtx | discord.Interaction
 
 
 def is_approved_user(ctx: AppInteraction, owner_id: discord.User | None = None):
@@ -55,11 +55,15 @@ async def get_or_fetch_supporter(
     return False
 
 
-def is_supporter(ctx, user: discord.Member | None = None) -> bool:
+def is_supporter(ctx: AppInteraction, user: discord.Member | None = None) -> bool:
     """Returns True if the user invoking the command is a supporter.
 
     Requires SUPPORTER_GUILD and SUPPORTER_ROLE to be set."""
-    support_server = inconnu.bot.get_guild(SUPPORTER_GUILD)
+    if isinstance(ctx, discord.Interaction):
+        bot = ctx.client
+    else:
+        bot = ctx.bot
+    support_server = bot.get_guild(SUPPORTER_GUILD)
     if support_server is None:
         logger.warning("Support server not set!")
         return False

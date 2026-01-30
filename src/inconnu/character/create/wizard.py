@@ -96,7 +96,7 @@ class Wizard:
                 )
             )
 
-        tasks.append(inconnu.char_mgr.register(character))
+        tasks.append(services.char_mgr.register(character))
         tasks.append(
             services.character_update(
                 ctx=self.ctx,

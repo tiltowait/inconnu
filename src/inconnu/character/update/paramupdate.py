@@ -1,6 +1,7 @@
 """character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
 
 import inconnu
+import services
 from constants import Damage
 from models import VChar
 
@@ -18,14 +19,14 @@ async def update_name(character: VChar, new_name: str) -> str:
         raise ValueError(f"{new_name} is already this character's name!")
     if character.name.lower() != new_name.lower():
         # We want to let them rename a character to fix capitalization
-        all_chars = await inconnu.char_mgr.fetchall(character.guild, character.user)
+        all_chars = await services.char_mgr.fetchall(character.guild, character.user)
         for char in all_chars:
             if char.name.lower() == new_name.lower():
                 raise ValueError(f"You already have a character named `{new_name}`!")
 
     old_name = character.name
     character.name = new_name
-    inconnu.char_mgr.sort_user(character.guild, character.user)
+    services.char_mgr.sort_user(character.guild, character.user)
 
     return f"Rename `{old_name}` to `{new_name}`."
 

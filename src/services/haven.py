@@ -9,7 +9,7 @@ import discord
 from loguru import logger
 
 import errors
-import inconnu
+import services
 import ui
 from ctx import AppCtx
 from models import VChar
@@ -83,7 +83,7 @@ class Haven:
 
             # If the owner only has one character, or selected one, then we
             # can skip the rest of the fetch and filter routine
-            character = await inconnu.char_mgr.fetchone(
+            character = await services.char_mgr.fetchone(
                 self.ctx.guild.id,
                 self.owner.id,
                 self.match,
@@ -121,7 +121,7 @@ class Haven:
         except errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
             assert self.owner is not None
-            all_chars = await inconnu.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)
+            all_chars = await services.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)
             if self.filter is not None:
                 # If we were given a filter, then we can only add those
                 # characters that match the filter and potentially go down

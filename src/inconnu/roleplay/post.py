@@ -323,7 +323,7 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
         # It's a valid post, but we can only work our magic if the character
         # still exists. Otherwise, spit out an error.
         try:
-            character = await inconnu.char_mgr.fetchone(
+            character = await services.char_mgr.fetchone(
                 ctx.guild_id,
                 ctx.user.id,
                 str(rp_post.header.charid),

@@ -291,3 +291,6 @@ class CharacterManager:
         if user and char.user != user:
             if not self._is_admin(guild, user):
                 raise LookupError(f"**{char.name}** doesn't belong to this user!")
+
+
+char_mgr = CharacterManager()

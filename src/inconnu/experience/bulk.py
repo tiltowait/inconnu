@@ -8,7 +8,7 @@ from discord.ext.commands import Paginator
 from discord.ui import InputText, Modal
 
 import errors
-import inconnu
+import services
 import ui
 
 
@@ -75,7 +75,7 @@ class _BulkModal(Modal):
             member = member.mention if member is not None else owner
 
             try:
-                character = await inconnu.char_mgr.fetchone(interaction.guild, owner, char_name)
+                character = await services.char_mgr.fetchone(interaction.guild, owner, char_name)
 
                 # Make sure this isn't a duplicate award
                 match = f"{member} {character.name}"

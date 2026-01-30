@@ -14,6 +14,7 @@ import constants
 import db
 import errors
 import inconnu
+import services
 import tasks as bot_tasks
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
 from ctx import AppCtx
@@ -281,12 +282,12 @@ class InconnuBot(discord.AutoShardedBot):
                 "update header",
                 "transfer",
             }:
-                num_chars = await inconnu.char_mgr.character_count(ctx.guild_id, ctx.user.id)
+                num_chars = await services.char_mgr.character_count(ctx.guild_id, ctx.user.id)
                 if num_chars == 1:
                     # The user might have been using an SPC, so let's grab that
                     # character and double-check before yelling at them.
                     try:
-                        character = await inconnu.char_mgr.fetchone(
+                        character = await services.char_mgr.fetchone(
                             ctx.guild, ctx.user, options["character"]
                         )
                         if character.is_pc:
@@ -314,7 +315,7 @@ class InconnuBot(discord.AutoShardedBot):
     async def on_connect(self):
         """Perform early setup."""
         if not self.connected:
-            inconnu.char_mgr.bot = self
+            services.char_mgr.bot = self
             await reporter.prepare_channel(self)
             self.webhook_cache = WebhookCache(self.user.id)
 
@@ -382,7 +383,7 @@ class InconnuBot(discord.AutoShardedBot):
     @staticmethod
     async def on_member_remove(member: discord.Member):
         """Mark all of a member's characters as inactive."""
-        await inconnu.char_mgr.mark_inactive(member)
+        await services.char_mgr.mark_inactive(member)
 
         if member.guild.id == SUPPORTER_GUILD:
             if member.get_role(SUPPORTER_ROLE):
@@ -391,7 +392,7 @@ class InconnuBot(discord.AutoShardedBot):
     @staticmethod
     async def on_member_join(member: discord.Member):
         """Mark all the player's characters as active when they rejoin a guild."""
-        await inconnu.char_mgr.mark_active(member)
+        await services.char_mgr.mark_active(member)
 
         if member.guild.id == SUPPORTER_GUILD:
             if member.get_role(SUPPORTER_ROLE):

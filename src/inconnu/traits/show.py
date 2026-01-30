@@ -3,9 +3,11 @@
 import discord
 from discord.ext.commands import Paginator as Chunker
 
-import inconnu
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+import constants
+import ui
+from models import VChar
+from services.haven import haven
+from utils.text import format_join
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-traits"
 
@@ -23,12 +25,12 @@ def traits_embed(
     owner: discord.Member | None = None,
 ):
     """Display traits in an embed."""
-    embed = inconnu.embeds.VCharEmbed(ctx, character, owner, title="Character Traits")
+    embed = ui.embeds.VCharEmbed(ctx, character, owner, title="Character Traits")
     embed.set_footer(text="To see HP, WP, etc., use /character display")
 
     char_traits = character.traits  # This is an automatic copy
     specialties = []
-    for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
+    for group, subgroups in constants.GROUPED_TRAITS.items():
         embed.add_field(name="​", value=f"**{group}**", inline=False)
         for subgroup, traits in subgroups.items():
             trait_list = []
@@ -37,7 +39,7 @@ def traits_embed(
                 for index, char_trait in enumerate(char_traits):
                     if char_trait.matching(trait, True):
                         if char_trait.has_specialties:
-                            specs = inconnu.utils.format_join(char_trait.specialties, ", ", "`")
+                            specs = format_join(char_trait.specialties, ", ", "`")
                             spec = f"**{char_trait.name}:** {specs}"
                             specialties.append(spec)
 
@@ -59,7 +61,7 @@ def traits_embed(
         if trait.is_discipline:
             if trait.has_specialties:
                 # If it has any powers, show them
-                powers = inconnu.utils.format_join(trait.specialties, ", ", "`")
+                powers = format_join(trait.specialties, ", ", "`")
                 entry += f" ({powers})"
             disciplines.append(entry)
         else:

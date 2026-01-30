@@ -5,8 +5,10 @@ from types import SimpleNamespace
 import pytest
 import pytest_asyncio
 
-import inconnu
-from inconnu.errors import CharacterNotFoundError
+import constants
+import services
+from errors import CharacterNotFoundError
+from models import VChar
 
 GUILD = 1
 USER = 1
@@ -63,14 +65,14 @@ class MockUser:
 async def char_id() -> str:
     """The ID of a dummy character inserted into the database."""
     splat = "vampire"
-    char = inconnu.models.VChar(
+    char = VChar(
         guild=1,
         user=1,
         raw_name="Test",
         splat=splat,
         raw_humanity=7,
-        health=6 * inconnu.constants.Damage.NONE,
-        willpower=5 * inconnu.constants.Damage.NONE,
+        health=6 * constants.Damage.NONE,
+        willpower=5 * constants.Damage.NONE,
         potency=splat == "vampire" and 1 or 0,
     )
     await char.save()
@@ -96,12 +98,12 @@ async def test_management(
 ):
     """Run a battery of CharManager tests."""
     user = MockUser(user_id, admin)
-    inconnu.char_mgr.bot = MockBot(user)  # Establish admin (or not)
+    services.char_mgr.bot = MockBot(user)  # Establish admin (or not)
     identifier = char_id if admin else CHAR_NAME
 
     if exception is not None:
         with pytest.raises(exception):
-            _ = await inconnu.char_mgr.fetchone(guild, user, identifier)
+            _ = await services.char_mgr.fetchone(guild, user, identifier)
     else:
-        char = await inconnu.char_mgr.fetchone(guild, user, identifier)
+        char = await services.char_mgr.fetchone(guild, user, identifier)
         assert char is not None

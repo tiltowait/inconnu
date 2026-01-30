@@ -6,10 +6,10 @@ import discord
 from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
-import inconnu
 from ctx import AppCtx
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
+from utils import get_avatar
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
@@ -39,7 +39,7 @@ async def __get_embeds(character: VChar, player):
     embeds = []
     for page in chunks.pages:
         embed = discord.Embed(title="Experience Log", description=page)
-        embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
+        embed.set_author(name=character.name, icon_url=get_avatar(player))
         embed.add_field(
             name="Experience (Unspent / Lifetime)",
             value=f"```{character.experience.unspent} / {character.experience.lifetime}```",

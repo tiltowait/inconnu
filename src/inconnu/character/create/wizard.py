@@ -7,7 +7,11 @@ import discord
 from discord.ui import Button
 from loguru import logger
 
+import constants
 import inconnu
+import services
+import ui
+from models import VChar
 
 
 class Wizard:
@@ -25,11 +29,11 @@ class Wizard:
                 self.core_traits = ["Stamina", "Resolve", "Composure"]
             else:
                 # Make a character with full traits
-                self.core_traits = inconnu.constants.get_standard_traits()
+                self.core_traits = constants.get_standard_traits()
 
         self.ctx = ctx
         self.msg = None  # We will be editing this message instead of sending new ones
-        self.view = inconnu.views.RatingView(self._assign_next_trait, self._timeout)
+        self.view = ui.views.RatingView(self._assign_next_trait, self._timeout)
         self.parameters = parameters
 
         if parameters.splat == "vampire":
@@ -67,14 +71,14 @@ class Wizard:
         """Add the character to the database and inform the user they are done."""
         owner = self.ctx.user.id if not self.parameters.spc else self.ctx.bot.user.id
 
-        character = inconnu.models.VChar(
+        character = VChar(
             guild=self.ctx.guild.id,
             user=owner,
             raw_name=self.parameters.name,
             splat=self.parameters.splat,
             raw_humanity=self.parameters.humanity,
-            health=self.parameters.hp * inconnu.constants.Damage.NONE,
-            willpower=self.parameters.wp * inconnu.constants.Damage.NONE,
+            health=self.parameters.hp * constants.Damage.NONE,
+            willpower=self.parameters.wp * constants.Damage.NONE,
             potency=self.assigned_traits.pop("Blood Potency", 0),
         )
         character.assign_traits(self.assigned_traits)
@@ -92,9 +96,9 @@ class Wizard:
                 )
             )
 
-        tasks.append(inconnu.char_mgr.register(character))
+        tasks.append(services.char_mgr.register(character))
         tasks.append(
-            inconnu.common.report_update(
+            services.character_update(
                 ctx=self.ctx,
                 character=character,
                 title="Character Created",
@@ -104,7 +108,7 @@ class Wizard:
         )
 
         if not self.parameters.spc:
-            modal = inconnu.views.ConvictionsModal(character, False)
+            modal = ui.views.ConvictionsModal(character, False)
             tasks.append(self.view.last_interaction.response.send_modal(modal))
 
         self.view.stop()
@@ -138,7 +142,7 @@ class Wizard:
             label="Full Documentation", url="https://docs.inconnu.app/guides/quickstart"
         )
 
-        await self.edit_message(embed=embed, view=inconnu.views.ReportingView(button))
+        await self.edit_message(embed=embed, view=ui.views.ReportingView(button))
 
     async def __query_trait(self, *, interaction: discord.Interaction = None, message: str = None):
         """Query for the next trait."""

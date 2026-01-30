@@ -9,11 +9,14 @@ from discord.ext import commands
 from loguru import logger
 from pymongo import DeleteOne
 
+import db
+import errors
 import inconnu
 import interface
+import services
 from ctx import AppCtx
 from inconnu.options import char_option
-from inconnu.utils.permissions import is_approved_user
+from utils.permissions import is_approved_user
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -130,7 +133,7 @@ async def _header_bol_options(ctx) -> list[OptionChoice]:
     user = ctx.interaction.user
 
     try:
-        character = await inconnu.char_mgr.fetchone(guild, user, charid)
+        character = await services.char_mgr.fetchone(guild, user, charid)
 
         if character.is_thin_blood:
             return [OptionChoice("N/A - Thin-Blood", "-1")]
@@ -142,7 +145,7 @@ async def _header_bol_options(ctx) -> list[OptionChoice]:
             ]
         return [OptionChoice("N/A - Mortal", "-1")]
 
-    except inconnu.errors.CharacterNotFoundError:
+    except errors.CharacterNotFoundError:
         return []
 
 
@@ -232,7 +235,7 @@ class HeaderCog(commands.Cog):
 
         if possible_header:
             # Make sure we have a header
-            record = await inconnu.db.headers.find_one({"message": message.id})
+            record = await db.headers.find_one({"message": message.id})
             if record is not None:
                 # Make sure we are allowed to update it
                 owner = record["character"]["user"]
@@ -261,13 +264,13 @@ class HeaderCog(commands.Cog):
             webhook = await self.bot.prep_webhook(message.channel)
             is_bot_message = message.author == self.bot.user
             is_webhook_message = message.author.id == webhook.id
-        except inconnu.errors.WebhookError:
+        except errors.WebhookError:
             webhook = None
             is_bot_message = message.author == self.bot.user
             is_webhook_message = False
 
         if is_bot_message or is_webhook_message:
-            record = await inconnu.db.headers.find_one({"message": message.id})
+            record = await db.headers.find_one({"message": message.id})
             if record is not None:
                 # Make sure we are allowed to delete it
                 owner = record["character"]["user"]
@@ -318,7 +321,7 @@ class HeaderCog(commands.Cog):
         )
         if deletions:
             logger.debug("HEADER: Deleting {} potential header messages", len(deletions))
-            await inconnu.db.headers.bulk_write(deletions)
+            await db.headers.bulk_write(deletions)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message):
@@ -327,7 +330,7 @@ class HeaderCog(commands.Cog):
         async def deletion_handler(message_id: int):
             """Delete the header record."""
             logger.debug("HEADER: Deleting possible header")
-            await inconnu.db.headers.delete_one({"message": message_id})
+            await db.headers.delete_one({"message": message_id})
 
         await interface.raw_message_delete_handler(
             raw_message,
@@ -340,7 +343,7 @@ class HeaderCog(commands.Cog):
     async def on_guild_channel_delete(self, channel):
         """Remove header records from the deleted channel."""
         logger.info("HEADER: Removing header records from deleted channel {}", channel.name)
-        await inconnu.db.headers.delete_many({"channel": channel.id})
+        await db.headers.delete_many({"channel": channel.id})
 
 
 def setup(bot):

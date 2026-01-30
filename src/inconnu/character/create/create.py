@@ -4,6 +4,8 @@ import re
 from types import SimpleNamespace as SN
 
 import inconnu
+import services
+import ui
 from inconnu.character.create import wizard
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/creation"
@@ -14,9 +16,7 @@ async def create(
 ):
     """Parse and handle character creation arguments."""
     if spc and not ctx.user.guild_permissions.administrator:
-        await inconnu.common.present_error(
-            ctx, "You need Administrator permissions to make an SPC."
-        )
+        await ui.embeds.error(ctx, "You need Administrator permissions to make an SPC.")
         return
 
     # Deferring is ugly, but there are multiple API calls we have to wait for:
@@ -41,7 +41,7 @@ async def create(
         # Remove extraenous spaces from the name
         name = re.sub(r"\s+", " ", name)
 
-        if await inconnu.char_mgr.exists(ctx.guild, ctx.user, name, spc):
+        if await services.char_mgr.exists(ctx.guild, ctx.user, name, spc):
             if spc:
                 raise ValueError(f"Sorry, there is already an SPC named `{name}`!")
             raise ValueError(f"Sorry, you have a character named `{name}` already!")
@@ -54,7 +54,7 @@ async def create(
         await character_wizard.begin_chargen()
 
     except ValueError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+        await ui.embeds.error(ctx, err, help_url=__HELP_URL)
 
 
 def __validate_parameters(name, humanity, health, willpower):

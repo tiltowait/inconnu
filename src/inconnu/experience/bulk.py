@@ -7,7 +7,9 @@ import discord
 from discord.ext.commands import Paginator
 from discord.ui import InputText, Modal
 
-import inconnu
+import errors
+import services
+import ui
 
 
 async def bulk_award_xp(ctx):
@@ -73,7 +75,7 @@ class _BulkModal(Modal):
             member = member.mention if member is not None else owner
 
             try:
-                character = await inconnu.char_mgr.fetchone(interaction.guild, owner, char_name)
+                character = await services.char_mgr.fetchone(interaction.guild, owner, char_name)
 
                 # Make sure this isn't a duplicate award
                 match = f"{member} {character.name}"
@@ -92,7 +94,7 @@ class _BulkModal(Modal):
                     # Prevent the character from being awarded again
                     seen.add(match)
 
-            except inconnu.errors.CharacterNotFoundError:
+            except errors.CharacterNotFoundError:
                 self.errors.append(f"**Not found:** {member}: `{char_name}`")
 
         # Finished parsing input
@@ -101,7 +103,7 @@ class _BulkModal(Modal):
         elif self.xp_tasks:
             await self._award_xp(interaction)
         else:
-            await inconnu.common.present_error(interaction, "You didn't supply any input!")
+            await ui.embeds.error(interaction, "You didn't supply any input!")
 
     async def _present_errors(self, interaction):
         """Show the error message. No XP awarded."""
@@ -111,7 +113,7 @@ class _BulkModal(Modal):
         fields = [("Would Award", page) for page in self.would_award] if self.would_award else []
         fields.extend([("Errors", page) for page in self.errors])
 
-        await inconnu.common.present_error(interaction, contents, *fields, ephemeral=False)
+        await ui.embeds.error(interaction, contents, *fields, ephemeral=False)
 
     async def _award_xp(self, interaction):
         """Award the XP."""

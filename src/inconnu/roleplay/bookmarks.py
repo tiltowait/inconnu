@@ -6,8 +6,10 @@ import discord
 from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
-import inconnu
+import db
+import ui
 from ctx import AppCtx
+from utils import get_avatar
 
 
 async def show_bookmarks(ctx: AppCtx):
@@ -25,7 +27,7 @@ async def show_bookmarks(ctx: AppCtx):
         {"$project": {"_id": 1, "title": 1, "date": 1, "url": 1}},
         {"$sort": {"date": -1}},
     ]
-    async with await inconnu.db.rp_posts.aggregate(pipeline) as cursor:
+    async with await db.rp_posts.aggregate(pipeline) as cursor:
         async for bookmark in cursor:
             title = bookmark["title"]
             url = bookmark["url"]
@@ -40,7 +42,7 @@ async def show_bookmarks(ctx: AppCtx):
         embed = discord.Embed(title="RP Bookmarks", description=chunk)
         embed.set_author(
             name=ctx.user.display_name,
-            icon_url=inconnu.get_avatar(ctx.user),
+            icon_url=get_avatar(ctx.user),
         )
         embed.add_field(name="\u200b", value=tip)
 
@@ -56,4 +58,4 @@ async def show_bookmarks(ctx: AppCtx):
         )
         await paginator.respond(ctx.interaction, ephemeral=True)
     else:
-        await inconnu.embeds.error(ctx, tip, title="You have no bookmarks!")
+        await ui.embeds.error(ctx, tip, title="You have no bookmarks!")

@@ -1,13 +1,14 @@
 """misc/remorse.py - Perform a remorse check."""
 
 from types import SimpleNamespace as SN
-from typing import TYPE_CHECKING
 
+import errors
 import inconnu
-from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from inconnu.models import VChar
+import services
+from models import VChar
+from services.haven import haven
+from utils import get_message
+from utils.text import pluralize
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#remorse-checks"
 
@@ -15,7 +16,7 @@ __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#remorse-checks"
 def _can_remorse(character):
     """Raise an exception if we have no stains."""
     if character.stains == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no stains.")
+        raise errors.CharacterError(f"{character.name} has no stains.")
 
 
 @haven(__HELP_URL, _can_remorse, "None of your characters have any stains!")
@@ -31,7 +32,7 @@ async def remorse(ctx, character, minimum=1, lasombra_alt=False):
     await character.save()
 
 
-async def __display_outcome(ctx, character: "VChar", outcome):
+async def __display_outcome(ctx, character: VChar, outcome):
     """Process the remorse result and display to the user."""
     title = "Remorse Success" if outcome.remorseful else "Remorse Fail"
     if outcome.remorseful:
@@ -45,7 +46,7 @@ async def __display_outcome(ctx, character: "VChar", outcome):
         footer += f"\nLasombra alt bane: -{character.bane_severity} dice"
 
     if outcome.overrode:
-        dice = inconnu.common.pluralize(outcome.minimum, "die")
+        dice = pluralize(outcome.minimum, "die")
         footer += f"\nOverride: Rolled {dice} instead of {outcome.nominal}"
 
     footer += "\nDice: " + ", ".join(map(str, outcome.dice))
@@ -60,7 +61,7 @@ async def __display_outcome(ctx, character: "VChar", outcome):
     )
 
 
-def __remorse_roll(character: "VChar", minimum: int, lasombra_alt: bool) -> SN:
+def __remorse_roll(character: VChar, minimum: int, lasombra_alt: bool) -> SN:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
     rolls = max(unfilled, minimum)
@@ -104,8 +105,8 @@ async def __report(ctx, inter, character, remorseful):
         verbed = "failed"
         humanity_str = f"Humanity drops to `{character.humanity}`."
 
-    msg = await inconnu.get_message(inter)
-    await inconnu.common.report_update(
+    msg = await get_message(inter)
+    await services.character_update(
         ctx=ctx,
         msg=msg,
         character=character,

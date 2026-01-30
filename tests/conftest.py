@@ -9,8 +9,6 @@ from beanie import init_beanie
 from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
 
-import inconnu.db
-
 os.environ["PYTEST"] = "1"
 os.environ["ADMIN_SERVER"] = "09876"
 os.environ["SUPPORTER_ROLE"] = "12345"
@@ -20,9 +18,11 @@ os.environ["SUPPORTER_GUILD"] = "54321"
 @pytest.fixture(autouse=True, scope="session")
 async def beanie_fixture():
     """Configures a mock beanie client for all tests."""
+    import db as database
+
     client = cast(AsyncMongoClient, AsyncMongoMockClient())
-    db = client.test
-    await init_beanie(db, document_models=inconnu.db.models())
+    mock_db = client.test
+    await init_beanie(mock_db, document_models=database.models())
 
 
 @pytest.fixture(scope="session")

@@ -5,9 +5,13 @@ from datetime import UTC, datetime, timedelta
 
 import discord
 
-import inconnu
+import constants
+import db
+import services
+import ui
 from ctx import AppCtx
-from inconnu.utils.haven import haven
+from services.haven import haven
+from utils import get_avatar, player_lookup
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
 DT_ST = "D"
@@ -29,7 +33,7 @@ async def statistics(
     """
     try:
         date = datetime.strptime(date_rep, "%Y%m%d")
-        owner = await inconnu.common.player_lookup(ctx, player)
+        owner = await player_lookup(ctx, player)
 
         # As Inconnu was originally made for Cape Town by Night, we will use
         # that server's weekly reset time as the cutoff--but only if we aren't
@@ -49,9 +53,9 @@ async def statistics(
             await __traits_statistics(ctx, character, date, player=owner)
 
     except ValueError:
-        await inconnu.embeds.error(ctx, f"`{date_rep}` is not a valid date.")
+        await ui.embeds.error(ctx, f"`{date_rep}` is not a valid date.")
     except LookupError as err:
-        await inconnu.embeds.error(ctx, err, help_url=__HELP_URL)
+        await ui.embeds.error(ctx, err, help_url=__HELP_URL)
 
 
 @haven(__HELP_URL)
@@ -88,7 +92,7 @@ async def __traits_statistics(ctx, character, date, *, player):
         {"$group": {"_id": "$_id.charid", "docs": {"$push": {"k": "$_id.pool", "v": "$count"}}}},
         {"$replaceRoot": {"newRoot": {"_id": "$_id", "traits": {"$arrayToObject": ["$docs"]}}}},
     ]
-    async with await inconnu.db.rolls.aggregate(pipeline) as cursor:
+    async with await db.rolls.aggregate(pipeline) as cursor:
         raw_stats = await cursor.to_list(1)
 
     if raw_stats:
@@ -121,9 +125,9 @@ async def __display_trait_statistics(ctx, character, stats, date, owner):
         title = f"{character.name}: Trait successes since {discord.utils.format_dt(date, DT_ST)}"
 
     embed = discord.Embed(title=title)
-    embed.set_author(name=owner.display_name, icon_url=inconnu.get_avatar(owner))
+    embed.set_author(name=owner.display_name, icon_url=get_avatar(owner))
 
-    for group, subgroups in inconnu.constants.GROUPED_TRAITS.items():
+    for group, subgroups in constants.GROUPED_TRAITS.items():
         embed.add_field(name="​", value=f"**{group}**", inline=False)
         for subgroup, traits in subgroups.items():
             trait_list = []
@@ -149,7 +153,7 @@ async def __display_trait_statistics(ctx, character, stats, date, owner):
 
 async def __general_statistics(ctx, date, owner):
     """View the roll statistics for the user's characters."""
-    col = inconnu.db.characters
+    col = db.characters
     pipeline = [
         {
             "$match": {
@@ -223,7 +227,7 @@ async def __general_statistics(ctx, date, owner):
             )
         return
 
-    if await inconnu.settings.accessible(ctx):
+    if await services.settings.accessible(ctx):
         await __display_text(ctx, results, date)
     else:
         await __display_embed(ctx, results, date, owner)
@@ -263,7 +267,7 @@ async def __display_embed(ctx, results, date, owner):
         fmt_date = "Since " + discord.utils.format_dt(date, DT_ST)
 
     embed = discord.Embed(title=f"Roll Statistics {fmt_date}")
-    embed.set_author(name=owner.display_name, icon_url=inconnu.get_avatar(owner))
+    embed.set_author(name=owner.display_name, icon_url=get_avatar(owner))
 
     for character in results:
         outcomes = defaultdict(int)

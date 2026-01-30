@@ -5,7 +5,7 @@ import os
 import aiohttp
 import discord
 
-import inconnu
+import ui
 
 CHANGELOG = "https://github.com/tiltowait/inconnu/releases/latest"
 
@@ -35,7 +35,7 @@ async def show_changelog(ctx: discord.ApplicationContext, hidden: bool):
         await paginator.respond(ctx.interaction, ephemeral=hidden)
 
     except (aiohttp.ClientError, KeyError):
-        await inconnu.embeds.error(ctx, "Unable to fetch changelog.")
+        await ui.embeds.error(ctx, "Unable to fetch changelog.")
 
 
 async def fetch_changelog() -> tuple[str, str]:

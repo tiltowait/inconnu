@@ -1,18 +1,19 @@
 """character/display/display.py - Tools for displaying characters."""
 
 from enum import StrEnum
-from typing import TYPE_CHECKING
 
 import discord
 
-import inconnu
+import services
+import ui
+from constants import Damage
 from ctx import AppCtx
 from inconnu.character.display import trackmoji
-from inconnu.constants import Damage
-from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from inconnu.models import VChar
+from models import VChar
+from services.haven import haven
+from utils import get_avatar
+from utils.text import pluralize
+from utils.urls import profile_url
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/displaying"
 
@@ -39,7 +40,7 @@ class DisplayField(StrEnum):
 @haven(__HELP_URL)
 async def display_requested(
     ctx: AppCtx,
-    character: "VChar",
+    character: VChar,
     message: str | None = None,
     player: discord.Member | None = None,
     ephemeral=False,
@@ -51,7 +52,7 @@ async def display_requested(
         owner=player,
         message=message,
         footer=None,
-        view=inconnu.views.TraitsView(character, ctx.user),
+        view=ui.views.TraitsView(character, ctx.user),
         ephemeral=ephemeral,
         thumbnail=character.profile_image_url,
     )
@@ -59,7 +60,7 @@ async def display_requested(
 
 async def display(
     ctx: AppCtx,
-    character: "VChar",
+    character: VChar,
     title: str | None = None,
     message: str | None = None,
     footer: str | None = None,
@@ -105,7 +106,7 @@ async def display(
         msg_contents["ephemeral"] = ephemeral
         msg = await ctx.respond(**msg_contents)
 
-        if isinstance(view, inconnu.views.DisablingView):
+        if isinstance(view, ui.views.DisablingView):
             view.message = msg
 
         return msg
@@ -114,14 +115,14 @@ async def display(
     if view is None:
         # We need to remove the view
         msg_contents["view"] = None
-    elif isinstance(view, inconnu.views.DisablingView):
+    elif isinstance(view, ui.views.DisablingView):
         view.message = ctx.message
     return await ctx.message.edit(**msg_contents)
 
 
 async def __get_embed(
     ctx,
-    character: "VChar",
+    character: VChar,
     title: str | None = None,
     message: str | None = None,
     footer: str | None = None,
@@ -138,25 +139,25 @@ async def __get_embed(
     # Begin building the embed
     title = title or character.name
     if title == character.name:
-        profile_url = inconnu.profile_url(character.id_str)
+        profile = profile_url(character.id_str)
     else:
-        profile_url = None
+        profile = None
 
     embed = discord.Embed(
         title=title,
         description=message or "",
         color=color or None,
-        url=profile_url,
+        url=profile,
     )
 
     embed.set_author(
         name=owner.display_name if title in (None, character.name) else character.name,
-        icon_url=inconnu.get_avatar(owner),
+        icon_url=get_avatar(owner),
     )
     embed.set_footer(text=footer or None)
     embed.set_thumbnail(url=thumbnail or None)
 
-    can_emoji = await inconnu.settings.can_emoji(ctx)
+    can_emoji = await services.settings.can_emoji(ctx)
 
     for field, parameter in fields:
         # We use optionals because ghouls and mortals don't have every parameter
@@ -210,7 +211,7 @@ def __stat_repr(can_emoji, function, *stats):
         if can_emoji:
             return function(humanity, stains)
 
-        stains = inconnu.common.pluralize(stains, "Stain")
+        stains = pluralize(stains, "Stain")
 
         return f"{humanity} ({stains})"
 

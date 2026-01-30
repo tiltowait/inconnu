@@ -7,12 +7,15 @@ import discord
 from discord.ui import Button, View
 from loguru import logger
 
+import errors
 import inconnu
+import ui
 from ctx import AppCtx
-from inconnu import common
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
 from inconnu.vr import display_outcome, perform_roll
+from services.haven import Haven
+from utils import get_avatar
 
 __HUNT_LISTENERS = {}
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/rolling"
@@ -29,7 +32,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
             raise ValueError("Macro names may only contain letters and underscores.")
 
         # Get the character
-        haven = inconnu.utils.Haven(
+        haven = Haven(
             ctx,
             character=character,
             char_filter=lambda c: c.find_macro(macro_name),
@@ -61,9 +64,9 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
 
             try:
                 outcome = await perform_roll(character, parameters)
-            except inconnu.errors.TraitNotFound as err:
+            except errors.TraitNotFound as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
-                await common.present_error(ctx, msg, character=character.name)
+                await ui.embeds.error(ctx, msg, character=character.name)
                 return
 
         # We show the rouse check first, because display_outcome() is blocking
@@ -88,7 +91,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
                     __HUNT_LISTENERS[outcome.id] = None
 
         if empty_macro:
-            await common.present_error(
+            await ui.embeds.error(
                 ctx, f"Your `{macro.name}` macro is empty!", character=character.name
             )
         elif macro.name.lower() == "bol":
@@ -101,7 +104,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
         err += "\n**Usage:** `/vm <macro_name> [hunger] [difficulty]`"
         err += "\n\nYou may add simple math after `macro_name`."
         err += "\n `hunger` and `difficulty` are optional."
-        await inconnu.embeds.error(ctx, err, help=__HELP_URL)
+        await ui.embeds.error(ctx, err, help=__HELP_URL)
         return
 
 
@@ -159,7 +162,7 @@ async def __slake(ctx, character, outcome):
         )
         embed.set_author(
             name=ctx.user.display_name,
-            icon_url=inconnu.get_avatar(ctx.user),
+            icon_url=get_avatar(ctx.user),
         )
         embed.set_footer(
             text="Red indicates harmful drinks (p.212). Slaking to 0 Hunger kills the victim."

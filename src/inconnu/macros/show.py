@@ -5,10 +5,13 @@ from types import SimpleNamespace
 import discord
 from discord.ext import pages
 
-import inconnu
+import errors
+import ui
 from ctx import AppCtx
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
+from utils import get_avatar
+from utils.text import paginate
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/listing"
 
@@ -16,7 +19,7 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/macros/listing"
 def _has_macros(character: VChar):
     """Raises an error if the character has no macros."""
     if not character.macros:
-        raise inconnu.errors.MacroError(f"{character.name} has no macros!")
+        raise errors.MacroError(f"{character.name} has no macros!")
 
 
 @haven(__HELP_URL, _has_macros, "None of your characters have any macros!")
@@ -24,7 +27,7 @@ async def show(ctx: AppCtx, character: VChar):
     """Show all of a character's macros."""
     macros = character.macros
     if not macros:
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx, f"{character.name} has no macros!", character=character.name, help=__HELP_URL
         )
         return
@@ -35,12 +38,12 @@ async def show(ctx: AppCtx, character: VChar):
 async def __display_macros(ctx, char_name, macros):
     """Show a user their character's macros in an embed."""
     fields = __generate_fields(macros)
-    raw_pages = inconnu.common.paginate(1200, *fields)
+    raw_pages = paginate(1200, *fields)
 
     _pages = []
     for page in raw_pages:
         embed = discord.Embed(title="Macros")
-        embed.set_author(name=char_name, icon_url=inconnu.get_avatar(ctx.user))
+        embed.set_author(name=char_name, icon_url=get_avatar(ctx.user))
         embed.set_footer(text="To roll a macro, use the /vm command.")
 
         for field in page:

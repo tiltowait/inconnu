@@ -8,8 +8,12 @@ import discord
 from discord.ui import Button
 
 import inconnu
+import services
 from config import web_asset
 from inconnu.vr import dicemoji
+from ui.views import DisablingView
+from utils import get_avatar, get_message
+from utils.text import contains_digit, de_camel
 
 
 class _ButtonID(StrEnum):
@@ -26,7 +30,7 @@ class _ButtonID(StrEnum):
         return f"{self} {uuid.uuid4()}"
 
 
-class _RollControls(inconnu.views.DisablingView):
+class _RollControls(DisablingView):
     """A View that has a dynamic number of roll buttons."""
 
     def __init__(self, has_character, callback, timeout_handler, owner, buttons):
@@ -66,7 +70,7 @@ class _RollControls(inconnu.views.DisablingView):
         else:
             button_id = interaction.data["custom_id"].split()[0]  # Remove the unique ID
 
-            if inconnu.common.contains_digit(button_id):
+            if contains_digit(button_id):
                 # This was a surge button, which are always last. Let's disable them
                 self.children[-1].disabled = True
                 self.children[-1].style = discord.ButtonStyle.secondary
@@ -159,7 +163,7 @@ class RollDisplay:
 
         if ctx.guild is not None:
             if not self.rerolled:
-                msg = await inconnu.get_message(inter)
+                msg = await get_message(inter)
                 msg_id = msg.id
             else:
                 msg_id = None
@@ -198,9 +202,9 @@ class RollDisplay:
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
             )
 
-        elif inconnu.common.contains_digit(button_id):
+        elif contains_digit(button_id):
             if button_id == self.character.id_str:
-                # elif inconnu.common.contains_digit(button_id):  # Surge buttons are just charids
+                # elif contains_digit(button_id):  # Surge buttons are just charids
                 self.surged = True
                 await inconnu.misc.rouse(btn, self.character, 1, "Surge", False)
 
@@ -272,9 +276,9 @@ class RollDisplay:
         """The icon for the embed."""
         if self.character is not None:
             guild_icon = self.ctx.guild.icon or ""
-            icon = inconnu.get_avatar(self.owner) if self.character.is_pc else guild_icon
+            icon = get_avatar(self.owner) if self.character.is_pc else guild_icon
         else:
-            icon = inconnu.get_avatar(self.owner)
+            icon = get_avatar(self.owner)
 
         return icon
 
@@ -315,7 +319,7 @@ class RollDisplay:
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        can_emoji = await inconnu.settings.can_emoji(self.ctx)
+        can_emoji = await services.settings.can_emoji(self.ctx)
         if self.outcome.pool <= 30 and can_emoji:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
@@ -345,7 +349,7 @@ class RollDisplay:
 
         if self.outcome.pool_str:
             # Make pool strings nicer to read
-            splitted = inconnu.utils.de_camel(self.outcome.pool_str).split()
+            splitted = de_camel(self.outcome.pool_str).split()
 
             # Uppercase each word in the pool. We can't use .title(), because
             # .title() will make everything else lowercase. "XYZ" would become

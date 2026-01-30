@@ -5,9 +5,8 @@ from datetime import UTC, datetime
 import discord
 from pymongo import ReturnDocument, UpdateOne
 
-import inconnu
-from inconnu.models import VChar
-from models import VGuild
+import db
+from models import VChar, VGuild
 
 
 async def log_roll(
@@ -27,7 +26,7 @@ async def log_roll(
         charid (VChar): The character that made the roll (optional)
         outcome (Roll): The roll's parameters and outcome
     """
-    rolls = inconnu.db.rolls
+    rolls = db.rolls
 
     if await rolls.find_one({"_id": outcome.id}) is None:
         roll = _gen_roll(guild, channel, user, message, char, outcome, comment)
@@ -39,7 +38,7 @@ async def log_roll(
 
 async def toggle_roll_stats(message: int) -> bool | None:
     """Toggle whether a roll should be used in statistics."""
-    ret = await inconnu.db.rolls.find_one_and_update(
+    ret = await db.rolls.find_one_and_update(
         {"message": message},
         [{"$set": {"use_in_stats": {"$not": "$use_in_stats"}}}],
         return_document=ReturnDocument.AFTER,
@@ -56,12 +55,12 @@ async def roll_message_deleted(*message_ids):
     for message_id in message_ids:
         updates.append(UpdateOne({"message": message_id}, {"$set": {"use_in_stats": False}}))
 
-    await inconnu.db.rolls.bulk_write(updates)
+    await db.rolls.bulk_write(updates)
 
 
 async def delete_rolls_in_channel(channel):
     """Delete all rolls in a channel."""
-    await inconnu.db.rolls.update_many({"channel": channel.id}, {"$set": {"use_in_stats": False}})
+    await db.rolls.update_many({"channel": channel.id}, {"$set": {"use_in_stats": False}})
 
 
 async def guild_joined(guild: discord.Guild):

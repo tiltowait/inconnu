@@ -4,8 +4,10 @@ import discord
 from discord.ext import pages
 from loguru import logger
 
-import inconnu
-from inconnu.utils.haven import haven
+import errors
+import ui
+from services.haven import haven
+from utils.text import clean_text
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#profile"
 
@@ -20,7 +22,7 @@ async def edit_biography(ctx, character):
 def _has_profile(character):
     """Raises an error if the character doesn't have a profile."""
     if not character.has_biography:
-        raise inconnu.errors.CharacterError(f"{character.name} doesn't have a profile!")
+        raise errors.CharacterError(f"{character.name} doesn't have a profile!")
 
 
 @haven(__HELP_URL, _has_profile, "None of your characters have a profile!", True)
@@ -39,7 +41,7 @@ async def show_biography(ctx, character, player, ephemeral=False):
 
 def __biography_paginator(ctx, character, owner):
     """Display the biography in an embed."""
-    embed = inconnu.embeds.VCharEmbed(
+    embed = ui.embeds.VCharEmbed(
         ctx,
         character,
         owner,
@@ -112,10 +114,10 @@ class _CharacterBio(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Finalize the modal."""
-        biography = inconnu.utils.clean_text(self.children[0].value)
-        description = inconnu.utils.clean_text(self.children[1].value)
+        biography = clean_text(self.children[0].value)
+        description = clean_text(self.children[1].value)
 
-        embed = inconnu.embeds.VCharEmbed(
+        embed = ui.embeds.VCharEmbed(
             interaction,
             self.character,
             description="Profile updated!",

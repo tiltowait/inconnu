@@ -4,11 +4,13 @@ import discord
 from loguru import logger
 
 import api
-import inconnu
+import db
+import errors
+import ui
 from ctx import AppCtx
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
-from inconnu.views import ReportingView
+from models import VChar
+from services.haven import haven
+from ui.views import ReportingView
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 
@@ -19,7 +21,7 @@ def _has_image(character):
         # We need to make sure the image isn't an empty string.
         if image:
             return
-    raise inconnu.errors.CharacterError(
+    raise errors.CharacterError(
         f"{character.name} doesn't have any images! Upload via `/character image upload`."
     )
 
@@ -149,7 +151,7 @@ class ImagePager(ReportingView):
 
     async def respond(self):
         """Display the pager."""
-        embed = inconnu.embeds.VCharEmbed(
+        embed = ui.embeds.VCharEmbed(
             self.ctx,
             self.character,
             self.owner,
@@ -203,7 +205,7 @@ class ImagePager(ReportingView):
 
     async def _display_no_images(self, interaction: discord.Interaction):
         """Inform the character has no images if the last image is deleted."""
-        embed = inconnu.embeds.VCharEmbed(
+        embed = ui.embeds.VCharEmbed(
             self.ctx,
             self.character,
             self.owner,
@@ -267,7 +269,7 @@ class ImagePager(ReportingView):
             await self.goto_page(page, interaction)
 
         if await api.delete_single_faceclaim(image_url):
-            await inconnu.db.upload_log.update_one(
+            await db.upload_log.update_one(
                 {"url": image_url}, {"$set": {"deleted": discord.utils.utcnow()}}
             )
         else:

@@ -2,10 +2,11 @@
 
 from loguru import logger
 
+import constants
 import inconnu
 from ctx import AppCtx
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#awakening"
 
@@ -30,7 +31,7 @@ async def awaken(ctx: AppCtx, character: VChar):
             message += "\n**No** Hunger gain."
         else:
             message += "\nRouse failure. "
-            color = inconnu.constants.ROUSE_FAIL_COLOR
+            color = constants.ROUSE_FAIL_COLOR
 
             if character.hunger == 5:
                 message += "**Enter torpor!**"

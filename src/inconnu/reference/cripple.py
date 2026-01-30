@@ -6,6 +6,7 @@ import discord
 
 import inconnu
 from ctx import AppCtx
+from utils import get_avatar
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#crippling-injuries"
 
@@ -23,7 +24,7 @@ async def __display_injury(ctx, damage, injuries):
     embed = discord.Embed(
         title="Crippling Injury", description=f"`{damage}` total Aggravated damage."
     )
-    embed.set_author(name=ctx.user.display_name, icon_url=inconnu.get_avatar(ctx.user))
+    embed.set_author(name=ctx.user.display_name, icon_url=get_avatar(ctx.user))
 
     for injury in injuries:
         embed.add_field(name=injury.injury, value=injury.effect, inline=False)

@@ -6,13 +6,13 @@ import pytest
 
 from ctx import AppCtx
 from inconnu.misc.stain import stain
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 async def test_stain_delta_zero_fails(vamp: VChar, ctx: AppCtx):
     """Test that applying 0 stains raises an error."""
     # stain() doesn't use the filter, so we call it directly
-    with patch("inconnu.embeds.error", new_callable=AsyncMock) as mock_error:
+    with patch("ui.embeds.error", new_callable=AsyncMock) as mock_error:
         await stain(ctx, vamp, 0, player=ctx.user)
 
         # Should call error embed

@@ -1,14 +1,14 @@
 """misc/aggheal.py - Heal aggravated damage."""
 
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
 
+import errors
 import inconnu
-from inconnu.constants import ROUSE_FAIL_COLOR, Damage
-from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from inconnu.models import VChar
+import services
+from constants import ROUSE_FAIL_COLOR, Damage
+from models import VChar
+from services.haven import haven
+from utils import get_message
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#aggravated-healing"
 
@@ -16,7 +16,7 @@ __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#aggravated-heal
 def _can_aggheal(character):
     """Raise an error if the character can't agg heal."""
     if character.aggravated_hp == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no Aggravated Health damage!")
+        raise errors.CharacterError(f"{character.name} has no Aggravated Health damage!")
 
 
 @haven(__HELP_URL, _can_aggheal, "None of your characters have Aggravated Health damage.")
@@ -39,8 +39,8 @@ async def aggheal(ctx, character):
             update_msg += "."
 
     inter = await __display_outcome(ctx, character, outcome)
-    msg = await inconnu.get_message(inter)
-    await inconnu.common.report_update(
+    msg = await get_message(inter)
+    await services.character_update(
         ctx=ctx,
         msg=msg,
         character=character,
@@ -49,7 +49,7 @@ async def aggheal(ctx, character):
     )
 
 
-async def __heal(character: "VChar"):
+async def __heal(character: VChar):
     """
     Heal agg damage.
     Does not check if the character has agg damage!

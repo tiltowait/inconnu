@@ -8,7 +8,11 @@ from discord import option
 from discord.commands import slash_command
 from discord.ext import commands
 
+import constants
+import errors
 import inconnu
+import services
+import ui
 from inconnu.options import char_option
 
 if TYPE_CHECKING:
@@ -47,9 +51,9 @@ class MiscCommands(commands.Cog):
         embed.set_author(name=ctx.bot.user.display_name)
         embed.set_thumbnail(url=ctx.bot.user.display_avatar)
         site = discord.ui.Button(label="Website", url="https://www.inconnu.app")
-        support = discord.ui.Button(label="Support", url=inconnu.constants.SUPPORT_URL)
+        support = discord.ui.Button(label="Support", url=constants.SUPPORT_URL)
 
-        await ctx.respond(embed=embed, view=inconnu.views.ReportingView(site, support))
+        await ctx.respond(embed=embed, view=ui.views.ReportingView(site, support))
 
     @slash_command()
     @option("ceiling", description="The roll's highest possible value", min_value=2, default=100)
@@ -75,13 +79,11 @@ class MiscCommands(commands.Cog):
     ):
         """Reassign a character from one player to another."""
         if current_owner.id == new_owner.id:
-            await inconnu.common.present_error(
-                ctx, "`current_owner` and `new_owner` can't be the same."
-            )
+            await ui.embeds.error(ctx, "`current_owner` and `new_owner` can't be the same.")
             return
 
         try:
-            xfer = await inconnu.char_mgr.fetchone(ctx.guild, current_owner.id, character)
+            xfer = await services.char_mgr.fetchone(ctx.guild, current_owner.id, character)
 
             if ctx.guild.id == xfer.guild and current_owner.id == xfer.user:
                 current_mention = current_owner.mention
@@ -89,19 +91,17 @@ class MiscCommands(commands.Cog):
 
                 msg = f"Transferred **{xfer.name}** from {current_mention} to {new_mention}."
                 await asyncio.gather(
-                    inconnu.char_mgr.transfer(xfer, current_owner, new_owner), ctx.respond(msg)
+                    services.char_mgr.transfer(xfer, current_owner, new_owner), ctx.respond(msg)
                 )
                 await self.bot.transfer_premium(new_owner, xfer)
 
             else:
-                await inconnu.common.present_error(
-                    ctx, f"{current_owner.display_name} doesn't own {xfer.name}!"
-                )
+                await ui.embeds.error(ctx, f"{current_owner.display_name} doesn't own {xfer.name}!")
 
-        except inconnu.errors.CharacterNotFoundError:
-            await inconnu.common.present_error(ctx, "Character not found.")
+        except errors.CharacterNotFoundError:
+            await ui.embeds.error(ctx, "Character not found.")
         except (LookupError, ValueError) as err:
-            await inconnu.common.present_error(ctx, err)
+            await ui.embeds.error(ctx, err)
 
 
 def setup(bot):

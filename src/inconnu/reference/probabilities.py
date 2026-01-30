@@ -5,9 +5,14 @@ from types import SimpleNamespace as SN
 
 import discord
 
+import db
+import errors
 import inconnu
+import services
+import ui
 from ctx import AppCtx
 from inconnu import vr as roll
+from services.haven import Haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
 __STRATEGIES = {
@@ -27,7 +32,7 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
                 return
 
             syntax = " ".join(syntax.split())
-            haven = inconnu.utils.Haven(
+            haven = Haven(
                 ctx,
                 character=character,
                 tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",
@@ -46,8 +51,8 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
 
         await __display_embed(ctx, params, strategy, probabilities)
 
-    except (SyntaxError, ValueError, inconnu.errors.TraitError) as err:
-        await inconnu.common.present_error(ctx, err, character=character, help_url=__HELP_URL)
+    except (SyntaxError, ValueError, errors.TraitError) as err:
+        await ui.embeds.error(ctx, err, character=character, help_url=__HELP_URL)
 
 
 async def __display_embed(ctx, params, strategy: str, probs: dict):
@@ -79,7 +84,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     # Total Faiiure
     # Bestial (Opt)
 
-    can_emoji = await inconnu.settings.can_emoji(ctx)
+    can_emoji = await services.settings.can_emoji(ctx)
     breakdown = []
 
     if probs["critical"] != 0:
@@ -120,7 +125,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
 
 async def __get_probabilities(params, strategy):
     """Retrieve the probabilities from storage or, if not calculated yet, generate them."""
-    col = inconnu.db.probabilities
+    col = db.probabilities
 
     probs = await col.find_one(
         {

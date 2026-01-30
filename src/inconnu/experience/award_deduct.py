@@ -4,10 +4,11 @@ import asyncio
 
 import discord
 
-import inconnu
+import ui
 from ctx import AppCtx
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
+from utils import get_avatar
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
@@ -32,7 +33,7 @@ async def award_or_deduct(
         else:
             errmsg = f"**{character.name}** only has `{character.experience.unspent}` xp to spend!"
 
-        await inconnu.common.present_error(ctx, errmsg)
+        await ui.embeds.error(ctx, errmsg)
         return
 
     character.apply_experience(amount, scope, reason, ctx.author.id)
@@ -53,7 +54,7 @@ def __get_embed(ctx, player, character, amount, scope, reason):
     title = f"{verb} {abs(amount)} {scope.title()} XP"
 
     embed = discord.Embed(title=title)
-    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
+    embed.set_author(name=character.name, icon_url=get_avatar(player))
     embed.set_footer(text="To view: /experience log")
 
     embed.add_field(name="Reason", value=reason, inline=False)

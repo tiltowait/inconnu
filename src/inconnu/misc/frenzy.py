@@ -2,9 +2,13 @@
 
 import discord
 
+import errors
 import inconnu
+import services
 from config import web_asset
-from inconnu.utils.haven import haven
+from services.haven import haven
+from utils import get_avatar, get_message
+from utils.text import pluralize
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#frenzy-checks"
 
@@ -20,7 +24,7 @@ __FRENZY_BONUSES.update({str(n): n for n in range(1, 8)})
 def _can_frenzy(character):
     """Raises an exception if the character can't frenzy."""
     if not character.is_vampire:
-        raise inconnu.errors.CharacterError("Only vampires can frenzy!")
+        raise errors.CharacterError("Only vampires can frenzy!")
 
 
 @haven(__HELP_URL, _can_frenzy, "None of your characters are capable of frenzying.")
@@ -50,7 +54,7 @@ async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
         failures = min(outcome.normal.failures, 3)
         outcome.reroll("reroll_failures")
 
-        dice = inconnu.common.pluralize(failures, "die")
+        dice = pluralize(failures, "die")
         footer.append(f"Re-rolled {dice} from {bonus}")
 
     if outcome.total_successes >= difficulty:
@@ -72,7 +76,7 @@ async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
     footer = "\n".join(footer)
 
     # Display the message
-    if await inconnu.settings.accessible(ctx):
+    if await services.settings.accessible(ctx):
         # Build the text version of the message
         name = character.name
         content = f"**{name}: Frenzy {title} (DC {difficulty})**\n{message}\n*{footer}*"
@@ -82,7 +86,7 @@ async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
         msg_content = {"embed": embed}
 
     inter = await ctx.respond(**msg_content)
-    msg = await inconnu.get_message(inter)
+    msg = await get_message(inter)
     await __generate_report_task(ctx, msg, character, outcome)
     await character.save()
 
@@ -91,7 +95,7 @@ def __get_embed(ctx, title: str, message: str, name: str, difficulty: str, foote
     """Display the frenzy outcome in an embed."""
     embed = discord.Embed(title=title, description=message, colour=color)
     author_field = f"{name}: Frenzy vs DC {difficulty}"
-    embed.set_author(name=author_field, icon_url=inconnu.get_avatar(ctx.user))
+    embed.set_author(name=author_field, icon_url=get_avatar(ctx.user))
     embed.set_footer(text=footer)
 
     if title == "Failure!":
@@ -104,7 +108,7 @@ async def __generate_report_task(ctx, msg, character, outcome):
     """Generate a report for the update channel."""
     verbed = "passed" if outcome.is_successful else "failed"
 
-    await inconnu.common.report_update(
+    await services.character_update(
         ctx=ctx,
         msg=msg,
         character=character,

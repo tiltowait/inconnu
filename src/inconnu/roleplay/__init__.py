@@ -2,7 +2,7 @@
 
 import discord
 
-import inconnu.models
+import models
 from inconnu.roleplay.bookmarks import show_bookmarks
 from inconnu.roleplay.delete import delete_message_chain
 from inconnu.roleplay.post import create_post as post
@@ -22,7 +22,7 @@ __all__ = (
 
 
 def post_embed(
-    post_doc: inconnu.models.RPPost,
+    post_doc: models.RPPost,
     author: str = None,
     footer: str = None,
     icon_url=None,

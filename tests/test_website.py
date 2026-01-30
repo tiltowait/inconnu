@@ -11,11 +11,10 @@ from mongomock_motor import AsyncMongoMockClient
 from pydantic import AnyUrl
 from pymongo import AsyncMongoClient
 
-import inconnu.db
-from inconnu.constants import Damage
-from inconnu.models.rpheader import DamageSubdoc, HeaderSubdoc
-from inconnu.models.rppost import PostHistoryEntry, RPPost
-from inconnu.models.vchar import VChar
+from constants import Damage
+from models.rpheader import DamageSubdoc, HeaderSubdoc
+from models.rppost import PostHistoryEntry, RPPost
+from models.vchar import VChar
 from server import app
 
 # Static test data IDs
@@ -32,11 +31,13 @@ POST_ID_MISSING = PydanticObjectId("6367ee5eaa29004c72953016")
 async def mock_beanie():
     """Initialize mock database for each test."""
     client = cast(AsyncMongoClient, AsyncMongoMockClient())
-    db = client.get_database("test")
-    await init_beanie(db, document_models=inconnu.db.models())
+    import db as database
+
+    mock_db = client.get_database("test")
+    await init_beanie(mock_db, document_models=database.models())
 
     # Patch the global database references to use mock database
-    with patch.object(inconnu.db, "characters", db.characters):
+    with patch.object(database, "characters", mock_db.characters):
         yield
 
 

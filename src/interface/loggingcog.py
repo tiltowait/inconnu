@@ -5,7 +5,8 @@ from datetime import UTC, datetime
 from discord.ext import commands
 from loguru import logger
 
-import inconnu.utils
+import db
+from utils import command_options
 
 
 class LoggingCog(commands.Cog):
@@ -26,11 +27,11 @@ class LoggingCog(commands.Cog):
             ctx.user.id,
             location,
             ctx.guild_id,
-            inconnu.utils.command_options(ctx.interaction),
+            command_options(ctx.interaction),
         )
 
         # Log to the database
-        await inconnu.db.command_log.insert_one(
+        await db.command_log.insert_one(
             {
                 "guild": ctx.guild_id,
                 "user": ctx.user.id,

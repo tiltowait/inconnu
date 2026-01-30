@@ -2,7 +2,7 @@
 
 import re
 
-from inconnu.constants import RESERVED_TRAITS
+from constants import RESERVED_TRAITS
 
 VALID_TRAIT_PATTERN = re.compile(r"^[A-Za-z_\']+$")
 

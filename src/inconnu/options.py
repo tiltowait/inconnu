@@ -3,7 +3,7 @@
 import discord
 from discord.commands import Option, OptionChoice
 
-import inconnu
+import services
 
 
 def ratings(low, high) -> list:
@@ -70,10 +70,10 @@ async def _available_characters(ctx):
 
         if user.guild_permissions.administrator:
             # Add SPCs
-            spcs = await inconnu.char_mgr.fetchall(guild.id, ctx.bot.user.id)
+            spcs = await services.char_mgr.fetchall(guild.id, ctx.bot.user.id)
             spcs = [(spc.name, spc.id_str) for spc in spcs]
 
-    chars = await inconnu.char_mgr.fetchall(guild.id, int(owner))
+    chars = await services.char_mgr.fetchall(guild.id, int(owner))
     chars = [(char.name, char.id_str) for char in chars]
     chars.extend(spcs)
 

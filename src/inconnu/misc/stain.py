@@ -1,8 +1,12 @@
 """misc/stain.py - Apply or remove stains from characters."""
 
 import inconnu
-from inconnu.constants import Damage
-from inconnu.utils.haven import haven
+import services
+import ui
+from constants import Damage
+from services.haven import haven
+from utils import get_message
+from utils.text import pluralize
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#applying-stains"
 
@@ -39,7 +43,7 @@ async def stain(ctx, character, delta, *, player):
             footer = "Degeneration! -2 dice to all rolls. Remains until /remorse or auto-drop."
 
         title = "Added" if delta > 0 else "Removed"
-        title = f"{title} {inconnu.common.pluralize(abs(delta), 'Stain')}"
+        title = f"{title} {pluralize(abs(delta), 'Stain')}"
 
         inter = await inconnu.character.display(
             ctx, character, title, message=message, owner=player, fields=fields, footer=footer
@@ -49,7 +53,7 @@ async def stain(ctx, character, delta, *, player):
 
     except ValueError as err:
         # Delta was 0
-        await inconnu.embeds.error(ctx, err, help=__HELP_URL)
+        await ui.embeds.error(ctx, err, help=__HELP_URL)
 
 
 async def __report(ctx, inter, character, delta):
@@ -57,9 +61,9 @@ async def __report(ctx, inter, character, delta):
     delta = abs(delta)
     stains = "Stains" if delta > 1 else "Stain"
 
-    msg = await inconnu.get_message(inter)
+    msg = await get_message(inter)
 
-    await inconnu.common.report_update(
+    await services.character_update(
         ctx=ctx,
         msg=msg,
         character=character,

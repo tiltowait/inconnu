@@ -2,18 +2,20 @@
 
 import asyncio
 from collections import OrderedDict
-from typing import TYPE_CHECKING
 
 import discord
 from discord.ui import Button
 
+import constants
 import inconnu
+import services
+import ui
 from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
 from inconnu.character.update import paramupdate
-
-if TYPE_CHECKING:
-    from inconnu.models import VChar
+from models import VChar
+from services.haven import Haven
+from utils import get_message, parse_parameters
 
 __MATCHES = {}
 
@@ -57,12 +59,8 @@ async def update(
 
     parameters = " ".join(parameters.split())
 
-    # This will get overwritten, but we need it now in case we run into trouble
-    # trying to parse the input
-    human_readable = parameters
-
     try:
-        haven = inconnu.utils.Haven(
+        haven = Haven(
             ctx,
             character=character,
             owner=player,
@@ -71,8 +69,7 @@ async def update(
         )
         character = await haven.fetch()
 
-        parameters = inconnu.utils.parse_parameters(parameters, True)
-        human_readable = " ".join([f"{k}={v}" for k, v in parameters.items()])
+        parameters = parse_parameters(parameters, True)
         parameters = __validate_parameters(parameters)
         updates = []
 
@@ -86,22 +83,11 @@ async def update(
         if (impairment := character.impairment) is not None:
             updates.append(impairment)
 
-        tasks = [
-            character.save(),
-            inconnu.log.log_event(
-                "update",
-                user=ctx.user.id,
-                guild=ctx.guild.id,
-                charid=character.id_str,
-                syntax=human_readable,
-            ),
-        ]
-
         # Ignore generated output if we got a custom message
         if update_message is None:
             update_message = "\n".join(map(lambda u: f"* {u}", updates))  # Give them bullet points
 
-        tasks.append(
+        inter, _ = await asyncio.gather(
             display(
                 ctx,
                 character,
@@ -110,13 +96,12 @@ async def update(
                 owner=haven.owner,
                 message=update_message,
                 thumbnail=character.profile_image_url if not fields else None,
-            )
+            ),
+            character.save(),
         )
-
-        _, _, inter = await asyncio.gather(*tasks)
         if update_message:  # May not always be true in the future
-            msg = await inconnu.get_message(inter)
-            await inconnu.common.report_update(
+            msg = await get_message(inter)
+            await services.character_update(
                 ctx=ctx,
                 msg=msg,
                 character=character,
@@ -125,20 +110,9 @@ async def update(
             )
 
     except (SyntaxError, ValueError) as err:
-        if isinstance(character, inconnu.models.VChar):
+        if isinstance(character, VChar):
             character.rollback()
-
-            await asyncio.gather(
-                inconnu.log.log_event(
-                    "update_error",
-                    user=ctx.user.id,
-                    guild=ctx.guild.id,
-                    charid=character.id_str,
-                    syntax=human_readable,
-                ),
-                update_help(ctx, err),
-                # character.reload(),  # clear_modified() doesn't reset the fields
-            )
+            await update_help(ctx, err)
 
 
 def __validate_parameters(parameters):
@@ -162,7 +136,7 @@ def __validate_parameters(parameters):
     return validated
 
 
-async def __update_character(ctx, character: "VChar", param: str, value: str) -> str:
+async def __update_character(ctx: AppCtx, character: VChar, param: str, value: str) -> str:
     """
     Update one of a character's parameters.
     Args:
@@ -172,10 +146,10 @@ async def __update_character(ctx, character: "VChar", param: str, value: str) ->
     Raises ValueError if the parameter's value is invalid.
     """
     if param == "current_xp":
-        if not await inconnu.settings.can_adjust_current_xp(ctx):
+        if not await services.settings.can_adjust_current_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust unspent XP.")
     elif param == "total_xp":
-        if not await inconnu.settings.can_adjust_lifetime_xp(ctx):
+        if not await services.settings.can_adjust_lifetime_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust lifetime XP.")
     elif param == "name":
         # This is the only async method
@@ -185,7 +159,7 @@ async def __update_character(ctx, character: "VChar", param: str, value: str) ->
     return func(character, value)
 
 
-async def update_help(ctx, err=None, ephemeral=True):
+async def update_help(ctx: AppCtx, err: str | None = None, ephemeral=True):
     """Display a help message that details the available keys."""
     color = None if err is None else 0xFF0000
     embed = discord.Embed(title="Character Tracking", color=color)
@@ -212,8 +186,8 @@ async def update_help(ctx, err=None, ephemeral=True):
         label="Full Documentation",
         url="https://docs.inconnu.app/command-reference/characters/updates",
     )
-    support = Button(label="Support", url=inconnu.constants.SUPPORT_URL)
-    view = inconnu.views.ReportingView(documentation, support)
+    support = Button(label="Support", url=constants.SUPPORT_URL)
+    view = ui.views.ReportingView(documentation, support)
 
     await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 

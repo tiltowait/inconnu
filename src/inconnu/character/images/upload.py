@@ -6,10 +6,11 @@ import discord
 from loguru import logger
 
 import api
-import inconnu
+import db
+import ui
 from ctx import AppCtx
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
@@ -19,7 +20,7 @@ VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
 async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment):
     """Upload an image. Only premium users can use this feature."""
     if not valid_url(image.url):
-        embed = inconnu.embeds.ErrorEmbed(
+        embed = ui.embeds.ErrorEmbed(
             ctx.user,
             "This is not a valid image file!",
             ("Allowed extensions", ", ".join(VALID_EXTENSIONS)),
@@ -37,7 +38,7 @@ async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment)
 
     character.profile.images.append(processed_url)
 
-    embed = inconnu.embeds.VCharEmbed(
+    embed = ui.embeds.VCharEmbed(
         ctx,
         character,
         link=True,
@@ -52,7 +53,7 @@ async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment)
 
     # We maintain a log of all image uploads to protect ourself against
     # potential legal claims if someone uploads something illegal
-    await inconnu.db.upload_log.insert_one(
+    await db.upload_log.insert_one(
         {
             "guild": ctx.guild.id,
             "user": ctx.user.id,

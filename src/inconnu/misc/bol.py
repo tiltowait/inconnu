@@ -1,8 +1,9 @@
 """misc/bol.py - Blush of Life shortcut command."""
 
+import errors
 import inconnu
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#blush-of-life"
 
@@ -10,7 +11,7 @@ __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#blush-of-life"
 def _can_blush(character):
     """Raises an exception if the character isn't capable of Blushing."""
     if not character.is_vampire:
-        raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
+        raise errors.CharacterError(f"{character.name} isn't a vampire!")
 
 
 @haven(__HELP_URL, _can_blush, "None of your characters need to Blush.")

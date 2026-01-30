@@ -2,8 +2,12 @@
 
 import asyncio
 
+import errors
 import inconnu
-from inconnu.utils.haven import haven
+import services
+import ui
+from services.haven import haven
+from utils import get_message
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"
 
@@ -11,9 +15,9 @@ __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"
 def _can_slake(character):
     """Raises an exception if the character isn't a vampire or is at Hunger 0."""
     if not character.is_vampire:
-        raise inconnu.errors.CharacterError(f"{character.name} isn't a vampire!")
+        raise errors.CharacterError(f"{character.name} isn't a vampire!")
     if character.hunger == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no Hunger!")
+        raise errors.CharacterError(f"{character.name} has no Hunger!")
 
 
 @haven(__HELP_URL, _can_slake, "None of your characters have Hunger to slake.")
@@ -33,7 +37,7 @@ async def slake(ctx, character, amount: int, **kwargs):
         character.log("slake", slaked)
 
         if old_hunger >= 4:
-            view = inconnu.views.FrenzyView(character, 3, ctx.user.id)
+            view = ui.views.FrenzyView(character, 3, ctx.user.id)
         else:
             view = None
 
@@ -47,10 +51,10 @@ async def slake(ctx, character, amount: int, **kwargs):
             view=view,
             **kwargs,
         )
-        msg = await inconnu.get_message(inter)
+        msg = await get_message(inter)
         await asyncio.gather(
             character.save(),
-            inconnu.common.report_update(
+            services.character_update(
                 ctx=ctx,
                 msg=msg,
                 character=character,

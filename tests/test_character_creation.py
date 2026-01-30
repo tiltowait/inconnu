@@ -4,7 +4,6 @@ import pytest
 
 from inconnu.character import valid_name
 
-
 # Character name validation tests
 
 

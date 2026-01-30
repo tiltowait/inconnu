@@ -12,20 +12,20 @@
 
 import re
 from functools import partial
-from typing import TYPE_CHECKING
 
 import discord
 import discord.ext.commands
 from loguru import logger
 
-import inconnu
-from inconnu.models.vchardocs import VCharTrait
+import errors
+import services
+import ui
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
-
-if TYPE_CHECKING:
-    from inconnu.models import VChar
+from models import VChar
+from models.vchardocs import VCharTrait
+from services.haven import Haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
@@ -51,18 +51,17 @@ async def parse(
             fields = [("Trying to roll a specialty?", "Use `skill.spec`, not `skill (spec)`.")]
         else:
             fields = []
-        await inconnu.embeds.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
-        await __log_error(ctx, character, raw_syntax)
+        await ui.embeds.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
         return
 
     comment = await stringify_mentions(ctx, comment)
     if comment is not None and (comment_len := len(comment)) > 300:
         logger.debug("VR: Comment is too long")
-        await inconnu.embeds.error(ctx, f"Comment is too long by {comment_len - 300} characters.")
+        await ui.embeds.error(ctx, f"Comment is too long by {comment_len - 300} characters.")
         return
 
     if ctx.guild is None and needs_character(syntax):
-        await inconnu.embeds.error(ctx, "You cannot roll traits in DMs!", help=__HELP_URL)
+        await ui.embeds.error(ctx, "You cannot roll traits in DMs!", help=__HELP_URL)
         return
 
     # Determine the character being used, if any
@@ -70,7 +69,7 @@ async def parse(
         # Only guilds have characters
         try:
             if character is not None or needs_character(syntax):
-                haven = inconnu.utils.Haven(
+                haven = Haven(
                     ctx,
                     owner=player,
                     character=character,
@@ -83,10 +82,9 @@ async def parse(
                 owner = haven.owner
 
         except (SyntaxError, LookupError) as err:
-            await inconnu.embeds.error(ctx, err, help=__HELP_URL)
+            await ui.embeds.error(ctx, err, help=__HELP_URL)
             return
-        except inconnu.errors.HandledError:
-            await __log_error(ctx, character, raw_syntax)
+        except errors.HandledError:
             return
     else:
         # Ignore the character parameter if the user gave it
@@ -94,19 +92,19 @@ async def parse(
 
     # Attempt to parse the user's roll syntax
     try:
-        max_hunger = await inconnu.settings.max_hunger(ctx.guild)
+        max_hunger = await services.settings.max_hunger(ctx.guild)
         outcome = await perform_roll(character, syntax, max_hunger)
         await display_outcome(ctx, owner, character, outcome, comment)
 
-    except (SyntaxError, ValueError, inconnu.errors.TraitError, inconnu.errors.RollError) as err:
-        if isinstance(err, inconnu.errors.TraitError):
-            view = inconnu.views.TraitsView(character, ctx.user)
+    except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
+        if isinstance(err, errors.TraitError):
+            view = ui.views.TraitsView(character, ctx.user)
             ephemeral = True
         else:
             view = discord.MISSING
             ephemeral = False
 
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx,
             err,
             ("Your Input", f"/vr syntax:`{raw_syntax}`"),
@@ -116,7 +114,6 @@ async def parse(
             view=view,
             ephemeral=ephemeral,
         )
-        await __log_error(ctx, character, raw_syntax)
 
     return character
 
@@ -125,12 +122,12 @@ def _can_roll(character, syntax):
     """Raises an exception if the traits aren't found."""
     try:
         _ = RollParser(character, syntax)
-    except (inconnu.errors.AmbiguousTraitError, inconnu.errors.HungerInPool):
+    except (errors.AmbiguousTraitError, errors.HungerInPool):
         # It's possible there's no ambiguity on another character. We pass on
         # HungerInPool so we can show the correct error message. Otherwise, we
         # get "None of your characters can roll x + hunger".
         pass
-    except inconnu.errors.TooManyParameters as err:
+    except errors.TooManyParameters as err:
         # Vampires take the most parameters, so we always want to show the
         # error message if it's too many for a vampire. Mortals, however, have
         # a Hunger 0 inserted, so their parameter count is always one higher.
@@ -153,7 +150,7 @@ def _can_roll(character, syntax):
             # a user with only mortals will get the most generic error message,
             # but that can't be helped for now.
             msg += "\n\nRemember: Mortals only need `POOL` and `DIFFICULTY`."
-            raise inconnu.errors.TooManyParameters(4, msg) from err
+            raise errors.TooManyParameters(4, msg) from err
 
         # There are too many parameters even for a vampire, so we'll just fail.
         # This works, because SyntaxErrors aren't handled by Haven.
@@ -162,7 +159,7 @@ def _can_roll(character, syntax):
 
 
 async def display_outcome(
-    ctx, player, character: "VChar", results, comment, listener=None, timeout=None
+    ctx, player, character: VChar, results, comment, listener=None, timeout=None
 ):
     """Display the roll results."""
     roll_display = RollDisplay(ctx, results, comment, character, player, listener, timeout)
@@ -170,7 +167,7 @@ async def display_outcome(
     await roll_display.display()
 
 
-async def perform_roll(character: "VChar", syntax, max_hunger=5):
+async def perform_roll(character: VChar, syntax, max_hunger=5):
     """Public interface for __evaluate_syntax() that returns a Roll."""
     parser = RollParser(character, syntax)
     return Roll(parser.pool, parser.hunger, parser.difficulty, max_hunger, parser.pool_str, syntax)
@@ -229,13 +226,3 @@ async def stringify_mentions(ctx, sentence):
             sentence = sentence.replace(match, replacement)
 
     return " ".join(sentence.split())
-
-
-async def __log_error(ctx, character, raw_syntax):
-    """Logs a roll error."""
-    await inconnu.log.log_event(
-        "roll_error",
-        user=ctx.user.id,
-        charid=getattr(character, "id", None),
-        syntax=raw_syntax,
-    )

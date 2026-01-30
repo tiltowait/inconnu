@@ -4,21 +4,22 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-import inconnu
+import errors
+import ui
 from ctx import AppCtx
 from inconnu.misc.slake import slake
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 async def test_mortal_slake_fails(mortal: VChar, ctx: AppCtx):
     """Test that mortals cannot slake hunger."""
-    with pytest.raises(inconnu.errors.CharacterError, match="isn't a vampire"):
+    with pytest.raises(errors.CharacterError, match="isn't a vampire"):
         await slake(ctx, mortal, 1)
 
 
 async def test_ghoul_slake_fails(ghoul: VChar, ctx: AppCtx):
     """Test that ghouls cannot slake hunger."""
-    with pytest.raises(inconnu.errors.CharacterError, match="isn't a vampire"):
+    with pytest.raises(errors.CharacterError, match="isn't a vampire"):
         await slake(ctx, ghoul, 1)
 
 
@@ -26,7 +27,7 @@ async def test_vamp_hunger_zero_fails(vamp: VChar, ctx: AppCtx):
     """Test that vampires at hunger 0 cannot slake."""
     vamp.hunger = 0
 
-    with pytest.raises(inconnu.errors.CharacterError, match="has no Hunger"):
+    with pytest.raises(errors.CharacterError, match="has no Hunger"):
         await slake(ctx, vamp, 1)
 
 
@@ -98,7 +99,7 @@ async def test_vamp_slake_high_hunger_frenzy_view(
     assert call_args is not None
     view = call_args.kwargs.get("view")
     assert view is not None
-    assert isinstance(view, inconnu.views.FrenzyView)
+    assert isinstance(view, ui.views.FrenzyView)
 
 
 @pytest.mark.parametrize("initial_hunger", [1, 2, 3])
@@ -210,7 +211,7 @@ async def test_vamp_slake_from_hunger_5(
     assert call_args is not None
     view = call_args.kwargs.get("view")
     assert view is not None
-    assert isinstance(view, inconnu.views.FrenzyView)
+    assert isinstance(view, ui.views.FrenzyView)
 
 
 async def test_vamp_slake_across_frenzy_threshold(
@@ -232,4 +233,4 @@ async def test_vamp_slake_across_frenzy_threshold(
     assert call_args is not None
     view = call_args.kwargs.get("view")
     assert view is not None
-    assert isinstance(view, inconnu.views.FrenzyView)
+    assert isinstance(view, ui.views.FrenzyView)

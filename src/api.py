@@ -5,7 +5,6 @@ import os
 import re
 from datetime import datetime
 from json import dumps
-from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import aiohttp
@@ -13,8 +12,7 @@ import async_timeout
 from dotenv import load_dotenv
 from loguru import logger
 
-if TYPE_CHECKING:
-    from inconnu.models import VChar
+from models import VChar
 
 load_dotenv()
 
@@ -56,7 +54,7 @@ def measure(func):
     return wrapper
 
 
-async def upload_faceclaim(character: "VChar", image_url: str) -> str:
+async def upload_faceclaim(character: VChar, image_url: str) -> str:
     """Uploads a faceclaim to cloud storage."""
     try:
         payload = {
@@ -90,7 +88,7 @@ async def delete_single_faceclaim(image: str) -> bool:
         raise ApiError(str(err))
 
 
-async def delete_character_faceclaims(character: "VChar"):
+async def delete_character_faceclaims(character: VChar):
     """Delete all of a character's faceclaims."""
     try:
         res = await _delete(path=f"/character/{character.id_str}")

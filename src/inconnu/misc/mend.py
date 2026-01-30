@@ -2,11 +2,15 @@
 
 from typing import NamedTuple
 
+import errors
 import inconnu
+import services
+import ui
+from constants import ROUSE_FAIL_COLOR, Damage
 from ctx import AppCtx
-from inconnu.constants import ROUSE_FAIL_COLOR, Damage
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
+from utils import get_message
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
 
@@ -20,7 +24,7 @@ class MendOutcome(NamedTuple):
 def _can_mend(character: VChar):
     """Raises an error if the character has no superficial health damage."""
     if character.superficial_hp == 0:
-        raise inconnu.errors.CharacterError(f"{character.name} has no damage to mend.")
+        raise errors.CharacterError(f"{character.name} has no damage to mend.")
 
 
 @haven(
@@ -49,8 +53,8 @@ async def mend(ctx: AppCtx, character: VChar):
             update_msg += "\nMust make a frenzy check at DC 4."
 
         inter = await __display_outcome(ctx, character, outcome)
-        msg = await inconnu.get_message(inter)
-        await inconnu.common.report_update(
+        msg = await get_message(inter)
+        await services.character_update(
             ctx=ctx, character=character, title="Damage Mended", message=update_msg, msg=msg
         )
 
@@ -76,7 +80,7 @@ async def __display_outcome(ctx: AppCtx, character: VChar, outcome: MendOutcome)
 
         if outcome.frenzy:
             footer = "Rouse failure at Hunger 5!"
-            view = inconnu.views.FrenzyView(character, 4, ctx.user.id)
+            view = ui.views.FrenzyView(character, 4, ctx.user.id)
 
     return await inconnu.character.display(
         ctx, character, title=title, fields=fields, footer=footer, view=view, color=color

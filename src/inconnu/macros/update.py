@@ -1,11 +1,14 @@
 """macros/update.py - Macro update commands."""
 
+import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
-from inconnu.models import VChar
-from inconnu.utils import strtobool
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
+from utils import parse_parameters
+from utils.text import strtobool
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"
 __VALID_KEYS = {
@@ -27,7 +30,7 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
     try:
         syntax = " ".join(syntax.split())
 
-        parameters = inconnu.utils.parse_parameters(syntax, False)
+        parameters = parse_parameters(syntax, False)
         macro_update = __validate_parameters(character, parameters)
 
         macro_name = character.update_macro(macro, macro_update)
@@ -35,30 +38,23 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         await character.save()
 
     except (
-        inconnu.errors.AmbiguousTraitError,
-        inconnu.errors.HungerInPool,
-        inconnu.errors.MacroNotFoundError,
-        inconnu.errors.TraitNotFound,
+        errors.AmbiguousTraitError,
+        errors.HungerInPool,
+        errors.MacroNotFoundError,
+        errors.TraitNotFound,
         SyntaxError,
         ValueError,
     ) as err:
-        if isinstance(err, (SyntaxError, ValueError)):
-            await inconnu.log.log_event(
-                "macro_update_error", user=ctx.user.id, charid=character.id, syntax=syntax
-            )
-
         keys = [f"`{key}`: {value}" for key, value in __VALID_KEYS.items()]
         instructions = [
             ("Instructions", "Update the macro with one or more KEY=VALUE pairs."),
             ("Valid Keys", "\n".join(keys)),
         ]
 
-        await inconnu.embeds.error(
-            ctx, err, *instructions, help=__HELP_URL, character=character.name
-        )
+        await ui.embeds.error(ctx, err, *instructions, help=__HELP_URL, character=character.name)
 
 
-def __validate_parameters(character: "VChar", parameters: dict):
+def __validate_parameters(character: VChar, parameters: dict):
     """Parse the update parameters."""
     macro_update = {}
 

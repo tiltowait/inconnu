@@ -2,8 +2,8 @@
 
 import pytest
 
-from inconnu.constants import Damage
-from inconnu.models import VChar
+from constants import Damage
+from models import VChar
 from tests.characters import gen_char
 
 

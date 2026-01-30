@@ -8,7 +8,7 @@ import pytest
 
 from bot import InconnuBot
 from ctx import AppCtx
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 @pytest.fixture
@@ -99,7 +99,7 @@ async def mock_defer() -> AsyncGenerator[AsyncMock, None]:
 
 @pytest.fixture
 def mock_char_save():
-    with patch("inconnu.models.vchar.VChar.save", new_callable=AsyncMock) as mocked:
+    with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mocked:
         yield mocked
 
 
@@ -165,14 +165,14 @@ async def mock_character_display() -> AsyncGenerator[AsyncMock, None]:
 @pytest.fixture(autouse=True)
 async def mock_common_report() -> AsyncGenerator[AsyncMock, None]:
     """Mock common report_update to avoid Discord API calls."""
-    with patch("inconnu.common.report_update", new_callable=AsyncMock) as mock:
+    with patch("services.character_update", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture(autouse=True)
 async def mock_get_message() -> AsyncGenerator[AsyncMock, None]:
     """Mock get_message to avoid fetching Discord messages."""
-    with patch("inconnu.get_message", new_callable=AsyncMock) as mock:
+    with patch("utils.get_message", new_callable=AsyncMock) as mock:
         yield mock
 
 
@@ -181,10 +181,3 @@ def mock_inconnu_bot(bot: InconnuBot):
     """Patch the global inconnu.bot with our test bot."""
     with patch("inconnu.bot", bot):
         yield bot
-
-
-@pytest.fixture(autouse=True)
-async def mock_log_event() -> AsyncGenerator[AsyncMock, None]:
-    """Mock log_event to avoid database writes during tests."""
-    with patch("inconnu.log.log_event", new_callable=AsyncMock) as mock:
-        yield mock

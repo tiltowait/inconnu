@@ -4,10 +4,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import inconnu
+import errors
 from ctx import AppCtx
 from inconnu.misc.bol import bol
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 @pytest.mark.parametrize("humanity", [7, 8, 9, 10])
@@ -73,13 +73,13 @@ async def test_thin_blood_bol(
 
 async def test_mortal_bol_fails(mortal: VChar, ctx: AppCtx):
     """Test that mortals cannot use Blush of Life."""
-    with pytest.raises(inconnu.errors.CharacterError, match="isn't a vampire"):
+    with pytest.raises(errors.CharacterError, match="isn't a vampire"):
         await bol(ctx, mortal, False)
 
 
 async def test_ghoul_bol_fails(ghoul: VChar, ctx: AppCtx):
     """Test that ghouls cannot use Blush of Life."""
-    with pytest.raises(inconnu.errors.CharacterError, match="isn't a vampire"):
+    with pytest.raises(errors.CharacterError, match="isn't a vampire"):
         await bol(ctx, ghoul, False)
 
 

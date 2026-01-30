@@ -7,7 +7,9 @@ from discord.ui import InputText, Modal
 from loguru import logger
 
 import api
-import inconnu
+import errors
+import services
+import ui
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 
@@ -15,12 +17,12 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 async def delete(ctx, character_name: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        character = await inconnu.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character_name)
+        character = await services.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character_name)
         modal = _DeletionModal(title=f"Delete {character.name}", character=character)
         await ctx.send_modal(modal)
 
-    except inconnu.errors.CharacterError as err:
-        await inconnu.common.present_error(ctx, err, help_url=__HELP_URL)
+    except errors.CharacterError as err:
+        await ui.embeds.error(ctx, err, help_url=__HELP_URL)
 
 
 class _DeletionModal(Modal):
@@ -46,7 +48,7 @@ class _DeletionModal(Modal):
 
             await asyncio.gather(
                 interaction.response.send_message(msg),
-                inconnu.common.report_update(
+                services.character_update(
                     ctx=interaction,
                     character=self.character,
                     title="Character Deleted",
@@ -58,8 +60,6 @@ class _DeletionModal(Modal):
             except api.ApiError as err:
                 logger.error("Unable to delete {}: {}", self.character.name, err)
 
-            await inconnu.char_mgr.remove(self.character)  # Has to be done after image deletion
+            await services.char_mgr.remove(self.character)  # Has to be done after image deletion
         else:
-            await inconnu.common.present_error(
-                interaction, "You must type the character's name exactly."
-            )
+            await ui.embeds.error(interaction, "You must type the character's name exactly.")

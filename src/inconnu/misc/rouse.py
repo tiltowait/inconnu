@@ -2,10 +2,16 @@
 
 from types import SimpleNamespace
 
+import constants
+import errors
 import inconnu
+import services
+import ui
 from config import web_asset
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
+from utils import get_message
+from utils.text import pluralize
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 
@@ -13,7 +19,7 @@ __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 def _can_rouse(character):
     """Raises an error if the character is mortal."""
     if character.splat == "mortal":
-        raise inconnu.errors.CharacterError(f"{character.name} is a mortal.")
+        raise errors.CharacterError(f"{character.name} is a mortal.")
 
 
 @haven(__HELP_URL, _can_rouse)
@@ -48,14 +54,14 @@ async def rouse(
 
         await character.save()
         inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
-        msg = await inconnu.get_message(inter)
+        msg = await get_message(inter)
 
         if character.hunger >= 4:
-            color = inconnu.constants.ROUSE_FAIL_COLOR
+            color = constants.ROUSE_FAIL_COLOR
         else:
             color = None
 
-        await inconnu.common.report_update(
+        await services.character_update(
             ctx=ctx,
             msg=msg,
             character=character,
@@ -76,8 +82,8 @@ def __make_title(outcome):
     if outcome.total == 1:
         title = "Rouse Success" if outcome.successes == 1 else "Rouse Failure"
     else:
-        successes = inconnu.common.pluralize(outcome.successes, "success")
-        failures = inconnu.common.pluralize(outcome.failures, "failure")
+        successes = pluralize(outcome.successes, "success")
+        failures = pluralize(outcome.failures, "failure")
         title = f"Rouse: {successes}, {failures}"
 
     return title
@@ -88,7 +94,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
     title = __make_title(outcome)
 
     if "ailure" in title and "0 fail" not in title:
-        color = inconnu.constants.ROUSE_FAIL_COLOR
+        color = constants.ROUSE_FAIL_COLOR
         thumbnail = web_asset("hunger-filled.webp")
     else:
         color = None
@@ -114,7 +120,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
     if outcome.reroll:
         footer.append("Re-rolling failures")
     if outcome.stains > 0:
-        stains_txt = inconnu.common.pluralize(outcome.stains, "stain")
+        stains_txt = pluralize(outcome.stains, "stain")
 
         if oblivion == "show":
             footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
@@ -125,7 +131,7 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
 
     footer = "\n".join(footer)
 
-    view = inconnu.views.FrenzyView(character, 4, ctx.user.id) if outcome.frenzy else None
+    view = ui.views.FrenzyView(character, 4, ctx.user.id) if outcome.frenzy else None
 
     return await inconnu.character.display(
         ctx,
@@ -161,7 +167,7 @@ async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):
     failures = 0
     stains = 0
 
-    oblivion = await inconnu.settings.oblivion_stains(guild)
+    oblivion = await services.settings.oblivion_stains(guild)
 
     for _ in range(rolls):
         die = inconnu.d10()

@@ -3,11 +3,13 @@
 import discord
 
 import inconnu
+import ui
 from ctx import AppCtx
-from inconnu.models import VChar
-from inconnu.utils import is_admin
-from inconnu.utils.haven import haven
-from inconnu.views import DisablingView
+from models import VChar
+from services.haven import haven
+from ui.views import DisablingView
+from utils import get_avatar
+from utils.permissions import is_admin
 
 __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
 
@@ -34,13 +36,13 @@ async def remove_entry(
 
     except IndexError:
         err = f"{character.name} has no experience log entry at index `{index}`."
-        await inconnu.embeds.error(ctx, err)
+        await ui.embeds.error(ctx, err)
 
 
 def _get_embed(player, character, entry):
     """Generate an embed for displaying the deletion message."""
     embed = discord.Embed(title="Deleted Experience Log Entry", description=_format_entry(entry))
-    embed.set_author(name=character.name, icon_url=inconnu.get_avatar(player))
+    embed.set_author(name=character.name, icon_url=get_avatar(player))
     embed.set_footer(text="Be sure to adjust unspent/lifetime XP accordingly!")
 
     experience = f"```{character.experience.unspent} / {character.experience.lifetime}```"

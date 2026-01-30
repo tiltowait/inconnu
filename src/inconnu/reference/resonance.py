@@ -1,12 +1,14 @@
 """reference/resonance.py - Display a random resonance and temperament."""
 
 import sqlite3
-from types import SimpleNamespace as SN
+from typing import NamedTuple
 
 import discord
 
 import inconnu
+import services
 from ctx import AppCtx
+from utils import get_avatar
 
 __DISCIPLINES = {
     "Choleric": "Celerity, Potence",
@@ -30,6 +32,14 @@ __EMOTIONS = {
 RESONANCES = list(__DISCIPLINES)
 
 
+class Dyscrasia(NamedTuple):
+    """Represents Dyscrasia data from the database."""
+
+    name: str
+    description: str
+    page: int
+
+
 async def random_temperament(ctx: AppCtx, res: str | None):
     """Generate a random temperament for a given resonance."""
     temperament = __get_temperament()
@@ -42,7 +52,7 @@ async def resonance(ctx, **kwargs):
     """Generate and display a resonance."""
     temperament = __get_temperament()
     if temperament != "Negligible":
-        add_empty = await inconnu.settings.add_empty_resonance(ctx.guild)
+        add_empty = await services.settings.add_empty_resonance(ctx.guild)
         die, res = __get_resonance(add_empty)
     else:
         die = None
@@ -51,7 +61,7 @@ async def resonance(ctx, **kwargs):
     await __display_embed(ctx, temperament, res, die, **kwargs)
 
 
-async def __display_embed(ctx, temperament, res, die, **kwargs):
+async def __display_embed(ctx: AppCtx, temperament: str, res: str | None, die: int, **kwargs):
     """Display the resonance in an embed."""
     if res:
         title = f"{temperament} {res} Resonance"
@@ -61,7 +71,7 @@ async def __display_embed(ctx, temperament, res, die, **kwargs):
     embed = discord.Embed(title=title)
     embed.set_author(
         name=kwargs.get("character", ctx.user.display_name),
-        icon_url=inconnu.get_avatar(ctx.user),
+        icon_url=get_avatar(ctx.user),
     )
     embed.add_field(name="Disciplines", value=__DISCIPLINES.get(res, "None"))
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[res])
@@ -117,10 +127,10 @@ def __get_resonance(add_empty: bool) -> tuple[int, str]:
     return (die, "Empty")
 
 
-def get_dyscrasia(resonance: str) -> SN | None:
+def get_dyscrasia(resonance: str) -> Dyscrasia | None:
     """Get a random dyscrasia for a resonance."""
     conn = sqlite3.connect("src/inconnu/reference/dyscrasias.db")
-    conn.row_factory = lambda c, r: SN(**{col[0]: r[idx] for idx, col in enumerate(c.description)})
+    conn.row_factory = lambda _, r: Dyscrasia(*r)
     cur = conn.cursor()
 
     res = cur.execute(

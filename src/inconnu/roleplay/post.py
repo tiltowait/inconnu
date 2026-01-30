@@ -5,8 +5,16 @@ import re
 import discord
 from loguru import logger
 
+import errors
 import inconnu
-from inconnu.utils.haven import haven
+import services
+import ui
+from models import HeaderSubdoc, RPPost, VChar
+from services.haven import haven
+from utils import get_avatar, re_paginate
+from utils.text import clean_text, pull_mentions
+from utils.text import diff as text_diff
+from utils.urls import post_url
 
 __HELP_URL = "https://docs.inconnu.app/"
 
@@ -16,12 +24,12 @@ class PostModal(discord.ui.Modal):
 
     SECTIONS = 2
 
-    def __init__(self, character: inconnu.models.VChar, bot, *args, **kwargs):
+    def __init__(self, character: VChar, bot, *args, **kwargs):
         self.character = character
         self.bot = bot  # Used for webhook management
         self.post_to_edit = kwargs.pop("rp_post", None)
         self.message = kwargs.pop("message", None)
-        self.mentions = " ".join(inconnu.utils.pull_mentions(kwargs.pop("mentions", "")))
+        self.mentions = " ".join(pull_mentions(kwargs.pop("mentions", "")))
         self.show_header = kwargs.pop("show_header", True)
 
         if self.post_to_edit is None:
@@ -29,7 +37,7 @@ class PostModal(discord.ui.Modal):
                 param: kwargs.pop(param, None)
                 for param in ["blush", "location", "merits", "flaws", "temp", "hunger"]
             }
-            self.header = inconnu.models.HeaderSubdoc.create(character, **header_params)
+            self.header = HeaderSubdoc.create(character, **header_params)
             starting_value = ""
             starting_title = ""
             starting_tags = ""
@@ -91,12 +99,12 @@ class PostModal(discord.ui.Modal):
             contents = [
                 child.value for child in self.children[0 : PostModal.SECTIONS] if child.value
             ]
-            return inconnu.utils.re_paginate(contents)
-        return inconnu.utils.re_paginate([self.children[0].value])[0]
+            return re_paginate(contents)
+        return re_paginate([self.children[0].value])[0]
 
     def _clean_title(self) -> str:
         """Clean the title."""
-        return inconnu.utils.clean_text(self.children[-2].value)
+        return clean_text(self.children[-2].value)
 
     def _clean_tags(self) -> list[str]:
         """Clean and separate the tags."""
@@ -106,7 +114,7 @@ class PostModal(discord.ui.Modal):
 
         cleaned_tags = []
         for tag in tags:
-            if cleaned := inconnu.utils.clean_text(tag):
+            if cleaned := clean_text(tag):
                 cleaned_tags.append(cleaned)
 
         return sorted(list(set(cleaned_tags)))  # Make sure the tags are unique
@@ -135,7 +143,7 @@ class PostModal(discord.ui.Modal):
                 self.post_to_edit.edit_post(new_content)
 
             except discord.NotFound:
-                await inconnu.embeds.error(
+                await ui.embeds.error(
                     interaction,
                     (
                         "The message wasn't found. Either someone deleted it while you "
@@ -162,7 +170,7 @@ class PostModal(discord.ui.Modal):
         await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
 
         webhook = await self.bot.prep_webhook(interaction.channel)
-        webhook_avatar = self.character.profile_image_url or inconnu.get_avatar(interaction.user)
+        webhook_avatar = self.character.profile_image_url or get_avatar(interaction.user)
 
         if self.show_header:
             # We take a regular header embed as a base, then modify it ... a lot
@@ -224,7 +232,7 @@ class PostModal(discord.ui.Modal):
         title = self._clean_title() or None
         tags = self._clean_tags()
         for content, message in zip(contents, post_messages):
-            db_rp_post = inconnu.models.RPPost.new(
+            db_rp_post = RPPost.new(
                 interaction=interaction,
                 character=self.character,
                 header=self.header,
@@ -245,10 +253,10 @@ class PostModal(discord.ui.Modal):
 
     async def _post_to_changelog(self, interaction: discord.Interaction):
         """Post the edited message to the RP changelog."""
-        if changelog_id := await inconnu.settings.changelog_channel(interaction.guild):
+        if changelog_id := await services.settings.changelog_channel(interaction.guild):
             # Prep the diff
             post = self.post_to_edit
-            diff = inconnu.utils.diff(post.history[0].content, post.content)
+            diff = text_diff(post.history[0].content, post.content)
 
             # Prep the embed
             description = (
@@ -259,11 +267,9 @@ class PostModal(discord.ui.Modal):
             embed = discord.Embed(
                 title="Rolepost Edited",
                 description=description,
-                url=inconnu.post_url(post.id),
+                url=post_url(post.id),
             )
-            embed.set_author(
-                name=post.header.char_name, icon_url=inconnu.get_avatar(interaction.user)
-            )
+            embed.set_author(name=post.header.char_name, icon_url=get_avatar(interaction.user))
             embed.set_thumbnail(url=self.character.profile_image_url)
             embed.add_field(name=" ", value=post.url)
             embed.timestamp = self.post_to_edit.utc_date
@@ -296,9 +302,9 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
         await ctx.send_modal(modal)
     elif isinstance(ctx.channel, discord.threads.Thread):
-        await inconnu.embeds.error(ctx, "This command is unavailable in threads.")
+        await ui.embeds.error(ctx, "This command is unavailable in threads.")
     else:
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx,
             "This feature requires `Manage Webhooks` permission.",
             title="Missing permissions",
@@ -307,18 +313,18 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
 
 async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
     """Edit a Rolepost."""
-    rp_post = await inconnu.models.RPPost.find_one({"message_id": message.id})
+    rp_post = await RPPost.find_one({"message_id": message.id})
 
     # Need to perform some checks to ensure we can edit the post
     if rp_post is None:
-        await inconnu.embeds.error(ctx, "This isn't a Rolepost!", help=__HELP_URL)
+        await ui.embeds.error(ctx, "This isn't a Rolepost!", help=__HELP_URL)
     elif ctx.user.id != rp_post.user:
-        await inconnu.embeds.error(ctx, "You can only edit your own posts!", help=__HELP_URL)
+        await ui.embeds.error(ctx, "You can only edit your own posts!", help=__HELP_URL)
     else:
         # It's a valid post, but we can only work our magic if the character
         # still exists. Otherwise, spit out an error.
         try:
-            character = await inconnu.char_mgr.fetchone(
+            character = await services.char_mgr.fetchone(
                 ctx.guild_id,
                 ctx.user.id,
                 str(rp_post.header.charid),
@@ -332,8 +338,8 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
             )
             await ctx.send_modal(modal)
 
-        except inconnu.errors.CharacterNotFoundError:
-            await inconnu.embeds.error(
+        except errors.CharacterNotFoundError:
+            await ui.embeds.error(
                 ctx,
                 "You can't edit the post of a deleted character!",
                 help=__HELP_URL,

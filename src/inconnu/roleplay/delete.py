@@ -2,8 +2,11 @@
 
 import discord
 
-import inconnu
+import db
+import errors
+import ui
 from ctx import AppCtx
+from models import RPPost
 
 
 async def delete_message_chain(ctx: AppCtx, message: discord.Message):
@@ -14,13 +17,13 @@ async def delete_message_chain(ctx: AppCtx, message: discord.Message):
         rp_post = await _fetch_rp_post(ctx, webhook, message)
         await ctx.send_modal(DeletionModal(webhook, rp_post))
 
-    except (inconnu.errors.WebhookError, ValueError) as err:
-        await inconnu.embeds.error(ctx, err, title="Invalid message")
+    except (errors.WebhookError, ValueError) as err:
+        await ui.embeds.error(ctx, err, title="Invalid message")
 
 
 async def _fetch_rp_post(
     ctx: discord.ApplicationContext, webhook: discord.Webhook, message: discord.Message
-) -> inconnu.models.RPPost:
+) -> RPPost:
     """Validate the message and ownership, displaying an error message if applicable."""
     if not message.author.bot:
         raise ValueError("You can't delete a user's post.")
@@ -31,9 +34,9 @@ async def _fetch_rp_post(
     if webhook.id != message.author.id:
         raise ValueError("Either this isn't a Rolepost, or the original webhook was deleted.")
 
-    rp_post = await inconnu.models.RPPost.find_one({"id_chain": message.id})
+    rp_post = await RPPost.find_one({"id_chain": message.id})
     if rp_post is None:
-        if await inconnu.db.headers.find_one({"message": message.id}) is not None:
+        if await db.headers.find_one({"message": message.id}) is not None:
             raise ValueError("Use `Header: Delete` for this.")
         raise ValueError("Something went wrong. Ask a moderator to delete the message for you.")
 
@@ -47,7 +50,7 @@ async def _fetch_rp_post(
 class DeletionModal(discord.ui.Modal):
     """A modal that asks for confirmation before deleting the post chain."""
 
-    def __init__(self, webhook: discord.Webhook, rp_post: inconnu.models.RPPost, *args, **kwargs):
+    def __init__(self, webhook: discord.Webhook, rp_post: RPPost, *args, **kwargs):
         self.webhook = webhook
         self.rp_post = rp_post
 
@@ -78,6 +81,6 @@ class DeletionModal(discord.ui.Modal):
             await interaction.respond("Rolepost deleted!", delete_after=3)
 
         else:
-            await inconnu.embeds.error(
+            await ui.embeds.error(
                 interaction, "You must type `DELETE` to delete.", title="Invalid response"
             )

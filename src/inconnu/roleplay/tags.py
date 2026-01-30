@@ -3,8 +3,14 @@
 import discord
 from discord.ext.pages import Page, Paginator
 
+import db
 import inconnu
+import ui
 from ctx import AppCtx
+from models import RPPost
+from ui.views import DisablingView
+from utils import get_avatar
+from utils.text import fence, oxford_list
 
 
 async def show_tags(ctx: AppCtx):
@@ -27,7 +33,7 @@ async def show_tags(ctx: AppCtx):
 
     pages = []
     current_tags = []
-    async with await inconnu.db.rp_posts.aggregate(pipeline) as cursor:
+    async with await db.rp_posts.aggregate(pipeline) as cursor:
         async for tag in cursor:
             # A Discord select menu can only hold a maximum of 25 items, so we will
             # make our pages hold no more than 25 tags each
@@ -54,7 +60,7 @@ async def show_tags(ctx: AppCtx):
         await paginator.respond(ctx.interaction, ephemeral=True)
     else:
         post = ctx.bot.cmd_mention("post")
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx,
             f"Set tags in {post} or add to old posts via right-click.",
             title="You have no tags!",
@@ -69,7 +75,7 @@ def _create_page(ctx: AppCtx, tags: list[tuple[str, int]]) -> Page:
     )
     embed.set_author(
         name=ctx.user.display_name,
-        icon_url=inconnu.get_avatar(ctx.user),
+        icon_url=get_avatar(ctx.user),
     )
 
     post = ctx.bot.cmd_mention("post")
@@ -81,7 +87,7 @@ def _create_page(ctx: AppCtx, tags: list[tuple[str, int]]) -> Page:
     return Page(embeds=[embed], custom_view=TagView(tags))
 
 
-class TagView(inconnu.views.DisablingView):
+class TagView(DisablingView):
     """A View for selecting and displaying tags."""
 
     def __init__(self, tags: list[tuple[str, int]], *args, **kwargs):
@@ -108,7 +114,7 @@ class TagView(inconnu.views.DisablingView):
         }
         pages = []
         footer = ("Search tag: " if len(selected) == 1 else "Search tags: ") + "; ".join(selected)
-        async for post in inconnu.models.RPPost.find(query):
+        async for post in RPPost.find(query):
             pages.append(inconnu.roleplay.post_embed(post, footer=footer))
 
         if pages:
@@ -122,7 +128,7 @@ class TagView(inconnu.views.DisablingView):
             await paginator.respond(interaction, ephemeral=True)
         else:
             tags = "tag" if len(selected) == 1 else "tags"
-            selection = inconnu.utils.oxford_list(map(inconnu.fence, selected))
-            await inconnu.embeds.error(
+            selection = oxford_list(map(fence, selected))
+            await ui.embeds.error(
                 interaction, f"No posts with {tags} {selection} found.", title="No posts found!"
             )

@@ -1,15 +1,15 @@
 """traits/delete.py - Delete character traits."""
 
-from typing import TYPE_CHECKING, NamedTuple
+from typing import NamedTuple
 
 from discord import ApplicationContext, Interaction
 
-import inconnu
+import constants
+import errors
+import ui
 from inconnu.traits import traitcommon
-from inconnu.utils.haven import haven
-
-if TYPE_CHECKING:
-    from inconnu.models import VChar
+from models import VChar
+from services.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 
@@ -38,7 +38,7 @@ async def delete(
         await character.save()
 
     except (ValueError, SyntaxError) as err:
-        await inconnu.embeds.error(ctx, err, character=character, help=__HELP_URL)
+        await ui.embeds.error(ctx, err, character=character, help=__HELP_URL)
 
 
 async def __outcome_embed(
@@ -47,7 +47,7 @@ async def __outcome_embed(
     """Display the operation outcome in an embed."""
     term = "Trait" if not disciplines else "Discipline"
 
-    embed = inconnu.embeds.VCharEmbed(ctx, character, title=f"{term} Removal")
+    embed = ui.embeds.VCharEmbed(ctx, character, title=f"{term} Removal")
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if outcome.deleted:
@@ -60,18 +60,18 @@ async def __outcome_embed(
         embed.add_field(name="Do not exist", value=errs, inline=False)
         embed.color = 0x000000 if outcome.deleted else 0xFF0000
 
-    view = inconnu.views.TraitsView(character, ctx.user)
+    view = ui.views.TraitsView(character, ctx.user)
     await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 
-def __delete_traits(character: "VChar", *traits: str) -> DeletionResult:
+def __delete_traits(character: VChar, *traits: str) -> DeletionResult:
     """
     Delete the validated traits. If the trait is a core trait, then it is set to 0.
     Returns (list): A list of traits that could not be found.
     """
     deleted = []
     errs = []
-    standard_traits = map(lambda t: t.lower(), inconnu.constants.get_standard_traits())
+    standard_traits = map(lambda t: t.lower(), constants.get_standard_traits())
 
     for trait_name in traits:
         if trait_name.lower() in standard_traits:
@@ -82,7 +82,7 @@ def __delete_traits(character: "VChar", *traits: str) -> DeletionResult:
             try:
                 trait = character.delete_trait(trait_name)
                 deleted.append(trait)
-            except inconnu.errors.TraitNotFound:
+            except errors.TraitNotFound:
                 errs.append(trait_name)
 
     return DeletionResult(deleted=deleted, errors=errs)

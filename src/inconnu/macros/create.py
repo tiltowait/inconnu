@@ -1,10 +1,12 @@
 """macros/create.py - Creating user macros."""
 
+import errors
 import inconnu
+import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
-from inconnu.models import VChar
-from inconnu.utils.haven import haven
+from models import VChar
+from services.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/creation"
 
@@ -32,7 +34,7 @@ async def create(
             raise SyntaxError(f"Comments can't be longer than 300 characters. (Yours: {length})")
 
         if not macro_common.is_macro_name_valid(name):
-            await inconnu.common.present_error(
+            await ui.embeds.error(
                 ctx,
                 "Macro names can only contain letters and underscores.",
                 character=character.name,
@@ -63,9 +65,9 @@ async def create(
 
     except (
         SyntaxError,
-        inconnu.errors.AmbiguousTraitError,
-        inconnu.errors.HungerInPool,
-        inconnu.errors.MacroAlreadyExistsError,
-        inconnu.errors.TraitNotFound,
+        errors.AmbiguousTraitError,
+        errors.HungerInPool,
+        errors.MacroAlreadyExistsError,
+        errors.TraitNotFound,
     ) as err:
-        await inconnu.embeds.error(ctx, err, help=__HELP_URL, character=character.name)
+        await ui.embeds.error(ctx, err, help=__HELP_URL, character=character.name)

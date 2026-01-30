@@ -5,11 +5,14 @@ from enum import Enum, StrEnum
 
 from loguru import logger
 
-import inconnu
+import errors
+import services
+import ui
 from ctx import AppCtx
-from inconnu.models.vchar import VChar
 from inconnu.specialties.tokenize import SYNTAX, tokenize
-from inconnu.utils.haven import haven
+from models.vchar import VChar
+from services.haven import haven
+from utils.text import format_join
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/specialties"
 
@@ -65,7 +68,7 @@ async def _add_or_remove(
     try:
         additions = action(character, syntax, category)
         embed = _make_embed(ctx, character, additions, title)
-        view = inconnu.views.TraitsView(character, ctx.user)
+        view = ui.views.TraitsView(character, ctx.user)
 
         tasks = [ctx.respond(embed=embed, view=view, ephemeral=True), character.save()]
 
@@ -77,7 +80,7 @@ async def _add_or_remove(
                 msg = f"__{ctx.user.mention} updated {character.name}'s {cat}__\n"
                 msg += embed.description
                 tasks.append(
-                    inconnu.common.report_update(
+                    services.character_update(
                         ctx=ctx,
                         character=character,
                         title=title,
@@ -91,7 +94,7 @@ async def _add_or_remove(
         await asyncio.gather(*tasks)
 
     except SyntaxError as err:
-        await inconnu.embeds.error(
+        await ui.embeds.error(
             ctx,
             err,
             ("Proper syntax", SYNTAX),
@@ -99,8 +102,8 @@ async def _add_or_remove(
             ("Reminder", "Don't leave a trailing `,`!"),
             title="Invalid syntax",
         )
-    except inconnu.errors.TraitError as err:
-        await inconnu.embeds.error(ctx, err)
+    except errors.TraitError as err:
+        await ui.embeds.error(ctx, err)
 
 
 def _make_embed(
@@ -112,17 +115,17 @@ def _make_embed(
     """Create the embed."""
     entries = []
     for trait, delta in additions:
-        delta_str = inconnu.utils.format_join(delta, ", ", "`", "*No change*")
+        delta_str = format_join(delta, ", ", "`", "*No change*")
 
         entry = f"**{trait.name}:** {delta_str}"
         if len(delta) != len(trait.specialties):
-            specs_str = inconnu.utils.format_join(trait.specialties, ", ", "*", "*None*")
+            specs_str = format_join(trait.specialties, ", ", "*", "*None*")
             entry += f"\n***All:*** {specs_str}\n"
             entry = "\n" + entry
         entries.append(entry)
 
     content = "\n".join(entries).strip()
-    embed = inconnu.embeds.VCharEmbed(ctx, character, title=title, description=content)
+    embed = ui.embeds.VCharEmbed(ctx, character, title=title, description=content)
     embed.set_footer(text="See all specialties, powers, traits, and Disciplines with /traits list.")
 
     return embed
@@ -181,4 +184,4 @@ def validate_tokens(character: VChar, tokens: list[tuple[str, list[str]]]):
             errs.insert(0, f"**{character.name}** doesn't have the following traits: {missing}.")
 
     if errs:
-        raise inconnu.errors.TraitError("\n\n".join(errs))
+        raise errors.TraitError("\n\n".join(errs))

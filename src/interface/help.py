@@ -11,7 +11,8 @@ from discord.ui import Button, View
 
 import inconnu
 from config import web_asset
-from inconnu.constants import PATREON, SUPPORT_URL
+from constants import PATREON, SUPPORT_URL
+from utils import cmd_replace
 
 
 class Section(StrEnum):
@@ -171,7 +172,7 @@ class Help(commands.Cog):
             )
         )
 
-        await inconnu.utils.cmd_replace(ctx, embed=embed, view=self.info_view)
+        await cmd_replace(ctx, embed=embed, view=self.info_view)
 
     # Callbacks
 
@@ -254,9 +255,7 @@ class Help(commands.Cog):
             )
         )
 
-        await inconnu.utils.cmd_replace(
-            ctx, embed=embed, view=self.overview_view, ephemeral=ephemeral
-        )
+        await cmd_replace(ctx, embed=embed, view=self.overview_view, ephemeral=ephemeral)
 
     async def show_traits_help(self, ctx, ephemeral=True):
         """Run the /traits help command."""
@@ -300,7 +299,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await inconnu.utils.cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
+        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
     async def show_specialties_help(self, ctx, ephemeral=True):
         """Show help for using/adding/removing specialties."""
@@ -344,7 +343,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await inconnu.utils.cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
+        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
     async def show_disciplines_help(self, ctx, ephemeral=True):
         """Show help for using/adding/removing specialties."""
@@ -403,7 +402,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await inconnu.utils.cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
+        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
     async def show_macros_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""
@@ -438,7 +437,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await inconnu.utils.cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
+        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
     async def show_character_help(self, ctx, ephemeral=True):
         """Run the /macro help command."""
@@ -500,7 +499,7 @@ class Help(commands.Cog):
         ]
         view = _HelpView(*buttons)
 
-        await inconnu.utils.cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
+        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
     def _empty_embed(self, *, title: str, description: str):
         """Create an empty help embed."""

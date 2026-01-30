@@ -4,18 +4,19 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import inconnu
+import errors
+import ui
+from constants import ROUSE_FAIL_COLOR, Damage
 from ctx import AppCtx
-from inconnu.constants import Damage
 from inconnu.misc.mend import mend
-from inconnu.models.vchar import VChar
+from models.vchar import VChar
 
 
 async def test_no_superficial_damage_fails(vamp: VChar, ctx: AppCtx):
     """Test that mending with no superficial damage fails."""
     vamp.health = "..........."  # All healthy
 
-    with pytest.raises(inconnu.errors.CharacterError, match="has no damage to mend"):
+    with pytest.raises(errors.CharacterError, match="has no damage to mend"):
         await mend(ctx, vamp)
 
 
@@ -91,7 +92,7 @@ async def test_vamp_mend_at_hunger_5_rouse_failure(
     assert call_args is not None
     view = call_args.kwargs.get("view")
     assert view is not None
-    assert isinstance(view, inconnu.views.FrenzyView)
+    assert isinstance(view, ui.views.FrenzyView)
 
     # Verify footer mentions frenzy
     footer = call_args.kwargs.get("footer")
@@ -156,9 +157,7 @@ async def test_vamp_mend_all_damage(
     mock_char_save: AsyncMock,
 ):
     """Test mending when mend_amount >= superficial damage."""
-    mend_amount = vamp.mend_amount
-    # Set superficial less than or equal to mend_amount
-    vamp.health = "/......"  # 1 superficial (less than mend_amount)
+    vamp.health = "/......"
 
     with patch("inconnu.d10", return_value=7):  # Rouse success
         await mend(ctx, vamp)
@@ -250,7 +249,7 @@ async def test_vamp_mend_rouse_failure_color(
     assert call_args is not None
     color = call_args.kwargs.get("color")
     assert color is not None
-    assert color == inconnu.constants.ROUSE_FAIL_COLOR
+    assert color == ROUSE_FAIL_COLOR
 
 
 async def test_vamp_mend_rouse_success_no_color(

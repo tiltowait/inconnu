@@ -59,10 +59,6 @@ async def update(
 
     parameters = " ".join(parameters.split())
 
-    # This will get overwritten, but we need it now in case we run into trouble
-    # trying to parse the input
-    human_readable = parameters
-
     try:
         haven = Haven(
             ctx,
@@ -74,7 +70,6 @@ async def update(
         character = await haven.fetch()
 
         parameters = parse_parameters(parameters, True)
-        human_readable = " ".join([f"{k}={v}" for k, v in parameters.items()])
         parameters = __validate_parameters(parameters)
         updates = []
 
@@ -88,22 +83,11 @@ async def update(
         if (impairment := character.impairment) is not None:
             updates.append(impairment)
 
-        tasks = [
-            character.save(),
-            inconnu.log.log_event(
-                "update",
-                user=ctx.user.id,
-                guild=ctx.guild.id,
-                charid=character.id_str,
-                syntax=human_readable,
-            ),
-        ]
-
         # Ignore generated output if we got a custom message
         if update_message is None:
             update_message = "\n".join(map(lambda u: f"* {u}", updates))  # Give them bullet points
 
-        tasks.append(
+        inter, _ = await asyncio.gather(
             display(
                 ctx,
                 character,
@@ -112,10 +96,9 @@ async def update(
                 owner=haven.owner,
                 message=update_message,
                 thumbnail=character.profile_image_url if not fields else None,
-            )
+            ),
+            character.save(),
         )
-
-        _, _, inter = await asyncio.gather(*tasks)
         if update_message:  # May not always be true in the future
             msg = await get_message(inter)
             await services.character_update(
@@ -129,18 +112,7 @@ async def update(
     except (SyntaxError, ValueError) as err:
         if isinstance(character, VChar):
             character.rollback()
-
-            await asyncio.gather(
-                inconnu.log.log_event(
-                    "update_error",
-                    user=ctx.user.id,
-                    guild=ctx.guild.id,
-                    charid=character.id_str,
-                    syntax=human_readable,
-                ),
-                update_help(ctx, err),
-                # character.reload(),  # clear_modified() doesn't reset the fields
-            )
+            await update_help(ctx, err)
 
 
 def __validate_parameters(parameters):

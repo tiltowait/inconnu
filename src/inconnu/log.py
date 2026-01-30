@@ -2,21 +2,8 @@
 
 import os
 import textwrap
-from datetime import UTC, datetime
 
 import discord
-
-import db
-
-
-async def log_event(event_key, **context):
-    """Log a bot event."""
-    log = db.log
-
-    if event_key in ["update", "update_error", "roll_error", "macro_update_error"]:
-        await log.insert_one({"date": datetime.now(UTC), "event": event_key, "context": context})
-    else:
-        raise KeyError("Invalid event key:", event_key)
 
 
 async def report_database_error(bot, ctx):

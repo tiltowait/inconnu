@@ -45,11 +45,6 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         SyntaxError,
         ValueError,
     ) as err:
-        if isinstance(err, (SyntaxError, ValueError)):
-            await inconnu.log.log_event(
-                "macro_update_error", user=ctx.user.id, charid=character.id, syntax=syntax
-            )
-
         keys = [f"`{key}`: {value}" for key, value in __VALID_KEYS.items()]
         instructions = [
             ("Instructions", "Update the macro with one or more KEY=VALUE pairs."),

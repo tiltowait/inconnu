@@ -52,7 +52,6 @@ async def parse(
         else:
             fields = []
         await ui.embeds.error(ctx, f"Invalid syntax: `{syntax}`.", *fields, ephemeral=False)
-        await __log_error(ctx, character, raw_syntax)
         return
 
     comment = await stringify_mentions(ctx, comment)
@@ -86,7 +85,6 @@ async def parse(
             await ui.embeds.error(ctx, err, help=__HELP_URL)
             return
         except errors.HandledError:
-            await __log_error(ctx, character, raw_syntax)
             return
     else:
         # Ignore the character parameter if the user gave it
@@ -116,7 +114,6 @@ async def parse(
             view=view,
             ephemeral=ephemeral,
         )
-        await __log_error(ctx, character, raw_syntax)
 
     return character
 
@@ -229,13 +226,3 @@ async def stringify_mentions(ctx, sentence):
             sentence = sentence.replace(match, replacement)
 
     return " ".join(sentence.split())
-
-
-async def __log_error(ctx, character, raw_syntax):
-    """Logs a roll error."""
-    await inconnu.log.log_event(
-        "roll_error",
-        user=ctx.user.id,
-        charid=getattr(character, "id", None),
-        syntax=raw_syntax,
-    )

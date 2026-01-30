@@ -20,7 +20,6 @@ from inconnu import (
     vr,
 )
 from inconnu.dice import d10, random
-from inconnu.emoji import emojis
 from inconnu.roll import Roll
 from inconnu.settings import menu
 
@@ -29,7 +28,6 @@ __all__ = (
     "character",
     "d10",
     "menu",
-    "emojis",
     "experience",
     "header",
     "macros",

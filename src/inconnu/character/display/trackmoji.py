@@ -1,6 +1,6 @@
 """character/display/trackmoji.py - A tool for converting a stress track to emoji."""
 
-import inconnu
+import services
 
 
 def emojify_track(track: str) -> str:
@@ -31,10 +31,10 @@ def emojify_hunger(level: int) -> str:
 def emojify_blood_potency(level: int) -> str:
     """Create a Blood Potency track."""
     if level > 0:
-        potency = inconnu.emojis.get("bp_filled", level)
+        potency = services.emojis.get("bp_filled", level)
         return " ".join(potency)
 
-    return inconnu.emojis["bp_unfilled"]
+    return services.emojis["bp_unfilled"]
 
 
 def emojify_humanity(humanity: int, stains: int) -> str:
@@ -75,26 +75,26 @@ def __emojify_stressbox(box: str):
     if not box:
         raise ValueError("Invalid stress box")  # Should never happen
 
-    return inconnu.emojis[box]
+    return services.emojis[box]
 
 
 def __hungermoji(hungry: bool, count: int) -> str:
     """Return a filled or unfilled hunger emoji."""
     hunger = "hunger" if hungry else "no_hunger"
-    return inconnu.emojis.get(hunger, count)
+    return services.emojis.get(hunger, count)
 
 
 def __humanitymoji(filled, count) -> str:
     """Return a filled or unfilled humanity emoji."""
     humanity = "hu_filled" if filled else "hu_unfilled"
-    return inconnu.emojis.get(humanity, count)
+    return services.emojis.get(humanity, count)
 
 
 def __stainmoji(count: int) -> str:
     """Return a stain emoji."""
-    return inconnu.emojis.get("stain", count)
+    return services.emojis.get("stain", count)
 
 
 def __degenerationmoji(count: int) -> str:
     """Return a degeneration emoji."""
-    return inconnu.emojis.get("degen", count)
+    return services.emojis.get("degen", count)

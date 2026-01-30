@@ -249,9 +249,9 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_interaction(self, interaction: discord.Interaction):
         """Check whether the bot is ready before allowing the interaction to go through."""
-        if not inconnu.emojis.loaded:
+        if not services.emojis.loaded:
             # To speed up start times, we load emojis here rather than in on_ready
-            await inconnu.emojis.load(bot)
+            await services.emojis.load(bot)
 
         if interaction.type == discord.InteractionType.application_command:
             # Insert the raw interaction data in case we get a crash before

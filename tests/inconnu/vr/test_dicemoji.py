@@ -20,7 +20,7 @@ def mock_emojis():
         "h_succ": "🩸_success",
         "h_fail": "🩸_fail",
     }
-    with patch("inconnu.emojis", emojis):
+    with patch("services.emojis", emojis):
         yield emojis
 
 
@@ -110,7 +110,7 @@ def test_threshold_1_is_bestial_not_just_failure(mock_emojis):
 
 def test_emoji_name_construction_normal():
     """Test that emoji names are constructed correctly for normal dice."""
-    with patch("inconnu.emojis", {"ln_bestial": "emoji"}) as mock:
+    with patch("services.emojis", {"ln_bestial": "emoji"}) as mock:
         emojify_die(1, hunger=False)
         # Verify the correct key was accessed
         assert "ln_bestial" in mock
@@ -118,7 +118,7 @@ def test_emoji_name_construction_normal():
 
 def test_emoji_name_construction_hunger():
     """Test that emoji names are constructed correctly for hunger dice."""
-    with patch("inconnu.emojis", {"h_crit": "emoji"}) as mock:
+    with patch("services.emojis", {"h_crit": "emoji"}) as mock:
         emojify_die(10, hunger=True)
         # Verify the correct key was accessed
         assert "h_crit" in mock

@@ -2,6 +2,7 @@
 
 from services import settings
 from services.characters import CharacterManager, char_mgr
+from services.emoji import emojis
 from services.log import report_database_error
 from services.reporter import ErrorReporter, character_update
 from services.webhooks import WebhookCache
@@ -9,6 +10,7 @@ from services.webhooks import WebhookCache
 __all__ = (
     "CharacterManager",
     "char_mgr",
+    "emojis",
     "ErrorReporter",
     "report_database_error",
     "WebhookCache",

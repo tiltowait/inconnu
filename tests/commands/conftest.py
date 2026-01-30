@@ -151,7 +151,7 @@ async def mock_emoji_manager():
     mock_emojis.__getitem__ = MagicMock(side_effect=lambda key: f":{key}:")
     mock_emojis.loaded = True
 
-    with patch("inconnu.emojis", mock_emojis):
+    with patch("services.emojis", mock_emojis):
         yield mock_emojis
 
 

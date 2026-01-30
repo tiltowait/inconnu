@@ -439,5 +439,5 @@ async def check_premium_expiries():
 
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True, webhooks=True)
-bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS)
+bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS, cache_app_emojis=True)
 inconnu.bot = bot

@@ -7,9 +7,10 @@ from loguru import logger
 
 import errors
 import inconnu
+import services
 import ui
 from models import HeaderSubdoc, RPPost, VChar
-from services import haven
+from services.haven import haven
 from utils import get_avatar, re_paginate
 from utils.text import clean_text, pull_mentions
 from utils.text import diff as text_diff
@@ -251,7 +252,7 @@ class PostModal(discord.ui.Modal):
 
     async def _post_to_changelog(self, interaction: discord.Interaction):
         """Post the edited message to the RP changelog."""
-        if changelog_id := await inconnu.settings.changelog_channel(interaction.guild):
+        if changelog_id := await services.settings.changelog_channel(interaction.guild):
             # Prep the diff
             post = self.post_to_edit
             diff = text_diff(post.history[0].content, post.content)

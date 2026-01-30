@@ -12,6 +12,7 @@ from pymongo import UpdateOne
 import db
 import inconnu
 import interface
+import services
 from utils.decorators import premium
 
 
@@ -252,7 +253,7 @@ class RoleplayCog(commands.Cog):
         )
         if post is not None:
             logger.debug("POST: Marked Rolepost as deleted")
-            deletion_id = await inconnu.settings.deletion_channel(post["guild"])
+            deletion_id = await services.settings.deletion_channel(post["guild"])
             if deletion_id:
                 channel = self.bot.get_partial_messageable(deletion_id)
 

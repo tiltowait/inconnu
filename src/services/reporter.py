@@ -10,7 +10,6 @@ from loguru import logger
 
 import constants
 import errors
-import inconnu
 import ui
 from utils import get_avatar
 
@@ -213,7 +212,9 @@ class ErrorReporter:
 
 async def character_update(*, ctx, character, title, message, **kwargs):
     """Display character updates in the update channel."""
-    if update_channel := await inconnu.settings.update_channel(ctx.guild):
+    from services.settings import update_channel as get_update_channel
+
+    if update_channel := await get_update_channel(ctx.guild):
         msg = kwargs.pop("msg", None)
         if msg:
             msg = msg.jump_url

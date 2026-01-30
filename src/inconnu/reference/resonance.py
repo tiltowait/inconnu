@@ -6,6 +6,7 @@ from typing import NamedTuple
 import discord
 
 import inconnu
+import services
 from ctx import AppCtx
 from utils import get_avatar
 
@@ -51,7 +52,7 @@ async def resonance(ctx, **kwargs):
     """Generate and display a resonance."""
     temperament = __get_temperament()
     if temperament != "Negligible":
-        add_empty = await inconnu.settings.add_empty_resonance(ctx.guild)
+        add_empty = await services.settings.add_empty_resonance(ctx.guild)
         die, res = __get_resonance(add_empty)
     else:
         die = None

@@ -9,7 +9,7 @@ import inconnu
 from ctx import AppCtx
 from models import VChar
 from models.rpheader import HeaderSubdoc
-from services import haven
+from services.haven import haven
 from utils import get_avatar
 from utils.permissions import is_supporter
 

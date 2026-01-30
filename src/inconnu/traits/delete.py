@@ -9,7 +9,7 @@ import errors
 import ui
 from inconnu.traits import traitcommon
 from models import VChar
-from services import haven
+from services.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
 

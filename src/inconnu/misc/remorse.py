@@ -6,7 +6,7 @@ import errors
 import inconnu
 import services
 from models import VChar
-from services import haven
+from services.haven import haven
 from utils import get_message
 from utils.text import pluralize
 

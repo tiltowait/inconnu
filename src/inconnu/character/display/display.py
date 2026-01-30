@@ -5,12 +5,13 @@ from enum import StrEnum
 import discord
 
 import inconnu
+import services
 import ui
 from constants import Damage
 from ctx import AppCtx
 from inconnu.character.display import trackmoji
 from models import VChar
-from services import haven
+from services.haven import haven
 from utils import get_avatar
 from utils.text import pluralize
 
@@ -156,7 +157,7 @@ async def __get_embed(
     embed.set_footer(text=footer or None)
     embed.set_thumbnail(url=thumbnail or None)
 
-    can_emoji = await inconnu.settings.can_emoji(ctx)
+    can_emoji = await services.settings.can_emoji(ctx)
 
     for field, parameter in fields:
         # We use optionals because ghouls and mortals don't have every parameter

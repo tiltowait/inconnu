@@ -6,7 +6,7 @@ import constants
 import inconnu
 from ctx import AppCtx
 from models import VChar
-from services import haven
+from services.haven import haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#awakening"
 

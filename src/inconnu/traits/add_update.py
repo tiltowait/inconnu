@@ -9,7 +9,7 @@ import ui
 from inconnu.traits.parser import parse_traits
 from models import VChar
 from models.vchardocs import VCharTrait
-from services import haven
+from services.haven import haven
 from utils.text import pluralize
 
 __HELP_URL = {

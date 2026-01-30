@@ -6,7 +6,7 @@ import errors
 import inconnu
 import services
 import ui
-from services import haven
+from services.haven import haven
 from utils import get_message
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"

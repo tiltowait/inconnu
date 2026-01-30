@@ -14,7 +14,7 @@ from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
 from inconnu.character.update import paramupdate
 from models import VChar
-from services import Haven
+from services.haven import Haven
 from utils import get_message, parse_parameters
 
 __MATCHES = {}
@@ -146,10 +146,10 @@ async def __update_character(ctx: AppCtx, character: VChar, param: str, value: s
     Raises ValueError if the parameter's value is invalid.
     """
     if param == "current_xp":
-        if not await inconnu.settings.can_adjust_current_xp(ctx):
+        if not await services.settings.can_adjust_current_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust unspent XP.")
     elif param == "total_xp":
-        if not await inconnu.settings.can_adjust_lifetime_xp(ctx):
+        if not await services.settings.can_adjust_lifetime_xp(ctx):
             raise ValueError("You must have administrator privileges to adjust lifetime XP.")
     elif param == "name":
         # This is the only async method

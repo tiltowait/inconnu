@@ -9,7 +9,7 @@ import services
 import ui
 from config import web_asset
 from models import VChar
-from services import haven
+from services.haven import haven
 from utils import get_message
 from utils.text import pluralize
 
@@ -167,7 +167,7 @@ async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):
     failures = 0
     stains = 0
 
-    oblivion = await inconnu.settings.oblivion_stains(guild)
+    oblivion = await services.settings.oblivion_stains(guild)
 
     for _ in range(rolls):
         die = inconnu.d10()

@@ -8,10 +8,11 @@ import discord
 import db
 import errors
 import inconnu
+import services
 import ui
 from ctx import AppCtx
 from inconnu import vr as roll
-from services import Haven
+from services.haven import Haven
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
 __STRATEGIES = {
@@ -83,7 +84,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     # Total Faiiure
     # Bestial (Opt)
 
-    can_emoji = await inconnu.settings.can_emoji(ctx)
+    can_emoji = await services.settings.can_emoji(ctx)
     breakdown = []
 
     if probs["critical"] != 0:

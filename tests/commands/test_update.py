@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-import inconnu
+import services
 from ctx import AppCtx
 from inconnu.character.update.parse import update
 from models.vchar import VChar
@@ -28,7 +28,7 @@ def mock_haven(vamp: VChar):
     haven_instance.fetch = mock_fetch
     haven_instance.owner = MagicMock()
 
-    with patch("services.Haven", return_value=haven_instance):
+    with patch("services.haven.Haven", return_value=haven_instance):
         yield haven_instance
 
 
@@ -497,7 +497,7 @@ async def test_update_xp_without_permission_error(
 
     # Mock permission check to return False
     with patch.object(
-        inconnu.settings, "can_adjust_current_xp", new_callable=AsyncMock, return_value=False
+        services.settings, "can_adjust_current_xp", new_callable=AsyncMock, return_value=False
     ):
         # Should fail permission check
         await update(ctx, "unspent_xp+2", character=vamp)

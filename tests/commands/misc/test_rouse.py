@@ -6,7 +6,7 @@ import pytest
 
 import constants
 import errors
-import inconnu
+import services
 from ctx import AppCtx
 from inconnu.misc.rouse import rouse
 from models.vchar import VChar
@@ -60,7 +60,7 @@ async def test_vamp_single_rouse(
         patch("inconnu.d10", return_value=die_result),
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
         patch("services.character_update", new_callable=AsyncMock),
-        patch.object(inconnu.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
         await rouse(ctx, vamp, 1, "Test", False)
@@ -107,7 +107,7 @@ async def test_vamp_multiple_rouse(
         patch("inconnu.d10", side_effect=lambda: next(die_mock)),
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
         patch("services.character_update", new_callable=AsyncMock),
-        patch.object(inconnu.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
         await rouse(ctx, vamp, count, "Test", False)
@@ -141,7 +141,7 @@ async def test_vamp_rouse_with_reroll(vamp: VChar, ctx: AppCtx, mock_char_save: 
         patch("inconnu.d10", side_effect=lambda: next(die_results)),
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
         patch("services.character_update", new_callable=AsyncMock),
-        patch.object(inconnu.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
         await rouse(ctx, vamp, 1, "Test", True)
@@ -166,7 +166,7 @@ async def test_vamp_rouse_reroll_both_fail(vamp: VChar, ctx: AppCtx, mock_char_s
         patch("inconnu.d10", side_effect=lambda: next(die_results)),
         patch("inconnu.character.display", new_callable=AsyncMock),
         patch("services.character_update", new_callable=AsyncMock),
-        patch.object(inconnu.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
         await rouse(ctx, vamp, 1, "Test", True)
@@ -199,7 +199,7 @@ async def test_vamp_rouse_oblivion_stains_show(
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
         patch("services.character_update", new_callable=AsyncMock),
         patch.object(
-            inconnu.settings,
+            services.settings,
             "oblivion_stains",
             new_callable=AsyncMock,
             return_value=oblivion_values,
@@ -235,7 +235,7 @@ async def test_vamp_rouse_oblivion_stains_apply(
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
         patch("services.character_update", new_callable=AsyncMock),
         patch.object(
-            inconnu.settings,
+            services.settings,
             "oblivion_stains",
             new_callable=AsyncMock,
             return_value=[1, 10],  # 1 and 10 cause stains
@@ -267,7 +267,7 @@ async def test_vamp_rouse_multiple_oblivion_stains(
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
         patch("services.character_update", new_callable=AsyncMock),
         patch.object(
-            inconnu.settings,
+            services.settings,
             "oblivion_stains",
             new_callable=AsyncMock,
             return_value=[1, 10],
@@ -293,7 +293,7 @@ async def test_vamp_rouse_at_hunger_5(vamp: VChar, ctx: AppCtx, mock_char_save: 
         patch("inconnu.d10", return_value=6),  # Success
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
         patch("services.character_update", new_callable=AsyncMock),
-        patch.object(inconnu.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
         await rouse(ctx, vamp, 1, "Test", False)
@@ -318,7 +318,7 @@ async def test_vamp_rouse_hunger_5_failure(vamp: VChar, ctx: AppCtx, mock_char_s
         patch("inconnu.d10", return_value=3),  # Failure
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
         patch("services.character_update", new_callable=AsyncMock),
-        patch.object(inconnu.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
         await rouse(ctx, vamp, 1, "Test", False)
@@ -345,7 +345,7 @@ async def test_thin_blood_rouse(thin_blood: VChar, ctx: AppCtx, mock_char_save: 
         patch("inconnu.d10", return_value=3),  # Failure
         patch("inconnu.character.display", new_callable=AsyncMock),
         patch("services.character_update", new_callable=AsyncMock),
-        patch.object(inconnu.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
         await rouse(ctx, thin_blood, 1, "Test", False)
@@ -363,7 +363,7 @@ async def test_vamp_rouse_purpose_in_footer(vamp: VChar, ctx: AppCtx, mock_char_
         patch("inconnu.d10", return_value=6),
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
         patch("services.character_update", new_callable=AsyncMock),
-        patch.object(inconnu.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
         await rouse(ctx, vamp, 1, purpose, False)
@@ -384,7 +384,7 @@ async def test_vamp_rouse_high_hunger_color(vamp: VChar, ctx: AppCtx, mock_char_
         patch("inconnu.d10", return_value=3),  # Failure
         patch("inconnu.character.display", new_callable=AsyncMock),
         patch("services.character_update", new_callable=AsyncMock) as mock_report,
-        patch.object(inconnu.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
         await rouse(ctx, vamp, 1, "Test", False)

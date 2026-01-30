@@ -14,7 +14,7 @@ from ctx import AppCtx
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
 from inconnu.vr import display_outcome, perform_roll
-from services import Haven
+from services.haven import Haven
 from utils import get_avatar
 
 __HUNT_LISTENERS = {}

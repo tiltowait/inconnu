@@ -8,7 +8,7 @@ from loguru import logger
 import inconnu
 from ctx import AppCtx
 from models import VChar
-from services import haven
+from services.haven import haven
 from utils.text import clean_text
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"

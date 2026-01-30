@@ -9,7 +9,7 @@ import errors
 import ui
 from ctx import AppCtx
 from models import VChar
-from services import haven
+from services.haven import haven
 from ui.views import ReportingView
 
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"

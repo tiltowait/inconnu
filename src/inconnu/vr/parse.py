@@ -18,14 +18,14 @@ import discord.ext.commands
 from loguru import logger
 
 import errors
-import inconnu
+import services
 import ui
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
 from models import VChar
 from models.vchardocs import VCharTrait
-from services import Haven
+from services.haven import Haven
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
@@ -92,7 +92,7 @@ async def parse(
 
     # Attempt to parse the user's roll syntax
     try:
-        max_hunger = await inconnu.settings.max_hunger(ctx.guild)
+        max_hunger = await services.settings.max_hunger(ctx.guild)
         outcome = await perform_roll(character, syntax, max_hunger)
         await display_outcome(ctx, owner, character, outcome, comment)
 

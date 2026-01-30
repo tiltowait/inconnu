@@ -11,7 +11,7 @@ import ui
 from ctx import AppCtx
 from inconnu.specialties.tokenize import SYNTAX, tokenize
 from models.vchar import VChar
-from services import haven
+from services.haven import haven
 from utils.text import format_join
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/specialties"

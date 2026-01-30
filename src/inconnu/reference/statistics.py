@@ -7,10 +7,10 @@ import discord
 
 import constants
 import db
-import inconnu
+import services
 import ui
 from ctx import AppCtx
-from services import haven
+from services.haven import haven
 from utils import get_avatar, player_lookup
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
@@ -227,7 +227,7 @@ async def __general_statistics(ctx, date, owner):
             )
         return
 
-    if await inconnu.settings.accessible(ctx):
+    if await services.settings.accessible(ctx):
         await __display_text(ctx, results, date)
     else:
         await __display_embed(ctx, results, date, owner)

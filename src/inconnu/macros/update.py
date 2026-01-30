@@ -6,7 +6,7 @@ import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
 from models import VChar
-from services import haven
+from services.haven import haven
 from utils import parse_parameters
 from utils.text import strtobool
 

@@ -6,7 +6,7 @@ import inconnu
 import ui
 from ctx import AppCtx
 from models import VChar
-from services import haven
+from services.haven import haven
 from ui.views import DisablingView
 from utils import get_avatar
 from utils.permissions import is_admin

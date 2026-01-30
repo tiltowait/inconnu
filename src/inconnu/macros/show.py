@@ -9,7 +9,7 @@ import errors
 import ui
 from ctx import AppCtx
 from models import VChar
-from services import haven
+from services.haven import haven
 from utils import get_avatar
 from utils.text import paginate
 

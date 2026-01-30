@@ -6,7 +6,7 @@ import errors
 import inconnu
 import services
 from config import web_asset
-from services import haven
+from services.haven import haven
 from utils import get_avatar, get_message
 from utils.text import pluralize
 
@@ -76,7 +76,7 @@ async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
     footer = "\n".join(footer)
 
     # Display the message
-    if await inconnu.settings.accessible(ctx):
+    if await services.settings.accessible(ctx):
         # Build the text version of the message
         name = character.name
         content = f"**{name}: Frenzy {title} (DC {difficulty})**\n{message}\n*{footer}*"

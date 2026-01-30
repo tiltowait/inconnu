@@ -6,7 +6,7 @@ from discord.ext.commands import Paginator as Chunker
 import constants
 import ui
 from models import VChar
-from services import haven
+from services.haven import haven
 from utils.text import format_join
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-traits"

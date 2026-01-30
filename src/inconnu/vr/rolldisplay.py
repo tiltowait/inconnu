@@ -8,6 +8,7 @@ import discord
 from discord.ui import Button
 
 import inconnu
+import services
 from config import web_asset
 from inconnu.vr import dicemoji
 from ui.views import DisablingView
@@ -318,7 +319,7 @@ class RollDisplay:
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        can_emoji = await inconnu.settings.can_emoji(self.ctx)
+        can_emoji = await services.settings.can_emoji(self.ctx)
         if self.outcome.pool <= 30 and can_emoji:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)

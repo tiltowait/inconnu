@@ -4,7 +4,7 @@ Invite: https://discord.com/api/oauth2/authorize?client_id=882409882119196704&pe
 """
 
 import asyncio
-import os
+import signal
 
 import uvloop
 from dotenv import load_dotenv
@@ -12,6 +12,7 @@ from loguru import logger
 
 import db
 from bot import bot
+from config import BOT_TOKEN
 
 load_dotenv()
 
@@ -19,14 +20,32 @@ load_dotenv()
 async def startup():
     """Initialize the database connection and start the bot."""
     await db.init()
-    async with bot:
-        await bot.start(os.environ["INCONNU_TOKEN"])
+    try:
+        async with bot:
+            await bot.start(BOT_TOKEN)
+    finally:
+        await db.close()
+
+
+def handle_signal(signum: int, _):
+    """Handle shutdown signals."""
+    signame = signal.Signals(signum).name
+    logger.info(f"Received {signame}, shutting down...")
+    raise KeyboardInterrupt
 
 
 def main():
     uvloop.install()
     logger.info("Installed uvloop")
-    asyncio.run(startup())
+
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
+
+    try:
+        asyncio.run(startup())
+    except KeyboardInterrupt:
+        logger.info("Shutdown complete")
 
 
 if __name__ == "__main__":

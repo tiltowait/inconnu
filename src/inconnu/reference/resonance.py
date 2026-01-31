@@ -107,7 +107,7 @@ async def _display_embed(
         if dys := get_dyscrasia(res):
             embed.add_field(
                 name=f"Dyscrasia: {dys.name}",
-                value=f"{dys.description} `(p. {dys.page})`",
+                value=f"{dys.description} *(p. {dys.page})*",
                 inline=False,
             )
     embed.set_footer(text=mode.short)

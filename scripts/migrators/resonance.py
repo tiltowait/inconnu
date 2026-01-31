@@ -52,7 +52,7 @@ def main():
     count = db.guilds.count_documents({})
     if not yorn(f"This will impact {count} guilds."):
         sys.exit("Canceling")
-    if args.env == "prod" and not yorn(f"THIS WILL AFFECT PROD!"):
+    if args.env == "prod" and not yorn("THIS WILL AFFECT PROD!"):
         sys.exit("Canceling")
 
     with client.start_session() as session:

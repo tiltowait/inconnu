@@ -10,6 +10,7 @@ from loguru import logger
 import db
 import errors
 from models.vchar import VChar
+from utils.text import pluralize
 
 
 class CharacterManager:
@@ -146,6 +147,18 @@ class CharacterManager:
 
         return False
 
+    def clear_caches(self, player: discord.Member):
+        """Clear the caches for the player + guild."""
+        _, _, key = self._get_ids(player.guild, player)
+        char_ids = {c.id_str for c in self.user_cache.get(key, [])}
+        for char_id in char_ids:
+            if char_id in self.id_cache:
+                del self.id_cache[char_id]
+        if key in self.user_cache:
+            del self.user_cache[key]
+
+        logger.debug("{}: Cleared {}'s caches", player.guild.name, player.name)
+
     async def register(self, character):
         """Add the character to the database and the cache."""
         self.id_cache[character.id_str] = character
@@ -166,7 +179,7 @@ class CharacterManager:
         key = self._user_key(character)
         self.user_cache[key] = user_chars
 
-    async def remove(self, character: "VChar"):
+    async def remove(self, character: VChar):
         """Remove a character from the database and the cache."""
         deletion = await character.delete()
 
@@ -223,24 +236,44 @@ class CharacterManager:
             new_owner.name,
         )
 
-    async def mark_inactive(self, player):
+    async def mark_inactive(self, player: discord.Member):
         """
         When a player leaves a guild, mark their characters as inactive. They
         will then be culled after 30 days if they haven't returned before then.
         """
-        await self.collection.update_many(
+        self.clear_caches(player)
+
+        res = await self.collection.update_many(
             {"guild": player.guild.id, "user": player.id},
             {"$set": {"log.left": datetime.now(UTC)}},
         )
+        if res.modified_count > 0:
+            logger.info(
+                "{}: {} left. Marked {} {} inactive.",
+                player.guild.name,
+                player.name,
+                res.modified_count,
+                pluralize(res.modified_count, "character"),
+            )
 
-    async def mark_active(self, player):
+    async def mark_active(self, player: discord.Member):
         """
         When a player returns to the guild, we mark their characters as active
         so long as they haven't already been culled.
         """
-        await self.collection.update_many(
+        # We don't need to clear the caches, since we already did that when we
+        # marked them inactive.
+        res = await self.collection.update_many(
             {"guild": player.guild.id, "user": player.id}, {"$unset": {"log.left": 1}}
         )
+        if res.modified_count > 0:
+            logger.info(
+                "{}: {} re-joined. Cleared {} deletion {}.",
+                player.guild.name,
+                player.name,
+                res.modified_count,
+                pluralize(res.modified_count, "countdown"),
+            )
 
     def sort_user(self, guild: int, user: int):
         """Sorts the user's characters alphabetically."""
@@ -268,7 +301,7 @@ class CharacterManager:
         return guild, user, key
 
     @staticmethod
-    def _user_key(character):
+    def _user_key(character: VChar):
         """Generate a key for the user cache."""
         return f"{character.guild} {character.user}"
 

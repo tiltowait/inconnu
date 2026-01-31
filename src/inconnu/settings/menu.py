@@ -16,7 +16,7 @@ from discord.ui import Button, Select, TextDisplay
 from loguru import logger
 
 from ctx import AppCtx
-from models import ExpPerms, VGuild, VUser
+from models import ExpPerms, ResonanceMode, VGuild, VUser
 from utils.permissions import is_admin
 
 
@@ -117,21 +117,25 @@ class SettingsMenu(discord.ui.DesignerView):
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
             container.add_text("## Gameplay")
 
-            # Empty resonance toggle
-            button = Button(
-                label="Yes" if self.scope.settings.add_empty_resonance else "No",
-                style=self.button_style(self.scope.settings.add_empty_resonance),
+            # Resonance mode
+            current_resonance = self.scope.settings.resonance
+            options = [
+                SelectOption(label=opt.description, value=opt, default=opt == current_resonance)
+                for opt in list(ResonanceMode)
+            ]
+            select = Select(
+                select_type=ComponentType.string_select,
+                options=options,
                 id=SettingsIDs.RESONANCE,
                 disabled=not admin,
             )
-            button.callback = self.toggle_add_empty_resonance
+            select.callback = self.set_resonance_mode
+
             resonance_cmd = ctx.bot.cmd_mention("resonance")
-            container.add_section(
-                TextDisplay(
-                    f"### Add empty resonance?\n16.7% chance to appear in {resonance_cmd}."
-                ),
-                accessory=button,
+            container.add_text(
+                f"### Resonance mode\nChange Resonance probabilities in {resonance_cmd}."
             )
+            container.add_row(select)
 
             container.add_item(discord.ui.Separator())
 
@@ -266,14 +270,14 @@ class SettingsMenu(discord.ui.DesignerView):
 
         self._log_update(interaction, "Oblivion stains", stains)
 
-    async def toggle_add_empty_resonance(self, interaction: discord.Interaction):
-        """Toggle the add empty resonance setting."""
-        vguild = cast(VGuild, self.scope)
-        vguild.settings.add_empty_resonance = not vguild.settings.add_empty_resonance
+    async def set_resonance_mode(self, interaction: discord.Interaction):
+        """Switch Resonance mode."""
+        select = cast(Select, self.get_item(SettingsIDs.RESONANCE))
+        resonance: str = select.values[0]
+        self._update_select_default(select, resonance)
 
-        button = cast(Button, self.get_item(SettingsIDs.RESONANCE))
-        button.label = self.button_label(vguild.settings.add_empty_resonance)
-        button.style = self.button_style(vguild.settings.add_empty_resonance)
+        vguild = cast(VGuild, self.scope)
+        vguild.settings.resonance = ResonanceMode(resonance)
 
         await interaction.edit(view=self)
         await vguild.save()

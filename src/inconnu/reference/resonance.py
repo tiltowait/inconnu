@@ -8,13 +8,23 @@ import discord
 import inconnu
 import services
 from ctx import AppCtx
+from models import ResonanceMode
 from utils import get_avatar
 
-__DISCIPLINES = {
+STANDARD_DISCIPLINES = {
     "Choleric": "Celerity, Potence",
     "Melancholy": "Fortitude, Obfuscate",
     "Phlegmatic": "Auspex, Dominate",
     "Sanguine": "Blood Sorcery, Presence",
+    "Animal Blood": "Animalism, Protean",
+    "Empty": "Oblivion",
+}
+
+TATTERED_DISCIPLINES = {
+    "Choleric": "Animalism, Celerity, Potence",
+    "Melancholy": "Fortitude, Obfuscate, Oblivion",
+    "Phlegmatic": "Auspex, Dominate",
+    "Sanguine": "Blood Sorcery, Presence, Protean",
     "Animal Blood": "Animalism, Protean",
     "Empty": "Oblivion",
 }
@@ -26,10 +36,14 @@ __EMOTIONS = {
     "Sanguine": "Horny, happy, addicted, active, flighty, enthusiastic",
     "Animal Blood": "No emotion",
     "Empty": "No emotion",
-    None: "No notable emotions",
+    "": "No notable emotions",
 }
 
-RESONANCES = list(__DISCIPLINES)
+# No need to export a "TATTERED_RESONANCES" list: We can't dynamically change
+# the options based on guild settings (we can ... but it is slow and bad UX),
+# so we'll allow animal and empty even though they're technically wrong, but
+# the Big Four will still be correct when called in get_resonance().
+STANDARD_RESONANCES = list(STANDARD_DISCIPLINES)
 
 
 class Dyscrasia(NamedTuple):
@@ -40,28 +54,36 @@ class Dyscrasia(NamedTuple):
     page: int
 
 
-async def random_temperament(ctx: AppCtx, res: str | None):
+async def random_temperament(ctx: AppCtx, res: str):
     """Generate a random temperament for a given resonance."""
-    temperament = __get_temperament()
+    temperament = _get_temperament()
     if temperament == "Negligible":
-        res = None
-    await __display_embed(ctx, temperament, res, None)
+        res = ""
+
+    mode = await services.settings.resonance_mode(ctx.guild)
+    await _display_embed(ctx, temperament, res, mode)
 
 
 async def resonance(ctx, **kwargs):
     """Generate and display a resonance."""
-    temperament = __get_temperament()
+    temperament = _get_temperament()
+    mode = await services.settings.resonance_mode(ctx.guild)
+
     if temperament != "Negligible":
-        add_empty = await services.settings.add_empty_resonance(ctx.guild)
-        die, res = __get_resonance(add_empty)
+        res = get_resonance(mode)
     else:
-        die = None
-        res = None
+        res = ""
 
-    await __display_embed(ctx, temperament, res, die, **kwargs)
+    await _display_embed(ctx, temperament, res, mode, **kwargs)
 
 
-async def __display_embed(ctx: AppCtx, temperament: str, res: str | None, die: int, **kwargs):
+async def _display_embed(
+    ctx: AppCtx,
+    temperament: str,
+    res: str,
+    mode: ResonanceMode,
+    **kwargs,
+):
     """Display the resonance in an embed."""
     if res:
         title = f"{temperament} {res} Resonance"
@@ -73,23 +95,27 @@ async def __display_embed(ctx: AppCtx, temperament: str, res: str | None, die: i
         name=kwargs.get("character", ctx.user.display_name),
         icon_url=get_avatar(ctx.user),
     )
-    embed.add_field(name="Disciplines", value=__DISCIPLINES.get(res, "None"))
+    if mode == ResonanceMode.TATTERED_FACADE:
+        disciplines = TATTERED_DISCIPLINES.get(res, "None")
+    else:
+        disciplines = STANDARD_DISCIPLINES.get(res, "None")
+
+    embed.add_field(name="Disciplines", value=disciplines)
     embed.add_field(name="Emotions & Conditions", value=__EMOTIONS[res])
 
-    if temperament == "Acute":
+    if res and temperament == "Acute":
         if dys := get_dyscrasia(res):
             embed.add_field(
                 name=f"Dyscrasia: {dys.name}",
-                value=f"{dys.description} `(p. {dys.page})`",
+                value=f"{dys.description} *(p. {dys.page})*",
                 inline=False,
             )
-    if die:
-        embed.set_footer(text=f"Rolled {die} for the Resonance")
+    embed.set_footer(text=mode.short)
 
     await ctx.respond(embed=embed)
 
 
-def __get_temperament() -> str:
+def _get_temperament() -> str:
     """Randomgly generate a temperament."""
     die = inconnu.d10()
 
@@ -107,24 +133,24 @@ def __get_temperament() -> str:
     return "Acute"
 
 
-def __get_resonance(add_empty: bool) -> tuple[int, str]:
+def get_resonance(mode: ResonanceMode) -> str:
     """Return a random resonance plus its associated die."""
-    cap = 12 if add_empty else 10
+    cap = 12 if mode == ResonanceMode.ADD_EMPTY else 10
     die = inconnu.random(cap)
 
     if 1 <= die <= 3:
-        return (die, "Phlegmatic")
+        return "Phlegmatic"
 
     if 4 <= die <= 6:
-        return (die, "Melancholy")
+        return "Melancholy"
 
     if 7 <= die <= 8:
-        return (die, "Choleric")
+        return "Choleric"
 
     if 9 <= die <= 10:
-        return (die, "Sanguine")
+        return "Sanguine"
 
-    return (die, "Empty")
+    return "Empty"
 
 
 def get_dyscrasia(resonance: str) -> Dyscrasia | None:

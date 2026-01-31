@@ -92,7 +92,9 @@ class ReferenceCommands(commands.Cog):
 
     @slash_command()
     @option(
-        "resonance", description="The resonance being rolled", choices=inconnu.reference.RESONANCES
+        "resonance",
+        description="The resonance being rolled",
+        choices=inconnu.reference.STANDARD_RESONANCES,
     )
     async def temperament(
         self,

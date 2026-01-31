@@ -37,6 +37,36 @@ class ExpPerms(StrEnum):
                 return "Only admins can adjust XP"
 
 
+class ResonanceMode(StrEnum):
+    """An enum for a guild's Resonance setting."""
+
+    STANDARD = "standard"
+    TATTERED_FACADE = "tattered_facade"  # Resonance chart per Tattered Facade
+    ADD_EMPTY = "add_empty"  # Custom: Fifth probability for Empty Resonance
+
+    @property
+    def description(self) -> str:
+        """Human-readable description."""
+        match self:
+            case ResonanceMode.STANDARD:
+                return "Use V5 core distribution"
+            case ResonanceMode.TATTERED_FACADE:
+                return "Use alternate distribution from Tattered Facade"
+            case ResonanceMode.ADD_EMPTY:
+                return "Add 16.7% chance for Empty Resonance"
+
+    @property
+    def short(self) -> str:
+        """Short description."""
+        match self:
+            case ResonanceMode.STANDARD:
+                return "Using standard V5 distribution."
+            case ResonanceMode.TATTERED_FACADE:
+                return "Using Tattered Facade distribution."
+            case ResonanceMode.ADD_EMPTY:
+                return "Using standard distribution with small chance for Empty Resonance."
+
+
 class VGuildSettings(BaseModel):
     """Represents an individual guild's settings."""
 
@@ -47,6 +77,7 @@ class VGuildSettings(BaseModel):
     changelog_channel: Optional[int] = None
     deletion_channel: Optional[int] = None
     add_empty_resonance: bool = False
+    resonance: ResonanceMode = ResonanceMode.STANDARD
     max_hunger: int = Field(ge=5, le=10, default=5)
 
     @property

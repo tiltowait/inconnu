@@ -61,7 +61,7 @@ async def random_temperament(ctx: AppCtx, res: str):
         res = ""
 
     mode = await services.settings.resonance_mode(ctx.guild)
-    await _display_embed(ctx, temperament, res, None, mode)
+    await _display_embed(ctx, temperament, res, mode)
 
 
 async def resonance(ctx, **kwargs):
@@ -70,19 +70,17 @@ async def resonance(ctx, **kwargs):
     mode = await services.settings.resonance_mode(ctx.guild)
 
     if temperament != "Negligible":
-        die, res = get_resonance(mode)
+        res = get_resonance(mode)
     else:
-        die = None
         res = ""
 
-    await _display_embed(ctx, temperament, res, die, mode, **kwargs)
+    await _display_embed(ctx, temperament, res, mode, **kwargs)
 
 
 async def _display_embed(
     ctx: AppCtx,
     temperament: str,
     res: str,
-    die: int | None,
     mode: ResonanceMode,
     **kwargs,
 ):
@@ -112,8 +110,7 @@ async def _display_embed(
                 value=f"{dys.description} `(p. {dys.page})`",
                 inline=False,
             )
-    if die is not None:
-        embed.set_footer(text=f"Rolled {die} for the Resonance")
+    embed.set_footer(text=mode.short)
 
     await ctx.respond(embed=embed)
 
@@ -136,24 +133,24 @@ def _get_temperament() -> str:
     return "Acute"
 
 
-def get_resonance(mode: ResonanceMode) -> tuple[int, str]:
+def get_resonance(mode: ResonanceMode) -> str:
     """Return a random resonance plus its associated die."""
     cap = 12 if mode == ResonanceMode.ADD_EMPTY else 10
     die = inconnu.random(cap)
 
     if 1 <= die <= 3:
-        return (die, "Phlegmatic")
+        return "Phlegmatic"
 
     if 4 <= die <= 6:
-        return (die, "Melancholy")
+        return "Melancholy"
 
     if 7 <= die <= 8:
-        return (die, "Choleric")
+        return "Choleric"
 
     if 9 <= die <= 10:
-        return (die, "Sanguine")
+        return "Sanguine"
 
-    return (die, "Empty")
+    return "Empty"
 
 
 def get_dyscrasia(resonance: str) -> Dyscrasia | None:

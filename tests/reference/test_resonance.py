@@ -92,8 +92,7 @@ def test_get_temperament_acute():
 def test_get_resonance(mode, die_value, expected_resonance):
     """Test get_resonance returns correct resonance for each die value and mode."""
     with patch("inconnu.random", return_value=die_value):
-        die, res = get_resonance(mode)
-        assert die == die_value
+        res = get_resonance(mode)
         assert res == expected_resonance
 
 
@@ -189,6 +188,7 @@ async def test_random_temperament():
 
             embed = call_kwargs["embed"]
             assert isinstance(embed, discord.Embed)
+            assert embed.title is not None
             assert "Fleeting Choleric Resonance" in embed.title
 
 
@@ -235,7 +235,7 @@ async def test_resonance_with_temperament():
             mock_ctx.respond.assert_called_once()
             embed = mock_ctx.respond.call_args[1]["embed"]
             assert "Fleeting Choleric Resonance" in embed.title
-            assert embed.footer.text == "Rolled 7 for the Resonance"
+            assert embed.footer.text == ResonanceMode.STANDARD.short
 
 
 async def test_resonance_negligible():
@@ -258,8 +258,7 @@ async def test_resonance_negligible():
             mock_ctx.respond.assert_called_once()
             embed = mock_ctx.respond.call_args[1]["embed"]
             assert "Negligible Resonance" in embed.title
-            # Should not have footer with die roll
-            assert embed.footer is None
+            assert embed.footer.text == ResonanceMode.STANDARD.short
 
 
 async def test_display_embed_standard_mode():
@@ -273,7 +272,6 @@ async def test_display_embed_standard_mode():
             mock_ctx,
             temperament="Fleeting",
             res="Choleric",
-            die=7,
             mode=ResonanceMode.STANDARD,
         )
 
@@ -286,7 +284,7 @@ async def test_display_embed_standard_mode():
         assert embed.fields[0].value == "Celerity, Potence"
         assert embed.fields[1].name == "Emotions & Conditions"
         assert "Angry, violent" in embed.fields[1].value
-        assert embed.footer.text == "Rolled 7 for the Resonance"
+        assert embed.footer.text == ResonanceMode.STANDARD.short
 
 
 async def test_display_embed_tattered_facade_mode():
@@ -299,13 +297,13 @@ async def test_display_embed_tattered_facade_mode():
             mock_ctx,
             temperament="Intense",
             res="Sanguine",
-            die=9,
             mode=ResonanceMode.TATTERED_FACADE,
         )
 
         embed = mock_ctx.respond.call_args[1]["embed"]
 
         assert embed.fields[0].value == "Blood Sorcery, Presence, Protean"
+        assert embed.footer.text == ResonanceMode.TATTERED_FACADE.short
 
 
 async def test_display_embed_acute_with_dyscrasia():
@@ -323,7 +321,6 @@ async def test_display_embed_acute_with_dyscrasia():
             mock_ctx,
             temperament="Acute",
             res="Melancholy",
-            die=5,
             mode=ResonanceMode.STANDARD,
         )
 
@@ -335,6 +332,7 @@ async def test_display_embed_acute_with_dyscrasia():
         assert "Description" in embed.fields[2].value
         assert "(p. 42)" in embed.fields[2].value
         assert embed.fields[2].inline is False
+        assert embed.footer.text == ResonanceMode.STANDARD.short
 
 
 async def test_display_embed_acute_without_dyscrasia():
@@ -350,7 +348,6 @@ async def test_display_embed_acute_without_dyscrasia():
             mock_ctx,
             temperament="Acute",
             res="Phlegmatic",
-            die=2,
             mode=ResonanceMode.STANDARD,
         )
 
@@ -358,6 +355,7 @@ async def test_display_embed_acute_without_dyscrasia():
 
         # Should only have 2 fields: Disciplines and Emotions (no Dyscrasia)
         assert len(embed.fields) == 2
+        assert embed.footer.text == ResonanceMode.STANDARD.short
 
 
 async def test_display_embed_with_character_kwarg():
@@ -370,13 +368,13 @@ async def test_display_embed_with_character_kwarg():
             mock_ctx,
             temperament="Fleeting",
             res="Sanguine",
-            die=10,
             mode=ResonanceMode.STANDARD,
             character="Custom Character Name",
         )
 
         embed = mock_ctx.respond.call_args[1]["embed"]
         assert embed.author.name == "Custom Character Name"
+        assert embed.footer.text == ResonanceMode.STANDARD.short
 
 
 async def test_display_embed_empty_resonance():
@@ -389,7 +387,6 @@ async def test_display_embed_empty_resonance():
             mock_ctx,
             temperament="Fleeting",
             res="Empty",
-            die=11,
             mode=ResonanceMode.ADD_EMPTY,
         )
 
@@ -398,23 +395,4 @@ async def test_display_embed_empty_resonance():
         assert embed.title == "Fleeting Empty Resonance"
         assert embed.fields[0].value == "Oblivion"
         assert embed.fields[1].value == "No emotion"
-
-
-async def test_display_embed_no_die():
-    """Test _display_embed with no die value (None)."""
-    mock_ctx = AsyncMock()
-    mock_ctx.user.display_name = "TestUser"
-
-    with patch("inconnu.reference.resonance.get_avatar", return_value="http://avatar.url"):
-        await _display_embed(
-            mock_ctx,
-            temperament="Fleeting",
-            res="Phlegmatic",
-            die=None,
-            mode=ResonanceMode.STANDARD,
-        )
-
-        embed = mock_ctx.respond.call_args[1]["embed"]
-
-        # Should not have footer when die is None
-        assert not hasattr(embed.footer, "text") or embed.footer.text == discord.Embed.Empty
+        assert embed.footer.text == ResonanceMode.ADD_EMPTY.short

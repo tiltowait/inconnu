@@ -55,6 +55,17 @@ class ResonanceMode(StrEnum):
             case ResonanceMode.ADD_EMPTY:
                 return "Add 16.7% chance for Empty Resonance"
 
+    @property
+    def short(self) -> str:
+        """Short description."""
+        match self:
+            case ResonanceMode.STANDARD:
+                return "Using standard V5 distribution."
+            case ResonanceMode.TATTERED_FACADE:
+                return "Using Tattered Facade distribution."
+            case ResonanceMode.ADD_EMPTY:
+                return "Using standard distribution with small chance for Empty Resonance."
+
 
 class VGuildSettings(BaseModel):
     """Represents an individual guild's settings."""

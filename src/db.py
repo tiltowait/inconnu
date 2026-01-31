@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from loguru import logger
 from pymongo import AsyncMongoClient
 
+from models import RPPost, VChar, VGuild, VUser
+
 load_dotenv()
 
 _mongo_url = os.environ["MONGO_URL"]
@@ -33,8 +35,6 @@ users = _db.users
 
 def models() -> list[type[Document]]:
     """Beanie database models."""
-    from models import RPPost, VChar, VGuild, VUser
-
     return [VChar, RPPost, VGuild, VUser]
 
 

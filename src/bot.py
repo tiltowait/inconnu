@@ -328,7 +328,6 @@ class InconnuBot(discord.AutoShardedBot):
             logger.info("CONNECT: Registered SPC owner")
 
             self.connected = True
-            await db.init()
 
         await self.sync_commands()
         logger.info("CONNECT: Commands synced")

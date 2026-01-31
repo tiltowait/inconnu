@@ -27,11 +27,9 @@ An **Inconnu** roll uses the following syntax: `/roll pool:POOL hunger:HUNGER di
 ## Required Permissions
 
 * **Send Messages:** For sending update messages in server-configured channels
-* **Use External Emoji:** For displaying individual dice throws and tracker boxes
 * **Manage Webhooks:** Used by the [premium "Roleposting" feature](https://docs.inconnu.app/premium/roleposting)
 
 ## Troubleshooting
 
 * **Can't use commands?** Make sure **Inconnu** has the permissions above. Additionally, make sure the `@everyone` role has the *Use slash commands* permission.
-* **Emojis not working?** Make sure to enable the *Use External Emoji* permission. Alternatively, enable [accessibility mode](https://docs.inconnu.app/command-reference/miscellaneous#accessibility-mode) server-wide.
 * **Can't see embeds?** Users need Discord's *Show website preview info from links pasted into chat* setting under *Text & Images* enabled in order to see **Inconnu's** embeds. Some AV software, such as McAfee, have also been known to block embeds.

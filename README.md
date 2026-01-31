@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/github/license/tiltowait/inconnu" alt="MIT license" />
 </p>
 
-**Inconnu** is a Discord dicebot for Vampire: The Masquerade 5th Edition. In addition to basic rolls, it offers a number of advanced options and quality-of-life features, such as character integration, trait-based pools, and more. [For a full rundown of **Inconnu's** features, read the documentation.](https://docs.inconnu.app)
+**Inconnu** is a Discord dicebot for *Vampire: The Masquerade 5th Edition*. In addition to basic rolls, it offers a number of advanced options and quality-of-life features, such as character integration, trait-based pools, and more. [For a full rundown of **Inconnu's** features, read the documentation.](https://docs.inconnu.app)
 
 ## Getting Started
 
@@ -32,5 +32,5 @@ An **Inconnu** roll uses the following syntax: `/roll pool:POOL hunger:HUNGER di
 
 ## Troubleshooting
 
-* **Can't use commands?** Make sure **Inconnu** has the permissions above. Additionally, make sure the `@everyone` role has the *Use slash commands* permission.
+* **Can't use commands?** Read [Discord's command permission blog post.](https://discord.com/blog/slash-commands-permissions-discord-apps-bots)
 * **Can't see embeds?** Users need Discord's *Show website preview info from links pasted into chat* setting under *Text & Images* enabled in order to see **Inconnu's** embeds. Some AV software, such as McAfee, have also been known to block embeds.

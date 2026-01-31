@@ -2,7 +2,6 @@
 
 import discord
 
-import inconnu
 from ui.views.disablingview import DisablingView
 
 
@@ -17,6 +16,8 @@ class TraitsView(DisablingView):
     @discord.ui.button(label="Traits", style=discord.ButtonStyle.primary)
     async def show_traits(self, _, interaction):
         """Show the traits so long as the user is valid."""
+        import inconnu
+
         if interaction.user == self.owner or interaction.permissions.administrator:
             await inconnu.traits.show(interaction, self.character, player=self.owner)
         else:

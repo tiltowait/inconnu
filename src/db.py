@@ -49,3 +49,9 @@ async def init():
     """Initialize the database."""
     await init_beanie(_db, document_models=models())
     logger.info("Initialized beanie")
+
+
+async def close():
+    """Close the database connection."""
+    await _client.close()
+    logger.info("Closed MongoDB connection")

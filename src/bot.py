@@ -61,7 +61,6 @@ class InconnuBot(discord.AutoShardedBot):
             self.user.id,
             permissions=discord.Permissions(
                 send_messages=True,
-                use_external_emojis=True,
                 manage_webhooks=True,
             ),
             scopes=("applications.commands", "bot"),

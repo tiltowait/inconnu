@@ -21,16 +21,7 @@ async def accessible(ctx: AppCtx | discord.Interaction):
 
     # Check guild accessibility
     guild = await VGuild.get_or_fetch(ctx.guild)
-    if guild.settings.accessibility:
-        return True
-
-    # Finally, make sure we have emoji permission
-    try:
-        everyone = ctx.guild.default_role
-        return not ctx.channel.permissions_for(everyone).external_emojis
-    except AttributeError:
-        # We somehow received a PartialMessageable or something else
-        return True  # Fallback
+    return guild.settings.accessibility
 
 
 async def can_emoji(ctx: AppCtx | discord.Interaction) -> bool:

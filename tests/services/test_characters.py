@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock
 
+import discord
 import pytest
 import pytest_asyncio
 
@@ -22,7 +23,7 @@ WRONG_USER = 2
 
 def mock_player(guild_id: int, user_id: int):
     """Create a mock Discord member."""
-    player = MagicMock()
+    player = MagicMock(spec=discord.Member)
     player.guild.id = guild_id
     player.id = user_id
     return player
@@ -31,21 +32,21 @@ def mock_player(guild_id: int, user_id: int):
 def mock_bot_with_user(user_id: int, admin: bool):
     """Create a mock bot with user permissions."""
     # Create mock permissions
-    mock_permissions = MagicMock()
+    mock_permissions = MagicMock(spec=discord.Permissions)
     mock_permissions.administrator = admin
 
     # Create mock user
-    user = MagicMock()
+    user = MagicMock(spec=discord.Member)
     user.id = user_id
     user.top_role.permissions = mock_permissions
     user.guild_permissions = mock_permissions
 
     # Create mock guild that returns the user
-    mock_guild = MagicMock()
+    mock_guild = MagicMock(spec=discord.Guild)
     mock_guild.get_member.return_value = user
 
     # Create mock bot that returns the guild
-    mock_bot = MagicMock()
+    mock_bot = MagicMock(spec=discord.AutoShardedBot)
     mock_bot.get_guild.return_value = mock_guild
 
     return mock_bot, user

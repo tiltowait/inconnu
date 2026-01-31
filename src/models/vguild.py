@@ -44,6 +44,17 @@ class ResonanceMode(StrEnum):
     TATTERED_FACADE = "tattered_facade"  # Resonance chart per Tattered Facade
     ADD_EMPTY = "add_empty"  # Custom: Fifth probability for Empty Resonance
 
+    @property
+    def description(self) -> str:
+        """Human-readable description."""
+        match self:
+            case ResonanceMode.STANDARD:
+                return "Use V5 core distribution"
+            case ResonanceMode.TATTERED_FACADE:
+                return "Use alternate distribution from Tattered Facade"
+            case ResonanceMode.ADD_EMPTY:
+                return "Add 16.7% chance for Empty Resonance"
+
 
 class VGuildSettings(BaseModel):
     """Represents an individual guild's settings."""

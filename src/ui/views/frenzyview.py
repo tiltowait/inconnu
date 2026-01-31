@@ -2,7 +2,6 @@
 
 import discord
 
-import inconnu
 from ui.views.disablingview import DisablingView
 
 
@@ -23,6 +22,8 @@ class FrenzyView(DisablingView):
 
     async def frenzy(self, interaction):
         """Frenzy, if applicable."""
+        import inconnu  # Inline to avoid circular import
+
         self.frenzy_button.style = discord.ButtonStyle.secondary
         await self.disable_items(interaction)
         await inconnu.misc.frenzy(interaction, self.character, self.difficulty, None, None)

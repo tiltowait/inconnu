@@ -80,8 +80,10 @@ async def add_empty_resonance(guild: discord.Guild) -> bool:
     return vguild.settings.add_empty_resonance
 
 
-async def resonance_mode(guild: discord.Guild) -> ResonanceMode:
+async def resonance_mode(guild: discord.Guild | None) -> ResonanceMode:
     """The Resonance mode to use on /resonance."""
+    if guild is None:
+        return ResonanceMode.STANDARD
     vguild = await VGuild.get_or_fetch(guild)
     return vguild.settings.resonance
 

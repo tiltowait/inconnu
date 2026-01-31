@@ -4,7 +4,7 @@ from inconnu.reference.bloodpotency import blood_potency
 from inconnu.reference.cripple import cripple
 from inconnu.reference.probabilities import probability
 from inconnu.reference.resonance import (
-    RESONANCES,
+    STANDARD_RESONANCES,
     get_dyscrasia,
     random_temperament,
     resonance,
@@ -18,6 +18,6 @@ __all__ = (
     "probability",
     "random_temperament",
     "resonance",
-    "RESONANCES",
+    "STANDARD_RESONANCES",
     "statistics",
 )

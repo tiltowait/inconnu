@@ -9,19 +9,17 @@ from config import API_KEY
 from constants import ATTRIBUTES, SKILLS
 from models import VChar
 from models.vchardocs import VCharTrait
-from services import char_mgr
+from services import char_mgr, wizard_cache
+from services.wizard import CharacterGuild
 from web.routers.characters.models import (
     AuthorizedCharacter,
     AuthorizedCharacterList,
-    CharacterGuild,
-    WizardCache,
     WizardSchema,
 )
 
 DISCORD_HEADER = "X-Discord-User-ID"
 
 router = APIRouter()
-cache = WizardCache()
 
 
 async def verify_api_key(
@@ -91,7 +89,7 @@ async def get_character(
 @router.get("/characters/wizard/{token}")
 async def get_wizard(token: str) -> WizardSchema:
     """Get the character wizard schema."""
-    wizard = cache.pop(token)
+    wizard = wizard_cache.pop(token)
     if wizard is None:
         raise HTTPException(404, detail="Unknown token. It may have expired.")
 

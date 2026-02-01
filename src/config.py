@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.environ.get("INCONNU_TOKEN", "")
+API_KEY = os.environ.get("INCONNU_API_TOKEN", "")
 DEBUG_GUILDS: Optional[list] = None
 ADMIN_GUILD = int(os.environ["ADMIN_SERVER"])
 SUPPORTER_GUILD = int(os.environ["SUPPORTER_GUILD"])

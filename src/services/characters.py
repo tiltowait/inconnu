@@ -4,6 +4,7 @@ import bisect
 from datetime import UTC, datetime
 
 import discord
+from beanie import PydanticObjectId
 from cachetools import TTLCache
 from loguru import logger
 
@@ -123,6 +124,16 @@ class CharacterManager:
         )
 
         return characters
+
+    async def id_fetch(self, oid: PydanticObjectId | str) -> VChar | None:
+        """Fetch the character by ID, if it exists."""
+        if str(oid) in self.id_cache:
+            return self.id_cache[str(oid)]
+
+        char = await VChar.get(str(oid))
+        if char is not None:
+            self.id_cache[str(oid)] = char
+        return char
 
     async def character_count(self, guild: int, user: int) -> int:
         """Get a count of the user's characters in the server."""

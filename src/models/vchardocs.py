@@ -11,6 +11,15 @@ from pydantic import BaseModel, ConfigDict, Field
 import errors
 
 
+class VCharSplat(StrEnum):
+    """Character splats."""
+
+    VAMPIRE = "vampire"
+    GHOUL = "ghoul"
+    MORTAL = "mortal"
+    THIN_BLOOD = "thin-blood"
+
+
 class VCharProfile(BaseModel):
     """Maintains character biographical info."""
 

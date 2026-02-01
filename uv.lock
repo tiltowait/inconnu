@@ -647,6 +647,7 @@ dependencies = [
     { name = "jinja-markdown" },
     { name = "jinja2" },
     { name = "loguru" },
+    { name = "petname" },
     { name = "py-cord", extra = ["speed"] },
     { name = "pymongo" },
     { name = "pyparsing" },
@@ -677,6 +678,7 @@ requires-dist = [
     { name = "jinja-markdown", specifier = ">=1.210911,<2" },
     { name = "jinja2", specifier = ">=3.1.2,<4" },
     { name = "loguru", specifier = ">=0.7.3,<1" },
+    { name = "petname", specifier = ">=2.6" },
     { name = "py-cord", extras = ["speed"], specifier = ">=2.7.0,<3" },
     { name = "pymongo", specifier = ">=4.2.0,<5" },
     { name = "pyparsing", specifier = ">=3.1.1,<4" },
@@ -976,6 +978,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/65/ee/299d360cdc32edc7d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/b9/c538f279a4e237a006a2c98387d081e9eb060d203d8ed34467cc0f0b9b53/packaging-26.0-py3-none-any.whl", hash = "sha256:b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529", size = 74366, upload-time = "2026-01-21T20:50:37.788Z" },
 ]
+
+[[package]]
+name = "petname"
+version = "2.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8e/a5/348c90b3fb09d7bd76f7dacf1b92e251d75bfbe715006cb9b84eb23be1b1/petname-2.6.tar.gz", hash = "sha256:981c31ef772356a373640d1bb7c67c102e0159eda14578c67a1c99d5b34c9e4c", size = 8357, upload-time = "2019-06-13T20:35:21.021Z" }
 
 [[package]]
 name = "pluggy"

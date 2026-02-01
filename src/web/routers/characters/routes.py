@@ -6,17 +6,22 @@ from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from config import API_KEY
+from constants import ATTRIBUTES, SKILLS
 from models import VChar
+from models.vchardocs import VCharTrait
 from services import char_mgr
 from web.routers.characters.models import (
     AuthorizedCharacter,
     AuthorizedCharacterList,
     CharacterGuild,
+    WizardCache,
+    WizardSchema,
 )
 
 DISCORD_HEADER = "X-Discord-User-ID"
 
 router = APIRouter()
+cache = WizardCache()
 
 
 async def verify_api_key(
@@ -37,6 +42,9 @@ async def get_authenticated_user(
     if user_id is None:
         raise HTTPException(400, detail="Missing user ID")
     return int(user_id)
+
+
+# Getters
 
 
 @router.get("/characters")
@@ -74,4 +82,27 @@ async def get_character(
     return AuthorizedCharacter(
         guild=guild,
         character=char,
+    )
+
+
+# Wizard
+
+
+@router.get("/characters/wizard/{token}")
+async def get_wizard(token: str) -> WizardSchema:
+    """Get the character wizard schema."""
+    wizard = cache.pop(token)
+    if wizard is None:
+        raise HTTPException(404, detail="Unknown token. It may have expired.")
+
+    # Construct the list of valid traits
+    attributes = [
+        VCharTrait(name=trait, rating=1, type=VCharTrait.Type.ATTRIBUTE) for trait in ATTRIBUTES
+    ]
+    skills = [VCharTrait(name=trait, rating=1, type=VCharTrait.Type.SKILL) for trait in SKILLS]
+
+    return WizardSchema(
+        spc=wizard.spc,
+        guild=wizard.guild,
+        traits=attributes + skills,
     )

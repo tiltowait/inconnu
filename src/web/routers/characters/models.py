@@ -3,10 +3,13 @@
 from typing import Optional, Self
 
 import discord
+import petname
+from cachetools import TTLCache
 from pydantic import BaseModel
 
 import inconnu
 from models import VChar
+from models.vchardocs import VCharSplat, VCharTrait
 
 
 class CharacterGuild(BaseModel):
@@ -55,3 +58,43 @@ class AuthorizedCharacterList(BaseModel):
 
     guilds: list[CharacterGuild]
     characters: list[VChar]
+
+
+class WizardSchema(BaseModel):
+    """Data sent by the wizard endpoint."""
+
+    spc: bool
+    guild: CharacterGuild
+    splats: list[VCharSplat] = list(VCharSplat)
+    traits: list[VCharTrait]
+
+
+class WizardData(BaseModel):
+    """User character wizard request data."""
+
+    spc: bool
+    guild: CharacterGuild
+    user: int
+
+
+class WizardCache:
+    """Maintains a TTL cache for character wizards."""
+
+    def __init__(self, maxsize=1000, ttl=1200):
+        self.cache = TTLCache[str, WizardData](maxsize=maxsize, ttl=ttl)
+
+    def register(self, guild: discord.Guild, user: int, spc: bool) -> str:
+        """Register a character creation wizard."""
+        request = WizardData(guild=CharacterGuild.create(guild), user=user, spc=spc)
+        key = petname.Generate(3)
+        if not isinstance(key, str):
+            raise ValueError("Unable to generate key")
+
+        self.cache[key] = request
+        return key
+
+    def pop(self, key: str) -> WizardData | None:
+        """Pop the wizard request data off the cache."""
+        if key not in self.cache:
+            return None
+        return self.cache.pop(key)

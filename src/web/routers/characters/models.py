@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 
+from constants import ATTRIBUTES, SKILLS
 from models import VChar
 from models.vchardocs import VCharSplat, VCharTrait
 from services.wizard import CharacterGuild
@@ -27,4 +28,6 @@ class WizardSchema(BaseModel):
     spc: bool
     guild: CharacterGuild
     splats: list[VCharSplat] = list(VCharSplat)
-    traits: list[VCharTrait]
+    traits: list[VCharTrait] = [
+        VCharTrait(name=trait, rating=1, type=VCharTrait.Type.ATTRIBUTE) for trait in ATTRIBUTES
+    ] + [VCharTrait(name=trait, rating=1, type=VCharTrait.Type.SKILL) for trait in SKILLS]

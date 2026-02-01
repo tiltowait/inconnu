@@ -6,9 +6,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from config import API_KEY
-from constants import ATTRIBUTES, SKILLS
 from models import VChar
-from models.vchardocs import VCharTrait
 from services import char_mgr, wizard_cache
 from services.wizard import CharacterGuild
 from web.routers.characters.models import (
@@ -93,14 +91,7 @@ async def get_wizard(token: str) -> WizardSchema:
     if wizard is None:
         raise HTTPException(404, detail="Unknown token. It may have expired.")
 
-    # Construct the list of valid traits
-    attributes = [
-        VCharTrait(name=trait, rating=1, type=VCharTrait.Type.ATTRIBUTE) for trait in ATTRIBUTES
-    ]
-    skills = [VCharTrait(name=trait, rating=1, type=VCharTrait.Type.SKILL) for trait in SKILLS]
-
     return WizardSchema(
         spc=wizard.spc,
         guild=wizard.guild,
-        traits=attributes + skills,
     )

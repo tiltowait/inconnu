@@ -1,6 +1,6 @@
 """Pydantic models for character API endpoints."""
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from constants import ATTRIBUTES, SKILLS
 from models import VChar
@@ -90,3 +90,15 @@ class CreationBody(BaseModel):
             if len(conviction) > 200:
                 raise ValueError("Each conviction must be 200 characters or less")
         return v
+
+    @model_validator(mode="after")
+    def validate_blood_potency_for_splat(self):
+        """Validate blood potency based on character splat."""
+        if self.splat in [VCharSplat.MORTAL, VCharSplat.GHOUL]:
+            if self.blood_potency != 0:
+                raise ValueError(f"{self.splat.value.title()}s must have blood potency of 0")
+        elif self.splat == VCharSplat.THIN_BLOOD:
+            if not (0 <= self.blood_potency <= 2):
+                raise ValueError("Thin-bloods must have blood potency between 0 and 2")
+        # VAMPIRE uses the default 0-10 range from Field constraint
+        return self

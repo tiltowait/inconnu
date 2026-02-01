@@ -76,21 +76,20 @@ async def verify_api_key(
     return credentials
 
 
-def get_discord_user_id(request: Request) -> int:
-    """Get the Discord user ID from the request headers."""
+async def get_authenticated_user(
+    request: Request,
+    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
+) -> int:
+    """Get the authenticated user ID from headers after verifying API key."""
     user_id = request.headers.get(DISCORD_HEADER)
     if user_id is None:
-        raise HTTPException(400, detail="User ID missing")
+        raise HTTPException(400, detail="Missing user ID")
     return int(user_id)
 
 
 @router.get("/characters")
-async def get_character_list(
-    request: Request,
-    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
-) -> CharacterList:
+async def get_character_list(user_id: int = Depends(get_authenticated_user)) -> CharacterList:
     """Get all of the user's characters."""
-    user_id = get_discord_user_id(request)
 
     guilds: dict[int, Guild] = {}
     chars = []
@@ -105,17 +104,15 @@ async def get_character_list(
 
 @router.get("/characters/{oid}")
 async def get_character(
-    request: Request,
     oid: PydanticObjectId,
-    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
+    user_id: int = Depends(get_authenticated_user),
 ) -> CharacterReturn:
     """Returns a given character if it belongs to the authed user."""
-    user_id = get_discord_user_id(request)
     char = await char_mgr.id_fetch(oid)
 
     if char is None:
         raise HTTPException(404, detail="Character not found")
-    if int(user_id) != char.user:
+    if user_id != char.user:
         raise HTTPException(403, detail="User does not own character")
 
     guild = await Guild.fetch(char.guild)

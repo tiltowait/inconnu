@@ -1,0 +1,1 @@
+"""Character router tests package."""

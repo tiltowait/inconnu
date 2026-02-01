@@ -6,12 +6,14 @@ from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from config import API_KEY
+from constants import Damage
 from models import VChar
 from services import char_mgr, wizard_cache
 from services.wizard import CharacterGuild
 from web.routers.characters.models import (
     AuthorizedCharacter,
     AuthorizedCharacterList,
+    CreationBody,
     WizardSchema,
 )
 
@@ -22,7 +24,7 @@ router = APIRouter()
 
 async def verify_api_key(
     credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
-):
+) -> HTTPAuthorizationCredentials:
     """Validates the API bearer token."""
     if credentials.credentials != API_KEY:
         raise HTTPException(401, detail="Invalid authentication token")
@@ -85,9 +87,12 @@ async def get_character(
 
 
 @router.get("/characters/wizard/{token}")
-async def get_wizard(token: str) -> WizardSchema:
+async def get_wizard(
+    token: str,
+    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
+) -> WizardSchema:
     """Get the character wizard schema."""
-    wizard = wizard_cache.pop(token)
+    wizard = wizard_cache.get(token)
     if wizard is None:
         raise HTTPException(404, detail="Unknown token. It may have expired.")
 
@@ -95,3 +100,27 @@ async def get_wizard(token: str) -> WizardSchema:
         spc=wizard.spc,
         guild=wizard.guild,
     )
+
+
+@router.post("/characters/wizard/{token}")
+async def create_character(
+    token: str,
+    data: CreationBody,
+    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
+):
+    """Create the character and insert it into the database."""
+    wizard = wizard_cache.pop(token)
+    if wizard is None:
+        raise HTTPException(404, detail="Unknown token. It may have expired.")
+
+    character = VChar(
+        guild=wizard.guild.id,
+        user=wizard.user,
+        raw_name=data.name,
+        splat=data.splat,
+        raw_humanity=data.humanity,
+        health=data.health * Damage.NONE,
+        willpower=data.willpower * Damage.NONE,
+        potency=data.blood_potency,
+    )
+    await char_mgr.register(character)

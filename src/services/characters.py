@@ -170,7 +170,7 @@ class CharacterManager:
 
         logger.debug("{}: Cleared {}'s caches", player.guild.name, player.name)
 
-    async def register(self, character):
+    async def register(self, character: VChar):
         """Add the character to the database and the cache."""
         self.id_cache[character.id_str] = character
 

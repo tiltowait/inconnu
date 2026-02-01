@@ -6,6 +6,7 @@ from constants import ATTRIBUTES, SKILLS
 from models import VChar
 from models.vchardocs import VCharSplat, VCharTrait
 from services.wizard import CharacterGuild
+from utils.validation import valid_name, validate_specialty_names, validate_trait_names
 
 
 class AuthorizedCharacter(BaseModel):
@@ -46,6 +47,40 @@ class CreationBody(BaseModel):
     biography: str = Field(max_length=1024)
     history: str = Field(max_length=24)
     traits: list[VCharTrait]
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate and normalize character name."""
+        normalized = " ".join(v.split())
+        if not valid_name(normalized):
+            raise ValueError(
+                "Invalid name: must be 1-30 characters and contain only letters, "
+                "numbers, spaces, hyphens, underscores, and apostrophes"
+            )
+        return normalized
+
+    @field_validator("traits")
+    @classmethod
+    def validate_traits(cls, v: list[VCharTrait]) -> list[VCharTrait]:
+        """Validate all trait names and specialties."""
+        # Validate trait names
+        trait_names = [trait.name for trait in v]
+        validate_trait_names(*trait_names)
+
+        # Validate specialties
+        for trait in v:
+            if trait.raw_subtraits:
+                # Only skills and custom traits can have specialties
+                if trait.type not in [VCharTrait.Type.SKILL, VCharTrait.Type.CUSTOM]:
+                    raise ValueError(
+                        f"Trait `{trait.name}` of type `{trait.type}` cannot have specialties. "
+                        "Only skills and custom traits may have specialties."
+                    )
+                # Validate specialty names
+                validate_specialty_names(*trait.raw_subtraits)
+
+        return v
 
     @field_validator("convictions")
     @classmethod

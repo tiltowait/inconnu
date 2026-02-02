@@ -76,7 +76,7 @@ def valid_character_data():
         "blood_potency": 1,
         "convictions": ["Never harm innocents"],
         "biography": "A compelling backstory",
-        "history": "Recent events",
+        "description": "A brief description",
         "traits": [
             {
                 "name": "Strength",
@@ -129,9 +129,10 @@ async def test_create_character_invalid_api_key(valid_character_data):
 
 async def test_create_character_valid_api_key(valid_character_data, auth_headers, mock_wizard_data):
     """Request with valid API key proceeds."""
-    with patch(
-        "web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data
-    ), patch("web.routers.characters.routes.char_mgr.register", new_callable=AsyncMock):
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", new_callable=AsyncMock),
+    ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/characters/wizard/{TEST_TOKEN}",
@@ -256,9 +257,10 @@ async def test_create_character_specialty_on_wrong_type(
 async def test_create_vampire_success(valid_character_data, auth_headers, mock_wizard_data):
     """Valid vampire character created successfully."""
     mock_register = AsyncMock()
-    with patch(
-        "web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data
-    ), patch("web.routers.characters.routes.char_mgr.register", mock_register):
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+    ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/characters/wizard/{TEST_TOKEN}",
@@ -282,9 +284,10 @@ async def test_create_mortal_success(valid_character_data, auth_headers, mock_wi
     valid_character_data["splat"] = VCharSplat.MORTAL
     valid_character_data["blood_potency"] = 0
     mock_register = AsyncMock()
-    with patch(
-        "web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data
-    ), patch("web.routers.characters.routes.char_mgr.register", mock_register):
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+    ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/characters/wizard/{TEST_TOKEN}",
@@ -300,9 +303,10 @@ async def test_create_ghoul_success(valid_character_data, auth_headers, mock_wiz
     valid_character_data["splat"] = VCharSplat.GHOUL
     valid_character_data["blood_potency"] = 0
     mock_register = AsyncMock()
-    with patch(
-        "web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data
-    ), patch("web.routers.characters.routes.char_mgr.register", mock_register):
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+    ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/characters/wizard/{TEST_TOKEN}",
@@ -318,9 +322,10 @@ async def test_create_thin_blood_success(valid_character_data, auth_headers, moc
     valid_character_data["splat"] = VCharSplat.THIN_BLOOD
     valid_character_data["blood_potency"] = 2
     mock_register = AsyncMock()
-    with patch(
-        "web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data
-    ), patch("web.routers.characters.routes.char_mgr.register", mock_register):
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+    ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/characters/wizard/{TEST_TOKEN}",
@@ -344,9 +349,10 @@ async def test_create_character_with_specialties(
         }
     )
     mock_register = AsyncMock()
-    with patch(
-        "web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data
-    ), patch("web.routers.characters.routes.char_mgr.register", mock_register):
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+    ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/characters/wizard/{TEST_TOKEN}",
@@ -356,13 +362,19 @@ async def test_create_character_with_specialties(
             assert response.status_code == 201
             mock_register.assert_called_once()
 
+            # Verify the specialty was properly assigned
+            created_char = mock_register.call_args[0][0]
+            academics_trait = next(t for t in created_char.raw_traits if t.name == "Academics")
+            assert academics_trait.raw_subtraits == ["History", "Occult"]
+
 
 async def test_token_consumed_after_creation(valid_character_data, auth_headers, mock_wizard_data):
     """Wizard token is consumed (popped) after character creation."""
     mock_pop = MagicMock(return_value=mock_wizard_data)
     mock_register = AsyncMock()
-    with patch("web.routers.characters.routes.wizard_cache.pop", mock_pop), patch(
-        "web.routers.characters.routes.char_mgr.register", mock_register
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", mock_pop),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             await client.post(
@@ -377,9 +389,10 @@ async def test_token_consumed_after_creation(valid_character_data, auth_headers,
 async def test_character_field_mapping(valid_character_data, auth_headers, mock_wizard_data):
     """VChar fields correctly mapped from CreationBody."""
     mock_register = AsyncMock()
-    with patch(
-        "web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data
-    ), patch("web.routers.characters.routes.char_mgr.register", mock_register):
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+    ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             await client.post(
                 f"/characters/wizard/{TEST_TOKEN}",
@@ -398,3 +411,16 @@ async def test_character_field_mapping(valid_character_data, auth_headers, mock_
             assert created_char.health == 6 * Damage.NONE
             assert created_char.willpower == 5 * Damage.NONE
             assert created_char.potency == 1
+
+            # Verify post-construction assignments
+            assert created_char.convictions == ["Never harm innocents"]
+            assert created_char.profile.biography == "A compelling backstory"
+            assert created_char.profile.description == "A brief description"
+
+            # Verify traits were assigned and sorted
+            assert len(created_char.raw_traits) == 2
+            assert created_char.raw_traits[0].name == "Athletics"  # Sorted alphabetically
+            assert created_char.raw_traits[0].rating == 2
+            assert created_char.raw_traits[0].raw_subtraits == ["Running"]
+            assert created_char.raw_traits[1].name == "Strength"
+            assert created_char.raw_traits[1].rating == 3

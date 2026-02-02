@@ -172,6 +172,7 @@ class CharacterManager:
 
     async def register(self, character: VChar):
         """Add the character to the database and the cache."""
+        await character.save()
         self.id_cache[character.id_str] = character
 
         user_chars = await self.fetchall(character.guild, character.user)
@@ -189,6 +190,8 @@ class CharacterManager:
 
         key = self._user_key(character)
         self.user_cache[key] = user_chars
+
+        logger.info("Registered {} to {} on {}", character.name, character.user, character.guild)
 
     async def remove(self, character: VChar):
         """Remove a character from the database and the cache."""

@@ -57,6 +57,8 @@ class WizardCache:
     """Maintains a TTL cache for character wizards."""
 
     def __init__(self, maxsize=1000, ttl=1200):
+        self.maxsize = maxsize
+        self.ttl = ttl
         self.cache = TTLCache[str, WizardData](maxsize=maxsize, ttl=ttl)
         logger.info("Wizard Cache initialized. maxsize={}, ttl={}.", maxsize, ttl)
 

@@ -18,10 +18,12 @@ def valid_creation_data(**overrides):
         "blood_potency": 1,
         "convictions": ["Never harm innocents"],
         "biography": "A compelling backstory",
-        "history": "Recent events",
+        "description": "A brief description",
         "traits": [
             VCharTrait(name="Strength", rating=3, type=VCharTrait.Type.ATTRIBUTE),
-            VCharTrait(name="Athletics", rating=2, type=VCharTrait.Type.SKILL, raw_subtraits=["Running"]),
+            VCharTrait(
+                name="Athletics", rating=2, type=VCharTrait.Type.SKILL, raw_subtraits=["Running"]
+            ),
         ],
     }
     base_data.update(overrides)
@@ -225,7 +227,7 @@ class TestConvictionsValidation:
 
 
 class TestTextFieldValidation:
-    """Tests for biography and history validation."""
+    """Tests for biography and description validation."""
 
     def test_biography_max_length(self):
         """Biography at 1024 characters passes."""
@@ -240,18 +242,18 @@ class TestTextFieldValidation:
             CreationBody(**data)
         assert "biography" in str(exc_info.value).lower()
 
-    def test_history_max_length(self):
-        """History at 24 characters passes."""
-        data = valid_creation_data(history="A" * 24)
+    def test_description_max_length(self):
+        """Description at 24 characters passes."""
+        data = valid_creation_data(description="A" * 24)
         body = CreationBody(**data)
-        assert len(body.history) == 24
+        assert len(body.description) == 24
 
-    def test_history_too_long(self):
-        """History longer than 24 characters rejected."""
-        data = valid_creation_data(history="A" * 25)
+    def test_description_too_long(self):
+        """Description longer than 24 characters rejected."""
+        data = valid_creation_data(description="A" * 25)
         with pytest.raises(ValidationError) as exc_info:
             CreationBody(**data)
-        assert "history" in str(exc_info.value).lower()
+        assert "description" in str(exc_info.value).lower()
 
 
 class TestTraitNameValidation:
@@ -282,12 +284,14 @@ class TestTraitNameValidation:
     def test_trait_name_invalid_characters(self):
         """Trait names with invalid characters rejected."""
         data = valid_creation_data()
-        data["traits"].append({
-            "name": "Strength-Plus",
-            "rating": 3,
-            "type": VCharTrait.Type.CUSTOM,
-            "subtraits": [],
-        })
+        data["traits"].append(
+            {
+                "name": "Strength-Plus",
+                "rating": 3,
+                "type": VCharTrait.Type.CUSTOM,
+                "subtraits": [],
+            }
+        )
         with pytest.raises((ValidationError, SyntaxError)) as exc_info:
             CreationBody(**data)
         assert "letters and underscores" in str(exc_info.value).lower()
@@ -295,12 +299,14 @@ class TestTraitNameValidation:
     def test_trait_name_with_apostrophe_rejected(self):
         """Trait names with apostrophes rejected."""
         data = valid_creation_data()
-        data["traits"].append({
-            "name": "O'Strength",
-            "rating": 3,
-            "type": VCharTrait.Type.CUSTOM,
-            "subtraits": [],
-        })
+        data["traits"].append(
+            {
+                "name": "O'Strength",
+                "rating": 3,
+                "type": VCharTrait.Type.CUSTOM,
+                "subtraits": [],
+            }
+        )
         with pytest.raises((ValidationError, SyntaxError)) as exc_info:
             CreationBody(**data)
         assert "letters and underscores" in str(exc_info.value).lower()
@@ -308,12 +314,14 @@ class TestTraitNameValidation:
     def test_reserved_trait_rejected(self):
         """Reserved trait names rejected."""
         data = valid_creation_data()
-        data["traits"].append({
-            "name": "Willpower",  # Use a definitely reserved trait
-            "rating": 6,
-            "type": VCharTrait.Type.CUSTOM,
-            "subtraits": [],
-        })
+        data["traits"].append(
+            {
+                "name": "Willpower",  # Use a definitely reserved trait
+                "rating": 6,
+                "type": VCharTrait.Type.CUSTOM,
+                "subtraits": [],
+            }
+        )
         with pytest.raises((ValidationError, ValueError)) as exc_info:
             CreationBody(**data)
         assert "reserved" in str(exc_info.value).lower() or "adjust" in str(exc_info.value).lower()
@@ -414,7 +422,7 @@ class TestCompleteValidation:
             "blood_potency": 0,
             "convictions": [],
             "biography": "",
-            "history": "",
+            "description": "",
             "traits": [],
         }
         body = CreationBody(**data)

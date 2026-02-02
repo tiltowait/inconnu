@@ -41,6 +41,13 @@ class Characters(commands.Cog, name="Character Management"):
         contexts={discord.InteractionContextType.guild},
     )
 
+    @character.command(name="wizard")
+    @not_on_lockdown()
+    @option("spc", description="Whether the character is an SPC.")
+    async def character_wizard(self, ctx: AppCtx, spc: bool):
+        """Start a character creation wizard."""
+        await inconnu.character.launch_wizard(ctx, spc)
+
     @character.command(name="create")
     @not_on_lockdown()
     @option("name", description="The character's name")

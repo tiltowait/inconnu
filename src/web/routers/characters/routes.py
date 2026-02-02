@@ -114,6 +114,9 @@ async def create_character(
     if wizard is None:
         raise HTTPException(404, detail="Unknown token. It may have expired.")
 
+    # We need to sort the traits before setting them
+    traits = sorted(data.traits, key=lambda t: t.name.casefold())
+
     character = VChar(
         guild=wizard.guild.id,
         user=wizard.user,
@@ -123,11 +126,16 @@ async def create_character(
         health=data.health * Damage.NONE,
         willpower=data.willpower * Damage.NONE,
         potency=data.blood_potency,
+        raw_traits=traits,
     )
+    character.profile.biography = data.biography
+    character.profile.description = data.description
+    character.convictions = data.convictions
+
     await char_mgr.register(character)
 
     return CreationSuccess(
         guild=wizard.guild,
-        character_id=str(character.id),
+        character_id=character.id_str,
         character_name=character.name,
     )

@@ -1,14 +1,40 @@
 """character/create/create.py - Handle new character creation."""
 
 import re
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace as SN
+
+import discord
+from discord.utils import format_dt
 
 import inconnu
 import services
 import ui
+from ctx import AppCtx
+from errors import InconnuError
 from inconnu.character.create import wizard
+from utils import urls
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/creation"
+
+
+async def launch_wizard(ctx: AppCtx, spc: bool):
+    """Launch a character creation wizard."""
+    if ctx.guild is None:
+        raise InconnuError("Unexpectedly got a null guild.")
+
+    token = services.wizard_cache.register(ctx.guild, ctx.user.id, spc)
+    wizard_url = urls.wizard_url(token)
+
+    expiration = datetime.now(UTC) + timedelta(seconds=services.wizard_cache.ttl)
+    expiration = format_dt(expiration, "R")
+
+    embed = discord.Embed(
+        title="Click here to create your character",
+        description=f"**Link expiration:** {expiration}.",
+        url=wizard_url,
+    )
+    await ctx.respond(embed=embed, ephemeral=True)
 
 
 async def create(

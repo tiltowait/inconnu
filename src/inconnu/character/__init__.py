@@ -3,7 +3,7 @@
 from inconnu.character import images
 from inconnu.character.bio import edit_biography, show_biography
 from inconnu.character.convictions import convictions_set, convictions_show
-from inconnu.character.create import create
+from inconnu.character.create import create, launch_wizard
 from inconnu.character.delete import delete
 from inconnu.character.display import DisplayField, display, display_requested
 from inconnu.character.images import upload
@@ -20,6 +20,7 @@ __all__ = (
     "display_requested",
     "edit_biography",
     "images",
+    "launch_wizard",
     "show_biography",
     "update",
     "update_help",

@@ -1,7 +1,5 @@
 """Pydantic models for character API endpoints."""
 
-from typing import Optional
-
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from constants import ATTRIBUTES, SKILLS
@@ -47,7 +45,7 @@ class CreationBody(BaseModel):
     blood_potency: int = Field(ge=0, le=10)
     convictions: list[str] = Field(max_length=3)
     biography: str = Field(max_length=1024)
-    history: str = Field(max_length=24)
+    description: str = Field(max_length=24)
     traits: list[VCharTrait]
 
     @field_validator("name")

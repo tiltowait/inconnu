@@ -43,10 +43,14 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="wizard", contexts={discord.InteractionContextType.guild})
     @not_on_lockdown()
-    @option("spc", description="Whether the character is an SPC.", default=False)
-    async def character_wizard(self, ctx: AppCtx, spc: bool):
+    @option("spc", description="(Admin only) Make an SPC", autocomplete=_spc_options, default="0")
+    async def character_wizard(self, ctx: AppCtx, spc: str):
         """Start a character creation wizard."""
-        await inconnu.character.launch_wizard(ctx, spc)
+        try:
+            make_spc = bool(strtobool(spc))
+            await inconnu.character.launch_wizard(ctx, make_spc)
+        except ValueError:
+            await ui.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
     @character.command(name="create")
     @not_on_lockdown()

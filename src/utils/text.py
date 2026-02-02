@@ -78,7 +78,7 @@ def fence(string: str) -> str:
     return f"`{string}`"
 
 
-def strtobool(val):
+def strtobool(val: str):
     """Convert a string representation of truth to true (1) or false (0).
 
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values

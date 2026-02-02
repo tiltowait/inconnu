@@ -14,6 +14,7 @@ from ctx import AppCtx
 from errors import InconnuError
 from inconnu.character.create import wizard
 from utils import urls
+from utils.permissions import is_admin
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/creation"
 
@@ -22,6 +23,9 @@ async def launch_wizard(ctx: AppCtx, spc: bool):
     """Launch a character creation wizard."""
     if ctx.guild is None:
         raise InconnuError("Unexpectedly got a null guild.")
+    if spc and not is_admin(ctx):
+        await ui.embeds.error(ctx, "You need Administrator permissions to make an SPC.")
+        return
 
     token = services.wizard_cache.register(ctx.guild, ctx.user.id, spc)
     wizard_url = urls.wizard_url(token)

@@ -83,7 +83,6 @@ async def char_id() -> str:
         (USER, True, WRONG_GUILD, LookupError),
     ],
 )
-@pytest.mark.asyncio
 async def test_management(
     user_id: int,
     admin: bool,

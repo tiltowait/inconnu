@@ -1,7 +1,9 @@
 """Comprehensive tests for CharacterManager."""
 
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
+import discord
 import pytest
 import pytest_asyncio
 
@@ -13,52 +15,39 @@ from errors import (
 from models import VChar
 from services import CharacterManager
 
-# Mock classes for admin testing
+# Mock helper functions
 
 
-class MockPermissions:
-    """Mock Discord permissions."""
+def mock_member(user_id: int, guild_id: int, is_admin: bool) -> discord.Member:
+    """Create a mock Discord member with permissions."""
+    member = MagicMock(spec=discord.Member)
+    member.id = user_id
+    member.guild.id = guild_id
 
-    def __init__(self, is_admin: bool):
-        self.administrator = is_admin
+    # Set up permissions
+    permissions = MagicMock(spec=discord.Permissions)
+    permissions.administrator = is_admin
 
+    member.top_role.permissions = permissions
+    member.guild_permissions = permissions
 
-class MockRole:
-    """Mock Discord role."""
-
-    def __init__(self, is_admin: bool):
-        self.permissions = MockPermissions(is_admin)
-
-
-class MockMember:
-    """Mock Discord member."""
-
-    def __init__(self, user_id: int, is_admin: bool):
-        self.id = user_id
-        self.top_role = MockRole(is_admin)
-        self.guild_permissions = MockPermissions(is_admin)
+    return member
 
 
-class MockGuild:
-    """Mock Discord guild."""
-
-    def __init__(self, guild_id: int, members: dict):
-        self.id = guild_id
-        self._members = members
-
-    def get_member(self, user_id: int):
-        return self._members.get(user_id)
+def mock_guild(guild_id: int, members: dict[int, discord.Member]) -> discord.Guild:
+    """Create a mock Discord guild."""
+    guild = MagicMock(spec=discord.Guild)
+    guild.id = guild_id
+    guild.get_member = lambda user_id: members.get(user_id)
+    return guild
 
 
-class MockBot:
-    """Mock Discord bot."""
-
-    def __init__(self, guilds: dict):
-        self.user = SimpleNamespace(id=0)
-        self._guilds = guilds
-
-    def get_guild(self, guild_id: int):
-        return self._guilds.get(guild_id)
+def mock_bot(guilds: dict[int, discord.Guild]) -> discord.AutoShardedBot:
+    """Create a mock Discord bot."""
+    bot = MagicMock(spec=discord.AutoShardedBot)
+    bot.user.id = 0
+    bot.get_guild = lambda guild_id: guilds.get(guild_id)
+    return bot
 
 
 # Fixtures
@@ -173,21 +162,21 @@ async def test_character_count_different_users(manager, char1, char3):
 
 async def test_exists_no_character(manager):
     """Test exists returns False when character doesn't exist."""
-    manager.bot = MockBot({})
+    manager.bot = mock_bot({})
     exists = await manager.exists(1, 1, "NonExistent", False)
     assert exists is False
 
 
 async def test_exists_character_found(manager, char1):
     """Test exists returns True when character exists."""
-    manager.bot = MockBot({})
+    manager.bot = mock_bot({})
     exists = await manager.exists(1, 1, "Alice", False)
     assert exists is True
 
 
 async def test_exists_case_insensitive(manager, char1):
     """Test exists is case-insensitive."""
-    manager.bot = MockBot({})
+    manager.bot = mock_bot({})
     exists = await manager.exists(1, 1, "alice", False)
     assert exists is True
 
@@ -210,7 +199,7 @@ async def test_exists_spc(manager):
     )
     await spc.insert()
 
-    manager.bot = MockBot({})
+    manager.bot = mock_bot({})
 
     # exists() will append " (SPC)" to "Example", making it "Example (SPC)"
     # This matches the SPC's name property which also returns "Example (SPC)"
@@ -226,7 +215,7 @@ async def test_exists_spc(manager):
 
 async def test_exists_different_user(manager, char1):
     """Test exists returns False for different user."""
-    manager.bot = MockBot({})
+    manager.bot = mock_bot({})
     exists = await manager.exists(1, 2, "Alice", False)
     assert exists is False
 
@@ -652,9 +641,9 @@ def test_is_admin_no_bot(manager):
 
 def test_is_admin_true(manager):
     """Test _is_admin returns True for administrator."""
-    member = MockMember(1, is_admin=True)
-    guild = MockGuild(1, {1: member})
-    manager.bot = MockBot({1: guild})
+    member = mock_member(1, 1, is_admin=True)
+    guild = mock_guild(1, {1: member})
+    manager.bot = mock_bot({1: guild})
 
     result = manager._is_admin(1, 1)
     assert result is True
@@ -662,9 +651,9 @@ def test_is_admin_true(manager):
 
 def test_is_admin_false(manager):
     """Test _is_admin returns False for non-administrator."""
-    member = MockMember(1, is_admin=False)
-    guild = MockGuild(1, {1: member})
-    manager.bot = MockBot({1: guild})
+    member = mock_member(1, 1, is_admin=False)
+    guild = mock_guild(1, {1: member})
+    manager.bot = mock_bot({1: guild})
 
     result = manager._is_admin(1, 1)
     assert result is False
@@ -674,9 +663,9 @@ async def test_validate_admin_bypass(manager, char3):
     """Test _validate allows admin to access other users' characters."""
     # char3 belongs to user 2
     # Create admin user 1
-    admin = MockMember(1, is_admin=True)
-    guild = MockGuild(1, {1: admin})
-    manager.bot = MockBot({1: guild})
+    admin = mock_member(1, 1, is_admin=True)
+    guild = mock_guild(1, {1: admin})
+    manager.bot = mock_bot({1: guild})
 
     # Admin should be able to validate char3 even though it's user 2's
     try:

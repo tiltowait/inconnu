@@ -265,10 +265,16 @@ async def test_create_vampire_success(valid_character_data, auth_headers, mock_w
                 json=valid_character_data,
                 headers=auth_headers,
             )
-            # Should succeed (200 or 201)
-            assert response.status_code in [200, 201]
+            # Should return 201 Created
+            assert response.status_code == 201
             # Should have called register
             mock_register.assert_called_once()
+            # Should return CreationSuccess with expected fields
+            result = response.json()
+            assert "guild" in result
+            assert "character_id" in result
+            assert "character_name" in result
+            assert result["character_name"] == "Test Character"
 
 
 async def test_create_mortal_success(valid_character_data, auth_headers, mock_wizard_data):
@@ -285,7 +291,7 @@ async def test_create_mortal_success(valid_character_data, auth_headers, mock_wi
                 json=valid_character_data,
                 headers=auth_headers,
             )
-            assert response.status_code in [200, 201]
+            assert response.status_code == 201
             mock_register.assert_called_once()
 
 
@@ -303,7 +309,7 @@ async def test_create_ghoul_success(valid_character_data, auth_headers, mock_wiz
                 json=valid_character_data,
                 headers=auth_headers,
             )
-            assert response.status_code in [200, 201]
+            assert response.status_code == 201
             mock_register.assert_called_once()
 
 
@@ -321,7 +327,7 @@ async def test_create_thin_blood_success(valid_character_data, auth_headers, moc
                 json=valid_character_data,
                 headers=auth_headers,
             )
-            assert response.status_code in [200, 201]
+            assert response.status_code == 201
             mock_register.assert_called_once()
 
 
@@ -347,7 +353,7 @@ async def test_create_character_with_specialties(
                 json=valid_character_data,
                 headers=auth_headers,
             )
-            assert response.status_code in [200, 201]
+            assert response.status_code == 201
             mock_register.assert_called_once()
 
 

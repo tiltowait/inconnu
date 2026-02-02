@@ -1,5 +1,7 @@
 """Pydantic models for character API endpoints."""
 
+from typing import Optional
+
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from constants import ATTRIBUTES, SKILLS
@@ -102,3 +104,11 @@ class CreationBody(BaseModel):
                 raise ValueError("Thin-bloods must have blood potency between 0 and 2")
         # VAMPIRE uses the default 0-10 range from Field constraint
         return self
+
+
+class CreationSuccess(BaseModel):
+    """Data returned to the web app indicating character creation success."""
+
+    guild: CharacterGuild
+    character_id: str
+    character_name: str

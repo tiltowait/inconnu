@@ -14,6 +14,7 @@ from web.routers.characters.models import (
     AuthorizedCharacter,
     AuthorizedCharacterList,
     CreationBody,
+    CreationSuccess,
     WizardSchema,
 )
 
@@ -102,12 +103,12 @@ async def get_wizard(
     )
 
 
-@router.post("/characters/wizard/{token}")
+@router.post("/characters/wizard/{token}", status_code=201)
 async def create_character(
     token: str,
     data: CreationBody,
     _: HTTPAuthorizationCredentials = Depends(verify_api_key),
-):
+) -> CreationSuccess:
     """Create the character and insert it into the database."""
     wizard = wizard_cache.pop(token)
     if wizard is None:
@@ -124,3 +125,9 @@ async def create_character(
         potency=data.blood_potency,
     )
     await char_mgr.register(character)
+
+    return CreationSuccess(
+        guild=wizard.guild,
+        character_id=str(character.id),
+        character_name=character.name,
+    )

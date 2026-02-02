@@ -41,7 +41,7 @@ class Characters(commands.Cog, name="Character Management"):
         contexts={discord.InteractionContextType.guild},
     )
 
-    @character.command(name="wizard")
+    @character.command(name="wizard", contexts={discord.InteractionContextType.guild})
     @not_on_lockdown()
     @option("spc", description="Whether the character is an SPC.")
     async def character_wizard(self, ctx: AppCtx, spc: bool):
@@ -239,7 +239,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="delete")
     @not_on_lockdown()
-    @char_option("The character to delete")
+    @char_option("The character to delete", required=True)
     async def character_delete(
         self,
         ctx: AppCtx,

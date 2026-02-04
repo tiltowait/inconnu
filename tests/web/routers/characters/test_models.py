@@ -365,10 +365,10 @@ class TestSpecialtyValidation:
         data = valid_creation_data(traits=[trait])
         with pytest.raises(ValidationError) as exc_info:
             CreationBody(**data)
-        assert "cannot have specialties" in str(exc_info.value).lower()
+        assert "cannot have subtraits" in str(exc_info.value).lower()
 
-    def test_specialty_on_discipline_rejected(self):
-        """Specialties on disciplines rejected."""
+    def test_powers_on_discipline_allowed(self):
+        """Subtraits (powers) on disciplines allowed."""
         trait = VCharTrait(
             name="Auspex",
             rating=2,
@@ -376,9 +376,8 @@ class TestSpecialtyValidation:
             raw_subtraits=["Heightened_Senses"],
         )
         data = valid_creation_data(traits=[trait])
-        with pytest.raises(ValidationError) as exc_info:
-            CreationBody(**data)
-        assert "cannot have specialties" in str(exc_info.value).lower()
+        body = CreationBody(**data)
+        assert len(body.traits[0].raw_subtraits) == 1
 
     def test_specialty_name_too_long(self):
         """Specialty name longer than 20 characters rejected."""

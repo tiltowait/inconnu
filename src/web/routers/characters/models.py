@@ -71,11 +71,14 @@ class CreationBody(BaseModel):
         # Validate specialties
         for trait in v:
             if trait.raw_subtraits:
-                # Only skills and custom traits can have specialties
-                if trait.type not in [VCharTrait.Type.SKILL, VCharTrait.Type.CUSTOM]:
+                # Only skills, custom traits, and disciplines can have subtraits
+                if trait.type not in [
+                    VCharTrait.Type.SKILL,
+                    VCharTrait.Type.CUSTOM,
+                    VCharTrait.Type.DISCIPLINE,
+                ]:
                     raise ValueError(
-                        f"Trait `{trait.name}` of type `{trait.type}` cannot have specialties. "
-                        "Only skills and custom traits may have specialties."
+                        f"Trait `{trait.name}` of type `{trait.type}` cannot have subtraits."
                     )
                 # Validate specialty names
                 validate_specialty_names(*trait.raw_subtraits)

@@ -248,7 +248,7 @@ async def test_create_character_specialty_on_wrong_type(
                 headers=auth_headers,
             )
             assert response.status_code == 422
-            assert "cannot have specialties" in response.text.lower()
+            assert "cannot have subtraits" in response.text.lower()
 
 
 # Character creation tests

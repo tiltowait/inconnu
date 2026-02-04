@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+import errors
 from config import API_KEY
 from constants import Damage
 from models import VChar
@@ -132,7 +133,10 @@ async def create_character(
     character.profile.description = data.description
     character.convictions = data.convictions
 
-    await char_mgr.register(character)
+    try:
+        await char_mgr.register(character)
+    except errors.DuplicateCharacterError as err:
+        raise HTTPException(422, detail=str(err)) from err
 
     return CreationSuccess(
         guild=wizard.guild,

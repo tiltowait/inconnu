@@ -172,10 +172,17 @@ class CharacterManager:
 
     async def register(self, character: VChar):
         """Add the character to the database and the cache."""
+        # Check for duplicate character (same name, guild, and user)
+        user_chars = await self.fetchall(character.guild, character.user)
+        for existing_char in user_chars:
+            if existing_char.name.casefold() == character.name.casefold():
+                raise errors.DuplicateCharacterError(
+                    f"Character '{character.name}' already exists for this user in this guild."
+                )
+
         await character.save()
         self.id_cache[character.id_str] = character
 
-        user_chars = await self.fetchall(character.guild, character.user)
         inserted = False
 
         # Keep the list sorted

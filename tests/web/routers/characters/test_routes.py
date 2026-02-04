@@ -251,6 +251,52 @@ async def test_create_character_specialty_on_wrong_type(
             assert "cannot have subtraits" in response.text.lower()
 
 
+async def test_create_duplicate_character(valid_character_data, auth_headers, mock_wizard_data):
+    """Creating duplicate character (same name, guild, user) returns 422."""
+    from errors import DuplicateCharacterError
+
+    mock_register = AsyncMock(
+        side_effect=DuplicateCharacterError("Character 'Test Character' already exists")
+    )
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/characters/wizard/{TEST_TOKEN}",
+                json=valid_character_data,
+                headers=auth_headers,
+            )
+            assert response.status_code == 422
+            assert "already exists" in response.text.lower()
+
+
+async def test_create_duplicate_character_case_insensitive(
+    valid_character_data, auth_headers, mock_wizard_data
+):
+    """Duplicate check is case-insensitive."""
+    from errors import DuplicateCharacterError
+
+    # Change name to different case
+    valid_character_data["name"] = "TEST CHARACTER"
+    mock_register = AsyncMock(
+        side_effect=DuplicateCharacterError("Character 'TEST CHARACTER' already exists")
+    )
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/characters/wizard/{TEST_TOKEN}",
+                json=valid_character_data,
+                headers=auth_headers,
+            )
+            assert response.status_code == 422
+            assert "already exists" in response.text.lower()
+
+
 # Character creation tests
 
 

@@ -67,6 +67,10 @@ class CharacterNotFoundError(CharacterError):
     """Raised when a given character does not exist."""
 
 
+class DuplicateCharacterError(CharacterError):
+    """Raised when attempting to create a character with a duplicate name."""
+
+
 class TraitError(InconnuError):
     """Base error class for trait errors."""
 

@@ -53,7 +53,14 @@ def validate_specialty_names(*specialties):
     Validates specialty (subtrait) names.
     Raises ValueError if a specialty is invalid.
     """
+    seen = set()
+
     for specialty in specialties:
+        normalized = specialty.casefold()
+        if normalized in seen:
+            raise ValueError(f"Duplicate specialty: {specialty}")
+        seen.add(normalized)
+
         if (spec_len := len(specialty)) > 20:
             raise ValueError(f"`{specialty}` is too long by {spec_len - 20} characters.")
 

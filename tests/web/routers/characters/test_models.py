@@ -436,6 +436,32 @@ class TestSpecialtyValidation:
             CreationBody(**data)
         assert "letters and underscores" in str(exc_info.value).lower()
 
+    def test_duplicate_specialty_names_rejected(self):
+        """Duplicate specialty names on same trait rejected."""
+        trait = VCharTrait(
+            name="Athletics",
+            rating=2,
+            type=VCharTrait.Type.SKILL,
+            raw_subtraits=["Running", "Running"],
+        )
+        data = valid_creation_data(traits=[trait])
+        with pytest.raises(ValidationError) as exc_info:
+            CreationBody(**data)
+        assert "duplicate" in str(exc_info.value).lower()
+
+    def test_duplicate_specialty_names_case_insensitive(self):
+        """Duplicate specialty names rejected (case-insensitive)."""
+        trait = VCharTrait(
+            name="Athletics",
+            rating=2,
+            type=VCharTrait.Type.SKILL,
+            raw_subtraits=["Running", "RUNNING"],
+        )
+        data = valid_creation_data(traits=[trait])
+        with pytest.raises(ValidationError) as exc_info:
+            CreationBody(**data)
+        assert "duplicate" in str(exc_info.value).lower()
+
 
 class TestCompleteValidation:
     """Tests for complete CreationBody validation."""

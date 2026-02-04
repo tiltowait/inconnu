@@ -258,8 +258,7 @@ async def test_register_adds_to_user_cache(manager):
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    await char.insert()
-
+    # register() handles the insert, no need to call insert() first
     await manager.register(char)
 
     key = "1 1"
@@ -285,8 +284,7 @@ async def test_register_maintains_sorted_order(manager, char1):
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    await charlie.insert()
-
+    # register() handles the insert
     await manager.register(charlie)
 
     key = "1 1"
@@ -314,8 +312,7 @@ async def test_register_inserts_in_middle(manager, char1, char2):
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    await amy.insert()
-
+    # register() handles the insert
     await manager.register(amy)
 
     key = "1 1"

@@ -326,6 +326,36 @@ class TestTraitNameValidation:
             CreationBody(**data)
         assert "reserved" in str(exc_info.value).lower() or "adjust" in str(exc_info.value).lower()
 
+    def test_duplicate_trait_names_rejected(self):
+        """Duplicate trait names rejected."""
+        data = valid_creation_data()
+        data["traits"].append(
+            {
+                "name": "Strength",  # Duplicate of existing trait
+                "rating": 4,
+                "type": VCharTrait.Type.ATTRIBUTE,
+                "subtraits": [],
+            }
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            CreationBody(**data)
+        assert "duplicate" in str(exc_info.value).lower()
+
+    def test_duplicate_trait_names_case_insensitive(self):
+        """Duplicate trait names rejected (case-insensitive)."""
+        data = valid_creation_data()
+        data["traits"].append(
+            {
+                "name": "STRENGTH",  # Duplicate with different case
+                "rating": 4,
+                "type": VCharTrait.Type.ATTRIBUTE,
+                "subtraits": [],
+            }
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            CreationBody(**data)
+        assert "duplicate" in str(exc_info.value).lower()
+
 
 class TestSpecialtyValidation:
     """Tests for specialty (subtrait) validation."""

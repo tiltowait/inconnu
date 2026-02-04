@@ -22,7 +22,15 @@ def validate_trait_names(*traits, disciplines=False):
     Raises a ValueError if a trait doesn't exist and a SyntaxError
     if the syntax is bad.
     """
+    # Check for duplicates (case-insensitive)
+    seen = set()
+
     for trait in traits:
+        normalized = trait.casefold()
+        if normalized in seen:
+            raise ValueError(f"Duplicate trait: `{trait}`.")
+        seen.add(normalized)
+
         if (trait_len := len(trait)) > 20:
             raise ValueError(f"`{trait}` is too long by {trait_len - 20} characters.")
 

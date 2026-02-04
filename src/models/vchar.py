@@ -113,7 +113,7 @@ class VChar(Document):
 
     def __eq__(self, other):
         """Just check the IDs."""
-        return self.id_str == other.id
+        return self.id == other.id
 
     # Synthetic properties
 

@@ -55,6 +55,14 @@ class CharacterError(InconnuError):
     """Raised when there is an issue fetching a character."""
 
 
+class WrongGuild(CharacterError):
+    """Raised when trying to access a character from the wrong guild."""
+
+
+class WrongOwner(CharacterError):
+    """Raised when trying to access a character from the wrong owner."""
+
+
 class NoCharactersError(CharacterError):
     """Raised when the user has no characters."""
 

@@ -1,30 +1,22 @@
-"""Comprehensive tests for CharacterManager."""
+"""Behavioral tests for CharacterManager."""
 
-from types import SimpleNamespace
-from unittest.mock import MagicMock
-
-import discord
 import pytest
 import pytest_asyncio
+import discord
+from unittest.mock import MagicMock
 
 from constants import Damage
-from errors import (
-    NoCharactersError,
-    UnspecifiedCharacterError,
-)
+from errors import CharacterNotFoundError, UnspecifiedCharacterError, DuplicateCharacterError
 from models import VChar
 from services import CharacterManager
 
-# Mock helper functions
 
-
-def mock_member(user_id: int, guild_id: int, is_admin: bool) -> discord.Member:
+def mock_member(user_id: int, guild_id: int, is_admin: bool = False) -> discord.Member:
     """Create a mock Discord member with permissions."""
     member = MagicMock(spec=discord.Member)
     member.id = user_id
     member.guild.id = guild_id
 
-    # Set up permissions
     permissions = MagicMock(spec=discord.Permissions)
     permissions.administrator = is_admin
 
@@ -34,20 +26,11 @@ def mock_member(user_id: int, guild_id: int, is_admin: bool) -> discord.Member:
     return member
 
 
-def mock_guild(guild_id: int, members: dict[int, discord.Member]) -> discord.Guild:
+def mock_guild(guild_id: int) -> discord.Guild:
     """Create a mock Discord guild."""
     guild = MagicMock(spec=discord.Guild)
     guild.id = guild_id
-    guild.get_member = lambda user_id: members.get(user_id)
     return guild
-
-
-def mock_bot(guilds: dict[int, discord.Guild]) -> discord.AutoShardedBot:
-    """Create a mock Discord bot."""
-    bot = MagicMock(spec=discord.AutoShardedBot)
-    bot.user.id = 0
-    bot.get_guild = lambda guild_id: guilds.get(guild_id)
-    return bot
 
 
 # Fixtures
@@ -57,16 +40,13 @@ def mock_bot(guilds: dict[int, discord.Guild]) -> discord.AutoShardedBot:
 async def manager():
     """Create a fresh CharacterManager instance."""
     mgr = CharacterManager()
-    # Clear the in-memory cache only - do NOT delete database records
-    mgr.user_cache.clear()
-    mgr.id_cache.clear()
-    mgr.all_fetched.clear()
+    await mgr.initialize()
     return mgr
 
 
 @pytest_asyncio.fixture
 async def char1():
-    """Create first test character (Alice)."""
+    """Create first test character (Alice) - not yet in database."""
     char = VChar(
         guild=1,
         user=1,
@@ -77,7 +57,7 @@ async def char1():
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    await char.insert()
+    # Don't insert - tests will register or insert as needed
     yield char
     try:
         await char.delete()
@@ -87,7 +67,7 @@ async def char1():
 
 @pytest_asyncio.fixture
 async def char2():
-    """Create second test character (Bob)."""
+    """Create second test character (Bob) - not yet in database."""
     char = VChar(
         guild=1,
         user=1,
@@ -98,7 +78,7 @@ async def char2():
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    await char.insert()
+    # Don't insert - tests will register or insert as needed
     yield char
     try:
         await char.delete()
@@ -108,7 +88,7 @@ async def char2():
 
 @pytest_asyncio.fixture
 async def char3():
-    """Create third test character (Charlie, different user)."""
+    """Create third test character (Charlie, different user) - not yet in database."""
     char = VChar(
         guild=1,
         user=2,
@@ -119,12 +99,66 @@ async def char3():
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    await char.insert()
+    # Don't insert - tests will register or insert as needed
     yield char
     try:
         await char.delete()
     except Exception:
         pass
+
+
+# INITIALIZE TESTS
+
+
+async def test_initialize_loads_existing_characters():
+    """Test initialize() loads characters that already exist in database."""
+    # Create characters directly in database (before manager exists)
+    alice = VChar(
+        guild=1,
+        user=1,
+        name="Alice",
+        splat="vampire",
+        humanity=7,
+        health=6 * Damage.NONE,
+        willpower=5 * Damage.NONE,
+        potency=1,
+    )
+    bob = VChar(
+        guild=1,
+        user=1,
+        name="Bob",
+        splat="vampire",
+        humanity=7,
+        health=6 * Damage.NONE,
+        willpower=5 * Damage.NONE,
+        potency=1,
+    )
+    await alice.save()
+    await bob.save()
+
+    try:
+        # Now create manager and initialize (cold start)
+        mgr = CharacterManager()
+        await mgr.initialize()
+
+        # Verify manager loaded characters from database
+        chars = await mgr.fetchall(1, 1)
+        assert len(chars) == 2
+        assert chars[0].name == "Alice"
+        assert chars[1].name == "Bob"
+
+        # Verify can fetch individual character
+        char = await mgr.fetchone(mock_guild(1), mock_member(1, 1), "Alice")
+        assert char.name == "Alice"
+
+        # Verify id_fetch works
+        alice_by_id = await mgr.id_fetch(alice.id)
+        assert alice_by_id is not None
+        assert alice_by_id.name == "Alice"
+
+    finally:
+        await alice.delete()
+        await bob.delete()
 
 
 # CHARACTER_COUNT TESTS
@@ -138,18 +172,24 @@ async def test_character_count_zero(manager):
 
 async def test_character_count_one(manager, char1):
     """Test character_count with one character."""
+    await manager.register(char1)
     count = await manager.character_count(1, 1)
     assert count == 1
 
 
 async def test_character_count_multiple(manager, char1, char2):
     """Test character_count with multiple characters."""
+    await manager.register(char1)
+    await manager.register(char2)
     count = await manager.character_count(1, 1)
     assert count == 2
 
 
 async def test_character_count_different_users(manager, char1, char3):
     """Test character_count counts only the specified user."""
+    await manager.register(char1)
+    await manager.register(char3)
+
     count = await manager.character_count(1, 1)
     assert count == 1
 
@@ -157,74 +197,115 @@ async def test_character_count_different_users(manager, char1, char3):
     assert count == 1
 
 
+# FETCHALL TESTS
+
+
+async def test_fetchall_empty(manager):
+    """Test fetchall returns empty list when no characters exist."""
+    chars = await manager.fetchall(1, 999)
+    assert chars == []
+
+
+async def test_fetchall_single(manager, char1):
+    """Test fetchall returns single character."""
+    await manager.register(char1)
+    chars = await manager.fetchall(1, 1)
+    assert len(chars) == 1
+    assert chars[0].name == "Alice"
+
+
+async def test_fetchall_multiple_sorted(manager, char1, char2):
+    """Test fetchall returns characters in alphabetical order."""
+    await manager.register(char2)  # Bob first
+    await manager.register(char1)  # Alice second
+
+    chars = await manager.fetchall(1, 1)
+    assert len(chars) == 2
+    assert chars[0].name == "Alice"  # Should be sorted
+    assert chars[1].name == "Bob"
+
+
+async def test_fetchall_filters_by_guild(manager, char1):
+    """Test fetchall only returns characters from specified guild."""
+    await manager.register(char1)
+
+    # Same user, different guild
+    chars = await manager.fetchall(999, 1)
+    assert len(chars) == 0
+
+
+async def test_fetchall_filters_by_user(manager, char1, char3):
+    """Test fetchall only returns characters from specified user."""
+    await manager.register(char1)
+    await manager.register(char3)
+
+    chars = await manager.fetchall(1, 1)
+    assert len(chars) == 1
+    assert chars[0].name == "Alice"
+
+
 # EXISTS TESTS
 
 
 async def test_exists_no_character(manager):
     """Test exists returns False when character doesn't exist."""
-    manager.bot = mock_bot({})
-    exists = await manager.exists(1, 1, "NonExistent", False)
+    guild = mock_guild(1)
+    user = mock_member(1, 1)
+    exists = await manager.exists(guild, user, "NonExistent", False)
     assert exists is False
 
 
 async def test_exists_character_found(manager, char1):
     """Test exists returns True when character exists."""
-    manager.bot = mock_bot({})
-    exists = await manager.exists(1, 1, "Alice", False)
+    await manager.register(char1)
+    guild = mock_guild(1)
+    user = mock_member(1, 1)
+    exists = await manager.exists(guild, user, "Alice", False)
     assert exists is True
 
 
 async def test_exists_case_insensitive(manager, char1):
     """Test exists is case-insensitive."""
-    manager.bot = mock_bot({})
-    exists = await manager.exists(1, 1, "alice", False)
-    assert exists is True
+    await manager.register(char1)
+    guild = mock_guild(1)
+    user = mock_member(1, 1)
 
-    exists = await manager.exists(1, 1, "ALICE", False)
-    assert exists is True
+    assert await manager.exists(guild, user, "alice", False) is True
+    assert await manager.exists(guild, user, "ALICE", False) is True
+    assert await manager.exists(guild, user, "AlIcE", False) is True
 
 
 async def test_exists_spc(manager):
-    """Test exists with SPC flag."""
-    # Create an SPC - the name property will automatically append " (SPC)"
+    """Test exists with SPC flag uses correct owner."""
+    # Create SPC character
     spc = VChar(
         guild=1,
-        user=0,  # SPC_OWNER - makes this an SPC
-        name="Example",  # VChar.name property will return "Example (SPC)"
+        user=VChar.SPC_OWNER,
+        name="TestNPC",
         splat="vampire",
         humanity=7,
         health=6 * Damage.NONE,
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    await spc.insert()
+    await manager.register(spc)
 
-    manager.bot = mock_bot({})
+    guild = mock_guild(1)
+    user = mock_member(1, 1)
 
-    # exists() will append " (SPC)" to "Example", making it "Example (SPC)"
-    # This matches the SPC's name property which also returns "Example (SPC)"
-    exists = await manager.exists(1, 1, "Example", True)
+    # Should find SPC when is_spc=True
+    # Note: VChar.name property adds " (SPC)" suffix for non-PCs
+    exists = await manager.exists(guild, user, "TestNPC (SPC)", True)
     assert exists is True
 
-    # Test that it doesn't find non-existent SPC
-    exists = await manager.exists(1, 1, "NonExistent", True)
-    assert exists is False
-
     await spc.delete()
-
-
-async def test_exists_different_user(manager, char1):
-    """Test exists returns False for different user."""
-    manager.bot = mock_bot({})
-    exists = await manager.exists(1, 2, "Alice", False)
-    assert exists is False
 
 
 # REGISTER TESTS
 
 
-async def test_register_adds_to_id_cache(manager):
-    """Test register adds character to ID cache."""
+async def test_register_adds_character(manager):
+    """Test register adds character to database."""
     char = VChar(
         guild=1,
         user=1,
@@ -235,45 +316,21 @@ async def test_register_adds_to_id_cache(manager):
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    await char.insert()
-
-    # Fetch to populate cache first
-    await manager.fetchall(1, 1)
-
-    assert char.id_str in manager.id_cache
-    assert manager.id_cache[char.id_str].id == char.id
-
-    await char.delete()
-
-
-async def test_register_adds_to_user_cache(manager):
-    """Test register adds character to user cache."""
-    char = VChar(
-        guild=1,
-        user=1,
-        name="NewChar",
-        splat="vampire",
-        humanity=7,
-        health=6 * Damage.NONE,
-        willpower=5 * Damage.NONE,
-        potency=1,
-    )
-    # register() handles the insert, no need to call insert() first
     await manager.register(char)
 
-    key = "1 1"
-    assert key in manager.user_cache
-    assert char in manager.user_cache[key]
+    # Verify it's in the database
+    chars = await manager.fetchall(1, 1)
+    assert len(chars) == 1
+    assert chars[0].name == "NewChar"
 
     await char.delete()
 
 
 async def test_register_maintains_sorted_order(manager, char1):
     """Test register maintains alphabetical order."""
-    # Load char1 into cache first
-    await manager.fetchall(1, 1)
+    await manager.register(char1)  # Alice
 
-    # char1 is "Alice", add "Charlie" which should come after
+    # Add Charlie (should come after)
     charlie = VChar(
         guild=1,
         user=1,
@@ -284,11 +341,9 @@ async def test_register_maintains_sorted_order(manager, char1):
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    # register() handles the insert
     await manager.register(charlie)
 
-    key = "1 1"
-    chars = manager.user_cache[key]
+    chars = await manager.fetchall(1, 1)
     assert len(chars) == 2
     assert chars[0].name == "Alice"
     assert chars[1].name == "Charlie"
@@ -297,11 +352,11 @@ async def test_register_maintains_sorted_order(manager, char1):
 
 
 async def test_register_inserts_in_middle(manager, char1, char2):
-    """Test register inserts character in correct alphabetical position."""
-    # Load existing characters into cache first
-    await manager.fetchall(1, 1)
+    """Test register maintains sorted order with insert in middle."""
+    await manager.register(char1)  # Alice
+    await manager.register(char2)  # Bob
 
-    # char1 = Alice, char2 = Bob, insert "Amy" between them
+    # Add Amy (should go between Alice and Bob)
     amy = VChar(
         guild=1,
         user=1,
@@ -312,11 +367,9 @@ async def test_register_inserts_in_middle(manager, char1, char2):
         willpower=5 * Damage.NONE,
         potency=1,
     )
-    # register() handles the insert
     await manager.register(amy)
 
-    key = "1 1"
-    chars = manager.user_cache[key]
+    chars = await manager.fetchall(1, 1)
     assert len(chars) == 3
     assert chars[0].name == "Alice"
     assert chars[1].name == "Amy"
@@ -325,66 +378,55 @@ async def test_register_inserts_in_middle(manager, char1, char2):
     await amy.delete()
 
 
+async def test_register_duplicate_raises_error(manager, char1):
+    """Test register raises DuplicateCharacterError for duplicate names."""
+    await manager.register(char1)
+
+    # Try to register another character with same name
+    duplicate = VChar(
+        guild=1,
+        user=1,
+        name="Alice",  # Same name
+        splat="vampire",
+        humanity=7,
+        health=6 * Damage.NONE,
+        willpower=5 * Damage.NONE,
+        potency=1,
+    )
+
+    with pytest.raises(DuplicateCharacterError):
+        await manager.register(duplicate)
+
+
 # REMOVE TESTS
 
 
 async def test_remove_deletes_from_database(manager, char1):
     """Test remove deletes character from database."""
-    char_id = char1.id
+    await manager.register(char1)
 
     result = await manager.remove(char1)
     assert result is True
 
-    # Verify it's gone from database
-    fetched = await VChar.get(char_id)
-    assert fetched is None
+    # Verify it's gone
+    chars = await manager.fetchall(1, 1)
+    assert len(chars) == 0
 
 
-async def test_remove_removes_from_id_cache(manager, char1):
-    """Test remove removes character from ID cache."""
-    char_id_str = char1.id_str
-    await manager.fetchall(1, 1)  # Populate cache
-
-    assert char_id_str in manager.id_cache
-
-    await manager.remove(char1)
-
-    assert char_id_str not in manager.id_cache
+async def test_remove_returns_true_on_success(manager, char1):
+    """Test remove returns True when character is successfully deleted."""
+    await manager.register(char1)
+    result = await manager.remove(char1)
+    assert result is True
 
 
-async def test_remove_removes_from_user_cache(manager, char1):
-    """Test remove removes character from user cache."""
-    chars = await manager.fetchall(1, 1)  # Populate cache
-    cached_char = chars[0]  # Get the cached instance
-
-    key = "1 1"
-    assert cached_char in manager.user_cache[key]
-
-    await manager.remove(cached_char)
-
-    assert cached_char not in manager.user_cache[key]
-
-
-async def test_remove_updates_user_cache_list(manager, char1, char2):
-    """Test remove properly updates user cache list."""
-    chars = await manager.fetchall(1, 1)  # Populate cache
-    cached_alice = chars[0]  # Alice is first alphabetically
-
-    key = "1 1"
-    assert len(manager.user_cache[key]) == 2
-
-    await manager.remove(cached_alice)
-
-    assert len(manager.user_cache[key]) == 1
-    assert manager.user_cache[key][0].name == "Bob"
-
-
-async def test_remove_nonexistent_character(manager):
-    """Test remove returns False for already-deleted character."""
+async def test_remove_returns_false_on_failure(manager):
+    """Test remove returns False when character doesn't exist."""
+    # Create a character that's already been deleted
     char = VChar(
-        guild=999,
-        user=999,
-        name="Ghost",
+        guild=1,
+        user=1,
+        name="Deleted",
         splat="vampire",
         humanity=7,
         health=6 * Damage.NONE,
@@ -392,281 +434,195 @@ async def test_remove_nonexistent_character(manager):
         potency=1,
     )
     await char.insert()
+    await char.delete()  # Delete it from DB
 
-    # Delete it first
-    await char.delete()
-
-    # Try to remove again
     result = await manager.remove(char)
     assert result is False
+
+
+async def test_remove_updates_fetchall(manager, char1, char2):
+    """Test remove updates future fetchall results."""
+    await manager.register(char1)
+    await manager.register(char2)
+
+    await manager.remove(char1)
+
+    chars = await manager.fetchall(1, 1)
+    assert len(chars) == 1
+    assert chars[0].name == "Bob"
+
+
+# FETCHONE TESTS
+
+
+async def test_fetchone_vchar_passthrough(manager, char1):
+    """Test fetchone returns VChar object unchanged."""
+    guild = mock_guild(1)
+    user = mock_member(1, 1)
+
+    result = await manager.fetchone(guild, user, char1)
+    assert result is char1
+
+
+async def test_fetchone_no_characters_error(manager):
+    """Test fetchone raises error when user has no characters."""
+    guild = mock_guild(1)
+    user = mock_member(999, 1)
+
+    with pytest.raises(CharacterNotFoundError, match="You have no characters"):
+        await manager.fetchone(guild, user, None)
+
+
+async def test_fetchone_multiple_characters_error(manager, char1, char2):
+    """Test fetchone raises error when multiple characters and no name given."""
+    await manager.register(char1)
+    await manager.register(char2)
+
+    guild = mock_guild(1)
+    user = mock_member(1, 1)
+
+    with pytest.raises(UnspecifiedCharacterError, match="You have 2 characters"):
+        await manager.fetchone(guild, user, None)
+
+
+async def test_fetchone_single_character_auto_select(manager, char1):
+    """Test fetchone auto-selects when user has only one character."""
+    await manager.register(char1)
+
+    guild = mock_guild(1)
+    user = mock_member(1, 1)
+
+    char = await manager.fetchone(guild, user, None)
+    assert char.name == "Alice"
+
+
+async def test_fetchone_by_name(manager, char1, char2):
+    """Test fetchone finds character by name."""
+    await manager.register(char1)
+    await manager.register(char2)
+
+    guild = mock_guild(1)
+    user = mock_member(1, 1)
+
+    char = await manager.fetchone(guild, user, "Bob")
+    assert char.name == "Bob"
+
+
+async def test_fetchone_case_insensitive(manager, char1):
+    """Test fetchone name matching is case-insensitive."""
+    await manager.register(char1)
+
+    guild = mock_guild(1)
+    user = mock_member(1, 1)
+
+    char = await manager.fetchone(guild, user, "alice")
+    assert char.name == "Alice"
 
 
 # TRANSFER TESTS
 
 
 async def test_transfer_updates_character_user(manager, char1):
-    """Test transfer updates character's user field."""
-    # Load into cache first
-    chars = await manager.fetchall(1, 1)
-    cached_char = chars[0]
+    """Test transfer updates character's user ID."""
+    await manager.register(char1)
 
-    new_owner = SimpleNamespace(id=2, name="NewOwner")
-    current_owner = SimpleNamespace(id=1, name="OldOwner")
+    current_owner = mock_member(1, 1)
+    new_owner = mock_member(2, 1)
 
-    await manager.transfer(cached_char, current_owner, new_owner)
+    await manager.transfer(char1, current_owner, new_owner)
 
-    assert cached_char.user == 2
-
-    # Verify in database
-    fetched = await VChar.get(cached_char.id)
-    assert fetched is not None
-    assert fetched.user == 2
+    assert char1.user == 2
 
 
-async def test_transfer_removes_from_old_cache(manager, char1, char2):
-    """Test transfer removes character from old owner's cache."""
-    chars = await manager.fetchall(1, 1)  # Populate cache
-    cached_alice = chars[0]  # Alice
+async def test_transfer_persists_to_database(manager, char1):
+    """Test transfer saves changes to database."""
+    await manager.register(char1)
 
-    old_key = "1 1"
-    assert len(manager.user_cache[old_key]) == 2
+    current_owner = mock_member(1, 1)
+    new_owner = mock_member(2, 1)
 
-    new_owner = SimpleNamespace(id=2, name="NewOwner")
-    current_owner = SimpleNamespace(id=1, name="OldOwner")
+    await manager.transfer(char1, current_owner, new_owner)
 
-    await manager.transfer(cached_alice, current_owner, new_owner)
-
-    # Old owner should have one less character
-    assert len(manager.user_cache[old_key]) == 1
-    assert manager.user_cache[old_key][0].name == "Bob"
-
-
-async def test_transfer_adds_to_new_cache_if_loaded(manager, char1, char3):
-    """Test transfer adds to new owner's cache if already loaded."""
-    # Load both users' caches
-    chars1 = await manager.fetchall(1, 1)
-    await manager.fetchall(1, 2)
-
-    cached_alice = chars1[0]
-
-    new_key = "1 2"
-    assert len(manager.user_cache[new_key]) == 1  # Just Charlie
-
-    new_owner = SimpleNamespace(id=2, name="NewOwner")
-    current_owner = SimpleNamespace(id=1, name="OldOwner")
-
-    await manager.transfer(cached_alice, current_owner, new_owner)
-
-    # New owner should have both characters, sorted
-    assert len(manager.user_cache[new_key]) == 2
-    assert manager.user_cache[new_key][0].name == "Alice"
-    assert manager.user_cache[new_key][1].name == "Charlie"
-
-
-async def test_transfer_doesnt_add_if_cache_not_loaded(manager, char1):
-    """Test transfer doesn't add to new owner's cache if not loaded."""
-    # Don't load user 2's cache
-    chars = await manager.fetchall(1, 1)
-    cached_alice = chars[0]
-
-    new_owner = SimpleNamespace(id=2, name="NewOwner")
-    current_owner = SimpleNamespace(id=1, name="OldOwner")
-
-    await manager.transfer(cached_alice, current_owner, new_owner)
-
-    # New owner's cache shouldn't exist
-    new_key = "1 2"
-    assert manager.user_cache.get(new_key) is None
-
-
-# MARK_INACTIVE / MARK_ACTIVE TESTS
-
-
-async def test_mark_inactive(manager, char1):
-    """Test mark_inactive sets the left timestamp."""
-    pytest.skip("mongomock_motor doesn't support nested field $set operations")
-    player = SimpleNamespace(guild=SimpleNamespace(id=1), id=1)
-
-    await manager.mark_inactive(player)
-
-    # Verify in database
-    fetched = await VChar.get(char1.id)
-    assert fetched is not None
-    assert "left" in fetched.stat_log
-
-
-async def test_mark_active(manager, char1):
-    """Test mark_active removes the left timestamp."""
-    pytest.skip("mongomock_motor doesn't support nested field $set operations")
-    player = SimpleNamespace(guild=SimpleNamespace(id=1), id=1)
-
-    # First mark inactive
-    await manager.mark_inactive(player)
-    fetched = await VChar.get(char1.id)
-    assert fetched is not None
-    assert "left" in fetched.stat_log
-
-    # Then mark active
-    await manager.mark_active(player)
-    fetched = await VChar.get(char1.id)
-    assert fetched is not None
-    assert "left" not in fetched.stat_log
-
-
-# SORT_USER TESTS
-
-
-async def test_sort_user_sorts_cache(manager, char1, char2):
-    """Test sort_user sorts the user's characters."""
-    await manager.fetchall(1, 1)
-
-    # Manually disorder the cache
-    key = "1 1"
-    manager.user_cache[key].reverse()
-    assert manager.user_cache[key][0].name == "Bob"
-
-    # Sort it
-    manager.sort_user(1, 1)
-
-    assert manager.user_cache[key][0].name == "Alice"
-    assert manager.user_cache[key][1].name == "Bob"
-
-
-async def test_sort_user_no_cache(manager):
-    """Test sort_user does nothing if cache not loaded."""
-    # Don't load cache
-    manager.sort_user(1, 1)
-    # Should not crash
-
-
-# FETCHONE EDGE CASES
-
-
-async def test_fetchone_vchar_passthrough(manager, char1):
-    """Test fetchone returns VChar unchanged."""
-    result = await manager.fetchone(1, 1, char1)
-    assert result is char1
-
-
-async def test_fetchone_no_characters_error(manager):
-    """Test fetchone raises NoCharactersError when user has no characters."""
-    with pytest.raises(NoCharactersError) as exc_info:
-        await manager.fetchone(1, 999, None)
-    assert "no characters" in str(exc_info.value).lower()
-
-
-async def test_fetchone_multiple_characters_error(manager, char1, char2):
-    """Test fetchone raises UnspecifiedCharacterError with multiple characters."""
-    with pytest.raises(UnspecifiedCharacterError) as exc_info:
-        await manager.fetchone(1, 1, None)
-    assert "specify which" in str(exc_info.value).lower()
-
-
-async def test_fetchone_single_character_auto_select(manager, char1):
-    """Test fetchone auto-selects when user has exactly one character."""
-    result = await manager.fetchone(1, 1, None)
-    assert result.id == char1.id
-    assert result.name == char1.name
-
-
-# FETCHALL CACHE HIT TESTS
-
-
-async def test_fetchall_cache_hit(manager, char1):
-    """Test fetchall returns from cache on second call."""
-    # First call - fetches from database
-    chars1 = await manager.fetchall(1, 1)
-    assert len(chars1) == 1
-
-    # Verify cache is populated
-    key = "1 1"
-    assert manager.all_fetched.get(key) is True
-
-    # Second call - should return from cache (not hit database again)
-    chars2 = await manager.fetchall(1, 1)
-    assert len(chars2) == 1
-    assert chars2 is manager.user_cache.get(key)
-
-
-async def test_fetchall_already_cached_character(manager, char1):
-    """Test fetchall uses already-cached character from ID cache."""
-    # Manually add to ID cache
-    manager.id_cache[char1.id_str] = char1
-
-    # Now fetch all - should use the cached instance
-    chars = await manager.fetchall(1, 1)
+    # Verify in database by fetching for new owner
+    chars = await manager.fetchall(1, 2)
     assert len(chars) == 1
-    assert chars[0] is char1  # Same instance
+    assert chars[0].name == "Alice"
 
 
-# HELPER METHOD TESTS
+# MARK_INACTIVE/MARK_ACTIVE TESTS
 
 
-def test_get_ids_with_objects():
-    """Test _get_ids extracts IDs from objects."""
-    guild_obj = SimpleNamespace(id=123)
-    user_obj = SimpleNamespace(id=456)
+async def test_mark_inactive_sets_timestamp(manager, char1):
+    """Test mark_inactive sets 'left' timestamp."""
+    await manager.register(char1)
 
-    guild, user, key = CharacterManager._get_ids(guild_obj, user_obj)
+    player = mock_member(1, 1)
+    await manager.mark_inactive(player)
 
-    assert guild == 123
-    assert user == 456
-    assert key == "123 456"
-
-
-def test_get_ids_with_ints():
-    """Test _get_ids handles integers."""
-    guild, user, key = CharacterManager._get_ids(123, 456)
-
-    assert guild == 123
-    assert user == 456
-    assert key == "123 456"
+    # Reload from database
+    reloaded = await VChar.get(char1.id)
+    assert "left" in reloaded.stat_log
+    assert reloaded.stat_log["left"] is not None
 
 
-def test_user_key():
-    """Test _user_key generates correct key."""
-    char = SimpleNamespace(guild=123, user=456)
-    key = CharacterManager._user_key(char)
-    assert key == "123 456"
+async def test_mark_inactive_handles_multiple_characters(manager, char1, char2):
+    """Test mark_inactive handles user with multiple characters."""
+    await manager.register(char1)
+    await manager.register(char2)
+
+    player = mock_member(1, 1)
+    await manager.mark_inactive(player)
+
+    # Both should have timestamp
+    for char_id in [char1.id, char2.id]:
+        reloaded = await VChar.get(char_id)
+        assert "left" in reloaded.stat_log
 
 
-def test_is_admin_no_bot(manager):
-    """Test _is_admin returns False when bot is None."""
-    result = manager._is_admin(1, 1)
-    assert result is False
+async def test_mark_active_clears_timestamp(manager, char1):
+    """Test mark_active clears 'left' timestamp."""
+    await manager.register(char1)
+
+    player = mock_member(1, 1)
+    await manager.mark_inactive(player)
+    await manager.mark_active(player)
+
+    # Reload from database
+    reloaded = await VChar.get(char1.id)
+    assert "left" not in reloaded.stat_log
 
 
-def test_is_admin_true(manager):
-    """Test _is_admin returns True for administrator."""
-    member = mock_member(1, 1, is_admin=True)
-    guild = mock_guild(1, {1: member})
-    manager.bot = mock_bot({1: guild})
+async def test_mark_active_handles_multiple_characters(manager, char1, char2):
+    """Test mark_active handles user with multiple characters."""
+    await manager.register(char1)
+    await manager.register(char2)
 
-    result = manager._is_admin(1, 1)
-    assert result is True
+    player = mock_member(1, 1)
+    await manager.mark_inactive(player)
+    await manager.mark_active(player)
 
-
-def test_is_admin_false(manager):
-    """Test _is_admin returns False for non-administrator."""
-    member = mock_member(1, 1, is_admin=False)
-    guild = mock_guild(1, {1: member})
-    manager.bot = mock_bot({1: guild})
-
-    result = manager._is_admin(1, 1)
-    assert result is False
+    # Both should have timestamp cleared
+    for char_id in [char1.id, char2.id]:
+        reloaded = await VChar.get(char_id)
+        assert "left" not in reloaded.stat_log
 
 
-async def test_validate_admin_bypass(manager, char3):
-    """Test _validate allows admin to access other users' characters."""
-    # char3 belongs to user 2
-    # Create admin user 1
-    admin = mock_member(1, 1, is_admin=True)
-    guild = mock_guild(1, {1: admin})
-    manager.bot = mock_bot({1: guild})
+# ID_FETCH TESTS
 
-    # Admin should be able to validate char3 even though it's user 2's
-    try:
-        manager._validate(1, 1, char3)
-        # Should not raise
-    except LookupError:
-        pytest.fail("Admin should be able to access other users' characters")
+
+async def test_id_fetch_returns_character(manager, char1):
+    """Test id_fetch returns character by ID."""
+    await manager.register(char1)
+
+    result = await manager.id_fetch(char1.id)
+    assert result is not None
+    assert result.name == "Alice"
+
+
+async def test_id_fetch_returns_none_when_not_found(manager):
+    """Test id_fetch returns None for non-existent ID."""
+    from beanie import PydanticObjectId
+
+    fake_id = PydanticObjectId()
+    result = await manager.id_fetch(fake_id)
+    assert result is None

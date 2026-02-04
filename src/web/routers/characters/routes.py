@@ -117,10 +117,11 @@ async def create_character(
 
     # We need to sort the traits before setting them
     traits = sorted(data.traits, key=lambda t: t.name.casefold())
+    owner_id = wizard.user if not wizard.spc else VChar.SPC_OWNER
 
     character = VChar(
         guild=wizard.guild.id,
-        user=wizard.user,
+        user=owner_id,
         raw_name=data.name,
         splat=data.splat,
         raw_humanity=data.humanity,

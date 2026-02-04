@@ -65,6 +65,16 @@ def mock_wizard_data(mock_guild):
 
 
 @pytest.fixture
+def mock_spc_wizard_data(mock_guild):
+    """Create mock SPC wizard data."""
+    return WizardData(
+        spc=True,
+        guild=CharacterGuild(id=mock_guild.id, name=mock_guild.name, icon=None),
+        user=TEST_USER_ID,
+    )
+
+
+@pytest.fixture
 def valid_character_data():
     """Valid character creation data."""
     return {
@@ -470,3 +480,52 @@ async def test_character_field_mapping(valid_character_data, auth_headers, mock_
             assert created_char.raw_traits[0].raw_subtraits == ["Running"]
             assert created_char.raw_traits[1].name == "Strength"
             assert created_char.raw_traits[1].rating == 3
+
+
+async def test_create_spc_character(valid_character_data, auth_headers, mock_spc_wizard_data):
+    """SPC character created with VChar.SPC_OWNER as user ID."""
+    mock_register = AsyncMock()
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_spc_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+        patch("web.routers.characters.routes.VChar.SPC_OWNER", 0),
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/characters/wizard/{TEST_TOKEN}",
+                json=valid_character_data,
+                headers=auth_headers,
+            )
+            assert response.status_code == 201
+
+            # Get the VChar that was passed to register
+            created_char = mock_register.call_args[0][0]
+            assert isinstance(created_char, VChar)
+            assert created_char.guild == TEST_GUILD_ID
+            # SPC should have SPC_OWNER (0) as user, not the requesting user
+            assert created_char.user == 0
+            assert created_char.raw_name == "Test Character"
+
+
+async def test_create_regular_character_user_id(
+    valid_character_data, auth_headers, mock_wizard_data
+):
+    """Regular (non-SPC) character created with actual user ID."""
+    mock_register = AsyncMock()
+    with (
+        patch("web.routers.characters.routes.wizard_cache.pop", return_value=mock_wizard_data),
+        patch("web.routers.characters.routes.char_mgr.register", mock_register),
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/characters/wizard/{TEST_TOKEN}",
+                json=valid_character_data,
+                headers=auth_headers,
+            )
+            assert response.status_code == 201
+
+            # Get the VChar that was passed to register
+            created_char = mock_register.call_args[0][0]
+            assert isinstance(created_char, VChar)
+            # Regular character should have the actual user ID
+            assert created_char.user == TEST_USER_ID

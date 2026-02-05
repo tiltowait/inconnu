@@ -1,5 +1,6 @@
 """Tests for services.characters.CharacterManager."""
 
+import asyncio
 from typing import AsyncGenerator, Generator, cast
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -610,12 +611,69 @@ async def test_fetchone_admin_fail(
         _ = await mgrf.fetchone(g1, u12, c111.id_str)
 
 
-def test_sort_characters(mgrf: CharacterManager):
+async def test_sort_characters(mgrf: CharacterManager):
     mgrf._characters[0].name = "zzzzzzz"
-    mgrf.sort_chars()
+    await mgrf.sort_chars()
     assert mgrf._characters[-1].name == "zzzzzzz"
 
 
 def test_validate_rejects_wrong_guild(mgrf: CharacterManager, g1: Guild, u21: Member, c211: VChar):
     with pytest.raises(LookupError):
         mgrf._validate(g1, u21, c211)
+
+
+async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Guild, u11: Member):
+    """Test that concurrent register calls don't create duplicates.
+
+    Uses a delay to ensure actual lock contention occurs.
+    """
+    from tests.characters import gen_char
+
+    # Create two identical characters
+    char1 = gen_char("vampire")
+    char1.name = "Race Test"
+    char1.guild = g1.id
+    char1.user = u11.id
+
+    char2 = gen_char("vampire")
+    char2.name = "Race Test"  # Same name
+    char2.guild = g1.id
+    char2.user = u11.id
+
+    # Patch save() to add delay, forcing lock contention
+    original_save = char1.save
+
+    async def slow_save(*args, **kwargs):
+        await asyncio.sleep(0.1)  # 100ms delay to ensure overlap
+        return await original_save(*args, **kwargs)
+
+    # Track when each operation starts to verify they overlap
+    start_times = []
+
+    async def register_with_timing(char):
+        start_times.append(asyncio.get_event_loop().time())
+        return await mgre.register(char)
+
+    with patch.object(type(char1), "save", side_effect=slow_save):
+        with patch.object(type(char2), "save", side_effect=slow_save):
+            # Try to register both concurrently
+            results = await asyncio.gather(
+                register_with_timing(char1),
+                register_with_timing(char2),
+                return_exceptions=True,
+            )
+
+    # Verify both operations started (near-)simultaneously
+    assert len(start_times) == 2
+    time_diff = abs(start_times[1] - start_times[0])
+    assert time_diff < 0.05, f"Operations didn't overlap (diff: {time_diff}s)"
+
+    # One should succeed, one should raise DuplicateCharacterError
+    errors = [r for r in results if isinstance(r, Exception)]
+    assert len(errors) == 1
+    assert isinstance(errors[0], DuplicateCharacterError)
+
+    # Verify only one character exists
+    chars = await mgre.fetchall(g1, u11)
+    assert len(chars) == 1
+    assert chars[0].name == "Race Test"

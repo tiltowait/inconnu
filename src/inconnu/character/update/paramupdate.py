@@ -26,7 +26,7 @@ async def update_name(character: VChar, new_name: str) -> str:
 
     old_name = character.name
     character.name = new_name
-    services.char_mgr.sort_chars()
+    await services.char_mgr.sort_chars()
 
     return f"Rename `{old_name}` to `{new_name}`."
 

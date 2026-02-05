@@ -21,6 +21,7 @@ class CharacterManager:
         self._characters: list[VChar] = []
         self._id_cache: dict[str, VChar] = {}
         self._initialized = False
+        self._lock = asyncio.Lock()
 
     @property
     def initialized(self) -> bool:
@@ -137,42 +138,49 @@ class CharacterManager:
     async def register(self, character: VChar):
         """Insert the character into the database and the cache."""
         await self.initialize()
-        try:
-            duplicate = next(
-                char
-                for char in self._characters
-                if char.user == character.user
-                and char.guild == character.guild
-                and char.name.casefold() == character.name.casefold()
-            )
-            raise errors.DuplicateCharacterError(
-                f"Character '{duplicate.name}' already exists for this user in this guild."
-            )
-        except StopIteration:
-            # No duplicate found
-            pass
 
-        await character.save()
-        self._id_cache[character.id_str] = character
-        bisect.insort(self._characters, character)
+        # Acquire global lock to prevent race conditions on shared data structures
+        async with self._lock:
+            try:
+                duplicate = next(
+                    char
+                    for char in self._characters
+                    if char.user == character.user
+                    and char.guild == character.guild
+                    and char.name.casefold() == character.name.casefold()
+                )
+                raise errors.DuplicateCharacterError(
+                    f"Character '{duplicate.name}' already exists for this user in this guild."
+                )
+            except StopIteration:
+                # No duplicate found
+                pass
 
-        logger.info("Registered {} to {} on {}", character.name, character.user, character.guild)
+            await character.save()
+            self._id_cache[character.id_str] = character
+            bisect.insort(self._characters, character)
+
+            logger.info(
+                "Registered {} to {} on {}", character.name, character.user, character.guild
+            )
 
     async def remove(self, character: VChar) -> bool:
         """Delete the character from the database and the cache."""
         await self.initialize()
 
-        deletion = await character.delete()
+        # Acquire global lock to prevent race conditions on shared data structures
+        async with self._lock:
+            deletion = await character.delete()
 
-        if deletion.deleted_count == 1:
-            self._characters.remove(character)
-            del self._id_cache[character.id_str]
+            if deletion.deleted_count == 1:
+                self._characters.remove(character)
+                del self._id_cache[character.id_str]
 
-            logger.info("Removed {} from {}", character.name, character.guild)
-            return True
+                logger.info("Removed {} from {}", character.name, character.guild)
+                return True
 
-        logger.warning("Unable to remove {} from {}", character.name, character.guild)
-        return False
+            logger.warning("Unable to remove {} from {}", character.name, character.guild)
+            return False
 
     async def transfer(
         self, character: VChar, current_owner: discord.Member, new_owner: discord.Member
@@ -244,9 +252,10 @@ class CharacterManager:
             )
             await asyncio.gather(*tasks)
 
-    def sort_chars(self):
+    async def sort_chars(self):
         """Sort characters after a rename."""
-        self._characters.sort()
+        async with self._lock:
+            self._characters.sort()
 
     def _validate(self, guild: discord.Guild, user: discord.Member, char: VChar):
         """Validate character ownership."""

@@ -20,7 +20,6 @@ class CharacterManager:
     def __init__(self):
         self._characters: list[VChar] = []
         self._id_cache: dict[str, VChar] = {}
-        self.bot = None
         self._initialized = False
 
     @property

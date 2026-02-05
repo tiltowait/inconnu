@@ -290,7 +290,7 @@ class InconnuBot(discord.AutoShardedBot):
                     # character and double-check before yelling at them.
                     try:
                         character = await services.char_mgr.fetchone(
-                            ctx.guild, ctx.user, options["character"]
+                            ctx.guild, cast(discord.Member, ctx.user), options["character"]
                         )
                         if character.is_pc:
                             await asyncio.sleep(1)  # Make sure it shows after the command
@@ -317,7 +317,6 @@ class InconnuBot(discord.AutoShardedBot):
     async def on_connect(self):
         """Perform early setup."""
         if not self.connected:
-            services.char_mgr.bot = self
             await reporter.prepare_channel(self)
             self.webhook_cache = WebhookCache(self.user.id)
 

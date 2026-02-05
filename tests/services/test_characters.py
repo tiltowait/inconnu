@@ -91,8 +91,7 @@ async def test_management(
     char_id: str,
 ):
     """Run a battery of CharManager tests."""
-    mock_bot, user = mock_bot_with_user(user_id, admin)
-    services.char_mgr.bot = mock_bot
+    _, user = mock_bot_with_user(user_id, admin)
     identifier = char_id if admin else CHAR_NAME
 
     if exception is not None:

@@ -272,7 +272,7 @@ class InconnuBot(discord.AutoShardedBot):
         options = raw_command_options(ctx.interaction)
         if "character" in options and "player" not in options:
             # Some commands do, in fact, need the character parameter
-            if ctx.command.qualified_name not in {
+            if ctx.guild and ctx.command.qualified_name not in {
                 "character bio edit",
                 "character delete",
                 "experience remove entry",
@@ -281,7 +281,10 @@ class InconnuBot(discord.AutoShardedBot):
                 "update header",
                 "transfer",
             }:
-                num_chars = await services.char_mgr.character_count(ctx.guild_id, ctx.user.id)
+                num_chars = await services.char_mgr.character_count(
+                    ctx.guild,
+                    cast(discord.Member, ctx.user),
+                )
                 if num_chars == 1:
                     # The user might have been using an SPC, so let's grab that
                     # character and double-check before yelling at them.

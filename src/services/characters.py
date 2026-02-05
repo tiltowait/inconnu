@@ -109,7 +109,7 @@ class CharacterManager:
         await self.initialize()
         return self._id_cache.get(str(oid))
 
-    async def character_count(self, guild: discord.Guild | int, user: discord.Member | int) -> int:
+    async def character_count(self, guild: discord.Guild, user: discord.Member) -> int:
         """Get a count of the user's characters in the server."""
         chars = await self.fetchall(guild, user)
         return len(chars)

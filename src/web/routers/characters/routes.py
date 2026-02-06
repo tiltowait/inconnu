@@ -6,6 +6,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 import errors
+import inconnu
 from config import API_KEY
 from constants import Damage
 from models import VChar
@@ -52,17 +53,20 @@ async def get_authenticated_user(
 async def get_character_list(
     user_id: int = Depends(get_authenticated_user),
 ) -> AuthorizedCharacterList:
-    """Get all of the user's characters."""
+    """Get all of the user's characters and the guilds they belong to."""
+    guilds = []
+    guild_ids = set()
+    for guild in inconnu.bot.guilds:
+        if guild.get_member(user_id) is not None:
+            guilds.append(CharacterGuild.create(guild))
+            guild_ids.add(guild.id)
 
-    guilds: dict[int, CharacterGuild] = {}
     chars = []
     for char in await char_mgr.fetchuser(user_id):
-        if char.guild not in guilds:
-            guild = await CharacterGuild.fetch(char.guild)
-            guilds[char.guild] = guild
-        chars.append(char)
+        if char.guild in guild_ids:
+            chars.append(char)
 
-    return AuthorizedCharacterList(guilds=list(guilds.values()), characters=chars)
+    return AuthorizedCharacterList(guilds=guilds, characters=chars)
 
 
 @router.get("/characters/{oid}")

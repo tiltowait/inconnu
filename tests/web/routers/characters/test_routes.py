@@ -721,7 +721,9 @@ async def test_get_full_character_success(
         mock_guild_fetch.return_value = mock_guild_obj
 
         with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
-            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
 
                 assert response.status_code == 200
@@ -774,7 +776,9 @@ async def test_get_full_character_not_owned(
         mock_get_avatar.return_value = mock_avatar
 
         with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
-            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
 
                 assert response.status_code == 200
@@ -1125,7 +1129,7 @@ async def test_get_guild_characters_guild_not_found(auth_headers, mock_bot):
     mock_bot.guilds = []
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.get(f"/characters/guild/999999", headers=auth_headers)
+        response = await client.get("/characters/guild/999999", headers=auth_headers)
         assert response.status_code == 404
         assert "guild not found" in response.json()["detail"].lower()
 

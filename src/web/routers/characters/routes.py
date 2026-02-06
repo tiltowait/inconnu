@@ -56,7 +56,7 @@ async def get_character_list(
 
     guilds: dict[int, CharacterGuild] = {}
     chars = []
-    async for char in VChar.find(VChar.user == user_id):
+    for char in await char_mgr.fetchuser(user_id):
         if char.guild not in guilds:
             guild = await CharacterGuild.fetch(char.guild)
             guilds[char.guild] = guild

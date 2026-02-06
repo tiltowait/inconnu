@@ -720,17 +720,26 @@ async def test_get_full_character_success(
         mock_char_mgr_fetchid.return_value = mock_char
         mock_guild_fetch.return_value = mock_guild_obj
 
-        with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+        # Mock OwnerData.create to return owner data for the character owner
+        owner_data = OwnerData(id=str(TEST_USER_ID), name="Test User", icon="http://avatar.png")
+        with patch("web.routers.characters.models.OwnerData.create", new_callable=AsyncMock) as mock_owner_create:
+            mock_owner_create.return_value = owner_data
 
-                assert response.status_code == 200
-                result = response.json()
-                assert "guild" in result
-                assert "character" in result
-                assert result["guild"]["id"] == str(TEST_GUILD_ID)
+            with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as client:
+                    response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+
+                    assert response.status_code == 200
+                    result = response.json()
+                    assert "guild" in result
+                    assert "character" in result
+                    assert result["guild"]["id"] == str(TEST_GUILD_ID)
+                    # Verify owner data matches the character owner
+                    assert result["owner"] is not None
+                    assert result["owner"]["id"] == str(TEST_USER_ID)
+                    assert result["owner"]["name"] == "Test User"
 
 
 async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid):
@@ -775,20 +784,29 @@ async def test_get_full_character_not_owned(
         mock_avatar.url = "http://avatar.png"
         mock_get_avatar.return_value = mock_avatar
 
-        with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+        # Mock OwnerData.create to return owner data for the CHARACTER owner (999999)
+        character_owner_data = OwnerData(id="999999", name="Character Owner", icon="http://owner-avatar.png")
+        with patch("web.routers.characters.models.OwnerData.create", new_callable=AsyncMock) as mock_owner_create:
+            mock_owner_create.return_value = character_owner_data
 
-                assert response.status_code == 200
-                result = response.json()
-                # Non-owner should get profile, not full character
-                assert result["profile"] is not None
-                assert result["character"] is None
-                # Owner data is present (for the requesting user)
-                assert result["owner"] is not None
-                assert result["guild"]["id"] == str(TEST_GUILD_ID)
+            with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as client:
+                    response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+
+                    assert response.status_code == 200
+                    result = response.json()
+                    # Non-owner should get profile, not full character
+                    assert result["profile"] is not None
+                    assert result["character"] is None
+                    # Owner data is present for the CHARACTER OWNER (999999), not requesting user
+                    assert result["owner"] is not None
+                    assert result["owner"]["id"] == "999999"
+                    assert result["owner"]["name"] == "Character Owner"
+                    # Verify it's NOT the requesting user's data
+                    assert result["owner"]["id"] != str(TEST_USER_ID)
+                    assert result["guild"]["id"] == str(TEST_GUILD_ID)
 
 
 async def test_get_full_character_missing_user_header():

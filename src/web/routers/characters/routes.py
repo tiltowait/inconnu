@@ -75,13 +75,23 @@ async def get_character_list(
 
 
 @router.get("/characters/{oid}")
-async def get_full_character(
+async def get_character(
     oid: PydanticObjectId,
     user_id: int = Depends(get_authenticated_user),
 ) -> AuthorizedCharacter:
-    """Returns a given character if it belongs to the authed user. This
-    endpoint requires authorization checks, as it returns the entire character
-    object!"""
+    """Fetch a character.
+
+    Args:
+      oid (PydanticObjectId): The ObjectId identifying the character
+
+    What is returned depends on the user_id. If that user is identified as an
+    admin on the guild to which the character belongs, OR if the user is the
+    character's owner, return the full character.
+
+    Otherwise, return a BaseProfile.
+
+    The AuthorizedCharacter also contains guild and owner information. If the
+    character is an SPC, then owner information is not returned."""
     char = await char_mgr.fetchid(oid)
     if char is None:
         raise HTTPException(404, detail="Character not found")
@@ -105,7 +115,7 @@ async def get_full_character(
     if char.is_spc:
         owner_data = None
     else:
-        owner_data = OwnerData.from_user(user)
+        owner_data = await OwnerData.create(char.guild, char.user)
 
     guild = await CharacterGuild.fetch(char.guild)
 

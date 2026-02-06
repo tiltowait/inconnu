@@ -14,7 +14,7 @@ import db as database
 from constants import Damage
 from errors import DuplicateCharacterError
 from models import VChar
-from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
+from models.vchardocs import VCharSplat, VCharTrait
 from server import app
 from services.wizard import CharacterGuild, WizardData
 from web.routers.characters.models import OwnerData
@@ -189,6 +189,36 @@ def mock_owner_data_create():
         yield mock
 
 
+@pytest.fixture
+def mock_get_avatar():
+    """Mock get_avatar to return consistent avatar URL."""
+    with patch("web.routers.characters.models.get_avatar") as mock:
+        mock_avatar = MagicMock()
+        mock_avatar.url = "http://avatar.png"
+        mock.return_value = mock_avatar
+        yield mock
+
+
+@pytest.fixture
+def mock_char_mgr_is_admin():
+    """Mock char_mgr.is_admin to return False by default."""
+    with patch("web.routers.characters.routes.char_mgr.is_admin") as mock:
+        mock.return_value = False
+        yield mock
+
+
+@pytest.fixture
+def character_guild():
+    """Standard CharacterGuild object for tests."""
+    return CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None)
+
+
+@pytest.fixture
+def owner_data():
+    """Standard OwnerData object for tests."""
+    return OwnerData(id=str(TEST_USER_ID), name="Test User", icon="http://avatar.png")
+
+
 # Factory functions for mocks
 
 
@@ -214,17 +244,26 @@ def make_mock_char(
     splat: VCharSplat = VCharSplat.VAMPIRE,
     is_spc: bool = False,
     has_left: bool = False,
-) -> MagicMock:
-    """Create a mock VChar."""
-    char = MagicMock(spec=VChar)
+) -> VChar:
+    """Create a real VChar instance that can be serialized by FastAPI/Pydantic."""
+    char = VChar(
+        guild=guild_id,
+        user=user_id if not is_spc else VChar.SPC_OWNER,
+        name=name,
+        splat=splat,
+        humanity=7,
+        health="//////",  # 6 undamaged boxes
+        willpower="/////",  # 5 undamaged boxes
+        potency=1,
+        traits=[],
+    )
+    # Set ID so it appears "saved" (required by PublicCharacter.create)
     char.id = PydanticObjectId()
-    char.guild = guild_id
-    char.user = user_id if not is_spc else VChar.SPC_OWNER
-    char.name = name
-    char.splat = splat
-    char.is_spc = is_spc
-    char.stat_log = {"left": True} if has_left else {}
-    char.profile = VCharProfile()  # Real VCharProfile instance for Pydantic validation
+
+    # Set stat_log for "left" check
+    if has_left:
+        char.stat_log["left"] = True
+
     return char
 
 
@@ -690,58 +729,60 @@ async def test_create_regular_character_user_id(
 
 
 async def test_get_full_character_success(
-    auth_headers, mock_bot, mock_char_mgr_fetchid, mock_guild_fetch
+    auth_headers,
+    mock_bot,
+    mock_char_mgr_fetchid,
+    mock_get_avatar,
+    mock_char_mgr_is_admin,
+    character_guild,
+    owner_data,
 ):
     """Successfully fetch full character owned by user."""
-    mock_char = MagicMock(spec=VChar)
-    mock_char.id = PydanticObjectId()
-    mock_char.guild = TEST_GUILD_ID
-    mock_char.user = TEST_USER_ID
-    mock_char.name = "Test Character"
-    mock_char.is_spc = False
+    mock_char = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Test Character")
 
     # Mock Discord guild and member
     mock_guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=True)
     mock_bot.guilds = [mock_guild]
 
-    # Set up the member with proper attributes
-    mock_member = mock_guild.get_or_fetch.return_value
-    mock_member.id = TEST_USER_ID
-    mock_member.display_name = "Test User"
+    mock_char_mgr_fetchid.return_value = mock_char
 
-    # Mock get_avatar to return an object with a url attribute
-    with patch("web.routers.characters.models.get_avatar") as mock_get_avatar:
-        mock_avatar = MagicMock()
-        mock_avatar.url = "http://avatar.png"
-        mock_get_avatar.return_value = mock_avatar
+    with patch(
+        "web.routers.characters.models.OwnerData.create", new_callable=AsyncMock
+    ) as mock_owner_create:
+        mock_owner_create.return_value = owner_data
 
-        mock_guild_obj = CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
 
-        mock_char_mgr_fetchid.return_value = mock_char
-        mock_guild_fetch.return_value = mock_guild_obj
+            assert response.status_code == 200
+            result = response.json()
 
-        # Mock OwnerData.create to return owner data for the character owner
-        owner_data = OwnerData(id=str(TEST_USER_ID), name="Test User", icon="http://avatar.png")
-        with patch(
-            "web.routers.characters.models.OwnerData.create", new_callable=AsyncMock
-        ) as mock_owner_create:
-            mock_owner_create.return_value = owner_data
+            # Verify AuthorizedCharacter structure
+            assert "guild" in result
+            assert "owner" in result
+            assert "character" in result
+            assert "spc" in result
+            assert "type" in result
 
-            with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
-                async with AsyncClient(
-                    transport=ASGITransport(app=app), base_url="http://test"
-                ) as client:
-                    response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+            # Verify type discriminator
+            assert result["type"] == "full"
+            assert result["spc"] is False
 
-                    assert response.status_code == 200
-                    result = response.json()
-                    assert "guild" in result
-                    assert "character" in result
-                    assert result["guild"]["id"] == str(TEST_GUILD_ID)
-                    # Verify owner data matches the character owner
-                    assert result["owner"] is not None
-                    assert result["owner"]["id"] == str(TEST_USER_ID)
-                    assert result["owner"]["name"] == "Test User"
+            # Verify guild data
+            assert result["guild"]["id"] == str(TEST_GUILD_ID)
+            assert result["guild"]["name"] == "Test Guild"
+
+            # Verify owner data
+            assert result["owner"] is not None
+            assert result["owner"]["id"] == str(TEST_USER_ID)
+            assert result["owner"]["name"] == "Test User"
+
+            # Verify character is VChar (full access)
+            # VChar serialization includes these fields
+            assert result["character"]["name"] == "Test Character"
+            assert result["character"]["guild"] == TEST_GUILD_ID
+            assert result["character"]["user"] == TEST_USER_ID
+            assert "traits" in result["character"]  # VChar has traits
 
 
 async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid):
@@ -756,63 +797,64 @@ async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid)
 
 
 async def test_get_full_character_not_owned(
-    auth_headers, mock_bot, mock_char_mgr_fetchid, mock_guild_fetch
+    auth_headers, mock_bot, mock_char_mgr_fetchid, mock_get_avatar, mock_char_mgr_is_admin
 ):
-    """Non-owner accessing character receives profile instead of full character."""
-    mock_char = MagicMock(spec=VChar)
-    mock_char.id = PydanticObjectId()
-    mock_char.guild = TEST_GUILD_ID
-    mock_char.user = 999999  # Different user
-    mock_char.is_spc = False
-    mock_char.name = "Someone Else's Character"
-    mock_char.splat = VCharSplat.VAMPIRE
-    mock_char.profile = VCharProfile()
+    """Non-owner accessing character receives PublicCharacter."""
+    # Character owned by different user
+    mock_char = make_mock_char(TEST_GUILD_ID, 999999, "Someone Else's Character")
 
     # Mock Discord guild and member
     mock_guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=True)
     mock_bot.guilds = [mock_guild]
 
-    # Set up the member with proper attributes
-    mock_member = mock_guild.get_or_fetch.return_value
-    mock_member.id = TEST_USER_ID
-    mock_member.display_name = "Test User"
-
     mock_char_mgr_fetchid.return_value = mock_char
-    mock_guild_obj = CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None)
-    mock_guild_fetch.return_value = mock_guild_obj
 
-    with patch("web.routers.characters.models.get_avatar") as mock_get_avatar:
-        mock_avatar = MagicMock()
-        mock_avatar.url = "http://avatar.png"
-        mock_get_avatar.return_value = mock_avatar
+    # Character owner's data (NOT the requesting user)
+    character_owner_data = OwnerData(
+        id="999999", name="Character Owner", icon="http://owner-avatar.png"
+    )
 
-        # Mock OwnerData.create to return owner data for the CHARACTER owner (999999)
-        character_owner_data = OwnerData(
-            id="999999", name="Character Owner", icon="http://owner-avatar.png"
-        )
-        with patch(
-            "web.routers.characters.models.OwnerData.create", new_callable=AsyncMock
-        ) as mock_owner_create:
-            mock_owner_create.return_value = character_owner_data
+    with patch(
+        "web.routers.characters.models.OwnerData.create", new_callable=AsyncMock
+    ) as mock_owner_create:
+        mock_owner_create.return_value = character_owner_data
 
-            with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
-                async with AsyncClient(
-                    transport=ASGITransport(app=app), base_url="http://test"
-                ) as client:
-                    response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
 
-                    assert response.status_code == 200
-                    result = response.json()
-                    # Non-owner should get profile, not full character
-                    assert result["profile"] is not None
-                    assert result["character"] is None
-                    # Owner data is present for the CHARACTER OWNER (999999), not requesting user
-                    assert result["owner"] is not None
-                    assert result["owner"]["id"] == "999999"
-                    assert result["owner"]["name"] == "Character Owner"
-                    # Verify it's NOT the requesting user's data
-                    assert result["owner"]["id"] != str(TEST_USER_ID)
-                    assert result["guild"]["id"] == str(TEST_GUILD_ID)
+            assert response.status_code == 200
+            result = response.json()
+
+            # Verify AuthorizedCharacter structure
+            assert "guild" in result
+            assert "owner" in result
+            assert "character" in result
+            assert "spc" in result
+            assert "type" in result
+
+            # Verify type discriminator - should be "public" not "full"
+            assert result["type"] == "public"
+            assert result["spc"] is False
+
+            # Verify guild data
+            assert result["guild"]["id"] == str(TEST_GUILD_ID)
+
+            # Verify owner data is for CHARACTER OWNER (999999), not requesting user
+            assert result["owner"] is not None
+            assert result["owner"]["id"] == "999999"
+            assert result["owner"]["name"] == "Character Owner"
+            assert result["owner"]["id"] != str(TEST_USER_ID)
+
+            # Verify character is PublicCharacter (restricted access)
+            # PublicCharacter has: id, user, name, splat, profile (no spc field)
+            char_data = result["character"]
+            assert char_data["id"] == str(mock_char.id)
+            assert char_data["name"] == "Someone Else's Character"
+            assert char_data["user"] == "999999"
+            assert char_data["splat"] == VCharSplat.VAMPIRE
+            assert "profile" in char_data
+            # Verify PublicCharacter doesn't have sensitive fields
+            assert "spc" not in char_data  # spc moved to top level
 
 
 async def test_get_full_character_missing_user_header():
@@ -891,10 +933,22 @@ async def test_get_character_list_success(auth_headers, mock_bot, mock_char_mgr_
 
         assert response.status_code == 200
         result = response.json()
+
+        # Verify AuthorizedUserChars structure
         assert len(result["guilds"]) == 2
         assert len(result["characters"]) == 4
         assert result["guilds"][0]["id"] == "1"
         assert result["guilds"][1]["id"] == "2"
+
+        # Verify characters are wrapped in AuthorizedCharacter
+        for char in result["characters"]:
+            assert "guild" in char
+            assert "owner" in char  # Should be None for user's own characters
+            assert "character" in char
+            assert "spc" in char
+            assert "type" in char
+            assert char["type"] == "full"
+            assert char["owner"] is None  # User's own characters
 
 
 async def test_get_character_list_user_in_guilds_without_characters(
@@ -915,10 +969,15 @@ async def test_get_character_list_user_in_guilds_without_characters(
 
         assert response.status_code == 200
         result = response.json()
-        # All 3 guilds returned even though user only has chars in 1
+        # All 3 guilds returned even though user only has chars in 2
         assert len(result["guilds"]) == 3
         # Only characters in guilds user belongs to
         assert len(result["characters"]) == 2
+
+        # Verify wrapped structure
+        for char_data in result["characters"]:
+            assert char_data["type"] == "full"
+            assert char_data["owner"] is None
 
 
 async def test_get_character_list_filters_left_guilds(
@@ -943,6 +1002,7 @@ async def test_get_character_list_filters_left_guilds(
         assert result["guilds"][0]["id"] == "1"
         # Should filter out char_left
         assert len(result["characters"]) == 1
+        assert result["characters"][0]["type"] == "full"
 
 
 async def test_get_character_list_no_guilds(auth_headers, mock_bot, mock_char_mgr_fetchuser):
@@ -975,6 +1035,8 @@ async def test_get_character_list_no_characters(auth_headers, mock_bot, mock_cha
         result = response.json()
         assert len(result["guilds"]) == 2
         assert len(result["characters"]) == 1  # Just the SPC
+        assert result["characters"][0]["spc"] is True
+        assert result["characters"][0]["type"] == "full"
 
 
 async def test_get_character_list_multiple_characters_same_guild(
@@ -997,6 +1059,10 @@ async def test_get_character_list_multiple_characters_same_guild(
         result = response.json()
         assert len(result["guilds"]) == 1
         assert len(result["characters"]) == 4
+        # Verify all wrapped in AuthorizedCharacter
+        for char in result["characters"]:
+            assert char["type"] == "full"
+            assert char["guild"]["id"] == "1"
 
 
 async def test_get_character_list_filters_left_characters(
@@ -1052,38 +1118,113 @@ async def test_get_character_list_missing_user_header():
 # Character profile tests
 
 
-async def test_get_character_profile_success(mock_guild, mock_char_mgr_fetchid, mock_guild_fetch):
-    """Successfully fetch character profile."""
-    # Create a mock character with profile
-    mock_char = MagicMock(spec=VChar)
-    mock_char.id = PydanticObjectId()
-    mock_char.guild = TEST_GUILD_ID
-    mock_char.user = TEST_USER_ID
-    mock_char.name = "Test Character"
-    mock_char.splat = VCharSplat.VAMPIRE
-    mock_char.is_spc = False
-    mock_char.profile = VCharProfile()
-
-    mock_guild_obj = CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None)
-
+async def test_get_character_profile_success_non_spc(mock_char_mgr_fetchid, character_guild):
+    """Successfully fetch character profile for non-SPC character."""
+    mock_char = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Test Character")
     mock_char_mgr_fetchid.return_value = mock_char
-    mock_guild_fetch.return_value = mock_guild_obj
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.get(
-            f"/characters/profile/{mock_char.id}",
-            headers={"Authorization": f"Bearer {TEST_API_KEY}"},
-        )
+    # Mock CharacterGuild.fetch and OwnerData.create
+    owner = OwnerData(id=str(TEST_USER_ID), name="Test User", icon="http://avatar.png")
 
-        assert response.status_code == 200
-        result = response.json()
-        assert result["id"] == str(mock_char.id)
-        assert result["spc"] is False
-        assert result["guild"]["id"] == str(TEST_GUILD_ID)
-        assert result["user"] == str(TEST_USER_ID)
-        assert result["name"] == "Test Character"
-        assert result["splat"] == VCharSplat.VAMPIRE
-        assert "profile" in result
+    with (
+        patch(
+            "web.routers.characters.routes.CharacterGuild.fetch", new_callable=AsyncMock
+        ) as mock_guild_fetch,
+        patch(
+            "web.routers.characters.routes.OwnerData.create", new_callable=AsyncMock
+        ) as mock_owner_create,
+    ):
+        mock_guild_fetch.return_value = character_guild
+        mock_owner_create.return_value = owner
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(
+                f"/characters/profile/{mock_char.id}",
+                headers={"Authorization": f"Bearer {TEST_API_KEY}"},
+            )
+
+            assert response.status_code == 200
+            result = response.json()
+
+            # Response is AuthorizedCharacter with PublicCharacter inside
+            assert "guild" in result
+            assert "owner" in result
+            assert "character" in result
+            assert "spc" in result
+            assert "type" in result
+
+            # Verify type discriminator
+            assert result["type"] == "public"
+            assert result["spc"] is False
+
+            # Verify guild data
+            assert result["guild"]["id"] == str(TEST_GUILD_ID)
+            assert result["guild"]["name"] == "Test Guild"
+
+            # Verify owner data
+            assert result["owner"] is not None
+            assert result["owner"]["id"] == str(TEST_USER_ID)
+            assert result["owner"]["name"] == "Test User"
+
+            # Verify character is PublicCharacter (id, user, name, splat, profile)
+            char_data = result["character"]
+            assert char_data["id"] == str(mock_char.id)
+            assert char_data["user"] == str(TEST_USER_ID)
+            assert char_data["name"] == "Test Character"
+            assert char_data["splat"] == VCharSplat.VAMPIRE
+            assert "profile" in char_data
+            # PublicCharacter doesn't have spc or guild fields
+            assert "spc" not in char_data
+            assert "guild" not in char_data
+
+
+async def test_get_character_profile_success_spc(mock_char_mgr_fetchid, character_guild):
+    """Successfully fetch character profile for SPC character."""
+    mock_char = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC Character", is_spc=True)
+    mock_char_mgr_fetchid.return_value = mock_char
+
+    # Mock CharacterGuild.fetch
+    with patch(
+        "web.routers.characters.routes.CharacterGuild.fetch", new_callable=AsyncMock
+    ) as mock_guild_fetch:
+        mock_guild_fetch.return_value = character_guild
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(
+                f"/characters/profile/{mock_char.id}",
+                headers={"Authorization": f"Bearer {TEST_API_KEY}"},
+            )
+
+            assert response.status_code == 200
+            result = response.json()
+
+            # Response is AuthorizedCharacter with PublicCharacter inside
+            assert "guild" in result
+            assert "owner" in result
+            assert "character" in result
+            assert "spc" in result
+            assert "type" in result
+
+            # Verify type discriminator
+            assert result["type"] == "public"
+            assert result["spc"] is True
+
+            # Verify guild data
+            assert result["guild"]["id"] == str(TEST_GUILD_ID)
+
+            # Verify owner is null for SPC
+            assert result["owner"] is None
+
+            # Verify character is PublicCharacter
+            char_data = result["character"]
+            assert char_data["id"] == str(mock_char.id)
+            # VChar.name appends "(SPC)" for SPCs
+            assert char_data["name"] == "SPC Character (SPC)"
+            assert char_data["splat"] == VCharSplat.VAMPIRE
+            assert "profile" in char_data
+            # PublicCharacter doesn't have spc or guild fields
+            assert "spc" not in char_data
+            assert "guild" not in char_data
 
 
 async def test_get_character_profile_not_found(mock_char_mgr_fetchid):
@@ -1193,15 +1334,27 @@ async def test_get_guild_characters_success(
         result = response.json()
         assert len(result) == 3
 
-        # Verify regular characters have owner_data (nested structure)
+        # Verify AuthorizedCharacter structure
+        for char in result:
+            assert "guild" in char
+            assert "owner" in char
+            assert "character" in char
+            assert "spc" in char
+            assert "type" in char
+            assert char["type"] == "public"  # Guild endpoint returns PublicCharacter
+
+        # Verify regular characters have owner data
         assert result[0]["character"]["name"] == "Character 1"
         assert result[0]["owner"]["name"] == "User1"
+        assert result[0]["spc"] is False
         assert result[1]["character"]["name"] == "Character 2"
         assert result[1]["owner"]["name"] == "User2"
+        assert result[1]["spc"] is False
 
-        # Verify SPC has null owner_data
-        assert result[2]["character"]["name"] == "SPC Char"
-        assert result[2]["character"]["spc"] is True
+        # Verify SPC has null owner
+        # VChar.name appends "(SPC)" for SPCs
+        assert result[2]["character"]["name"] == "SPC Char (SPC)"
+        assert result[2]["spc"] is True
         assert result[2]["owner"] is None
 
 
@@ -1338,15 +1491,18 @@ async def test_get_guild_characters_mixed_filtering(
         # Only active chars with valid owners + SPC
         assert len(result) == 3
         assert result[0]["character"]["name"] == "Active Char"
+        assert result[0]["spc"] is False
         assert result[1]["character"]["name"] == "Another Active"
-        assert result[2]["character"]["name"] == "SPC"
-        assert result[2]["character"]["spc"] is True
+        assert result[1]["spc"] is False
+        # VChar.name appends "(SPC)" for SPCs
+        assert result[2]["character"]["name"] == "SPC (SPC)"
+        assert result[2]["spc"] is True  # spc at top level, not in character
 
 
 async def test_get_guild_characters_spc_owner_data_null(
     auth_headers, mock_bot, mock_char_mgr_fetchguild
 ):
-    """SPCs have owner_data as null."""
+    """SPCs have owner as null."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
     mock_bot.guilds = [guild]
 
@@ -1359,12 +1515,15 @@ async def test_get_guild_characters_spc_owner_data_null(
         assert response.status_code == 200
         result = response.json()
         assert len(result) == 1
-        assert result[0]["character"]["spc"] is True
+        assert result[0]["spc"] is True  # spc at top level in AuthorizedCharacter
+        assert result[0]["type"] == "public"
         assert result[0]["owner"] is None
+        # PublicCharacter doesn't have spc field
+        assert "spc" not in result[0]["character"]
 
 
 async def test_get_guild_characters_only_spcs(auth_headers, mock_bot, mock_char_mgr_fetchguild):
-    """Guild with only SPCs returns all SPCs with null owner_data."""
+    """Guild with only SPCs returns all SPCs with null owner."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
     mock_bot.guilds = [guild]
 
@@ -1380,5 +1539,7 @@ async def test_get_guild_characters_only_spcs(auth_headers, mock_bot, mock_char_
         result = response.json()
         assert len(result) == 3
         for char in result:
-            assert char["character"]["spc"] is True
+            assert char["spc"] is True  # spc at top level in AuthorizedCharacter
+            assert char["type"] == "public"
             assert char["owner"] is None
+            assert "spc" not in char["character"]  # PublicCharacter doesn't have spc

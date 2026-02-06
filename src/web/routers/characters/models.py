@@ -1,10 +1,16 @@
 """Pydantic models for character API endpoints."""
 
-from typing import Optional, Self
+from typing import Literal, Optional, Self
 
 import discord
 from beanie import PydanticObjectId
-from pydantic import BaseModel, Field, field_validator, model_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 import inconnu
 from constants import ATTRIBUTES, SKILLS
@@ -41,34 +47,23 @@ class OwnerData(BaseModel):
         return cls.from_user(user)
 
 
-class BaseProfile(BaseModel):
-    """A base character model containing name, profile, and guild data."""
+class PublicCharacter(BaseModel):
+    """Public character data without sensitive information, such as trait ratings."""
 
     id: PydanticObjectId
-    spc: bool
-    guild: CharacterGuild
     user: str
     name: str
     splat: str
     profile: VCharProfile
 
     @classmethod
-    async def create(
-        cls,
-        char: VChar,
-        guild: CharacterGuild | None = None,
-    ) -> Self:
+    def create(cls, char: VChar) -> Self:
         """Construct a base profile."""
-        if guild is None:
-            guild = await CharacterGuild.fetch(char.guild)
-
         if char.id is None:
             raise CharacterError(f"{char.name} hasn't been saved to the database yet.")
 
         return cls(
             id=char.id,
-            spc=char.is_spc,
-            guild=guild,
             user=str(char.user),
             name=char.name,
             splat=char.splat,
@@ -76,37 +71,33 @@ class BaseProfile(BaseModel):
         )
 
 
-class ProfileWithOwner(BaseModel):
-    """Character profile with ownership metadata for guild listings."""
-
-    character: BaseProfile
-    owner: Optional[OwnerData]
-
-
 class AuthorizedCharacter(BaseModel):
-    """The character data for /characters/{oid}."""
+    """Unified character response containing guild, owner, and character data."""
 
     guild: CharacterGuild
     owner: Optional[OwnerData]
-    character: Optional[VChar]
-    profile: Optional[BaseProfile]
+    character: VChar | PublicCharacter
+    spc: bool
+
+    @computed_field
+    @property
+    def type(self) -> Literal["full", "public"]:
+        """The type of character model being returned."""
+        return "full" if isinstance(self.character, VChar) else "public"
 
 
-class AuthorizedCharacterList(BaseModel):
-    """The character data for /characters."""
+class AuthorizedUserChars(BaseModel):
+    """Intended to contain one user's characters as well as all the guilds the
+    user shares with the bot.
+
+    This model does contain redundant data: each character contains its own
+    guild data and owner data, which leads to duplication. However, only 0.8%
+    of users have more than 10 characters, and 87% have only 1 or 2. This
+    small redundancy is acceptable given the reduced frontend logic complexity
+    it enables."""
 
     guilds: list[CharacterGuild]
-    characters: list[VChar]
-
-    @model_serializer(mode="wrap")
-    def serialize_model(self, serializer, _):
-        """Convert VChar Discord ID fields to strings for JavaScript compatibility."""
-        data = serializer(self)
-        # Convert Discord IDs to strings for all VChars
-        for char in data["characters"]:
-            char["user"] = str(char["user"])
-            char["guild"] = str(char["guild"])
-        return data
+    characters: list[AuthorizedCharacter]
 
 
 class WizardSchema(BaseModel):

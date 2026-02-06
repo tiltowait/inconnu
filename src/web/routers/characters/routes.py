@@ -15,12 +15,11 @@ from services import char_mgr, wizard_cache
 from services.wizard import CharacterGuild
 from web.routers.characters.models import (
     AuthorizedCharacter,
-    AuthorizedCharacterList,
-    BaseProfile,
+    AuthorizedUserChars,
     CreationBody,
     CreationSuccess,
     OwnerData,
-    ProfileWithOwner,
+    PublicCharacter,
     WizardSchema,
 )
 
@@ -55,23 +54,25 @@ async def get_authenticated_user(
 @router.get("/characters")
 async def get_character_list(
     user_id: int = Depends(get_authenticated_user),
-) -> AuthorizedCharacterList:
+) -> AuthorizedUserChars:
     """Get all of the user's characters and the guilds they belong to."""
-    guilds = []
-    guild_ids = set()
+    guilds = {}
     for guild in inconnu.bot.guilds:
+        if guild.id in guilds:
+            continue
         if guild.get_member(user_id) is not None:
-            guilds.append(CharacterGuild.create(guild))
-            guild_ids.add(guild.id)
+            guilds[guild.id] = CharacterGuild.create(guild)
 
     chars = []
     for char in await char_mgr.fetchuser(user_id):
         if char.stat_log.get("left") is not None:
             continue
-        if char.guild in guild_ids:
-            chars.append(char)
+        if char.guild in guilds:
+            guild = guilds[char.guild]
+            authed = AuthorizedCharacter(guild=guild, owner=None, character=char, spc=char.is_spc)
+            chars.append(authed)
 
-    return AuthorizedCharacterList(guilds=guilds, characters=chars)
+    return AuthorizedUserChars(guilds=list(guilds.values()), characters=chars)
 
 
 @router.get("/characters/{oid}")
@@ -88,7 +89,7 @@ async def get_character(
     admin on the guild to which the character belongs, OR if the user is the
     character's owner, return the full character.
 
-    Otherwise, return a BaseProfile.
+    Otherwise, return a PublicCharacter.
 
     The AuthorizedCharacter also contains guild and owner information. If the
     character is an SPC, then owner information is not returned."""
@@ -104,26 +105,21 @@ async def get_character(
     if user is None:
         raise HTTPException(404, detail="User not in character's guild")
 
-    guild_data = CharacterGuild.create(guild)
     if user_id == char.user or char_mgr.is_admin(user):
         character = char
-        profile = None
     else:
-        character = None
-        profile = await BaseProfile.create(char, guild_data)
+        character = PublicCharacter.create(char)
 
     if char.is_spc:
         owner_data = None
     else:
         owner_data = await OwnerData.create(char.guild, char.user)
 
-    guild = await CharacterGuild.fetch(char.guild)
-
     return AuthorizedCharacter(
-        guild=guild,
+        guild=CharacterGuild.create(guild),
         owner=owner_data,
         character=character,
-        profile=profile,
+        spc=char.is_spc,
     )
 
 
@@ -131,7 +127,7 @@ async def get_character(
 async def get_guild_characters(
     guild_id: int,
     user_id: int = Depends(get_authenticated_user),
-) -> list[ProfileWithOwner]:
+) -> list[AuthorizedCharacter]:
     """Get all character base profiles belonging to the guild. Excludes
     characters whose owners have left the server."""
     guild = await inconnu.bot.get_or_fetch_guild(guild_id)
@@ -157,8 +153,13 @@ async def get_guild_characters(
                 # Without owner data, however, we won't return this character.
                 continue
 
-        base_profile = await BaseProfile.create(char, char_guild)
-        guild_profile = ProfileWithOwner(character=base_profile, owner=owner_data)
+        base_profile = PublicCharacter.create(char)
+        guild_profile = AuthorizedCharacter(
+            guild=char_guild,
+            owner=owner_data,
+            character=base_profile,
+            spc=char.is_spc,
+        )
         profiles.append(guild_profile)
 
     return profiles
@@ -168,14 +169,25 @@ async def get_guild_characters(
 async def get_character_profile(
     oid: PydanticObjectId,
     _: HTTPAuthorizationCredentials = Depends(verify_api_key),
-) -> BaseProfile:
+) -> AuthorizedCharacter:
     """Fetch a character profile. This endpoint returns a non-sensitive character
     model with only name, ownership data, and public profile data."""
     char = await char_mgr.fetchid(oid)
     if char is None:
         raise HTTPException(404, detail="Character not found.")
 
-    return await BaseProfile.create(char)
+    guild = await CharacterGuild.fetch(char.guild)
+    if char.is_spc:
+        owner = None
+    else:
+        owner = await OwnerData.create(char.guild, char.user)
+
+    return AuthorizedCharacter(
+        guild=guild,
+        owner=owner,
+        character=PublicCharacter.create(char),
+        spc=char.is_spc,
+    )
 
 
 # Wizard
@@ -213,7 +225,7 @@ async def create_character(
     owner_id = wizard.user if not wizard.spc else VChar.SPC_OWNER
 
     character = VChar(
-        guild=wizard.guild.id,
+        guild=int(wizard.guild.id),
         user=owner_id,
         name=data.name,
         splat=data.splat,

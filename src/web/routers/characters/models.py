@@ -4,7 +4,7 @@ from typing import Optional, Self
 
 import discord
 from beanie import PydanticObjectId
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_serializer, model_validator
 
 import inconnu
 from constants import ATTRIBUTES, SKILLS
@@ -97,6 +97,16 @@ class AuthorizedCharacterList(BaseModel):
 
     guilds: list[CharacterGuild]
     characters: list[VChar]
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, serializer, _):
+        """Convert VChar Discord ID fields to strings for JavaScript compatibility."""
+        data = serializer(self)
+        # Convert Discord IDs to strings for all VChars
+        for char in data["characters"]:
+            char["user"] = str(char["user"])
+            char["guild"] = str(char["guild"])
+        return data
 
 
 class AuthorizedGuildList(BaseModel):

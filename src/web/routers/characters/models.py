@@ -1,16 +1,81 @@
 """Pydantic models for character API endpoints."""
 
-from typing import Self
+from typing import Optional, Self
 
+import discord
 from beanie import PydanticObjectId
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+import inconnu
 from constants import ATTRIBUTES, SKILLS
 from errors import CharacterError
 from models import VChar
 from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
 from services.wizard import CharacterGuild
+from utils import get_avatar
 from utils.validation import valid_name, validate_specialty_names, validate_trait_names
+
+
+class OwnerData(BaseModel):
+    """Basic character ownership data."""
+
+    id: int
+    name: str
+    icon: str
+
+    @classmethod
+    async def create(cls, guild_id: int, user_id: int) -> Self | None:
+        """Create a CharacterOwner object."""
+        guild = await inconnu.bot.get_or_fetch_guild(guild_id)
+        if guild is None:
+            return None
+        user = await guild.get_or_fetch(discord.Member, user_id)
+        if user is None:
+            return None
+
+        return cls(id=user.id, name=user.display_name, icon=get_avatar(user).url)
+
+
+class BaseProfile(BaseModel):
+    """A base character model containing name, profile, and guild data."""
+
+    id: PydanticObjectId
+    spc: bool
+    guild: CharacterGuild
+    user: int
+    name: str
+    splat: str
+    profile: VCharProfile
+
+    @classmethod
+    async def create(
+        cls,
+        char: VChar,
+        guild: CharacterGuild | None = None,
+    ) -> Self:
+        """Construct a base profile."""
+        if guild is None:
+            guild = await CharacterGuild.fetch(char.guild)
+
+        if char.id is None:
+            raise CharacterError(f"{char.name} hasn't been saved to the database yet.")
+
+        return cls(
+            id=char.id,
+            spc=char.is_spc,
+            guild=guild,
+            user=char.user,
+            name=char.name,
+            splat=char.splat,
+            profile=char.profile,
+        )
+
+
+class ProfileWithOwner(BaseModel):
+    """Character profile with ownership metadata for guild listings."""
+
+    character: BaseProfile
+    owner_data: Optional[OwnerData]
 
 
 class AuthorizedCharacter(BaseModel):
@@ -27,6 +92,12 @@ class AuthorizedCharacterList(BaseModel):
     characters: list[VChar]
 
 
+class AuthorizedGuildList(BaseModel):
+    """Data returned by /characters/guild."""
+
+    characters: list[BaseProfile]
+
+
 class WizardSchema(BaseModel):
     """Data sent by the wizard endpoint."""
 
@@ -36,36 +107,6 @@ class WizardSchema(BaseModel):
     traits: list[VCharTrait] = [
         VCharTrait(name=trait, rating=1, type=VCharTrait.Type.ATTRIBUTE) for trait in ATTRIBUTES
     ] + [VCharTrait(name=trait, rating=1, type=VCharTrait.Type.SKILL) for trait in SKILLS]
-
-
-class BaseProfile(BaseModel):
-    """A base character model containing name, profile, owner, and guild data."""
-
-    id: PydanticObjectId
-    spc: bool
-    guild: CharacterGuild
-    user: int
-    name: str
-    splat: str
-    profile: VCharProfile
-
-    @classmethod
-    async def create(cls, char: VChar) -> Self:
-        """Construct a base profile."""
-        guild = await CharacterGuild.fetch(char.guild)
-
-        if char.id is None:
-            raise CharacterError(f"{char.name} hasn't been saved to the database yet.")
-
-        return cls(
-            id=char.id,
-            spc=char.is_spc,
-            guild=guild,
-            user=char.user,
-            name=char.name,
-            splat=char.splat,
-            profile=char.profile,
-        )
 
 
 class CreationBody(BaseModel):

@@ -3,7 +3,6 @@
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import db as database
 import discord
 import pytest
 from beanie import PydanticObjectId, init_beanie
@@ -11,12 +10,14 @@ from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
 
+import db as database
 from constants import Damage
 from errors import DuplicateCharacterError
 from models import VChar
 from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
 from server import app
 from services.wizard import CharacterGuild, WizardData
+from web.routers.characters.models import OwnerData
 
 # Test constants
 TEST_API_KEY = "test-api-key-12345"
@@ -118,6 +119,16 @@ def mock_bot():
     """Mock bot with guilds list that can be configured per test."""
     bot = MagicMock(spec=discord.Bot)
     bot.guilds = []
+
+    # Mock get_or_fetch_guild for guild lookup by ID
+    async def get_or_fetch_guild(guild_id: int):
+        for guild in bot.guilds:
+            if guild.id == guild_id:
+                return guild
+        return None
+
+    bot.get_or_fetch_guild = AsyncMock(side_effect=get_or_fetch_guild)
+
     with patch("web.routers.characters.routes.inconnu.bot", bot):
         yield bot
 
@@ -164,6 +175,20 @@ def mock_guild_fetch():
         yield mock
 
 
+@pytest.fixture
+def mock_char_mgr_fetchguild():
+    """Mock char_mgr.fetchguild for guild character tests."""
+    with patch("web.routers.characters.routes.char_mgr.fetchguild", new_callable=AsyncMock) as mock:
+        yield mock
+
+
+@pytest.fixture
+def mock_owner_data_create():
+    """Mock OwnerData.create for guild character tests."""
+    with patch("web.routers.characters.models.OwnerData.create", new_callable=AsyncMock) as mock:
+        yield mock
+
+
 # Factory functions for mocks
 
 
@@ -173,7 +198,12 @@ def make_mock_guild(guild_id: int, name: str, user_is_member: bool = True) -> Ma
     guild.id = guild_id
     guild.name = name
     guild.icon = None
-    guild.get_member.return_value = MagicMock(spec=discord.Member) if user_is_member else None
+
+    # Mock both get_member and get_or_fetch
+    mock_member = MagicMock(spec=discord.Member) if user_is_member else None
+    guild.get_member.return_value = mock_member
+    guild.get_or_fetch = AsyncMock(return_value=mock_member)
+
     return guild
 
 
@@ -183,6 +213,7 @@ def make_mock_char(
     name: str,
     splat: VCharSplat = VCharSplat.VAMPIRE,
     is_spc: bool = False,
+    has_left: bool = False,
 ) -> MagicMock:
     """Create a mock VChar."""
     char = MagicMock(spec=VChar)
@@ -192,6 +223,8 @@ def make_mock_char(
     char.name = name
     char.splat = splat
     char.is_spc = is_spc
+    char.stat_log = {"left": True} if has_left else {}
+    char.profile = VCharProfile()  # Real VCharProfile instance for Pydantic validation
     return char
 
 
@@ -889,6 +922,28 @@ async def test_get_character_list_multiple_characters_same_guild(
         assert len(result["characters"]) == 4
 
 
+async def test_get_character_list_filters_left_characters(
+    auth_headers, mock_bot, mock_char_mgr_fetchuser
+):
+    """Characters marked as left are filtered out."""
+    guild1 = make_mock_guild(1, "Guild 1")
+    mock_bot.guilds = [guild1]
+
+    char_active = make_mock_char(1, TEST_USER_ID, "Active Character")
+    char_left = make_mock_char(1, TEST_USER_ID, "Left Character", has_left=True)
+    char_active2 = make_mock_char(1, TEST_USER_ID, "Another Active")
+    mock_char_mgr_fetchuser.return_value = [char_active, char_left, char_active2]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/characters", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+        assert len(result["guilds"]) == 1
+        # Only 2 characters returned (char_left filtered out)
+        assert len(result["characters"]) == 2
+
+
 async def test_get_character_list_missing_api_key():
     """Request without API key rejected with 401."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -983,3 +1038,270 @@ async def test_get_character_profile_invalid_api_key():
             headers={"Authorization": "Bearer wrong-key"},
         )
         assert response.status_code == 401
+
+
+# Guild character list tests
+
+
+async def test_get_guild_characters_missing_api_key():
+    """Request without API key rejected with 401."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}")
+        assert response.status_code == 401
+
+
+async def test_get_guild_characters_invalid_api_key():
+    """Request with invalid API key rejected with 401."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            f"/characters/guild/{TEST_GUILD_ID}",
+            headers={"Authorization": "Bearer wrong-key", "X-Discord-User-ID": str(TEST_USER_ID)},
+        )
+        assert response.status_code == 401
+
+
+async def test_get_guild_characters_missing_user_header():
+    """Request missing X-Discord-User-ID header returns 400."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            f"/characters/guild/{TEST_GUILD_ID}",
+            headers={"Authorization": f"Bearer {TEST_API_KEY}"},
+        )
+        assert response.status_code == 400
+        assert "user id" in response.json()["detail"].lower()
+
+
+async def test_get_guild_characters_guild_not_found(auth_headers, mock_bot):
+    """Non-existent guild returns 404."""
+    mock_bot.guilds = []
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/999999", headers=auth_headers)
+        assert response.status_code == 404
+        assert "guild not found" in response.json()["detail"].lower()
+
+
+async def test_get_guild_characters_user_not_member(auth_headers, mock_bot):
+    """User not a member of guild returns 400."""
+    guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=False)
+    mock_bot.guilds = [guild]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
+        assert response.status_code == 400
+        assert "does not belong to guild" in response.json()["detail"].lower()
+
+
+async def test_get_guild_characters_success(
+    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+):
+    """Returns all active characters with owner data."""
+    guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    mock_bot.guilds = [guild]
+
+    char1 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Character 1")
+    char2 = make_mock_char(TEST_GUILD_ID, 111111, "Character 2")
+    spc = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC Char", is_spc=True)
+    mock_char_mgr_fetchguild.return_value = [char1, char2, spc]
+
+    # Mock owner data creation
+    owner1 = OwnerData(id=TEST_USER_ID, name="User1", icon="http://icon1.png")
+    owner2 = OwnerData(id=111111, name="User2", icon="http://icon2.png")
+    mock_owner_data_create.side_effect = [owner1, owner2]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+        assert len(result) == 3
+
+        # Verify regular characters have owner_data (nested structure)
+        assert result[0]["character"]["name"] == "Character 1"
+        assert result[0]["owner_data"]["name"] == "User1"
+        assert result[1]["character"]["name"] == "Character 2"
+        assert result[1]["owner_data"]["name"] == "User2"
+
+        # Verify SPC has null owner_data
+        assert result[2]["character"]["name"] == "SPC Char"
+        assert result[2]["character"]["spc"] is True
+        assert result[2]["owner_data"] is None
+
+
+async def test_get_guild_characters_empty_guild(auth_headers, mock_bot, mock_char_mgr_fetchguild):
+    """Empty guild returns empty list."""
+    guild = make_mock_guild(TEST_GUILD_ID, "Empty Guild")
+    mock_bot.guilds = [guild]
+    mock_char_mgr_fetchguild.return_value = []
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+        assert result == []
+
+
+async def test_get_guild_characters_multiple_owners(
+    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+):
+    """Guild with characters from different users."""
+    guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    mock_bot.guilds = [guild]
+
+    char1 = make_mock_char(TEST_GUILD_ID, 100, "User1 Char")
+    char2 = make_mock_char(TEST_GUILD_ID, 200, "User2 Char")
+    char3 = make_mock_char(TEST_GUILD_ID, 300, "User3 Char")
+    mock_char_mgr_fetchguild.return_value = [char1, char2, char3]
+
+    owner1 = OwnerData(id=100, name="User1", icon="http://icon1.png")
+    owner2 = OwnerData(id=200, name="User2", icon="http://icon2.png")
+    owner3 = OwnerData(id=300, name="User3", icon="http://icon3.png")
+    mock_owner_data_create.side_effect = [owner1, owner2, owner3]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+        assert len(result) == 3
+        assert result[0]["character"]["name"] == "User1 Char"
+        assert result[0]["owner_data"]["name"] == "User1"
+        assert result[1]["character"]["name"] == "User2 Char"
+        assert result[1]["owner_data"]["name"] == "User2"
+        assert result[2]["character"]["name"] == "User3 Char"
+        assert result[2]["owner_data"]["name"] == "User3"
+
+
+async def test_get_guild_characters_filters_left(
+    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+):
+    """Characters marked as left are excluded."""
+    guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    mock_bot.guilds = [guild]
+
+    char_active = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Active Char")
+    char_left = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Left Char", has_left=True)
+    char_active2 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Another Active")
+    mock_char_mgr_fetchguild.return_value = [char_active, char_left, char_active2]
+
+    owner = OwnerData(id=TEST_USER_ID, name="User", icon="http://icon.png")
+    mock_owner_data_create.side_effect = [owner, owner]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+        # Only 2 active characters returned
+        assert len(result) == 2
+        assert result[0]["character"]["name"] == "Active Char"
+        assert result[1]["character"]["name"] == "Another Active"
+
+
+async def test_get_guild_characters_filters_missing_owners(
+    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+):
+    """Characters whose owners can't be found are excluded."""
+    guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    mock_bot.guilds = [guild]
+
+    char1 = make_mock_char(TEST_GUILD_ID, 100, "Valid Owner")
+    char2 = make_mock_char(TEST_GUILD_ID, 200, "Missing Owner")
+    char3 = make_mock_char(TEST_GUILD_ID, 300, "Another Valid")
+    mock_char_mgr_fetchguild.return_value = [char1, char2, char3]
+
+    owner1 = OwnerData(id=100, name="User1", icon="http://icon1.png")
+    owner3 = OwnerData(id=300, name="User3", icon="http://icon3.png")
+    # char2's owner returns None (can't be found)
+    mock_owner_data_create.side_effect = [owner1, None, owner3]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+        # Only 2 characters with valid owners returned
+        assert len(result) == 2
+        assert result[0]["character"]["name"] == "Valid Owner"
+        assert result[1]["character"]["name"] == "Another Valid"
+
+
+async def test_get_guild_characters_mixed_filtering(
+    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+):
+    """Guild with active chars, left chars, and chars with missing owners."""
+    guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    mock_bot.guilds = [guild]
+
+    char_active = make_mock_char(TEST_GUILD_ID, 100, "Active Char")
+    char_left = make_mock_char(TEST_GUILD_ID, 200, "Left Char", has_left=True)
+    char_missing_owner = make_mock_char(TEST_GUILD_ID, 300, "Missing Owner")
+    char_active2 = make_mock_char(TEST_GUILD_ID, 400, "Another Active")
+    spc = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC", is_spc=True)
+    mock_char_mgr_fetchguild.return_value = [
+        char_active,
+        char_left,
+        char_missing_owner,
+        char_active2,
+        spc,
+    ]
+
+    owner1 = OwnerData(id=100, name="User1", icon="http://icon1.png")
+    owner4 = OwnerData(id=400, name="User4", icon="http://icon4.png")
+    # char_left is filtered before owner creation
+    # char_missing_owner's owner returns None
+    mock_owner_data_create.side_effect = [owner1, None, owner4]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+        # Only active chars with valid owners + SPC
+        assert len(result) == 3
+        assert result[0]["character"]["name"] == "Active Char"
+        assert result[1]["character"]["name"] == "Another Active"
+        assert result[2]["character"]["name"] == "SPC"
+        assert result[2]["character"]["spc"] is True
+
+
+async def test_get_guild_characters_spc_owner_data_null(
+    auth_headers, mock_bot, mock_char_mgr_fetchguild
+):
+    """SPCs have owner_data as null."""
+    guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    mock_bot.guilds = [guild]
+
+    spc = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Test SPC", is_spc=True)
+    mock_char_mgr_fetchguild.return_value = [spc]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+        assert len(result) == 1
+        assert result[0]["character"]["spc"] is True
+        assert result[0]["owner_data"] is None
+
+
+async def test_get_guild_characters_only_spcs(auth_headers, mock_bot, mock_char_mgr_fetchguild):
+    """Guild with only SPCs returns all SPCs with null owner_data."""
+    guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    mock_bot.guilds = [guild]
+
+    spc1 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC 1", is_spc=True)
+    spc2 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC 2", is_spc=True)
+    spc3 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC 3", is_spc=True)
+    mock_char_mgr_fetchguild.return_value = [spc1, spc2, spc3]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+        assert len(result) == 3
+        for char in result:
+            assert char["character"]["spc"] is True
+            assert char["owner_data"] is None

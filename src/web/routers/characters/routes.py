@@ -1,5 +1,6 @@
 """Character API routes."""
 
+import discord
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
@@ -18,6 +19,8 @@ from web.routers.characters.models import (
     BaseProfile,
     CreationBody,
     CreationSuccess,
+    OwnerData,
+    ProfileWithOwner,
     WizardSchema,
 )
 
@@ -63,6 +66,8 @@ async def get_character_list(
 
     chars = []
     for char in await char_mgr.fetchuser(user_id):
+        if char.stat_log.get("left") is not None:
+            continue
         if char.guild in guild_ids:
             chars.append(char)
 
@@ -92,11 +97,47 @@ async def get_full_character(
     )
 
 
+@router.get("/characters/guild/{guild_id}")
+async def get_guild_characters(
+    guild_id: int,
+    user_id: int = Depends(get_authenticated_user),
+) -> list[ProfileWithOwner]:
+    """Get all character base profiles belonging to the guild. Excludes
+    characters whose owners have left the server."""
+    guild = await inconnu.bot.get_or_fetch_guild(guild_id)
+    if guild is None:
+        raise HTTPException(404, detail="Guild not found")
+    member = await guild.get_or_fetch(discord.Member, user_id)
+    if member is None:
+        raise HTTPException(400, detail="User does not belong to guild")
+
+    char_guild = CharacterGuild.create(guild)
+    profiles = []
+    for char in await char_mgr.fetchguild(guild_id):
+        if char.stat_log.get("left") is not None:
+            continue
+
+        if char.is_spc:
+            owner_data = None
+        else:
+            owner_data = await OwnerData.create(char.guild, char.user)
+            if owner_data is None:
+                # We couldn't find them; maybe Discord is throwing a fit.
+                # Without owner data, however, we won't return this character.
+                continue
+
+        base_profile = await BaseProfile.create(char, char_guild)
+        guild_profile = ProfileWithOwner(character=base_profile, owner_data=owner_data)
+        profiles.append(guild_profile)
+
+    return profiles
+
+
 @router.get("/characters/profile/{oid}")
 async def get_character_profile(
     oid: PydanticObjectId,
     _: HTTPAuthorizationCredentials = Depends(verify_api_key),
-):
+) -> BaseProfile:
     """Fetch a character profile. This endpoint returns a non-sensitive character
     model with only name, ownership data, and public profile data."""
     char = await char_mgr.fetchid(oid)

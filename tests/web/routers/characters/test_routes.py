@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
-from beanie import init_beanie
+from beanie import PydanticObjectId, init_beanie
 from httpx import ASGITransport, AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
@@ -529,3 +529,77 @@ async def test_create_regular_character_user_id(
             assert isinstance(created_char, VChar)
             # Regular character should have the actual user ID
             assert created_char.user == TEST_USER_ID
+
+
+# Character profile tests
+
+
+async def test_get_character_profile_success(mock_guild):
+    """Successfully fetch character profile."""
+    from models.vchardocs import VCharProfile
+    from services.wizard import CharacterGuild
+
+    # Create a mock character with profile
+    mock_char = MagicMock(spec=VChar)
+    mock_char.id = PydanticObjectId()
+    mock_char.guild = TEST_GUILD_ID
+    mock_char.user = TEST_USER_ID
+    mock_char.name = "Test Character"
+    mock_char.splat = VCharSplat.VAMPIRE
+    mock_char.profile = VCharProfile()
+
+    mock_guild_obj = CharacterGuild(id=mock_guild.id, name=mock_guild.name, icon=None)
+
+    with (
+        patch("web.routers.characters.routes.char_mgr.id_fetch", new_callable=AsyncMock) as mock_id_fetch,
+        patch("services.wizard.CharacterGuild.fetch", new_callable=AsyncMock) as mock_guild_fetch,
+    ):
+        mock_id_fetch.return_value = mock_char
+        mock_guild_fetch.return_value = mock_guild_obj
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(
+                f"/characters/profile/{mock_char.id}",
+                headers={"Authorization": f"Bearer {TEST_API_KEY}"},
+            )
+
+            assert response.status_code == 200
+            result = response.json()
+            assert result["id"] == str(mock_char.id)
+            assert result["guild"]["id"] == TEST_GUILD_ID
+            assert result["user"] == TEST_USER_ID
+            assert result["name"] == "Test Character"
+            assert result["splat"] == VCharSplat.VAMPIRE
+            assert "profile" in result
+
+
+async def test_get_character_profile_not_found():
+    """Character profile returns 404 when character doesn't exist."""
+    with patch("web.routers.characters.routes.char_mgr.id_fetch", new_callable=AsyncMock) as mock_id_fetch:
+        mock_id_fetch.return_value = None
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(
+                f"/characters/profile/{PydanticObjectId()}",
+                headers={"Authorization": f"Bearer {TEST_API_KEY}"},
+            )
+
+            assert response.status_code == 404
+            assert "not found" in response.json()["detail"].lower()
+
+
+async def test_get_character_profile_missing_api_key():
+    """Request without API key rejected with 401."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(f"/characters/profile/{PydanticObjectId()}")
+        assert response.status_code == 401
+
+
+async def test_get_character_profile_invalid_api_key():
+    """Request with invalid API key rejected with 401."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            f"/characters/profile/{PydanticObjectId()}",
+            headers={"Authorization": "Bearer wrong-key"},
+        )
+        assert response.status_code == 401

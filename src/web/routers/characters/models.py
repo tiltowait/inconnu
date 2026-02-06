@@ -1,10 +1,14 @@
 """Pydantic models for character API endpoints."""
 
+from typing import Self
+
+from beanie import PydanticObjectId
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from constants import ATTRIBUTES, SKILLS
+from errors import CharacterError
 from models import VChar
-from models.vchardocs import VCharSplat, VCharTrait
+from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
 from services.wizard import CharacterGuild
 from utils.validation import valid_name, validate_specialty_names, validate_trait_names
 
@@ -32,6 +36,34 @@ class WizardSchema(BaseModel):
     traits: list[VCharTrait] = [
         VCharTrait(name=trait, rating=1, type=VCharTrait.Type.ATTRIBUTE) for trait in ATTRIBUTES
     ] + [VCharTrait(name=trait, rating=1, type=VCharTrait.Type.SKILL) for trait in SKILLS]
+
+
+class BaseProfile(BaseModel):
+    """A base character model containing name, profile, owner, and guild data."""
+
+    id: PydanticObjectId
+    guild: CharacterGuild
+    user: int
+    name: str
+    splat: str
+    profile: VCharProfile
+
+    @classmethod
+    async def create(cls, char: VChar) -> Self:
+        """Construct a base profile."""
+        guild = await CharacterGuild.fetch(char.guild)
+
+        if char.id is None:
+            raise CharacterError(f"{char.name} hasn't been saved to the database yet.")
+
+        return cls(
+            id=char.id,
+            guild=guild,
+            user=char.user,
+            name=char.name,
+            splat=char.splat,
+            profile=char.profile,
+        )
 
 
 class CreationBody(BaseModel):

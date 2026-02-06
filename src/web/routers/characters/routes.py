@@ -14,6 +14,7 @@ from services.wizard import CharacterGuild
 from web.routers.characters.models import (
     AuthorizedCharacter,
     AuthorizedCharacterList,
+    BaseProfile,
     CreationBody,
     CreationSuccess,
     WizardSchema,
@@ -65,11 +66,13 @@ async def get_character_list(
 
 
 @router.get("/characters/{oid}")
-async def get_character(
+async def get_full_character(
     oid: PydanticObjectId,
     user_id: int = Depends(get_authenticated_user),
 ) -> AuthorizedCharacter:
-    """Returns a given character if it belongs to the authed user."""
+    """Returns a given character if it belongs to the authed user. This
+    endpoint requires authorization checks, as it returns the entire character
+    object!"""
     char = await char_mgr.id_fetch(oid)
 
     if char is None:
@@ -83,6 +86,20 @@ async def get_character(
         guild=guild,
         character=char,
     )
+
+
+@router.get("/characters/profile/{oid}")
+async def get_character_profile(
+    oid: PydanticObjectId,
+    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
+):
+    """Fetch a character profile. This endpoint returns a non-sensitive character
+    model with only name, ownership data, and public profile data."""
+    char = await char_mgr.id_fetch(oid)
+    if char is None:
+        raise HTTPException(404, detail="Character not found.")
+
+    return await BaseProfile.create(char)
 
 
 # Wizard

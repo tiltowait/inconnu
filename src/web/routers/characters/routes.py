@@ -104,12 +104,19 @@ async def get_guild_characters(
 ) -> list[ProfileWithOwner]:
     """Get all character base profiles belonging to the guild. Excludes
     characters whose owners have left the server."""
-    guild = await inconnu.bot.get_or_fetch_guild(guild_id)
-    if guild is None:
+    try:
+        guild = await inconnu.bot.get_or_fetch_guild(guild_id)
+        if guild is None:
+            raise ValueError
+    except Exception:
         raise HTTPException(404, detail="Guild not found")
-    member = await guild.get_or_fetch(discord.Member, user_id)
-    if member is None:
-        raise HTTPException(400, detail="User does not belong to guild")
+
+    try:
+        member = await guild.get_or_fetch(discord.Member, user_id)
+        if member is None:
+            raise HTTPException(400, detail="User does not belong to guild")
+    except Exception:
+        raise HTTPException(404, detail="Guild not found")
 
     char_guild = CharacterGuild.create(guild)
     profiles = []

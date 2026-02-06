@@ -109,12 +109,6 @@ class AuthorizedCharacterList(BaseModel):
         return data
 
 
-class AuthorizedGuildList(BaseModel):
-    """Data returned by /characters/guild."""
-
-    characters: list[BaseProfile]
-
-
 class WizardSchema(BaseModel):
     """Data sent by the wizard endpoint."""
 

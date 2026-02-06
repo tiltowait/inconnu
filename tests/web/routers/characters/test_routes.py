@@ -551,10 +551,12 @@ async def test_get_character_profile_success(mock_guild):
     mock_guild_obj = CharacterGuild(id=mock_guild.id, name=mock_guild.name, icon=None)
 
     with (
-        patch("web.routers.characters.routes.char_mgr.id_fetch", new_callable=AsyncMock) as mock_id_fetch,
+        patch(
+            "web.routers.characters.routes.char_mgr.fetchid", new_callable=AsyncMock
+        ) as mock_fetchid,
         patch("services.wizard.CharacterGuild.fetch", new_callable=AsyncMock) as mock_guild_fetch,
     ):
-        mock_id_fetch.return_value = mock_char
+        mock_fetchid.return_value = mock_char
         mock_guild_fetch.return_value = mock_guild_obj
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -575,8 +577,10 @@ async def test_get_character_profile_success(mock_guild):
 
 async def test_get_character_profile_not_found():
     """Character profile returns 404 when character doesn't exist."""
-    with patch("web.routers.characters.routes.char_mgr.id_fetch", new_callable=AsyncMock) as mock_id_fetch:
-        mock_id_fetch.return_value = None
+    with patch(
+        "web.routers.characters.routes.char_mgr.fetchid", new_callable=AsyncMock
+    ) as mock_fetchid:
+        mock_fetchid.return_value = None
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(

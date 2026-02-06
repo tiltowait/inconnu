@@ -104,7 +104,7 @@ class CharacterManager:
         except StopIteration:
             raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
 
-    async def id_fetch(self, oid: PydanticObjectId | str) -> VChar | None:
+    async def fetchid(self, oid: PydanticObjectId | str) -> VChar | None:
         """Fetch the character by ID, if it exists."""
         await self.initialize()
         return self._id_cache.get(str(oid))

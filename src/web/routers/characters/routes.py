@@ -73,7 +73,7 @@ async def get_full_character(
     """Returns a given character if it belongs to the authed user. This
     endpoint requires authorization checks, as it returns the entire character
     object!"""
-    char = await char_mgr.id_fetch(oid)
+    char = await char_mgr.fetchid(oid)
 
     if char is None:
         raise HTTPException(404, detail="Character not found")
@@ -95,7 +95,7 @@ async def get_character_profile(
 ):
     """Fetch a character profile. This endpoint returns a non-sensitive character
     model with only name, ownership data, and public profile data."""
-    char = await char_mgr.id_fetch(oid)
+    char = await char_mgr.fetchid(oid)
     if char is None:
         raise HTTPException(404, detail="Character not found.")
 

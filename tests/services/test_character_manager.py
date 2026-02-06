@@ -427,14 +427,14 @@ async def test_fetchone_vchar_early_return(
 
 
 async def test_id_fetch(mgrf: CharacterManager, c211: VChar):
-    char = await mgrf.id_fetch(c211.id_str)
+    char = await mgrf.fetchid(c211.id_str)
     assert char is not None
     assert char.id == c211.id
     assert char.name == c211.name
 
 
 async def test_id_fetch_fail(mgrf: CharacterManager):
-    char = await mgrf.id_fetch("fake")
+    char = await mgrf.fetchid("fake")
     assert char is None
 
 
@@ -470,7 +470,7 @@ async def test_remove(g1: Guild, u11: Member, mgrf: CharacterManager, c111: VCha
         assert deleted is True
         mock_delete.assert_awaited_once()
 
-        char = await mgrf.id_fetch(c111.id_str)
+        char = await mgrf.fetchid(c111.id_str)
         assert char is None
 
         with pytest.raises(CharacterNotFoundError):
@@ -526,7 +526,7 @@ async def test_mark_active(
 
 
 async def test_transfer(mgrf: CharacterManager, u11: Member, u12: Member, c111: VChar):
-    char = await mgrf.id_fetch(c111.id_str)
+    char = await mgrf.fetchid(c111.id_str)
     assert char is not None
     await mgrf.transfer(char, u11, u12)
 
@@ -535,7 +535,7 @@ async def test_transfer(mgrf: CharacterManager, u11: Member, u12: Member, c111: 
 
 
 async def test_transfer_wrong_owner(mgrf: CharacterManager, u11: Member, u12: Member, c111: VChar):
-    char = await mgrf.id_fetch(c111.id_str)
+    char = await mgrf.fetchid(c111.id_str)
     assert char is not None
 
     with patch(VCHAR_SAVE, new_callable=AsyncMock) as mock_save:
@@ -545,7 +545,7 @@ async def test_transfer_wrong_owner(mgrf: CharacterManager, u11: Member, u12: Me
 
 
 async def test_transfer_wrong_guild(mgrf: CharacterManager, u11: Member, u21: Member, c111: VChar):
-    char = await mgrf.id_fetch(c111.id_str)
+    char = await mgrf.fetchid(c111.id_str)
     assert char is not None
 
     with patch(VCHAR_SAVE, new_callable=AsyncMock) as mock_save:

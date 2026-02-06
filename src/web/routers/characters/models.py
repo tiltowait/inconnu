@@ -42,6 +42,7 @@ class BaseProfile(BaseModel):
     """A base character model containing name, profile, owner, and guild data."""
 
     id: PydanticObjectId
+    spc: bool
     guild: CharacterGuild
     user: int
     name: str
@@ -58,6 +59,7 @@ class BaseProfile(BaseModel):
 
         return cls(
             id=char.id,
+            spc=char.is_spc,
             guild=guild,
             user=char.user,
             name=char.name,

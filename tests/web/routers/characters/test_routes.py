@@ -546,6 +546,7 @@ async def test_get_character_profile_success(mock_guild):
     mock_char.user = TEST_USER_ID
     mock_char.name = "Test Character"
     mock_char.splat = VCharSplat.VAMPIRE
+    mock_char.is_spc = False
     mock_char.profile = VCharProfile()
 
     mock_guild_obj = CharacterGuild(id=mock_guild.id, name=mock_guild.name, icon=None)
@@ -568,6 +569,7 @@ async def test_get_character_profile_success(mock_guild):
             assert response.status_code == 200
             result = response.json()
             assert result["id"] == str(mock_char.id)
+            assert result["spc"] is False
             assert result["guild"]["id"] == TEST_GUILD_ID
             assert result["user"] == TEST_USER_ID
             assert result["name"] == "Test Character"

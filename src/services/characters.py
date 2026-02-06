@@ -114,6 +114,11 @@ class CharacterManager:
         await self.initialize()
         return [c for c in self._characters if c.user == user]
 
+    async def fetchguild(self, guild: int) -> list[VChar]:
+        """Fetch all the user's characters."""
+        await self.initialize()
+        return [c for c in self._characters if c.guild == guild]
+
     async def character_count(self, guild: discord.Guild, user: discord.Member) -> int:
         """Get a count of the user's characters in the server."""
         chars = await self.fetchall(guild, user)

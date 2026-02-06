@@ -453,6 +453,21 @@ async def test_fetchuser_no_characters(mgrf: CharacterManager):
     assert chars == []
 
 
+async def test_fetchguild_multiple_users(mgrf: CharacterManager):
+    """Guild with characters from multiple users gets all of them."""
+    # Guild 1 has: c111, c112 (user 1), c121 (user 2), spc11 (SPC)
+    chars = await mgrf.fetchguild(1)
+    assert len(chars) == 4
+    char_names = {char.name for char in chars}
+    assert char_names == {"Nadea Theron", "Jimmy Maxwell", "John Wilcox", "Quentin (SPC)"}
+
+
+async def test_fetchguild_no_characters(mgrf: CharacterManager):
+    """Guild with no characters gets empty list."""
+    chars = await mgrf.fetchguild(9999)
+    assert chars == []
+
+
 async def test_character_count(g1: Guild, u11: Member, mgrf: CharacterManager):
     count = await mgrf.character_count(g1, u11)
     assert count == 2

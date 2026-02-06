@@ -139,13 +139,13 @@ async def create_character(
     character = VChar(
         guild=wizard.guild.id,
         user=owner_id,
-        raw_name=data.name,
+        name=data.name,
         splat=data.splat,
-        raw_humanity=data.humanity,
+        humanity=data.humanity,
         health=data.health * Damage.NONE,
         willpower=data.willpower * Damage.NONE,
         potency=data.blood_potency,
-        raw_traits=traits,
+        traits=traits,
     )
     character.profile.biography = data.biography
     character.profile.description = data.description

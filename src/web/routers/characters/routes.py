@@ -107,9 +107,6 @@ async def get_full_character(
     else:
         owner_data = OwnerData.from_user(user)
 
-    if int(user_id) != char.user and not char_mgr.is_admin(user):
-        raise HTTPException(403, detail="User does not own character")
-
     guild = await CharacterGuild.fetch(char.guild)
 
     return AuthorizedCharacter(

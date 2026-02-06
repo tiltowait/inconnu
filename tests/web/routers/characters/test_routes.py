@@ -742,8 +742,10 @@ async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid)
         assert "not found" in response.json()["detail"].lower()
 
 
-async def test_get_full_character_not_owned(auth_headers, mock_bot, mock_char_mgr_fetchid):
-    """Accessing character not owned by user returns 403."""
+async def test_get_full_character_not_owned(
+    auth_headers, mock_bot, mock_char_mgr_fetchid, mock_guild_fetch
+):
+    """Non-owner accessing character receives profile instead of full character."""
     mock_char = MagicMock(spec=VChar)
     mock_char.id = PydanticObjectId()
     mock_char.guild = TEST_GUILD_ID
@@ -763,6 +765,8 @@ async def test_get_full_character_not_owned(auth_headers, mock_bot, mock_char_mg
     mock_member.display_name = "Test User"
 
     mock_char_mgr_fetchid.return_value = mock_char
+    mock_guild_obj = CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None)
+    mock_guild_fetch.return_value = mock_guild_obj
 
     with patch("web.routers.characters.models.get_avatar") as mock_get_avatar:
         mock_avatar = MagicMock()
@@ -773,8 +777,14 @@ async def test_get_full_character_not_owned(auth_headers, mock_bot, mock_char_mg
             async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
                 response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
 
-                assert response.status_code == 403
-                assert "does not own" in response.json()["detail"].lower()
+                assert response.status_code == 200
+                result = response.json()
+                # Non-owner should get profile, not full character
+                assert result["profile"] is not None
+                assert result["character"] is None
+                # Owner data is present (for the requesting user)
+                assert result["owner"] is not None
+                assert result["guild"]["id"] == str(TEST_GUILD_ID)
 
 
 async def test_get_full_character_missing_user_header():

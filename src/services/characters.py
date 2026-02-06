@@ -275,11 +275,11 @@ class CharacterManager:
         if guild_id != char.guild:
             raise LookupError(f"**{char.name}** doesn't belong to this server!")
         if char.user != user_id:
-            if not self._is_admin(user):
+            if not self.is_admin(user):
                 raise LookupError(f"**{char.name}** doesn't belong to this user!")
 
     @staticmethod
-    def _is_admin(user: discord.Member) -> bool:
+    def is_admin(user: discord.Member) -> bool:
         """Determine whether the user is an administrator."""
         return user.top_role.permissions.administrator or user.guild_permissions.administrator
 

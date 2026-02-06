@@ -24,6 +24,11 @@ class OwnerData(BaseModel):
     icon: str
 
     @classmethod
+    def from_user(cls, user: discord.Member) -> Self:
+        """Create OwnerData from Discord Member object."""
+        return cls(id=str(user.id), name=user.display_name, icon=get_avatar(user).url)
+
+    @classmethod
     async def create(cls, guild_id: int, user_id: int) -> Self | None:
         """Create a CharacterOwner object."""
         guild = await inconnu.bot.get_or_fetch_guild(guild_id)
@@ -33,7 +38,7 @@ class OwnerData(BaseModel):
         if user is None:
             return None
 
-        return cls(id=str(user.id), name=user.display_name, icon=get_avatar(user).url)
+        return cls.from_user(user)
 
 
 class BaseProfile(BaseModel):
@@ -82,7 +87,9 @@ class AuthorizedCharacter(BaseModel):
     """The character data for /characters/{oid}."""
 
     guild: CharacterGuild
-    character: VChar
+    owner: Optional[OwnerData]
+    character: Optional[VChar]
+    profile: Optional[BaseProfile]
 
 
 class AuthorizedCharacterList(BaseModel):

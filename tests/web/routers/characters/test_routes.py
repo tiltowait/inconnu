@@ -689,27 +689,46 @@ async def test_create_regular_character_user_id(
 # Get full character tests
 
 
-async def test_get_full_character_success(auth_headers, mock_char_mgr_fetchid, mock_guild_fetch):
+async def test_get_full_character_success(
+    auth_headers, mock_bot, mock_char_mgr_fetchid, mock_guild_fetch
+):
     """Successfully fetch full character owned by user."""
     mock_char = MagicMock(spec=VChar)
     mock_char.id = PydanticObjectId()
     mock_char.guild = TEST_GUILD_ID
     mock_char.user = TEST_USER_ID
     mock_char.name = "Test Character"
+    mock_char.is_spc = False
 
-    mock_guild_obj = CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None)
+    # Mock Discord guild and member
+    mock_guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=True)
+    mock_bot.guilds = [mock_guild]
 
-    mock_char_mgr_fetchid.return_value = mock_char
-    mock_guild_fetch.return_value = mock_guild_obj
+    # Set up the member with proper attributes
+    mock_member = mock_guild.get_or_fetch.return_value
+    mock_member.id = TEST_USER_ID
+    mock_member.display_name = "Test User"
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+    # Mock get_avatar to return an object with a url attribute
+    with patch("web.routers.characters.models.get_avatar") as mock_get_avatar:
+        mock_avatar = MagicMock()
+        mock_avatar.url = "http://avatar.png"
+        mock_get_avatar.return_value = mock_avatar
 
-        assert response.status_code == 200
-        result = response.json()
-        assert "guild" in result
-        assert "character" in result
-        assert result["guild"]["id"] == str(TEST_GUILD_ID)
+        mock_guild_obj = CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None)
+
+        mock_char_mgr_fetchid.return_value = mock_char
+        mock_guild_fetch.return_value = mock_guild_obj
+
+        with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+                response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+
+                assert response.status_code == 200
+                result = response.json()
+                assert "guild" in result
+                assert "character" in result
+                assert result["guild"]["id"] == str(TEST_GUILD_ID)
 
 
 async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid):
@@ -723,19 +742,39 @@ async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid)
         assert "not found" in response.json()["detail"].lower()
 
 
-async def test_get_full_character_not_owned(auth_headers, mock_char_mgr_fetchid):
+async def test_get_full_character_not_owned(auth_headers, mock_bot, mock_char_mgr_fetchid):
     """Accessing character not owned by user returns 403."""
     mock_char = MagicMock(spec=VChar)
     mock_char.id = PydanticObjectId()
+    mock_char.guild = TEST_GUILD_ID
     mock_char.user = 999999  # Different user
+    mock_char.is_spc = False
+    mock_char.name = "Someone Else's Character"
+    mock_char.splat = VCharSplat.VAMPIRE
+    mock_char.profile = VCharProfile()
+
+    # Mock Discord guild and member
+    mock_guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=True)
+    mock_bot.guilds = [mock_guild]
+
+    # Set up the member with proper attributes
+    mock_member = mock_guild.get_or_fetch.return_value
+    mock_member.id = TEST_USER_ID
+    mock_member.display_name = "Test User"
 
     mock_char_mgr_fetchid.return_value = mock_char
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+    with patch("web.routers.characters.models.get_avatar") as mock_get_avatar:
+        mock_avatar = MagicMock()
+        mock_avatar.url = "http://avatar.png"
+        mock_get_avatar.return_value = mock_avatar
 
-        assert response.status_code == 403
-        assert "does not own" in response.json()["detail"].lower()
+        with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+                response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+
+                assert response.status_code == 403
+                assert "does not own" in response.json()["detail"].lower()
 
 
 async def test_get_full_character_missing_user_header():
@@ -1082,13 +1121,13 @@ async def test_get_guild_characters_guild_not_found(auth_headers, mock_bot):
 
 
 async def test_get_guild_characters_user_not_member(auth_headers, mock_bot):
-    """User not a member of guild returns 400."""
+    """User not a member of guild returns 403."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=False)
     mock_bot.guilds = [guild]
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
-        assert response.status_code == 400
+        assert response.status_code == 403
         assert "does not belong to guild" in response.json()["detail"].lower()
 
 

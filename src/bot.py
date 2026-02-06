@@ -171,10 +171,7 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
         """Look up a guild in the guild cache or fetches if not found."""
-        if guild := self.get_guild(guild_id):
-            return guild
-        logger.debug("BOT: Guild {} not found in cache; attempting fetch", guild_id)
-        return await self.fetch_guild(guild_id)
+        return await self.get_or_fetch(discord.Guild, guild_id)
 
     def can_webhook(self, channel: discord.TextChannel) -> bool:
         """Whether the bot has manage webhooks permission in the channel."""

@@ -83,17 +83,40 @@ async def get_full_character(
     endpoint requires authorization checks, as it returns the entire character
     object!"""
     char = await char_mgr.fetchid(oid)
-
     if char is None:
         raise HTTPException(404, detail="Character not found")
-    if int(user_id) != char.user:
+
+    guild = await inconnu.bot.get_or_fetch_guild(char.guild)
+    if guild is None:
+        raise HTTPException(404, detail="Character not found")
+
+    user = await guild.get_or_fetch(discord.Member, user_id)
+    if user is None:
+        raise HTTPException(404, detail="User not in character's guild")
+
+    guild_data = CharacterGuild.create(guild)
+    if user_id == char.user or char_mgr.is_admin(user):
+        character = char
+        profile = None
+    else:
+        character = None
+        profile = await BaseProfile.create(char, guild_data)
+
+    if char.is_spc:
+        owner_data = None
+    else:
+        owner_data = OwnerData.from_user(user)
+
+    if int(user_id) != char.user and not char_mgr.is_admin(user):
         raise HTTPException(403, detail="User does not own character")
 
     guild = await CharacterGuild.fetch(char.guild)
 
     return AuthorizedCharacter(
         guild=guild,
-        character=char,
+        owner=owner_data,
+        character=character,
+        profile=profile,
     )
 
 
@@ -104,19 +127,13 @@ async def get_guild_characters(
 ) -> list[ProfileWithOwner]:
     """Get all character base profiles belonging to the guild. Excludes
     characters whose owners have left the server."""
-    try:
-        guild = await inconnu.bot.get_or_fetch_guild(guild_id)
-        if guild is None:
-            raise ValueError
-    except Exception:
+    guild = await inconnu.bot.get_or_fetch_guild(guild_id)
+    if guild is None:
         raise HTTPException(404, detail="Guild not found")
 
-    try:
-        member = await guild.get_or_fetch(discord.Member, user_id)
-        if member is None:
-            raise HTTPException(400, detail="User does not belong to guild")
-    except Exception:
-        raise HTTPException(404, detail="Guild not found")
+    member = await guild.get_or_fetch(discord.Member, user_id)
+    if member is None:
+        raise HTTPException(403, detail="User does not belong to guild")
 
     char_guild = CharacterGuild.create(guild)
     profiles = []

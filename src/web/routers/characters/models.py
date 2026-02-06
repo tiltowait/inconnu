@@ -80,7 +80,7 @@ class ProfileWithOwner(BaseModel):
     """Character profile with ownership metadata for guild listings."""
 
     character: BaseProfile
-    owner_data: Optional[OwnerData]
+    owner: Optional[OwnerData]
 
 
 class AuthorizedCharacter(BaseModel):

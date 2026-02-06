@@ -722,7 +722,9 @@ async def test_get_full_character_success(
 
         # Mock OwnerData.create to return owner data for the character owner
         owner_data = OwnerData(id=str(TEST_USER_ID), name="Test User", icon="http://avatar.png")
-        with patch("web.routers.characters.models.OwnerData.create", new_callable=AsyncMock) as mock_owner_create:
+        with patch(
+            "web.routers.characters.models.OwnerData.create", new_callable=AsyncMock
+        ) as mock_owner_create:
             mock_owner_create.return_value = owner_data
 
             with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
@@ -785,8 +787,12 @@ async def test_get_full_character_not_owned(
         mock_get_avatar.return_value = mock_avatar
 
         # Mock OwnerData.create to return owner data for the CHARACTER owner (999999)
-        character_owner_data = OwnerData(id="999999", name="Character Owner", icon="http://owner-avatar.png")
-        with patch("web.routers.characters.models.OwnerData.create", new_callable=AsyncMock) as mock_owner_create:
+        character_owner_data = OwnerData(
+            id="999999", name="Character Owner", icon="http://owner-avatar.png"
+        )
+        with patch(
+            "web.routers.characters.models.OwnerData.create", new_callable=AsyncMock
+        ) as mock_owner_create:
             mock_owner_create.return_value = character_owner_data
 
             with patch("web.routers.characters.routes.char_mgr.is_admin", return_value=False):
@@ -1189,14 +1195,14 @@ async def test_get_guild_characters_success(
 
         # Verify regular characters have owner_data (nested structure)
         assert result[0]["character"]["name"] == "Character 1"
-        assert result[0]["owner_data"]["name"] == "User1"
+        assert result[0]["owner"]["name"] == "User1"
         assert result[1]["character"]["name"] == "Character 2"
-        assert result[1]["owner_data"]["name"] == "User2"
+        assert result[1]["owner"]["name"] == "User2"
 
         # Verify SPC has null owner_data
         assert result[2]["character"]["name"] == "SPC Char"
         assert result[2]["character"]["spc"] is True
-        assert result[2]["owner_data"] is None
+        assert result[2]["owner"] is None
 
 
 async def test_get_guild_characters_empty_guild(auth_headers, mock_bot, mock_char_mgr_fetchguild):
@@ -1237,11 +1243,11 @@ async def test_get_guild_characters_multiple_owners(
         result = response.json()
         assert len(result) == 3
         assert result[0]["character"]["name"] == "User1 Char"
-        assert result[0]["owner_data"]["name"] == "User1"
+        assert result[0]["owner"]["name"] == "User1"
         assert result[1]["character"]["name"] == "User2 Char"
-        assert result[1]["owner_data"]["name"] == "User2"
+        assert result[1]["owner"]["name"] == "User2"
         assert result[2]["character"]["name"] == "User3 Char"
-        assert result[2]["owner_data"]["name"] == "User3"
+        assert result[2]["owner"]["name"] == "User3"
 
 
 async def test_get_guild_characters_filters_left(
@@ -1354,7 +1360,7 @@ async def test_get_guild_characters_spc_owner_data_null(
         result = response.json()
         assert len(result) == 1
         assert result[0]["character"]["spc"] is True
-        assert result[0]["owner_data"] is None
+        assert result[0]["owner"] is None
 
 
 async def test_get_guild_characters_only_spcs(auth_headers, mock_bot, mock_char_mgr_fetchguild):
@@ -1375,4 +1381,4 @@ async def test_get_guild_characters_only_spcs(auth_headers, mock_bot, mock_char_
         assert len(result) == 3
         for char in result:
             assert char["character"]["spc"] is True
-            assert char["owner_data"] is None
+            assert char["owner"] is None

@@ -158,7 +158,7 @@ async def get_guild_characters(
                 continue
 
         base_profile = await BaseProfile.create(char, char_guild)
-        guild_profile = ProfileWithOwner(character=base_profile, owner_data=owner_data)
+        guild_profile = ProfileWithOwner(character=base_profile, owner=owner_data)
         profiles.append(guild_profile)
 
     return profiles

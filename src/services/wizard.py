@@ -14,7 +14,7 @@ import inconnu
 class CharacterGuild(BaseModel):
     """Guild data for the character endpoints."""
 
-    id: int
+    id: str
     name: str
     icon: Optional[str]
 
@@ -37,12 +37,12 @@ class CharacterGuild(BaseModel):
     def create(cls, guild: discord.Guild) -> Self:
         """Create from a real Discord guild object."""
         icon = guild.icon.url if guild.icon else None
-        return cls(id=guild.id, name=guild.name, icon=icon)
+        return cls(id=str(guild.id), name=guild.name, icon=icon)
 
     @classmethod
     def unknown(cls, id: int) -> Self:
         """Return generic data."""
-        return cls(id=id, name="Unknown", icon=None)
+        return cls(id=str(id), name="Unknown", icon=None)
 
 
 class WizardData(BaseModel):

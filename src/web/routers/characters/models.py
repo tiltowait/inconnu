@@ -19,7 +19,7 @@ from utils.validation import valid_name, validate_specialty_names, validate_trai
 class OwnerData(BaseModel):
     """Basic character ownership data."""
 
-    id: int
+    id: str
     name: str
     icon: str
 
@@ -33,7 +33,7 @@ class OwnerData(BaseModel):
         if user is None:
             return None
 
-        return cls(id=user.id, name=user.display_name, icon=get_avatar(user).url)
+        return cls(id=str(user.id), name=user.display_name, icon=get_avatar(user).url)
 
 
 class BaseProfile(BaseModel):
@@ -42,7 +42,7 @@ class BaseProfile(BaseModel):
     id: PydanticObjectId
     spc: bool
     guild: CharacterGuild
-    user: int
+    user: str
     name: str
     splat: str
     profile: VCharProfile
@@ -64,7 +64,7 @@ class BaseProfile(BaseModel):
             id=char.id,
             spc=char.is_spc,
             guild=guild,
-            user=char.user,
+            user=str(char.user),
             name=char.name,
             splat=char.splat,
             profile=char.profile,

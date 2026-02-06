@@ -60,7 +60,7 @@ def mock_wizard_data(mock_guild):
     """Create mock wizard data."""
     return WizardData(
         spc=False,
-        guild=CharacterGuild(id=mock_guild.id, name=mock_guild.name, icon=None),
+        guild=CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None),
         user=TEST_USER_ID,
     )
 
@@ -70,7 +70,7 @@ def mock_spc_wizard_data(mock_guild):
     """Create mock SPC wizard data."""
     return WizardData(
         spc=True,
-        guild=CharacterGuild(id=mock_guild.id, name=mock_guild.name, icon=None),
+        guild=CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None),
         user=TEST_USER_ID,
     )
 
@@ -697,7 +697,7 @@ async def test_get_full_character_success(auth_headers, mock_char_mgr_fetchid, m
     mock_char.user = TEST_USER_ID
     mock_char.name = "Test Character"
 
-    mock_guild_obj = CharacterGuild(id=TEST_GUILD_ID, name="Test Guild", icon=None)
+    mock_guild_obj = CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None)
 
     mock_char_mgr_fetchid.return_value = mock_char
     mock_guild_fetch.return_value = mock_guild_obj
@@ -709,7 +709,7 @@ async def test_get_full_character_success(auth_headers, mock_char_mgr_fetchid, m
         result = response.json()
         assert "guild" in result
         assert "character" in result
-        assert result["guild"]["id"] == TEST_GUILD_ID
+        assert result["guild"]["id"] == str(TEST_GUILD_ID)
 
 
 async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid):
@@ -816,8 +816,8 @@ async def test_get_character_list_success(auth_headers, mock_bot, mock_char_mgr_
         result = response.json()
         assert len(result["guilds"]) == 2
         assert len(result["characters"]) == 4
-        assert result["guilds"][0]["id"] == 1
-        assert result["guilds"][1]["id"] == 2
+        assert result["guilds"][0]["id"] == "1"
+        assert result["guilds"][1]["id"] == "2"
 
 
 async def test_get_character_list_user_in_guilds_without_characters(
@@ -863,7 +863,7 @@ async def test_get_character_list_filters_left_guilds(
         result = response.json()
         # Only guild user is in
         assert len(result["guilds"]) == 1
-        assert result["guilds"][0]["id"] == 1
+        assert result["guilds"][0]["id"] == "1"
         # Should filter out char_left
         assert len(result["characters"]) == 1
 
@@ -987,7 +987,7 @@ async def test_get_character_profile_success(mock_guild, mock_char_mgr_fetchid, 
     mock_char.is_spc = False
     mock_char.profile = VCharProfile()
 
-    mock_guild_obj = CharacterGuild(id=mock_guild.id, name=mock_guild.name, icon=None)
+    mock_guild_obj = CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None)
 
     mock_char_mgr_fetchid.return_value = mock_char
     mock_guild_fetch.return_value = mock_guild_obj
@@ -1002,8 +1002,8 @@ async def test_get_character_profile_success(mock_guild, mock_char_mgr_fetchid, 
         result = response.json()
         assert result["id"] == str(mock_char.id)
         assert result["spc"] is False
-        assert result["guild"]["id"] == TEST_GUILD_ID
-        assert result["user"] == TEST_USER_ID
+        assert result["guild"]["id"] == str(TEST_GUILD_ID)
+        assert result["user"] == str(TEST_USER_ID)
         assert result["name"] == "Test Character"
         assert result["splat"] == VCharSplat.VAMPIRE
         assert "profile" in result
@@ -1105,8 +1105,8 @@ async def test_get_guild_characters_success(
     mock_char_mgr_fetchguild.return_value = [char1, char2, spc]
 
     # Mock owner data creation
-    owner1 = OwnerData(id=TEST_USER_ID, name="User1", icon="http://icon1.png")
-    owner2 = OwnerData(id=111111, name="User2", icon="http://icon2.png")
+    owner1 = OwnerData(id=str(TEST_USER_ID), name="User1", icon="http://icon1.png")
+    owner2 = OwnerData(id="111111", name="User2", icon="http://icon2.png")
     mock_owner_data_create.side_effect = [owner1, owner2]
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -1154,9 +1154,9 @@ async def test_get_guild_characters_multiple_owners(
     char3 = make_mock_char(TEST_GUILD_ID, 300, "User3 Char")
     mock_char_mgr_fetchguild.return_value = [char1, char2, char3]
 
-    owner1 = OwnerData(id=100, name="User1", icon="http://icon1.png")
-    owner2 = OwnerData(id=200, name="User2", icon="http://icon2.png")
-    owner3 = OwnerData(id=300, name="User3", icon="http://icon3.png")
+    owner1 = OwnerData(id="100", name="User1", icon="http://icon1.png")
+    owner2 = OwnerData(id="200", name="User2", icon="http://icon2.png")
+    owner3 = OwnerData(id="300", name="User3", icon="http://icon3.png")
     mock_owner_data_create.side_effect = [owner1, owner2, owner3]
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -1185,7 +1185,7 @@ async def test_get_guild_characters_filters_left(
     char_active2 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Another Active")
     mock_char_mgr_fetchguild.return_value = [char_active, char_left, char_active2]
 
-    owner = OwnerData(id=TEST_USER_ID, name="User", icon="http://icon.png")
+    owner = OwnerData(id=str(TEST_USER_ID), name="User", icon="http://icon.png")
     mock_owner_data_create.side_effect = [owner, owner]
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -1211,8 +1211,8 @@ async def test_get_guild_characters_filters_missing_owners(
     char3 = make_mock_char(TEST_GUILD_ID, 300, "Another Valid")
     mock_char_mgr_fetchguild.return_value = [char1, char2, char3]
 
-    owner1 = OwnerData(id=100, name="User1", icon="http://icon1.png")
-    owner3 = OwnerData(id=300, name="User3", icon="http://icon3.png")
+    owner1 = OwnerData(id="100", name="User1", icon="http://icon1.png")
+    owner3 = OwnerData(id="300", name="User3", icon="http://icon3.png")
     # char2's owner returns None (can't be found)
     mock_owner_data_create.side_effect = [owner1, None, owner3]
 
@@ -1247,8 +1247,8 @@ async def test_get_guild_characters_mixed_filtering(
         spc,
     ]
 
-    owner1 = OwnerData(id=100, name="User1", icon="http://icon1.png")
-    owner4 = OwnerData(id=400, name="User4", icon="http://icon4.png")
+    owner1 = OwnerData(id="100", name="User1", icon="http://icon1.png")
+    owner4 = OwnerData(id="400", name="User4", icon="http://icon4.png")
     # char_left is filtered before owner creation
     # char_missing_owner's owner returns None
     mock_owner_data_create.side_effect = [owner1, None, owner4]

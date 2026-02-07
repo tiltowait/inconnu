@@ -62,6 +62,11 @@ class WizardCache:
         self.cache = TTLCache[str, WizardData](maxsize=maxsize, ttl=ttl)
         logger.info("Wizard Cache initialized. maxsize={}, ttl={}.", maxsize, ttl)
 
+    @property
+    def count(self) -> int:
+        """The number of active wizards."""
+        return len(self.cache)
+
     def register(self, guild: discord.Guild, user: int, spc: bool) -> str:
         """Register a character creation wizard."""
         request = WizardData(guild=CharacterGuild.create(guild), user=user, spc=spc)

@@ -9,6 +9,7 @@ from discord import option
 from discord.ext import commands
 from loguru import logger
 
+import services
 from config import ADMIN_GUILD
 
 if TYPE_CHECKING:
@@ -98,15 +99,15 @@ class AdminCog(commands.Cog):
         self.bot.lockdown = discord.utils.utcnow() + timedelta(minutes=15)
 
         message = None
-        while self.bot.wizards > 0:
-            if self.bot.wizards > 1:
+        while services.wizard_cache.count > 0:
+            if services.wizard_cache.count > 1:
                 # Properly pluralize the message
                 is_are = "are"
                 wizards = "chargen wizards"
             else:
                 is_are = "is"
                 wizards = "chargen wizard"
-            msg = f"There {is_are} **{self.bot.wizards}** {wizards} running."
+            msg = f"There {is_are} **{services.wizard_cache.count}** {wizards} running."
 
             if message is None:
                 message = await ctx.respond(msg, ephemeral=True)

@@ -1,6 +1,5 @@
 """Emoji manager."""
 
-import asyncio
 from typing import TYPE_CHECKING
 
 from discord import AppEmoji
@@ -21,7 +20,6 @@ class _EmojiManager:
     def __init__(self):
         self._emojis: dict[str, AppEmoji] = {}
         self.loaded = False
-        self._load_triggered = False
 
     def __getitem__(self, emoji_name: str) -> str:
         standard = {"bp_filled": ":red_circle:​", "bp_unfilled": ":o:​"}
@@ -48,16 +46,16 @@ class _EmojiManager:
 
     async def load(self, bot: "InconnuBot"):
         """Load the emoji from the specified guild ."""
-        if self._load_triggered or self.loaded:
+        if self.loaded:
             return
 
-        self._load_triggered = True
+        if bot.app_emojis:
+            emojis = bot.app_emojis
+        else:
+            logger.info("Fetching emojis")
+            emojis = await bot.fetch_emojis()
 
-        while not bot.app_emojis:
-            logger.info("Waiting for emojis to load")
-            await asyncio.sleep(1)
-
-        self._emojis = {emoji.name: emoji for emoji in bot.app_emojis}
+        self._emojis = {emoji.name: emoji for emoji in emojis}
 
         logger.info("Loaded {} app emojis", len(self._emojis))
         logger.debug("{}", list(map(lambda e: e.name, self._emojis.values())))

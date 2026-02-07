@@ -1331,10 +1331,14 @@ async def test_get_guild_characters_success(
 
         assert response.status_code == 200
         result = response.json()
-        assert len(result) == 3
+        assert "guild" in result
+        assert "characters" in result
+        assert result["guild"]["id"] == str(TEST_GUILD_ID)
+        assert result["guild"]["name"] == "Test Guild"
+        assert len(result["characters"]) == 3
 
         # Verify CharData structure
-        for char in result:
+        for char in result["characters"]:
             assert "guild" in char
             assert "owner" in char
             assert "character" in char
@@ -1343,17 +1347,18 @@ async def test_get_guild_characters_success(
             assert char["type"] == "public"  # Guild endpoint returns PublicCharacter
 
         # Verify regular characters have owner data
-        assert result[0]["character"]["name"] == "Character 1"
-        assert result[0]["owner"]["name"] == "User1"
-        assert result[0]["spc"] is False
-        assert result[1]["character"]["name"] == "Character 2"
-        assert result[1]["owner"]["name"] == "User2"
-        assert result[1]["spc"] is False
+        chars = result["characters"]
+        assert chars[0]["character"]["name"] == "Character 1"
+        assert chars[0]["owner"]["name"] == "User1"
+        assert chars[0]["spc"] is False
+        assert chars[1]["character"]["name"] == "Character 2"
+        assert chars[1]["owner"]["name"] == "User2"
+        assert chars[1]["spc"] is False
 
         # Verify SPC has null owner
-        assert result[2]["character"]["name"] == "SPC Char"
-        assert result[2]["spc"] is True
-        assert result[2]["owner"] is None
+        assert chars[2]["character"]["name"] == "SPC Char"
+        assert chars[2]["spc"] is True
+        assert chars[2]["owner"] is None
 
 
 async def test_get_guild_characters_empty_guild(auth_headers, mock_bot, mock_char_mgr_fetchguild):
@@ -1367,7 +1372,11 @@ async def test_get_guild_characters_empty_guild(auth_headers, mock_bot, mock_cha
 
         assert response.status_code == 200
         result = response.json()
-        assert result == []
+        assert "guild" in result
+        assert "characters" in result
+        assert result["guild"]["id"] == str(TEST_GUILD_ID)
+        assert result["guild"]["name"] == "Empty Guild"
+        assert result["characters"] == []
 
 
 async def test_get_guild_characters_multiple_owners(
@@ -1392,13 +1401,16 @@ async def test_get_guild_characters_multiple_owners(
 
         assert response.status_code == 200
         result = response.json()
-        assert len(result) == 3
-        assert result[0]["character"]["name"] == "User1 Char"
-        assert result[0]["owner"]["name"] == "User1"
-        assert result[1]["character"]["name"] == "User2 Char"
-        assert result[1]["owner"]["name"] == "User2"
-        assert result[2]["character"]["name"] == "User3 Char"
-        assert result[2]["owner"]["name"] == "User3"
+        assert "guild" in result
+        assert "characters" in result
+        chars = result["characters"]
+        assert len(chars) == 3
+        assert chars[0]["character"]["name"] == "User1 Char"
+        assert chars[0]["owner"]["name"] == "User1"
+        assert chars[1]["character"]["name"] == "User2 Char"
+        assert chars[1]["owner"]["name"] == "User2"
+        assert chars[2]["character"]["name"] == "User3 Char"
+        assert chars[2]["owner"]["name"] == "User3"
 
 
 async def test_get_guild_characters_filters_left(
@@ -1422,9 +1434,10 @@ async def test_get_guild_characters_filters_left(
         assert response.status_code == 200
         result = response.json()
         # Only 2 active characters returned
-        assert len(result) == 2
-        assert result[0]["character"]["name"] == "Active Char"
-        assert result[1]["character"]["name"] == "Another Active"
+        chars = result["characters"]
+        assert len(chars) == 2
+        assert chars[0]["character"]["name"] == "Active Char"
+        assert chars[1]["character"]["name"] == "Another Active"
 
 
 async def test_get_guild_characters_filters_missing_owners(
@@ -1450,9 +1463,10 @@ async def test_get_guild_characters_filters_missing_owners(
         assert response.status_code == 200
         result = response.json()
         # Only 2 characters with valid owners returned
-        assert len(result) == 2
-        assert result[0]["character"]["name"] == "Valid Owner"
-        assert result[1]["character"]["name"] == "Another Valid"
+        chars = result["characters"]
+        assert len(chars) == 2
+        assert chars[0]["character"]["name"] == "Valid Owner"
+        assert chars[1]["character"]["name"] == "Another Valid"
 
 
 async def test_get_guild_characters_mixed_filtering(
@@ -1487,13 +1501,14 @@ async def test_get_guild_characters_mixed_filtering(
         assert response.status_code == 200
         result = response.json()
         # Only active chars with valid owners + SPC
-        assert len(result) == 3
-        assert result[0]["character"]["name"] == "Active Char"
-        assert result[0]["spc"] is False
-        assert result[1]["character"]["name"] == "Another Active"
-        assert result[1]["spc"] is False
-        assert result[2]["character"]["name"] == "SPC"
-        assert result[2]["spc"] is True  # spc at top level, not in character
+        chars = result["characters"]
+        assert len(chars) == 3
+        assert chars[0]["character"]["name"] == "Active Char"
+        assert chars[0]["spc"] is False
+        assert chars[1]["character"]["name"] == "Another Active"
+        assert chars[1]["spc"] is False
+        assert chars[2]["character"]["name"] == "SPC"
+        assert chars[2]["spc"] is True  # spc at top level, not in character
 
 
 async def test_get_guild_characters_spc_owner_data_null(
@@ -1511,12 +1526,13 @@ async def test_get_guild_characters_spc_owner_data_null(
 
         assert response.status_code == 200
         result = response.json()
-        assert len(result) == 1
-        assert result[0]["spc"] is True  # spc at top level in CharData
-        assert result[0]["type"] == "public"
-        assert result[0]["owner"] is None
+        chars = result["characters"]
+        assert len(chars) == 1
+        assert chars[0]["spc"] is True  # spc at top level in CharData
+        assert chars[0]["type"] == "public"
+        assert chars[0]["owner"] is None
         # PublicCharacter doesn't have spc field
-        assert "spc" not in result[0]["character"]
+        assert "spc" not in chars[0]["character"]
 
 
 async def test_get_guild_characters_only_spcs(auth_headers, mock_bot, mock_char_mgr_fetchguild):
@@ -1534,8 +1550,9 @@ async def test_get_guild_characters_only_spcs(auth_headers, mock_bot, mock_char_
 
         assert response.status_code == 200
         result = response.json()
-        assert len(result) == 3
-        for char in result:
+        chars = result["characters"]
+        assert len(chars) == 3
+        for char in chars:
             assert char["spc"] is True  # spc at top level in CharData
             assert char["type"] == "public"
             assert char["owner"] is None

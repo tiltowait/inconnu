@@ -86,6 +86,13 @@ class CharData(BaseModel):
         return "full" if isinstance(self.character, VChar) else "public"
 
 
+class GuildChars(BaseModel):
+    """Data for all the characters belonging to a guild."""
+
+    guild: CharacterGuild
+    characters: list[CharData]
+
+
 class UserCharData(BaseModel):
     """Intended to contain one user's characters as well as all the guilds the
     user shares with the bot.

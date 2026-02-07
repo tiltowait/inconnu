@@ -17,6 +17,7 @@ from web.routers.characters.models import (
     CharData,
     CreationBody,
     CreationSuccess,
+    GuildChars,
     OwnerData,
     PublicCharacter,
     UserCharData,
@@ -127,7 +128,7 @@ async def get_character(
 async def get_guild_characters(
     guild_id: int,
     user_id: int = Depends(get_authenticated_user),
-) -> list[CharData]:
+) -> GuildChars:
     """Get all character base profiles belonging to the guild. Excludes
     characters whose owners have left the server."""
     guild = await inconnu.bot.get_or_fetch_guild(guild_id)
@@ -139,7 +140,7 @@ async def get_guild_characters(
         raise HTTPException(403, detail="User does not belong to guild")
 
     char_guild = CharacterGuild.create(guild)
-    profiles = []
+    profiles: list[CharData] = []
     for char in await char_mgr.fetchguild(guild_id):
         if char.stat_log.get("left") is not None:
             continue
@@ -162,7 +163,7 @@ async def get_guild_characters(
         )
         profiles.append(guild_profile)
 
-    return profiles
+    return GuildChars(guild=char_guild, characters=profiles)
 
 
 @router.get("/characters/profile/{oid}")

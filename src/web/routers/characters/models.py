@@ -65,7 +65,7 @@ class PublicCharacter(BaseModel):
         return cls(
             id=char.id,
             user=str(char.user),
-            name=char.name,
+            name=char.raw_name,
             splat=char.splat,
             profile=char.profile,
         )

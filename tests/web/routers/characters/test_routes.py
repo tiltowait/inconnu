@@ -1218,8 +1218,7 @@ async def test_get_character_profile_success_spc(mock_char_mgr_fetchid, characte
             # Verify character is PublicCharacter
             char_data = result["character"]
             assert char_data["id"] == str(mock_char.id)
-            # VChar.name appends "(SPC)" for SPCs
-            assert char_data["name"] == "SPC Character (SPC)"
+            assert char_data["name"] == "SPC Character"
             assert char_data["splat"] == VCharSplat.VAMPIRE
             assert "profile" in char_data
             # PublicCharacter doesn't have spc or guild fields
@@ -1352,8 +1351,7 @@ async def test_get_guild_characters_success(
         assert result[1]["spc"] is False
 
         # Verify SPC has null owner
-        # VChar.name appends "(SPC)" for SPCs
-        assert result[2]["character"]["name"] == "SPC Char (SPC)"
+        assert result[2]["character"]["name"] == "SPC Char"
         assert result[2]["spc"] is True
         assert result[2]["owner"] is None
 
@@ -1494,8 +1492,7 @@ async def test_get_guild_characters_mixed_filtering(
         assert result[0]["spc"] is False
         assert result[1]["character"]["name"] == "Another Active"
         assert result[1]["spc"] is False
-        # VChar.name appends "(SPC)" for SPCs
-        assert result[2]["character"]["name"] == "SPC (SPC)"
+        assert result[2]["character"]["name"] == "SPC"
         assert result[2]["spc"] is True  # spc at top level, not in character
 
 

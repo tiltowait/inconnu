@@ -634,7 +634,7 @@ wheels = [
 
 [[package]]
 name = "inconnu"
-version = "8.7.0"
+version = "2026.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "async-lru" },

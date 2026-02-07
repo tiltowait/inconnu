@@ -114,7 +114,7 @@ class WizardSchema(BaseModel):
     splats: list[VCharSplat] = list(VCharSplat)
     traits: list[VCharTrait] = [
         VCharTrait(name=trait, rating=1, type=VCharTrait.Type.ATTRIBUTE) for trait in ATTRIBUTES
-    ] + [VCharTrait(name=trait, rating=1, type=VCharTrait.Type.SKILL) for trait in SKILLS]
+    ] + [VCharTrait(name=trait, rating=0, type=VCharTrait.Type.SKILL) for trait in SKILLS]
 
 
 class CreationBody(BaseModel):

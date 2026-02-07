@@ -1,5 +1,6 @@
 """Emoji manager."""
 
+import asyncio
 from typing import TYPE_CHECKING
 
 from discord import AppEmoji
@@ -46,6 +47,10 @@ class _EmojiManager:
 
     async def load(self, bot: "InconnuBot"):
         """Load the emoji from the specified guild ."""
+        while not bot.app_emojis:
+            logger.info("Waiting for emojis to load")
+            await asyncio.sleep(1)
+
         self._emojis = {emoji.name: emoji for emoji in bot.app_emojis}
 
         logger.info("Loaded {} app emojis", len(self._emojis))

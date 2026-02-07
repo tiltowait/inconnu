@@ -21,6 +21,7 @@ class _EmojiManager:
     def __init__(self):
         self._emojis: dict[str, AppEmoji] = {}
         self.loaded = False
+        self._load_triggered = False
 
     def __getitem__(self, emoji_name: str) -> str:
         standard = {"bp_filled": ":red_circle:​", "bp_unfilled": ":o:​"}
@@ -47,6 +48,11 @@ class _EmojiManager:
 
     async def load(self, bot: "InconnuBot"):
         """Load the emoji from the specified guild ."""
+        if self._load_triggered or self.loaded:
+            return
+
+        self._load_triggered = True
+
         while not bot.app_emojis:
             logger.info("Waiting for emojis to load")
             await asyncio.sleep(1)

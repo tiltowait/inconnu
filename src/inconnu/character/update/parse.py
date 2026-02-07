@@ -43,7 +43,7 @@ async def update(
     ctx: AppCtx,
     parameters: str,
     character: "VChar | str | None" = None,
-    fields: list[DisplayField] | None = None,
+    fields: list[tuple[str, DisplayField]] | None = None,
     color: discord.Color | None = None,
     update_message: str | None = None,
     player: discord.Member | None = None,

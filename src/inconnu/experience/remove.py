@@ -6,6 +6,7 @@ import inconnu
 import ui
 from ctx import AppCtx
 from models import VChar
+from models.vchardocs import VCharExperienceEntry
 from services.haven import haven
 from ui.views import DisablingView
 from utils import get_avatar
@@ -39,7 +40,7 @@ async def remove_entry(
         await ui.embeds.error(ctx, err)
 
 
-def _get_embed(player, character, entry):
+def _get_embed(player: discord.Member, character: VChar, entry: VCharExperienceEntry):
     """Generate an embed for displaying the deletion message."""
     embed = discord.Embed(title="Deleted Experience Log Entry", description=_format_entry(entry))
     embed.set_author(name=character.name, icon_url=get_avatar(player))
@@ -51,28 +52,28 @@ def _get_embed(player, character, entry):
     return embed
 
 
-def _format_entry(entry):
+def _format_entry(entry: VCharExperienceEntry):
     """Format the deleted entry for display."""
-    date = entry["date"].strftime("%b %d, %Y")
+    date = entry.date.strftime("%b %d, %Y")
     scope = _entry_scope(entry)
 
-    return f"**{entry['amount']:+} {scope} XP: {entry['reason']}** *({date})*"
+    return f"**{entry.amount:+} {scope} XP: {entry.reason}** *({date})*"
 
 
-def _entry_scope(entry):
+def _entry_scope(entry: VCharExperienceEntry):
     """Get the log entry scope."""
-    return entry["event"].split("_")[-1].capitalize()
+    return entry.event.split("_")[-1].capitalize()
 
 
 class _ExperienceView(DisablingView):
     """A View that adds or deducts the proper XP from a character when pressed."""
 
-    def __init__(self, character, entry):
+    def __init__(self, character: VChar, entry: VCharExperienceEntry):
         super().__init__()
 
         self.character = character
         self.scope = _entry_scope(entry)
-        self.amount = entry["amount"] * -1
+        self.amount = entry.amount * -1
 
         if self.amount < 0:
             title = f"Remove {abs(self.amount)} {self.scope} XP"
@@ -83,7 +84,7 @@ class _ExperienceView(DisablingView):
         button.callback = self.apply_xp
         self.add_item(button)
 
-    async def apply_xp(self, interaction):
+    async def apply_xp(self, interaction: discord.Interaction):
         """Apply the XP to the character."""
         if self.scope == "Unspent":
             syntax = f"uxp{self.amount:+}"
@@ -98,7 +99,7 @@ class _ExperienceView(DisablingView):
         )
         self.stop()
 
-    async def interaction_check(self, interaction) -> bool:
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check whether the user is an admin."""
         if not is_admin(interaction):
             await interaction.response.send_message("Only an admin can do this.", ephemeral=True)

@@ -10,3 +10,6 @@ if TYPE_CHECKING:
 
 class AppCtx(discord.ApplicationContext):
     bot: "InconnuBot"
+
+
+AppInteraction = AppCtx | discord.Interaction

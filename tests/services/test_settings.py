@@ -164,7 +164,9 @@ async def test_can_adjust_current_xp_admin_always_true(mock_is_admin):
         (ExpPerms.ADMIN_ONLY, False),
     ],
 )
-async def test_can_adjust_current_xp_non_admin(mock_is_admin, mock_vguild_fetch, permission, expected):
+async def test_can_adjust_current_xp_non_admin(
+    mock_is_admin, mock_vguild_fetch, permission, expected
+):
     """Test current XP permissions for non-admins with different guild settings."""
     ctx = mock_ctx()
     mock_is_admin.return_value = False
@@ -195,7 +197,9 @@ async def test_can_adjust_lifetime_xp_admin_always_true(mock_is_admin):
         (ExpPerms.ADMIN_ONLY, False),
     ],
 )
-async def test_can_adjust_lifetime_xp_non_admin(mock_is_admin, mock_vguild_fetch, permission, expected):
+async def test_can_adjust_lifetime_xp_non_admin(
+    mock_is_admin, mock_vguild_fetch, permission, expected
+):
     """Test lifetime XP permissions for non-admins with different guild settings."""
     ctx = mock_ctx()
     mock_is_admin.return_value = False

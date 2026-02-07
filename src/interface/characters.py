@@ -1,5 +1,7 @@
 """interface/characters.py - Character management Cog."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import option
 from discord.commands import OptionChoice, SlashCommandGroup
@@ -11,6 +13,9 @@ from ctx import AppCtx
 from inconnu.options import char_option, player_option
 from utils import decorators, not_on_lockdown
 from utils.text import strtobool
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 async def _spc_options(ctx):
@@ -30,6 +35,10 @@ class Characters(commands.Cog, name="Character Management"):
         OptionChoice("Thin-Blood", "thinblood"),
     ]
 
+    def __init__(self, bot: "InconnuBot"):
+        super().__init__()
+        self.bot = bot
+
     @commands.user_command(name="Stats", contexts={discord.InteractionContextType.guild})
     async def user_characters(self, ctx, member):
         """Display the user's character(s)."""
@@ -41,59 +50,30 @@ class Characters(commands.Cog, name="Character Management"):
         contexts={discord.InteractionContextType.guild},
     )
 
-    @character.command(name="create")
+    @character.command(name="wizard", contexts={discord.InteractionContextType.guild})
     @not_on_lockdown()
-    @option("name", description="The character's name")
-    @option("template", description="The character type", choices=_TEMPLATES)
-    @option("health", description="Health levels (4-15)", choices=inconnu.options.ratings(3, 15))
-    @option(
-        "willpower", description="Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)
-    )
-    @option(
-        "humanity", description="Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)
-    )
     @option("spc", description="(Admin only) Make an SPC", autocomplete=_spc_options, default="0")
-    async def character_create(
-        self,
-        ctx: AppCtx,
-        name: str,
-        template: str,
-        health: int,
-        willpower: int,
-        humanity: int,
-        spc: str,
-    ):
-        """Create a new character."""
+    async def character_wizard(self, ctx: AppCtx, spc: str):
+        """Start a character creation wizard."""
         try:
-            is_spc = bool(strtobool(spc))
-            await inconnu.character.create(
-                ctx, name, template, humanity, health, willpower, is_spc, False
-            )
+            make_spc = bool(strtobool(spc))
+            await inconnu.character.launch_wizard(ctx, make_spc)
         except ValueError:
             await ui.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
+    @character.command(name="create")
+    @not_on_lockdown()
+    async def character_create(self, ctx: AppCtx):
+        """[DEPRECATED] Use /character wizard instead!"""
+        wizard = self.bot.cmd_mention("character wizard")
+        await ctx.respond(f"This command has been removed! Use {wizard} instead.", ephemeral=True)
+
     @commands.slash_command(name="spc", contexts={discord.InteractionContextType.guild})
     @commands.has_permissions(administrator=True)
-    @option("name", description="The SPC's name")
-    @option("template", description="The character type", choices=_TEMPLATES)
-    @option("health", description="Health levels (4-15)", choices=inconnu.options.ratings(4, 15))
-    @option(
-        "willpower", description="Willpower levels (3-15)", choices=inconnu.options.ratings(3, 15)
-    )
-    @option(
-        "humanity", description="Humanity rating (0-10)", choices=inconnu.options.ratings(0, 10)
-    )
-    async def spc_create(
-        self,
-        ctx: AppCtx,
-        name: str,
-        template: str,
-        health: int,
-        willpower: int,
-        humanity: int,
-    ):
-        """Create an SPC character with no traits."""
-        await inconnu.character.create(ctx, name, template, humanity, health, willpower, True, True)
+    async def spc_create(self, ctx: AppCtx):
+        """[DEPRECATED] Use /character wizard instead!"""
+        wizard = self.bot.cmd_mention("character wizard")
+        await ctx.respond(f"This command has been removed! Use {wizard} instead.", ephemeral=True)
 
     @character.command(name="display")
     @char_option("The character to display")
@@ -232,7 +212,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     @character.command(name="delete")
     @not_on_lockdown()
-    @char_option("The character to delete")
+    @char_option("The character to delete", required=True)
     async def character_delete(
         self,
         ctx: AppCtx,

@@ -32,9 +32,9 @@ class DisplayField(StrEnum):
     EXPERIENCE = "Experience (Unspent / Lifetime)"
 
     @classmethod
-    def all(cls):
-        """Return a mapping of all (value, case) pairings."""
-        return map(lambda f: (f.value, f), list(cls))
+    def all(cls) -> list[tuple[str, "DisplayField"]]:
+        """Return a list of all (value, case) pairings."""
+        return [(f.value, f) for f in cls]
 
 
 @haven(__HELP_URL)
@@ -65,7 +65,7 @@ async def display(
     message: str | None = None,
     footer: str | None = None,
     owner: discord.Member | None = None,
-    fields: list | None = None,
+    fields: list[tuple[str, DisplayField]] | None = None,
     custom: list | None = None,
     color: discord.Color | int | None = None,
     thumbnail: str | None = None,
@@ -127,7 +127,7 @@ async def __get_embed(
     message: str | None = None,
     footer: str | None = None,
     owner: discord.Member | None = None,
-    fields: list | None = None,
+    fields: list[tuple[str, DisplayField]] | None = None,
     custom: list | None = None,
     color: discord.Color | int | None = None,
     thumbnail: str | None = None,

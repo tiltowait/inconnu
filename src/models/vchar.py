@@ -109,11 +109,11 @@ class VChar(Document):
     # Comparators
 
     def __lt__(self, other):
-        return self.name.lower() < other.name.lower()
+        return self.name.casefold() < other.name.casefold()
 
     def __eq__(self, other):
         """Just check the IDs."""
-        return self.id_str == other.id
+        return self.id == other.id
 
     # Synthetic properties
 

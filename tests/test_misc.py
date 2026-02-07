@@ -89,7 +89,6 @@ def generate_random_word(length):
     return "".join(random.choice(letters) for i in range(length))
 
 
-@pytest.mark.asyncio
 async def test_changelog():
     tag, changelog = await inconnu.misc.fetch_changelog()
     assert isinstance(tag, str)

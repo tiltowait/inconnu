@@ -6,6 +6,7 @@ from datetime import datetime, time, timezone
 from typing import cast
 
 import discord
+from cachetools import TTLCache
 from discord.ext import tasks
 from loguru import logger
 
@@ -37,6 +38,7 @@ class InconnuBot(discord.AutoShardedBot):
         self.motd = None
         self.motd_given = set()
         self.webhook_cache: WebhookCache = None  # type:ignore
+        self._guild_fetch_failures = TTLCache[int, bool](maxsize=200, ttl=1200)
         logger.info("BOT: Instantiated")
 
         if config.SHOW_TEST_ROUTES:
@@ -170,11 +172,18 @@ class InconnuBot(discord.AutoShardedBot):
         return None
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
-        """Look up a guild in the guild cache or fetches if not found."""
-        if guild := self.get_guild(guild_id):
-            return guild
-        logger.debug("BOT: Guild {} not found in cache; attempting fetch", guild_id)
-        return await self.fetch_guild(guild_id)
+        """Look up a guild in the guild cache or fetches if not found.
+
+        If fetch fails, then prevent further fetches for until the TTL cache
+        times out."""
+        guild = self.get_guild(guild_id)
+        if guild is None and guild_id not in self._guild_fetch_failures:
+            try:
+                guild = await self.fetch_guild(guild_id)
+            except (discord.Forbidden, discord.HTTPException):
+                self._guild_fetch_failures[guild_id] = True
+
+        return guild
 
     def can_webhook(self, channel: discord.TextChannel) -> bool:
         """Whether the bot has manage webhooks permission in the channel."""
@@ -272,7 +281,7 @@ class InconnuBot(discord.AutoShardedBot):
         options = raw_command_options(ctx.interaction)
         if "character" in options and "player" not in options:
             # Some commands do, in fact, need the character parameter
-            if ctx.command.qualified_name not in {
+            if ctx.guild and ctx.command.qualified_name not in {
                 "character bio edit",
                 "character delete",
                 "experience remove entry",
@@ -281,13 +290,16 @@ class InconnuBot(discord.AutoShardedBot):
                 "update header",
                 "transfer",
             }:
-                num_chars = await services.char_mgr.character_count(ctx.guild_id, ctx.user.id)
+                num_chars = await services.char_mgr.character_count(
+                    ctx.guild,
+                    cast(discord.Member, ctx.user),
+                )
                 if num_chars == 1:
                     # The user might have been using an SPC, so let's grab that
                     # character and double-check before yelling at them.
                     try:
                         character = await services.char_mgr.fetchone(
-                            ctx.guild, ctx.user, options["character"]
+                            ctx.guild, cast(discord.Member, ctx.user), options["character"]
                         )
                         if character.is_pc:
                             await asyncio.sleep(1)  # Make sure it shows after the command
@@ -314,7 +326,6 @@ class InconnuBot(discord.AutoShardedBot):
     async def on_connect(self):
         """Perform early setup."""
         if not self.connected:
-            services.char_mgr.bot = self
             await reporter.prepare_channel(self)
             self.webhook_cache = WebhookCache(self.user.id)
 

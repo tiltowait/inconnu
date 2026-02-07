@@ -1,13 +1,14 @@
 """vchar/manager.py - Character cache/in-memory database."""
 
+import asyncio
 import bisect
 from datetime import UTC, datetime
 
 import discord
-from cachetools import TTLCache
+from beanie import PydanticObjectId
+from bson import ObjectId
 from loguru import logger
 
-import db
 import errors
 from models.vchar import VChar
 from utils.text import pluralize
@@ -17,223 +18,202 @@ class CharacterManager:
     """A class for maintaining a local copy of characters."""
 
     def __init__(self):
-        logger.info("CHARACTER MANAGER: Initialized")
-        max_size = 200
-        ttl = 7200
-        self.all_fetched: TTLCache[str, bool] = TTLCache(maxsize=max_size, ttl=ttl)
-        self.user_cache: TTLCache[str, list[VChar]] = TTLCache(
-            maxsize=max_size,
-            ttl=ttl,
-        )
-        self.id_cache: TTLCache[str, VChar] = TTLCache(
-            maxsize=max_size,
-            ttl=ttl,
-        )
+        self._characters: list[VChar] = []
+        self._id_cache: dict[str, VChar] = {}
+        self._initialized = False
+        self._lock = asyncio.Lock()
 
-        # Set after construction. Used to check whether a user is an admin
-        self.bot = None
-        self.collection = db.characters
+    @property
+    def initialized(self) -> bool:
+        """Whether the bot has been initialized."""
+        return self._initialized
+
+    async def initialize(self):
+        """Load the characters from the database."""
+        if not self._initialized:
+            self._characters = await VChar.find_all().to_list()
+            self._characters.sort()
+            self._id_cache = {char.id_str: char for char in self._characters}
+            self._initialized = True
+
+            logger.info("Initialized with {} characters", len(self._characters))
+
+    async def fetchall(self, guild: discord.Guild | int, user: discord.Member | int) -> list[VChar]:
+        """Fetch all characters. Parameters given act as a filter."""
+        await self.initialize()
+
+        guild_id = guild.id if isinstance(guild, discord.Guild) else guild
+        user_id = user.id if isinstance(user, discord.Member) else user
+
+        return [
+            char for char in self._characters if char.guild == guild_id and char.user == user_id
+        ]
 
     async def fetchone(
         self,
-        guild: discord.Guild | int,
-        user: discord.Member | int,
+        guild: discord.Guild,
+        user: discord.Member,
         name: str | VChar | None,
-    ):
-        """
-        Fetch a single character.
+    ) -> VChar:
+        """Attempt to return a single character.
+
         Args:
-            guild: The Discord ID of the guild the bot was invoked in
-            user: The user's Discord ID
-            name (optional): The character's name or ID
+            guild: The guild to which the character belongs.
+            user: The character's owner.
+            name (optional): The character's name, or a VChar object.
 
-        If the name isn't given, return the user's sole character, if applicable.
+        Returns a single character, if a single match is found.
+
+        Raises:
+            CharacterNotFoundError if no character matches the name.
+            UnspecifiedCharacterError if more than one match is found.
         """
+        await self.initialize()
+
         if isinstance(name, VChar):
+            # Short-circuit if we already have a VChar
             return name
+        if isinstance(name, str):
+            name = name.strip()
 
-        guild, user, _ = self._get_ids(guild, user)
-
-        if name is not None:
-            if char := self.id_cache.get(name[:24]):
+        if name and ObjectId.is_valid(name):
+            if char := self._id_cache.get(name):
                 self._validate(guild, user, char)
                 return char
 
-            # Retrieve all of the user's characters on the guild, which also
-            # populates the ID cache
-            user_chars = await self.fetchall(guild, user)
-
-            # We could check the ID cache again, but this is only a tiny bit
-            # slower, so let's avoid code duplication
-            for char in user_chars:
-                # Post editing sends an ObjectId, so we need to check that, too
-                if char.name.lower() == name.lower() or char.id_str == name:
-                    self._validate(guild, user, char)
-                    return char
-
-            # The given name doesn't match any character ID or name
+        user_chars = await self.fetchall(guild, user)
+        if not user_chars:
+            raise errors.CharacterNotFoundError("You have no characters.")
+        if len(user_chars) == 1:
+            if not name:
+                return user_chars[0]
+            if user_chars[0].name.casefold() == name.casefold():
+                return user_chars[0]
             raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
 
-        # No character name given. If the user only has one character, then we
-        # can just return it. Otherwise, send an error message.
-
-        user_chars = await self.fetchall(guild, user)
-
-        if (count := len(user_chars)) == 0:
-            raise errors.NoCharactersError(
-                "You have no characters. Create one with `/character create`."
+        # More than one found. Attempt to filter down.
+        if name is None:
+            raise errors.UnspecifiedCharacterError(
+                f"You have {len(user_chars)} characters. Please specify which to use."
             )
-        if count == 1:
-            return user_chars[0]
 
-        # Two or more characters
-        errmsg = f"You have {count} characters. Please specify which to use."
-        raise errors.UnspecifiedCharacterError(errmsg)
+        try:
+            char = next(char for char in user_chars if char.name.casefold() == name.casefold())
+            self._validate(guild, user, char)
+            return char
+        except StopIteration:
+            raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
 
-    async def fetchall(self, guild: int, user: int):
-        """
-        Fetch all of a user's characters in a given guild. Adds them to the
-        cache if necessary.
-        """
-        guild, user, key = self._get_ids(guild, user)
+    async def fetchid(self, oid: PydanticObjectId | str) -> VChar | None:
+        """Fetch the character by ID, if it exists."""
+        await self.initialize()
+        return self._id_cache.get(str(oid))
 
-        if self.all_fetched.get(key, False):
-            return self.user_cache.get(key, [])
+    async def fetchuser(self, user: int) -> list[VChar]:
+        """Fetch all the user's characters."""
+        await self.initialize()
+        return [c for c in self._characters if c.user == user]
 
-        logger.info("CHARACTER MANAGER: Fetching {}'s characters on {} from the db", user, guild)
+    async def fetchguild(self, guild: int) -> list[VChar]:
+        """Fetch all the user's characters."""
+        await self.initialize()
+        return [c for c in self._characters if c.guild == guild]
 
-        characters = []
-        async for character in VChar.find({"guild": guild, "user": user}):
-            if character.id_str not in self.id_cache:
-                bisect.insort(characters, character)
-                self.id_cache[character.id_str] = character
-            else:
-                # Use the already cached character. This will probably never
-                # happen, but we'll put it here just in case
-                bisect.insort(characters, self.id_cache[character.id_str])
-
-        self.user_cache[key] = characters
-        self.all_fetched[key] = True
-
-        logger.debug(
-            "CHARACTER MANAGER: Found {} characters ({} on {})",
-            len(characters),
-            user,
-            guild,
-        )
-
-        return characters
-
-    async def character_count(self, guild: int, user: int) -> int:
+    async def character_count(self, guild: discord.Guild, user: discord.Member) -> int:
         """Get a count of the user's characters in the server."""
         chars = await self.fetchall(guild, user)
         return len(chars)
 
-    async def exists(self, guild: int, user: int, name: str, is_spc: bool) -> bool:
+    async def exists(
+        self,
+        guild: discord.Guild,
+        user: discord.Member,
+        name: str,
+        is_spc: bool,
+    ) -> bool:
         """Determine whether a user already has a named character."""
-        if self.bot is None:
-            raise ValueError("Bot is not set!")
+        await self.initialize()
 
         if is_spc:
-            owner_id = self.bot.user.id
-            name += " (SPC)"
+            owner_id = VChar.SPC_OWNER
         else:
-            owner_id = user
-        user_chars = await self.fetchall(guild, owner_id)
+            owner_id = user.id
 
-        for character in user_chars:
-            if character.name.lower() == name.lower():
+        for character in await self.fetchall(guild, owner_id):
+            if character.name.casefold() == name.casefold():
                 return True
 
         return False
 
-    def clear_caches(self, player: discord.Member):
-        """Clear the caches for the player + guild."""
-        _, _, key = self._get_ids(player.guild, player)
-        char_ids = {c.id_str for c in self.user_cache.get(key, [])}
-        for char_id in char_ids:
-            if char_id in self.id_cache:
-                del self.id_cache[char_id]
-        if key in self.user_cache:
-            del self.user_cache[key]
+    async def register(self, character: VChar):
+        """Insert the character into the database and the cache."""
+        await self.initialize()
 
-        logger.debug("{}: Cleared {}'s caches", player.guild.name, player.name)
+        # Acquire global lock to prevent race conditions on shared data structures
+        async with self._lock:
+            try:
+                duplicate = next(
+                    char
+                    for char in self._characters
+                    if char.user == character.user
+                    and char.guild == character.guild
+                    and char.name.casefold() == character.name.casefold()
+                )
+                raise errors.DuplicateCharacterError(
+                    f"Character '{duplicate.name}' already exists for this user in this guild."
+                )
+            except StopIteration:
+                # No duplicate found
+                pass
 
-    async def register(self, character):
-        """Add the character to the database and the cache."""
-        self.id_cache[character.id_str] = character
+            await character.save()
+            self._id_cache[character.id_str] = character
+            bisect.insort(self._characters, character)
 
-        user_chars = await self.fetchall(character.guild, character.user)
-        inserted = False
+            logger.info(
+                "Registered {} to {} on {}", character.name, character.user, character.guild
+            )
 
-        # Keep the list sorted
-        for index, char in enumerate(user_chars):
-            if character.name.lower() < char.name.lower():
-                user_chars.insert(index, character)
-                inserted = True
-                break
+    async def remove(self, character: VChar) -> bool:
+        """Delete the character from the database and the cache."""
+        await self.initialize()
 
-        if not inserted:
-            user_chars.append(character)
+        # Acquire global lock to prevent race conditions on shared data structures
+        async with self._lock:
+            deletion = await character.delete()
 
-        key = self._user_key(character)
-        self.user_cache[key] = user_chars
+            if deletion.deleted_count == 1:
+                self._characters.remove(character)
+                del self._id_cache[character.id_str]
 
-    async def remove(self, character: VChar):
-        """Remove a character from the database and the cache."""
-        deletion = await character.delete()
+                logger.info("Removed {} from {}", character.name, character.guild)
+                return True
 
-        if deletion.deleted_count == 1:
-            user_chars = await self.fetchall(character.guild, character.user)
-            if character in user_chars:
-                user_chars.remove(character)
+            logger.warning("Unable to remove {} from {}", character.name, character.guild)
+            return False
 
-            key = self._user_key(character)
-            self.user_cache[key] = user_chars
+    async def transfer(
+        self, character: VChar, current_owner: discord.Member, new_owner: discord.Member
+    ):
+        """Transfer character ownership."""
+        await self.initialize()
 
-            if character.id_str in self.id_cache:
-                del self.id_cache[character.id_str]
+        if character.user != current_owner.id:
+            raise errors.WrongOwner(f"{current_owner.display_name} does not own {character.name}!")
+        if character.guild != new_owner.guild.id:
+            raise errors.WrongGuild(
+                f"{new_owner.display_name} is not in the same server as {character.name}!"
+            )
 
-            logger.info("CHARACTER MANAGER: Removed {}", character.name)
-
-            return True
-
-        logger.warning("CHARACTER MANAGER: Unable to remove {}", character.name)
-        return False
-
-    async def transfer(self, character, current_owner, new_owner):
-        """Transfer one character to another."""
-        # Remove it from the owner's cache
-        current_chars = await self.fetchall(character.guild, current_owner)
-        current_key = self._user_key(character)
-        current_chars.remove(character)
-        self.user_cache[current_key] = current_chars
-
-        # Make the transfer
         character.user = new_owner.id
         await character.save()
 
-        # Only add it to the new owner's cache if they've already loaded
-        new_key = self._user_key(character)
-        if (new_chars := self.user_cache.get(new_key)) is not None:
-            inserted = False
-
-            for index, char in enumerate(new_chars):
-                if char > character:
-                    new_chars.insert(index, character)
-                    inserted = True
-                    break
-
-            if not inserted:
-                new_chars.append(character)
-
-            self.user_cache[new_key] = new_chars
-
         logger.info(
-            "CHARACTER MANAGER: Transferred '{}' from {} to {}",
+            "Transferred '{}' from {} to {} on {}",
             character.name,
             current_owner.name,
             new_owner.name,
+            new_owner.guild.name,
         )
 
     async def mark_inactive(self, player: discord.Member):
@@ -241,89 +221,67 @@ class CharacterManager:
         When a player leaves a guild, mark their characters as inactive. They
         will then be culled after 30 days if they haven't returned before then.
         """
-        self.clear_caches(player)
+        await self.initialize()
 
-        res = await self.collection.update_many(
-            {"guild": player.guild.id, "user": player.id},
-            {"$set": {"log.left": datetime.now(UTC)}},
-        )
-        if res.modified_count > 0:
+        tasks = []
+        for char in self._characters:
+            if char.user == player.id and char.guild == player.guild.id:
+                char.stat_log["left"] = datetime.now(UTC)
+                tasks.append(char.save())
+
+        if tasks:
             logger.info(
                 "{}: {} left. Marked {} {} inactive.",
                 player.guild.name,
                 player.name,
-                res.modified_count,
-                pluralize(res.modified_count, "character"),
+                len(tasks),
+                pluralize(len(tasks), "character"),
             )
+            await asyncio.gather(*tasks)
 
     async def mark_active(self, player: discord.Member):
         """
         When a player returns to the guild, we mark their characters as active
         so long as they haven't already been culled.
         """
-        # We don't need to clear the caches, since we already did that when we
-        # marked them inactive.
-        res = await self.collection.update_many(
-            {"guild": player.guild.id, "user": player.id}, {"$unset": {"log.left": 1}}
-        )
-        if res.modified_count > 0:
+        await self.initialize()
+
+        tasks = []
+        for char in self._characters:
+            if char.user == player.id and "left" in char.stat_log:
+                del char.stat_log["left"]
+                tasks.append(char.save())
+
+        if tasks:
             logger.info(
-                "{}: {} re-joined. Cleared {} deletion {}.",
+                "{}: {} left. Marked {} {} active.",
                 player.guild.name,
                 player.name,
-                res.modified_count,
-                pluralize(res.modified_count, "countdown"),
+                len(tasks),
+                pluralize(len(tasks), "character"),
             )
+            await asyncio.gather(*tasks)
 
-    def sort_user(self, guild: int, user: int):
-        """Sorts the user's characters alphabetically."""
-        guild, user, key = self._get_ids(guild, user)
+    async def sort_chars(self):
+        """Sort characters after a rename."""
+        async with self._lock:
+            self._characters.sort()
 
-        if not (user_chars := self.user_cache.get(key)):
-            # Characters are automatically sorted when fetched
-            return
+    def _validate(self, guild: discord.Guild, user: discord.Member, char: VChar):
+        """Validate character ownership."""
+        guild_id = guild.id if isinstance(guild, discord.Guild) else guild
+        user_id = user.id if isinstance(user, discord.Member) else user
 
-        user_chars.sort()
-        self.user_cache[key] = user_chars
-
-    # Private Methods
-
-    @staticmethod
-    def _get_ids(guild: discord.Guild | int, user: discord.Member | int):
-        """Get the guild and user IDs."""
-        if guild and not isinstance(guild, int):
-            guild = guild.id
-        if user and not isinstance(user, int):
-            user = user.id
-
-        key = f"{guild} {user}"
-
-        return guild, user, key
-
-    @staticmethod
-    def _user_key(character: VChar):
-        """Generate a key for the user cache."""
-        return f"{character.guild} {character.user}"
-
-    def _is_admin(self, guild: int, user: int):
-        """Determine whether the user is an administrator."""
-        if not self.bot:
-            return False
-
-        if isinstance(guild, int):
-            guild = self.bot.get_guild(guild)
-        if isinstance(user, int):
-            user = guild.get_member(user)
-
-        return user.top_role.permissions.administrator or user.guild_permissions.administrator
-
-    def _validate(self, guild, user, char):
-        """Validate that a character belongs to the user."""
-        if guild and char.guild != guild:
+        if guild_id != char.guild:
             raise LookupError(f"**{char.name}** doesn't belong to this server!")
-        if user and char.user != user:
-            if not self._is_admin(guild, user):
+        if char.user != user_id:
+            if not self.is_admin(user):
                 raise LookupError(f"**{char.name}** doesn't belong to this user!")
+
+    @staticmethod
+    def is_admin(user: discord.Member) -> bool:
+        """Determine whether the user is an administrator."""
+        return user.top_role.permissions.administrator or user.guild_permissions.administrator
 
 
 char_mgr = CharacterManager()

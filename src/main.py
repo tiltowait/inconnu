@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from loguru import logger
 
 import db
+import services
 from bot import bot
 from config import BOT_TOKEN
 
@@ -20,6 +21,7 @@ load_dotenv()
 async def startup():
     """Initialize the database connection and start the bot."""
     await db.init()
+    await services.char_mgr.initialize()
     try:
         async with bot:
             await bot.start(BOT_TOKEN)

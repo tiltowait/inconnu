@@ -44,7 +44,7 @@ class Haven:
 
     def __init__(
         self,
-        ctx,
+        ctx: AppCtx,
         *,
         owner: discord.Member | None = None,
         allow_lookups=False,
@@ -83,9 +83,11 @@ class Haven:
 
             # If the owner only has one character, or selected one, then we
             # can skip the rest of the fetch and filter routine
+            guild = cast(discord.Guild, self.ctx.guild)
+            user = cast(discord.Member, self.owner)
             character = await services.char_mgr.fetchone(
-                self.ctx.guild.id,
-                self.owner.id,
+                guild,
+                user,
                 self.match,
             )
             logger.debug("HAVEN: Found explicit character: {}", character.name)

@@ -99,6 +99,12 @@ class AuthorizedUserChars(BaseModel):
     guilds: list[CharacterGuild]
     characters: list[AuthorizedCharacter]
 
+    @model_validator(mode="after")
+    def sort_guilds(self) -> Self:
+        """Sort guilds alphabetically by name (case-insensitive)."""
+        self.guilds = sorted(self.guilds, key=lambda g: g.name.casefold())
+        return self
+
 
 class WizardSchema(BaseModel):
     """Data sent by the wizard endpoint."""

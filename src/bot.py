@@ -6,6 +6,7 @@ from datetime import datetime, time, timezone
 from typing import cast
 
 import discord
+from cachetools import TTLCache
 from discord.ext import tasks
 from loguru import logger
 
@@ -37,6 +38,7 @@ class InconnuBot(discord.AutoShardedBot):
         self.motd = None
         self.motd_given = set()
         self.webhook_cache: WebhookCache = None  # type:ignore
+        self._guild_fetch_failures = TTLCache[int, bool](maxsize=200, ttl=1200)
         logger.info("BOT: Instantiated")
 
         if config.SHOW_TEST_ROUTES:
@@ -170,8 +172,18 @@ class InconnuBot(discord.AutoShardedBot):
         return None
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
-        """Look up a guild in the guild cache or fetches if not found."""
-        return await self.get_or_fetch(discord.Guild, guild_id)
+        """Look up a guild in the guild cache or fetches if not found.
+
+        If fetch fails, then prevent further fetches for until the TTL cache
+        times out."""
+        guild = self.get_guild(guild_id)
+        if guild is None and guild_id not in self._guild_fetch_failures:
+            try:
+                guild = await self.fetch_guild(guild_id)
+            except (discord.Forbidden, discord.HTTPException):
+                self._guild_fetch_failures[guild_id] = True
+
+        return guild
 
     def can_webhook(self, channel: discord.TextChannel) -> bool:
         """Whether the bot has manage webhooks permission in the channel."""

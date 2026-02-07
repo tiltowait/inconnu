@@ -35,7 +35,7 @@ class OwnerData(BaseModel):
         return cls(id=str(user.id), name=user.display_name, icon=get_avatar(user).url)
 
     @classmethod
-    async def create(cls, guild_id: int, user_id: int) -> Self | None:
+    async def fetch(cls, guild_id: int, user_id: int) -> Self | None:
         """Create a CharacterOwner object."""
         guild = await inconnu.bot.get_or_fetch_guild(guild_id)
         if guild is None:
@@ -71,7 +71,7 @@ class PublicCharacter(BaseModel):
         )
 
 
-class AuthorizedCharacter(BaseModel):
+class CharData(BaseModel):
     """Unified character response containing guild, owner, and character data."""
 
     guild: CharacterGuild
@@ -86,7 +86,7 @@ class AuthorizedCharacter(BaseModel):
         return "full" if isinstance(self.character, VChar) else "public"
 
 
-class AuthorizedUserChars(BaseModel):
+class UserCharData(BaseModel):
     """Intended to contain one user's characters as well as all the guilds the
     user shares with the bot.
 
@@ -97,7 +97,7 @@ class AuthorizedUserChars(BaseModel):
     it enables."""
 
     guilds: list[CharacterGuild]
-    characters: list[AuthorizedCharacter]
+    characters: list[CharData]
 
     @model_validator(mode="after")
     def sort_guilds(self) -> Self:

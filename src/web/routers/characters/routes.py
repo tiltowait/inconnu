@@ -14,12 +14,12 @@ from models import VChar
 from services import char_mgr, wizard_cache
 from services.wizard import CharacterGuild
 from web.routers.characters.models import (
-    AuthorizedCharacter,
-    AuthorizedUserChars,
+    CharData,
     CreationBody,
     CreationSuccess,
     OwnerData,
     PublicCharacter,
+    UserCharData,
     WizardSchema,
 )
 
@@ -54,7 +54,7 @@ async def get_authenticated_user(
 @router.get("/characters")
 async def get_character_list(
     user_id: int = Depends(get_authenticated_user),
-) -> AuthorizedUserChars:
+) -> UserCharData:
     """Get all of the user's characters and the guilds they belong to."""
     guilds = {}
     for guild in inconnu.bot.guilds:
@@ -69,17 +69,17 @@ async def get_character_list(
             continue
         if char.guild in guilds:
             guild = guilds[char.guild]
-            authed = AuthorizedCharacter(guild=guild, owner=None, character=char, spc=char.is_spc)
+            authed = CharData(guild=guild, owner=None, character=char, spc=char.is_spc)
             chars.append(authed)
 
-    return AuthorizedUserChars(guilds=list(guilds.values()), characters=chars)
+    return UserCharData(guilds=list(guilds.values()), characters=chars)
 
 
 @router.get("/characters/{oid}")
 async def get_character(
     oid: PydanticObjectId,
     user_id: int = Depends(get_authenticated_user),
-) -> AuthorizedCharacter:
+) -> CharData:
     """Fetch a character.
 
     Args:
@@ -91,7 +91,7 @@ async def get_character(
 
     Otherwise, return a PublicCharacter.
 
-    The AuthorizedCharacter also contains guild and owner information. If the
+    The CharData also contains guild and owner information. If the
     character is an SPC, then owner information is not returned."""
     char = await char_mgr.fetchid(oid)
     if char is None:
@@ -113,9 +113,9 @@ async def get_character(
     if char.is_spc:
         owner_data = None
     else:
-        owner_data = await OwnerData.create(char.guild, char.user)
+        owner_data = await OwnerData.fetch(char.guild, char.user)
 
-    return AuthorizedCharacter(
+    return CharData(
         guild=CharacterGuild.create(guild),
         owner=owner_data,
         character=character,
@@ -127,7 +127,7 @@ async def get_character(
 async def get_guild_characters(
     guild_id: int,
     user_id: int = Depends(get_authenticated_user),
-) -> list[AuthorizedCharacter]:
+) -> list[CharData]:
     """Get all character base profiles belonging to the guild. Excludes
     characters whose owners have left the server."""
     guild = await inconnu.bot.get_or_fetch_guild(guild_id)
@@ -147,14 +147,14 @@ async def get_guild_characters(
         if char.is_spc:
             owner_data = None
         else:
-            owner_data = await OwnerData.create(char.guild, char.user)
+            owner_data = await OwnerData.fetch(char.guild, char.user)
             if owner_data is None:
                 # We couldn't find them; maybe Discord is throwing a fit.
                 # Without owner data, however, we won't return this character.
                 continue
 
         base_profile = PublicCharacter.create(char)
-        guild_profile = AuthorizedCharacter(
+        guild_profile = CharData(
             guild=char_guild,
             owner=owner_data,
             character=base_profile,
@@ -169,7 +169,7 @@ async def get_guild_characters(
 async def get_character_profile(
     oid: PydanticObjectId,
     _: HTTPAuthorizationCredentials = Depends(verify_api_key),
-) -> AuthorizedCharacter:
+) -> CharData:
     """Fetch a character profile. This endpoint returns a non-sensitive character
     model with only name, ownership data, and public profile data."""
     char = await char_mgr.fetchid(oid)
@@ -180,9 +180,9 @@ async def get_character_profile(
     if char.is_spc:
         owner = None
     else:
-        owner = await OwnerData.create(char.guild, char.user)
+        owner = await OwnerData.fetch(char.guild, char.user)
 
-    return AuthorizedCharacter(
+    return CharData(
         guild=guild,
         owner=owner,
         character=PublicCharacter.create(char),

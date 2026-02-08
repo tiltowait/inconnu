@@ -324,22 +324,24 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_connect(self):
         """Perform early setup."""
+        if not self.user or not self.user.id:
+            raise RuntimeError("Did not receive a user ID. Crashing.")
+
         if not self.connected:
             await reporter.prepare_channel(self)
             self.webhook_cache = WebhookCache(self.user.id)
 
-            logger.info("CONNECT: Logged in as {}!", str(self.user))
-            logger.info("CONNECT: Playing on {} servers", len(self.guilds))
-            logger.info("CONNECT: {}", discord.version_info)
-            logger.info("CONNECT: Latency: {} ms", self.latency * 1000)
+            logger.info("Logged in as {}!", str(self.user))
+            logger.info("{}", discord.version_info)
+            logger.info("Latency: {} ms", self.latency * 1000)
 
             VChar.SPC_OWNER = self.user.id
-            logger.info("CONNECT: Registered SPC owner")
+            logger.info("Registered SPC owner: {}", VChar.SPC_OWNER)
 
             self.connected = True
 
         await self.sync_commands()
-        logger.info("CONNECT: Commands synced")
+        logger.info("Commands synced")
 
     async def on_ready(self):
         """Schedule a task to perform final setup."""
@@ -357,6 +359,11 @@ class InconnuBot(discord.AutoShardedBot):
             # Schedule tasks
             cull_inactive.start()
             check_premium_expiries.start()
+
+            # Display some vanity stats
+            guild_count = len(self.guilds)
+            member_count = sum(g.member_count for g in self.guilds)
+            logger.info("Caches built: {} guilds. {} members.", guild_count, member_count)
 
             self.welcomed = True
 

@@ -325,8 +325,8 @@ async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
         # still exists. Otherwise, spit out an error.
         try:
             character = await services.char_mgr.fetchone(
-                ctx.guild_id,
-                ctx.user.id,
+                ctx.guild,
+                ctx.user,
                 str(rp_post.header.charid),
             )
             modal = PostModal(

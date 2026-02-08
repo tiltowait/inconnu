@@ -83,7 +83,7 @@ class MiscCommands(commands.Cog):
             return
 
         try:
-            xfer = await services.char_mgr.fetchone(ctx.guild, current_owner.id, character)
+            xfer = await services.char_mgr.fetchone(ctx.guild, current_owner, character)
 
             if ctx.guild.id == xfer.guild and current_owner.id == xfer.user:
                 current_mention = current_owner.mention

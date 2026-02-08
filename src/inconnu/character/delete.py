@@ -10,14 +10,15 @@ import api
 import errors
 import services
 import ui
+from ctx import AppCtx
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 
 
-async def delete(ctx, character_name: str):
+async def delete(ctx: AppCtx, character_name: str):
     """Prompt whether the user actually wants to delete the character."""
     try:
-        character = await services.char_mgr.fetchone(ctx.guild.id, ctx.user.id, character_name)
+        character = await services.char_mgr.fetchone(ctx.guild, ctx.user, character_name)
         modal = _DeletionModal(title=f"Delete {character.name}", character=character)
         await ctx.send_modal(modal)
 

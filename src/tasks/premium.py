@@ -8,7 +8,7 @@ from loguru import logger
 
 import api
 import db
-from models import VChar
+import services
 
 
 async def remove_expired_images():
@@ -23,11 +23,9 @@ async def remove_expired_images():
         expired_user_ids.append(user_id)
         logger.info("TASK: Removing {}'s profile images", user_id)
 
-        # The cache doesn't have a facility for fetching cross-guild, so we
-        # have to fetch them manually
-        async for character in VChar.find({"user": user_id}):
-            logger.info("TASK: Removing images from {}", character.name)
-            api_tasks.append(api.delete_character_faceclaims(character))
+        for char in await services.char_mgr.fetchuser(user_id):
+            logger.info("TASK: Removing images from {}", char.name)
+            api_tasks.append(api.delete_character_faceclaims(char))
 
     logger.info(
         "TASK: Removing images from {} characters due to expired supporter status",

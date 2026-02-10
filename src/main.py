@@ -13,7 +13,7 @@ from loguru import logger
 import db
 import services
 from bot import bot
-from config import BOT_TOKEN
+from config import BOT_TOKEN, PROD
 
 load_dotenv()
 
@@ -39,6 +39,16 @@ def handle_signal(signum: int, _):
 def main():
     uvloop.install()
     logger.info("Installed uvloop")
+
+    if PROD:
+        logger.debug("Configuring log rotation")
+        logger.remove()
+        logger.add(
+            "/var/log/inconnu.log",
+            rotation="0:00",
+            retention=7,
+            level="INFO",
+        )
 
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, handle_signal)

@@ -1,13 +1,15 @@
 """Character API routes."""
 
+import discord
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from loguru import logger
 
 import errors
 import inconnu
-from config import API_KEY
+from config import API_KEY, SUPPORTER_GUILD, SUPPORTER_ROLE
 from constants import Damage
 from models import VChar
 from services import char_mgr, guild_cache, wizard_cache
@@ -236,10 +238,9 @@ async def create_character(
     _: HTTPAuthorizationCredentials = Depends(verify_api_key),
 ) -> CreationSuccess:
     """Create the character and insert it into the database."""
-    wizard = wizard_cache.pop(token)
+    wizard = wizard_cache.get(token)
     if wizard is None:
         raise HTTPException(404, detail="Unknown token. It may have expired.")
-
     # We need to sort the traits before setting them
     traits = sorted(data.traits, key=lambda t: t.name.casefold())
     owner_id = wizard.user if not wizard.spc else VChar.SPC_OWNER
@@ -264,8 +265,23 @@ async def create_character(
     except errors.DuplicateCharacterError as err:
         raise HTTPException(422, detail=str(err)) from err
 
+    wizard_cache.delete(token)
+
+    # Figure out if the user has premium. We can't use is_supporter(), because
+    # that function requires an AppCtx, which we don't have. (Good candidate
+    # for a future refactor ...)
+    premium = False
+    guild = await inconnu.bot.get_or_fetch_guild(SUPPORTER_GUILD)
+    if guild is not None:
+        user = await guild.get_or_fetch(discord.Member, wizard.user)
+        if user is not None and user.get_role(SUPPORTER_ROLE) is not None:
+            premium = True
+    else:
+        logger.warning("Supporter guild not found")
+
     return CreationSuccess(
         guild=wizard.guild,
         character_id=character.id_str,
         character_name=character.name,
+        has_premium=premium,
     )

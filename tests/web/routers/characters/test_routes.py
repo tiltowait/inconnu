@@ -24,6 +24,8 @@ TEST_API_KEY = "test-api-key-12345"
 TEST_USER_ID = 987654321
 TEST_GUILD_ID = 123456789
 TEST_TOKEN = "valid-wizard-token"
+TEST_SUPPORTER_GUILD_ID = 54321
+TEST_SUPPORTER_ROLE_ID = 99999
 
 
 @pytest.fixture(autouse=True, scope="function")
@@ -153,15 +155,21 @@ def mock_bot():
 
     bot.get_guild = MagicMock(side_effect=get_guild)
 
+    # Mock get_or_fetch_guild for premium checks (returns None by default)
+    bot.get_or_fetch_guild = AsyncMock(return_value=None)
+
     with patch("web.routers.characters.routes.inconnu.bot", bot):
         yield bot
 
 
 @pytest.fixture
 def mock_wizard_cache_pop():
-    """Mock wizard_cache.pop for character creation tests."""
-    with patch("web.routers.characters.routes.wizard_cache.pop") as mock:
-        yield mock
+    """Mock wizard_cache.get and delete for character creation tests."""
+    with (
+        patch("web.routers.characters.routes.wizard_cache.get") as mock_get,
+        patch("web.routers.characters.routes.wizard_cache.delete") as mock_delete,
+    ):
+        yield mock_get, mock_delete
 
 
 @pytest.fixture
@@ -355,9 +363,11 @@ async def test_create_character_valid_api_key(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Request with valid API key proceeds."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -376,7 +386,8 @@ async def test_create_character_invalid_token(
     valid_character_data, auth_headers, mock_wizard_cache_pop
 ):
     """Invalid wizard token returns 404."""
-    mock_wizard_cache_pop.return_value = None
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = None
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -392,7 +403,8 @@ async def test_create_character_expired_token(
     valid_character_data, auth_headers, mock_wizard_cache_pop
 ):
     """Expired wizard token returns 404."""
-    mock_wizard_cache_pop.return_value = None
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = None
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -412,7 +424,8 @@ async def test_create_character_invalid_name(
 ):
     """Invalid character name returns 422."""
     valid_character_data["name"] = "A" * 31  # Too long
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -428,7 +441,8 @@ async def test_create_character_health_out_of_range(
 ):
     """Health out of range (4-20) returns 422."""
     valid_character_data["health"] = 3  # Too low
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -445,7 +459,8 @@ async def test_create_character_mortal_with_blood_potency(
     """Mortal with blood potency > 0 returns 422."""
     valid_character_data["splat"] = VCharSplat.MORTAL
     valid_character_data["blood_potency"] = 1
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -462,7 +477,8 @@ async def test_create_character_too_many_convictions(
 ):
     """More than 3 convictions returns 422."""
     valid_character_data["convictions"] = ["One", "Two", "Three", "Four"]
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -478,7 +494,8 @@ async def test_create_character_specialty_on_wrong_type(
 ):
     """Specialty on attribute returns 422."""
     valid_character_data["traits"][0]["subtraits"] = ["Lifting"]  # Strength is an attribute
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -498,7 +515,8 @@ async def test_create_duplicate_character(
     mock_char_mgr_register,
 ):
     """Creating duplicate character (same name, guild, user) returns 422."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
     mock_char_mgr_register.side_effect = DuplicateCharacterError(
         "Character 'Test Character' already exists"
     )
@@ -522,7 +540,8 @@ async def test_create_duplicate_character_case_insensitive(
 ):
     """Duplicate check is case-insensitive."""
     valid_character_data["name"] = "TEST CHARACTER"
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
     mock_char_mgr_register.side_effect = DuplicateCharacterError(
         "Character 'TEST CHARACTER' already exists"
     )
@@ -546,9 +565,11 @@ async def test_create_vampire_success(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Valid vampire character created successfully."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -566,6 +587,7 @@ async def test_create_vampire_success(
         assert "character_id" in result
         assert "character_name" in result
         assert result["character_name"] == "Test Character"
+        assert result["has_premium"] is False
 
 
 async def test_create_mortal_success(
@@ -574,11 +596,13 @@ async def test_create_mortal_success(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Valid mortal character created successfully."""
     valid_character_data["splat"] = VCharSplat.MORTAL
     valid_character_data["blood_potency"] = 0
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -596,11 +620,13 @@ async def test_create_ghoul_success(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Valid ghoul character created successfully."""
     valid_character_data["splat"] = VCharSplat.GHOUL
     valid_character_data["blood_potency"] = 0
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -618,11 +644,13 @@ async def test_create_thin_blood_success(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Valid thin-blood character created successfully."""
     valid_character_data["splat"] = VCharSplat.THIN_BLOOD
     valid_character_data["blood_potency"] = 2
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -640,6 +668,7 @@ async def test_create_character_with_specialties(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Character with valid specialties created successfully."""
     valid_character_data["traits"].append(
@@ -650,7 +679,8 @@ async def test_create_character_with_specialties(
             "subtraits": ["History", "Occult"],
         }
     )
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -673,9 +703,11 @@ async def test_token_consumed_after_creation(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Wizard token is consumed (popped) after character creation."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         await client.post(
@@ -683,8 +715,9 @@ async def test_token_consumed_after_creation(
             json=valid_character_data,
             headers=auth_headers,
         )
-        # pop() should have been called with the token
-        mock_wizard_cache_pop.assert_called_once_with(TEST_TOKEN)
+        # get() and delete() should have been called with the token
+        mock_get.assert_called_once_with(TEST_TOKEN)
+        mock_delete.assert_called_once_with(TEST_TOKEN)
 
 
 async def test_character_field_mapping(
@@ -693,9 +726,11 @@ async def test_character_field_mapping(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """VChar fields correctly mapped from CreationBody."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         await client.post(
@@ -736,9 +771,11 @@ async def test_create_spc_character(
     mock_spc_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """SPC character created with VChar.SPC_OWNER as user ID."""
-    mock_wizard_cache_pop.return_value = mock_spc_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_spc_wizard_data
 
     with patch("web.routers.characters.routes.VChar.SPC_OWNER", 0):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -764,9 +801,11 @@ async def test_create_regular_character_user_id(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Regular (non-SPC) character created with actual user ID."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -781,6 +820,179 @@ async def test_create_regular_character_user_id(
         assert isinstance(created_char, VChar)
         # Regular character should have the actual user ID
         assert created_char.user == TEST_USER_ID
+
+
+# Premium status tests
+
+
+async def test_create_character_premium_user(
+    valid_character_data,
+    auth_headers,
+    mock_wizard_data,
+    mock_wizard_cache_pop,
+    mock_char_mgr_register,
+    mock_bot,
+):
+    """User with supporter role gets has_premium=True."""
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
+
+    # Mock supporter guild and member with role
+    mock_supporter_guild = MagicMock(spec=discord.Guild)
+    mock_supporter_guild.id = TEST_SUPPORTER_GUILD_ID
+
+    mock_member = MagicMock(spec=discord.Member)
+    mock_member.id = TEST_USER_ID
+    mock_supporter_role = MagicMock(spec=discord.Role)
+    mock_supporter_role.id = TEST_SUPPORTER_ROLE_ID
+    mock_member.get_role = MagicMock(return_value=mock_supporter_role)
+
+    # Mock get_or_fetch to return member
+    async def mock_get_or_fetch(member_type, user_id):
+        if user_id == TEST_USER_ID:
+            return mock_member
+        return None
+
+    mock_supporter_guild.get_or_fetch = AsyncMock(side_effect=mock_get_or_fetch)
+
+    # Configure bot to return supporter guild
+    mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
+
+    with patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID), patch(
+        "web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/characters/wizard/{TEST_TOKEN}",
+                json=valid_character_data,
+                headers=auth_headers,
+            )
+            assert response.status_code == 201
+            result = response.json()
+            assert result["has_premium"] is True
+
+
+async def test_create_character_non_premium_user(
+    valid_character_data,
+    auth_headers,
+    mock_wizard_data,
+    mock_wizard_cache_pop,
+    mock_char_mgr_register,
+    mock_bot,
+):
+    """User in supporter guild without role gets has_premium=False."""
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
+
+    # Mock supporter guild and member WITHOUT role
+    mock_supporter_guild = MagicMock(spec=discord.Guild)
+    mock_supporter_guild.id = TEST_SUPPORTER_GUILD_ID
+
+    mock_member = MagicMock(spec=discord.Member)
+    mock_member.id = TEST_USER_ID
+    mock_member.get_role = MagicMock(return_value=None)  # No role
+
+    async def mock_get_or_fetch(member_type, user_id):
+        if user_id == TEST_USER_ID:
+            return mock_member
+        return None
+
+    mock_supporter_guild.get_or_fetch = AsyncMock(side_effect=mock_get_or_fetch)
+    mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
+
+    with patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID), patch(
+        "web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/characters/wizard/{TEST_TOKEN}",
+                json=valid_character_data,
+                headers=auth_headers,
+            )
+            assert response.status_code == 201
+            result = response.json()
+            assert result["has_premium"] is False
+
+
+async def test_create_character_user_not_in_supporter_guild(
+    valid_character_data,
+    auth_headers,
+    mock_wizard_data,
+    mock_wizard_cache_pop,
+    mock_char_mgr_register,
+    mock_bot,
+):
+    """User not in supporter guild gets has_premium=False."""
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
+
+    # Mock supporter guild but user not a member
+    mock_supporter_guild = MagicMock(spec=discord.Guild)
+    mock_supporter_guild.id = TEST_SUPPORTER_GUILD_ID
+    mock_supporter_guild.get_or_fetch = AsyncMock(return_value=None)  # User not found
+
+    mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
+
+    with patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID), patch(
+        "web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/characters/wizard/{TEST_TOKEN}",
+                json=valid_character_data,
+                headers=auth_headers,
+            )
+            assert response.status_code == 201
+            result = response.json()
+            assert result["has_premium"] is False
+
+
+async def test_create_spc_premium_check_uses_wizard_creator(
+    valid_character_data,
+    auth_headers,
+    mock_spc_wizard_data,
+    mock_wizard_cache_pop,
+    mock_char_mgr_register,
+    mock_bot,
+):
+    """SPC character premium check uses wizard creator (wizard.user), not SPC_OWNER."""
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_spc_wizard_data
+
+    # Mock supporter guild
+    mock_supporter_guild = MagicMock(spec=discord.Guild)
+    mock_supporter_guild.id = TEST_SUPPORTER_GUILD_ID
+
+    # Admin creating the SPC has premium
+    mock_member = MagicMock(spec=discord.Member)
+    mock_member.id = TEST_USER_ID  # wizard.user, not SPC_OWNER
+    mock_supporter_role = MagicMock(spec=discord.Role)
+    mock_supporter_role.id = TEST_SUPPORTER_ROLE_ID
+    mock_member.get_role = MagicMock(return_value=mock_supporter_role)
+
+    async def mock_get_or_fetch(member_type, user_id):
+        if user_id == TEST_USER_ID:  # wizard.user
+            return mock_member
+        return None
+
+    mock_supporter_guild.get_or_fetch = AsyncMock(side_effect=mock_get_or_fetch)
+    mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
+
+    with (
+        patch("web.routers.characters.routes.VChar.SPC_OWNER", 0),
+        patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
+        patch("web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                f"/characters/wizard/{TEST_TOKEN}",
+                json=valid_character_data,
+                headers=auth_headers,
+            )
+            assert response.status_code == 201
+            result = response.json()
+            # SPC checks wizard creator's premium status
+            assert result["has_premium"] is True
 
 
 # Get full character tests

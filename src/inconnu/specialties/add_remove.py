@@ -102,7 +102,7 @@ async def _add_or_remove(
             ("Reminder", "Don't leave a trailing `,`!"),
             title="Invalid syntax",
         )
-    except errors.TraitError as err:
+    except (errors.TraitError, ValueError) as err:
         await ui.embeds.error(ctx, err)
 
 

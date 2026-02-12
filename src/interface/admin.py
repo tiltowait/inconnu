@@ -11,6 +11,7 @@ from loguru import logger
 
 import services
 from config import ADMIN_GUILD
+from ctx import AppCtx
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -89,6 +90,13 @@ class AdminCog(commands.Cog):
             await ctx.respond(embed=self.bot.motd, ephemeral=True)
         else:
             await ctx.respond("No Message of the Day is set.", ephemeral=True)
+
+    @discord.slash_command(guild_ids=[ADMIN_GUILD])
+    @discord.default_permissions(administrator=True)
+    @commands.is_owner()
+    async def wizards(self, ctx: AppCtx):
+        """Show the number of character wizards running."""
+        await ctx.respond(f"**Wizards running:** {services.wizard_cache.count}", ephemeral=True)
 
     @discord.slash_command(guild_ids=[ADMIN_GUILD])
     @discord.default_permissions(administrator=True)

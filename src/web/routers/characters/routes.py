@@ -273,10 +273,11 @@ async def create_character(
     premium = False
     guild = await inconnu.bot.get_or_fetch_guild(SUPPORTER_GUILD)
     if guild is not None:
-        logger.warning("Supporter guild not set")
-        user = await guild.get_or_fetch(discord.Member, character.user)
+        user = await guild.get_or_fetch(discord.Member, wizard.user)
         if user is not None and user.get_role(SUPPORTER_ROLE) is not None:
             premium = True
+    else:
+        logger.warning("Supporter guild not found")
 
     return CreationSuccess(
         guild=wizard.guild,

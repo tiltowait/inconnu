@@ -64,6 +64,7 @@ class WizardCache:
         self.maxsize = maxsize
         self.ttl = ttl
         self.cache = TTLCache[str, WizardData](maxsize=maxsize, ttl=ttl)
+        self.users = TTLCache[tuple[int, int], str](maxsize=maxsize, ttl=ttl)
         logger.info("Wizard Cache initialized. maxsize={}, ttl={}.", maxsize, ttl)
 
     @property
@@ -73,12 +74,21 @@ class WizardCache:
 
     def register(self, guild: discord.Guild, user: int, spc: bool) -> str:
         """Register a character creation wizard."""
+        cache_key = (guild.id, user)
+        if cache_key in self.users:
+            existing_token = self.users[cache_key]
+            existing_wizard = self.get(existing_token)
+            # If wizard still exists and spc flag matches, return existing token
+            if existing_wizard and existing_wizard.spc == spc:
+                return existing_token
+
         request = WizardData(guild=CharacterGuild.create(guild), user=user, spc=spc)
         key = petname.Generate(3)
         if not isinstance(key, str):
             raise ValueError("Unable to generate key")
 
         self.cache[key] = request
+        self.users[cache_key] = key
         return key
 
     def get(self, key: str) -> WizardData | None:
@@ -87,5 +97,9 @@ class WizardCache:
 
     def delete(self, key: str):
         """Delete a wizard request."""
-        if key in self.cache:
+        wizard = self.get(key)
+        if wizard is not None:
             del self.cache[key]
+            cache_key = (int(wizard.guild.id), wizard.user)
+            if cache_key in self.users:
+                del self.users[cache_key]

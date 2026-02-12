@@ -236,10 +236,9 @@ async def create_character(
     _: HTTPAuthorizationCredentials = Depends(verify_api_key),
 ) -> CreationSuccess:
     """Create the character and insert it into the database."""
-    wizard = wizard_cache.pop(token)
+    wizard = wizard_cache.get(token)
     if wizard is None:
         raise HTTPException(404, detail="Unknown token. It may have expired.")
-
     # We need to sort the traits before setting them
     traits = sorted(data.traits, key=lambda t: t.name.casefold())
     owner_id = wizard.user if not wizard.spc else VChar.SPC_OWNER
@@ -263,6 +262,8 @@ async def create_character(
         await char_mgr.register(character)
     except errors.DuplicateCharacterError as err:
         raise HTTPException(422, detail=str(err)) from err
+
+    wizard_cache.delete(token)
 
     return CreationSuccess(
         guild=wizard.guild,

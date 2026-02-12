@@ -159,9 +159,12 @@ def mock_bot():
 
 @pytest.fixture
 def mock_wizard_cache_pop():
-    """Mock wizard_cache.pop for character creation tests."""
-    with patch("web.routers.characters.routes.wizard_cache.pop") as mock:
-        yield mock
+    """Mock wizard_cache.get and delete for character creation tests."""
+    with (
+        patch("web.routers.characters.routes.wizard_cache.get") as mock_get,
+        patch("web.routers.characters.routes.wizard_cache.delete") as mock_delete,
+    ):
+        yield mock_get, mock_delete
 
 
 @pytest.fixture
@@ -357,7 +360,8 @@ async def test_create_character_valid_api_key(
     mock_char_mgr_register,
 ):
     """Request with valid API key proceeds."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -376,7 +380,8 @@ async def test_create_character_invalid_token(
     valid_character_data, auth_headers, mock_wizard_cache_pop
 ):
     """Invalid wizard token returns 404."""
-    mock_wizard_cache_pop.return_value = None
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = None
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -392,7 +397,8 @@ async def test_create_character_expired_token(
     valid_character_data, auth_headers, mock_wizard_cache_pop
 ):
     """Expired wizard token returns 404."""
-    mock_wizard_cache_pop.return_value = None
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = None
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -412,7 +418,8 @@ async def test_create_character_invalid_name(
 ):
     """Invalid character name returns 422."""
     valid_character_data["name"] = "A" * 31  # Too long
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -428,7 +435,8 @@ async def test_create_character_health_out_of_range(
 ):
     """Health out of range (4-20) returns 422."""
     valid_character_data["health"] = 3  # Too low
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -445,7 +453,8 @@ async def test_create_character_mortal_with_blood_potency(
     """Mortal with blood potency > 0 returns 422."""
     valid_character_data["splat"] = VCharSplat.MORTAL
     valid_character_data["blood_potency"] = 1
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -462,7 +471,8 @@ async def test_create_character_too_many_convictions(
 ):
     """More than 3 convictions returns 422."""
     valid_character_data["convictions"] = ["One", "Two", "Three", "Four"]
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -478,7 +488,8 @@ async def test_create_character_specialty_on_wrong_type(
 ):
     """Specialty on attribute returns 422."""
     valid_character_data["traits"][0]["subtraits"] = ["Lifting"]  # Strength is an attribute
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -498,7 +509,8 @@ async def test_create_duplicate_character(
     mock_char_mgr_register,
 ):
     """Creating duplicate character (same name, guild, user) returns 422."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
     mock_char_mgr_register.side_effect = DuplicateCharacterError(
         "Character 'Test Character' already exists"
     )
@@ -522,7 +534,8 @@ async def test_create_duplicate_character_case_insensitive(
 ):
     """Duplicate check is case-insensitive."""
     valid_character_data["name"] = "TEST CHARACTER"
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
     mock_char_mgr_register.side_effect = DuplicateCharacterError(
         "Character 'TEST CHARACTER' already exists"
     )
@@ -548,7 +561,8 @@ async def test_create_vampire_success(
     mock_char_mgr_register,
 ):
     """Valid vampire character created successfully."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -578,7 +592,8 @@ async def test_create_mortal_success(
     """Valid mortal character created successfully."""
     valid_character_data["splat"] = VCharSplat.MORTAL
     valid_character_data["blood_potency"] = 0
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -600,7 +615,8 @@ async def test_create_ghoul_success(
     """Valid ghoul character created successfully."""
     valid_character_data["splat"] = VCharSplat.GHOUL
     valid_character_data["blood_potency"] = 0
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -622,7 +638,8 @@ async def test_create_thin_blood_success(
     """Valid thin-blood character created successfully."""
     valid_character_data["splat"] = VCharSplat.THIN_BLOOD
     valid_character_data["blood_potency"] = 2
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -650,7 +667,8 @@ async def test_create_character_with_specialties(
             "subtraits": ["History", "Occult"],
         }
     )
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -675,7 +693,8 @@ async def test_token_consumed_after_creation(
     mock_char_mgr_register,
 ):
     """Wizard token is consumed (popped) after character creation."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         await client.post(
@@ -683,8 +702,9 @@ async def test_token_consumed_after_creation(
             json=valid_character_data,
             headers=auth_headers,
         )
-        # pop() should have been called with the token
-        mock_wizard_cache_pop.assert_called_once_with(TEST_TOKEN)
+        # get() and delete() should have been called with the token
+        mock_get.assert_called_once_with(TEST_TOKEN)
+        mock_delete.assert_called_once_with(TEST_TOKEN)
 
 
 async def test_character_field_mapping(
@@ -695,7 +715,8 @@ async def test_character_field_mapping(
     mock_char_mgr_register,
 ):
     """VChar fields correctly mapped from CreationBody."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         await client.post(
@@ -738,7 +759,8 @@ async def test_create_spc_character(
     mock_char_mgr_register,
 ):
     """SPC character created with VChar.SPC_OWNER as user ID."""
-    mock_wizard_cache_pop.return_value = mock_spc_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_spc_wizard_data
 
     with patch("web.routers.characters.routes.VChar.SPC_OWNER", 0):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -766,7 +788,8 @@ async def test_create_regular_character_user_id(
     mock_char_mgr_register,
 ):
     """Regular (non-SPC) character created with actual user ID."""
-    mock_wizard_cache_pop.return_value = mock_wizard_data
+    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(

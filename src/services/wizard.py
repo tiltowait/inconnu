@@ -85,8 +85,7 @@ class WizardCache:
         """Get the wizard request data off the cache (nondestructive)."""
         return self.cache.get(key)
 
-    def pop(self, key: str) -> WizardData | None:
-        """Pop the wizard request data off the cache (destructive)."""
-        if key not in self.cache:
-            return None
-        return self.cache.pop(key)
+    def delete(self, key: str):
+        """Delete a wizard request."""
+        if key in self.cache:
+            del self.cache[key]

@@ -206,6 +206,49 @@ async def test_guild_with_none_icon(gce: GuildCache):
     assert cached.icon is None
 
 
+async def test_fetchguilds(gcf: GuildCache, g1: Guild, g2: Guild):
+    """Fetch all guilds with members populated."""
+    guilds = await gcf.fetchguilds()
+
+    assert len(guilds) == 2
+    guild_ids = {g.id for g in guilds}
+    assert g1.id in guild_ids
+    assert g2.id in guild_ids
+
+    # Check that members are populated
+    g2_cached = next(g for g in guilds if g.id == g2.id)
+    assert len(g2_cached.members) == g2.member_count
+
+
+async def test_fetchguilds_empty(gce: GuildCache):
+    """Fetch all guilds from empty cache returns empty list."""
+    guilds = await gce.fetchguilds()
+    assert guilds == []
+
+
+async def test_cached_guild_get_member(gcf: GuildCache, g2: Guild):
+    """CachedGuild.get_member() finds members by ID."""
+    guild = await gcf.fetchguild(g2.id)
+    assert guild is not None
+
+    # Find existing member
+    target_member = g2.members[0]
+    found = guild.get_member(target_member.id)
+    assert found is not None
+    assert found.id == target_member.id
+    assert found.name == target_member.name
+
+
+async def test_cached_guild_get_member_not_found(gcf: GuildCache, g2: Guild):
+    """CachedGuild.get_member() returns None for nonexistent member."""
+    guild = await gcf.fetchguild(g2.id)
+    assert guild is not None
+
+    # Try to find nonexistent member
+    found = guild.get_member(999999)
+    assert found is None
+
+
 async def test_reinitialize_existing_database(g1: Guild):
     """Re-initializing an existing database should be safe."""
     import os

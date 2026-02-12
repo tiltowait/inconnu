@@ -1,6 +1,5 @@
 """Character API routes."""
 
-import discord
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
@@ -11,7 +10,7 @@ import inconnu
 from config import API_KEY
 from constants import Damage
 from models import VChar
-from services import char_mgr, wizard_cache
+from services import char_mgr, guild_cache, wizard_cache
 from services.wizard import CharacterGuild
 from web.routers.characters.models import (
     CharData,
@@ -57,9 +56,13 @@ async def get_character_list(
     user_id: int = Depends(get_authenticated_user),
 ) -> UserCharData:
     """Get all of the user's characters and the guilds they belong to."""
+    if not await guild_cache.ready():
+        raise HTTPException(503, detail="Bot is still starting up.")
+
     guilds = {}
-    for guild in inconnu.bot.guilds:
+    for guild in await guild_cache.fetchguilds():
         if guild.id in guilds:
+            # Shouldn't be possible
             continue
         if guild.get_member(user_id) is not None:
             guilds[guild.id] = CharacterGuild.create(guild)
@@ -94,19 +97,29 @@ async def get_character(
 
     The CharData also contains guild and owner information. If the
     character is an SPC, then owner information is not returned."""
+    if not await guild_cache.ready():
+        raise HTTPException(503, detail="Bot is still starting up.")
+
     char = await char_mgr.fetchid(oid)
     if char is None:
         raise HTTPException(404, detail="Character not found")
 
-    guild = await inconnu.bot.get_or_fetch_guild(char.guild)
+    # Get cached guild (primary data source for web routes)
+    guild = await guild_cache.fetchguild(char.guild)
     if guild is None:
-        raise HTTPException(404, detail="Character not found")
+        raise HTTPException(404, detail="Guild not found")
 
-    user = await guild.get_or_fetch(discord.Member, user_id)
-    if user is None:
+    # Verify user is a member
+    cached_user = await guild_cache.fetchmember(char.guild, user_id)
+    if cached_user is None:
         raise HTTPException(404, detail="User not in character's guild")
 
-    if user_id == char.user or char_mgr.is_admin(user):
+    # For admin check, need Discord member (has role data)
+    discord_guild = inconnu.bot.get_guild(char.guild)
+    discord_member = discord_guild.get_member(user_id) if discord_guild else None
+
+    # Permission check (requires Discord member for role checking)
+    if user_id == char.user or (discord_member and char_mgr.is_admin(discord_member)):
         character = char
     else:
         character = PublicCharacter.create(char)
@@ -131,11 +144,14 @@ async def get_guild_characters(
 ) -> GuildChars:
     """Get all character base profiles belonging to the guild. Excludes
     characters whose owners have left the server."""
-    guild = await inconnu.bot.get_or_fetch_guild(guild_id)
+    if not await guild_cache.ready():
+        raise HTTPException(503, detail="Bot is still starting up.")
+
+    guild = await guild_cache.fetchguild(guild_id)
     if guild is None:
         raise HTTPException(404, detail="Guild not found")
 
-    member = await guild.get_or_fetch(discord.Member, user_id)
+    member = await guild_cache.fetchmember(guild_id, user_id)
     if member is None:
         raise HTTPException(403, detail="User does not belong to guild")
 
@@ -173,6 +189,9 @@ async def get_character_profile(
 ) -> CharData:
     """Fetch a character profile. This endpoint returns a non-sensitive character
     model with only name, ownership data, and public profile data."""
+    if not await guild_cache.ready():
+        raise HTTPException(503, detail="Bot is still starting up.")
+
     char = await char_mgr.fetchid(oid)
     if char is None:
         raise HTTPException(404, detail="Character not found.")

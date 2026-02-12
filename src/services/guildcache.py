@@ -29,6 +29,13 @@ class CachedGuild(BaseModel):
     icon: Optional[str]
     members: list[CachedMember] = Field(default_factory=list)
 
+    def get_member(self, id: int) -> CachedMember | None:
+        """Get a member, if it exists."""
+        try:
+            return next(m for m in self.members if m.id == id)
+        except StopIteration:
+            return None
+
 
 def validate(func):
     """Decorator for asserting that the GuildCache is ready."""
@@ -163,6 +170,24 @@ class GuildCache:
             if members:
                 guild.members = await self.fetchmembers(guild.id)
             return guild
+
+    @validate
+    async def fetchguilds(self) -> list[CachedGuild]:
+        """Fetch all guilds and populate with members."""
+        guilds: dict[int, CachedGuild] = {}
+        async with self.db.execute("SELECT * FROM guilds") as cur:
+            async for row in cur:
+                guild = CachedGuild.model_validate(dict(row))
+                guilds[guild.id] = guild
+
+        async with self.db.execute("SELECT * FROM members") as cur:
+            async for row in cur:
+                guild = guilds[row["guild"]]
+                data = dict(row)
+                data["guild"] = guild
+                guild.members.append(CachedMember.model_validate(data))
+
+        return list(guilds.values())
 
     @validate
     async def upsert_members(self, members: discord.Member | list[discord.Member]):

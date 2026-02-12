@@ -3,3 +3,4 @@
 .env
 .wizard.lock
 logs
+local.db

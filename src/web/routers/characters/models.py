@@ -2,7 +2,6 @@
 
 from typing import Literal, Optional, Self
 
-import discord
 from beanie import PydanticObjectId
 from pydantic import (
     BaseModel,
@@ -12,13 +11,13 @@ from pydantic import (
     model_validator,
 )
 
-import inconnu
 from constants import ATTRIBUTES, SKILLS
 from errors import CharacterError
 from models import VChar
 from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
+from services import guild_cache
+from services.guildcache import CachedMember
 from services.wizard import CharacterGuild
-from utils import get_avatar
 from utils.validation import valid_name, validate_specialty_names, validate_trait_names
 
 
@@ -30,17 +29,14 @@ class OwnerData(BaseModel):
     icon: str
 
     @classmethod
-    def from_user(cls, user: discord.Member) -> Self:
+    def from_user(cls, user: CachedMember) -> Self:
         """Create OwnerData from Discord Member object."""
-        return cls(id=str(user.id), name=user.display_name, icon=get_avatar(user).url)
+        return cls(id=str(user.id), name=user.name, icon=user.icon)
 
     @classmethod
     async def fetch(cls, guild_id: int, user_id: int) -> Self | None:
         """Create a CharacterOwner object."""
-        guild = await inconnu.bot.get_or_fetch_guild(guild_id)
-        if guild is None:
-            return None
-        user = await guild.get_or_fetch(discord.Member, user_id)
+        user = await guild_cache.fetchmember(guild_id, user_id)
         if user is None:
             return None
 

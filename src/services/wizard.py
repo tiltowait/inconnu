@@ -8,7 +8,8 @@ from cachetools import TTLCache
 from loguru import logger
 from pydantic import BaseModel
 
-import inconnu
+import services
+from services.guildcache import CachedGuild
 
 
 class CharacterGuild(BaseModel):
@@ -24,7 +25,7 @@ class CharacterGuild(BaseModel):
         try:
             # This method raises, despite the docs' indication otherwise, so we
             # have to wrap it in a try, irkshome though that is.
-            guild = await inconnu.bot.get_or_fetch_guild(id)
+            guild = await services.guild_cache.fetchguild(id)
             if guild is None:
                 # This can probably never happen, but the return type hints
                 # are wrong
@@ -34,9 +35,12 @@ class CharacterGuild(BaseModel):
             return cls.unknown(id)
 
     @classmethod
-    def create(cls, guild: discord.Guild) -> Self:
+    def create(cls, guild: CachedGuild | discord.Guild) -> Self:
         """Create from a real Discord guild object."""
-        icon = guild.icon.url if guild.icon else None
+        if isinstance(guild, discord.Guild):
+            icon = guild.icon.url if guild.icon else None
+        else:
+            icon = guild.icon
         return cls(id=str(guild.id), name=guild.name, icon=icon)
 
     @classmethod

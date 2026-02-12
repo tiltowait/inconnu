@@ -1,6 +1,6 @@
 [project]
 name = "inconnu"
-version = "2026.02.3"
+version = "2026.02.4"
 description = "An advanced Discord dice bot and character manager for V5"
 authors = [{ name = "tiltowait", email = "208040+tiltowait@users.noreply.github.com" }]
 license = "MIT"
@@ -24,6 +24,7 @@ dependencies = [
     "beanie>=2.0.0,<3",
     "async-lru>=2.1.0",
     "petname>=2.6",
+    "aiosqlite>=0.22.1",
 ]
 
 [project.scripts]

@@ -84,7 +84,7 @@ async def get_message(inter):
     return await inter.original_response()
 
 
-def get_avatar(user: discord.User | discord.Member):
+def get_avatar(user: discord.User | discord.Member) -> discord.Asset:
     """Get the user's avatar."""
     if isinstance(user, discord.User):
         # Users don't have a guild presence

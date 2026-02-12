@@ -27,7 +27,7 @@ async def launch_wizard(ctx: AppCtx, spc: bool):
         await ui.embeds.error(ctx, "You need Administrator permissions to make an SPC.")
         return
 
-    token = await services.wizard_cache.register(ctx.guild, ctx.user.id, spc)
+    token = services.wizard_cache.register(ctx.guild, ctx.user.id, spc)
     wizard_url = urls.wizard_url(token)
 
     expiration = datetime.now(UTC) + timedelta(seconds=services.wizard_cache.ttl)

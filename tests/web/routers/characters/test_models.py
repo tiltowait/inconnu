@@ -244,13 +244,13 @@ class TestTextFieldValidation:
 
     def test_description_max_length(self):
         """Description at 24 characters passes."""
-        data = valid_creation_data(description="A" * 24)
+        data = valid_creation_data(description="A" * 1024)
         body = CreationBody(**data)
-        assert len(body.description) == 24
+        assert len(body.description) == 1024
 
     def test_description_too_long(self):
         """Description longer than 24 characters rejected."""
-        data = valid_creation_data(description="A" * 25)
+        data = valid_creation_data(description="A" * 1025)
         with pytest.raises(ValidationError) as exc_info:
             CreationBody(**data)
         assert "description" in str(exc_info.value).lower()

@@ -153,6 +153,9 @@ def mock_bot():
 
     bot.get_guild = MagicMock(side_effect=get_guild)
 
+    # Mock get_or_fetch_guild for premium checks (returns None by default)
+    bot.get_or_fetch_guild = AsyncMock(return_value=None)
+
     with patch("web.routers.characters.routes.inconnu.bot", bot):
         yield bot
 
@@ -358,6 +361,7 @@ async def test_create_character_valid_api_key(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Request with valid API key proceeds."""
     mock_get, mock_delete = mock_wizard_cache_pop
@@ -559,6 +563,7 @@ async def test_create_vampire_success(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Valid vampire character created successfully."""
     mock_get, mock_delete = mock_wizard_cache_pop
@@ -580,6 +585,7 @@ async def test_create_vampire_success(
         assert "character_id" in result
         assert "character_name" in result
         assert result["character_name"] == "Test Character"
+        assert result["has_premium"] is False
 
 
 async def test_create_mortal_success(
@@ -588,6 +594,7 @@ async def test_create_mortal_success(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Valid mortal character created successfully."""
     valid_character_data["splat"] = VCharSplat.MORTAL
@@ -611,6 +618,7 @@ async def test_create_ghoul_success(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Valid ghoul character created successfully."""
     valid_character_data["splat"] = VCharSplat.GHOUL
@@ -634,6 +642,7 @@ async def test_create_thin_blood_success(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Valid thin-blood character created successfully."""
     valid_character_data["splat"] = VCharSplat.THIN_BLOOD
@@ -657,6 +666,7 @@ async def test_create_character_with_specialties(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Character with valid specialties created successfully."""
     valid_character_data["traits"].append(
@@ -691,6 +701,7 @@ async def test_token_consumed_after_creation(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Wizard token is consumed (popped) after character creation."""
     mock_get, mock_delete = mock_wizard_cache_pop
@@ -713,6 +724,7 @@ async def test_character_field_mapping(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """VChar fields correctly mapped from CreationBody."""
     mock_get, mock_delete = mock_wizard_cache_pop
@@ -757,6 +769,7 @@ async def test_create_spc_character(
     mock_spc_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """SPC character created with VChar.SPC_OWNER as user ID."""
     mock_get, mock_delete = mock_wizard_cache_pop
@@ -786,6 +799,7 @@ async def test_create_regular_character_user_id(
     mock_wizard_data,
     mock_wizard_cache_pop,
     mock_char_mgr_register,
+    mock_bot,
 ):
     """Regular (non-SPC) character created with actual user ID."""
     mock_get, mock_delete = mock_wizard_cache_pop

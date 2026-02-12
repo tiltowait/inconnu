@@ -199,3 +199,4 @@ class CreationSuccess(BaseModel):
     guild: CharacterGuild
     character_id: str
     character_name: str
+    has_premium: bool

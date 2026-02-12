@@ -1,13 +1,15 @@
 """Character API routes."""
 
+import discord
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from loguru import logger
 
 import errors
 import inconnu
-from config import API_KEY
+from config import API_KEY, SUPPORTER_GUILD, SUPPORTER_ROLE
 from constants import Damage
 from models import VChar
 from services import char_mgr, guild_cache, wizard_cache
@@ -265,8 +267,20 @@ async def create_character(
 
     wizard_cache.delete(token)
 
+    # Figure out if the user has premium. We can't use is_supporter(), because
+    # that function requires an AppCtx, which we don't have. (Good candidate
+    # for a future refactor ...)
+    premium = False
+    guild = await inconnu.bot.get_or_fetch_guild(SUPPORTER_GUILD)
+    if guild is not None:
+        logger.warning("Supporter guild not set")
+        user = await guild.get_or_fetch(discord.Member, character.user)
+        if user is not None and user.get_role(SUPPORTER_ROLE) is not None:
+            premium = True
+
     return CreationSuccess(
         guild=wizard.guild,
         character_id=character.id_str,
         character_name=character.name,
+        has_premium=premium,
     )

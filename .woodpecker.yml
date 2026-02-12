@@ -13,6 +13,11 @@ steps:
       - git clone "$CI_REPO_CLONE_URL" .
       - git checkout "$CI_COMMIT_SHA"
 
+  - name: lint
+    image: sh
+    commands:
+      - ruff check
+
   - name: install-dev
     image: sh
     commands:

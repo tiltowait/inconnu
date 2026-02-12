@@ -858,8 +858,9 @@ async def test_create_character_premium_user(
     # Configure bot to return supporter guild
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
-    with patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID), patch(
-        "web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID
+    with (
+        patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
+        patch("web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -900,8 +901,9 @@ async def test_create_character_non_premium_user(
     mock_supporter_guild.get_or_fetch = AsyncMock(side_effect=mock_get_or_fetch)
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
-    with patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID), patch(
-        "web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID
+    with (
+        patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
+        patch("web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -933,8 +935,9 @@ async def test_create_character_user_not_in_supporter_guild(
 
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
-    with patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID), patch(
-        "web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID
+    with (
+        patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
+        patch("web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(

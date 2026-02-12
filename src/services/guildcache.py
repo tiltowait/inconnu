@@ -5,8 +5,10 @@ from typing import Optional
 
 import aiosqlite
 import discord
+from loguru import logger
 from pydantic import BaseModel, Field
 
+from config import GUILD_CACHE_LOC
 from utils.discord_helpers import get_avatar
 
 
@@ -46,6 +48,7 @@ class GuildCache:
     def __init__(self, loc: str):
         self.location = loc
         self._initialized = False
+        self._refreshed = False
 
     @property
     def initialized(self) -> bool:
@@ -56,6 +59,8 @@ class GuildCache:
         """Check if the cache is populated."""
         if not self.initialized:
             return False
+        if self._refreshed:
+            return True
         async with self.db.execute("SELECT COUNT(*) AS count FROM members") as cur:
             row = await cur.fetchone()
             if row is None:
@@ -68,6 +73,7 @@ class GuildCache:
     async def initialize(self):
         """Initialize the database and create tables if necessary."""
         if self.initialized:
+            logger.warning("Guild cache already initialized! ({})", self.location)
             return
 
         self.db = await aiosqlite.connect(self.location)
@@ -101,11 +107,14 @@ class GuildCache:
 
         await self.db.commit()
         self._initialized = True
+        logger.info("Guild cache initialized at {}", self.location)
 
     async def close(self):
         """Close the database."""
         await self.db.close()
         self._initialized = False
+        self._refreshed = False
+        logger.info("Guild cache closed ({})", self.location)
 
     @validate
     async def upsert_guilds(self, guilds: discord.Guild | list[discord.Guild]):
@@ -163,7 +172,7 @@ class GuildCache:
         if not members:
             return
 
-        data = [(m.guild.id, m.id, m.name, get_avatar(m)) for m in members]
+        data = [(m.guild.id, m.id, m.name, get_avatar(m).url) for m in members]
         await self.db.executemany(
             """
                 INSERT INTO members VALUES (?, ?, ?, ?)
@@ -222,7 +231,12 @@ class GuildCache:
             return members
 
     @validate
-    async def reset(self, guilds: list[discord.Guild]):
+    async def refresh(self, guilds: list[discord.Guild]):
         """Clear all data and insert new guilds. For use in bot on_ready()."""
         await self.db.execute("DELETE FROM guilds")
         await self.upsert_guilds(guilds)
+        logger.info("Guild cache {} refreshed!", self.location)
+        self._refreshed = True
+
+
+guild_cache = GuildCache(GUILD_CACHE_LOC)

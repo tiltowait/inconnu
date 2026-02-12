@@ -273,7 +273,7 @@ class InconnuBot(discord.AutoShardedBot):
 
         await self.process_application_commands(interaction)
 
-    async def on_application_command(self, ctx: discord.ApplicationContext):
+    async def on_application_command(self, ctx: AppCtx):
         """General processing after application commands."""
         # If a user specifies a character but only has one, we want to inform
         # them it's unnecessary so they don't keep doing it.
@@ -365,6 +365,7 @@ class InconnuBot(discord.AutoShardedBot):
             member_count = sum(g.member_count for g in self.guilds)
             logger.info("Caches built: {} guilds. {} members.", guild_count, member_count)
 
+            await services.guild_cache.refresh(self.guilds)
             self.welcomed = True
 
         # We always want to do these regardless of welcoming or not
@@ -380,6 +381,9 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         """Check for supporter status changes."""
+        if await services.guild_cache.ready():
+            await services.guild_cache.upsert_members(after)
+
         if before.guild.id != SUPPORTER_GUILD:
             return
 
@@ -399,6 +403,8 @@ class InconnuBot(discord.AutoShardedBot):
     async def on_member_remove(member: discord.Member):
         """Mark all of a member's characters as inactive."""
         await services.char_mgr.mark_inactive(member)
+        if await services.guild_cache.ready():
+            await services.guild_cache.delete_member(member)
 
         if member.guild.id == SUPPORTER_GUILD:
             if member.get_role(SUPPORTER_ROLE):
@@ -408,6 +414,8 @@ class InconnuBot(discord.AutoShardedBot):
     async def on_member_join(member: discord.Member):
         """Mark all the player's characters as active when they rejoin a guild."""
         await services.char_mgr.mark_active(member)
+        if await services.guild_cache.ready():
+            await services.guild_cache.upsert_members(member)
 
         if member.guild.id == SUPPORTER_GUILD:
             if member.get_role(SUPPORTER_ROLE):
@@ -418,12 +426,18 @@ class InconnuBot(discord.AutoShardedBot):
     async def on_guild_join(self, guild: discord.Guild):
         """Log whenever a guild is joined."""
         logger.info("Joined {}!", guild.name)
-        await asyncio.gather(inconnu.stats.guild_joined(guild), self._set_presence())
+        await inconnu.stats.guild_joined(guild)
+        await self._set_presence()
+        if await services.guild_cache.ready():
+            await services.guild_cache.upsert_guilds(guild)
 
     async def on_guild_remove(self, guild: discord.Guild):
         """Log guild removals."""
         logger.info("BOT: Left {} :(", guild.name)
-        await asyncio.gather(inconnu.stats.guild_left(guild), self._set_presence())
+        await inconnu.stats.guild_left(guild)
+        await self._set_presence()
+        if await services.guild_cache.ready():
+            await services.guild_cache.delete_guild(guild)
 
     @staticmethod
     async def on_guild_update(before: discord.Guild, after: discord.Guild):
@@ -431,6 +445,10 @@ class InconnuBot(discord.AutoShardedBot):
         if before.name != after.name:
             logger.info("Renamed {} => {}", before.name, after.name)
             await inconnu.stats.guild_renamed(after, after.name)
+
+        if await services.guild_cache.ready():
+            # In its own block, because the icon might also have changed
+            await services.guild_cache.upsert_guilds(after)
 
     async def on_webhooks_update(self, channel: discord.TextChannel):
         """Update the webhooks cache."""

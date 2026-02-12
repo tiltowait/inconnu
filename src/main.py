@@ -22,18 +22,27 @@ async def startup():
     """Initialize the database connection and start the bot."""
     await db.init()
     await services.char_mgr.initialize()
+    await services.guild_cache.initialize()
     try:
         async with bot:
             await bot.start(BOT_TOKEN)
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        logger.info("Received shutdown signal")
     finally:
+        logger.info("Cleaning up resources...")
+        await services.guild_cache.close()
         await db.close()
 
 
 def handle_signal(signum: int, _):
     """Handle shutdown signals."""
     signame = signal.Signals(signum).name
-    logger.info(f"Received {signame}, shutting down...")
-    raise KeyboardInterrupt
+    logger.info(f"Received {signame}, initiating shutdown...")
+
+    # Cancel all running tasks to trigger cleanup
+    loop = asyncio.get_event_loop()
+    for task in asyncio.all_tasks(loop):
+        task.cancel()
 
 
 def main():

@@ -169,7 +169,7 @@ async def test_upsert_member(gcf: GuildCache, g2: Guild):
 
 
 async def test_reset(gcf: GuildCache, g1: Guild, g2: Guild):
-    await gcf.reset([g1])
+    await gcf.refresh([g1])
     assert not await gcf.fetchmembers(g2)
 
     guild = await gcf.fetchguild(g1.id)
@@ -208,8 +208,8 @@ async def test_guild_with_none_icon(gce: GuildCache):
 
 async def test_reinitialize_existing_database(g1: Guild):
     """Re-initializing an existing database should be safe."""
-    import tempfile
     import os
+    import tempfile
 
     # Use a real temp file instead of in-memory for this test
     fd, path = tempfile.mkstemp(suffix=".db")

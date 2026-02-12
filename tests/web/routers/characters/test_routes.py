@@ -38,6 +38,30 @@ async def mock_beanie():
         yield
 
 
+@pytest.fixture(autouse=True, scope="function")
+async def setup_guild_cache():
+    """Set up guild cache with in-memory database for each test."""
+    from services import guild_cache
+
+    # Patch GUILD_CACHE_LOC to use in-memory database
+    with patch("config.GUILD_CACHE_LOC", "file::memory:?cache=shared"):
+        # Reinitialize the guild_cache instance with new location
+        guild_cache.location = "file::memory:?cache=shared"
+        guild_cache._initialized = False
+
+        await guild_cache.initialize()
+
+        # Populate with a default guild so cache is "ready"
+        # Tests that need specific guilds will call populate_guild_cache again
+        default_guild = make_mock_guild(99999, "Default Guild", user_is_member=False)
+        await guild_cache.upsert_guilds([default_guild])
+
+        yield guild_cache
+
+        if guild_cache.initialized:
+            await guild_cache.close()
+
+
 @pytest.fixture(autouse=True)
 def mock_api_key():
     """Mock API_KEY for all tests."""
@@ -120,14 +144,14 @@ def mock_bot():
     bot = MagicMock(spec=discord.Bot)
     bot.guilds = []
 
-    # Mock get_or_fetch_guild for guild lookup by ID
-    async def get_or_fetch_guild(guild_id: int):
+    # Mock get_guild for guild lookup by ID
+    def get_guild(guild_id: int):
         for guild in bot.guilds:
             if guild.id == guild_id:
                 return guild
         return None
 
-    bot.get_or_fetch_guild = AsyncMock(side_effect=get_or_fetch_guild)
+    bot.get_guild = MagicMock(side_effect=get_guild)
 
     with patch("web.routers.characters.routes.inconnu.bot", bot):
         yield bot
@@ -191,12 +215,9 @@ def mock_owner_data_create():
 
 @pytest.fixture
 def mock_get_avatar():
-    """Mock get_avatar to return consistent avatar URL."""
-    with patch("web.routers.characters.models.get_avatar") as mock:
-        mock_avatar = MagicMock()
-        mock_avatar.url = "http://avatar.png"
-        mock.return_value = mock_avatar
-        yield mock
+    """Mock get_avatar to return consistent avatar URL (not used in web routes)."""
+    # get_avatar is not actually used in web routes, this fixture is a no-op
+    yield None
 
 
 @pytest.fixture
@@ -219,20 +240,57 @@ def owner_data():
     return OwnerData(id=str(TEST_USER_ID), name="Test User", icon="http://avatar.png")
 
 
-# Factory functions for mocks
+# Factory functions for mocks and cache helpers
 
 
-def make_mock_guild(guild_id: int, name: str, user_is_member: bool = True) -> MagicMock:
-    """Create a mock Discord guild."""
+async def populate_guild_cache(guilds: list[MagicMock]) -> None:
+    """Populate the guild cache with mock Discord guilds."""
+    from services import guild_cache
+
+    # Use refresh to clear existing guilds and replace with new ones
+    await guild_cache.refresh(guilds)
+
+
+def make_mock_guild(
+    guild_id: int, name: str, user_is_member: bool = True, members: list | None = None
+) -> MagicMock:
+    """Create a mock Discord guild compatible with guild cache."""
     guild = MagicMock(spec=discord.Guild)
     guild.id = guild_id
     guild.name = name
     guild.icon = None
+    guild.chunked = True  # Pretend already chunked
+    guild.members = members if members is not None else []
 
-    # Mock both get_member and get_or_fetch
-    mock_member = MagicMock(spec=discord.Member) if user_is_member else None
-    guild.get_member.return_value = mock_member
-    guild.get_or_fetch = AsyncMock(return_value=mock_member)
+    # Always add at least one member so cache is "ready"
+    if not guild.members:
+        if user_is_member:
+            # Add the test user
+            member = MagicMock(spec=discord.Member)
+            member.id = TEST_USER_ID
+            member.guild = guild
+            member.name = "Test User"
+            member.display_avatar.url = "http://avatar.png"
+            member.guild_avatar = None
+            guild.members = [member]
+        else:
+            # Add a different user so cache is still ready
+            member = MagicMock(spec=discord.Member)
+            member.id = 888888  # Different from TEST_USER_ID
+            member.guild = guild
+            member.name = "Other User"
+            member.display_avatar.url = "http://other-avatar.png"
+            member.guild_avatar = None
+            guild.members = [member]
+
+    # Mock get_member to find in members list
+    def get_member(user_id: int):
+        for m in guild.members:
+            if m.id == user_id:
+                return m
+        return None
+
+    guild.get_member = MagicMock(side_effect=get_member)
 
     return guild
 
@@ -742,7 +800,7 @@ async def test_get_full_character_success(
 
     # Mock Discord guild and member
     mock_guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=True)
-    mock_bot.guilds = [mock_guild]
+    await populate_guild_cache([mock_guild])
 
     mock_char_mgr_fetchid.return_value = mock_char
 
@@ -805,7 +863,7 @@ async def test_get_full_character_not_owned(
 
     # Mock Discord guild and member
     mock_guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=True)
-    mock_bot.guilds = [mock_guild]
+    await populate_guild_cache([mock_guild])
 
     mock_char_mgr_fetchid.return_value = mock_char
 
@@ -920,7 +978,9 @@ async def test_get_character_list_success(auth_headers, mock_bot, mock_char_mgr_
     """User in multiple guilds with characters and SPCs."""
     guild1 = make_mock_guild(1, "Guild 1")
     guild2 = make_mock_guild(2, "Guild 2")
-    mock_bot.guilds = [guild1, guild2]
+
+    # Populate guild cache instead of mock_bot.guilds
+    await populate_guild_cache([guild1, guild2])
 
     char1 = make_mock_char(1, TEST_USER_ID, "Character 1", VCharSplat.VAMPIRE)
     char2 = make_mock_char(1, TEST_USER_ID, "Character 2", VCharSplat.MORTAL)
@@ -958,7 +1018,7 @@ async def test_get_character_list_user_in_guilds_without_characters(
     guild1 = make_mock_guild(1, "Guild 1")
     guild2 = make_mock_guild(2, "Guild 2")
     guild3 = make_mock_guild(3, "Guild 3")
-    mock_bot.guilds = [guild1, guild2, guild3]
+    await populate_guild_cache([guild1, guild2, guild3])
 
     char = make_mock_char(1, TEST_USER_ID, "My Character")
     spc = make_mock_char(2, TEST_USER_ID, "SPC", is_spc=True)
@@ -986,7 +1046,7 @@ async def test_get_character_list_filters_left_guilds(
     """Characters in guilds user has left are not returned."""
     guild1 = make_mock_guild(1, "Current Guild", user_is_member=True)
     guild2 = make_mock_guild(2, "Left Guild", user_is_member=False)
-    mock_bot.guilds = [guild1, guild2]
+    await populate_guild_cache([guild1, guild2])
 
     char_current = make_mock_char(1, TEST_USER_ID, "Current Char")
     char_left = make_mock_char(2, TEST_USER_ID, "Left Char")
@@ -1007,7 +1067,9 @@ async def test_get_character_list_filters_left_guilds(
 
 async def test_get_character_list_no_guilds(auth_headers, mock_bot, mock_char_mgr_fetchuser):
     """User not in any guilds returns empty lists."""
-    mock_bot.guilds = []
+    # Bot is in guilds, but user is not a member of any
+    other_guild = make_mock_guild(999, "Other Guild", user_is_member=False)
+    await populate_guild_cache([other_guild])
     mock_char_mgr_fetchuser.return_value = []
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -1023,7 +1085,7 @@ async def test_get_character_list_no_characters(auth_headers, mock_bot, mock_cha
     """User in guilds but has no characters, SPC exists."""
     guild1 = make_mock_guild(1, "Guild 1")
     guild2 = make_mock_guild(2, "Guild 2")
-    mock_bot.guilds = [guild1, guild2]
+    await populate_guild_cache([guild1, guild2])
 
     spc = make_mock_char(1, TEST_USER_ID, "SPC", is_spc=True)
     mock_char_mgr_fetchuser.return_value = [spc]
@@ -1044,7 +1106,7 @@ async def test_get_character_list_multiple_characters_same_guild(
 ):
     """Multiple characters in same guild, guild not duplicated."""
     guild1 = make_mock_guild(1, "Guild 1")
-    mock_bot.guilds = [guild1]
+    await populate_guild_cache([guild1])
 
     char1 = make_mock_char(1, TEST_USER_ID, "Character 1")
     char2 = make_mock_char(1, TEST_USER_ID, "Character 2")
@@ -1070,7 +1132,7 @@ async def test_get_character_list_filters_left_characters(
 ):
     """Characters marked as left are filtered out."""
     guild1 = make_mock_guild(1, "Guild 1")
-    mock_bot.guilds = [guild1]
+    await populate_guild_cache([guild1])
 
     char_active = make_mock_char(1, TEST_USER_ID, "Active Character")
     char_left = make_mock_char(1, TEST_USER_ID, "Left Character", has_left=True)
@@ -1290,7 +1352,9 @@ async def test_get_guild_characters_missing_user_header():
 
 async def test_get_guild_characters_guild_not_found(auth_headers, mock_bot):
     """Non-existent guild returns 404."""
-    mock_bot.guilds = []
+    # Populate with a different guild so cache is ready
+    other_guild = make_mock_guild(12345, "Other Guild", user_is_member=False)
+    await populate_guild_cache([other_guild])
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/characters/guild/999999", headers=auth_headers)
@@ -1301,7 +1365,7 @@ async def test_get_guild_characters_guild_not_found(auth_headers, mock_bot):
 async def test_get_guild_characters_user_not_member(auth_headers, mock_bot):
     """User not a member of guild returns 403."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=False)
-    mock_bot.guilds = [guild]
+    await populate_guild_cache([guild])
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
@@ -1314,7 +1378,7 @@ async def test_get_guild_characters_success(
 ):
     """Returns all active characters with owner data."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
-    mock_bot.guilds = [guild]
+    await populate_guild_cache([guild])
 
     char1 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Character 1")
     char2 = make_mock_char(TEST_GUILD_ID, 111111, "Character 2")
@@ -1364,7 +1428,7 @@ async def test_get_guild_characters_success(
 async def test_get_guild_characters_empty_guild(auth_headers, mock_bot, mock_char_mgr_fetchguild):
     """Empty guild returns empty list."""
     guild = make_mock_guild(TEST_GUILD_ID, "Empty Guild")
-    mock_bot.guilds = [guild]
+    await populate_guild_cache([guild])
     mock_char_mgr_fetchguild.return_value = []
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -1384,7 +1448,7 @@ async def test_get_guild_characters_multiple_owners(
 ):
     """Guild with characters from different users."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
-    mock_bot.guilds = [guild]
+    await populate_guild_cache([guild])
 
     char1 = make_mock_char(TEST_GUILD_ID, 100, "User1 Char")
     char2 = make_mock_char(TEST_GUILD_ID, 200, "User2 Char")
@@ -1418,7 +1482,7 @@ async def test_get_guild_characters_filters_left(
 ):
     """Characters marked as left are excluded."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
-    mock_bot.guilds = [guild]
+    await populate_guild_cache([guild])
 
     char_active = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Active Char")
     char_left = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Left Char", has_left=True)
@@ -1445,7 +1509,7 @@ async def test_get_guild_characters_filters_missing_owners(
 ):
     """Characters whose owners can't be found are excluded."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
-    mock_bot.guilds = [guild]
+    await populate_guild_cache([guild])
 
     char1 = make_mock_char(TEST_GUILD_ID, 100, "Valid Owner")
     char2 = make_mock_char(TEST_GUILD_ID, 200, "Missing Owner")
@@ -1474,7 +1538,7 @@ async def test_get_guild_characters_mixed_filtering(
 ):
     """Guild with active chars, left chars, and chars with missing owners."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
-    mock_bot.guilds = [guild]
+    await populate_guild_cache([guild])
 
     char_active = make_mock_char(TEST_GUILD_ID, 100, "Active Char")
     char_left = make_mock_char(TEST_GUILD_ID, 200, "Left Char", has_left=True)
@@ -1516,7 +1580,7 @@ async def test_get_guild_characters_spc_owner_data_null(
 ):
     """SPCs have owner as null."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
-    mock_bot.guilds = [guild]
+    await populate_guild_cache([guild])
 
     spc = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Test SPC", is_spc=True)
     mock_char_mgr_fetchguild.return_value = [spc]
@@ -1538,7 +1602,7 @@ async def test_get_guild_characters_spc_owner_data_null(
 async def test_get_guild_characters_only_spcs(auth_headers, mock_bot, mock_char_mgr_fetchguild):
     """Guild with only SPCs returns all SPCs with null owner."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
-    mock_bot.guilds = [guild]
+    await populate_guild_cache([guild])
 
     spc1 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC 1", is_spc=True)
     spc2 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC 2", is_spc=True)

@@ -2,7 +2,6 @@
 
 from typing import Literal, Optional, Self
 
-import discord
 from beanie import PydanticObjectId
 from pydantic import (
     BaseModel,

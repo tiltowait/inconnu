@@ -8,7 +8,6 @@ from cachetools import TTLCache
 from loguru import logger
 from pydantic import BaseModel
 
-import inconnu
 import services
 from services.guildcache import CachedGuild
 

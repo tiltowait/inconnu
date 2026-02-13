@@ -55,6 +55,7 @@ def make_mock_member(
     member.id = member_id
     member.guild = guild
     member.name = name
+    member.display_name = name
     member.display_avatar.url = "http://avatar.png"
     member.guild_avatar = None
     return member

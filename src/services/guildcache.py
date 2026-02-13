@@ -197,7 +197,7 @@ class GuildCache:
         if not members:
             return
 
-        data = [(m.guild.id, m.id, m.name, get_avatar(m).url) for m in members]
+        data = [(m.guild.id, m.id, m.display_name, get_avatar(m).url) for m in members]
         await self.db.executemany(
             """
                 INSERT INTO members VALUES (?, ?, ?, ?)

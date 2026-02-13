@@ -28,6 +28,7 @@ def make_member(guild: Guild, id: int) -> Member:
     member.id = id
     member.guild = guild
     member.name = f"Member {id}"
+    member.display_name = f"Member {id}"
     member.guild_avatar.url = f"https://example.com/m{id}.png"
 
     return member
@@ -157,14 +158,14 @@ async def test_update_guild(gcf: GuildCache, g1: Guild):
 
 async def test_upsert_member(gcf: GuildCache, g2: Guild):
     m1 = g2.members[0]
-    m1.name = "Billy"
+    m1.display_name = "Billy"
     m1.guild_avatar.url = "icon"  # type:ignore
     await gcf.upsert_members(m1)
 
     member = await gcf.fetchmember(m1.guild.id, m1.id)
     assert member is not None
     assert member.id == m1.id
-    assert member.name == m1.name
+    assert member.name == m1.display_name
     assert member.icon == get_avatar(m1).url
 
 

@@ -18,6 +18,7 @@ class CharacterGuild(BaseModel):
     id: str
     name: str
     icon: Optional[str]
+    count: Optional[int]
 
     @classmethod
     async def fetch(cls, id: int) -> Self:
@@ -35,18 +36,18 @@ class CharacterGuild(BaseModel):
             return cls.unknown(id)
 
     @classmethod
-    def create(cls, guild: CachedGuild | discord.Guild) -> Self:
+    def create(cls, guild: CachedGuild | discord.Guild, count: int | None = None) -> Self:
         """Create from a real Discord guild object."""
         if isinstance(guild, discord.Guild):
             icon = guild.icon.url if guild.icon else None
         else:
             icon = guild.icon
-        return cls(id=str(guild.id), name=guild.name, icon=icon)
+        return cls(id=str(guild.id), name=guild.name, icon=icon, count=count)
 
     @classmethod
     def unknown(cls, id: int) -> Self:
         """Return generic data."""
-        return cls(id=str(id), name="Unknown", icon=None)
+        return cls(id=str(id), name="Unknown", icon=None, count=None)
 
 
 class WizardData(BaseModel):

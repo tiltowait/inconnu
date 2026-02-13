@@ -707,3 +707,11 @@ async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Gui
     chars = await mgre.fetchall(g1, u11)
     assert len(chars) == 1
     assert chars[0].name == "Race Test"
+
+
+async def test_countguild(mgrf: CharacterManager, g1: Guild, g2: Guild):
+    count = await mgrf.countguild(g1.id)
+    assert count == 4
+
+    count = await mgrf.countguild(g2.id)
+    assert count == 1

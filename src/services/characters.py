@@ -166,7 +166,7 @@ class CharacterManager:
                 # No duplicate found
                 pass
 
-            await character.save()
+            await character.insert()
             self._id_cache[character.id_str] = character
             bisect.insort(self._characters, character)
 

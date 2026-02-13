@@ -16,6 +16,7 @@ from errors import DuplicateCharacterError
 from models import VChar
 from models.vchardocs import VCharSplat, VCharTrait
 from server import app
+from services import guild_cache
 from services.wizard import CharacterGuild, WizardData
 from web.routers.characters.models import OwnerData
 
@@ -43,8 +44,6 @@ async def mock_beanie():
 @pytest.fixture(autouse=True, scope="function")
 async def setup_guild_cache():
     """Set up guild cache with in-memory database for each test."""
-    from services import guild_cache
-
     # Patch GUILD_CACHE_LOC to use in-memory database
     with patch("config.GUILD_CACHE_LOC", "file::memory:?cache=shared"):
         # Reinitialize the guild_cache instance with new location
@@ -251,9 +250,8 @@ def owner_data():
 # Factory functions for mocks and cache helpers
 
 
-async def populate_guild_cache(guilds: list[MagicMock]) -> None:
+async def populate_guild_cache(guilds: list[discord.Guild]) -> None:
     """Populate the guild cache with mock Discord guilds."""
-    from services import guild_cache
 
     # Use refresh to clear existing guilds and replace with new ones
     await guild_cache.refresh(guilds)

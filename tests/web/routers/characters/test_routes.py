@@ -71,7 +71,7 @@ def mock_api_key():
 
 
 @pytest.fixture
-def mock_guild():
+def mock_guild() -> discord.Guild:
     """Mock Discord guild."""
     guild = MagicMock(spec=discord.Guild)
     guild.id = TEST_GUILD_ID
@@ -81,11 +81,11 @@ def mock_guild():
 
 
 @pytest.fixture
-def mock_wizard_data(mock_guild):
+def mock_wizard_data(mock_guild) -> WizardData:
     """Create mock wizard data."""
     return WizardData(
         spc=False,
-        guild=CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None),
+        guild=CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None, count=None),
         user=TEST_USER_ID,
     )
 
@@ -95,7 +95,7 @@ def mock_spc_wizard_data(mock_guild):
     """Create mock SPC wizard data."""
     return WizardData(
         spc=True,
-        guild=CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None),
+        guild=CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None, count=None),
         user=TEST_USER_ID,
     )
 
@@ -221,24 +221,17 @@ def mock_owner_data_create():
 
 
 @pytest.fixture
-def mock_get_avatar():
-    """Mock get_avatar to return consistent avatar URL (not used in web routes)."""
-    # get_avatar is not actually used in web routes, this fixture is a no-op
-    yield None
-
-
-@pytest.fixture
-def mock_char_mgr_is_admin():
-    """Mock char_mgr.is_admin to return False by default."""
-    with patch("web.routers.characters.routes.char_mgr.is_admin") as mock:
-        mock.return_value = False
+def mock_char_mgr_countguild():
+    """Mock char_mgr.countguild for character list tests."""
+    with patch("web.routers.characters.routes.char_mgr.countguild", new_callable=AsyncMock) as mock:
+        mock.return_value = 0
         yield mock
 
 
 @pytest.fixture
 def character_guild():
     """Standard CharacterGuild object for tests."""
-    return CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None)
+    return CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None, count=None)
 
 
 @pytest.fixture
@@ -1003,8 +996,6 @@ async def test_get_full_character_success(
     auth_headers,
     mock_bot,
     mock_char_mgr_fetchid,
-    mock_get_avatar,
-    mock_char_mgr_is_admin,
     character_guild,
     owner_data,
 ):
@@ -1068,7 +1059,7 @@ async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid)
 
 
 async def test_get_full_character_not_owned(
-    auth_headers, mock_bot, mock_char_mgr_fetchid, mock_get_avatar, mock_char_mgr_is_admin
+    auth_headers, mock_bot, mock_char_mgr_fetchid
 ):
     """Non-owner accessing character receives PublicCharacter."""
     # Character owned by different user
@@ -1187,7 +1178,9 @@ async def test_get_wizard_missing_api_key():
 # Character list tests
 
 
-async def test_get_character_list_success(auth_headers, mock_bot, mock_char_mgr_fetchuser):
+async def test_get_character_list_success(
+    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+):
     """User in multiple guilds with characters and SPCs."""
     guild1 = make_mock_guild(1, "Guild 1")
     guild2 = make_mock_guild(2, "Guild 2")
@@ -1225,7 +1218,7 @@ async def test_get_character_list_success(auth_headers, mock_bot, mock_char_mgr_
 
 
 async def test_get_character_list_user_in_guilds_without_characters(
-    auth_headers, mock_bot, mock_char_mgr_fetchuser
+    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
 ):
     """User in multiple guilds but only has characters in one."""
     guild1 = make_mock_guild(1, "Guild 1")
@@ -1254,7 +1247,7 @@ async def test_get_character_list_user_in_guilds_without_characters(
 
 
 async def test_get_character_list_filters_left_guilds(
-    auth_headers, mock_bot, mock_char_mgr_fetchuser
+    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
 ):
     """Characters in guilds user has left are not returned."""
     guild1 = make_mock_guild(1, "Current Guild", user_is_member=True)
@@ -1278,7 +1271,9 @@ async def test_get_character_list_filters_left_guilds(
         assert result["characters"][0]["type"] == "full"
 
 
-async def test_get_character_list_no_guilds(auth_headers, mock_bot, mock_char_mgr_fetchuser):
+async def test_get_character_list_no_guilds(
+    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+):
     """User not in any guilds returns empty lists."""
     # Bot is in guilds, but user is not a member of any
     other_guild = make_mock_guild(999, "Other Guild", user_is_member=False)
@@ -1294,7 +1289,9 @@ async def test_get_character_list_no_guilds(auth_headers, mock_bot, mock_char_mg
         assert result["characters"] == []
 
 
-async def test_get_character_list_no_characters(auth_headers, mock_bot, mock_char_mgr_fetchuser):
+async def test_get_character_list_no_characters(
+    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+):
     """User in guilds but has no characters, SPC exists."""
     guild1 = make_mock_guild(1, "Guild 1")
     guild2 = make_mock_guild(2, "Guild 2")
@@ -1315,7 +1312,7 @@ async def test_get_character_list_no_characters(auth_headers, mock_bot, mock_cha
 
 
 async def test_get_character_list_multiple_characters_same_guild(
-    auth_headers, mock_bot, mock_char_mgr_fetchuser
+    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
 ):
     """Multiple characters in same guild, guild not duplicated."""
     guild1 = make_mock_guild(1, "Guild 1")
@@ -1341,7 +1338,7 @@ async def test_get_character_list_multiple_characters_same_guild(
 
 
 async def test_get_character_list_filters_left_characters(
-    auth_headers, mock_bot, mock_char_mgr_fetchuser
+    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
 ):
     """Characters marked as left are filtered out."""
     guild1 = make_mock_guild(1, "Guild 1")
@@ -1360,6 +1357,41 @@ async def test_get_character_list_filters_left_characters(
         assert len(result["guilds"]) == 1
         # Only 2 characters returned (char_left filtered out)
         assert len(result["characters"]) == 2
+
+
+async def test_get_character_list_guild_counts(
+    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+):
+    """Guild character counts are included in the response."""
+    guild1 = make_mock_guild(1, "Guild 1")
+    guild2 = make_mock_guild(2, "Guild 2")
+    await populate_guild_cache([guild1, guild2])
+
+    # Return different counts per guild
+    async def countguild(guild_id):
+        return {1: 5, 2: 12}.get(guild_id, 0)
+
+    mock_char_mgr_countguild.side_effect = countguild
+
+    char1 = make_mock_char(1, TEST_USER_ID, "Character 1")
+    char2 = make_mock_char(2, TEST_USER_ID, "Character 2")
+    mock_char_mgr_fetchuser.return_value = [char1, char2]
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/characters", headers=auth_headers)
+
+        assert response.status_code == 200
+        result = response.json()
+
+        assert len(result["guilds"]) == 2
+        guilds_by_id = {g["id"]: g for g in result["guilds"]}
+        assert guilds_by_id["1"]["count"] == 5
+        assert guilds_by_id["2"]["count"] == 12
+
+        # Verify counts also appear in character guild data
+        for char in result["characters"]:
+            guild_id = char["guild"]["id"]
+            assert char["guild"]["count"] == guilds_by_id[guild_id]["count"]
 
 
 async def test_get_character_list_missing_api_key():
@@ -1563,7 +1595,7 @@ async def test_get_guild_characters_missing_user_header():
         assert "user id" in response.json()["detail"].lower()
 
 
-async def test_get_guild_characters_guild_not_found(auth_headers, mock_bot):
+async def test_get_guild_characters_guild_not_found(auth_headers):
     """Non-existent guild returns 404."""
     # Populate with a different guild so cache is ready
     other_guild = make_mock_guild(12345, "Other Guild", user_is_member=False)
@@ -1575,7 +1607,7 @@ async def test_get_guild_characters_guild_not_found(auth_headers, mock_bot):
         assert "guild not found" in response.json()["detail"].lower()
 
 
-async def test_get_guild_characters_user_not_member(auth_headers, mock_bot):
+async def test_get_guild_characters_user_not_member(auth_headers):
     """User not a member of guild returns 403."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=False)
     await populate_guild_cache([guild])
@@ -1587,7 +1619,7 @@ async def test_get_guild_characters_user_not_member(auth_headers, mock_bot):
 
 
 async def test_get_guild_characters_success(
-    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
 ):
     """Returns all active characters with owner data."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1638,7 +1670,7 @@ async def test_get_guild_characters_success(
         assert chars[2]["owner"] is None
 
 
-async def test_get_guild_characters_empty_guild(auth_headers, mock_bot, mock_char_mgr_fetchguild):
+async def test_get_guild_characters_empty_guild(auth_headers, mock_char_mgr_fetchguild):
     """Empty guild returns empty list."""
     guild = make_mock_guild(TEST_GUILD_ID, "Empty Guild")
     await populate_guild_cache([guild])
@@ -1657,7 +1689,7 @@ async def test_get_guild_characters_empty_guild(auth_headers, mock_bot, mock_cha
 
 
 async def test_get_guild_characters_multiple_owners(
-    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
 ):
     """Guild with characters from different users."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1691,7 +1723,7 @@ async def test_get_guild_characters_multiple_owners(
 
 
 async def test_get_guild_characters_filters_left(
-    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
 ):
     """Characters marked as left are excluded."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1718,7 +1750,7 @@ async def test_get_guild_characters_filters_left(
 
 
 async def test_get_guild_characters_filters_missing_owners(
-    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
 ):
     """Characters whose owners can't be found are excluded."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1747,7 +1779,7 @@ async def test_get_guild_characters_filters_missing_owners(
 
 
 async def test_get_guild_characters_mixed_filtering(
-    auth_headers, mock_bot, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
 ):
     """Guild with active chars, left chars, and chars with missing owners."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1789,7 +1821,7 @@ async def test_get_guild_characters_mixed_filtering(
 
 
 async def test_get_guild_characters_spc_owner_data_null(
-    auth_headers, mock_bot, mock_char_mgr_fetchguild
+    auth_headers, mock_char_mgr_fetchguild
 ):
     """SPCs have owner as null."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1812,7 +1844,7 @@ async def test_get_guild_characters_spc_owner_data_null(
         assert "spc" not in chars[0]["character"]
 
 
-async def test_get_guild_characters_only_spcs(auth_headers, mock_bot, mock_char_mgr_fetchguild):
+async def test_get_guild_characters_only_spcs(auth_headers, mock_char_mgr_fetchguild):
     """Guild with only SPCs returns all SPCs with null owner."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
     await populate_guild_cache([guild])

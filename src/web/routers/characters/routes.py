@@ -63,11 +63,9 @@ async def get_character_list(
 
     guilds = {}
     for guild in await guild_cache.fetchguilds():
-        if guild.id in guilds:
-            # Shouldn't be possible
-            continue
         if guild.get_member(user_id) is not None:
-            guilds[guild.id] = CharacterGuild.create(guild)
+            char_count = await char_mgr.countguild(guild.id)
+            guilds[guild.id] = CharacterGuild.create(guild, char_count)
 
     chars = []
     for char in await char_mgr.fetchuser(user_id):

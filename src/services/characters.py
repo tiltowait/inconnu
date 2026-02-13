@@ -124,6 +124,11 @@ class CharacterManager:
         chars = await self.fetchall(guild, user)
         return len(chars)
 
+    async def countguild(self, guild_id: int) -> int:
+        """Get the number of characters in the guild."""
+        chars = await self.fetchguild(guild_id)
+        return len(chars)
+
     async def exists(
         self,
         guild: discord.Guild,

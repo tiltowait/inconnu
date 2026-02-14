@@ -1,1 +1,0 @@
-"""Web tests package."""

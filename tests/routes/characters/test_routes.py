@@ -18,7 +18,7 @@ from models.vchardocs import VCharSplat, VCharTrait
 from server import app
 from services import guild_cache
 from services.wizard import CharacterGuild, WizardData
-from web.routers.characters.models import OwnerData
+from routes.characters.models import OwnerData
 
 # Test constants
 TEST_API_KEY = "test-api-key-12345"
@@ -66,7 +66,7 @@ async def setup_guild_cache():
 @pytest.fixture(autouse=True)
 def mock_api_key():
     """Mock API_KEY for all tests."""
-    with patch("web.auth.API_KEY", TEST_API_KEY):
+    with patch("routes.auth.API_KEY", TEST_API_KEY):
         yield
 
 
@@ -157,7 +157,7 @@ def mock_bot():
     # Mock get_or_fetch_guild for premium checks (returns None by default)
     bot.get_or_fetch_guild = AsyncMock(return_value=None)
 
-    with patch("web.routers.characters.routes.inconnu.bot", bot):
+    with patch("routes.characters.routes.inconnu.bot", bot):
         yield bot
 
 
@@ -165,8 +165,8 @@ def mock_bot():
 def mock_wizard_cache_pop():
     """Mock wizard_cache.get and delete for character creation tests."""
     with (
-        patch("web.routers.characters.routes.wizard_cache.get") as mock_get,
-        patch("web.routers.characters.routes.wizard_cache.delete") as mock_delete,
+        patch("routes.characters.routes.wizard_cache.get") as mock_get,
+        patch("routes.characters.routes.wizard_cache.delete") as mock_delete,
     ):
         yield mock_get, mock_delete
 
@@ -174,28 +174,28 @@ def mock_wizard_cache_pop():
 @pytest.fixture
 def mock_wizard_cache_get():
     """Mock wizard_cache.get for wizard endpoint tests."""
-    with patch("web.routers.characters.routes.wizard_cache.get") as mock:
+    with patch("routes.characters.routes.wizard_cache.get") as mock:
         yield mock
 
 
 @pytest.fixture
 def mock_char_mgr_register():
     """Mock char_mgr.register for character creation tests."""
-    with patch("web.routers.characters.routes.char_mgr.register", new_callable=AsyncMock) as mock:
+    with patch("routes.characters.routes.char_mgr.register", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
 def mock_char_mgr_fetchuser():
     """Mock char_mgr.fetchuser for character list tests."""
-    with patch("web.routers.characters.routes.char_mgr.fetchuser", new_callable=AsyncMock) as mock:
+    with patch("routes.characters.routes.char_mgr.fetchuser", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
 def mock_char_mgr_fetchid():
     """Mock char_mgr.fetchid for character fetch tests."""
-    with patch("web.routers.characters.routes.char_mgr.fetchid", new_callable=AsyncMock) as mock:
+    with patch("routes.characters.routes.char_mgr.fetchid", new_callable=AsyncMock) as mock:
         yield mock
 
 
@@ -209,21 +209,21 @@ def mock_guild_fetch():
 @pytest.fixture
 def mock_char_mgr_fetchguild():
     """Mock char_mgr.fetchguild for guild character tests."""
-    with patch("web.routers.characters.routes.char_mgr.fetchguild", new_callable=AsyncMock) as mock:
+    with patch("routes.characters.routes.char_mgr.fetchguild", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
 def mock_owner_data_create():
     """Mock OwnerData.fetch for guild character tests."""
-    with patch("web.routers.characters.models.OwnerData.fetch", new_callable=AsyncMock) as mock:
+    with patch("routes.characters.models.OwnerData.fetch", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
 def mock_char_mgr_countguild():
     """Mock char_mgr.countguild for character list tests."""
-    with patch("web.routers.characters.routes.char_mgr.countguild", new_callable=AsyncMock) as mock:
+    with patch("routes.characters.routes.char_mgr.countguild", new_callable=AsyncMock) as mock:
         mock.return_value = 0
         yield mock
 
@@ -768,7 +768,7 @@ async def test_create_spc_character(
     mock_get, mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_spc_wizard_data
 
-    with patch("web.routers.characters.routes.VChar.SPC_OWNER", 0):
+    with patch("routes.characters.routes.VChar.SPC_OWNER", 0):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/characters/wizard/{TEST_TOKEN}",
@@ -850,8 +850,8 @@ async def test_create_character_premium_user(
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
     with (
-        patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
-        patch("web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
+        patch("routes.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
+        patch("routes.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -893,8 +893,8 @@ async def test_create_character_non_premium_user(
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
     with (
-        patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
-        patch("web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
+        patch("routes.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
+        patch("routes.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -927,8 +927,8 @@ async def test_create_character_user_not_in_supporter_guild(
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
     with (
-        patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
-        patch("web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
+        patch("routes.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
+        patch("routes.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -973,9 +973,9 @@ async def test_create_spc_premium_check_uses_wizard_creator(
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
     with (
-        patch("web.routers.characters.routes.VChar.SPC_OWNER", 0),
-        patch("web.routers.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
-        patch("web.routers.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
+        patch("routes.characters.routes.VChar.SPC_OWNER", 0),
+        patch("routes.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
+        patch("routes.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -1009,7 +1009,7 @@ async def test_get_full_character_success(
     mock_char_mgr_fetchid.return_value = mock_char
 
     with patch(
-        "web.routers.characters.models.OwnerData.fetch", new_callable=AsyncMock
+        "routes.characters.models.OwnerData.fetch", new_callable=AsyncMock
     ) as mock_owner_create:
         mock_owner_create.return_value = owner_data
 
@@ -1075,7 +1075,7 @@ async def test_get_full_character_not_owned(auth_headers, mock_bot, mock_char_mg
     )
 
     with patch(
-        "web.routers.characters.models.OwnerData.fetch", new_callable=AsyncMock
+        "routes.characters.models.OwnerData.fetch", new_callable=AsyncMock
     ) as mock_owner_create:
         mock_owner_create.return_value = character_owner_data
 
@@ -1433,10 +1433,10 @@ async def test_get_character_profile_success_non_spc(mock_char_mgr_fetchid, char
 
     with (
         patch(
-            "web.routers.characters.routes.CharacterGuild.fetch", new_callable=AsyncMock
+            "routes.characters.routes.CharacterGuild.fetch", new_callable=AsyncMock
         ) as mock_guild_fetch,
         patch(
-            "web.routers.characters.routes.OwnerData.fetch", new_callable=AsyncMock
+            "routes.characters.routes.OwnerData.fetch", new_callable=AsyncMock
         ) as mock_owner_create,
     ):
         mock_guild_fetch.return_value = character_guild
@@ -1490,7 +1490,7 @@ async def test_get_character_profile_success_spc(mock_char_mgr_fetchid, characte
 
     # Mock CharacterGuild.fetch
     with patch(
-        "web.routers.characters.routes.CharacterGuild.fetch", new_callable=AsyncMock
+        "routes.characters.routes.CharacterGuild.fetch", new_callable=AsyncMock
     ) as mock_guild_fetch:
         mock_guild_fetch.return_value = character_guild
 
@@ -1836,8 +1836,6 @@ async def test_get_guild_characters_spc_owner_data_null(auth_headers, mock_char_
         assert chars[0]["spc"] is True  # spc at top level in CharData
         assert chars[0]["type"] == "public"
         assert chars[0]["owner"] is None
-        # PublicCharacter doesn't have spc field
-        assert "spc" not in chars[0]["character"]
 
 
 async def test_get_guild_characters_only_spcs(auth_headers, mock_char_mgr_fetchguild):

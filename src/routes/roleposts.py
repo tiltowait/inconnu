@@ -13,10 +13,10 @@ from pydantic import AnyUrl, BaseModel
 import inconnu
 from models import RPPost
 from models.rppost import PostHistoryEntry
+from routes.auth import verify_api_key
+from routes.characters.models import OwnerData
 from services.wizard import CharacterGuild
 from utils.discord_helpers import get_avatar
-from web.auth import verify_api_key
-from web.routers.characters.models import OwnerData
 
 router = APIRouter()
 

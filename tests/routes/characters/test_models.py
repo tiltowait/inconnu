@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from models.vchardocs import VCharSplat, VCharTrait
-from web.routers.characters.models import CreationBody
+from routes.characters.models import CreationBody
 
 
 def valid_creation_data(**overrides):

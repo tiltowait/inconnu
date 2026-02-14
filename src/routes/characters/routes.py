@@ -12,10 +12,8 @@ import inconnu
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
 from constants import Damage
 from models import VChar
-from services import char_mgr, guild_cache, wizard_cache
-from services.wizard import CharacterGuild
-from web.auth import get_authenticated_user, verify_api_key
-from web.routers.characters.models import (
+from routes.auth import get_authenticated_user, verify_api_key
+from routes.characters.models import (
     CharData,
     CreationBody,
     CreationSuccess,
@@ -25,6 +23,8 @@ from web.routers.characters.models import (
     UserCharData,
     WizardSchema,
 )
+from services import char_mgr, guild_cache, wizard_cache
+from services.wizard import CharacterGuild
 
 router = APIRouter()
 

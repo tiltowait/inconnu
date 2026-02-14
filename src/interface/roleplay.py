@@ -45,7 +45,7 @@ class RoleplayCog(commands.Cog):
     )
     @option("merits", description="THIS POST ONLY: Obvious/important merits", required=False)
     @option("flaws", description="THIS POST ONLY: Obvious/important flaws", required=False)
-    @option("temporary", descroption="THIS POST ONLY: Temporary effects", required=False)
+    @option("temporary", description="THIS POST ONLY: Temporary effects", required=False)
     @option(
         "display_header",
         description="Display a header above the post (default true)",
@@ -99,7 +99,7 @@ class RoleplayCog(commands.Cog):
     )
     @option("merits", description="THIS POST ONLY: Obvious/important merits", required=False)
     @option("flaws", description="THIS POST ONLY: Obvious/important flaws", required=False)
-    @option("temporary", descroption="THIS POST ONLY: Temporary effects", required=False)
+    @option("temporary", description="THIS POST ONLY: Temporary effects", required=False)
     @option(
         "display_header",
         description="Display a header above the post (default false)",

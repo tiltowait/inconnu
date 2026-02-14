@@ -203,23 +203,26 @@ class CharacterManager:
         """Transfer character ownership."""
         await self.initialize()
 
-        if character.user != current_owner.id:
-            raise errors.WrongOwner(f"{current_owner.display_name} does not own {character.name}!")
-        if character.guild != new_owner.guild.id:
-            raise errors.WrongGuild(
-                f"{new_owner.display_name} is not in the same server as {character.name}!"
+        async with self._lock:
+            if character.user != current_owner.id:
+                raise errors.WrongOwner(
+                    f"{current_owner.display_name} does not own {character.name}!"
+                )
+            if character.guild != new_owner.guild.id:
+                raise errors.WrongGuild(
+                    f"{new_owner.display_name} is not in the same server as {character.name}!"
+                )
+
+            character.user = new_owner.id
+            await character.save()
+
+            logger.info(
+                "Transferred '{}' from {} to {} on {}",
+                character.name,
+                current_owner.name,
+                new_owner.name,
+                new_owner.guild.name,
             )
-
-        character.user = new_owner.id
-        await character.save()
-
-        logger.info(
-            "Transferred '{}' from {} to {} on {}",
-            character.name,
-            current_owner.name,
-            new_owner.name,
-            new_owner.guild.name,
-        )
 
     async def mark_inactive(self, player: discord.Member):
         """
@@ -228,21 +231,22 @@ class CharacterManager:
         """
         await self.initialize()
 
-        tasks = []
-        for char in self._characters:
-            if char.user == player.id and char.guild == player.guild.id:
-                char.stat_log["left"] = datetime.now(UTC)
-                tasks.append(char.save())
+        async with self._lock:
+            tasks = []
+            for char in self._characters:
+                if char.user == player.id and char.guild == player.guild.id:
+                    char.stat_log["left"] = datetime.now(UTC)
+                    tasks.append(char.save())
 
-        if tasks:
-            logger.info(
-                "{}: {} left. Marked {} {} inactive.",
-                player.guild.name,
-                player.name,
-                len(tasks),
-                pluralize(len(tasks), "character"),
-            )
-            await asyncio.gather(*tasks)
+            if tasks:
+                logger.info(
+                    "{}: {} left. Marked {} {} inactive.",
+                    player.guild.name,
+                    player.name,
+                    len(tasks),
+                    pluralize(len(tasks), "character"),
+                )
+                await asyncio.gather(*tasks)
 
     async def mark_active(self, player: discord.Member):
         """
@@ -251,21 +255,22 @@ class CharacterManager:
         """
         await self.initialize()
 
-        tasks = []
-        for char in self._characters:
-            if char.user == player.id and "left" in char.stat_log:
-                del char.stat_log["left"]
-                tasks.append(char.save())
+        async with self._lock:
+            tasks = []
+            for char in self._characters:
+                if char.user == player.id and "left" in char.stat_log:
+                    del char.stat_log["left"]
+                    tasks.append(char.save())
 
-        if tasks:
-            logger.info(
-                "{}: {} left. Marked {} {} active.",
-                player.guild.name,
-                player.name,
-                len(tasks),
-                pluralize(len(tasks), "character"),
-            )
-            await asyncio.gather(*tasks)
+            if tasks:
+                logger.info(
+                    "{}: {} returned. Marked {} {} active.",
+                    player.guild.name,
+                    player.name,
+                    len(tasks),
+                    pluralize(len(tasks), "character"),
+                )
+                await asyncio.gather(*tasks)
 
     async def sort_chars(self):
         """Sort characters after a rename."""

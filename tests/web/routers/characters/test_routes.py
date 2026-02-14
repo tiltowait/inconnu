@@ -268,7 +268,7 @@ def make_mock_guild(
             member = MagicMock(spec=discord.Member)
             member.id = TEST_USER_ID
             member.guild = guild
-            member.name = "Test User"
+            member.display_name = "Test User"
             member.display_avatar.url = "http://avatar.png"
             member.guild_avatar = None
             guild.members = [member]
@@ -277,7 +277,7 @@ def make_mock_guild(
             member = MagicMock(spec=discord.Member)
             member.id = 888888  # Different from TEST_USER_ID
             member.guild = guild
-            member.name = "Other User"
+            member.display_name = "Other User"
             member.display_avatar.url = "http://other-avatar.png"
             member.guild_avatar = None
             guild.members = [member]
@@ -1058,9 +1058,7 @@ async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid)
         assert "not found" in response.json()["detail"].lower()
 
 
-async def test_get_full_character_not_owned(
-    auth_headers, mock_bot, mock_char_mgr_fetchid
-):
+async def test_get_full_character_not_owned(auth_headers, mock_bot, mock_char_mgr_fetchid):
     """Non-owner accessing character receives PublicCharacter."""
     # Character owned by different user
     mock_char = make_mock_char(TEST_GUILD_ID, 999999, "Someone Else's Character")
@@ -1820,9 +1818,7 @@ async def test_get_guild_characters_mixed_filtering(
         assert chars[2]["spc"] is True  # spc at top level, not in character
 
 
-async def test_get_guild_characters_spc_owner_data_null(
-    auth_headers, mock_char_mgr_fetchguild
-):
+async def test_get_guild_characters_spc_owner_data_null(auth_headers, mock_char_mgr_fetchguild):
     """SPCs have owner as null."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
     await populate_guild_cache([guild])

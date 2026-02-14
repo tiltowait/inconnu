@@ -30,7 +30,7 @@ async def display_post_history(request: Request, oid: ObjectId = Depends(object_
     for event in post.history:
         history.append((event.content, event.date))
 
-    if not 0 <= page <= len(history):
+    if not 0 <= page < len(history):
         raise HTTPException(404, detail="Page out of range.")
 
     content, date = history[page]

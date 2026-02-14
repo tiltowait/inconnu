@@ -1,6 +1,6 @@
 [project]
 name = "inconnu"
-version = "2026.02.4"
+version = "2026.02.5"
 description = "An advanced Discord dice bot and character manager for V5"
 authors = [{ name = "tiltowait", email = "208040+tiltowait@users.noreply.github.com" }]
 license = "MIT"

@@ -12,7 +12,7 @@ from models import VChar
 
 async def cull(days=30):
     """Cull inactive guilds, characters, and macros."""
-    logger.info("CULLER: Initiating culling run.")
+    logger.info("Initiating culling run.")
     past = datetime.now(UTC) - timedelta(days=days)
 
     # Remove old guilds
@@ -25,8 +25,8 @@ async def cull(days=30):
         removed_guilds.append(guild)
         await db.guilds.delete_one({"guild": guild})
 
-    if guilds:
-        logger.info("CULLER: Culled {} guilds", len(removed_guilds))
+    if removed_guilds:
+        logger.info("Culled {} guilds", len(removed_guilds))
 
     # We remove characters separately so as to make only one database call
     # rather than potentially many
@@ -38,8 +38,8 @@ async def cull(days=30):
     async for character in characters:
         await api.delete_character_faceclaims(character)
         if await services.char_mgr.remove(character):
-            logger.info("CULLER: Culling {}", character.name)
+            logger.info("Culling {}", character.name)
         else:
-            logger.info("CULLER: Unable to cull {}", character.name)
+            logger.info("Unable to cull {}", character.name)
 
-    logger.info("CULLER: Done culling")
+    logger.info("Done culling")

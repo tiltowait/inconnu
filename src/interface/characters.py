@@ -57,7 +57,7 @@ class Characters(commands.Cog, name="Character Management"):
         """Start a character creation wizard."""
         try:
             make_spc = bool(strtobool(spc))
-            await inconnu.character.launch_wizard(ctx, make_spc)
+            await inconnu.character.create.launch_wizard(ctx, make_spc)
         except ValueError:
             await ui.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 

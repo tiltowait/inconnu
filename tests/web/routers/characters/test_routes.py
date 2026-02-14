@@ -66,7 +66,7 @@ async def setup_guild_cache():
 @pytest.fixture(autouse=True)
 def mock_api_key():
     """Mock API_KEY for all tests."""
-    with patch("web.routers.characters.routes.API_KEY", TEST_API_KEY):
+    with patch("web.auth.API_KEY", TEST_API_KEY):
         yield
 
 

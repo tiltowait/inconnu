@@ -24,7 +24,7 @@ class RPPost(Document):
     """Represents a Rolepost with the ability to maintain deltas."""
 
     # Metadata
-    date: datetime = Field(default_factory=datetime.utcnow)
+    date: datetime = Field(default_factory=lambda: datetime.now(UTC))
     date_modified: Optional[datetime] = None
     guild: int
     channel: int

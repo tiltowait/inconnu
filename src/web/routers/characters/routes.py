@@ -2,18 +2,19 @@
 
 import discord
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials
 from loguru import logger
 
 import errors
 import inconnu
-from config import API_KEY, SUPPORTER_GUILD, SUPPORTER_ROLE
+from config import SUPPORTER_GUILD, SUPPORTER_ROLE
 from constants import Damage
 from models import VChar
 from services import char_mgr, guild_cache, wizard_cache
 from services.wizard import CharacterGuild
+from web.auth import get_authenticated_user, verify_api_key
 from web.routers.characters.models import (
     CharData,
     CreationBody,
@@ -25,29 +26,7 @@ from web.routers.characters.models import (
     WizardSchema,
 )
 
-DISCORD_HEADER = "X-Discord-User-ID"
-
 router = APIRouter()
-
-
-async def verify_api_key(
-    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
-) -> HTTPAuthorizationCredentials:
-    """Validates the API bearer token."""
-    if credentials.credentials != API_KEY:
-        raise HTTPException(401, detail="Invalid authentication token")
-    return credentials
-
-
-async def get_authenticated_user(
-    request: Request,
-    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
-) -> int:
-    """Get the authenticated user ID from headers after verifying API key."""
-    user_id = request.headers.get(DISCORD_HEADER)
-    if user_id is None:
-        raise HTTPException(400, detail="Missing user ID")
-    return int(user_id)
 
 
 # Getters

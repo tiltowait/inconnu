@@ -207,23 +207,25 @@ async def test_guild_with_none_icon(gce: GuildCache):
     assert cached.icon is None
 
 
-async def test_fetchguilds(gcf: GuildCache, g1: Guild, g2: Guild):
-    """Fetch all guilds with members populated."""
-    guilds = await gcf.fetchguilds()
+async def test_fetchguilds(gcf: GuildCache, g2: Guild):
+    """Fetch guilds for a user who belongs to g2."""
+    member_id = g2.members[0].id
+    guilds = await gcf.fetchguilds(member_id)
 
-    assert len(guilds) == 2
-    guild_ids = {g.id for g in guilds}
-    assert g1.id in guild_ids
-    assert g2.id in guild_ids
+    assert len(guilds) == 1
+    assert guilds[0].id == g2.id
+    assert len(guilds[0].members) == g2.member_count
 
-    # Check that members are populated
-    g2_cached = next(g for g in guilds if g.id == g2.id)
-    assert len(g2_cached.members) == g2.member_count
+
+async def test_fetchguilds_no_memberships(gcf: GuildCache):
+    """Fetch guilds for a user who isn't in any guild returns empty list."""
+    guilds = await gcf.fetchguilds(999999)
+    assert guilds == []
 
 
 async def test_fetchguilds_empty(gce: GuildCache):
-    """Fetch all guilds from empty cache returns empty list."""
-    guilds = await gce.fetchguilds()
+    """Fetch guilds from empty cache returns empty list."""
+    guilds = await gce.fetchguilds(1)
     assert guilds == []
 
 

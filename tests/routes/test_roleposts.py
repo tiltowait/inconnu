@@ -37,7 +37,7 @@ async def mock_beanie():
 @pytest.fixture(autouse=True)
 def mock_api_key():
     """Mock API_KEY for all tests."""
-    with patch("web.auth.API_KEY", TEST_API_KEY):
+    with patch("routes.auth.API_KEY", TEST_API_KEY):
         yield
 
 
@@ -120,7 +120,9 @@ async def test_rolepost_not_found():
 async def test_guild_gone():
     """Returns 410 when the bot is no longer in the guild."""
     post = await insert_rolepost()
-    with patch("inconnu.bot.get_or_fetch_guild", new_callable=AsyncMock, return_value=None):
+    bot = MagicMock()
+    bot.get_or_fetch_guild = AsyncMock(return_value=None)
+    with patch("routes.roleposts.inconnu.bot", bot):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
     assert resp.status_code == 410
@@ -133,7 +135,9 @@ async def test_channel_gone():
     guild = make_mock_guild()
     guild.get_or_fetch = AsyncMock(return_value=None)
 
-    with patch("inconnu.bot.get_or_fetch_guild", new_callable=AsyncMock, return_value=guild):
+    bot = MagicMock()
+    bot.get_or_fetch_guild = AsyncMock(return_value=guild)
+    with patch("routes.roleposts.inconnu.bot", bot):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
     assert resp.status_code == 410
@@ -150,7 +154,9 @@ async def test_success_with_poster():
     guild.get_or_fetch = AsyncMock(return_value=channel)
     guild.get_member.return_value = member
 
-    with patch("inconnu.bot.get_or_fetch_guild", new_callable=AsyncMock, return_value=guild):
+    bot = MagicMock()
+    bot.get_or_fetch_guild = AsyncMock(return_value=guild)
+    with patch("routes.roleposts.inconnu.bot", bot):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
 
@@ -173,7 +179,9 @@ async def test_success_without_poster():
     guild.get_or_fetch = AsyncMock(return_value=channel)
     guild.get_member.return_value = None
 
-    with patch("inconnu.bot.get_or_fetch_guild", new_callable=AsyncMock, return_value=guild):
+    bot = MagicMock()
+    bot.get_or_fetch_guild = AsyncMock(return_value=guild)
+    with patch("routes.roleposts.inconnu.bot", bot):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
 

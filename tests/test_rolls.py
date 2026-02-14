@@ -1,7 +1,5 @@
 """Test basic roll logic."""
 
-import unittest
-
 import pytest
 
 import inconnu
@@ -31,168 +29,161 @@ def gen_roll(
     return roll
 
 
-class TestRollOutcomes(unittest.TestCase):
-    """
-    This suite tests the following roll outcome stats:
-
-      * Total successes
-      * Margin
-      * Outcome string
-      * Computed boolean equalities (is_messy, is_successful, etc.)
-
-    It tests all six types of outcomes, including both types of messy critical.
-    """
-
-    def test_bestial_failure(self):
-        """This roll should be a bestial failure."""
-        roll = gen_roll(1, 2, 1, 1, 1, 1, 0, 5)
-
-        self.assertTrue(roll.is_bestial)
-        self.assertEqual(roll.outcome, "bestial")
-        self.assertEqual(roll.total_successes, 4)
-        self.assertEqual(roll.margin, -1)
-
-        self.assertFalse(roll.is_total_failure)
-        self.assertFalse(roll.is_failure)
-        self.assertFalse(roll.is_successful)
-        self.assertFalse(roll.is_critical)
-        self.assertFalse(roll.is_messy)
-
-    def test_total_failure(self):
-        """This roll should be a total failure."""
-        roll = gen_roll(1, 0, 0, 0, 0, 0, 0, 2)
-
-        self.assertTrue(roll.is_total_failure)
-        self.assertFalse(roll.is_failure)
-        self.assertEqual(roll.outcome, "total_fail")
-        self.assertEqual(roll.total_successes, 0)
-        self.assertEqual(roll.margin, -2)
-
-        self.assertFalse(roll.is_bestial)
-        self.assertFalse(roll.is_successful)
-        self.assertFalse(roll.is_messy)
-        self.assertFalse(roll.is_critical)
-
-    def test_failure(self):
-        """This roll should be a simple failure."""
-        roll = gen_roll(0, 1, 0, 0, 0, 0, 0, 2)
-
-        self.assertTrue(roll.is_failure)
-        self.assertEqual(roll.outcome, "fail")
-        self.assertEqual(roll.total_successes, 1)
-        self.assertEqual(roll.margin, -1)
-
-        self.assertFalse(roll.is_total_failure)
-        self.assertFalse(roll.is_bestial)
-        self.assertFalse(roll.is_successful)
-        self.assertFalse(roll.is_messy)
-        self.assertFalse(roll.is_critical)
-
-    def test_success(self):
-        """This roll should be a plain success."""
-        roll = gen_roll(0, 2, 1, 0, 0, 0, 0, 3)
-
-        self.assertTrue(roll.is_successful)
-        self.assertEqual(roll.outcome, "success")
-        self.assertEqual(roll.total_successes, 3)
-        self.assertEqual(roll.margin, 0)
-
-        self.assertFalse(roll.is_bestial)
-        self.assertFalse(roll.is_total_failure)
-        self.assertFalse(roll.is_failure)
-        self.assertFalse(roll.is_messy)
-        self.assertFalse(roll.is_critical)
-
-    def test_messy_critical(self):
-        """This roll should be a messy critical."""
-        roll = gen_roll(0, 0, 0, 1, 0, 0, 2, 3)
-
-        self.assertTrue(roll.is_successful)
-        self.assertTrue(roll.is_messy)
-        self.assertEqual(roll.outcome, "messy")
-        self.assertEqual(roll.total_successes, 4)
-        self.assertEqual(roll.margin, 1)
-
-        self.assertFalse(roll.is_bestial)
-        self.assertFalse(roll.is_total_failure)
-        self.assertFalse(roll.is_failure)
-        self.assertFalse(roll.is_critical)
-
-        # A messy critical is still messy if there are two normal 10s
-        roll = gen_roll(0, 0, 4, 1, 0, 0, 1, 3)
-        self.assertTrue(roll.is_messy)
-        self.assertEqual(roll.total_successes, 9)
-        self.assertEqual(roll.margin, 6)
-
-    def test_critical(self):
-        """This roll should be a critical success."""
-        roll = gen_roll(0, 1, 3, 0, 0, 0, 0, 3)
-
-        self.assertTrue(roll.is_successful)
-        self.assertTrue(roll.is_critical)
-        self.assertEqual(roll.outcome, "critical")
-        self.assertEqual(roll.total_successes, 6)
-        self.assertEqual(roll.margin, 3)
-
-        self.assertFalse(roll.is_bestial)
-        self.assertFalse(roll.is_total_failure)
-        self.assertFalse(roll.is_failure)
-        self.assertFalse(roll.is_messy)
+# Roll outcome tests
 
 
-class TestRollOpportunities(unittest.TestCase):
-    """
-    This suite tests the different WP opportunities.
+def test_bestial_failure():
+    """This roll should be a bestial failure."""
+    roll = gen_roll(1, 2, 1, 1, 1, 1, 0, 5)
 
-    There are an absurd number of possible permutations. Rather than attempting
-    to test them all, we simply test the major categories, looking at both true
-    and false states.
-    """
+    assert roll.is_bestial
+    assert roll.outcome == "bestial"
+    assert roll.total_successes == 4
+    assert roll.margin == -1
 
-    def test_can_reroll_failures(self):
-        """Test the various reroll failure states."""
-        roll = gen_roll(3, 0, 0, 0, 1, 1, 0, 3)
-        self.assertTrue(roll.can_reroll_failures)
+    assert not roll.is_total_failure
+    assert not roll.is_failure
+    assert not roll.is_successful
+    assert not roll.is_critical
+    assert not roll.is_messy
 
-        roll = gen_roll(0, 3, 0, 0, 1, 1, 0, 3)
-        self.assertFalse(roll.can_reroll_failures)
 
-    def test_can_maximize_crits(self):
-        """Test the maximize crits options."""
-        roll = gen_roll(1, 1, 3, 0, 0, 0, 0, 3)
-        self.assertTrue(roll.can_maximize_criticals)
+def test_total_failure():
+    """This roll should be a total failure."""
+    roll = gen_roll(1, 0, 0, 0, 0, 0, 0, 2)
 
-        roll = gen_roll(0, 0, 3, 0, 0, 0, 0, 3)
-        self.assertFalse(roll.can_maximize_criticals)
+    assert roll.is_total_failure
+    assert not roll.is_failure
+    assert roll.outcome == "total_fail"
+    assert roll.total_successes == 0
+    assert roll.margin == -2
 
-        roll = gen_roll(0, 0, 0, 0, 0, 0, 3, 3)
-        self.assertFalse(roll.can_maximize_criticals)
+    assert not roll.is_bestial
+    assert not roll.is_successful
+    assert not roll.is_messy
+    assert not roll.is_critical
 
-    def test_can_avoid_messy(self):
-        """Test the avoid messy options."""
-        roll = gen_roll(0, 0, 1, 0, 0, 0, 1, 3)
-        self.assertTrue(roll.is_messy)
-        self.assertTrue(roll.can_avoid_messy_critical)
 
-        roll = gen_roll(0, 0, 0, 0, 0, 0, 2, 3)
-        self.assertTrue(roll.is_messy)
-        self.assertFalse(roll.can_avoid_messy_critical)
+def test_failure():
+    """This roll should be a simple failure."""
+    roll = gen_roll(0, 1, 0, 0, 0, 0, 0, 2)
 
-        roll = gen_roll(0, 0, 1, 0, 0, 0, 0, 3)
-        self.assertFalse(roll.is_messy)
-        self.assertFalse(roll.can_avoid_messy_critical)
+    assert roll.is_failure
+    assert roll.outcome == "fail"
+    assert roll.total_successes == 1
+    assert roll.margin == -1
 
-    def test_can_risky_avoid_messy(self):
-        """Test the risky avoid messy options."""
-        roll = gen_roll(1, 0, 1, 0, 0, 0, 1, 3)
-        self.assertTrue(roll.is_messy)
-        self.assertTrue(roll.can_avoid_messy_critical)
-        self.assertTrue(roll.can_risky_messy_critical)
+    assert not roll.is_total_failure
+    assert not roll.is_bestial
+    assert not roll.is_successful
+    assert not roll.is_messy
+    assert not roll.is_critical
 
-        roll = gen_roll(0, 0, 1, 0, 0, 0, 1, 3)
-        self.assertTrue(roll.is_messy)
-        self.assertTrue(roll.can_avoid_messy_critical)
-        self.assertFalse(roll.can_risky_messy_critical)
+
+def test_success():
+    """This roll should be a plain success."""
+    roll = gen_roll(0, 2, 1, 0, 0, 0, 0, 3)
+
+    assert roll.is_successful
+    assert roll.outcome == "success"
+    assert roll.total_successes == 3
+    assert roll.margin == 0
+
+    assert not roll.is_bestial
+    assert not roll.is_total_failure
+    assert not roll.is_failure
+    assert not roll.is_messy
+    assert not roll.is_critical
+
+
+def test_messy_critical():
+    """This roll should be a messy critical."""
+    roll = gen_roll(0, 0, 0, 1, 0, 0, 2, 3)
+
+    assert roll.is_successful
+    assert roll.is_messy
+    assert roll.outcome == "messy"
+    assert roll.total_successes == 4
+    assert roll.margin == 1
+
+    assert not roll.is_bestial
+    assert not roll.is_total_failure
+    assert not roll.is_failure
+    assert not roll.is_critical
+
+    # A messy critical is still messy if there are two normal 10s
+    roll = gen_roll(0, 0, 4, 1, 0, 0, 1, 3)
+    assert roll.is_messy
+    assert roll.total_successes == 9
+    assert roll.margin == 6
+
+
+def test_critical():
+    """This roll should be a critical success."""
+    roll = gen_roll(0, 1, 3, 0, 0, 0, 0, 3)
+
+    assert roll.is_successful
+    assert roll.is_critical
+    assert roll.outcome == "critical"
+    assert roll.total_successes == 6
+    assert roll.margin == 3
+
+    assert not roll.is_bestial
+    assert not roll.is_total_failure
+    assert not roll.is_failure
+    assert not roll.is_messy
+
+
+# Roll opportunity tests
+
+
+def test_can_reroll_failures():
+    """Test the various reroll failure states."""
+    roll = gen_roll(3, 0, 0, 0, 1, 1, 0, 3)
+    assert roll.can_reroll_failures
+
+    roll = gen_roll(0, 3, 0, 0, 1, 1, 0, 3)
+    assert not roll.can_reroll_failures
+
+
+def test_can_maximize_crits():
+    """Test the maximize crits options."""
+    roll = gen_roll(1, 1, 3, 0, 0, 0, 0, 3)
+    assert roll.can_maximize_criticals
+
+    roll = gen_roll(0, 0, 3, 0, 0, 0, 0, 3)
+    assert not roll.can_maximize_criticals
+
+    roll = gen_roll(0, 0, 0, 0, 0, 0, 3, 3)
+    assert not roll.can_maximize_criticals
+
+
+def test_can_avoid_messy():
+    """Test the avoid messy options."""
+    roll = gen_roll(0, 0, 1, 0, 0, 0, 1, 3)
+    assert roll.is_messy
+    assert roll.can_avoid_messy_critical
+
+    roll = gen_roll(0, 0, 0, 0, 0, 0, 2, 3)
+    assert roll.is_messy
+    assert not roll.can_avoid_messy_critical
+
+    roll = gen_roll(0, 0, 1, 0, 0, 0, 0, 3)
+    assert not roll.is_messy
+    assert not roll.can_avoid_messy_critical
+
+
+def test_can_risky_avoid_messy():
+    """Test the risky avoid messy options."""
+    roll = gen_roll(1, 0, 1, 0, 0, 0, 1, 3)
+    assert roll.is_messy
+    assert roll.can_avoid_messy_critical
+    assert roll.can_risky_messy_critical
+
+    roll = gen_roll(0, 0, 1, 0, 0, 0, 1, 3)
+    assert roll.is_messy
+    assert roll.can_avoid_messy_critical
+    assert not roll.can_risky_messy_critical
 
 
 # DiceThrow tests

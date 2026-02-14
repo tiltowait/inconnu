@@ -172,20 +172,33 @@ class GuildCache:
             return guild
 
     @validate
-    async def fetchguilds(self) -> list[CachedGuild]:
-        """Fetch all guilds and populate with members."""
+    async def fetchguilds(self, user_id: int) -> list[CachedGuild]:
+        """Fetch the guilds a specific user belongs to, with members populated."""
         guilds: dict[int, CachedGuild] = {}
-        async with self.db.execute("SELECT * FROM guilds") as cur:
-            async for row in cur:
-                guild = CachedGuild.model_validate(dict(row))
-                guilds[guild.id] = guild
 
-        async with self.db.execute("SELECT * FROM members") as cur:
+        query = (
+            "SELECT "
+            "g.id AS guild_id, g.name AS guild_name, g.icon AS guild_icon, "
+            "m.id AS member_id, m.name AS member_name, m.icon AS member_icon "
+            "FROM guilds g "
+            "JOIN members m ON g.id = m.guild "
+            "WHERE g.id IN (SELECT guild FROM members WHERE id = ?)"
+        )
+        async with self.db.execute(query, (user_id,)) as cur:
             async for row in cur:
-                guild = guilds[row["guild"]]
-                data = dict(row)
-                data["guild"] = guild
-                guild.members.append(CachedMember.model_validate(data))
+                gid = row["guild_id"]
+                if gid not in guilds:
+                    guilds[gid] = CachedGuild(
+                        id=gid, name=row["guild_name"], icon=row["guild_icon"]
+                    )
+                guild = guilds[gid]
+                member = CachedMember(
+                    id=row["member_id"],
+                    name=row["member_name"],
+                    icon=row["member_icon"],
+                    guild=guild,
+                )
+                guild.members.append(member)
 
         return list(guilds.values())
 

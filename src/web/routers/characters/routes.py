@@ -61,11 +61,12 @@ async def get_character_list(
     if not await guild_cache.ready():
         raise HTTPException(503, detail="Bot is still starting up.")
 
+    user_guilds = await guild_cache.fetchguilds(user_id)
+
     guilds = {}
-    for guild in await guild_cache.fetchguilds():
-        if guild.get_member(user_id) is not None:
-            char_count = await char_mgr.countguild(guild.id)
-            guilds[guild.id] = CharacterGuild.create(guild, char_count)
+    for guild in user_guilds:
+        char_count = await char_mgr.countguild(guild.id)
+        guilds[guild.id] = CharacterGuild.create(guild, char_count)
 
     chars = []
     for char in await char_mgr.fetchuser(user_id):

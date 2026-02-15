@@ -11,7 +11,7 @@ dependencies = [
     "python-dotenv>=0.21.0,<2",
     "uvicorn>=0.37.0,<1",
     "fastapi>=0.120.3,<1",
-    "py-cord[speed]>=2.7.0,<3",
+    "py-cord[speed]==2.7.0",
     "pyparsing>=3.1.1,<4",
     "cachetools>=5.5.2,<6",
     "uvloop>=0.21.0,<1",

@@ -16,7 +16,7 @@ from utils.text import clean_text, pull_mentions
 from utils.text import diff as text_diff
 from utils.urls import post_url
 
-__HELP_URL = "https://docs.inconnu.app/"
+__HELP_URL = "https://docs.inconnu.app/premium/roleposting"
 
 
 class PostModal(discord.ui.Modal):

@@ -38,7 +38,7 @@ async def get_character_list(
 ) -> UserCharData:
     """Get all of the user's characters and the guilds they belong to."""
     if not await guild_cache.ready():
-        raise HTTPException(503, detail="Bot is still starting up.")
+        raise HTTPException(503, detail="Bot is still starting up")
 
     user_guilds = await guild_cache.fetchguilds(user_id)
 
@@ -78,7 +78,7 @@ async def get_character(
     The CharData also contains guild and owner information. If the
     character is an SPC, then owner information is not returned."""
     if not await guild_cache.ready():
-        raise HTTPException(503, detail="Bot is still starting up.")
+        raise HTTPException(503, detail="Bot is still starting up")
 
     char = await char_mgr.fetchid(oid)
     if char is None:
@@ -125,7 +125,7 @@ async def get_guild_characters(
     """Get all character base profiles belonging to the guild. Excludes
     characters whose owners have left the server."""
     if not await guild_cache.ready():
-        raise HTTPException(503, detail="Bot is still starting up.")
+        raise HTTPException(503, detail="Bot is still starting up")
 
     guild = await guild_cache.fetchguild(guild_id)
     if guild is None:
@@ -170,11 +170,11 @@ async def get_character_profile(
     """Fetch a character profile. This endpoint returns a non-sensitive character
     model with only name, ownership data, and public profile data."""
     if not await guild_cache.ready():
-        raise HTTPException(503, detail="Bot is still starting up.")
+        raise HTTPException(503, detail="Bot is still starting up")
 
     char = await char_mgr.fetchid(oid)
     if char is None:
-        raise HTTPException(404, detail="Character not found.")
+        raise HTTPException(404, detail="Character not found")
 
     guild = await CharacterGuild.fetch(char.guild)
     if char.is_spc:

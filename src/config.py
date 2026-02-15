@@ -13,7 +13,7 @@ DEBUG_GUILDS: Optional[list] = None
 ADMIN_GUILD = int(os.environ["ADMIN_SERVER"])
 SUPPORTER_GUILD = int(os.environ["SUPPORTER_GUILD"])
 SUPPORTER_ROLE = int(os.environ["SUPPORTER_ROLE"])
-PROFILE_SITE = os.environ.get("PROFILE_SITE", "http://localhost:8000/")
+PROFILE_SITE = os.environ.get("PROFILE_SITE", "http://localhost:5173/")
 SHOW_TEST_ROUTES = "SHOW_TEST_ROUTES" in os.environ
 APP_SITE = os.environ.get("APP_SITE", "http://localhost:5173")
 GUILD_CACHE_LOC = os.environ.get("GUILD_CACHE_LOC", "file::memory:?cache=shared")

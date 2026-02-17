@@ -30,6 +30,7 @@ def main():
 
         if not args.commit:
             print(f"This operation would update {len(updates)} characters.")
+            print("First:", updates[0])
         else:
             with client.start_session() as session:
                 with session.start_transaction():

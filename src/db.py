@@ -13,10 +13,10 @@ from models import RPPost, VChar, VGuild, VUser
 load_dotenv()
 
 _mongo_url = os.environ["MONGO_URL"]
-_db_name = _mongo_url.rsplit("/", 1)[-1]
+_db_name = os.path.basename(_mongo_url)
 
 _client = AsyncMongoClient(_mongo_url, serverSelectionTimeoutMS=1800)
-_db = _client[_db_name]
+_db = _client.get_database(_db_name)
 
 # The collections
 characters = _db.characters
@@ -48,7 +48,7 @@ async def server_info() -> dict[str, Any]:
 async def init():
     """Initialize the database."""
     await init_beanie(_db, document_models=models())
-    logger.info("Initialized beanie")
+    logger.info("Initialized beanie. Database: {}", _db_name)
 
 
 async def close():

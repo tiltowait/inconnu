@@ -49,6 +49,7 @@ filterwarnings = [
     "ignore:'audioop' is deprecated:DeprecationWarning",
     "ignore:the imp module is deprecated:DeprecationWarning",
     "ignore:There is no current event loop:DeprecationWarning:discord.client",
+    "ignore:alru_cache detected event loop change:async_lru.AlruCacheLoopResetWarning",
 ]
 
 [build-system]

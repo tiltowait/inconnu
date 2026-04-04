@@ -280,15 +280,15 @@ class PostModal(discord.ui.Modal):
             try:
                 await changelog.send(embed=embed)
                 logger.info("POST: Sent changelog to {}: {}", interaction.guild.name, changelog_id)
-            except discord.HTTPException:
-                logger.info(
-                    "POST: Changelog channel doesn't exist: {}: {}",
-                    interaction.guild.name,
-                    changelog_id,
-                )
             except discord.Forbidden:
                 logger.info(
                     "POST: Unable to post changelog in {}: {}",
+                    interaction.guild.name,
+                    changelog_id,
+                )
+            except discord.HTTPException:
+                logger.info(
+                    "POST: Changelog channel doesn't exist: {}: {}",
                     interaction.guild.name,
                     changelog_id,
                 )

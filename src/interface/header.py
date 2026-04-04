@@ -248,7 +248,7 @@ class HeaderCog(commands.Cog):
             if record is not None:
                 # Make sure we are allowed to delete it
                 owner = record["character"]["user"]
-                if is_approved_user(ctx, owner_id=owner):
+                if is_approved_user(ctx, owner=owner):
                     logger.debug("HEADER: Deleting RP header")
                     try:
                         if is_bot_message:

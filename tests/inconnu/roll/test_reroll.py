@@ -2,14 +2,12 @@
 
 from unittest.mock import patch
 
-
 from inconnu.roll.roll import (
     _avoid_messy,
     _maximize_criticals,
     _reroll_failures,
     _risky_avoid_messy,
 )
-
 
 # Test _reroll_failures
 

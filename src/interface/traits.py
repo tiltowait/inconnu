@@ -8,6 +8,7 @@ from discord.commands import SlashCommandGroup
 from discord.ext import commands
 
 import inconnu
+from ctx import AppCtx
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -32,7 +33,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def traits_add(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         traits: str,
         character: str,
     ):
@@ -44,7 +45,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.player_option()
     async def traits_list(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
         player: discord.Member,
     ):
@@ -56,7 +57,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def traits_update(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         traits: str,
         character: str,
     ):
@@ -68,7 +69,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def delete_traits(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         traits: str,
         character: str,
     ):
@@ -90,7 +91,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def add_disciplines(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         disciplines: str,
         character: str,
     ):
@@ -101,7 +102,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def remove_disciplines(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         disciplines: str,
         character: str,
     ):
@@ -112,7 +113,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def disciplines_update(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         disciplines: str,
         character: str,
     ):
@@ -131,7 +132,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def add_specialties(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         specialties: str,
         character: str,
     ):
@@ -148,7 +149,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def remove_specialties(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         specialties: str,
         character: str,
     ):
@@ -172,7 +173,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def add_powers(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         powers: str,
         character: str,
     ):
@@ -189,7 +190,7 @@ class Traits(commands.Cog, name="Trait Management"):
     @inconnu.options.char_option("The character to modify")
     async def remove_powers(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         powers: str,
         character: str,
     ):

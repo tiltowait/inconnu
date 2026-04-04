@@ -9,6 +9,7 @@ import errors
 import inconnu
 import services
 import ui
+from ctx import AppCtx
 from models import HeaderSubdoc, RPPost, VChar
 from services.haven import haven
 from utils import get_avatar, re_paginate
@@ -296,7 +297,7 @@ class PostModal(discord.ui.Modal):
 
 
 @haven(__HELP_URL)
-async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs):
+async def create_post(ctx: AppCtx, character: str, **kwargs):
     """Create a modal that sends a Rolepost."""
     if ctx.bot.can_webhook(ctx.channel):
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
@@ -311,7 +312,7 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
         )
 
 
-async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
+async def edit_post(ctx: AppCtx, message: discord.Message):
     """Edit a Rolepost."""
     rp_post = await RPPost.find_one({"message_id": message.id})
 

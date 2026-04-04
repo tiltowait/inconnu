@@ -13,6 +13,7 @@ import errors
 import inconnu
 import services
 import ui
+from ctx import AppCtx
 from inconnu.options import char_option
 
 if TYPE_CHECKING:
@@ -59,7 +60,7 @@ class MiscCommands(commands.Cog):
     @option("ceiling", description="The roll's highest possible value", min_value=2, default=100)
     async def random(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         ceiling: int,
     ):
         """Roll between 1 and a given ceiling (default 100)."""
@@ -72,7 +73,7 @@ class MiscCommands(commands.Cog):
     @option("new_owner", description="The character's new owner")
     async def transfer(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         current_owner: discord.Member,
         character: str,
         new_owner: discord.Member,

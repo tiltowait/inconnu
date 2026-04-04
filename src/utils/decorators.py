@@ -5,6 +5,7 @@ from discord.ext import commands
 from loguru import logger
 
 import errors
+from ctx import AppCtx
 from utils.permissions import get_or_fetch_supporter
 
 
@@ -21,7 +22,7 @@ def not_on_lockdown():
     return commands.check(predicate)
 
 
-async def _check_supporter(ctx: discord.ApplicationContext, user: discord.Member | None = None):
+async def _check_supporter(ctx: AppCtx, user: discord.Member | None = None):
     """Wraps is_supporter() to raise on failure."""
     if not await get_or_fetch_supporter(ctx, user):
         raise errors.NotPremium

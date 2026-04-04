@@ -8,6 +8,7 @@ from discord.commands import SlashCommandGroup, user_command
 from discord.ext import commands
 
 import inconnu
+from ctx import AppCtx
 from inconnu.options import char_option, player_option
 
 if TYPE_CHECKING:
@@ -37,7 +38,7 @@ class ExperienceCommands(commands.Cog):
     @option("reason", description="The reason for the grant")
     async def award(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         player: discord.Member,
         character: str,
         amount: int,
@@ -58,7 +59,7 @@ class ExperienceCommands(commands.Cog):
     @option("reason", description="The reason for the deduction")
     async def deduct(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         player: discord.Member,
         character: str,
         amount: int,
@@ -81,7 +82,7 @@ class ExperienceCommands(commands.Cog):
     )
     async def remove_entry(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         player: discord.Member,
         character: str,
         log_index: int,
@@ -94,7 +95,7 @@ class ExperienceCommands(commands.Cog):
     @player_option()
     async def log(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
         player: discord.Member,
     ):

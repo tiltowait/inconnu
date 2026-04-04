@@ -13,6 +13,7 @@ from pymongo import UpdateOne
 import db
 import inconnu
 import services
+from ctx import AppCtx
 from utils.decorators import premium
 from utils.discord_helpers import raw_bulk_delete_handler
 from utils.urls import post_url
@@ -58,7 +59,7 @@ class RoleplayCog(commands.Cog):
     @premium()
     async def post(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
         mentions: str,
         blush: int,
@@ -112,7 +113,7 @@ class RoleplayCog(commands.Cog):
     @premium()
     async def post_shortcut(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         mentions: str,
         character: str,
         blush: int,
@@ -167,7 +168,7 @@ class RoleplayCog(commands.Cog):
     )
     async def search(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         user: discord.Member,
         content: str,
         character: str,
@@ -193,24 +194,24 @@ class RoleplayCog(commands.Cog):
         )
 
     @slash_command(contexts={discord.InteractionContextType.guild})
-    async def tags(self, ctx: discord.ApplicationContext):
+    async def tags(self, ctx: AppCtx):
         """View your Rolepost tags."""
         await inconnu.roleplay.show_tags(ctx)
 
     # Message commands
 
     @slash_command(contexts={discord.InteractionContextType.guild})
-    async def bookmarks(self, ctx: discord.ApplicationContext):
+    async def bookmarks(self, ctx: AppCtx):
         """View your Rolepost bookmarks."""
         await inconnu.roleplay.show_bookmarks(ctx)
 
     @commands.message_command(name="Post: Edit", contexts={discord.InteractionContextType.guild})
-    async def edit_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
+    async def edit_rp_post(self, ctx: AppCtx, message: discord.Message):
         """Edit the selected Rolepost."""
         await inconnu.roleplay.edit_post(ctx, message)
 
     @commands.message_command(name="Post: Delete", contexts={discord.InteractionContextType.guild})
-    async def delete_rp_post(self, ctx: discord.ApplicationContext, message: discord.Message):
+    async def delete_rp_post(self, ctx: AppCtx, message: discord.Message):
         """Delete the selected Rolepost."""
         await inconnu.roleplay.delete_message_chain(ctx, message)
 

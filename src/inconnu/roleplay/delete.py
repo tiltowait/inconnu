@@ -21,9 +21,7 @@ async def delete_message_chain(ctx: AppCtx, message: discord.Message):
         await ui.embeds.error(ctx, err, title="Invalid message")
 
 
-async def _fetch_rp_post(
-    ctx: discord.ApplicationContext, webhook: discord.Webhook, message: discord.Message
-) -> RPPost:
+async def _fetch_rp_post(ctx: AppCtx, webhook: discord.Webhook, message: discord.Message) -> RPPost:
     """Validate the message and ownership, displaying an error message if applicable."""
     if not message.author.bot:
         raise ValueError("You can't delete a user's post.")

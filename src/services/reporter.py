@@ -11,6 +11,7 @@ from loguru import logger
 import constants
 import errors
 import ui
+from ctx import AppInteraction
 from services.log import report_database_error
 from utils import get_avatar
 
@@ -59,7 +60,7 @@ class ErrorReporter:
         except ValueError:
             logger.warning("REPORTER: Unhandled exceptions channel is not an int")
 
-    async def report_error(self, ctx: discord.ApplicationContext | discord.Interaction, error):
+    async def report_error(self, ctx: AppInteraction, error):
         """Report an error, switching between known and unknown."""
         error = getattr(error, "original", error)
         if isinstance(ctx, discord.ApplicationContext):

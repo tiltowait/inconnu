@@ -6,9 +6,7 @@ import discord
 from loguru import logger
 
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
-from ctx import AppCtx
-
-AppInteraction = AppCtx | discord.Interaction
+from ctx import AppCtx, AppInteraction
 
 
 def is_approved_user(ctx: AppInteraction, owner_id: discord.User | None = None):
@@ -33,9 +31,7 @@ def is_admin(ctx: AppInteraction):
     return ctx.channel.permissions_for(user).administrator
 
 
-async def get_or_fetch_supporter(
-    ctx: discord.ApplicationContext, user: discord.Member | None
-) -> bool:
+async def get_or_fetch_supporter(ctx: AppCtx, user: discord.Member | None) -> bool:
     """Returns True if the user or invoking user is a supporter."""
     user = user or ctx.user
     assert user is not None

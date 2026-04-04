@@ -8,6 +8,7 @@ from discord.commands import OptionChoice, slash_command
 from discord.ext import commands
 
 import inconnu
+from ctx import AppCtx
 from inconnu.options import char_option, player_option
 from models import VChar
 
@@ -32,7 +33,7 @@ class Gameplay(commands.Cog):
     @player_option()
     async def vr(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         syntax: str,
         comment: str,
         character: str,
@@ -66,7 +67,7 @@ class Gameplay(commands.Cog):
     @player_option()
     async def easy_roll(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         pool: str,
         hunger: str,
         difficulty: int,
@@ -97,7 +98,7 @@ class Gameplay(commands.Cog):
     @char_option("The character to heal")
     async def aggheal(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
     ):
         """Heal a character's Aggravated damage, performing three Rouse checks."""
@@ -107,7 +108,7 @@ class Gameplay(commands.Cog):
     @char_option("The character to wake")
     async def awaken(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
     ):
         """Perform a Rouse check and heal Superficial Willpower damage."""
@@ -122,7 +123,7 @@ class Gameplay(commands.Cog):
     @inconnu.options.char_option("The character to Blush")
     async def bol(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         ministry_alt: bool,
         character: str,
     ):
@@ -164,7 +165,7 @@ class Gameplay(commands.Cog):
     @char_option("The frenzying character")
     async def frenzy(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         difficulty: int,
         penalty: str,
         bonus: str,
@@ -194,7 +195,7 @@ class Gameplay(commands.Cog):
     @inconnu.options.char_option("The character undergoing remorse")
     async def remorse(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         min_override: int,
         lasombra_alt: bool,
         character: str,
@@ -219,7 +220,7 @@ class Gameplay(commands.Cog):
     @char_option("The character to Rouse")
     async def rouse(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         count: int,
         reroll: int,
         purpose: str,
@@ -233,7 +234,7 @@ class Gameplay(commands.Cog):
     @char_option("The character feeding")
     async def slake(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         amount: int,
         character: str,
     ):
@@ -246,7 +247,7 @@ class Gameplay(commands.Cog):
     @player_option()
     async def stain(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         delta: int,
         character: str,
         player: discord.Member,

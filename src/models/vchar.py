@@ -164,6 +164,11 @@ class VChar(Document):
         """A copy of the character's traits."""
         return copy.deepcopy(self.raw_traits)
 
+    @traits.setter
+    def traits(self, value: list[VCharTrait]):
+        """Set the character's traits (used by beanie rollback)."""
+        self.raw_traits = value
+
     @property
     def has_biography(self) -> bool:
         """Whether the character has a biography set."""

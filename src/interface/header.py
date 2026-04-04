@@ -12,7 +12,6 @@ from pymongo import DeleteOne
 import db
 import errors
 import inconnu
-import services
 from ctx import AppCtx
 from inconnu.options import char_option
 from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
@@ -122,31 +121,6 @@ class LocationChangeModal(discord.ui.Modal):
             description=f"**Location:** {location}\n**Temporary Effects:** {temp_effects}",
         )
         await interaction.response.send_message(embed=embed, ephemeral=True, delete_after=5)
-
-
-async def _header_bol_options(ctx) -> list[OptionChoice]:
-    """Generate options for the BoL portion of the header update command."""
-    if (charid := ctx.options.get("character")) is None:
-        return []
-
-    guild = ctx.interaction.guild
-    user = ctx.interaction.user
-
-    try:
-        character = await services.char_mgr.fetchone(guild, user, charid)
-
-        if character.is_thin_blood:
-            return [OptionChoice("N/A - Thin-Blood", "-1")]
-        if character.is_vampire:
-            return [
-                OptionChoice("Yes", "1"),
-                OptionChoice("No", "0"),
-                OptionChoice("N/A - Thin-Blood", "-1"),
-            ]
-        return [OptionChoice("N/A - Mortal", "-1")]
-
-    except errors.CharacterNotFoundError:
-        return []
 
 
 class HeaderCog(commands.Cog):

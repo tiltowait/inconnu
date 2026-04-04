@@ -1,5 +1,7 @@
 """interface/reference.py - A cog for reference material."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import option
 from discord.commands import OptionChoice, slash_command
@@ -8,14 +10,18 @@ from loguru import logger
 
 import inconnu
 import ui
+from ctx import AppCtx
 from inconnu.options import char_option, player_option
 from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class ReferenceCommands(commands.Cog):
     """A cog for reference commands."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: "InconnuBot"):
         super().__init__()
         self.bot = bot
 
@@ -25,7 +31,7 @@ class ReferenceCommands(commands.Cog):
     )
     async def bp(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         rating: int,
     ):
         """Look up Blood Potency effects."""
@@ -35,7 +41,7 @@ class ReferenceCommands(commands.Cog):
     @option("damage", description="The total Aggravated damage sustained", min_value=1)
     async def cripple(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         damage: int,
     ):
         """Generate a random crippling injury based on Aggravated damage."""
@@ -57,7 +63,7 @@ class ReferenceCommands(commands.Cog):
     @char_option("The character (if using traits)")
     async def probability(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         roll: str,
         reroll: str,
         character: str,
@@ -81,7 +87,7 @@ class ReferenceCommands(commands.Cog):
     @player_option()
     async def statistics(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         style: str,
         date: str,
         character: str,
@@ -98,7 +104,7 @@ class ReferenceCommands(commands.Cog):
     )
     async def temperament(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         resonance: str,
     ):
         """Get a random temperament."""
@@ -175,6 +181,6 @@ class ReferenceCommands(commands.Cog):
         await inconnu.stats.delete_rolls_in_channel(channel)
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(ReferenceCommands(bot))

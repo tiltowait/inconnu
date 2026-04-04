@@ -133,6 +133,6 @@ class AdminCog(commands.Cog):
         logger.info("SHUTDOWN: Bot is ready for shutdown")
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(AdminCog(bot))

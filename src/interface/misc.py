@@ -104,6 +104,6 @@ class MiscCommands(commands.Cog):
             await ui.embeds.error(ctx, err)
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(MiscCommands(bot))

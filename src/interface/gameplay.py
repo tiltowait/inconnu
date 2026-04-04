@@ -1,5 +1,7 @@
 """interface/gameplay.py - Command interface directly related to gameplay."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import option
 from discord.commands import OptionChoice, slash_command
@@ -9,11 +11,14 @@ import inconnu
 from inconnu.options import char_option, player_option
 from models import VChar
 
+if TYPE_CHECKING:
+    from bot import InconnuBot
+
 
 class Gameplay(commands.Cog):
     """Gameplay-based commands."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: "InconnuBot"):
         self.bot = bot
 
     # This is the primary roll command. It features the fastest entry and
@@ -250,6 +255,6 @@ class Gameplay(commands.Cog):
         await inconnu.misc.stain(ctx, character, delta, player=player)
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(Gameplay(bot))

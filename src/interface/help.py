@@ -2,6 +2,7 @@
 # TODO: Migrate to _empty_embed
 
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 import discord
 from discord import option
@@ -13,6 +14,9 @@ import inconnu
 from config import web_asset
 from constants import PATREON, SUPPORT_URL
 from utils import cmd_replace
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class Section(StrEnum):
@@ -56,7 +60,7 @@ class _HelpView(View):
 class Help(commands.Cog):
     """A class for housing the /help command."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: "InconnuBot"):
         super().__init__()
         self.bot = bot
         self.info_view = None
@@ -510,6 +514,6 @@ class Help(commands.Cog):
         return embed
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(Help(bot))

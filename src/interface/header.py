@@ -320,6 +320,6 @@ class HeaderCog(commands.Cog):
         await db.headers.delete_many({"channel": channel.id})
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(HeaderCog(bot))

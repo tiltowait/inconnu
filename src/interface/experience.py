@@ -1,5 +1,7 @@
 """experience.py - Commands for tracking XP."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import option
 from discord.commands import SlashCommandGroup, user_command
@@ -7,6 +9,9 @@ from discord.ext import commands
 
 import inconnu
 from inconnu.options import char_option, player_option
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class ExperienceCommands(commands.Cog):
@@ -114,6 +119,6 @@ class ExperienceCommands(commands.Cog):
         await inconnu.experience.bulk_award_xp(ctx)
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(ExperienceCommands(bot))

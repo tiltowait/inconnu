@@ -1,11 +1,16 @@
 """interface/traits.py - Traits command interface."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import option
 from discord.commands import SlashCommandGroup
 from discord.ext import commands
 
 import inconnu
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class Traits(commands.Cog, name="Trait Management"):
@@ -197,6 +202,6 @@ class Traits(commands.Cog, name="Trait Management"):
         )
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(Traits(bot))

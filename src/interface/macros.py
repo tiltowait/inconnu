@@ -1,5 +1,7 @@
 """interface/macros.py - Macro command interface."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import option
 from discord.commands import OptionChoice, SlashCommandGroup, slash_command
@@ -7,6 +9,9 @@ from discord.ext import commands
 
 import inconnu
 from inconnu.options import char_option
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class Macros(commands.Cog, name="Macro Utilities"):
@@ -137,6 +142,6 @@ class Macros(commands.Cog, name="Macro Utilities"):
         await inconnu.macros.delete(ctx, character, macro)
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(Macros(bot))

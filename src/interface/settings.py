@@ -1,11 +1,16 @@
 """interface/settings.py - Settings-related commands."""
 
+from typing import TYPE_CHECKING
+
 from discord import option
 from discord.commands import OptionChoice, slash_command
 from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class SettingsCommands(commands.Cog):
@@ -25,6 +30,6 @@ class SettingsCommands(commands.Cog):
         await inconnu.menu.show(ctx, scope)
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(SettingsCommands(bot))

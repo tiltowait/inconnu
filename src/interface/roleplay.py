@@ -1,6 +1,7 @@
 """Roleplay commands."""
 
 from datetime import timezone
+from typing import TYPE_CHECKING
 
 import discord
 from discord import option
@@ -16,11 +17,14 @@ import services
 from utils.decorators import premium
 from utils.urls import post_url
 
+if TYPE_CHECKING:
+    from bot import InconnuBot
+
 
 class RoleplayCog(commands.Cog):
     """A cog with roleplay commands."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: "InconnuBot"):
         self.bot = bot
 
     # Slash commands
@@ -304,6 +308,6 @@ class RoleplayCog(commands.Cog):
         )
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Set up the cog."""
     bot.add_cog(RoleplayCog(bot))

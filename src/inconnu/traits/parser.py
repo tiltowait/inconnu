@@ -3,7 +3,7 @@
 from inconnu.traits import traitcommon
 
 
-def parse_traits(*args, disciplines: bool) -> dict:
+def parse_traits(*args: str, disciplines: bool) -> dict:
     """Parses arguments and puts them into a dictionary."""
     ratings = {}
 

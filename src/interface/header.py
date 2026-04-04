@@ -12,10 +12,10 @@ from pymongo import DeleteOne
 import db
 import errors
 import inconnu
-import interface
 import services
 from ctx import AppCtx
 from inconnu.options import char_option
+from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
 from utils.permissions import is_approved_user
 
 if TYPE_CHECKING:
@@ -311,9 +311,9 @@ class HeaderCog(commands.Cog):
             await ctx.respond("This is not an RP header.", ephemeral=True)
 
     @commands.Cog.listener()
-    async def on_raw_bulk_message_delete(self, payload):
+    async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
         """Bulk delete headers."""
-        deletions = interface.raw_bulk_delete_handler(
+        deletions = raw_bulk_delete_handler(
             payload,
             self.bot,
             lambda id: DeleteOne({"message": id}),
@@ -324,7 +324,7 @@ class HeaderCog(commands.Cog):
             await db.headers.bulk_write(deletions)
 
     @commands.Cog.listener()
-    async def on_raw_message_delete(self, raw_message):
+    async def on_raw_message_delete(self, raw_message: discord.RawMessageDeleteEvent):
         """Remove a header record."""
 
         async def deletion_handler(message_id: int):
@@ -332,7 +332,7 @@ class HeaderCog(commands.Cog):
             logger.debug("HEADER: Deleting possible header")
             await db.headers.delete_one({"message": message_id})
 
-        await interface.raw_message_delete_handler(
+        await raw_message_delete_handler(
             raw_message,
             self.bot,
             deletion_handler,

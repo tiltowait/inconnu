@@ -11,7 +11,7 @@ from pymongo import UpdateOne
 
 import db
 import inconnu
-import interface
+from utils.discord_helpers import raw_bulk_delete_handler
 import services
 from utils.decorators import premium
 from utils.urls import post_url
@@ -215,7 +215,7 @@ class RoleplayCog(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
         """Bulk mark Roleposts as deleted."""
-        updates = interface.raw_bulk_delete_handler(
+        updates = raw_bulk_delete_handler(
             payload,
             self.bot,
             lambda id: UpdateOne(

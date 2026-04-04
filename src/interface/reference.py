@@ -7,9 +7,9 @@ from discord.ext import commands
 from loguru import logger
 
 import inconnu
-import interface
 import ui
 from inconnu.options import char_option, player_option
+from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
 
 
 class ReferenceCommands(commands.Cog):
@@ -145,16 +145,16 @@ class ReferenceCommands(commands.Cog):
                 )
 
     @commands.Cog.listener()
-    async def on_raw_bulk_message_delete(self, payload):
+    async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
         """Bulk remove rolls from statistics."""
         # We only need the message IDs
-        deletions = interface.raw_bulk_delete_handler(payload, self.bot, lambda id: id)
+        deletions = raw_bulk_delete_handler(payload, self.bot, lambda id: id)
         if deletions:
             logger.debug("REFERENCE: Deleting {} potential roll records", len(deletions))
             await inconnu.stats.roll_message_deleted(*deletions)
 
     @commands.Cog.listener()
-    async def on_raw_message_delete(self, raw_message):
+    async def on_raw_message_delete(self, raw_message: discord.RawMessageDeleteEvent):
         """Remove the roll from statistics."""
 
         async def deletion_handler(message_id: int):
@@ -162,7 +162,7 @@ class ReferenceCommands(commands.Cog):
             logger.debug("REFERENCE: Deleting possible roll record")
             await inconnu.stats.roll_message_deleted(message_id)
 
-        await interface.raw_message_delete_handler(raw_message, self.bot, deletion_handler)
+        await raw_message_delete_handler(raw_message, self.bot, deletion_handler)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):

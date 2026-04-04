@@ -13,6 +13,8 @@
 
 **Inconnu** is a Discord dicebot for *Vampire: The Masquerade 5th Edition*. In addition to basic rolls, it offers a number of advanced options and quality-of-life features, such as character integration, trait-based pools, and more. [For a full rundown of **Inconnu's** features, read the documentation.](https://docs.inconnu.app)
 
+**See also:** [inconnu-app](https://github.com/the-second-city/inconnu-app), the web frontend for **Inconnu**.
+
 ## Getting Started
 
 * [Invite Inconnu to your server](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=537135104&scope=bot%20applications.commands)

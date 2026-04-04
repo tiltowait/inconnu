@@ -1,5 +1,4 @@
 """interface/help.py - Help commands"""
-# TODO: Migrate to _empty_embed
 
 from enum import StrEnum
 from typing import TYPE_CHECKING
@@ -13,6 +12,7 @@ from discord.ui import Button, View
 import inconnu
 from config import web_asset
 from constants import PATREON, SUPPORT_URL
+from ctx import AppCtx
 from utils import cmd_replace
 
 if TYPE_CHECKING:
@@ -131,7 +131,7 @@ class Help(commands.Cog):
 
     @slash_command(name="help")
     @option("section", description="The help section to look up", choices=Section.all())
-    async def help_command(self, ctx: discord.ApplicationContext, section: str):
+    async def help_command(self, ctx: AppCtx, section: str):
         """View help on a particular section."""
         match section:
             case Section.OVERVIEW:
@@ -152,7 +152,7 @@ class Help(commands.Cog):
                 raise NotImplementedError("Oops")
 
     @slash_command()
-    async def info(self, ctx):
+    async def info(self, ctx: AppCtx):
         """Display bot info."""
         embed = discord.Embed(
             title="Bot Information",
@@ -180,9 +180,9 @@ class Help(commands.Cog):
 
     # Callbacks
 
-    async def show_basic_help(self, ctx, ephemeral=True):
+    async def show_basic_help(self, ctx: AppCtx, ephemeral=True):
         """Run the /traits help command."""
-        embed = discord.Embed(
+        embed = self._empty_embed(
             title="Commands Help",
             description=(
                 "Basic commands listing. Click the links for detailed documentation!"
@@ -193,9 +193,6 @@ class Help(commands.Cog):
                 " interface after selecting 3 Hunger."
             ),
         )
-        embed.set_author(name=self.bot.user.display_name)
-        embed.set_thumbnail(url=self.bot.user.avatar)
-
         embed.add_field(
             name="Dice Rolls",
             value=(
@@ -261,15 +258,12 @@ class Help(commands.Cog):
 
         await cmd_replace(ctx, embed=embed, view=self.overview_view, ephemeral=ephemeral)
 
-    async def show_traits_help(self, ctx, ephemeral=True):
+    async def show_traits_help(self, ctx: AppCtx, ephemeral=True):
         """Run the /traits help command."""
-        embed = discord.Embed(
+        embed = self._empty_embed(
             title="Traits Management",
             description="This command group allows you to add, remove, or update character traits.",
         )
-        embed.set_author(name=self.bot.user.display_name)
-        embed.set_thumbnail(url=self.bot.user.avatar)
-
         embed.add_field(
             name="Add custom traits",
             value="`/traits add`\n**Example:** `/traits add traits:Forgery=1 Stunning=2`",
@@ -305,7 +299,7 @@ class Help(commands.Cog):
 
         await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
-    async def show_specialties_help(self, ctx, ephemeral=True):
+    async def show_specialties_help(self, ctx: AppCtx, ephemeral=True):
         """Show help for using/adding/removing specialties."""
         embed = self._empty_embed(
             title="Specialties",
@@ -349,7 +343,7 @@ class Help(commands.Cog):
 
         await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
-    async def show_disciplines_help(self, ctx, ephemeral=True):
+    async def show_disciplines_help(self, ctx: AppCtx, ephemeral=True):
         """Show help for using/adding/removing specialties."""
         embed = self._empty_embed(
             title="Disciplines & Powers",
@@ -408,15 +402,12 @@ class Help(commands.Cog):
 
         await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
-    async def show_macros_help(self, ctx, ephemeral=True):
+    async def show_macros_help(self, ctx: AppCtx, ephemeral=True):
         """Run the /macro help command."""
-        embed = discord.Embed(
+        embed = self._empty_embed(
             title="Macros",
             description="This command group lets you define, delete, or update macros.",
         )
-        embed.set_author(name=self.bot.user.display_name)
-        embed.set_thumbnail(url=self.bot.user.avatar)
-
         embed.add_field(
             name="Creation", value="`/macro create`\nFill out the parameters offered.", inline=False
         )
@@ -443,11 +434,11 @@ class Help(commands.Cog):
 
         await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
-    async def show_character_help(self, ctx, ephemeral=True):
+    async def show_character_help(self, ctx: AppCtx, ephemeral=True):
         """Run the /macro help command."""
         await inconnu.character.update_help(ctx, ephemeral=ephemeral)
 
-    async def show_rp_posts_help(self, ctx, ephemeral=True):
+    async def show_rp_posts_help(self, ctx: AppCtx, ephemeral=True):
         """Show the Roleposting help."""
         embed = self._empty_embed(
             title="Roleposting",

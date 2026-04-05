@@ -112,7 +112,7 @@ class _RPHeader(discord.ui.DesignerModal):
     async def callback(self, interaction: discord.Interaction):
         """Set the header and tell the user."""
         # TODO: Find out if ModalItem.item is the intended attribute (checker complains)
-        self.character.header.location = clean_text(self.children[0].item.value)
+        self.character.header.location = clean_text(self.children[0].item.value.replace("•", ""))
         self.character.header.blush = int(self.children[1].item.values[0])
         self.character.header.merits = clean_text(self.children[2].item.value)
         self.character.header.flaws = clean_text(self.children[3].item.value)

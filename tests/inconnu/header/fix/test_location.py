@@ -331,6 +331,19 @@ async def test_callback_title_whitespace_normalization(interaction: discord.Inte
     assert embed.footer.text == "Obfuscate active"
 
 
+async def test_callback_strips_bullet_from_location(interaction: discord.Interaction):
+    """Bullet character in location input is stripped to prevent parsing issues."""
+    msg = _make_header_message(title="Nadea")
+    modal = LocationChangeModal(msg, webhook=None, title="Edit")
+    modal.children[0].value = "Bar • VIP Lounge"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    embed = msg.embeds[0]
+    assert embed.title == "Nadea • Bar VIP Lounge"
+
+
 # --- callback tests (author mode, with webhook) ---
 
 

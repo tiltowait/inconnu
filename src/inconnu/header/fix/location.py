@@ -103,7 +103,7 @@ class LocationChangeModal(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Update the RP header."""
-        location = " ".join(self.children[0].value.split())
+        location = " ".join(self.children[0].value.replace("•", "").split())
         temp_effects = " ".join(self.children[1].value.split())
         embed = self.header.embeds[0]
 

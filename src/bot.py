@@ -18,7 +18,7 @@ import inconnu
 import services
 import tasks as bot_tasks
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
-from ctx import AppCtx
+from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
 from services.reporter import reporter
@@ -185,13 +185,16 @@ class InconnuBot(discord.AutoShardedBot):
 
         return guild
 
-    def can_webhook(self, channel: discord.abc.MessageableChannel) -> bool:
+    def can_webhook(self, channel: Channel) -> bool:
         """Whether the bot has manage webhooks permission in the channel."""
         if not isinstance(channel, discord.TextChannel):
             return False
         return channel.permissions_for(channel.guild.me).manage_webhooks
 
-    async def prep_webhook(self, channel: discord.abc.MessageableChannel) -> discord.Webhook:
+    async def prep_webhook(
+        self,
+        channel: Channel,
+    ) -> discord.Webhook:
         """Prepare a webhook, either from the cache or creating one. Raises WebhookError."""
         if not isinstance(channel, discord.TextChannel):
             raise ValueError("Webhooks are only supported in text channels.")

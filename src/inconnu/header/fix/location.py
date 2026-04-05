@@ -6,7 +6,7 @@ import discord
 from loguru import logger
 
 import db
-from ctx import AppCtx
+from ctx import AppCtx, Channel
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -38,7 +38,7 @@ async def fix_header_location(ctx: AppCtx, message: discord.Message):
 
 async def _resolve_webhook(
     bot: "InconnuBot",
-    channel: discord.abc.MessageableChannel,
+    channel: Channel,
     message: discord.Message,
 ) -> discord.Webhook | None:
     """Resolve a webhook if the message was sent by one of ours."""

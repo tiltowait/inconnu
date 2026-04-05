@@ -12,44 +12,6 @@ _RESOLVE_WEBHOOK = "inconnu.header.posted.location._resolve_webhook"
 
 
 @pytest.fixture
-def bot_user() -> discord.User:
-    """The bot's user identity."""
-    user = MagicMock(spec=discord.User)
-    user.id = 999
-    return user
-
-
-@pytest.fixture
-def owner_user() -> discord.Member:
-    """The header owner."""
-    user = MagicMock(spec=discord.Member)
-    user.id = 100
-    user.name = "owner"
-    return user
-
-
-@pytest.fixture
-def other_user() -> discord.Member:
-    """A non-owner user."""
-    user = MagicMock(spec=discord.Member)
-    user.id = 200
-    user.name = "intruder"
-    return user
-
-
-@pytest.fixture
-def webhook() -> discord.Webhook:
-    """A resolved webhook."""
-    return MagicMock(spec=discord.Webhook)
-
-
-@pytest.fixture
-def header_record(owner_user: discord.Member) -> dict:
-    """A database header record."""
-    return {"character": {"user": owner_user.id}}
-
-
-@pytest.fixture
 def message(bot_user: discord.User) -> discord.Message:
     """A Discord message authored by the bot (non-webhook header)."""
     msg = MagicMock(spec=discord.Message)
@@ -66,17 +28,6 @@ def webhook_message() -> discord.Message:
     msg.author = MagicMock(spec=discord.User)
     msg.author.id = 888
     return msg
-
-
-@pytest.fixture
-def ctx(owner_user: discord.Member, bot_user: discord.User) -> AsyncMock:
-    """A minimal AppCtx mock."""
-    ctx = AsyncMock()
-    ctx.user = owner_user
-    ctx.bot = MagicMock()
-    ctx.bot.user = bot_user
-    ctx.channel = MagicMock(spec=discord.TextChannel)
-    return ctx
 
 
 @pytest.fixture

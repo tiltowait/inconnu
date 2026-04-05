@@ -92,7 +92,7 @@ class LocationChangeModal(discord.ui.Modal):
             return "" if self.updating_title else elements[0]
         if len(elements) == 2:
             if self.updating_title:
-                if "Blushed" in elements[-1]:
+                if elements[-1] in ("Blushed", "Not Blushed"):
                     return ""
                 return elements[-1]
 

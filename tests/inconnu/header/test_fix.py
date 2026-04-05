@@ -240,6 +240,13 @@ async def test_get_location_title_name_and_not_blushed():
     assert modal._get_location() == ""
 
 
+async def test_get_location_title_blushed_in_location_name():
+    """Title with a location containing 'Blushed' as a substring."""
+    msg = _make_header_message(title="Nadea • The Blushed Rose")
+    modal = LocationChangeModal(msg, webhook=None, title="Edit")
+    assert modal._get_location() == "The Blushed Rose"
+
+
 async def test_get_location_title_all_three():
     """Title with name, location, and blush → extracts location."""
     msg = _make_header_message(title="Nadea • The Elysium • Blushed")

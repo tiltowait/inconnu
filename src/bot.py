@@ -185,14 +185,16 @@ class InconnuBot(discord.AutoShardedBot):
 
         return guild
 
-    def can_webhook(self, channel: discord.TextChannel) -> bool:
+    def can_webhook(self, channel: discord.abc.MessageableChannel) -> bool:
         """Whether the bot has manage webhooks permission in the channel."""
-        if isinstance(channel, (discord.threads.Thread, discord.PartialMessageable)):
+        if not isinstance(channel, discord.TextChannel):
             return False
         return channel.permissions_for(channel.guild.me).manage_webhooks
 
-    async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
+    async def prep_webhook(self, channel: discord.abc.MessageableChannel) -> discord.Webhook:
         """Prepare a webhook, either from the cache or creating one. Raises WebhookError."""
+        if not isinstance(channel, discord.TextChannel):
+            raise ValueError("Webhooks are only supported in text channels.")
         try:
             return await self.webhook_cache.prep_webhook(channel)
         except discord.Forbidden:

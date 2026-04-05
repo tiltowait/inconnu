@@ -27,11 +27,11 @@ async def fix_header_location(ctx: AppCtx, message: discord.Message):
 
     owner = record["character"]["user"]
     if ctx.user.id != owner:
-        logger.debug("HEADER: Unauthorized RP header update attempt by {}", ctx.user.name)
+        logger.debug("Unauthorized RP header update attempt by {}", ctx.user.name)
         await ctx.respond("This isn't your RP header!", ephemeral=True)
         return
 
-    logger.debug("HEADER: {} is updating an RP header", ctx.user.name)
+    logger.debug("{} is updating an RP header", ctx.user.name)
     modal = LocationChangeModal(message, webhook, title="Edit RP Header")
     await ctx.send_modal(modal)
 

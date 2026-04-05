@@ -10,12 +10,10 @@ from loguru import logger
 from pymongo import DeleteOne
 
 import db
-import errors
 import inconnu
 from ctx import AppCtx
 from inconnu.options import char_option
 from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
-from utils.permissions import is_approved_user
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -97,55 +95,7 @@ class HeaderCog(commands.Cog):
     )
     async def delete_rp_header(self, ctx: AppCtx, message: discord.Message):
         """Delete an RP header."""
-        try:
-            webhook = await self.bot.prep_webhook(message.channel)
-            is_bot_message = message.author == self.bot.user
-            is_webhook_message = message.author.id == webhook.id
-        except errors.WebhookError:
-            webhook = None
-            is_bot_message = message.author == self.bot.user
-            is_webhook_message = False
-
-        if is_bot_message or is_webhook_message:
-            record = await db.headers.find_one({"message": message.id})
-            if record is not None:
-                # Make sure we are allowed to delete it
-                owner = record["character"]["user"]
-                if is_approved_user(ctx, owner=owner):
-                    logger.debug("HEADER: Deleting RP header")
-                    try:
-                        if is_bot_message:
-                            logger.debug("HEADER: Calling message.delete()")
-                            await message.delete()
-                        else:
-                            logger.debug("HEADER: Calling webhook.delete_message()")
-                            await webhook.delete_message(message.id)
-                        await ctx.respond("RP header deleted!", ephemeral=True, delete_after=3)
-                    except discord.errors.Forbidden:
-                        await ctx.respond(
-                            (
-                                "Something went wrong. Unable to delete the header. "
-                                "This may be a permissions issue."
-                            ),
-                            ephemeral=True,
-                        )
-                        logger.warning(
-                            "HEADER: Unable to delete {} in #{} on {}",
-                            record["message"],
-                            ctx.channel.name,
-                            ctx.guild.name,
-                        )
-                else:
-                    logger.debug("HEADER: Unauthorized deletion attempt by {}", ctx.user.name)
-                    await ctx.respond(
-                        "You don't have permission to delete this RP header.", ephemeral=True
-                    )
-            else:
-                logger.debug("HEADER: Attempted to delete non-header post")
-                await ctx.respond("This is not an RP header.", ephemeral=True)
-        else:
-            logger.debug("HEADER: Attempted to delete someone else's post")
-            await ctx.respond("This is not an RP header.", ephemeral=True)
+        await inconnu.header.fix.delete_header(ctx, message)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):

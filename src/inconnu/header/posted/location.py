@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-async def fix_header_location(ctx: AppCtx, message: discord.Message):
+async def edit_location(ctx: AppCtx, message: discord.Message):
     """Validate ownership and open the location edit modal for a posted header."""
     webhook = await _resolve_webhook(ctx.bot, ctx.channel, message)
 

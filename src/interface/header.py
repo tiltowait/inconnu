@@ -87,7 +87,7 @@ class HeaderCog(commands.Cog):
     @commands.message_command(name="Header: Edit", contexts={discord.InteractionContextType.guild})
     async def fix_rp_header(self, ctx: AppCtx, message: discord.Message):
         """Change an RP header's location."""
-        await inconnu.header.fix.fix_header_location(ctx, message)
+        await inconnu.header.posted.edit_location(ctx, message)
 
     @commands.message_command(
         name="Header: Delete",
@@ -95,7 +95,7 @@ class HeaderCog(commands.Cog):
     )
     async def delete_rp_header(self, ctx: AppCtx, message: discord.Message):
         """Delete an RP header."""
-        await inconnu.header.fix.delete_header(ctx, message)
+        await inconnu.header.posted.delete_header(ctx, message)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):

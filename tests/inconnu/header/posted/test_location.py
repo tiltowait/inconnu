@@ -1,4 +1,4 @@
-"""Tests for inconnu.header.fix.location."""
+"""Tests for inconnu.header.posted.location."""
 
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import discord
 import pytest
 
-from inconnu.header.fix.location import LocationChangeModal, fix_header_location
+from inconnu.header.posted.location import LocationChangeModal, edit_location
 
-_RESOLVE_WEBHOOK = "inconnu.header.fix.location._resolve_webhook"
+_RESOLVE_WEBHOOK = "inconnu.header.posted.location._resolve_webhook"
 
 
 @pytest.fixture
@@ -101,7 +101,7 @@ async def test_not_bot_message_and_no_webhook(
     message.id = 1
     message.author = other_user
 
-    await fix_header_location(ctx, message)
+    await edit_location(ctx, message)
 
     ctx.respond.assert_awaited_once()
     args, kwargs = ctx.respond.await_args
@@ -112,7 +112,7 @@ async def test_not_bot_message_and_no_webhook(
 async def test_no_db_record(ctx: AsyncMock, no_webhook: AsyncMock, message: discord.Message):
     """Bot message with no header record in the database is rejected."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
-        await fix_header_location(ctx, message)
+        await edit_location(ctx, message)
 
     ctx.respond.assert_awaited_once()
     args, kwargs = ctx.respond.await_args
@@ -131,7 +131,7 @@ async def test_non_owner_rejected(
     ctx.user = other_user
 
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record):
-        await fix_header_location(ctx, message)
+        await edit_location(ctx, message)
 
     ctx.respond.assert_awaited_once()
     args, kwargs = ctx.respond.await_args
@@ -144,7 +144,7 @@ async def test_owner_gets_modal(
 ):
     """The header owner receives the edit modal."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record):
-        await fix_header_location(ctx, message)
+        await edit_location(ctx, message)
 
     ctx.respond.assert_not_awaited()
     ctx.send_modal.assert_awaited_once()
@@ -158,7 +158,7 @@ async def test_webhook_message_with_record(
 ):
     """A webhook-authored message with a valid record opens the modal."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record):
-        await fix_header_location(ctx, webhook_message)
+        await edit_location(ctx, webhook_message)
 
     ctx.respond.assert_not_awaited()
     ctx.send_modal.assert_awaited_once()
@@ -169,7 +169,7 @@ async def test_webhook_message_no_record(
 ):
     """A webhook-authored message with no db record is rejected."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
-        await fix_header_location(ctx, webhook_message)
+        await edit_location(ctx, webhook_message)
 
     ctx.respond.assert_awaited_once()
     args, kwargs = ctx.respond.await_args

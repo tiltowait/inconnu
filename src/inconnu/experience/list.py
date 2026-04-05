@@ -6,7 +6,7 @@ import discord
 from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
-from ctx import AppCtx, AppInteraction
+from ctx import AppInteraction
 from models import VChar
 from services.haven import haven
 from utils import get_avatar

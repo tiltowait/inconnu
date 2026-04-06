@@ -72,9 +72,19 @@ class ReferenceCommands(commands.Cog):
         await inconnu.reference.probability(ctx, roll, reroll, character)
 
     @slash_command()
-    async def resonance(self, ctx):
+    @option(
+        "minimum",
+        description="The minimum Temperament",
+        choices=(
+            OptionChoice("Negligible", 1),
+            OptionChoice("Fleeting", 6),
+            OptionChoice("Intense", 9),
+        ),
+        default=1,
+    )
+    async def resonance(self, ctx: AppCtx, minimum: int):
         """Generate a random Resonance."""
-        await inconnu.reference.resonance(ctx)
+        await inconnu.reference.resonance(ctx, minimum)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
     @option(

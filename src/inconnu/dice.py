@@ -25,6 +25,11 @@ def d10(count: int | None = None) -> list[int] | int:
     return [RNG.randint(1, 10) for _ in range(count)]
 
 
-def random(ceiling=100):
+def random(ceiling=100) -> int:
     """Get a random number between 1 and ceiling."""
     return RNG.randint(1, ceiling)
+
+
+def randint(floor: int, ceil: int) -> int:
+    """Get a random number between floor and ceil, inclusive."""
+    return RNG.randint(floor, ceil)

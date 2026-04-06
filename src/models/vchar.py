@@ -423,7 +423,7 @@ class VChar(Document):
             updated = False
             for trait in self.raw_traits:
                 if trait.matching(input_name, True):
-                    if trait.name in ["Resolve", "Composure"]:
+                    if trait.name in ("Resolve", "Composure"):
                         counter["willpower"] += input_rating - trait.rating
                     elif trait.name == "Stamina":
                         counter["health"] += input_rating - trait.rating
@@ -607,9 +607,9 @@ class VChar(Document):
             severity (str): Damage.SUPERFICIAL or Damage.AGGRAVATED
             amount (int): The amount to set it to
         """
-        if severity not in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
+        if severity not in (Damage.SUPERFICIAL, Damage.AGGRAVATED):
             raise SyntaxError("Severity must be superficial or aggravated.")
-        if tracker not in [Tracker.HEALTH, Tracker.WILLPOWER]:
+        if tracker not in (Tracker.HEALTH, Tracker.WILLPOWER):
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = getattr(self, tracker)
@@ -663,9 +663,9 @@ class VChar(Document):
         Damage won't be applied if delta is 0 or if we are subtracting damage when
             there is none.
         """
-        if severity not in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
+        if severity not in (Damage.SUPERFICIAL, Damage.AGGRAVATED):
             raise SyntaxError("Severity must be superficial or aggravated.")
-        if tracker not in [Tracker.HEALTH, Tracker.WILLPOWER]:
+        if tracker not in (Tracker.HEALTH, Tracker.WILLPOWER):
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = getattr(self, tracker)

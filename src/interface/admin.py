@@ -56,10 +56,10 @@ class AdminCog(commands.Cog):
             embed.set_author(name="Announcement", icon_url=self.bot.user.display_avatar)
 
         try:
-            for field, value in [
+            for field, value in (
                 (field1_name, field1_value),
                 (field2_name, field2_value),
-            ]:
+            ):
                 if field:
                     field = " ".join(field.split())
                     value = " ".join(value.split())

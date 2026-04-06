@@ -43,10 +43,10 @@ async def can_adjust_current_xp(ctx: AppCtx) -> bool:
         return True
 
     guild = await VGuild.get_or_fetch(ctx.guild)
-    return guild.settings.experience_permissions in [
+    return guild.settings.experience_permissions in (
         ExpPerms.UNRESTRICTED,
         ExpPerms.UNSPENT_ONLY,
-    ]
+    )
 
 
 async def can_adjust_lifetime_xp(ctx: AppCtx) -> bool:
@@ -55,10 +55,10 @@ async def can_adjust_lifetime_xp(ctx: AppCtx) -> bool:
         return True
 
     guild = await VGuild.get_or_fetch(ctx.guild)
-    return guild.settings.experience_permissions in [
+    return guild.settings.experience_permissions in (
         ExpPerms.UNRESTRICTED,
         ExpPerms.LIFETIME_ONLY,
-    ]
+    )
 
 
 # Gameplay

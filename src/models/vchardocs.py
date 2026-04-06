@@ -123,7 +123,7 @@ class VCharTrait(BaseModel):
     @property
     def specialties_allowed(self) -> bool:
         """Only skills and custom traits can have specialties."""
-        return self.type in [VCharTrait.Type.CUSTOM.value, VCharTrait.Type.SKILL.value]
+        return self.type in (VCharTrait.Type.CUSTOM.value, VCharTrait.Type.SKILL.value)
 
     @property
     def has_specialties(self) -> bool:

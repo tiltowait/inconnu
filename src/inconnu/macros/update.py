@@ -91,7 +91,7 @@ def __validate_parameters(character: VChar, parameters: dict):
             except ValueError:
                 raise ValueError("`hunger` requires yes/no or true/false.") from ValueError
 
-        elif key in ["diff", "difficulty"]:
+        elif key in ("diff", "difficulty"):
             if not value.isdigit() or int(value) < 0:
                 raise ValueError("`difficulty` must be a number greater than 0.")
             macro_update["difficulty"] = int(value)
@@ -99,19 +99,19 @@ def __validate_parameters(character: VChar, parameters: dict):
         elif key == "comment":
             macro_update[key] = value
 
-        elif key in ["rouses", "rouse"]:
+        elif key in ("rouses", "rouse"):
             if not value.isdigit() or not 0 <= int(value) <= 3:
                 raise ValueError("`rouses` must be a number between 0 and 3.")
             macro_update["rouses"] = int(value)
 
-        elif key in ["reroll_rouses", "reroll", "rerolls", "reroll_rouse"]:
+        elif key in ("reroll_rouses", "reroll", "rerolls", "reroll_rouse"):
             try:
                 value = bool(strtobool(value))
                 macro_update["reroll_rouses"] = value
             except ValueError:
                 raise ValueError("`reroll_rouses` requires yes/no or true/false.") from ValueError
 
-        elif key in ["stain", "stains", "staining"]:
+        elif key in ("stain", "stains", "staining"):
             if value.lower() == "yes":
                 macro_update["staining"] = "apply"
             elif value.lower() == "no":

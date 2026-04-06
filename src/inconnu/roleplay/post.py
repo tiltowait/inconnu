@@ -40,7 +40,7 @@ class PostModal(discord.ui.Modal):
         if self.post_to_edit is None:
             header_params = {
                 param: kwargs.pop(param, None)
-                for param in ["blush", "location", "merits", "flaws", "temp", "hunger"]
+                for param in ("blush", "location", "merits", "flaws", "temp", "hunger")
             }
             self.header = HeaderSubdoc.create(character, **header_params)
             starting_value = ""

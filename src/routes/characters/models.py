@@ -158,11 +158,11 @@ class CreationBody(BaseModel):
         for trait in v:
             if trait.raw_subtraits:
                 # Only skills, custom traits, and disciplines can have subtraits
-                if trait.type not in [
+                if trait.type not in (
                     VCharTrait.Type.SKILL,
                     VCharTrait.Type.CUSTOM,
                     VCharTrait.Type.DISCIPLINE,
-                ]:
+                ):
                     raise ValueError(
                         f"Trait `{trait.name}` of type `{trait.type}` cannot have subtraits."
                     )
@@ -183,7 +183,7 @@ class CreationBody(BaseModel):
     @model_validator(mode="after")
     def validate_blood_potency_for_splat(self):
         """Validate blood potency based on character splat."""
-        if self.splat in [VCharSplat.MORTAL, VCharSplat.GHOUL]:
+        if self.splat in (VCharSplat.MORTAL, VCharSplat.GHOUL):
             if self.blood_potency != 0:
                 raise ValueError(f"{self.splat.value.title()}s must have blood potency of 0")
         elif self.splat == VCharSplat.THIN_BLOOD:

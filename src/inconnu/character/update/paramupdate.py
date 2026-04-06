@@ -312,7 +312,7 @@ def __update_humanity(character: VChar, hu_type: str, delta: str | int) -> str:
 
     Does not catch exceptions.
     """
-    if hu_type not in ["humanity", "stains"]:
+    if hu_type not in ("humanity", "stains"):
         raise SyntaxError(f"Unknown humanity syntax: {hu_type}.")
 
     setting = False

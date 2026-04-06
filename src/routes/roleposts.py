@@ -1,7 +1,6 @@
 """Rolepost changelogs routing."""
 
 from datetime import datetime
-from typing import Optional
 
 import discord
 from beanie import PydanticObjectId
@@ -32,12 +31,12 @@ class Changelog(BaseModel):
     """Rolepost changelog response model."""
 
     guild: CharacterGuild
-    poster: Optional[OwnerData]
+    poster: OwnerData | None
     channel: str
     character: CharData
-    url: Optional[AnyUrl]
+    url: AnyUrl | None
     history: list[PostHistoryEntry]
-    deletion_date: Optional[datetime]
+    deletion_date: datetime | None
 
 
 @router.get("/changelog/{oid}")

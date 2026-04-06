@@ -1,7 +1,7 @@
 """Rolepost models."""
 
 from datetime import UTC, datetime, timezone
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import discord
 from beanie import Document
@@ -25,14 +25,14 @@ class RPPost(Document):
 
     # Metadata
     date: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    date_modified: Optional[datetime] = None
+    date_modified: datetime | None = None
     guild: int
     channel: int
     user: int
     message_id: int
-    url: Optional[AnyUrl]
+    url: AnyUrl | None
     deleted: bool = False
-    deletion_date: Optional[datetime] = None
+    deletion_date: datetime | None = None
     id_chain: list[int] = Field(default_factory=list)
 
     # Content
@@ -42,7 +42,7 @@ class RPPost(Document):
     history: list[PostHistoryEntry] = Field(default_factory=list)
 
     # Custom
-    title: Optional[str] = None
+    title: str | None = None
     tags: list[str] = Field(default_factory=list)
 
     @property

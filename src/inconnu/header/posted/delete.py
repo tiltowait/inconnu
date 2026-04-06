@@ -32,9 +32,7 @@ async def delete_header(ctx: AppCtx, message: discord.Message):
     owner = record["character"]["user"]
     if not is_approved_user(ctx, owner=owner):
         logger.debug("Unauthorized header deletion attempt by {}", ctx.user.name)
-        await ctx.respond(
-            "You don't have permission to delete this RP header.", ephemeral=True
-        )
+        await ctx.respond("You don't have permission to delete this RP header.", ephemeral=True)
         return
 
     try:
@@ -47,8 +45,7 @@ async def delete_header(ctx: AppCtx, message: discord.Message):
         await ctx.respond("RP header deleted!", ephemeral=True, delete_after=3)
     except discord.errors.Forbidden:
         await ctx.respond(
-            "Something went wrong. Unable to delete the header. "
-            "This may be a permissions issue.",
+            "Something went wrong. Unable to delete the header. This may be a permissions issue.",
             ephemeral=True,
         )
         logger.warning(

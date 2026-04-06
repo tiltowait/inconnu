@@ -1,7 +1,7 @@
 """Header subdoc."""
 
 import copy
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel
@@ -28,7 +28,7 @@ class HeaderSubdoc(BaseModel):
     char_name: str
 
     blush: int
-    hunger: Optional[int]
+    hunger: int | None
     location: str
     merits: str
     flaws: str

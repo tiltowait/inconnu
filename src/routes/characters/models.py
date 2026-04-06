@@ -1,6 +1,6 @@
 """Pydantic models for character API endpoints."""
 
-from typing import Literal, Optional, Self
+from typing import Literal, Self
 
 from beanie import PydanticObjectId
 from pydantic import (
@@ -71,7 +71,7 @@ class CharData(BaseModel):
     """Unified character response containing guild, owner, and character data."""
 
     guild: CharacterGuild
-    owner: Optional[OwnerData]
+    owner: OwnerData | None
     character: VChar | PublicCharacter
     spc: bool
 

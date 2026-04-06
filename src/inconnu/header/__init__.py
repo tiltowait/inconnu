@@ -6,7 +6,15 @@ from inconnu.header.show import register_header as register
 from inconnu.header.show import show_header
 from inconnu.header.update import update_header
 
-__all__ = ("blush_text", "posted", "embed", "header_title", "register", "show_header", "update_header")
+__all__ = (
+    "blush_text",
+    "posted",
+    "embed",
+    "header_title",
+    "register",
+    "show_header",
+    "update_header",
+)
 
 
 def header_title(*fields):

@@ -4,7 +4,7 @@ import itertools
 from datetime import UTC, datetime
 from enum import StrEnum
 from types import SimpleNamespace as SN
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -69,7 +69,7 @@ class VCharMacro(BaseModel):
     reroll_rouses: bool
     staining: str
     hunt: bool
-    comment: Optional[str]
+    comment: str | None
 
 
 class VCharTrait(BaseModel):

@@ -2,7 +2,6 @@
 
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Optional
 
 from async_lru import alru_cache
 from beanie import Document
@@ -73,9 +72,9 @@ class VGuildSettings(BaseModel):
     accessibility: bool = False
     experience_permissions: ExpPerms = ExpPerms.UNRESTRICTED
     oblivion_stains: list[int] = Field(default_factory=lambda: [1, 10])
-    update_channel: Optional[int] = None
-    changelog_channel: Optional[int] = None
-    deletion_channel: Optional[int] = None
+    update_channel: int | None = None
+    changelog_channel: int | None = None
+    deletion_channel: int | None = None
     add_empty_resonance: bool = False
     resonance: ResonanceMode = ResonanceMode.STANDARD
     max_hunger: int = Field(ge=5, le=10, default=5)
@@ -93,7 +92,7 @@ class VGuild(Document):
     name: str
     active: bool = True
     joined: datetime = Field(default_factory=utcnow)
-    left: Optional[datetime] = None
+    left: datetime | None = None
     settings: VGuildSettings = Field(default_factory=VGuildSettings)
 
     def join(self):

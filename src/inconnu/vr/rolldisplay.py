@@ -354,7 +354,7 @@ class RollDisplay:
             # Uppercase each word in the pool. We can't use .title(), because
             # .title() will make everything else lowercase. "XYZ" would become
             # "Xyz", which is not desired.
-            splitted = map(lambda t: (t[0].upper() + t[1:]) if t[0].islower() else t, splitted)
+            splitted = (t[0].upper() + t[1:] if t[0].islower() else t for t in splitted)
             pool_str = " ".join(splitted)
 
             embed.add_field(name="Pool", value=pool_str)

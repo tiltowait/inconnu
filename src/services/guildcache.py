@@ -1,7 +1,6 @@
 """Guild/Member caching for cold start recovery."""
 
 import functools
-from typing import Optional
 
 import aiosqlite
 import discord
@@ -26,7 +25,7 @@ class CachedGuild(BaseModel):
 
     id: int
     name: str
-    icon: Optional[str]
+    icon: str | None
     members: list[CachedMember] = Field(default_factory=list)
 
     def get_member(self, id: int) -> CachedMember | None:

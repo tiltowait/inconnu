@@ -317,6 +317,6 @@ def _check_number(label, value):
         raise ValueError(f"`{label}` must be a number (with or without `+/-`.") from ValueError
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(Characters(bot))

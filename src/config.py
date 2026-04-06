@@ -1,7 +1,6 @@
 """Basic bot config."""
 
 import os
-from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -9,7 +8,7 @@ load_dotenv()
 
 BOT_TOKEN = os.environ.get("INCONNU_TOKEN", "")
 API_KEY = os.environ.get("INCONNU_API_TOKEN", "")
-DEBUG_GUILDS: Optional[list] = None
+DEBUG_GUILDS: list[int] | None = None
 ADMIN_GUILD = int(os.environ["ADMIN_SERVER"])
 SUPPORTER_GUILD = int(os.environ["SUPPORTER_GUILD"])
 SUPPORTER_ROLE = int(os.environ["SUPPORTER_ROLE"])

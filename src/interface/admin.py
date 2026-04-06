@@ -34,7 +34,7 @@ class AdminCog(commands.Cog):
     @option("field2_value", description="The first field's contents", required=False)
     async def announce(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         title: str,
         description: str,
         field1_name: str,
@@ -56,10 +56,10 @@ class AdminCog(commands.Cog):
             embed.set_author(name="Announcement", icon_url=self.bot.user.display_avatar)
 
         try:
-            for field, value in [
+            for field, value in (
                 (field1_name, field1_value),
                 (field2_name, field2_value),
-            ]:
+            ):
                 if field:
                     field = " ".join(field.split())
                     value = " ".join(value.split())
@@ -78,13 +78,13 @@ class AdminCog(commands.Cog):
     @discord.slash_command(guild_ids=[ADMIN_GUILD])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
-    async def unannounce(self, ctx: discord.ApplicationContext):
+    async def unannounce(self, ctx: AppCtx):
         """Unset the Message of the Day."""
         self.bot.set_motd(None)
         await ctx.respond("Message of the Day unset!", ephemeral=True)
 
     @discord.slash_command()
-    async def motd(self, ctx: discord.ApplicationContext):
+    async def motd(self, ctx: AppCtx):
         """Show the Message of the Day."""
         if self.bot.motd is not None:
             await ctx.respond(embed=self.bot.motd, ephemeral=True)
@@ -101,7 +101,7 @@ class AdminCog(commands.Cog):
     @discord.slash_command(guild_ids=[ADMIN_GUILD])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
-    async def shutdown(self, ctx: discord.ApplicationContext):
+    async def shutdown(self, ctx: AppCtx):
         """Shuts down the bot after 15 minutes."""
         await ctx.respond("Preparing to shut down.", ephemeral=True)
         self.bot.lockdown = discord.utils.utcnow() + timedelta(minutes=15)
@@ -133,6 +133,6 @@ class AdminCog(commands.Cog):
         logger.info("SHUTDOWN: Bot is ready for shutdown")
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(AdminCog(bot))

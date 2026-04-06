@@ -15,7 +15,7 @@ from ui.views import ReportingView
 __HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
 
 
-def _has_image(character):
+def _has_image(character: VChar):
     """Raises an error if the character doesn't have an image."""
     for image in character.profile.images:
         # We need to make sure the image isn't an empty string.
@@ -51,7 +51,13 @@ class ImagePager(ReportingView):
     character's owner.
     """
 
-    def __init__(self, ctx, character, owner, invoker_controls):
+    def __init__(
+        self,
+        ctx: AppCtx,
+        character: VChar,
+        owner: discord.Member | None,
+        invoker_controls: bool,
+    ):
         self.ctx = ctx
         self.message = None
         self.character = character
@@ -199,9 +205,10 @@ class ImagePager(ReportingView):
         self.promote_button.disabled = self.current_page == 0
         self.demote_button.disabled = self.current_page == self.num_pages - 1
 
-        embed = interaction.message.embeds[0]
-        embed.set_image(url=self.current_image)
-        await interaction.response.edit_message(embed=embed, view=self)
+        if interaction.message is not None:
+            embed = interaction.message.embeds[0]
+            embed.set_image(url=self.current_image)
+            await interaction.response.edit_message(embed=embed, view=self)
 
     async def _display_no_images(self, interaction: discord.Interaction):
         """Inform the character has no images if the last image is deleted."""
@@ -279,7 +286,13 @@ class ImagePager(ReportingView):
 
     async def interaction_check(self, interaction: discord.Interaction):
         """Ensure image management safety."""
-        if self.management_mode or self.manage_button.custom_id == interaction.data["custom_id"]:
+        if interaction.data is None or interaction.user is None:
+            # We have nothing to check (shouldn't be possible)
+            return False
+
+        if self.management_mode or self.manage_button.custom_id == interaction.data.get(
+            "custom_id"
+        ):
             # Only the character's owner may access management mode.
             if interaction.user.id != self.character.user:
                 await interaction.response.send_message(
@@ -298,8 +311,11 @@ class ImagePager(ReportingView):
 
     async def on_timeout(self):
         """Delete the components."""
+        if self.message is None:
+            logger.warning("self.message is somehow None")
+            return
         if self.children:
-            logger.debug("IMAGES: View timed out; deleting components")
+            logger.debug("View timed out; deleting components")
             await self.message.edit(view=None)
         else:
-            logger.debug("IMAGES: View timed out, but no components")
+            logger.debug("View timed out, but no components")

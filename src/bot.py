@@ -18,7 +18,7 @@ import inconnu
 import services
 import tasks as bot_tasks
 from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
-from ctx import AppCtx
+from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
 from services.reporter import reporter
@@ -102,7 +102,7 @@ class InconnuBot(discord.AutoShardedBot):
                     # Users can't turn off reply pings to bots, so we don't
                     # need to worry about an edge case where they disabled the
                     # reply ping and can safely ping the author.
-                    if rp_post.user not in map(lambda m: m.id, message.mentions):
+                    if rp_post.user not in (m.id for m in message.mentions):
                         logger.debug("BOT: Pinging Rolepost's author")
                         user = await self.get_or_fetch_user(rp_post.user)
                         await message.reply(user.mention, mention_author=False, delete_after=60)
@@ -164,11 +164,13 @@ class InconnuBot(discord.AutoShardedBot):
             logger.info("PREMIUM: Could not DM {} about premium features", member.name)
 
     def cmd_mention(
-        self, name: str, type: type[discord.ApplicationCommand] = discord.ApplicationCommand
-    ) -> str:
+        self,
+        name: str,
+        type: type[discord.ApplicationCommand] = discord.ApplicationCommand,
+    ) -> str | None:
         """Shorthand for get_application_command(...).mention."""
         if command := self.get_application_command(name, type=type):
-            return command.mention
+            return getattr(command, "mention", None)
         return None
 
     async def get_or_fetch_guild(self, guild_id: int) -> discord.Guild | None:
@@ -185,14 +187,19 @@ class InconnuBot(discord.AutoShardedBot):
 
         return guild
 
-    def can_webhook(self, channel: discord.TextChannel) -> bool:
+    def can_webhook(self, channel: Channel) -> bool:
         """Whether the bot has manage webhooks permission in the channel."""
-        if isinstance(channel, (discord.threads.Thread, discord.PartialMessageable)):
+        if not isinstance(channel, discord.TextChannel):
             return False
         return channel.permissions_for(channel.guild.me).manage_webhooks
 
-    async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
+    async def prep_webhook(
+        self,
+        channel: Channel,
+    ) -> discord.Webhook:
         """Prepare a webhook, either from the cache or creating one. Raises WebhookError."""
+        if not isinstance(channel, discord.TextChannel):
+            raise ValueError("Webhooks are only supported in text channels.")
         try:
             return await self.webhook_cache.prep_webhook(channel)
         except discord.Forbidden:

@@ -1,10 +1,10 @@
 """Tests for utils.paramparse module."""
 
-import pytest
 from collections import OrderedDict
 
-from utils.paramparse import parse_parameters
+import pytest
 
+from utils.paramparse import parse_parameters
 
 # Basic parsing tests
 

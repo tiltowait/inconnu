@@ -20,6 +20,7 @@ from loguru import logger
 import errors
 import services
 import ui
+from ctx import AppCtx
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
@@ -31,7 +32,7 @@ __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
 
 async def parse(
-    ctx: discord.ApplicationContext,
+    ctx: AppCtx,
     raw_syntax: str,
     comment: str | None,
     character: str | None,

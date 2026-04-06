@@ -11,7 +11,7 @@ class DisablingView(ReportingView):
     def __init__(self, timeout=60, remove_on_timeout=False):
         super().__init__(timeout=timeout)
         self.remove_on_timeout = remove_on_timeout
-        self.link_filter = filter(lambda btn: getattr(btn, "url", None) is None, self.children)
+        self.link_filter = (btn for btn in self.children if getattr(btn, "url", None) is None)
         self.message = None
 
     async def disable_items(self, interaction):

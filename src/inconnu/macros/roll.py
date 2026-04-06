@@ -180,7 +180,7 @@ def __normalize_syntax(syntax: str) -> tuple[list[str], str | None, str | None]:
     stack = syntax.split()
     params = []
 
-    while len(stack) > 1 and stack[-2] not in ["+", "-"]:
+    while len(stack) > 1 and stack[-2] not in "+-":
         params.insert(0, stack.pop())
 
     params.insert(0, stack)

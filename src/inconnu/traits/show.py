@@ -5,6 +5,7 @@ from discord.ext.commands import Paginator as Chunker
 
 import constants
 import ui
+from ctx import AppCtx, AppInvocation
 from models import VChar
 from services.haven import haven
 from utils.text import format_join
@@ -13,14 +14,14 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-trait
 
 
 @haven(__HELP_URL)
-async def show(ctx: discord.ApplicationContext, character: VChar, *, player: discord.Member):
+async def show(ctx: AppCtx, character: VChar, *, player: discord.Member):
     """Present a character's traits to its owner."""
     embed = traits_embed(ctx, character, player)
     await ctx.respond(embed=embed, ephemeral=True)
 
 
 def traits_embed(
-    ctx: discord.ApplicationContext | discord.Interaction,
+    ctx: AppInvocation,
     character: VChar,
     owner: discord.Member | None = None,
 ):

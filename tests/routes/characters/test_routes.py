@@ -15,10 +15,10 @@ from constants import Damage
 from errors import DuplicateCharacterError
 from models import VChar
 from models.vchardocs import VCharSplat, VCharTrait
+from routes.characters.models import OwnerData
 from server import app
 from services import guild_cache
 from services.wizard import CharacterGuild, WizardData
-from routes.characters.models import OwnerData
 
 # Test constants
 TEST_API_KEY = "test-api-key-12345"

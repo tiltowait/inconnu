@@ -1,5 +1,7 @@
 """interface/reference.py - A cog for reference material."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import option
 from discord.commands import OptionChoice, slash_command
@@ -7,15 +9,19 @@ from discord.ext import commands
 from loguru import logger
 
 import inconnu
-import interface
 import ui
+from ctx import AppCtx
 from inconnu.options import char_option, player_option
+from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class ReferenceCommands(commands.Cog):
     """A cog for reference commands."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: "InconnuBot"):
         super().__init__()
         self.bot = bot
 
@@ -25,7 +31,7 @@ class ReferenceCommands(commands.Cog):
     )
     async def bp(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         rating: int,
     ):
         """Look up Blood Potency effects."""
@@ -35,7 +41,7 @@ class ReferenceCommands(commands.Cog):
     @option("damage", description="The total Aggravated damage sustained", min_value=1)
     async def cripple(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         damage: int,
     ):
         """Generate a random crippling injury based on Aggravated damage."""
@@ -57,7 +63,7 @@ class ReferenceCommands(commands.Cog):
     @char_option("The character (if using traits)")
     async def probability(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         roll: str,
         reroll: str,
         character: str,
@@ -66,9 +72,19 @@ class ReferenceCommands(commands.Cog):
         await inconnu.reference.probability(ctx, roll, reroll, character)
 
     @slash_command()
-    async def resonance(self, ctx):
+    @option(
+        "minimum",
+        description="The minimum Temperament",
+        choices=(
+            OptionChoice("Negligible", 1),
+            OptionChoice("Fleeting", 6),
+            OptionChoice("Intense", 9),
+        ),
+        default=1,
+    )
+    async def resonance(self, ctx: AppCtx, minimum: int):
         """Generate a random Resonance."""
-        await inconnu.reference.resonance(ctx)
+        await inconnu.reference.resonance(ctx, minimum)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
     @option(
@@ -81,7 +97,7 @@ class ReferenceCommands(commands.Cog):
     @player_option()
     async def statistics(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         style: str,
         date: str,
         character: str,
@@ -98,7 +114,7 @@ class ReferenceCommands(commands.Cog):
     )
     async def temperament(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         resonance: str,
     ):
         """Get a random temperament."""
@@ -145,16 +161,16 @@ class ReferenceCommands(commands.Cog):
                 )
 
     @commands.Cog.listener()
-    async def on_raw_bulk_message_delete(self, payload):
+    async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
         """Bulk remove rolls from statistics."""
         # We only need the message IDs
-        deletions = interface.raw_bulk_delete_handler(payload, self.bot, lambda id: id)
+        deletions = raw_bulk_delete_handler(payload, self.bot, lambda id: id)
         if deletions:
             logger.debug("REFERENCE: Deleting {} potential roll records", len(deletions))
             await inconnu.stats.roll_message_deleted(*deletions)
 
     @commands.Cog.listener()
-    async def on_raw_message_delete(self, raw_message):
+    async def on_raw_message_delete(self, raw_message: discord.RawMessageDeleteEvent):
         """Remove the roll from statistics."""
 
         async def deletion_handler(message_id: int):
@@ -162,7 +178,7 @@ class ReferenceCommands(commands.Cog):
             logger.debug("REFERENCE: Deleting possible roll record")
             await inconnu.stats.roll_message_deleted(message_id)
 
-        await interface.raw_message_delete_handler(raw_message, self.bot, deletion_handler)
+        await raw_message_delete_handler(raw_message, self.bot, deletion_handler)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
@@ -175,6 +191,6 @@ class ReferenceCommands(commands.Cog):
         await inconnu.stats.delete_rolls_in_channel(channel)
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(ReferenceCommands(bot))

@@ -6,11 +6,12 @@ import aiohttp
 import discord
 
 import ui
+from ctx import AppCtx
 
 CHANGELOG = "https://github.com/tiltowait/inconnu/releases/latest"
 
 
-async def show_changelog(ctx: discord.ApplicationContext, hidden: bool):
+async def show_changelog(ctx: AppCtx, hidden: bool):
     """Display Inconnu's changelog."""
     try:
         tag, changelog = await fetch_changelog()

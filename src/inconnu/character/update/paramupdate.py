@@ -1,9 +1,12 @@
 """character/update/paramupdate.py - Functions for updating a character's non-trait parameters."""
 
+from typing import cast
+
 import inconnu
 import services
 from constants import Damage
 from models import VChar
+from models.vchar import Tracker
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal", "thinblood"]
 
@@ -34,8 +37,7 @@ async def update_name(character: VChar, new_name: str) -> str:
 def update_splat(character: VChar, new_splat: str) -> str:
     """Update the character's splat."""
     if new_splat not in VALID_SPLATS:
-        splats = map(lambda splat: f"`{splat}`", VALID_SPLATS)
-        splats = ", ".join(splats)
+        splats = ", ".join(f"`{splat}`" for splat in VALID_SPLATS)
         raise ValueError(f"The `splat` must be one of: {splats}.")
 
     character.splat = new_splat
@@ -52,12 +54,12 @@ def update_potency(character: VChar, delta: str) -> str:
     return __update_hunger_potency(character, delta, "potency", 10)
 
 
-def __update_hunger_potency(character: VChar, delta: str, key: str, maximum: int) -> str:
+def __update_hunger_potency(character: VChar, delta: str | int, key: str, maximum: int) -> str:
     """Update the character's hunger if they are a vampire."""
     if not character.is_vampire:
         raise ValueError(f"Mortals and ghouls do not have {key.title()}.")
 
-    setting = delta[0] not in ["+", "-"]
+    setting = delta[0] not in "+-" if isinstance(delta, str) else False
     try:
         delta = int(delta)
     except ValueError:
@@ -98,22 +100,22 @@ def update_stains(character: VChar, delta: str) -> str:
 
 def update_sh(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    return __update_damage(character, "health", Damage.SUPERFICIAL, delta)
+    return __update_damage(character, Tracker.HEALTH, Damage.SUPERFICIAL, delta)
 
 
 def update_ah(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
-    return __update_damage(character, "health", Damage.AGGRAVATED, delta)
+    return __update_damage(character, Tracker.HEALTH, Damage.AGGRAVATED, delta)
 
 
 def update_sw(character: VChar, delta: str) -> str:
     """Apply or remove superficial health damage."""
-    return __update_damage(character, "willpower", Damage.SUPERFICIAL, delta)
+    return __update_damage(character, Tracker.WILLPOWER, Damage.SUPERFICIAL, delta)
 
 
 def update_aw(character: VChar, delta: str) -> str:
     """Apply or remove aggravated health damage."""
-    return __update_damage(character, "willpower", Damage.AGGRAVATED, delta)
+    return __update_damage(character, Tracker.WILLPOWER, Damage.AGGRAVATED, delta)
 
 
 def update_current_xp(character: VChar, delta: str) -> str:
@@ -126,7 +128,7 @@ def update_total_xp(character: VChar, delta: str) -> str:
     return __update_xp(character, "lifetime", delta)
 
 
-def __update_track(character: VChar, tracker: str, new_len: str) -> str:
+def __update_track(character: VChar, tracker: str, new_len_str: str) -> str:
     """
     Update the size of a character's tracker.
     Args:
@@ -139,12 +141,12 @@ def __update_track(character: VChar, tracker: str, new_len: str) -> str:
     if tracker not in {"health", "willpower"}:
         raise SyntaxError(f"Unknown tracker {tracker}")
 
-    if new_len[0] in ["+", "-"]:
+    if new_len_str[0] in "+-":
         raise ValueError(f"You must supply an exact value for {tracker.capitalize()}.")
 
     track = getattr(character, tracker)  # Get tracker string
     cur_len = len(track)
-    new_len = int(new_len)
+    new_len = int(new_len_str)
 
     # Ensure the tracker is the right size
     if not 3 <= new_len <= 25:
@@ -159,7 +161,7 @@ def __update_track(character: VChar, tracker: str, new_len: str) -> str:
     return f"Set {tracker.capitalize()} to `{new_len}`."
 
 
-def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) -> str:
+def __update_damage(character: VChar, tracker: Tracker, dtype: Damage, delta_str: str) -> str:
     """
     Update a character's tracker damage.
     Args:
@@ -170,22 +172,17 @@ def __update_damage(character: VChar, tracker: str, dtype: str, delta_str: int) 
 
     Raises ValueError if delta_str can't be made an integer.
     """
-    if tracker not in {"health", "willpower"}:
-        raise SyntaxError(f"Unknown tracker {tracker}")
-    if dtype not in {Damage.SUPERFICIAL, Damage.AGGRAVATED}:
-        raise SyntaxError(f"Unknown damage type: {dtype}")
-
     # If the user doesn't supply a sign, they are setting the damage total rather
     # than modifying it
 
     try:
         delta = int(delta_str)
 
-        if delta == 0 and delta_str[0] in ["+", "-"]:
+        if delta == 0 and delta_str[0] in "+-":
             return "Can't adjust by 0 damage. Nothing to do."
 
         # delta_str can be an int if called by another command
-        if isinstance(delta_str, str) and delta_str[0] in ["+", "-"]:
+        if isinstance(delta_str, str) and delta_str[0] in "+-":
             # If they are applying superficial damage, it can wrap.
             old_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
             damaged = character.apply_damage(tracker, dtype, delta)
@@ -227,7 +224,7 @@ def __damage_adjust_message(tracker, dtype, delta_str, overflow) -> str:
     else:
         severity = "Aggravated"
 
-    if delta_str[0] in ["+", "-"]:
+    if delta_str[0] in "+-":
         msg = f"`{delta_str}` {severity} {tracker.title()} damage."
         if overflow > 0:
             msg += f" `{overflow}` wrapped to Aggravated."
@@ -245,7 +242,7 @@ def __damage_adjust_message(tracker, dtype, delta_str, overflow) -> str:
     return msg
 
 
-def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
+def __update_xp(character: VChar, xp_type: str, delta: str | int) -> str:
     """
     Update a character's XP.
     Args:
@@ -260,7 +257,7 @@ def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
     # If the user doesn't supply a sign, they are setting the XP total rather
     # than modifying it
     if isinstance(delta, str):
-        if delta[0] not in ["+", "-"]:
+        if delta[0] not in "+-":
             setting = True
 
     if xp_type not in {"lifetime", "unspent"}:
@@ -304,7 +301,7 @@ def __update_xp(character: VChar, xp_type: str, delta: str) -> str:
     return f"`{cur_delta:+}` unspent XP.\n`{tot_delta:+}` lifetime XP."
 
 
-def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
+def __update_humanity(character: VChar, hu_type: str, delta: str | int) -> str:
     """
     Update a character's humanity or stains.
     Args:
@@ -314,19 +311,19 @@ def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
 
     Does not catch exceptions.
     """
-    if hu_type not in ["humanity", "stains"]:
+    if hu_type not in ("humanity", "stains"):
         raise SyntaxError(f"Unknown humanity syntax: {hu_type}.")
 
     setting = False
     if isinstance(delta, str):
-        if delta[0] not in ["+", "-"]:
+        if delta[0] not in "+-":
             setting = True
 
     delta = int(delta)
     new_value = delta if setting else None
 
     if new_value is None:
-        current = getattr(character, hu_type)
+        current = cast(int, getattr(character, hu_type))
         new_value = current + delta
 
     if not 0 <= new_value <= 10:
@@ -346,7 +343,7 @@ def __update_humanity(character: VChar, hu_type: str, delta: str) -> str:
         new_overlap = abs(10 - character.humanity - new_value)
         overlap_delta = new_overlap - old_overlap
 
-        character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta)
+        character.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, overlap_delta)
         message += f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
 
     character.stains = new_value

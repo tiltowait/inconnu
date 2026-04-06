@@ -157,11 +157,11 @@ async def __results_embed(ctx, outcome, character: VChar, disciplines: bool):
         embed.add_field(name=action_past, value=assigned)
 
     if outcome.unassigned:
-        unassigned = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.unassigned)))
+        unassigned = ", ".join(f"`{trait}`" for trait in outcome.unassigned)
         embed.add_field(name="No value given", value=unassigned)
 
     if outcome.errors:
-        errs = ", ".join(list(map(lambda trait: f"`{trait}`", outcome.errors)))
+        errs = ", ".join(f"`{trait}`" for trait in outcome.errors)
         if outcome.updating:
             field_name = "Error! You don't have these traits"
             embed.set_footer(text="To add a trait, use /traits add")

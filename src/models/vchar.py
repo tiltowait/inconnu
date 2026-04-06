@@ -27,7 +27,7 @@ from models.vchardocs import (
 )
 
 
-class _Tracker(StrEnum):
+class Tracker(StrEnum):
     """An enum to avoid stringly typing database fields."""
 
     HEALTH = "health"
@@ -164,6 +164,11 @@ class VChar(Document):
         """A copy of the character's traits."""
         return copy.deepcopy(self.raw_traits)
 
+    @traits.setter
+    def traits(self, value: list[VCharTrait]):
+        """Set the character's traits (used by beanie rollback)."""
+        self.raw_traits = value
+
     @property
     def has_biography(self) -> bool:
         """Whether the character has a biography set."""
@@ -185,7 +190,7 @@ class VChar(Document):
 
     def set_aggravated_hp(self, new_value):
         """Set the Aggravated Health damage."""
-        self.set_damage(_Tracker.HEALTH, Damage.AGGRAVATED, new_value, wrap=False)
+        self.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, new_value, wrap=False)
 
     @property
     def aggravated_wp(self) -> int:
@@ -214,7 +219,7 @@ class VChar(Document):
 
     def set_superficial_wp(self, new_value):
         """Set the Superficial Willpower damage."""
-        self.set_damage(_Tracker.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)
+        self.set_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)
 
     @property
     def superficial_hp(self) -> int:
@@ -256,8 +261,8 @@ class VChar(Document):
                 return "You are IN TORPOR!"
             return "You are DEAD!"
 
-        physical = self.health.count(Damage.NONE) == 0
-        mental = self.willpower.count(Damage.NONE) == 0
+        physical = Damage.NONE not in self.health
+        mental = Damage.NONE not in self.willpower
         total = self.degeneration or (physical and mental)
 
         if total:
@@ -274,12 +279,12 @@ class VChar(Document):
     @property
     def physically_impaired(self):
         """Whether the character is physically impaired."""
-        return self.health.count(Damage.NONE) == 0 or self.stains > (10 - self.humanity)
+        return Damage.NONE not in self.health or self.stains > (10 - self.humanity)
 
     @property
     def mentally_impaired(self):
         """Whether the character is physically impaired."""
-        return self.willpower.count(Damage.NONE) == 0 or self.stains > (10 - self.humanity)
+        return Damage.NONE not in self.willpower or self.stains > (10 - self.humanity)
 
     @property
     def is_pc(self):
@@ -355,7 +360,7 @@ class VChar(Document):
         if self.is_vampire:
             inherents = UNIVERSAL_TRAITS
         else:
-            inherents = filter(lambda t: t not in VChar.VAMPIRE_TRAITS, UNIVERSAL_TRAITS)
+            inherents = (t for t in UNIVERSAL_TRAITS if t not in VChar.VAMPIRE_TRAITS)
 
         traits = []
         for inherent in inherents:
@@ -397,7 +402,7 @@ class VChar(Document):
             raise errors.TraitNotFound(self, name)
 
         if len(found) > 1:
-            keys = map(lambda m: m.key, found)
+            keys = (m.key for m in found)
             raise errors.AmbiguousTraitError(name, keys)
 
         # One single match found
@@ -418,7 +423,7 @@ class VChar(Document):
             updated = False
             for trait in self.raw_traits:
                 if trait.matching(input_name, True):
-                    if trait.name in ["Resolve", "Composure"]:
+                    if trait.name in ("Resolve", "Composure"):
                         counter["willpower"] += input_rating - trait.rating
                     elif trait.name == "Stamina":
                         counter["health"] += input_rating - trait.rating
@@ -568,12 +573,12 @@ class VChar(Document):
 
     # Specialized mutators
 
-    def adjust_tracker_rating(self, track: _Tracker, new_rating: int) -> bool:
+    def adjust_tracker_rating(self, track: Tracker, new_rating: int) -> bool:
         """Adjust a character's Health or Willpower rating. Returns true if changed."""
-        if track == _Tracker.HEALTH:
+        if track == Tracker.HEALTH:
             current_rating = len(self.health)
             current_track = self.health
-        elif track == _Tracker.WILLPOWER:
+        elif track == Tracker.WILLPOWER:
             current_rating = len(self.willpower)
             current_track = self.willpower
         else:
@@ -594,7 +599,7 @@ class VChar(Document):
         setattr(self, track, new_track)
         return True
 
-    def set_damage(self, tracker: _Tracker, severity: Damage, amount: int, wrap=False):
+    def set_damage(self, tracker: Tracker, severity: Damage, amount: int, wrap=False):
         """
         Set the current damage level.
         Args:
@@ -602,9 +607,9 @@ class VChar(Document):
             severity (str): Damage.SUPERFICIAL or Damage.AGGRAVATED
             amount (int): The amount to set it to
         """
-        if severity not in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
+        if severity not in (Damage.SUPERFICIAL, Damage.AGGRAVATED):
             raise SyntaxError("Severity must be superficial or aggravated.")
-        if tracker not in [_Tracker.HEALTH, _Tracker.WILLPOWER]:
+        if tracker not in (Tracker.HEALTH, Tracker.WILLPOWER):
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = getattr(self, tracker)
@@ -632,7 +637,7 @@ class VChar(Document):
             # No need to do anything if the track is unchanged
             return
 
-        if tracker == _Tracker.HEALTH:
+        if tracker == Tracker.HEALTH:
             self.health = new_track
         else:
             self.willpower = new_track
@@ -646,7 +651,7 @@ class VChar(Document):
         self.__update_log(f"{tracker}_superficial", old_sup, new_sup)
         self.__update_log(f"{tracker}_aggravated", old_agg, new_agg)
 
-    def apply_damage(self, tracker: _Tracker, severity: Damage, delta: int) -> bool:
+    def apply_damage(self, tracker: Tracker, severity: Damage, delta: int) -> bool:
         """
         Apply Superficial damage.
         Args:
@@ -658,9 +663,9 @@ class VChar(Document):
         Damage won't be applied if delta is 0 or if we are subtracting damage when
             there is none.
         """
-        if severity not in [Damage.SUPERFICIAL, Damage.AGGRAVATED]:
+        if severity not in (Damage.SUPERFICIAL, Damage.AGGRAVATED):
             raise SyntaxError("Severity must be superficial or aggravated.")
-        if tracker not in [_Tracker.HEALTH, _Tracker.WILLPOWER]:
+        if tracker not in (Tracker.HEALTH, Tracker.WILLPOWER):
             raise SyntaxError("Tracker must be health or willpower.")
 
         cur_track = getattr(self, tracker)

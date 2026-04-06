@@ -28,7 +28,7 @@ def _can_frenzy(character):
 
 
 @haven(__HELP_URL, _can_frenzy, "None of your characters are capable of frenzying.")
-async def frenzy(ctx, character, difficulty: int, penalty: str, bonus: str):
+async def frenzy(ctx, character, difficulty: int, penalty: str | None, bonus: str | None):
     """Perform a frenzy check."""
     frenzy_pool = character.frenzy_resist
     footer = []

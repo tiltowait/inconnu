@@ -16,7 +16,7 @@ async def create(
     ctx: AppCtx,
     character: VChar,
     name: str,
-    pool: str,
+    pool: str | list[str],
     hunger: bool,
     diff: int,
     rouses: int,

@@ -1,12 +1,18 @@
 """interface/macros.py - Macro command interface."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import option
 from discord.commands import OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 
 import inconnu
+from ctx import AppCtx
 from inconnu.options import char_option
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class Macros(commands.Cog, name="Macro Utilities"):
@@ -17,7 +23,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @char_option()
     async def vm(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         syntax: str,
         character: str,
     ):
@@ -73,7 +79,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @char_option()
     async def macro_create(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         name: str,
         pool: str,
         hunger: int,
@@ -104,7 +110,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @char_option()
     async def macro_list(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
     ):
         """List a character's macros."""
@@ -116,7 +122,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @char_option("The character who owns the macro")
     async def macro_update(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         macro: str,
         parameters: str,
         character: str,
@@ -129,7 +135,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @char_option("The character who owns the macro")
     async def macro_delete(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         macro: str,
         character: str,
     ):
@@ -137,6 +143,6 @@ class Macros(commands.Cog, name="Macro Utilities"):
         await inconnu.macros.delete(ctx, character, macro)
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(Macros(bot))

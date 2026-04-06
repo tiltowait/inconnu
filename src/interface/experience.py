@@ -1,12 +1,18 @@
 """experience.py - Commands for tracking XP."""
 
+from typing import TYPE_CHECKING
+
 import discord
 from discord import option
 from discord.commands import SlashCommandGroup, user_command
 from discord.ext import commands
 
 import inconnu
+from ctx import AppCtx
 from inconnu.options import char_option, player_option
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class ExperienceCommands(commands.Cog):
@@ -32,7 +38,7 @@ class ExperienceCommands(commands.Cog):
     @option("reason", description="The reason for the grant")
     async def award(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         player: discord.Member,
         character: str,
         amount: int,
@@ -53,7 +59,7 @@ class ExperienceCommands(commands.Cog):
     @option("reason", description="The reason for the deduction")
     async def deduct(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         player: discord.Member,
         character: str,
         amount: int,
@@ -76,7 +82,7 @@ class ExperienceCommands(commands.Cog):
     )
     async def remove_entry(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         player: discord.Member,
         character: str,
         log_index: int,
@@ -89,7 +95,7 @@ class ExperienceCommands(commands.Cog):
     @player_option()
     async def log(
         self,
-        ctx: discord.ApplicationContext,
+        ctx: AppCtx,
         character: str,
         player: discord.Member,
     ):
@@ -114,6 +120,6 @@ class ExperienceCommands(commands.Cog):
         await inconnu.experience.bulk_award_xp(ctx)
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(ExperienceCommands(bot))

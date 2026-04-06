@@ -1,6 +1,7 @@
 """Tupperbox-style character posting."""
 
 import re
+from typing import TYPE_CHECKING
 
 import discord
 from loguru import logger
@@ -9,12 +10,16 @@ import errors
 import inconnu
 import services
 import ui
+from ctx import AppCtx
 from models import HeaderSubdoc, RPPost, VChar
 from services.haven import haven
 from utils import get_avatar, re_paginate
 from utils.text import clean_text, pull_mentions
 from utils.text import diff as text_diff
 from utils.urls import post_url
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 __HELP_URL = "https://docs.inconnu.app/premium/roleposting"
 
@@ -24,7 +29,7 @@ class PostModal(discord.ui.Modal):
 
     SECTIONS = 2
 
-    def __init__(self, character: VChar, bot, *args, **kwargs):
+    def __init__(self, character: VChar, bot: "InconnuBot", *args, **kwargs):
         self.character = character
         self.bot = bot  # Used for webhook management
         self.post_to_edit = kwargs.pop("rp_post", None)
@@ -35,7 +40,7 @@ class PostModal(discord.ui.Modal):
         if self.post_to_edit is None:
             header_params = {
                 param: kwargs.pop(param, None)
-                for param in ["blush", "location", "merits", "flaws", "temp", "hunger"]
+                for param in ("blush", "location", "merits", "flaws", "temp", "hunger")
             }
             self.header = HeaderSubdoc.create(character, **header_params)
             starting_value = ""
@@ -100,15 +105,15 @@ class PostModal(discord.ui.Modal):
                 child.value for child in self.children[0 : PostModal.SECTIONS] if child.value
             ]
             return re_paginate(contents)
-        return re_paginate([self.children[0].value])[0]
+        return re_paginate([self.children[0].value or ""])[0]
 
     def _clean_title(self) -> str:
         """Clean the title."""
-        return clean_text(self.children[-2].value)
+        return clean_text(self.children[-2].value or "")
 
     def _clean_tags(self) -> list[str]:
         """Clean and separate the tags."""
-        raw_tags = self.children[-1].value.lower().replace(",", ";")
+        raw_tags = (self.children[-1].value or "").lower().replace(",", ";")
         tags = re.sub(r"[^\w\s;\(\)]+", "", raw_tags)
         tags = tags.split(";")
 
@@ -129,6 +134,7 @@ class PostModal(discord.ui.Modal):
     async def _edit_rp_post(self, interaction: discord.Interaction):
         """Edit an existing post."""
         new_content = self._clean_post_content()
+        assert isinstance(new_content, str)  # Always str when editing
         post_to_changelog = False
 
         if new_content != self.post_to_edit.content:
@@ -279,15 +285,15 @@ class PostModal(discord.ui.Modal):
             try:
                 await changelog.send(embed=embed)
                 logger.info("POST: Sent changelog to {}: {}", interaction.guild.name, changelog_id)
-            except discord.HTTPException:
-                logger.info(
-                    "POST: Changelog channel doesn't exist: {}: {}",
-                    interaction.guild.name,
-                    changelog_id,
-                )
             except discord.Forbidden:
                 logger.info(
                     "POST: Unable to post changelog in {}: {}",
+                    interaction.guild.name,
+                    changelog_id,
+                )
+            except discord.HTTPException:
+                logger.info(
+                    "POST: Changelog channel doesn't exist: {}: {}",
                     interaction.guild.name,
                     changelog_id,
                 )
@@ -296,7 +302,7 @@ class PostModal(discord.ui.Modal):
 
 
 @haven(__HELP_URL)
-async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs):
+async def create_post(ctx: AppCtx, character: VChar, **kwargs):
     """Create a modal that sends a Rolepost."""
     if ctx.bot.can_webhook(ctx.channel):
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
@@ -311,7 +317,7 @@ async def create_post(ctx: discord.ApplicationContext, character: str, **kwargs)
         )
 
 
-async def edit_post(ctx: discord.ApplicationContext, message: discord.Message):
+async def edit_post(ctx: AppCtx, message: discord.Message):
     """Edit a Rolepost."""
     rp_post = await RPPost.find_one({"message_id": message.id})
 

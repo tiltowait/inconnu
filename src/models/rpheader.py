@@ -1,7 +1,7 @@
 """Header subdoc."""
 
 import copy
-from typing import TYPE_CHECKING, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel
@@ -28,7 +28,7 @@ class HeaderSubdoc(BaseModel):
     char_name: str
 
     blush: int
-    hunger: Optional[int]
+    hunger: int | None
     location: str
     merits: str
     flaws: str
@@ -48,7 +48,7 @@ class HeaderSubdoc(BaseModel):
     def base_title(self) -> str:
         """Header title: Location and blush status."""
         title_fields = [self.location, self.blush_str]
-        base = " • ".join(filter(lambda f: f, title_fields))
+        base = " • ".join(f for f in title_fields if f)
 
         return base[: HeaderSubdoc.MAX_TITLE_LEN]
 

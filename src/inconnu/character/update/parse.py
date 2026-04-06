@@ -85,7 +85,7 @@ async def update(
 
         # Ignore generated output if we got a custom message
         if update_message is None:
-            update_message = "\n".join(map(lambda u: f"* {u}", updates))  # Give them bullet points
+            update_message = "\n".join(f"* {u}" for u in updates)  # Give them bullet points
 
         inter, _ = await asyncio.gather(
             display(

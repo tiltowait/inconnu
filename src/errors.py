@@ -106,8 +106,7 @@ class AmbiguousTraitError(TraitError):
         self.input = input_trait
         self.matches = matches
 
-        matches = map(lambda match: f"`{match}`", matches)
-        formatted_matches = ", ".join(matches)
+        formatted_matches = ", ".join(f"`{match}`" for match in matches)
         self.message = f"`{input_trait}` is ambiguous. Do you mean: {formatted_matches}?"
 
         super().__init__(self.message)

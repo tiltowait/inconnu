@@ -1,12 +1,16 @@
 """interface/loggingcog.py - Log command events."""
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from discord.ext import commands
 from loguru import logger
 
 import db
 from utils import command_options
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class LoggingCog(commands.Cog):
@@ -47,6 +51,6 @@ class LoggingCog(commands.Cog):
         )
 
 
-def setup(bot):
+def setup(bot: "InconnuBot"):
     """Add the cog to the bot."""
     bot.add_cog(LoggingCog(bot))

@@ -3,7 +3,6 @@
 from inconnu.experience.remove import _entry_scope
 from models.vchardocs import VCharExperienceEntry
 
-
 # Test basic functionality
 
 

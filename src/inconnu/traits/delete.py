@@ -2,11 +2,10 @@
 
 from typing import NamedTuple
 
-from discord import ApplicationContext, Interaction
-
 import constants
 import errors
 import ui
+from ctx import AppInvocation
 from inconnu.traits import traitcommon
 from models import VChar
 from services.haven import haven
@@ -22,9 +21,7 @@ class DeletionResult(NamedTuple):
 
 
 @haven(__HELP_URL)
-async def delete(
-    ctx: Interaction | ApplicationContext, character, traits_input: str, disciplines=False
-):
+async def delete(ctx: AppInvocation, character, traits_input: str, disciplines=False):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
         traits = traits_input.split()
@@ -41,9 +38,7 @@ async def delete(
         await ui.embeds.error(ctx, err, character=character, help=__HELP_URL)
 
 
-async def __outcome_embed(
-    ctx: Interaction | ApplicationContext, character, outcome, disciplines: bool
-):
+async def __outcome_embed(ctx: AppInvocation, character, outcome, disciplines: bool):
     """Display the operation outcome in an embed."""
     term = "Trait" if not disciplines else "Discipline"
 
@@ -51,12 +46,12 @@ async def __outcome_embed(
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if outcome.deleted:
-        deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
+        deleted = ", ".join(f"`{trait}`" for trait in outcome.deleted)
         embed.add_field(name="Removed", value=deleted)
         embed.color = None
 
     if outcome.errors:
-        errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
+        errs = ", ".join(f"`{error}`" for error in outcome.errors)
         embed.add_field(name="Do not exist", value=errs, inline=False)
         embed.color = 0x000000 if outcome.deleted else 0xFF0000
 
@@ -71,7 +66,7 @@ def __delete_traits(character: VChar, *traits: str) -> DeletionResult:
     """
     deleted = []
     errs = []
-    standard_traits = map(lambda t: t.lower(), constants.get_standard_traits())
+    standard_traits = (t.lower() for t in constants.get_standard_traits())
 
     for trait_name in traits:
         if trait_name.lower() in standard_traits:

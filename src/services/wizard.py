@@ -1,6 +1,6 @@
 """Character wizard cache and related models."""
 
-from typing import Optional, Self
+from typing import Self
 
 import discord
 import petname
@@ -17,8 +17,8 @@ class CharacterGuild(BaseModel):
 
     id: str
     name: str
-    icon: Optional[str]
-    count: Optional[int]
+    icon: str | None
+    count: int | None
 
     @classmethod
     async def fetch(cls, id: int) -> Self:

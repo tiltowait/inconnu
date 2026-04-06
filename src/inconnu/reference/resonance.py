@@ -8,6 +8,7 @@ import discord
 import inconnu
 import services
 from ctx import AppCtx
+from inconnu import dice
 from models import ResonanceMode
 from utils import get_avatar
 
@@ -64,9 +65,9 @@ async def random_temperament(ctx: AppCtx, res: str):
     await _display_embed(ctx, temperament, res, mode)
 
 
-async def resonance(ctx, **kwargs):
+async def resonance(ctx: AppCtx, minimum=1, **kwargs):
     """Generate and display a resonance."""
-    temperament = _get_temperament()
+    temperament = _get_temperament(minimum)
     mode = await services.settings.resonance_mode(ctx.guild)
 
     if temperament != "Negligible":
@@ -115,9 +116,9 @@ async def _display_embed(
     await ctx.respond(embed=embed)
 
 
-def _get_temperament() -> str:
+def _get_temperament(minimum=1) -> str:
     """Randomgly generate a temperament."""
-    die = inconnu.d10()
+    die = dice.randint(minimum, 10)
 
     if 1 <= die <= 5:
         return "Negligible"

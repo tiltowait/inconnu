@@ -4,7 +4,6 @@ import pytest
 
 from interface.characters import _check_number
 
-
 # Test None handling
 
 

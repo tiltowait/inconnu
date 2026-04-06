@@ -5,6 +5,7 @@ from inconnu.header.show import header_embed as embed
 from inconnu.header.show import register_header as register
 from inconnu.header.show import show_header
 from inconnu.header.update import update_header
+from models import VChar
 
 __all__ = (
     "blush_text",
@@ -17,13 +18,12 @@ __all__ = (
 )
 
 
-def header_title(*fields):
+def header_title(*fields: str | None):
     """Make a header title out of the given fields."""
-    # This is just a simple wrapper function for join() so we can test length
     return " • ".join(f for f in fields if f is not None)
 
 
-def blush_text(character, blush: int) -> str | None:
+def blush_text(character: VChar, blush: int) -> str | None:
     """Get the blush text."""
     if character.is_vampire and blush != -1:
         # Only vampires can blush

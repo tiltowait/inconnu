@@ -25,6 +25,11 @@ class AppInteraction(discord.Interaction):
     def client(self) -> "InconnuBot":
         return super().client  # type: ignore[return-value]
 
+    @property
+    def bot(self) -> "InconnuBot":
+        """The bot instance."""
+        return super().client  # type: ignore[return-value]
+
 
 class AppCtx(discord.ApplicationContext):
     bot: "InconnuBot"

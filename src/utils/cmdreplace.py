@@ -6,15 +6,11 @@ from typing import Any
 import discord
 from loguru import logger
 
-from ctx import AppCtx, AppInvocation
+from ctx import AppInvocation
 
 
 async def cmd_replace(ctx: AppInvocation, content: str | None = None, **kwargs: Any):
     """Substitute command names for command mentions and respond."""
-    if isinstance(ctx, AppCtx):
-        bot = ctx.bot
-    else:
-        bot = ctx.client
 
     # Inlines so the bot doesn't have to be passed all over the place
     def _get_command_strings(text: str) -> list[str]:
@@ -24,7 +20,7 @@ async def cmd_replace(ctx: AppInvocation, content: str | None = None, **kwargs: 
     def _get_command_mention(cmd_str: str) -> str | None:
         """Gets the command mention from a command string."""
         cmd_name = cmd_str[2:-1]
-        return bot.cmd_mention(cmd_name)
+        return ctx.bot.cmd_mention(cmd_name)
 
     def _sub(text: str | None):
         """Perform the substitution on the text."""

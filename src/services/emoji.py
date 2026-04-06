@@ -58,7 +58,7 @@ class _EmojiManager:
         self._emojis = {emoji.name: emoji for emoji in emojis}
 
         logger.info("Loaded {} app emojis", len(self._emojis))
-        logger.debug("{}", list(map(lambda e: e.name, self._emojis.values())))
+        logger.debug("{}", [e.name for e in self._emojis.values()])
         self.loaded = True
 
 

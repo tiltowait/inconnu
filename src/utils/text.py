@@ -56,7 +56,7 @@ def diff(old: str, new: str, join=True, no_pos_markers=True, strip=False) -> lis
 
 def format_join(collection: list, separator: str, f: str, alt="") -> str:
     """Join a collection by a separator, formatting each item."""
-    return separator.join(map(lambda c: f"{f}{c}{f}", collection)) or alt
+    return separator.join(f"{f}{c}{f}" for c in collection) or alt
 
 
 def pull_mentions(text: str) -> set[str]:

@@ -180,7 +180,7 @@ def validate_tokens(character: VChar, tokens: list[tuple[str, list[str]]]):
             # We want the part of the error with the character name to come first
             errs.insert(0, f"**{character.name}** has no trait named `{missing[0]}`.")
         else:
-            missing = ", ".join(map(lambda t: f"`{t}`", missing))
+            missing = ", ".join(f"`{t}`" for t in missing)
             errs.insert(0, f"**{character.name}** doesn't have the following traits: {missing}.")
 
     if errs:

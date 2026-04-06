@@ -261,8 +261,8 @@ class VChar(Document):
                 return "You are IN TORPOR!"
             return "You are DEAD!"
 
-        physical = self.health.count(Damage.NONE) == 0
-        mental = self.willpower.count(Damage.NONE) == 0
+        physical = Damage.NONE not in self.health
+        mental = Damage.NONE not in self.willpower
         total = self.degeneration or (physical and mental)
 
         if total:
@@ -279,12 +279,12 @@ class VChar(Document):
     @property
     def physically_impaired(self):
         """Whether the character is physically impaired."""
-        return self.health.count(Damage.NONE) == 0 or self.stains > (10 - self.humanity)
+        return Damage.NONE not in self.health or self.stains > (10 - self.humanity)
 
     @property
     def mentally_impaired(self):
         """Whether the character is physically impaired."""
-        return self.willpower.count(Damage.NONE) == 0 or self.stains > (10 - self.humanity)
+        return Damage.NONE not in self.willpower or self.stains > (10 - self.humanity)
 
     @property
     def is_pc(self):
@@ -360,7 +360,7 @@ class VChar(Document):
         if self.is_vampire:
             inherents = UNIVERSAL_TRAITS
         else:
-            inherents = filter(lambda t: t not in VChar.VAMPIRE_TRAITS, UNIVERSAL_TRAITS)
+            inherents = (t for t in UNIVERSAL_TRAITS if t not in VChar.VAMPIRE_TRAITS)
 
         traits = []
         for inherent in inherents:
@@ -402,7 +402,7 @@ class VChar(Document):
             raise errors.TraitNotFound(self, name)
 
         if len(found) > 1:
-            keys = map(lambda m: m.key, found)
+            keys = (m.key for m in found)
             raise errors.AmbiguousTraitError(name, keys)
 
         # One single match found

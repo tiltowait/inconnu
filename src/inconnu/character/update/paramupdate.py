@@ -37,8 +37,7 @@ async def update_name(character: VChar, new_name: str) -> str:
 def update_splat(character: VChar, new_splat: str) -> str:
     """Update the character's splat."""
     if new_splat not in VALID_SPLATS:
-        splats = map(lambda splat: f"`{splat}`", VALID_SPLATS)
-        splats = ", ".join(splats)
+        splats = ", ".join(f"`{splat}`" for splat in VALID_SPLATS)
         raise ValueError(f"The `splat` must be one of: {splats}.")
 
     character.splat = new_splat

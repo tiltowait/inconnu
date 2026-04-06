@@ -23,7 +23,7 @@ def _can_aggheal(character):
 async def aggheal(ctx, character):
     """Heal a point of aggravated damage."""
 
-    if character.health.count(Damage.AGGRAVATED) == 0:
+    if Damage.AGGRAVATED not in character.health:
         await ctx.respond(f"{character.name} has no aggravated damage to heal!", ephemeral=True)
         return
 

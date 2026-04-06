@@ -128,7 +128,7 @@ class VCharTrait(BaseModel):
     @property
     def has_specialties(self) -> bool:
         """Whether the trait has any specialties."""
-        return len(self.raw_subtraits) > 0
+        return bool(self.raw_subtraits)
 
     @property
     def specialties(self) -> list[str]:

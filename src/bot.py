@@ -102,7 +102,7 @@ class InconnuBot(discord.AutoShardedBot):
                     # Users can't turn off reply pings to bots, so we don't
                     # need to worry about an edge case where they disabled the
                     # reply ping and can safely ping the author.
-                    if rp_post.user not in map(lambda m: m.id, message.mentions):
+                    if rp_post.user not in (m.id for m in message.mentions):
                         logger.debug("BOT: Pinging Rolepost's author")
                         user = await self.get_or_fetch_user(rp_post.user)
                         await message.reply(user.mention, mention_author=False, delete_after=60)

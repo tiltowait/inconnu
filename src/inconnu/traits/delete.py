@@ -46,12 +46,12 @@ async def __outcome_embed(ctx: AppInvocation, character, outcome, disciplines: b
     embed.set_footer(text="To see remaining traits: /traits list")
 
     if outcome.deleted:
-        deleted = ", ".join(map(lambda trait: f"`{trait}`", outcome.deleted))
+        deleted = ", ".join(f"`{trait}`" for trait in outcome.deleted)
         embed.add_field(name="Removed", value=deleted)
         embed.color = None
 
     if outcome.errors:
-        errs = ", ".join(map(lambda error: f"`{error}`", outcome.errors))
+        errs = ", ".join(f"`{error}`" for error in outcome.errors)
         embed.add_field(name="Do not exist", value=errs, inline=False)
         embed.color = 0x000000 if outcome.deleted else 0xFF0000
 
@@ -66,7 +66,7 @@ def __delete_traits(character: VChar, *traits: str) -> DeletionResult:
     """
     deleted = []
     errs = []
-    standard_traits = map(lambda t: t.lower(), constants.get_standard_traits())
+    standard_traits = (t.lower() for t in constants.get_standard_traits())
 
     for trait_name in traits:
         if trait_name.lower() in standard_traits:

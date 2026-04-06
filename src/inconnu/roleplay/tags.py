@@ -71,7 +71,7 @@ def _create_page(ctx: AppCtx, tags: list[tuple[str, int]]) -> Page:
     """Creates a tag page."""
     embed = discord.Embed(
         title="Rolepost Tags",
-        description="\n".join(map(lambda t: f"{t[1]}: `{t[0]}`", tags)),
+        description="\n".join(f"{t[1]}: `{t[0]}`" for t in tags),
     )
     embed.set_author(
         name=ctx.user.display_name,

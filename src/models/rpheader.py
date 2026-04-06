@@ -48,7 +48,7 @@ class HeaderSubdoc(BaseModel):
     def base_title(self) -> str:
         """Header title: Location and blush status."""
         title_fields = [self.location, self.blush_str]
-        base = " • ".join(filter(lambda f: f, title_fields))
+        base = " • ".join(f for f in title_fields if f)
 
         return base[: HeaderSubdoc.MAX_TITLE_LEN]
 

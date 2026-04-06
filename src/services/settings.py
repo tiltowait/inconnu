@@ -2,19 +2,24 @@
 
 import discord
 
-from ctx import AppCtx
+from ctx import AppCtx, AppInteraction
 from models import ExpPerms, ResonanceMode, VGuild, VUser
 from utils.permissions import is_admin
 
 # Accessibility
 
 
-async def accessible(ctx: AppCtx | discord.Interaction):
+async def accessible(ctx: AppInteraction):
     """Determine whether we should use accessibility mode.
 
     Accessibility mode disables emojis. Recommended to instead use can_emoji()
     instead, as it's easier to reason about."""
     # User accessibility trumps guild accessibility
+    if ctx.user is None:
+        # We should always have a user, but if we somehow don't, default to
+        # showing emojis.
+        return False
+
     user_settings = await VUser.get_or_fetch(ctx.user.id)
     if user_settings.settings.accessibility:
         return True
@@ -24,7 +29,7 @@ async def accessible(ctx: AppCtx | discord.Interaction):
     return guild.settings.accessibility
 
 
-async def can_emoji(ctx: AppCtx | discord.Interaction) -> bool:
+async def can_emoji(ctx: AppInteraction) -> bool:
     """Wrapper for accessible() that simply inverts the logic."""
     return not await accessible(ctx)
 

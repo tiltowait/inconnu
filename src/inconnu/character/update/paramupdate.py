@@ -60,7 +60,7 @@ def __update_hunger_potency(character: VChar, delta: str | int, key: str, maximu
     if not character.is_vampire:
         raise ValueError(f"Mortals and ghouls do not have {key.title()}.")
 
-    setting = delta[0] not in ["+", "-"] if isinstance(delta, str) else False
+    setting = delta[0] not in "+-" if isinstance(delta, str) else False
     try:
         delta = int(delta)
     except ValueError:
@@ -142,7 +142,7 @@ def __update_track(character: VChar, tracker: str, new_len_str: str) -> str:
     if tracker not in {"health", "willpower"}:
         raise SyntaxError(f"Unknown tracker {tracker}")
 
-    if new_len_str[0] in ["+", "-"]:
+    if new_len_str[0] in "+-":
         raise ValueError(f"You must supply an exact value for {tracker.capitalize()}.")
 
     track = getattr(character, tracker)  # Get tracker string
@@ -179,11 +179,11 @@ def __update_damage(character: VChar, tracker: Tracker, dtype: Damage, delta_str
     try:
         delta = int(delta_str)
 
-        if delta == 0 and delta_str[0] in ["+", "-"]:
+        if delta == 0 and delta_str[0] in "+-":
             return "Can't adjust by 0 damage. Nothing to do."
 
         # delta_str can be an int if called by another command
-        if isinstance(delta_str, str) and delta_str[0] in ["+", "-"]:
+        if isinstance(delta_str, str) and delta_str[0] in "+-":
             # If they are applying superficial damage, it can wrap.
             old_agg = getattr(character, tracker).count(Damage.AGGRAVATED)
             damaged = character.apply_damage(tracker, dtype, delta)
@@ -225,7 +225,7 @@ def __damage_adjust_message(tracker, dtype, delta_str, overflow) -> str:
     else:
         severity = "Aggravated"
 
-    if delta_str[0] in ["+", "-"]:
+    if delta_str[0] in "+-":
         msg = f"`{delta_str}` {severity} {tracker.title()} damage."
         if overflow > 0:
             msg += f" `{overflow}` wrapped to Aggravated."
@@ -258,7 +258,7 @@ def __update_xp(character: VChar, xp_type: str, delta: str | int) -> str:
     # If the user doesn't supply a sign, they are setting the XP total rather
     # than modifying it
     if isinstance(delta, str):
-        if delta[0] not in ["+", "-"]:
+        if delta[0] not in "+-":
             setting = True
 
     if xp_type not in {"lifetime", "unspent"}:
@@ -317,7 +317,7 @@ def __update_humanity(character: VChar, hu_type: str, delta: str | int) -> str:
 
     setting = False
     if isinstance(delta, str):
-        if delta[0] not in ["+", "-"]:
+        if delta[0] not in "+-":
             setting = True
 
     delta = int(delta)

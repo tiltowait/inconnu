@@ -102,7 +102,7 @@ class RollParser:
         expecting_operand = True
 
         for token in self.tokens:
-            if token in ["+", "-"]:
+            if token in "+-":
                 # We don't prevent anyone from using multiple operators in a
                 # row, so they could technically write 3 + - + - 2, and it will
                 # work despite being somewhat nonsensical.

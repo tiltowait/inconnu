@@ -4,7 +4,7 @@ import itertools
 from datetime import UTC, datetime
 from enum import StrEnum
 from types import SimpleNamespace as SN
-from typing import ClassVar
+from typing import ClassVar, Literal, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -211,8 +211,30 @@ class VCharTrait(BaseModel):
                 )
         return matches
 
-    def expanding(self, identifier: str, exact: bool, join=True) -> list[str | list[str]]:
-        """Expand the user's input to full skill:spec names. If join is False, return a list."""
+    @overload
+    def expanding(self, identifier: str, exact: bool, join: Literal[True] = ...) -> list[str]: ...
+    @overload
+    def expanding(self, identifier: str, exact: bool, join: Literal[False]) -> list[list[str]]: ...
+
+    def expanding(
+        self,
+        identifier: str,
+        exact: bool,
+        join: bool = True,
+    ) -> list[str] | list[list[str]]:
+        """Expand a dot-delimited identifier into all matching fully qualified
+        trait.specialty names.
+
+        Example: "melee.sw" -> ["Melee.Swords"], "occ.k" -> ["Occult.Kindred"]
+
+        Args:
+            identifier: Dot-delimited string, e.g. "melee.swords".
+            exact: Require exact matches (case-insensitive) vs prefix matching.
+            join: If True, return joined strings. If False, return split lists.
+
+        Returns:
+            Empty list on no match. Otherwise, all matching expansions.
+        """
         tokens = [token.lower() for token in identifier.split(VCharTrait.DELIMITER)]
 
         # The comparison function takes a token and an instance var

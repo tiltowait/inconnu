@@ -5,7 +5,7 @@ from typing import NamedTuple
 import constants
 import errors
 import ui
-from ctx import AppInteraction
+from ctx import AppInvocation
 from inconnu.traits import traitcommon
 from models import VChar
 from services.haven import haven
@@ -21,7 +21,7 @@ class DeletionResult(NamedTuple):
 
 
 @haven(__HELP_URL)
-async def delete(ctx: AppInteraction, character, traits_input: str, disciplines=False):
+async def delete(ctx: AppInvocation, character, traits_input: str, disciplines=False):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
         traits = traits_input.split()
@@ -38,7 +38,7 @@ async def delete(ctx: AppInteraction, character, traits_input: str, disciplines=
         await ui.embeds.error(ctx, err, character=character, help=__HELP_URL)
 
 
-async def __outcome_embed(ctx: AppInteraction, character, outcome, disciplines: bool):
+async def __outcome_embed(ctx: AppInvocation, character, outcome, disciplines: bool):
     """Display the operation outcome in an embed."""
     term = "Trait" if not disciplines else "Discipline"
 

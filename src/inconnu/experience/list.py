@@ -6,7 +6,7 @@ import discord
 from discord.ext.commands import Paginator as Chunker
 from discord.ext.pages import Paginator
 
-from ctx import AppInteraction
+from ctx import AppInvocation
 from models import VChar
 from services.haven import haven
 from utils import get_avatar
@@ -16,7 +16,7 @@ __HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-manage
 
 @haven(__HELP_URL)
 async def list_events(
-    ctx: AppInteraction,
+    ctx: AppInvocation,
     character: VChar,
     ephemeral: bool,
     *,

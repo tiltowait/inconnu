@@ -6,10 +6,10 @@ import discord
 from loguru import logger
 
 from config import SUPPORTER_GUILD, SUPPORTER_ROLE
-from ctx import AppCtx, AppInteraction
+from ctx import AppCtx, AppInvocation
 
 
-def is_approved_user(ctx: AppInteraction, owner: discord.User | None = None):
+def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None):
     """Check if the user owns the object or is an admin."""
     if ctx.user is None:
         raise ValueError("Unexpectedly got null user")
@@ -19,7 +19,7 @@ def is_approved_user(ctx: AppInteraction, owner: discord.User | None = None):
     return is_admin(ctx)
 
 
-def is_admin(ctx: AppInteraction):
+def is_admin(ctx: AppInvocation):
     """Check if the ctx user is a server admin."""
     if ctx.channel is None:
         raise ValueError("Unexpectedly got null channel")
@@ -51,7 +51,7 @@ async def get_or_fetch_supporter(ctx: AppCtx, user: discord.Member | discord.Use
     return False
 
 
-def is_supporter(ctx: AppInteraction, user: discord.Member | discord.User | None = None) -> bool:
+def is_supporter(ctx: AppInvocation, user: discord.Member | discord.User | None = None) -> bool:
     """Returns True if the user invoking the command is a supporter.
 
     Requires SUPPORTER_GUILD and SUPPORTER_ROLE to be set."""

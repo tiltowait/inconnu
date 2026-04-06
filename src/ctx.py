@@ -20,8 +20,15 @@ else:
     )
 
 
+class AppInteraction(discord.Interaction):
+    @property
+    def client(self) -> "InconnuBot":
+        return super().client  # type: ignore[return-value]
+
+
 class AppCtx(discord.ApplicationContext):
     bot: "InconnuBot"
+    interaction: AppInteraction
 
 
-AppInteraction = AppCtx | discord.Interaction
+AppInvocation = AppCtx | AppInteraction

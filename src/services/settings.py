@@ -2,14 +2,14 @@
 
 import discord
 
-from ctx import AppCtx, AppInteraction
+from ctx import AppCtx, AppInvocation
 from models import ExpPerms, ResonanceMode, VGuild, VUser
 from utils.permissions import is_admin
 
 # Accessibility
 
 
-async def accessible(ctx: AppInteraction):
+async def accessible(ctx: AppInvocation):
     """Determine whether we should use accessibility mode.
 
     Accessibility mode disables emojis. Recommended to instead use can_emoji()
@@ -29,7 +29,7 @@ async def accessible(ctx: AppInteraction):
     return guild.settings.accessibility
 
 
-async def can_emoji(ctx: AppInteraction) -> bool:
+async def can_emoji(ctx: AppInvocation) -> bool:
     """Wrapper for accessible() that simply inverts the logic."""
     return not await accessible(ctx)
 

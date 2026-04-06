@@ -5,7 +5,7 @@ from discord.ext.commands import Paginator as Chunker
 
 import constants
 import ui
-from ctx import AppCtx, AppInteraction
+from ctx import AppCtx, AppInvocation
 from models import VChar
 from services.haven import haven
 from utils.text import format_join
@@ -21,7 +21,7 @@ async def show(ctx: AppCtx, character: VChar, *, player: discord.Member):
 
 
 def traits_embed(
-    ctx: AppInteraction,
+    ctx: AppInvocation,
     character: VChar,
     owner: discord.Member | None = None,
 ):

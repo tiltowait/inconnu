@@ -19,14 +19,13 @@ from models import ResonanceMode
 
 # Test _get_temperament
 
-_RANDINT = "inconnu.reference.resonance.dice.randint"
 _D10 = "inconnu.d10"
 
 
 def test_get_temperament_negligible():
     """Test _get_temperament returns Negligible for dice 1-5."""
     for die_value in range(1, 6):
-        with patch(_RANDINT, return_value=die_value):
+        with patch(_D10, return_value=die_value):
             result = _get_temperament()
             assert result == "Negligible"
 
@@ -34,7 +33,7 @@ def test_get_temperament_negligible():
 def test_get_temperament_fleeting():
     """Test _get_temperament returns Fleeting for dice 6-8."""
     for die_value in range(6, 9):
-        with patch(_RANDINT, return_value=die_value):
+        with patch(_D10, return_value=die_value):
             result = _get_temperament()
             assert result == "Fleeting"
 
@@ -43,7 +42,7 @@ def test_get_temperament_intense():
     """Test _get_temperament returns Intense for 9-10 followed by 1-8."""
     for first_die in (9, 10):
         for second_die in range(1, 9):
-            with patch(_RANDINT, return_value=first_die), patch(_D10, return_value=second_die):
+            with patch(_D10, side_effect=[first_die, second_die]):
                 result = _get_temperament()
                 assert result == "Intense"
 
@@ -52,7 +51,7 @@ def test_get_temperament_acute():
     """Test _get_temperament returns Acute for 9-10 followed by 9-10."""
     for first_die in (9, 10):
         for second_die in (9, 10):
-            with patch(_RANDINT, return_value=first_die), patch(_D10, return_value=second_die):
+            with patch(_D10, side_effect=[first_die, second_die]):
                 result = _get_temperament()
                 assert result == "Acute"
 
@@ -181,7 +180,7 @@ async def test_random_temperament():
         mock_mode.return_value = ResonanceMode.STANDARD
 
         # Mock the temperament generation
-        with patch(_RANDINT, return_value=7):
+        with patch(_D10, return_value=7):
             await random_temperament(mock_ctx, "Choleric")
 
             # Verify respond was called with an embed
@@ -209,7 +208,7 @@ async def test_random_temperament_negligible():
         mock_mode.return_value = ResonanceMode.STANDARD
 
         # Mock negligible temperament
-        with patch(_RANDINT, return_value=3):
+        with patch(_D10, return_value=3):
             await random_temperament(mock_ctx, "Choleric")
 
             mock_ctx.respond.assert_called_once()
@@ -232,7 +231,7 @@ async def test_resonance_with_temperament():
         mock_mode.return_value = ResonanceMode.STANDARD
 
         # Mock fleeting temperament and choleric resonance
-        with patch(_RANDINT, return_value=7), patch("inconnu.random", return_value=7):
+        with patch(_D10, return_value=7), patch("inconnu.random", return_value=7):
             await resonance(mock_ctx)
 
             mock_ctx.respond.assert_called_once()
@@ -255,7 +254,7 @@ async def test_resonance_negligible():
         mock_mode.return_value = ResonanceMode.STANDARD
 
         # Mock negligible temperament
-        with patch(_RANDINT, return_value=3):
+        with patch(_D10, return_value=3):
             await resonance(mock_ctx)
 
             mock_ctx.respond.assert_called_once()

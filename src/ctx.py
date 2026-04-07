@@ -36,4 +36,4 @@ class AppCtx(discord.ApplicationContext):
     interaction: AppInteraction
 
 
-AppInvocation = AppCtx | AppInteraction
+type AppInvocation = AppCtx | AppInteraction

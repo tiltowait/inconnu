@@ -379,8 +379,7 @@ class InconnuBot(discord.AutoShardedBot):
         await self._set_presence()
         logger.info("BOT: Ready")
 
-    @staticmethod
-    async def on_application_command_error(context, exception):
+    async def on_application_command_error(self, context, exception):
         """Use centralized reporter to handle errors."""
         await reporter.report_error(context, exception)
 

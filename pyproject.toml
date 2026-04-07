@@ -1,10 +1,10 @@
 [project]
 name = "inconnu"
-version = "2026.04.0"
+version = "2026.04.1"
 description = "An advanced Discord dice bot and character manager for V5"
 authors = [{ name = "tiltowait", email = "208040+tiltowait@users.noreply.github.com" }]
 license = "MIT"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.12,<3.14"
 dependencies = [
     "flatdict>=4.0.1,<5",
     "pymongo>=4.2.0,<5",

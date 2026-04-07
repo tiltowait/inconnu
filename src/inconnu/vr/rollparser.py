@@ -3,6 +3,7 @@
 import ast
 import operator as op
 import re
+from typing import cast
 
 from loguru import logger
 
@@ -257,15 +258,15 @@ class RollParser:
 OPERATORS = {ast.Add: op.add, ast.Sub: op.sub, ast.UAdd: op.pos, ast.USub: op.neg}
 
 
-def eval_expr(expr):
+def eval_expr(expr: str) -> int:
     """Evaluate a mathematical string expression. Safer than using eval."""
     return eval_(ast.parse(expr, mode="eval").body)
 
 
-def eval_(node):
+def eval_(node: ast.expr) -> int:
     """Recursively evaluate a mathematical expression. Only handles +/-."""
     if isinstance(node, ast.Constant):
-        return node.value
+        return cast(int, node.value)
 
     if isinstance(node, ast.BinOp):
         return OPERATORS[type(node.op)](eval_(node.left), eval_(node.right))

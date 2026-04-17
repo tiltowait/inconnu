@@ -8,7 +8,6 @@ import discord
 import inconnu
 import services
 from ctx import AppCtx
-from inconnu import dice
 from models import ResonanceMode
 from utils import get_avatar
 
@@ -118,7 +117,7 @@ async def _display_embed(
 
 def _get_temperament(minimum=1) -> str:
     """Randomgly generate a temperament."""
-    die = dice.randint(minimum, 10)
+    die = max(minimum, inconnu.d10())
 
     if 1 <= die <= 5:
         return "Negligible"

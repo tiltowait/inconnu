@@ -3,7 +3,7 @@
 import functools
 import uuid
 from collections import OrderedDict
-from typing import Awaitable, Callable, Concatenate, ParamSpec, TypeVar, cast
+from typing import Awaitable, Callable, Concatenate, cast
 
 import discord
 from loguru import logger
@@ -15,9 +15,6 @@ from ctx import AppCtx
 from models import VChar
 from ui.views.basicselector import BasicSelector
 from utils.permissions import is_admin
-
-P = ParamSpec("P")
-T = TypeVar("T")
 
 
 class Haven:
@@ -281,11 +278,11 @@ def _personalize_error(err, ctx, member):
     return err
 
 
-def haven(
+def haven[**P, T](
     url: str,
     char_filter: Callable[[VChar], None] | None = None,
-    errmsg: str = "",
-    allow_lookups: bool = False,
+    errmsg="",
+    allow_lookups=False,
 ) -> Callable[
     [Callable[Concatenate[AppCtx, VChar, P], Awaitable[T]]],
     Callable[Concatenate[AppCtx, str | VChar | None, P], Awaitable[T]],

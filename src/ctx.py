@@ -21,6 +21,8 @@ else:
 
 
 class AppInteraction(discord.Interaction):
+    """A discord.Interaction with client and bot typed to InconnuBot."""
+
     @property
     def client(self) -> "InconnuBot":
         return super().client  # type: ignore[return-value]
@@ -32,6 +34,9 @@ class AppInteraction(discord.Interaction):
 
 
 class AppCtx(discord.ApplicationContext):
+    """A discord.ApplicationContext with bot typed to InconnuBot and interaction
+    typed to AppInteraction."""
+
     bot: "InconnuBot"
     interaction: AppInteraction
 

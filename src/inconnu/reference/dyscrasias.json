@@ -1,0 +1,158 @@
+[
+  {
+    "resonance": "Choleric",
+    "name": "Bully",
+    "description": "Drinker does +1 damage against weaker foes (or against the kinds of foes the vessel most enjoyed bullying). This bonus applies to both social and physical combat.",
+    "page": 230
+  },
+  {
+    "resonance": "Choleric",
+    "name": "Cycle of Violence",
+    "description": "Your next feeding on choleric blood slakes one additional Hunger; other blood slakes one less Hunger.",
+    "page": 230
+  },
+  {
+    "resonance": "Choleric",
+    "name": "Envy",
+    "description": "Drinker does +1 damage against better (more attractive, younger, more talented, taller, richer, higher-status, etc.) foes. This bonus applies to both social and physical combat.",
+    "page": 230
+  },
+  {
+    "resonance": "Choleric",
+    "name": "Principled",
+    "description": "Re-roll any one roll in a conflict with a perceived ideological enemy. You may not re-roll Hunger dice that resulted in 1s during the first roll.",
+    "page": 230
+  },
+  {
+    "resonance": "Choleric",
+    "name": "Vengeful",
+    "description": "Add two dice to one test against the type of target on which the vessel wished revenge (cheating spouses, social rivals, loud neighbors, the government, etc.), or on all rolls against the specific individual the vessel hated.",
+    "page": 230
+  },
+  {
+    "resonance": "Choleric",
+    "name": "Vicious",
+    "description": "Re-roll any rolls using the Intimidation Skill. You may not re-roll Hunger dice that resulted in 1s during the first roll.",
+    "page": 230
+  },
+  {
+    "resonance": "Choleric",
+    "name": "Driving",
+    "description": "Gain 1 free experience point towards the purchase of Celerity or Potence. This fully consumes the Dyscrasia.",
+    "page": 230
+  },
+  {
+    "resonance": "Melancholy",
+    "name": "In Mourning",
+    "description": "Add one die to Remorse tests.",
+    "page": 230
+  },
+  {
+    "resonance": "Melancholy",
+    "name": "Lost Love",
+    "description": "Add one die to all pools to resist seduction attempts, including Presence.",
+    "page": 230
+  },
+  {
+    "resonance": "Melancholy",
+    "name": "Lost Relative",
+    "description": "Slake 1 additional Hunger when feeding from remaining members of your family.",
+    "page": 230
+  },
+  {
+    "resonance": "Melancholy",
+    "name": "Massive Failure",
+    "description": "Constantly reminded not to fail in the same way, the drinker can re-roll tests that remind them of the vessel\u2019s failure. You may not re-roll Hunger dice that resulted in 1s during the first roll.",
+    "page": 230
+  },
+  {
+    "resonance": "Melancholy",
+    "name": "Nostalgic",
+    "description": "Add one die to all pools for rolls that connect to the specific decade, art form, or social group about which the vessel was nostalgic; add three dice to a Memoriam pool exploring that subject.",
+    "page": 230
+  },
+  {
+    "resonance": "Melancholy",
+    "name": "Recalling",
+    "description": "Gain 1 free experience point towards the purchase of Fortitude or Obfuscate. This fully consumes the Dyscrasia.",
+    "page": 230
+  },
+  {
+    "resonance": "Phlegmatic",
+    "name": "Chill",
+    "description": "Add two dice to pools to resist frenzy.",
+    "page": 230
+  },
+  {
+    "resonance": "Phlegmatic",
+    "name": "Comfortably Numb",
+    "description": "Feel no pain: receive no penalties or other negative effects from pain, both physical and social.",
+    "page": 230
+  },
+  {
+    "resonance": "Phlegmatic",
+    "name": "Eating Your Emotions",
+    "description": "Eat and digest food without becoming nauseous (or slaking Hunger, of course).",
+    "page": 230
+  },
+  {
+    "resonance": "Phlegmatic",
+    "name": "Given Up",
+    "description": "Your next feeding on phlegmatic blood slakes 1 additional Hunger; other blood slakes one fewer Hunger.",
+    "page": 230
+  },
+  {
+    "resonance": "Phlegmatic",
+    "name": "Lone Wolf",
+    "description": "Add one die to your tests when alone, subtract one die from tests to assist others or use teamwork (see Teamwork section). Lasts only one scene.",
+    "page": 230
+  },
+  {
+    "resonance": "Phlegmatic",
+    "name": "Procrastinate",
+    "description": "Regain 1 point of Willpower if you delay something important by a day or more. Can only be used once per session.",
+    "page": 230
+  },
+  {
+    "resonance": "Phlegmatic",
+    "name": "Reflection",
+    "description": "Gain 1 free experience point towards the purchase of Auspex or Dominate. This fully consumes the Dyscrasia.",
+    "page": 230
+  },
+  {
+    "resonance": "Sanguine",
+    "name": "Contagious Enthusiasm",
+    "description": "If you can touch your target skin-to-skin and sweat-to-sweat, you can add three dice to one test to convince them to do something. Treat this Dyscrasia as Dominate with regards to core beliefs, secrets, and so forth.",
+    "page": 230
+  },
+  {
+    "resonance": "Sanguine",
+    "name": "Smell Game",
+    "description": "Add three dice to all rolls to detect other Sanguine vessels.",
+    "page": 231
+  },
+  {
+    "resonance": "Sanguine",
+    "name": "High on Life",
+    "description": "The drinker can use Blush of Life without making a Rouse Check.",
+    "page": 231
+  },
+  {
+    "resonance": "Sanguine",
+    "name": "Manic High",
+    "description": "The drinker adds one die to all tests until they fail a roll; after that point, they subtract two dice from all tests.",
+    "page": 231
+  },
+  {
+    "resonance": "Sanguine",
+    "name": "True Love",
+    "description": "Slake 1 additional Hunger when feeding from the vessel\u2019s true love. If the drinker has Auspex, they can see through the true love\u2019s eyes by Rousing the Blood.",
+    "page": 231
+  },
+  {
+    "resonance": "Sanguine",
+    "name": "Stirring",
+    "description": "Gain 1 free experience point towards the purchase of Blood Sorcery or Presence. This fully consumes the Dyscrasia.",
+    "page": 231
+  }
+]

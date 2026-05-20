@@ -1,7 +1,6 @@
 """Tests for inconnu/reference/resonance.py."""
 
-import sqlite3
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import discord
 import pytest
@@ -115,50 +114,21 @@ def test_get_resonance_add_empty_mode_cap():
 # Test get_dyscrasia
 
 
-def test_get_dyscrasia_returns_dyscrasia():
-    """Test get_dyscrasia returns a Dyscrasia object."""
-    mock_conn = MagicMock(spec=sqlite3.Connection)
-    mock_cursor = MagicMock()
-
-    # Create a Dyscrasia-like object using the row_factory
-    test_dyscrasia = Dyscrasia("Test Dyscrasia", "A test description", 123)
-    mock_cursor.fetchone.return_value = test_dyscrasia
-    mock_cursor.execute.return_value = mock_cursor
-    mock_conn.cursor.return_value = mock_cursor
-
-    with patch("sqlite3.connect", return_value=mock_conn):
-        result = get_dyscrasia("Choleric")
-
-        assert result is not None
-        assert result.name == "Test Dyscrasia"
-        assert result.description == "A test description"
-        assert result.page == 123
-
-        # Verify database query was correct
-        mock_cursor.execute.assert_called_once()
-        call_args = mock_cursor.execute.call_args
-        assert "SELECT name, description, page FROM dyscrasias" in call_args[0][0]
-        assert "WHERE resonance=?" in call_args[0][0]
-        assert call_args[0][1] == ("Choleric",)
-
-        # Verify connection was closed
-        mock_conn.close.assert_called_once()
+@pytest.mark.parametrize("res", ["Melancholy", "Choleric", "Phlegmatic", "Sanguine"])
+def test_get_dyscrasia_returns_dyscrasia(res):
+    """Test get_dyscrasia returns a Dyscrasia for each standard resonance."""
+    result = get_dyscrasia(res)
+    assert result is not None
+    assert isinstance(result, Dyscrasia)
+    assert result.name
+    assert result.description
+    assert result.page > 0
 
 
 def test_get_dyscrasia_returns_none_when_not_found():
-    """Test get_dyscrasia returns None when no dyscrasia is found."""
-    mock_conn = MagicMock(spec=sqlite3.Connection)
-    mock_cursor = MagicMock()
-
-    mock_cursor.fetchone.return_value = None
-    mock_cursor.execute.return_value = mock_cursor
-    mock_conn.cursor.return_value = mock_cursor
-
-    with patch("sqlite3.connect", return_value=mock_conn):
-        result = get_dyscrasia("NonexistentResonance")
-
-        assert result is None
-        mock_conn.close.assert_called_once()
+    """Test get_dyscrasia returns None for an unknown resonance."""
+    result = get_dyscrasia("NonexistentResonance")
+    assert result is None
 
 
 # Test async functions
@@ -313,7 +283,7 @@ async def test_display_embed_acute_with_dyscrasia():
     mock_ctx = AsyncMock()
     mock_ctx.user.display_name = "TestUser"
 
-    mock_dyscrasia = Dyscrasia("Test Dyscrasia", "Description", 42)
+    mock_dyscrasia = Dyscrasia(name="Test Dyscrasia", resonance="melancholy", description="Description", page=42)
 
     with (
         patch("inconnu.reference.resonance.get_avatar", return_value="http://avatar.url"),

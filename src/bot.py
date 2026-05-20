@@ -56,10 +56,16 @@ class InconnuBot(discord.AutoShardedBot):
                 self.load_extension(f"interface.{filename[:-3]}")
 
     @property
+    def me(self) -> discord.ClientUser:
+        """The bot's own user, non-null after login."""
+        assert self.user is not None
+        return self.user
+
+    @property
     def invite_url(self) -> str:
         """The bot's invite URL."""
         return discord.utils.oauth_url(
-            self.user.id,
+            self.me.id,
             permissions=discord.Permissions(
                 send_messages=True,
                 manage_webhooks=True,

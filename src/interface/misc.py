@@ -84,6 +84,7 @@ class MiscCommands(commands.Cog):
             return
 
         try:
+            assert ctx.guild is not None  # Guild context guarantees this
             xfer = await services.char_mgr.fetchone(ctx.guild, current_owner, character)
 
             if ctx.guild.id == xfer.guild and current_owner.id == xfer.user:

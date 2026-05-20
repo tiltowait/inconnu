@@ -22,7 +22,7 @@ async def show_changelog(ctx: AppCtx, hidden: bool):
         embeds = []
         for page in paginator.pages:
             embed = discord.Embed(title=f"Inconnu {tag}", description=page, url=CHANGELOG)
-            embed.set_thumbnail(url=ctx.bot.user.display_avatar)
+            embed.set_thumbnail(url=ctx.bot.me.display_avatar)
             embeds.append(embed)
 
         show_buttons = len(embeds) > 1

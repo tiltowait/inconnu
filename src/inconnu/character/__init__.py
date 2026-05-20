@@ -10,12 +10,12 @@ from inconnu.character.update import update, update_help
 from utils.validation import valid_name
 
 __all__ = (
+    "DisplayField",
     "convictions_set",
     "convictions_show",
     "create",
     "delete",
     "display",
-    "DisplayField",
     "display_requested",
     "edit_biography",
     "images",

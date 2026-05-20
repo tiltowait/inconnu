@@ -12,13 +12,13 @@ wizard_cache = wizard.WizardCache()
 
 __all__ = (
     "CharacterManager",
-    "char_mgr",
-    "emojis",
     "ErrorReporter",
+    "WebhookCache",
+    "char_mgr",
+    "character_update",
+    "emojis",
     "guild_cache",
     "report_database_error",
-    "WebhookCache",
-    "character_update",
     "settings",
     "wizard",
     "wizard_cache",

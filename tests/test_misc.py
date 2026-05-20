@@ -97,7 +97,6 @@ async def test_changelog():
     assert len(changelog) > 0
 
 
-
 @pytest.mark.parametrize(
     "after,before,exp_b,exp_a,error",
     [

@@ -283,7 +283,9 @@ async def test_display_embed_acute_with_dyscrasia():
     mock_ctx = AsyncMock()
     mock_ctx.user.display_name = "TestUser"
 
-    mock_dyscrasia = Dyscrasia(name="Test Dyscrasia", resonance="melancholy", description="Description", page=42)
+    mock_dyscrasia = Dyscrasia(
+        name="Test Dyscrasia", resonance="melancholy", description="Description", page=42
+    )
 
     with (
         patch("inconnu.reference.resonance.get_avatar", return_value="http://avatar.url"),

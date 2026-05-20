@@ -24,18 +24,18 @@ from inconnu.roll import Roll
 from inconnu.settings import menu
 
 __all__ = (
+    "Roll",
     "bot",
     "character",
     "d10",
-    "menu",
     "experience",
     "header",
     "macros",
+    "menu",
     "misc",
     "options",
     "random",
     "reference",
-    "Roll",
     "roleplay",
     "settings",
     "specialties",

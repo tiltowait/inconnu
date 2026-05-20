@@ -21,3 +21,8 @@ def post_url(post_id: str | PydanticObjectId) -> str:
 def wizard_url(token: str) -> str:
     """Generate a character creation wizard URL."""
     return urljoin(settings.app_site, f"/wizard/{token}")
+
+
+def web_asset(path: str) -> str:
+    """Return the CDN URL for a static asset."""
+    return urljoin("https://assets.inconnu.app/", path)

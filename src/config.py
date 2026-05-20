@@ -1,7 +1,5 @@
 """Basic bot config."""
 
-from urllib.parse import urljoin
-
 from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -56,8 +54,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()  # type: ignore[call-arg]
-
-
-def web_asset(path: str):
-    """Returns the AWS URL for the given path."""
-    return urljoin("https://assets.inconnu.app/", path)

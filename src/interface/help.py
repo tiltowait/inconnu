@@ -10,10 +10,10 @@ from discord.ext import commands
 from discord.ui import Button, View
 
 import inconnu
-from config import web_asset
 from constants import PATREON, SUPPORT_URL
 from ctx import AppCtx
 from utils import cmd_replace
+from utils.urls import web_asset
 
 if TYPE_CHECKING:
     from bot import InconnuBot

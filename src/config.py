@@ -1,13 +1,22 @@
-"""Basic bot config."""
+"""Pydantic-settings configuration; validated and loaded from .env or
+INCONNU_CONFIG_FILE at startup."""
+
+import os
 
 from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+CONFIG_FILE = os.getenv("INCONNU_CONFIG_FILE", ".env")
+
 
 class Settings(BaseSettings):
-    """Inconnu configuration settings."""
+    """Inconnu configuration settings. Loaded from INCONNU_CONFIG_FILE or from
+    .env if that variable is not set.
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    Should not be instantiated directly. Use the config.settings singleton
+    instead."""
+
+    model_config = SettingsConfigDict(env_file=CONFIG_FILE, extra="ignore")
 
     inconnu_token: str
     inconnu_api_token: str = ""

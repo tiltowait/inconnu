@@ -1,6 +1,8 @@
 """Basic bot config."""
 
-from pydantic import field_validator
+from urllib.parse import urljoin
+
+from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,11 +40,9 @@ class Settings(BaseSettings):
 
     @field_validator("fc_api")
     @classmethod
-    def normalize_fc_api(cls, v: str) -> str:
-        v = v.strip("/")
-        if not v.startswith(("http://", "https://")):
-            v = "http://" + v
-        return v + "/"
+    def validate_fc_api_url(cls, v: str) -> str:
+        AnyHttpUrl(v)
+        return v
 
     @property
     def debug_guilds(self) -> list[int] | None:
@@ -60,7 +60,4 @@ settings = Settings()  # type: ignore[call-arg]
 
 def web_asset(path: str):
     """Returns the AWS URL for the given path."""
-    base = "https://assets.inconnu.app/"
-    if path[0] == "/":
-        path = path[1:]
-    return base + path
+    return urljoin("https://assets.inconnu.app/", path)

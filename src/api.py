@@ -4,7 +4,7 @@ import functools
 import re
 from datetime import datetime
 from json import dumps
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import aiohttp
 import async_timeout
@@ -87,10 +87,10 @@ async def delete_character_faceclaims(character: VChar):
 
 
 @measure
-async def _post(*, path: str, data: dict) -> str:
+async def _post(*, path: str, data: str) -> str:
     """Send an API POST request."""
     logger.debug("API: POST to {} with {}", path, str(data))
-    url = BASE_API + path.lstrip("/")
+    url = urljoin(BASE_API, path)
 
     async with async_timeout.timeout(60):
         async with aiohttp.ClientSession(headers=HEADER) as session:
@@ -106,7 +106,7 @@ async def _post(*, path: str, data: dict) -> str:
 async def _delete(*, path: str) -> str:
     """Send an API DELETE request."""
     logger.debug("API: DELETE to {}", path)
-    url = BASE_API + path.lstrip("/")
+    url = urljoin(BASE_API, path)
 
     async with async_timeout.timeout(60):
         async with aiohttp.ClientSession(headers=HEADER) as session:

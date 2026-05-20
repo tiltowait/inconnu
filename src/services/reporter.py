@@ -102,13 +102,13 @@ class ErrorReporter:
             return
         if isinstance(error, commands.NotOwner):
             await respond(
-                f"Sorry, only {ctx.bot.user.mention}'s owner may issue this command!",
+                f"Sorry, only {ctx.bot.me.mention}'s owner may issue this command!",
                 ephemeral=True,
             )
             return
-        if isinstance(error, errors.LockdownError):
+        if isinstance(error, errors.LockdownError) and ctx.bot.lockdown:
             timestamp = discord.utils.format_dt(ctx.bot.lockdown, "R")
-            err = f"{ctx.bot.user.mention} is undergoing maintenance {timestamp}."
+            err = f"{ctx.bot.me.mention} is undergoing maintenance {timestamp}."
             embed = ui.embeds.ErrorEmbed(
                 ctx.user,
                 err,
@@ -162,14 +162,13 @@ class ErrorReporter:
             if self.channel is not None:
                 await self.channel.send(embed=embed)
 
-    @staticmethod
-    async def error_embed(ctx, error) -> discord.Embed:
+    async def error_embed(self, ctx, error) -> discord.Embed:
         """Create an error embed."""
         if "50027" in str(error):
             description = "**Unrecoverable Discord error:** Invalid webhook token"
             await ctx.channel.send(
                 (
-                    "**Alert:** A Discord issue is currently impacting {self.bot.user.mention}'s "
+                    f"**Alert:** A Discord issue is currently impacting {self.bot.me.mention}'s "
                     "responsiveness. Check status here: https://discordstatus.com"
                 ),
                 delete_after=15,

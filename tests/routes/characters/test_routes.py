@@ -11,6 +11,7 @@ from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
 
 import db as database
+from config import settings
 from constants import Damage
 from errors import DuplicateCharacterError
 from models import VChar
@@ -44,29 +45,26 @@ async def mock_beanie():
 @pytest.fixture(autouse=True, scope="function")
 async def setup_guild_cache():
     """Set up guild cache with in-memory database for each test."""
-    # Patch GUILD_CACHE_LOC to use in-memory database
-    with patch("config.GUILD_CACHE_LOC", "file::memory:?cache=shared"):
-        # Reinitialize the guild_cache instance with new location
-        guild_cache.location = "file::memory:?cache=shared"
-        guild_cache._initialized = False
+    guild_cache.location = "file::memory:?cache=shared"
+    guild_cache._initialized = False
 
-        await guild_cache.initialize()
+    await guild_cache.initialize()
 
-        # Populate with a default guild so cache is "ready"
-        # Tests that need specific guilds will call populate_guild_cache again
-        default_guild = make_mock_guild(99999, "Default Guild", user_is_member=False)
-        await guild_cache.upsert_guilds([default_guild])
+    # Populate with a default guild so cache is "ready"
+    # Tests that need specific guilds will call populate_guild_cache again
+    default_guild = make_mock_guild(99999, "Default Guild", user_is_member=False)
+    await guild_cache.upsert_guilds([default_guild])
 
-        yield guild_cache
+    yield guild_cache
 
-        if guild_cache.initialized:
-            await guild_cache.close()
+    if guild_cache.initialized:
+        await guild_cache.close()
 
 
 @pytest.fixture(autouse=True)
 def mock_api_key():
     """Mock API_KEY for all tests."""
-    with patch("routes.auth.API_KEY", TEST_API_KEY):
+    with patch.object(settings, "inconnu_api_token", TEST_API_KEY):
         yield
 
 
@@ -850,8 +848,8 @@ async def test_create_character_premium_user(
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
     with (
-        patch("routes.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
-        patch("routes.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
+        patch.object(settings, "supporter_guild", TEST_SUPPORTER_GUILD_ID),
+        patch.object(settings, "supporter_role", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -893,8 +891,8 @@ async def test_create_character_non_premium_user(
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
     with (
-        patch("routes.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
-        patch("routes.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
+        patch.object(settings, "supporter_guild", TEST_SUPPORTER_GUILD_ID),
+        patch.object(settings, "supporter_role", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -927,8 +925,8 @@ async def test_create_character_user_not_in_supporter_guild(
     mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
 
     with (
-        patch("routes.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
-        patch("routes.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
+        patch.object(settings, "supporter_guild", TEST_SUPPORTER_GUILD_ID),
+        patch.object(settings, "supporter_role", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -974,8 +972,8 @@ async def test_create_spc_premium_check_uses_wizard_creator(
 
     with (
         patch("routes.characters.routes.VChar.SPC_OWNER", 0),
-        patch("routes.characters.routes.SUPPORTER_GUILD", TEST_SUPPORTER_GUILD_ID),
-        patch("routes.characters.routes.SUPPORTER_ROLE", TEST_SUPPORTER_ROLE_ID),
+        patch.object(settings, "supporter_guild", TEST_SUPPORTER_GUILD_ID),
+        patch.object(settings, "supporter_role", TEST_SUPPORTER_ROLE_ID),
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(

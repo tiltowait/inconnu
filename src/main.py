@@ -7,15 +7,12 @@ import asyncio
 import signal
 
 import uvloop
-from dotenv import load_dotenv
 from loguru import logger
 
 import db
 import services
 from bot import bot
-from config import BOT_TOKEN, PROD
-
-load_dotenv()
+from config import settings
 
 
 async def startup():
@@ -25,7 +22,7 @@ async def startup():
     await services.guild_cache.initialize()
     try:
         async with bot:
-            await bot.start(BOT_TOKEN)
+            await bot.start(settings.inconnu_token)
     except (KeyboardInterrupt, asyncio.CancelledError):
         logger.info("Received shutdown signal")
     finally:
@@ -49,7 +46,7 @@ def main():
     uvloop.install()
     logger.info("Installed uvloop")
 
-    if PROD:
+    if settings.prod:
         logger.debug("Configuring log rotation")
         logger.remove()
         logger.add(

@@ -9,7 +9,7 @@ from loguru import logger
 
 import errors
 import inconnu
-from config import SUPPORTER_GUILD, SUPPORTER_ROLE
+from config import settings
 from constants import Damage
 from models import VChar
 from routes.auth import get_authenticated_user, verify_api_key
@@ -249,10 +249,10 @@ async def create_character(
     # that function requires an AppCtx, which we don't have. (Good candidate
     # for a future refactor ...)
     premium = False
-    guild = await inconnu.bot.get_or_fetch_guild(SUPPORTER_GUILD)
+    guild = await inconnu.bot.get_or_fetch_guild(settings.supporter_guild)
     if guild is not None:
         user = await guild.get_or_fetch(discord.Member, wizard.user)
-        if user is not None and user.get_role(SUPPORTER_ROLE) is not None:
+        if user is not None and user.get_role(settings.supporter_role) is not None:
             premium = True
     else:
         logger.warning("Supporter guild not found")

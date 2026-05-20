@@ -14,18 +14,15 @@ from services import guild_cache
 @pytest.fixture(autouse=True, scope="function")
 async def setup_guild_cache():
     """Set up guild cache with in-memory database for each test."""
-    # Patch GUILD_CACHE_LOC to use in-memory database
-    with patch("config.GUILD_CACHE_LOC", "file::memory:?cache=shared"):
-        # Reinitialize the guild_cache instance with new location
-        guild_cache.location = "file::memory:?cache=shared"
-        guild_cache._initialized = False
-        guild_cache._refreshed = False
+    guild_cache.location = "file::memory:?cache=shared"
+    guild_cache._initialized = False
+    guild_cache._refreshed = False
 
-        await guild_cache.initialize()
-        yield guild_cache
+    await guild_cache.initialize()
+    yield guild_cache
 
-        if guild_cache.initialized:
-            await guild_cache.close()
+    if guild_cache.initialized:
+        await guild_cache.close()
 
 
 @pytest.fixture

@@ -10,14 +10,13 @@ from cachetools import TTLCache
 from discord.ext import tasks
 from loguru import logger
 
-import config
 import constants
 import db
 import errors
 import inconnu
 import services
 import tasks as bot_tasks
-from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
+from config import settings
 from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
@@ -41,14 +40,14 @@ class InconnuBot(discord.AutoShardedBot):
         self._guild_fetch_failures = TTLCache[int, bool](maxsize=200, ttl=1200)
         logger.info("BOT: Instantiated")
 
-        if config.SHOW_TEST_ROUTES:
+        if settings.show_test_routes:
             logger.info("CONFIG: Showing test routes")
 
-        logger.info("CONFIG: Profile site set to {}", config.PROFILE_SITE)
-        logger.info("CONFIG: Admin guild: {}", config.ADMIN_GUILD)
+        logger.info("CONFIG: Profile site set to {}", settings.profile_site)
+        logger.info("CONFIG: Admin guild: {}", settings.admin_server)
 
-        if config.DEBUG_GUILDS:
-            logger.info("CONFIG: Debugging on {}", DEBUG_GUILDS)
+        if settings.debug_guilds:
+            logger.info("CONFIG: Debugging on {}", settings.debug_guilds)
 
         # Add the cogs
         for filename in os.listdir("./src/interface"):
@@ -390,12 +389,12 @@ class InconnuBot(discord.AutoShardedBot):
         if await services.guild_cache.ready():
             await services.guild_cache.upsert_members(after)
 
-        if before.guild.id != SUPPORTER_GUILD:
+        if before.guild.id != settings.supporter_guild:
             return
 
         def is_supporter(member: discord.Member) -> bool:
             """Check if the member is a supporter."""
-            return member.get_role(SUPPORTER_ROLE) is not None
+            return member.get_role(settings.supporter_role) is not None
 
         if is_supporter(before) and not is_supporter(after):
             logger.info("PREMIUM: {} is no longer a supporter", after.name)
@@ -412,8 +411,8 @@ class InconnuBot(discord.AutoShardedBot):
         if await services.guild_cache.ready():
             await services.guild_cache.delete_member(member)
 
-        if member.guild.id == SUPPORTER_GUILD:
-            if member.get_role(SUPPORTER_ROLE):
+        if member.guild.id == settings.supporter_guild:
+            if member.get_role(settings.supporter_role):
                 await bot.mark_premium_loss(member)
 
     @staticmethod
@@ -423,8 +422,8 @@ class InconnuBot(discord.AutoShardedBot):
         if await services.guild_cache.ready():
             await services.guild_cache.upsert_members(member)
 
-        if member.guild.id == SUPPORTER_GUILD:
-            if member.get_role(SUPPORTER_ROLE):
+        if member.guild.id == settings.supporter_guild:
+            if member.get_role(settings.supporter_role):
                 await bot.mark_premium_gain(member)
 
     # Guild Events
@@ -478,5 +477,5 @@ async def check_premium_expiries():
 
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True, webhooks=True)
-bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS, cache_app_emojis=True)
+bot = InconnuBot(intents=intents, debug_guilds=settings.debug_guilds, cache_app_emojis=True)
 inconnu.bot = bot

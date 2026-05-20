@@ -7,7 +7,7 @@ import discord
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from config import GUILD_CACHE_LOC
+from config import settings
 from utils.discord_helpers import get_avatar
 
 
@@ -276,4 +276,4 @@ class GuildCache:
         self._refreshed = True
 
 
-guild_cache = GuildCache(GUILD_CACHE_LOC)
+guild_cache = GuildCache(settings.guild_cache_loc)

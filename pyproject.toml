@@ -22,6 +22,7 @@ dependencies = [
     "petname>=2.6",
     "aiosqlite>=0.22.1",
     "async-timeout>=5.0.1",
+    "pydantic-settings>=2.14.1",
 ]
 
 [project.scripts]

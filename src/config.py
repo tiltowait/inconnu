@@ -1,29 +1,61 @@
 """Basic bot config."""
 
-import os
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from dotenv import load_dotenv
 
-load_dotenv()
+class Settings(BaseSettings):
+    """Inconnu configuration settings."""
 
-BOT_TOKEN = os.environ.get("INCONNU_TOKEN", "")
-API_KEY = os.environ.get("INCONNU_API_TOKEN", "")
-DEBUG_GUILDS: list[int] | None = None
-ADMIN_GUILD = int(os.environ["ADMIN_SERVER"])
-SUPPORTER_GUILD = int(os.environ["SUPPORTER_GUILD"])
-SUPPORTER_ROLE = int(os.environ["SUPPORTER_ROLE"])
-PROFILE_SITE = os.environ.get("PROFILE_SITE", "http://localhost:5173/")
-SHOW_TEST_ROUTES = "SHOW_TEST_ROUTES" in os.environ
-APP_SITE = os.environ.get("APP_SITE", "http://localhost:5173")
-GUILD_CACHE_LOC = os.environ.get("GUILD_CACHE_LOC", "file::memory:?cache=shared")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-if PROFILE_SITE[-1] != "/":
-    PROFILE_SITE += "/"
+    inconnu_token: str
+    inconnu_api_token: str = ""
+    admin_server: int
+    supporter_guild: int
+    supporter_role: int
+    profile_site: str = "http://localhost:5173/"
+    app_site: str = "http://localhost:5173"
+    guild_cache_loc: str = "file::memory:?cache=shared"
+    show_test_routes: bool = False
+    debug: str | None = None
 
-if (_debug_guilds := os.getenv("DEBUG")) is not None:
-    DEBUG_GUILDS = [int(g) for g in _debug_guilds.split(",")]
+    # Database
+    mongo_url: str
 
-PROD = not DEBUG_GUILDS
+    # Channels
+    report_channel: int | None = None
+    db_error_channel: int | None = None
+
+    # External APIs
+    fc_api: str = "http://127.0.0.1:8080/"
+    github_token: str = ""
+
+    @field_validator("profile_site")
+    @classmethod
+    def ensure_trailing_slash(cls, v: str) -> str:
+        return v if v.endswith("/") else v + "/"
+
+    @field_validator("fc_api")
+    @classmethod
+    def normalize_fc_api(cls, v: str) -> str:
+        v = v.strip("/")
+        if not v.startswith(("http://", "https://")):
+            v = "http://" + v
+        return v + "/"
+
+    @property
+    def debug_guilds(self) -> list[int] | None:
+        if self.debug is None:
+            return None
+        return [int(g) for g in self.debug.split(",")]
+
+    @property
+    def prod(self) -> bool:
+        return self.debug_guilds is None
+
+
+settings = Settings()  # type: ignore[call-arg]
 
 
 def web_asset(path: str):

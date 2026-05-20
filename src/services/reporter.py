@@ -1,6 +1,5 @@
 """An error reporter."""
 
-import os
 import traceback
 
 import discord
@@ -11,6 +10,7 @@ from loguru import logger
 import constants
 import errors
 import ui
+from config import settings
 from ctx import AppInvocation
 from services.log import report_database_error
 from utils import get_avatar
@@ -47,18 +47,15 @@ class ErrorReporter:
     async def prepare_channel(self, bot):
         """Attempt to get the error channel from the bot."""
         self.bot = bot
-        try:
-            if (channel := os.getenv("REPORT_CHANNEL")) is not None:
-                logger.info("REPORTER: Report channel ID: {}", channel)
-                if (channel := await bot.fetch_channel(channel)) is not None:
-                    logger.info("REPORTER: Recording errors in #{}", channel.name)
-                    self.channel = channel
-                else:
-                    logger.warning("REPORTER: Unhandled exceptions channel invalid")
+        if settings.report_channel is not None:
+            logger.info("REPORTER: Report channel ID: {}", settings.report_channel)
+            if (channel := await bot.fetch_channel(settings.report_channel)) is not None:
+                logger.info("REPORTER: Recording errors in #{}", channel.name)
+                self.channel = channel
             else:
-                logger.warning("REPORTER: Unhandled exceptions report channel not set")
-        except ValueError:
-            logger.warning("REPORTER: Unhandled exceptions channel is not an int")
+                logger.warning("REPORTER: Unhandled exceptions channel invalid")
+        else:
+            logger.warning("REPORTER: Unhandled exceptions report channel not set")
 
     async def report_error(self, ctx: AppInvocation, error: discord.DiscordException):
         """Report an error, switching between known and unknown."""

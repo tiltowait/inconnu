@@ -4,18 +4,15 @@ import os
 from typing import Any
 
 from beanie import Document, init_beanie
-from dotenv import load_dotenv
 from loguru import logger
 from pymongo import AsyncMongoClient
 
+from config import settings
 from models import RPPost, VChar, VGuild, VUser
 
-load_dotenv()
+_db_name = os.path.basename(settings.mongo_url)
 
-_mongo_url = os.environ["MONGO_URL"]
-_db_name = os.path.basename(_mongo_url)
-
-_client = AsyncMongoClient(_mongo_url, serverSelectionTimeoutMS=1800)
+_client = AsyncMongoClient(settings.mongo_url, serverSelectionTimeoutMS=1800)
 _db = _client.get_database(_db_name)
 
 # The collections

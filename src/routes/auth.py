@@ -4,7 +4,7 @@ from fastapi import Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from config import API_KEY
+from config import settings
 
 DISCORD_HEADER = "X-Discord-User-ID"
 
@@ -13,7 +13,7 @@ async def verify_api_key(
     credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
 ) -> HTTPAuthorizationCredentials:
     """Validates the API bearer token."""
-    if credentials.credentials != API_KEY:
+    if credentials.credentials != settings.inconnu_api_token:
         raise HTTPException(401, detail="Invalid authentication token")
     return credentials
 

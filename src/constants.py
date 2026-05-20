@@ -3,10 +3,7 @@
 from enum import StrEnum
 from typing import cast
 
-from dotenv import load_dotenv
 from flatdict import FlatDict
-
-load_dotenv()
 
 SUPPORT_URL = "https://discord.gg/QHnCdSPeEE"
 PATREON = "https://www.patreon.com/tiltowait"

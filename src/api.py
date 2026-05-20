@@ -1,7 +1,6 @@
 """The Inconnu API endpoints."""
 
 import functools
-import os
 import re
 from datetime import datetime
 from json import dumps
@@ -9,28 +8,16 @@ from urllib.parse import urlparse
 
 import aiohttp
 import async_timeout
-from dotenv import load_dotenv
 from loguru import logger
 
+from config import settings
 from models import VChar
-
-load_dotenv()
-
-
-def normalize_url(url: str) -> str:
-    """Return a normalized URL with scheme and trailing slash."""
-    url = url.strip("/")
-    if not url.startswith(("http://", "https://")):
-        url = "http://" + url
-
-    return url + "/"
-
 
 # An argument can be made that these should simply live with their appropriate
 # command counterparts, but I see a value in keeping them together.
 
 HEADER = {"Content-Type": "application/json"}
-BASE_API = normalize_url(os.getenv("FC_API", "http://127.0.0.1:8080/"))
+BASE_API = settings.fc_api
 BUCKET = "pcs.inconnu.app"  # The name of the bucket where the images live
 
 

@@ -1,9 +1,10 @@
 """log.py - Database error reporting."""
 
-import os
 import textwrap
 
 import discord
+
+from config import settings
 
 
 async def report_database_error(bot, ctx):
@@ -14,8 +15,7 @@ async def report_database_error(bot, ctx):
     await ctx.respond(textwrap.dedent(errmsg), ephemeral=True)
 
     # Send an error message to the support server
-    if (db_error_channel := os.getenv("DB_ERROR_CHANNEL")) is not None:
+    if settings.db_error_channel is not None:
         timestamp = discord.utils.format_dt(discord.utils.utcnow())
-
-        db_error_channel = bot.get_channel(int(db_error_channel))
-        await db_error_channel.send(f"{timestamp}: Database error detected.")
+        channel = bot.get_channel(settings.db_error_channel)
+        await channel.send(f"{timestamp}: Database error detected.")

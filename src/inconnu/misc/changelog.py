@@ -1,11 +1,10 @@
 """Fetch and display changelog from GitHub."""
 
-import os
-
 import aiohttp
 import discord
 
 import ui
+from config import settings
 from ctx import AppCtx
 
 CHANGELOG = "https://github.com/tiltowait/inconnu/releases/latest"
@@ -41,7 +40,7 @@ async def show_changelog(ctx: AppCtx, hidden: bool):
 
 async def fetch_changelog() -> tuple[str, str]:
     """Fetch the changelog from GitHub."""
-    token = os.getenv("GITHUB_TOKEN", "")
+    token = settings.github_token
     header = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
 
     async with aiohttp.ClientSession(headers=header, raise_for_status=True) as session:

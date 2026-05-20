@@ -19,7 +19,7 @@ def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None):
     return is_admin(ctx)
 
 
-def is_admin(ctx: AppInvocation):
+def is_admin(ctx: AppInvocation | discord.Interaction):
     """Check if the ctx user is a server admin."""
     if ctx.channel is None:
         raise ValueError("Unexpectedly got null channel")

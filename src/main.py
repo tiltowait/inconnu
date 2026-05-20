@@ -42,12 +42,9 @@ def handle_signal(signum: int, _):
         task.cancel()
 
 
-def main():
-    uvloop.install()
-    logger.info("Installed uvloop")
-
+def configure_logging():
+    """Configure loguru for production (file sink) or leave defaults for dev."""
     if settings.prod:
-        logger.debug("Configuring log rotation")
         logger.remove()
         logger.add(
             "/var/log/inconnu.log",
@@ -55,6 +52,12 @@ def main():
             retention=7,
             level="INFO",
         )
+
+
+def main():
+    uvloop.install()
+    configure_logging()
+    logger.info("Installed uvloop")
 
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, handle_signal)

@@ -3,7 +3,7 @@
 import asyncio
 import os
 from datetime import datetime, time, timezone
-from typing import cast
+from typing import Any, cast
 
 import discord
 from cachetools import TTLCache
@@ -98,7 +98,7 @@ class InconnuBot(discord.AutoShardedBot):
         # It's possible for the backend to not fill in this property, which is
         # why we have to check it. We *could* also search the cached messages,
         # and maybe we'll add that in the future.
-        if message.reference.resolved is not None:
+        if isinstance(message.reference.resolved, discord.Message):
             # This routine only works if the webhooks have already been fetched
             if message.reference.resolved.author.id in self.webhook_cache.webhook_ids:
                 logger.debug("BOT: Received a reply to one of our webhooks")
@@ -110,7 +110,8 @@ class InconnuBot(discord.AutoShardedBot):
                     if rp_post.user not in (m.id for m in message.mentions):
                         logger.debug("BOT: Pinging Rolepost's author")
                         user = await self.get_or_fetch_user(rp_post.user)
-                        await message.reply(user.mention, mention_author=False, delete_after=60)
+                        if user is not None:
+                            await message.reply(user.mention, mention_author=False, delete_after=60)
                     else:
                         logger.debug("BOT: Replier pinged the Rolepost's author; doing nothing")
                 else:
@@ -146,7 +147,7 @@ class InconnuBot(discord.AutoShardedBot):
     async def inform_premium_features(self, member: discord.Member):
         """Inform the member of premium features."""
         try:
-            upload_mention = self.get_application_command("character image upload").mention
+            upload_mention = self.cmd_mention("character image upload")
             embed = discord.Embed(
                 title="Thank you for your support!",
                 description=(
@@ -280,13 +281,15 @@ class InconnuBot(discord.AutoShardedBot):
                 "guild": interaction.guild_id,
                 "user": interaction.user.id if interaction.user else None,
             }
-            inter_data.update(interaction.data)
+            if interaction.data is not None:
+                inter_data.update(cast(dict[str, Any], interaction.data))
             await db.interactions.insert_one(inter_data)
 
         await self.process_application_commands(interaction)
 
     async def on_application_command(self, ctx: AppCtx):
         """General processing after application commands."""
+        assert ctx.command is not None
         # If a user specifies a character but only has one, we want to inform
         # them it's unnecessary so they don't keep doing it.
         options = raw_command_options(ctx.interaction)
@@ -386,7 +389,7 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_application_command_error(self, context, exception):
         """Use centralized reporter to handle errors."""
-        await reporter.report_error(context, exception)
+        await reporter.report_error(cast(AppCtx, context), exception)
 
     # Member Events
 

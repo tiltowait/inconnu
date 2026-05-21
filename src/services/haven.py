@@ -72,6 +72,7 @@ class Haven:
 
     async def fetch(self):
         """Fetch the sole-matching character or raise a CharacterError."""
+        guild = cast(discord.Guild, self.ctx.guild)
         try:
             # Confirm ownership. We weren't able to do so in a sync context,
             # but now that we're async, we can do so and send an error message
@@ -80,7 +81,6 @@ class Haven:
 
             # If the owner only has one character, or selected one, then we
             # can skip the rest of the fetch and filter routine
-            guild = cast(discord.Guild, self.ctx.guild)
             user = cast(discord.Member, self.owner)
             character = await services.char_mgr.fetchone(
                 guild,
@@ -120,7 +120,7 @@ class Haven:
         except errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
             assert self.owner is not None
-            all_chars = await services.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)
+            all_chars = await services.char_mgr.fetchall(guild.id, self.owner.id)
             if self.filter is not None:
                 # If we were given a filter, then we can only add those
                 # characters that match the filter and potentially go down

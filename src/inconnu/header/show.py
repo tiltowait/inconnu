@@ -5,6 +5,7 @@ from loguru import logger
 
 import db
 import errors
+import ui
 from ctx import AppCtx
 from models import VChar
 from models.rpheader import HeaderSubdoc
@@ -19,6 +20,10 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
 @haven(__HELP_URL)
 async def show_header(ctx: AppCtx, character: VChar, **kwargs):
     """Display the character's header in an embed."""
+    if ctx.guild is None:
+        await ui.embeds.error(ctx, "This command is unavailable in DMs.")
+        return
+
     header_doc = HeaderSubdoc.create(character, **kwargs)
     message = None
     try:

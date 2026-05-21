@@ -59,9 +59,10 @@ class ConvictionsModal(Modal):
         old_convictions = self.character.convictions.copy()
         old_convictions = "\n".join(old_convictions) if old_convictions else "*None*"
 
-        new_convictions = [first, second, third]
+        new_convictions = [v for v in [first, second, third] if v]
         new_convictions_str = "\n".join(new_convictions) if new_convictions else "*None*"
 
+        assert interaction.user is not None
         user = interaction.user
         update_message = f"__{user.mention} changed **{self.character.name}'s** Convictions__"
         update_message += f"\n\n***Old***\n{old_convictions}\n\n***New***\n{new_convictions_str}"

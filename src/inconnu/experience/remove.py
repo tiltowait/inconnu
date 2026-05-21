@@ -1,5 +1,7 @@
 """experience/remove.py - Remove an XP log entry."""
 
+from typing import cast
+
 import discord
 
 import inconnu
@@ -95,7 +97,10 @@ class _ExperienceView(DisablingView):
 
         field = inconnu.character.DisplayField.EXPERIENCE
         await inconnu.character.update(
-            interaction, syntax, character=self.character, fields=[(field.value, field)]
+            cast(AppCtx, interaction),
+            syntax,
+            character=self.character,
+            fields=[(field.value, field)],
         )
         self.stop()
 

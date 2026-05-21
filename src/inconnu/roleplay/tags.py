@@ -1,5 +1,7 @@
 """Tag display and selection."""
 
+from typing import cast
+
 import discord
 from discord.ext.pages import Page, Paginator
 
@@ -15,6 +17,10 @@ from utils.text import fence, oxford_list
 
 async def show_tags(ctx: AppCtx):
     """Show the user's tags with an option to select and view messages."""
+    if ctx.guild is None:
+        await ui.embeds.error(ctx, "This command is unavailable in DMs.")
+        return
+
     pipeline = [
         {
             "$match": {
@@ -104,7 +110,9 @@ class TagView(DisablingView):
 
     async def callback(self, interaction: discord.Interaction):
         """Present the posts with the tag."""
-        selected = self.children[0].values
+        assert interaction.user is not None
+        select_item = cast(discord.ui.Select, self.children[0])
+        selected = cast(list[str], select_item.values)
 
         query = {
             "deleted": False,

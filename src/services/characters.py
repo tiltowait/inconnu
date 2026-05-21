@@ -187,7 +187,7 @@ class CharacterManager:
         async with self._lock:
             deletion = await character.delete()
 
-            if deletion.deleted_count == 1:
+            if deletion is not None and deletion.deleted_count == 1:
                 self._characters.remove(character)
                 del self._id_cache[character.id_str]
 

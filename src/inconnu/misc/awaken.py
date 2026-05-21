@@ -1,5 +1,6 @@
 """misc/awake.py - Automate the awakening bookkeeping."""
 
+import discord
 from loguru import logger
 
 import constants
@@ -31,7 +32,7 @@ async def awaken(ctx: AppCtx, character: VChar):
             message += "\n**No** Hunger gain."
         else:
             message += "\nRouse failure. "
-            color = constants.ROUSE_FAIL_COLOR
+            color = discord.Color(constants.ROUSE_FAIL_COLOR)
 
             if character.hunger == 5:
                 message += "**Enter torpor!**"

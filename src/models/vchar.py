@@ -38,7 +38,7 @@ class Tracker(StrEnum):
 class VChar(Document):
     """A vampire, mortal, ghoul, or thin-blood character."""
 
-    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True, validate_assignment=True)
 
     class Settings:
         name = "characters"

@@ -240,10 +240,9 @@ class CharacterManager:
 
             if tasks:
                 logger.info(
-                    "{}: {} left. Marked {} {} inactive.",
+                    "{}: {} left. Marked {} inactive.",
                     player.guild.name,
                     player.name,
-                    len(tasks),
                     pluralize(len(tasks), "character"),
                 )
                 await asyncio.gather(*tasks)
@@ -258,16 +257,19 @@ class CharacterManager:
         async with self._lock:
             tasks = []
             for char in self._characters:
-                if char.user == player.id and "left" in char.stat_log:
+                if (
+                    char.user == player.id
+                    and char.guild == player.guild.id
+                    and "left" in char.stat_log
+                ):
                     del char.stat_log["left"]
                     tasks.append(char.save())
 
             if tasks:
                 logger.info(
-                    "{}: {} returned. Marked {} {} active.",
+                    "{}: {} returned. Marked {} active.",
                     player.guild.name,
                     player.name,
-                    len(tasks),
                     pluralize(len(tasks), "character"),
                 )
                 await asyncio.gather(*tasks)

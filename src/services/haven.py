@@ -49,7 +49,7 @@ class Haven:
         character: VChar | str | None = None,
         tip: str | None = None,
         help: str | None = None,
-        char_filter: Callable | None = None,
+        char_filter: Callable[[VChar], None] | None = None,
         errmsg: str = "None of your characters can perform this action.",
     ):
         self.uuid = uuid.uuid4().hex  # For ensuring button uniqueness

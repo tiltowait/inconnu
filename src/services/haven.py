@@ -2,7 +2,6 @@
 
 import functools
 import uuid
-from collections import OrderedDict
 from typing import Awaitable, Callable, Concatenate, cast
 
 import discord
@@ -64,7 +63,7 @@ class Haven:
 
         self.match = character
         self.filter = char_filter
-        self.possibilities = OrderedDict()
+        self.possibilities: dict[str, tuple[VChar, errors.InconnuError | None]] = {}
 
         # When the view's button is clicked, the view doesn't make use of the
         # interaction. Instead, we'll store it so that the function calling
@@ -134,11 +133,11 @@ class Haven:
                     try:
                         self.filter(char)
                         logger.debug("HAVEN: Character {} matches filter", char.name)
-                        self.possibilities[self.uuid + char.id_str] = (char, False)
+                        self.possibilities[self.uuid + char.id_str] = (char, None)
                         passed += 1
-                    except errors.InconnuError:
+                    except errors.InconnuError as filter_err:
                         logger.debug("HAVEN: Character {} does not match filter", char.name)
-                        self.possibilities[self.uuid + char.id_str] = (char, True)
+                        self.possibilities[self.uuid + char.id_str] = (char, filter_err)
 
                 logger.debug("HAVEN: {} of {} character(s) match filter", passed, len(all_chars))
 
@@ -160,7 +159,7 @@ class Haven:
 
             else:
                 logger.debug("HAVEN: Presenting {} character options", len(all_chars))
-                self.possibilities = {self.uuid + char.id_str: (char, False) for char in all_chars}
+                self.possibilities = {self.uuid + char.id_str: (char, None) for char in all_chars}
 
             if self.match is None:
                 await self._get_user_selection(err)
@@ -182,7 +181,7 @@ class Haven:
             author=self.owner,
             help=self.help,
             view=view,
-            footer="Characters that can't be clicked cannot perform the desired action.",
+            footer="Characters that are disabled or marked X cannot perform the desired action.",
         )
 
         if view is None:
@@ -193,7 +192,20 @@ class Haven:
         await self.ctx.delete()
 
         if (key := view.selected_value) is not None:
-            character, _ = self.possibilities[key]
+            character, filter_err = self.possibilities[key]
+            if filter_err is not None:
+                # Select menu options can't be disabled, so an unusable
+                # character may still be selected. Reject it with the same
+                # error an explicitly named character would get.
+                logger.debug("HAVEN: {} selected but fails filter", character.name)
+                await ui.embeds.error(
+                    view.interaction,
+                    _personalize_error(filter_err, self.ctx, self.owner),
+                    author=self.owner,
+                    help=self.help,
+                )
+                raise errors.HandledError() from filter_err
+
             self.match = character
             logger.debug("HAVEN: {} selected", character.name)
         else:
@@ -209,13 +221,13 @@ class Haven:
         components = []
         if len(self.possibilities) < 6:
             for key, value in self.possibilities.items():
-                char, disabled = value
+                char, failed = value
                 components.append(
                     discord.ui.Button(
                         label=char.name,
                         custom_id=key,
                         style=discord.ButtonStyle.primary,
-                        disabled=disabled,
+                        disabled=failed is not None,
                     )
                 )
         else:

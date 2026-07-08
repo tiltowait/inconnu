@@ -6,6 +6,8 @@ from collections import OrderedDict
 from typing import Awaitable, Callable, Concatenate, cast
 
 import discord
+from discord import SelectOption
+from discord.ui import Select
 from loguru import logger
 
 import errors
@@ -218,7 +220,12 @@ class Haven:
                 )
         else:
             options = [
-                (char.name, self.uuid + char.id_str) for char, _ in self.possibilities.values()
+                SelectOption(
+                    label=char.name,
+                    value=self.uuid + char.id_str,
+                    emoji="🚫" if failed else None,
+                )
+                for char, failed in self.possibilities.values()
             ]
             logger.debug("HAVEN: {} characters are too many for buttons", len(options))
 
@@ -229,8 +236,8 @@ class Haven:
 
             while options:
                 selection = options[:25]
-                begin_letter = selection[0][0][0]
-                end_letter = selection[-1][0][0]
+                begin_letter = selection[0].label[0]
+                end_letter = selection[-1].label[0]
 
                 placeholder = "Select a character"
                 if show_name_range:
@@ -241,7 +248,7 @@ class Haven:
                         name_range = f" ({begin_letter}-{end_letter})"
                     placeholder += name_range
 
-                components.append(ui.views.Dropdown(placeholder, *selection))
+                components.append(Select(placeholder=placeholder, options=selection))
                 options = options[25:]
 
         logger.debug("HAVEN: Created {} component(s)", len(components))

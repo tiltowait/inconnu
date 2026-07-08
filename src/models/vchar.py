@@ -437,13 +437,19 @@ class VChar(Document):
             if not updated:
                 # Automatically categorize attributes and skills (helps with chargen)
                 if input_name in ATTRIBUTES:
-                    category = VCharTrait.Type.ATTRIBUTE
+                    assigned_category = VCharTrait.Type.ATTRIBUTE
                 elif input_name in SKILLS:
-                    category = VCharTrait.Type.SKILL
+                    assigned_category = VCharTrait.Type.SKILL
                 elif input_name.lower() in map(str.lower, DISCIPLINES):
-                    category = VCharTrait.Type.DISCIPLINE
+                    assigned_category = VCharTrait.Type.DISCIPLINE
+                else:
+                    assigned_category = category
 
-                new_trait = VCharTrait(name=input_name, rating=input_rating, type=category.value)
+                new_trait = VCharTrait(
+                    name=input_name,
+                    rating=input_rating,
+                    type=assigned_category.value,
+                )
                 bisect.insort(self.raw_traits, new_trait, key=lambda t: t.name.casefold())
                 assignments[input_name] = input_rating
 

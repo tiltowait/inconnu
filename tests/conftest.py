@@ -24,6 +24,7 @@ mongomock.Database.list_collection_names = _patched_list_collection_names
 os.environ["ADMIN_SERVER"] = "09876"
 os.environ["SUPPORTER_ROLE"] = "12345"
 os.environ["SUPPORTER_GUILD"] = "54321"
+os.environ["INCONNU_TOKEN"] = "test-token"  # Never use the real bot token in tests
 os.environ.setdefault("MONGO_URL", "mongodb://localhost/test")
 
 

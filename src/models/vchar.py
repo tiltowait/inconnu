@@ -694,11 +694,17 @@ class VChar(Document):
             scope: Unspent or lifetime XP
             reason: The reason for the application
             admin; The Discord ID of the admin who added/deducted
+        Zero amounts are ignored and not logged.
         """
-        event = "award" if amount > 0 else "deduct"
+        if amount == 0:
+            return
 
+        event_verb = "award" if amount > 0 else "deduct"
         event = VCharExperienceEntry(
-            event=f"{event}_{scope}", amount=amount, reason=reason, admin=admin
+            event=f"{event_verb}_{scope}",
+            amount=amount,
+            reason=reason,
+            admin=admin,
         )
         self.experience.log.append(event)
         logger.info("VCHAR: {}: Experience event: {}", self.name, event)

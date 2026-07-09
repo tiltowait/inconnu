@@ -1,36 +1,23 @@
 """The Inconnu API endpoints."""
 
 import functools
-import os
 import re
 from datetime import datetime
 from json import dumps
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import aiohttp
 import async_timeout
-from dotenv import load_dotenv
 from loguru import logger
 
+from config import settings
 from models import VChar
-
-load_dotenv()
-
-
-def normalize_url(url: str) -> str:
-    """Return a normalized URL with scheme and trailing slash."""
-    url = url.strip("/")
-    if not url.startswith(("http://", "https://")):
-        url = "http://" + url
-
-    return url + "/"
-
 
 # An argument can be made that these should simply live with their appropriate
 # command counterparts, but I see a value in keeping them together.
 
 HEADER = {"Content-Type": "application/json"}
-BASE_API = normalize_url(os.getenv("FC_API", "http://127.0.0.1:8080/"))
+BASE_API = settings.fc_api
 BUCKET = "pcs.inconnu.app"  # The name of the bucket where the images live
 
 
@@ -100,10 +87,10 @@ async def delete_character_faceclaims(character: VChar):
 
 
 @measure
-async def _post(*, path: str, data: dict) -> str:
+async def _post(*, path: str, data: str) -> str:
     """Send an API POST request."""
     logger.debug("API: POST to {} with {}", path, str(data))
-    url = BASE_API + path.lstrip("/")
+    url = urljoin(BASE_API, path)
 
     async with async_timeout.timeout(60):
         async with aiohttp.ClientSession(headers=HEADER) as session:
@@ -119,7 +106,7 @@ async def _post(*, path: str, data: dict) -> str:
 async def _delete(*, path: str) -> str:
     """Send an API DELETE request."""
     logger.debug("API: DELETE to {}", path)
-    url = BASE_API + path.lstrip("/")
+    url = urljoin(BASE_API, path)
 
     async with async_timeout.timeout(60):
         async with aiohttp.ClientSession(headers=HEADER) as session:

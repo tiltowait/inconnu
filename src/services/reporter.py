@@ -1,6 +1,5 @@
 """An error reporter."""
 
-import os
 import traceback
 
 import discord
@@ -11,6 +10,7 @@ from loguru import logger
 import constants
 import errors
 import ui
+from config import settings
 from ctx import AppInvocation
 from services.log import report_database_error
 from utils import get_avatar
@@ -47,18 +47,15 @@ class ErrorReporter:
     async def prepare_channel(self, bot):
         """Attempt to get the error channel from the bot."""
         self.bot = bot
-        try:
-            if (channel := os.getenv("REPORT_CHANNEL")) is not None:
-                logger.info("REPORTER: Report channel ID: {}", channel)
-                if (channel := await bot.fetch_channel(channel)) is not None:
-                    logger.info("REPORTER: Recording errors in #{}", channel.name)
-                    self.channel = channel
-                else:
-                    logger.warning("REPORTER: Unhandled exceptions channel invalid")
+        if settings.report_channel is not None:
+            logger.info("REPORTER: Report channel ID: {}", settings.report_channel)
+            if (channel := await bot.fetch_channel(settings.report_channel)) is not None:
+                logger.info("REPORTER: Recording errors in #{}", channel.name)
+                self.channel = channel
             else:
-                logger.warning("REPORTER: Unhandled exceptions report channel not set")
-        except ValueError:
-            logger.warning("REPORTER: Unhandled exceptions channel is not an int")
+                logger.warning("REPORTER: Unhandled exceptions channel invalid")
+        else:
+            logger.warning("REPORTER: Unhandled exceptions report channel not set")
 
     async def report_error(self, ctx: AppInvocation, error: discord.DiscordException):
         """Report an error, switching between known and unknown."""
@@ -105,13 +102,13 @@ class ErrorReporter:
             return
         if isinstance(error, commands.NotOwner):
             await respond(
-                f"Sorry, only {ctx.bot.user.mention}'s owner may issue this command!",
+                f"Sorry, only {ctx.bot.me.mention}'s owner may issue this command!",
                 ephemeral=True,
             )
             return
-        if isinstance(error, errors.LockdownError):
+        if isinstance(error, errors.LockdownError) and ctx.bot.lockdown:
             timestamp = discord.utils.format_dt(ctx.bot.lockdown, "R")
-            err = f"{ctx.bot.user.mention} is undergoing maintenance {timestamp}."
+            err = f"{ctx.bot.me.mention} is undergoing maintenance {timestamp}."
             embed = ui.embeds.ErrorEmbed(
                 ctx.user,
                 err,
@@ -165,14 +162,13 @@ class ErrorReporter:
             if self.channel is not None:
                 await self.channel.send(embed=embed)
 
-    @staticmethod
-    async def error_embed(ctx, error) -> discord.Embed:
+    async def error_embed(self, ctx, error) -> discord.Embed:
         """Create an error embed."""
         if "50027" in str(error):
             description = "**Unrecoverable Discord error:** Invalid webhook token"
             await ctx.channel.send(
                 (
-                    "**Alert:** A Discord issue is currently impacting {self.bot.user.mention}'s "
+                    f"**Alert:** A Discord issue is currently impacting {self.bot.me.mention}'s "
                     "responsiveness. Check status here: https://discordstatus.com"
                 ),
                 delete_after=15,

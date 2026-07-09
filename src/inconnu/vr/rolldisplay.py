@@ -9,11 +9,11 @@ from discord.ui import Button
 
 import inconnu
 import services
-from config import web_asset
 from inconnu.vr import dicemoji
 from ui.views import DisablingView
 from utils import get_avatar, get_message
 from utils.text import contains_digit, de_camel
+from utils.urls import web_asset
 
 
 class _ButtonID(StrEnum):

@@ -9,9 +9,9 @@ from models import VChar
 
 __all__ = (
     "blush_text",
-    "posted",
     "embed",
     "header_title",
+    "posted",
     "register",
     "show_header",
     "update_header",

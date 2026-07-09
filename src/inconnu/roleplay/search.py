@@ -3,6 +3,7 @@
 import re
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 
 import discord
 from discord.ext.pages import Paginator
@@ -41,6 +42,7 @@ async def search(
     query = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
     footer = []
     reverse_results = False
+    sort_key: Any
 
     match SortOrder(sort_order):
         case SortOrder.MOST_RELEVANT:
@@ -77,12 +79,12 @@ async def search(
         footer.append(f"Mentioning {user.display_name}")
 
     try:
-        after, before = convert_dates(after, before)
+        after_dt, before_dt = convert_dates(after, before)
         dt_query = {}
-        if after:
-            dt_query["$gt"] = after
-        if before:
-            dt_query["$lt"] = before
+        if after_dt:
+            dt_query["$gt"] = after_dt
+        if before_dt:
+            dt_query["$lt"] = before_dt
         if dt_query:
             query["date"] = dt_query
     except (ValueError, SyntaxError) as err:
@@ -144,7 +146,7 @@ async def search(
         await ui.embeds.error(ctx, err, title="Not found")
 
 
-def convert_dates(after: str, before: str) -> tuple[datetime, datetime]:
+def convert_dates(after: str, before: str) -> tuple[datetime | None, datetime | None]:
     """Convert the before and after strings to proper datetimes.
     Removes timezone info.
 
@@ -157,18 +159,18 @@ def convert_dates(after: str, before: str) -> tuple[datetime, datetime]:
         if dt is None:
             return None
         try:
-            dt = datetime.strptime(dt, "%Y%m%d")
-            if dt.tzinfo is None:
-                return dt
-            return dt.astimezone(timezone.utc).replace(tzinfo=None)
+            parsed = datetime.strptime(dt, "%Y%m%d")
+            if parsed.tzinfo is None:
+                return parsed
+            return parsed.astimezone(timezone.utc).replace(tzinfo=None)
         except ValueError as err:
             raise SyntaxError(f"Invalid date: `{dt}`.\nAccepted format: YYYYMMDD.") from err
 
-    after = convert_tzs(after)
-    before = convert_tzs(before)
+    after_dt = convert_tzs(after)
+    before_dt = convert_tzs(before)
 
-    if before and after:
-        if before <= after:
+    if before_dt and after_dt:
+        if before_dt <= after_dt:
             raise ValueError("`before` must occur after `after`.")
 
-    return after, before
+    return after_dt, before_dt

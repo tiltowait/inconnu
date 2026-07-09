@@ -1,34 +1,65 @@
-"""Basic bot config."""
+"""Pydantic-settings configuration; validated and loaded from .env or
+INCONNU_CONFIG_FILE at startup."""
 
 import os
 
-from dotenv import load_dotenv
+from pydantic import AnyHttpUrl, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-load_dotenv()
-
-BOT_TOKEN = os.environ.get("INCONNU_TOKEN", "")
-API_KEY = os.environ.get("INCONNU_API_TOKEN", "")
-DEBUG_GUILDS: list[int] | None = None
-ADMIN_GUILD = int(os.environ["ADMIN_SERVER"])
-SUPPORTER_GUILD = int(os.environ["SUPPORTER_GUILD"])
-SUPPORTER_ROLE = int(os.environ["SUPPORTER_ROLE"])
-PROFILE_SITE = os.environ.get("PROFILE_SITE", "http://localhost:5173/")
-SHOW_TEST_ROUTES = "SHOW_TEST_ROUTES" in os.environ
-APP_SITE = os.environ.get("APP_SITE", "http://localhost:5173")
-GUILD_CACHE_LOC = os.environ.get("GUILD_CACHE_LOC", "file::memory:?cache=shared")
-
-if PROFILE_SITE[-1] != "/":
-    PROFILE_SITE += "/"
-
-if (_debug_guilds := os.getenv("DEBUG")) is not None:
-    DEBUG_GUILDS = [int(g) for g in _debug_guilds.split(",")]
-
-PROD = not DEBUG_GUILDS
+CONFIG_FILE = os.getenv("INCONNU_CONFIG_FILE", ".env")
 
 
-def web_asset(path: str):
-    """Returns the AWS URL for the given path."""
-    base = "https://assets.inconnu.app/"
-    if path[0] == "/":
-        path = path[1:]
-    return base + path
+class Settings(BaseSettings):
+    """Inconnu configuration settings. Loaded from INCONNU_CONFIG_FILE or from
+    .env if that variable is not set.
+
+    Should not be instantiated directly. Use the config.settings singleton
+    instead."""
+
+    model_config = SettingsConfigDict(env_file=CONFIG_FILE, extra="ignore")
+
+    inconnu_token: str
+    inconnu_api_token: str = ""
+    admin_server: int
+    supporter_guild: int
+    supporter_role: int
+    profile_site: str = "http://localhost:5173/"
+    app_site: str = "http://localhost:5173"
+    guild_cache_loc: str = "file::memory:?cache=shared"
+    show_test_routes: bool = False
+    debug: str | None = None
+
+    # Database
+    mongo_url: str
+
+    # Channels
+    report_channel: int | None = None
+    db_error_channel: int | None = None
+
+    # External APIs
+    fc_api: str = "http://127.0.0.1:8080/"
+    github_token: str = ""
+
+    @field_validator("profile_site")
+    @classmethod
+    def ensure_trailing_slash(cls, v: str) -> str:
+        return v if v.endswith("/") else v + "/"
+
+    @field_validator("fc_api")
+    @classmethod
+    def validate_fc_api_url(cls, v: str) -> str:
+        AnyHttpUrl(v)
+        return v
+
+    @property
+    def debug_guilds(self) -> list[int] | None:
+        if self.debug is None:
+            return None
+        return [int(g) for g in self.debug.split(",")]
+
+    @property
+    def prod(self) -> bool:
+        return self.debug_guilds is None
+
+
+settings = Settings()  # type: ignore[call-arg]

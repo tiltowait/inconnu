@@ -1,22 +1,16 @@
 """Shared database instance and collections."""
 
-import os
 from typing import Any
 
 from beanie import Document, init_beanie
-from dotenv import load_dotenv
 from loguru import logger
 from pymongo import AsyncMongoClient
 
+from config import settings
 from models import RPPost, VChar, VGuild, VUser
 
-load_dotenv()
-
-_mongo_url = os.environ["MONGO_URL"]
-_db_name = os.path.basename(_mongo_url)
-
-_client = AsyncMongoClient(_mongo_url, serverSelectionTimeoutMS=1800)
-_db = _client.get_database(_db_name)
+_client = AsyncMongoClient(settings.mongo_url, serverSelectionTimeoutMS=1800)
+_db = _client.get_database()
 
 # The collections
 characters = _db.characters
@@ -41,14 +35,14 @@ def models() -> list[type[Document]]:
 async def server_info() -> dict[str, Any]:
     """Run the client server_info() method and return the result."""
     info = await _client.server_info()
-    info["database"] = _db_name  # For logging purposes
+    info["database"] = _db.name  # For logging purposes
     return info
 
 
 async def init():
     """Initialize the database."""
     await init_beanie(_db, document_models=models())
-    logger.info("Initialized beanie. Database: {}", _db_name)
+    logger.info("Initialized beanie. Database: {}", _db.name)
 
 
 async def close():

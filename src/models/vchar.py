@@ -38,7 +38,9 @@ class Tracker(StrEnum):
 class VChar(Document):
     """A vampire, mortal, ghoul, or thin-blood character."""
 
-    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+    model_config = ConfigDict(
+        validate_by_alias=True, validate_by_name=True, validate_assignment=True
+    )
 
     class Settings:
         name = "characters"
@@ -435,13 +437,19 @@ class VChar(Document):
             if not updated:
                 # Automatically categorize attributes and skills (helps with chargen)
                 if input_name in ATTRIBUTES:
-                    category = VCharTrait.Type.ATTRIBUTE
+                    assigned_category = VCharTrait.Type.ATTRIBUTE
                 elif input_name in SKILLS:
-                    category = VCharTrait.Type.SKILL
+                    assigned_category = VCharTrait.Type.SKILL
                 elif input_name.lower() in map(str.lower, DISCIPLINES):
-                    category = VCharTrait.Type.DISCIPLINE
+                    assigned_category = VCharTrait.Type.DISCIPLINE
+                else:
+                    assigned_category = category
 
-                new_trait = VCharTrait(name=input_name, rating=input_rating, type=category.value)
+                new_trait = VCharTrait(
+                    name=input_name,
+                    rating=input_rating,
+                    type=assigned_category.value,
+                )
                 bisect.insort(self.raw_traits, new_trait, key=lambda t: t.name.casefold())
                 assignments[input_name] = input_rating
 
@@ -686,11 +694,17 @@ class VChar(Document):
             scope: Unspent or lifetime XP
             reason: The reason for the application
             admin; The Discord ID of the admin who added/deducted
+        Zero amounts are ignored and not logged.
         """
-        event = "award" if amount > 0 else "deduct"
+        if amount == 0:
+            return
 
+        event_verb = "award" if amount > 0 else "deduct"
         event = VCharExperienceEntry(
-            event=f"{event}_{scope}", amount=amount, reason=reason, admin=admin
+            event=f"{event_verb}_{scope}",
+            amount=amount,
+            reason=reason,
+            admin=admin,
         )
         self.experience.log.append(event)
         logger.info("VCHAR: {}: Experience event: {}", self.name, event)

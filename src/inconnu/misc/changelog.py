@@ -1,11 +1,10 @@
 """Fetch and display changelog from GitHub."""
 
-import os
-
 import aiohttp
 import discord
 
 import ui
+from config import settings
 from ctx import AppCtx
 
 CHANGELOG = "https://github.com/tiltowait/inconnu/releases/latest"
@@ -23,7 +22,7 @@ async def show_changelog(ctx: AppCtx, hidden: bool):
         embeds = []
         for page in paginator.pages:
             embed = discord.Embed(title=f"Inconnu {tag}", description=page, url=CHANGELOG)
-            embed.set_thumbnail(url=ctx.bot.user.display_avatar)
+            embed.set_thumbnail(url=ctx.bot.me.display_avatar)
             embeds.append(embed)
 
         show_buttons = len(embeds) > 1
@@ -41,7 +40,7 @@ async def show_changelog(ctx: AppCtx, hidden: bool):
 
 async def fetch_changelog() -> tuple[str, str]:
     """Fetch the changelog from GitHub."""
-    token = os.getenv("GITHUB_TOKEN", "")
+    token = settings.github_token
     header = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
 
     async with aiohttp.ClientSession(headers=header, raise_for_status=True) as session:

@@ -3,15 +3,12 @@
 from typing import TYPE_CHECKING
 
 from discord import AppEmoji
-from dotenv import load_dotenv
 from loguru import logger
 
 from constants import Damage
 
 if TYPE_CHECKING:
     from bot import InconnuBot
-
-load_dotenv()
 
 
 class _EmojiManager:

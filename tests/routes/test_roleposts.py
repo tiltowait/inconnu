@@ -11,6 +11,7 @@ from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
 
 import db as database
+from config import settings
 from models import RPPost
 from models.rpheader import DamageSubdoc, HeaderSubdoc
 from server import app
@@ -37,7 +38,7 @@ async def mock_beanie():
 @pytest.fixture(autouse=True)
 def mock_api_key():
     """Mock API_KEY for all tests."""
-    with patch("routes.auth.API_KEY", TEST_API_KEY):
+    with patch.object(settings, "inconnu_api_token", TEST_API_KEY):
         yield
 
 

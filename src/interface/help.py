@@ -10,10 +10,10 @@ from discord.ext import commands
 from discord.ui import Button, View
 
 import inconnu
-from config import web_asset
 from constants import PATREON, SUPPORT_URL
 from ctx import AppCtx
 from utils import cmd_replace
+from utils.urls import web_asset
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -158,7 +158,7 @@ class Help(commands.Cog):
             title="Bot Information",
             description="**Inconnu** is a dice roller for Vampire: The Masquerade 5th Edition.",
         )
-        embed.set_author(name=self.bot.user.display_name, icon_url=self.bot.user.avatar)
+        embed.set_author(name=self.bot.me.display_name, icon_url=self.bot.me.avatar)
         embed.set_thumbnail(url=web_asset("darkpack_logo2.webp"))
 
         embed.add_field(name="Author", value="`@tiltowait#8282`", inline=False)
@@ -499,8 +499,8 @@ class Help(commands.Cog):
     def _empty_embed(self, *, title: str, description: str):
         """Create an empty help embed."""
         embed = discord.Embed(title=title, description=description)
-        embed.set_author(name=self.bot.user.display_name)
-        embed.set_thumbnail(url=self.bot.user.avatar)
+        embed.set_author(name=self.bot.me.display_name)
+        embed.set_thumbnail(url=self.bot.me.avatar)
 
         return embed
 

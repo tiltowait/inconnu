@@ -10,7 +10,7 @@ from discord.ext import commands
 from loguru import logger
 
 import services
-from config import ADMIN_GUILD
+from config import settings
 from ctx import AppCtx
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ class AdminCog(commands.Cog):
     def __init__(self, bot: "InconnuBot"):
         self.bot = bot
 
-    @discord.slash_command(guild_ids=[ADMIN_GUILD])
+    @discord.slash_command(guild_ids=[settings.admin_server])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
     @option("title", description="The message's title")
@@ -75,7 +75,7 @@ class AdminCog(commands.Cog):
         except AttributeError:
             await ctx.respond("A field must have an associated value!", ephemeral=True)
 
-    @discord.slash_command(guild_ids=[ADMIN_GUILD])
+    @discord.slash_command(guild_ids=[settings.admin_server])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
     async def unannounce(self, ctx: AppCtx):
@@ -91,14 +91,14 @@ class AdminCog(commands.Cog):
         else:
             await ctx.respond("No Message of the Day is set.", ephemeral=True)
 
-    @discord.slash_command(guild_ids=[ADMIN_GUILD])
+    @discord.slash_command(guild_ids=[settings.admin_server])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
     async def wizards(self, ctx: AppCtx):
         """Show the number of character wizards running."""
         await ctx.respond(f"**Wizards running:** {services.wizard_cache.count}", ephemeral=True)
 
-    @discord.slash_command(guild_ids=[ADMIN_GUILD])
+    @discord.slash_command(guild_ids=[settings.admin_server])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()
     async def shutdown(self, ctx: AppCtx):

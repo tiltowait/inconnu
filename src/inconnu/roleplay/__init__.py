@@ -23,8 +23,8 @@ __all__ = (
 
 def post_embed(
     post_doc: models.RPPost,
-    author: str = None,
-    footer: str = None,
+    author: str | None = None,
+    footer: str | None = None,
     icon_url=None,
 ) -> discord.Embed:
     """Generate a Rolepost embed."""

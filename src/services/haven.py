@@ -2,10 +2,11 @@
 
 import functools
 import uuid
-from collections import OrderedDict
-from typing import Awaitable, Callable, Concatenate, ParamSpec, TypeVar, cast
+from typing import Awaitable, Callable, Concatenate, cast
 
 import discord
+from discord import SelectOption
+from discord.ui import Select
 from loguru import logger
 
 import errors
@@ -15,9 +16,6 @@ from ctx import AppCtx
 from models import VChar
 from ui.views.basicselector import BasicSelector
 from utils.permissions import is_admin
-
-P = ParamSpec("P")
-T = TypeVar("T")
 
 
 class Haven:
@@ -51,7 +49,7 @@ class Haven:
         character: VChar | str | None = None,
         tip: str | None = None,
         help: str | None = None,
-        char_filter: Callable | None = None,
+        char_filter: Callable[[VChar], None] | None = None,
         errmsg: str = "None of your characters can perform this action.",
     ):
         self.uuid = uuid.uuid4().hex  # For ensuring button uniqueness
@@ -65,7 +63,7 @@ class Haven:
 
         self.match = character
         self.filter = char_filter
-        self.possibilities = OrderedDict()
+        self.possibilities: dict[str, tuple[VChar, errors.InconnuError | None]] = {}
 
         # When the view's button is clicked, the view doesn't make use of the
         # interaction. Instead, we'll store it so that the function calling
@@ -75,6 +73,7 @@ class Haven:
 
     async def fetch(self):
         """Fetch the sole-matching character or raise a CharacterError."""
+        guild = cast(discord.Guild, self.ctx.guild)
         try:
             # Confirm ownership. We weren't able to do so in a sync context,
             # but now that we're async, we can do so and send an error message
@@ -83,7 +82,6 @@ class Haven:
 
             # If the owner only has one character, or selected one, then we
             # can skip the rest of the fetch and filter routine
-            guild = cast(discord.Guild, self.ctx.guild)
             user = cast(discord.Member, self.owner)
             character = await services.char_mgr.fetchone(
                 guild,
@@ -123,7 +121,7 @@ class Haven:
         except errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
             assert self.owner is not None
-            all_chars = await services.char_mgr.fetchall(self.ctx.guild.id, self.owner.id)
+            all_chars = await services.char_mgr.fetchall(guild.id, self.owner.id)
             if self.filter is not None:
                 # If we were given a filter, then we can only add those
                 # characters that match the filter and potentially go down
@@ -135,11 +133,11 @@ class Haven:
                     try:
                         self.filter(char)
                         logger.debug("HAVEN: Character {} matches filter", char.name)
-                        self.possibilities[self.uuid + char.id_str] = (char, False)
+                        self.possibilities[self.uuid + char.id_str] = (char, None)
                         passed += 1
-                    except errors.InconnuError:
+                    except errors.InconnuError as filter_err:
                         logger.debug("HAVEN: Character {} does not match filter", char.name)
-                        self.possibilities[self.uuid + char.id_str] = (char, True)
+                        self.possibilities[self.uuid + char.id_str] = (char, filter_err)
 
                 logger.debug("HAVEN: {} of {} character(s) match filter", passed, len(all_chars))
 
@@ -161,7 +159,7 @@ class Haven:
 
             else:
                 logger.debug("HAVEN: Presenting {} character options", len(all_chars))
-                self.possibilities = {self.uuid + char.id_str: (char, False) for char in all_chars}
+                self.possibilities = {self.uuid + char.id_str: (char, None) for char in all_chars}
 
             if self.match is None:
                 await self._get_user_selection(err)
@@ -183,7 +181,7 @@ class Haven:
             author=self.owner,
             help=self.help,
             view=view,
-            footer="Characters that can't be clicked cannot perform the desired action.",
+            footer="Characters that are disabled or marked X cannot perform the desired action.",
         )
 
         if view is None:
@@ -194,7 +192,20 @@ class Haven:
         await self.ctx.delete()
 
         if (key := view.selected_value) is not None:
-            character, _ = self.possibilities[key]
+            character, filter_err = self.possibilities[key]
+            if filter_err is not None:
+                # Select menu options can't be disabled, so an unusable
+                # character may still be selected. Reject it with the same
+                # error an explicitly named character would get.
+                logger.debug("HAVEN: {} selected but fails filter", character.name)
+                await ui.embeds.error(
+                    view.interaction,
+                    _personalize_error(filter_err, self.ctx, self.owner),
+                    author=self.owner,
+                    help=self.help,
+                )
+                raise errors.HandledError() from filter_err
+
             self.match = character
             logger.debug("HAVEN: {} selected", character.name)
         else:
@@ -210,18 +221,23 @@ class Haven:
         components = []
         if len(self.possibilities) < 6:
             for key, value in self.possibilities.items():
-                char, disabled = value
+                char, failed = value
                 components.append(
                     discord.ui.Button(
                         label=char.name,
                         custom_id=key,
                         style=discord.ButtonStyle.primary,
-                        disabled=disabled,
+                        disabled=failed is not None,
                     )
                 )
         else:
             options = [
-                (char.name, self.uuid + char.id_str) for char, _ in self.possibilities.values()
+                SelectOption(
+                    label=char.name,
+                    value=self.uuid + char.id_str,
+                    emoji="🚫" if failed else None,
+                )
+                for char, failed in self.possibilities.values()
             ]
             logger.debug("HAVEN: {} characters are too many for buttons", len(options))
 
@@ -232,8 +248,8 @@ class Haven:
 
             while options:
                 selection = options[:25]
-                begin_letter = selection[0][0][0]
-                end_letter = selection[-1][0][0]
+                begin_letter = selection[0].label[0]
+                end_letter = selection[-1].label[0]
 
                 placeholder = "Select a character"
                 if show_name_range:
@@ -244,7 +260,7 @@ class Haven:
                         name_range = f" ({begin_letter}-{end_letter})"
                     placeholder += name_range
 
-                components.append(ui.views.Dropdown(placeholder, *selection))
+                components.append(Select(placeholder=placeholder, options=selection))
                 options = options[25:]
 
         logger.debug("HAVEN: Created {} component(s)", len(components))
@@ -281,11 +297,11 @@ def _personalize_error(err, ctx, member):
     return err
 
 
-def haven(
+def haven[**P, T](
     url: str,
     char_filter: Callable[[VChar], None] | None = None,
-    errmsg: str = "",
-    allow_lookups: bool = False,
+    errmsg="",
+    allow_lookups=False,
 ) -> Callable[
     [Callable[Concatenate[AppCtx, VChar, P], Awaitable[T]]],
     Callable[Concatenate[AppCtx, str | VChar | None, P], Awaitable[T]],

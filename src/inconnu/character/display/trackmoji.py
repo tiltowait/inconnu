@@ -57,12 +57,12 @@ def emojify_humanity(humanity: int, stains: int) -> str:
     filled = __humanitymoji(True, filled)
     overlapped = __degenerationmoji(overlapped)
     unfilled = __humanitymoji(False, unfilled)
-    stains = __stainmoji(stains)
+    stain_emojis = __stainmoji(stains)
 
     track = filled
     track.extend(overlapped)
     track.extend(unfilled)
-    track.extend(stains)
+    track.extend(stain_emojis)
 
     return " ".join(track)
 
@@ -70,7 +70,7 @@ def emojify_humanity(humanity: int, stains: int) -> str:
 # Helper Methods
 
 
-def __emojify_stressbox(box: str):
+def __emojify_stressbox(box: str) -> str:
     """Convert a stress box value to an emoji."""
     if not box:
         raise ValueError("Invalid stress box")  # Should never happen
@@ -78,23 +78,23 @@ def __emojify_stressbox(box: str):
     return services.emojis[box]
 
 
-def __hungermoji(hungry: bool, count: int) -> str:
+def __hungermoji(hungry: bool, count: int) -> list[str]:
     """Return a filled or unfilled hunger emoji."""
     hunger = "hunger" if hungry else "no_hunger"
     return services.emojis.get(hunger, count)
 
 
-def __humanitymoji(filled, count) -> str:
+def __humanitymoji(filled, count) -> list[str]:
     """Return a filled or unfilled humanity emoji."""
     humanity = "hu_filled" if filled else "hu_unfilled"
     return services.emojis.get(humanity, count)
 
 
-def __stainmoji(count: int) -> str:
+def __stainmoji(count: int) -> list[str]:
     """Return a stain emoji."""
     return services.emojis.get("stain", count)
 
 
-def __degenerationmoji(count: int) -> str:
+def __degenerationmoji(count: int) -> list[str]:
     """Return a degeneration emoji."""
     return services.emojis.get("degen", count)

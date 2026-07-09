@@ -7,11 +7,11 @@ import errors
 import inconnu
 import services
 import ui
-from config import web_asset
 from models import VChar
 from services.haven import haven
 from utils import get_message
 from utils.text import pluralize
+from utils.urls import web_asset
 
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 

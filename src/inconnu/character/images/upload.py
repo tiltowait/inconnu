@@ -19,6 +19,9 @@ VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
 @haven(__HELP_URL)
 async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment):
     """Upload an image. Only premium users can use this feature."""
+    if ctx.guild is None:
+        await ui.embeds.error(ctx, "This command is unavailable in DMs.")
+        return
     if not valid_url(image.url):
         embed = ui.embeds.ErrorEmbed(
             ctx.user,

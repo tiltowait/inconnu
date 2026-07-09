@@ -14,6 +14,10 @@ from utils import get_avatar
 
 async def show_bookmarks(ctx: AppCtx):
     """Show the users's bookmarks."""
+    if ctx.guild is None:
+        await ui.embeds.error(ctx, "This command is unavailable in DMs.")
+        return
+
     chunker = Chunker(prefix="", suffix="")
     pipeline = [
         {

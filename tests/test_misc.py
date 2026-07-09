@@ -97,15 +97,6 @@ async def test_changelog():
     assert len(changelog) > 0
 
 
-@pytest.mark.parametrize("res", ["Melancholy", "Choleric", "Phlegmatic", "Sanguine"])
-def test_dyscrasias(res):
-    dys = inconnu.reference.get_dyscrasia(res)
-    assert dys is not None
-    assert dys.name
-    assert dys.description
-    assert dys.page
-
-
 @pytest.mark.parametrize(
     "after,before,exp_b,exp_a,error",
     [

@@ -12,12 +12,12 @@ from inconnu.reference.resonance import (
 from inconnu.reference.statistics import statistics
 
 __all__ = (
+    "STANDARD_RESONANCES",
     "blood_potency",
     "cripple",
     "get_dyscrasia",
     "probability",
     "random_temperament",
     "resonance",
-    "STANDARD_RESONANCES",
     "statistics",
 )

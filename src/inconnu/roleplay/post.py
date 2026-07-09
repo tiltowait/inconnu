@@ -1,7 +1,7 @@
 """Tupperbox-style character posting."""
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import discord
 from loguru import logger
@@ -172,6 +172,7 @@ class PostModal(discord.ui.Modal):
 
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new Rolepost."""
+        assert interaction.user is not None
         # We need an interaction response, so make and delete this one
         await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
 
@@ -181,7 +182,9 @@ class PostModal(discord.ui.Modal):
         if self.show_header:
             # We take a regular header embed as a base, then modify it ... a lot
             header_embed = inconnu.header.embed(self.header, self.character, True)
-            header_embed.description += f"\n*Author: {interaction.user.mention}*"
+            header_embed.description = (
+                header_embed.description or ""
+            ) + f"\n*Author: {interaction.user.mention}*"
 
             header_message = await webhook.send(
                 embed=header_embed,
@@ -208,6 +211,7 @@ class PostModal(discord.ui.Modal):
             id_chain.append(msg.id)
 
         if self.show_header:
+            assert header_message is not None
             id_chain.insert(0, header_message.id)
 
         if self.mentions:
@@ -259,6 +263,8 @@ class PostModal(discord.ui.Modal):
 
     async def _post_to_changelog(self, interaction: discord.Interaction):
         """Post the edited message to the RP changelog."""
+        assert interaction.guild is not None
+        assert interaction.user is not None
         if changelog_id := await services.settings.changelog_channel(interaction.guild):
             # Prep the diff
             post = self.post_to_edit
@@ -330,9 +336,10 @@ async def edit_post(ctx: AppCtx, message: discord.Message):
         # It's a valid post, but we can only work our magic if the character
         # still exists. Otherwise, spit out an error.
         try:
+            assert ctx.guild is not None
             character = await services.char_mgr.fetchone(
                 ctx.guild,
-                ctx.user,
+                cast(discord.Member, ctx.user),
                 str(rp_post.header.charid),
             )
             modal = PostModal(

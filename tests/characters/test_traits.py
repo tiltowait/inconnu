@@ -210,6 +210,24 @@ def test_discipline_fallback(discipline: str, empty_vampire: VChar):
     assert empty_vampire.traits[0].is_discipline
 
 
+@pytest.mark.parametrize(
+    "auto_trait,expected_type",
+    [
+        ("Strength", VCharTrait.Type.ATTRIBUTE),
+        ("Brawl", VCharTrait.Type.SKILL),
+        ("Oblivion", VCharTrait.Type.DISCIPLINE),
+    ],
+)
+def test_auto_category_does_not_leak(
+    auto_trait: str, expected_type: VCharTrait.Type, empty_vampire: VChar
+):
+    """A custom trait assigned alongside an auto-categorized trait stays custom."""
+    empty_vampire.assign_traits({auto_trait: 3, "OccultLibrary": 2})
+
+    assert empty_vampire.find_trait(auto_trait).type == expected_type
+    assert empty_vampire.find_trait("OccultLibrary").type == VCharTrait.Type.CUSTOM
+
+
 def test_traits_copied(vampire: VChar):
     expected_name = vampire.traits[0].name
     vampire.traits[0].name = "Fakeo"

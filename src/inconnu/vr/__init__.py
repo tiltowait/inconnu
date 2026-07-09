@@ -6,11 +6,11 @@ from inconnu.vr.rolldisplay import RollDisplay
 from inconnu.vr.rollparser import RollParser
 
 __all__ = (
+    "RollDisplay",
+    "RollParser",
     "dicemoji",
     "display_outcome",
     "needs_character",
     "parse",
     "perform_roll",
-    "RollDisplay",
-    "RollParser",
 )

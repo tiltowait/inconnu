@@ -163,8 +163,8 @@ async def update_help(ctx: AppCtx, err: str | None = None, ephemeral=True):
     """Display a help message that details the available keys."""
     color = None if err is None else 0xFF0000
     embed = discord.Embed(title="Character Tracking", color=color)
-    embed.set_author(name=inconnu.bot.user.display_name)
-    embed.set_thumbnail(url=inconnu.bot.user.avatar)
+    embed.set_author(name=inconnu.bot.me.display_name)
+    embed.set_thumbnail(url=inconnu.bot.me.avatar)
 
     if err is not None:
         embed.add_field(name="Error", value=str(err), inline=False)

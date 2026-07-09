@@ -74,6 +74,10 @@ class _BulkModal(Modal):
             member = interaction.guild.get_member(owner)
             member = member.mention if member is not None else owner
 
+            if experience == 0:
+                self.errors.append(f"**Zero XP:** {member}: `{char_name}`")
+                continue
+
             try:
                 character = await services.char_mgr.fetchone(interaction.guild, owner, char_name)
 

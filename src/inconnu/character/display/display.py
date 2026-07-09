@@ -1,6 +1,7 @@
 """character/display/display.py - Tools for displaying characters."""
 
 from enum import StrEnum
+from typing import Any
 
 import discord
 
@@ -98,7 +99,7 @@ async def display(
         color=color,
         thumbnail=thumbnail,
     )
-    msg_contents = {"embed": embed}
+    msg_contents: dict[str, Any] = {"embed": embed}
     if view is not None:
         msg_contents["view"] = view
 
@@ -112,6 +113,7 @@ async def display(
         return msg
 
     # We are editing the original message
+    assert ctx.message is not None
     if view is None:
         # We need to remove the view
         msg_contents["view"] = None

@@ -114,8 +114,8 @@ class _CharacterBio(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Finalize the modal."""
-        biography = clean_text(self.children[0].value)
-        description = clean_text(self.children[1].value)
+        biography = clean_text(self.children[0].value or "")
+        description = clean_text(self.children[1].value or "")
 
         embed = ui.embeds.VCharEmbed(
             interaction,

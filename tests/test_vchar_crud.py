@@ -550,6 +550,15 @@ async def test_update_experience_log(vampire):
     assert fetched.experience.log[0].reason == "Test award"
 
 
+def test_apply_zero_experience(vampire):
+    """Applying zero XP is a no-op and creates no log entry."""
+    vampire.apply_experience(0, "lifetime", "Nothing", 12345)
+
+    assert not vampire.experience.log
+    assert vampire.experience.lifetime == 0
+    assert vampire.experience.unspent == 0
+
+
 # DELETE TESTS
 
 

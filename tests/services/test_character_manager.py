@@ -537,13 +537,28 @@ async def test_mark_inactive(
 async def test_mark_active(
     mgrf: CharacterManager,
     g1: Guild,
+    g2: Guild,
     u11: Member,
+    u21: Member,
 ):
+    """Rejoining a guild only reactivates that guild's characters."""
+    # u11 and u21 are the same user on different guilds
     await mgrf.mark_inactive(u11)
+    await mgrf.mark_inactive(u21)
 
     with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock_save:
+        await mgrf.mark_active(u21)
+        assert mock_save.await_count == 1
+
+        # The g1 characters must remain inactive
+        for char in await mgrf.fetchall(g1, u11):
+            assert "left" in char.stat_log
+
+        for char in await mgrf.fetchall(g2, u21):
+            assert "left" not in char.stat_log
+
         await mgrf.mark_active(u11)
-        assert mock_save.await_count == 2
+        assert mock_save.await_count == 3
         chars = await mgrf.fetchall(g1, u11)
         assert len(chars) == 2
 

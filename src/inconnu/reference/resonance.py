@@ -1,9 +1,13 @@
 """reference/resonance.py - Display a random resonance and temperament."""
 
-import sqlite3
-from typing import NamedTuple
+import json
+import random
+from functools import cache
+from pathlib import Path
+from typing import Self
 
 import discord
+from pydantic import BaseModel, field_validator
 
 import inconnu
 import services
@@ -46,12 +50,28 @@ __EMOTIONS = {
 STANDARD_RESONANCES = list(STANDARD_DISCIPLINES)
 
 
-class Dyscrasia(NamedTuple):
-    """Represents Dyscrasia data from the database."""
+class Dyscrasia(BaseModel):
+    """A Dyscrasia is a special benefit for tapping an Acute Resonance."""
 
     name: str
+    resonance: str
     description: str
     page: int
+
+    @field_validator("resonance")
+    @classmethod
+    def casefold_resonance(cls, v: str) -> str:
+        """Casefold the resonance for easier compare."""
+        return v.casefold()
+
+    @classmethod
+    @cache
+    def load(cls) -> list[Self]:
+        """Load dyscrasias from JSON."""
+        dyscrasias_path = Path(__file__).parent / "dyscrasias.json"
+        with open(dyscrasias_path) as f:
+            dyscrasias_data = json.load(f)
+            return [cls.model_validate(d) for d in dyscrasias_data]
 
 
 async def random_temperament(ctx: AppCtx, res: str):
@@ -155,14 +175,7 @@ def get_resonance(mode: ResonanceMode) -> str:
 
 def get_dyscrasia(resonance: str) -> Dyscrasia | None:
     """Get a random dyscrasia for a resonance."""
-    conn = sqlite3.connect("src/inconnu/reference/dyscrasias.db")
-    conn.row_factory = lambda _, r: Dyscrasia(*r)
-    cur = conn.cursor()
-
-    res = cur.execute(
-        "SELECT name, description, page FROM dyscrasias WHERE resonance=? ORDER BY RANDOM()",
-        (resonance,),
-    ).fetchone()
-
-    conn.close()
-    return res
+    dyscrasias = [d for d in Dyscrasia.load() if d.resonance == resonance.casefold()]
+    if not dyscrasias:
+        return None
+    return random.choice(dyscrasias)

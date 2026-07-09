@@ -3,21 +3,20 @@
 import asyncio
 import os
 from datetime import datetime, time, timezone
-from typing import cast
+from typing import Any, cast
 
 import discord
 from cachetools import TTLCache
 from discord.ext import tasks
 from loguru import logger
 
-import config
 import constants
 import db
 import errors
 import inconnu
 import services
 import tasks as bot_tasks
-from config import DEBUG_GUILDS, SUPPORTER_GUILD, SUPPORTER_ROLE
+from config import settings
 from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
@@ -41,14 +40,14 @@ class InconnuBot(discord.AutoShardedBot):
         self._guild_fetch_failures = TTLCache[int, bool](maxsize=200, ttl=1200)
         logger.info("BOT: Instantiated")
 
-        if config.SHOW_TEST_ROUTES:
+        if settings.show_test_routes:
             logger.info("CONFIG: Showing test routes")
 
-        logger.info("CONFIG: Profile site set to {}", config.PROFILE_SITE)
-        logger.info("CONFIG: Admin guild: {}", config.ADMIN_GUILD)
+        logger.info("CONFIG: Profile site set to {}", settings.profile_site)
+        logger.info("CONFIG: Admin guild: {}", settings.admin_server)
 
-        if config.DEBUG_GUILDS:
-            logger.info("CONFIG: Debugging on {}", DEBUG_GUILDS)
+        if settings.debug_guilds:
+            logger.info("CONFIG: Debugging on {}", settings.debug_guilds)
 
         # Add the cogs
         for filename in os.listdir("./src/interface"):
@@ -57,10 +56,16 @@ class InconnuBot(discord.AutoShardedBot):
                 self.load_extension(f"interface.{filename[:-3]}")
 
     @property
+    def me(self) -> discord.ClientUser:
+        """The bot's own user, non-null after login."""
+        assert self.user is not None
+        return self.user
+
+    @property
     def invite_url(self) -> str:
         """The bot's invite URL."""
         return discord.utils.oauth_url(
-            self.user.id,
+            self.me.id,
             permissions=discord.Permissions(
                 send_messages=True,
                 manage_webhooks=True,
@@ -93,7 +98,7 @@ class InconnuBot(discord.AutoShardedBot):
         # It's possible for the backend to not fill in this property, which is
         # why we have to check it. We *could* also search the cached messages,
         # and maybe we'll add that in the future.
-        if message.reference.resolved is not None:
+        if isinstance(message.reference.resolved, discord.Message):
             # This routine only works if the webhooks have already been fetched
             if message.reference.resolved.author.id in self.webhook_cache.webhook_ids:
                 logger.debug("BOT: Received a reply to one of our webhooks")
@@ -105,7 +110,8 @@ class InconnuBot(discord.AutoShardedBot):
                     if rp_post.user not in (m.id for m in message.mentions):
                         logger.debug("BOT: Pinging Rolepost's author")
                         user = await self.get_or_fetch_user(rp_post.user)
-                        await message.reply(user.mention, mention_author=False, delete_after=60)
+                        if user is not None:
+                            await message.reply(user.mention, mention_author=False, delete_after=60)
                     else:
                         logger.debug("BOT: Replier pinged the Rolepost's author; doing nothing")
                 else:
@@ -141,7 +147,7 @@ class InconnuBot(discord.AutoShardedBot):
     async def inform_premium_features(self, member: discord.Member):
         """Inform the member of premium features."""
         try:
-            upload_mention = self.get_application_command("character image upload").mention
+            upload_mention = self.cmd_mention("character image upload")
             embed = discord.Embed(
                 title="Thank you for your support!",
                 description=(
@@ -275,13 +281,15 @@ class InconnuBot(discord.AutoShardedBot):
                 "guild": interaction.guild_id,
                 "user": interaction.user.id if interaction.user else None,
             }
-            inter_data.update(interaction.data)
+            if interaction.data is not None:
+                inter_data.update(cast(dict[str, Any], interaction.data))
             await db.interactions.insert_one(inter_data)
 
         await self.process_application_commands(interaction)
 
     async def on_application_command(self, ctx: AppCtx):
         """General processing after application commands."""
+        assert ctx.command is not None
         # If a user specifies a character but only has one, we want to inform
         # them it's unnecessary so they don't keep doing it.
         options = raw_command_options(ctx.interaction)
@@ -381,7 +389,7 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_application_command_error(self, context, exception):
         """Use centralized reporter to handle errors."""
-        await reporter.report_error(context, exception)
+        await reporter.report_error(cast(AppCtx, context), exception)
 
     # Member Events
 
@@ -390,12 +398,12 @@ class InconnuBot(discord.AutoShardedBot):
         if await services.guild_cache.ready():
             await services.guild_cache.upsert_members(after)
 
-        if before.guild.id != SUPPORTER_GUILD:
+        if before.guild.id != settings.supporter_guild:
             return
 
         def is_supporter(member: discord.Member) -> bool:
             """Check if the member is a supporter."""
-            return member.get_role(SUPPORTER_ROLE) is not None
+            return member.get_role(settings.supporter_role) is not None
 
         if is_supporter(before) and not is_supporter(after):
             logger.info("PREMIUM: {} is no longer a supporter", after.name)
@@ -412,8 +420,8 @@ class InconnuBot(discord.AutoShardedBot):
         if await services.guild_cache.ready():
             await services.guild_cache.delete_member(member)
 
-        if member.guild.id == SUPPORTER_GUILD:
-            if member.get_role(SUPPORTER_ROLE):
+        if member.guild.id == settings.supporter_guild:
+            if member.get_role(settings.supporter_role):
                 await bot.mark_premium_loss(member)
 
     @staticmethod
@@ -423,8 +431,8 @@ class InconnuBot(discord.AutoShardedBot):
         if await services.guild_cache.ready():
             await services.guild_cache.upsert_members(member)
 
-        if member.guild.id == SUPPORTER_GUILD:
-            if member.get_role(SUPPORTER_ROLE):
+        if member.guild.id == settings.supporter_guild:
+            if member.get_role(settings.supporter_role):
                 await bot.mark_premium_gain(member)
 
     # Guild Events
@@ -478,5 +486,5 @@ async def check_premium_expiries():
 
 # Set up the bot instance
 intents = discord.Intents(guilds=True, members=True, messages=True, webhooks=True)
-bot = InconnuBot(intents=intents, debug_guilds=DEBUG_GUILDS, cache_app_emojis=True)
+bot = InconnuBot(intents=intents, debug_guilds=settings.debug_guilds, cache_app_emojis=True)
 inconnu.bot = bot

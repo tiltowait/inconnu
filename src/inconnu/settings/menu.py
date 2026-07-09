@@ -259,9 +259,10 @@ class SettingsMenu(discord.ui.DesignerView):
     async def set_oblivion_stains(self, interaction: discord.Interaction):
         """Set Oblivion stains mode."""
         select = cast(Select, self.get_item(SettingsIDs.OBLIVION))
-        self._update_select_default(select, select.values[0])
+        values = cast(list[str], select.values)
+        self._update_select_default(select, values[0])
 
-        stains = OblivionOptions(select.values[0]).to_list()
+        stains = OblivionOptions(values[0]).to_list()
         vguild = cast(VGuild, self.scope)
         vguild.settings.oblivion_stains = stains
 
@@ -273,7 +274,7 @@ class SettingsMenu(discord.ui.DesignerView):
     async def set_resonance_mode(self, interaction: discord.Interaction):
         """Switch Resonance mode."""
         select = cast(Select, self.get_item(SettingsIDs.RESONANCE))
-        resonance: str = select.values[0]
+        resonance: str = cast(list[str], select.values)[0]
         self._update_select_default(select, resonance)
 
         vguild = cast(VGuild, self.scope)
@@ -299,9 +300,10 @@ class SettingsMenu(discord.ui.DesignerView):
     async def set_max_hunger(self, interaction: discord.Interaction):
         """Set the server's max Hunger rating."""
         select = cast(Select, self.get_item(SettingsIDs.MAX_HUNGER))
-        new_max_hunger = int(select.values[0])
+        values = cast(list[str], select.values)
+        new_max_hunger = int(values[0])
 
-        self._update_select_default(select, select.values[0])
+        self._update_select_default(select, values[0])
 
         vguild = cast(VGuild, self.scope)
         vguild.settings.max_hunger = new_max_hunger
@@ -314,7 +316,7 @@ class SettingsMenu(discord.ui.DesignerView):
     async def set_experience_permissions(self, interaction: discord.Interaction):
         """Set experience permissions."""
         select = cast(Select, self.get_item(SettingsIDs.EXPERIENCE))
-        perms = select.values[0]
+        perms = cast(list[str], select.values)[0]
         self._update_select_default(select, perms)
 
         vguild = cast(VGuild, self.scope)
@@ -336,7 +338,7 @@ class SettingsMenu(discord.ui.DesignerView):
             raise ValueError("Expected a VGuild")
 
         select = cast(Select, self.get_item(component))
-        channel = cast(discord.TextChannel, select.values[0])
+        channel = cast(discord.TextChannel, cast(list[str], select.values)[0])
 
         setattr(self.scope.settings, channel_key, channel.id)
         select.default_values = [

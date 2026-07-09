@@ -1,6 +1,7 @@
 """delete.py - Character deletion facilities."""
 
 import asyncio
+from typing import cast
 
 import discord
 from discord.ui import InputText, Modal
@@ -17,8 +18,14 @@ __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 
 async def delete(ctx: AppCtx, character_name: str):
     """Prompt whether the user actually wants to delete the character."""
+    if ctx.guild is None:
+        await ui.embeds.error(ctx, "This command is unavailable in DMs.")
+        return
+
     try:
-        character = await services.char_mgr.fetchone(ctx.guild, ctx.user, character_name)
+        character = await services.char_mgr.fetchone(
+            ctx.guild, cast(discord.Member, ctx.user), character_name
+        )
         modal = _DeletionModal(title=f"Delete {character.name}", character=character)
         await ctx.send_modal(modal)
 

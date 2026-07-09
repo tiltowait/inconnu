@@ -7,15 +7,12 @@ import asyncio
 import signal
 
 import uvloop
-from dotenv import load_dotenv
 from loguru import logger
 
 import db
 import services
 from bot import bot
-from config import BOT_TOKEN, PROD
-
-load_dotenv()
+from config import settings
 
 
 async def startup():
@@ -25,7 +22,7 @@ async def startup():
     await services.guild_cache.initialize()
     try:
         async with bot:
-            await bot.start(BOT_TOKEN)
+            await bot.start(settings.inconnu_token)
     except (KeyboardInterrupt, asyncio.CancelledError):
         logger.info("Received shutdown signal")
     finally:
@@ -45,12 +42,9 @@ def handle_signal(signum: int, _):
         task.cancel()
 
 
-def main():
-    uvloop.install()
-    logger.info("Installed uvloop")
-
-    if PROD:
-        logger.debug("Configuring log rotation")
+def configure_logging():
+    """Configure loguru for production (file sink) or leave defaults for dev."""
+    if settings.prod:
         logger.remove()
         logger.add(
             "/var/log/inconnu.log",
@@ -58,6 +52,12 @@ def main():
             retention=7,
             level="INFO",
         )
+
+
+def main():
+    uvloop.install()
+    configure_logging()
+    logger.info("Installed uvloop")
 
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, handle_signal)

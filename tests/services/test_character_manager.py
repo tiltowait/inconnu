@@ -599,6 +599,54 @@ async def test_transfer_wrong_guild(mgrf: CharacterManager, u11: Member, u21: Me
         mock_save.assert_not_awaited()
 
 
+@pytest.mark.parametrize("transform", [str, str.upper, str.lower])
+async def test_transfer_duplicate_name(
+    transform,
+    mgrf: CharacterManager,
+    g1: Guild,
+    u11: Member,
+    u12: Member,
+    c111: VChar,
+):
+    """Transfer raises DuplicateCharacterError if the recipient has a same-named character."""
+    duplicate = gen_char("vampire")
+    duplicate.name = transform(c111.name)
+    duplicate.guild = g1.id
+    duplicate.user = u12.id
+    await mgrf.register(duplicate)
+
+    char = await mgrf.fetchid(c111.id_str)
+    assert char is not None
+
+    with patch(VCHAR_SAVE, new_callable=AsyncMock) as mock_save:
+        with pytest.raises(DuplicateCharacterError):
+            await mgrf.transfer(char, u11, u12)
+        mock_save.assert_not_awaited()
+
+    assert char.user == u11.id
+
+
+async def test_transfer_duplicate_name_other_guild_allowed(
+    mgrf: CharacterManager,
+    g2: Guild,
+    u11: Member,
+    u12: Member,
+    c111: VChar,
+):
+    """A same-named character in a different guild does not block a transfer."""
+    other_guild_char = gen_char("vampire")
+    other_guild_char.name = c111.name
+    other_guild_char.guild = g2.id
+    other_guild_char.user = u12.id
+    await mgrf.register(other_guild_char)
+
+    char = await mgrf.fetchid(c111.id_str)
+    assert char is not None
+    await mgrf.transfer(char, u11, u12)
+
+    assert char.user == u12.id
+
+
 async def test_exists(
     mgrf: CharacterManager,
     g1: Guild,

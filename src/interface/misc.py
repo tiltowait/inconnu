@@ -1,6 +1,5 @@
 """interface/misc.py - Miscellaneous commands."""
 
-import asyncio
 from typing import TYPE_CHECKING
 
 import discord
@@ -9,9 +8,7 @@ from discord.commands import slash_command
 from discord.ext import commands
 
 import constants
-import errors
 import inconnu
-import services
 import ui
 from ctx import AppCtx
 from inconnu.options import char_option
@@ -79,31 +76,7 @@ class MiscCommands(commands.Cog):
         new_owner: discord.Member,
     ):
         """Reassign a character from one player to another."""
-        if current_owner.id == new_owner.id:
-            await ui.embeds.error(ctx, "`current_owner` and `new_owner` can't be the same.")
-            return
-
-        try:
-            assert ctx.guild is not None  # Guild context guarantees this
-            xfer = await services.char_mgr.fetchone(ctx.guild, current_owner, character)
-
-            if ctx.guild.id == xfer.guild and current_owner.id == xfer.user:
-                current_mention = current_owner.mention
-                new_mention = new_owner.mention
-
-                msg = f"Transferred **{xfer.name}** from {current_mention} to {new_mention}."
-                await asyncio.gather(
-                    services.char_mgr.transfer(xfer, current_owner, new_owner), ctx.respond(msg)
-                )
-                await self.bot.transfer_premium(new_owner, xfer)
-
-            else:
-                await ui.embeds.error(ctx, f"{current_owner.display_name} doesn't own {xfer.name}!")
-
-        except errors.CharacterNotFoundError:
-            await ui.embeds.error(ctx, "Character not found.")
-        except (LookupError, ValueError) as err:
-            await ui.embeds.error(ctx, err)
+        await inconnu.misc.transfer_character(ctx, current_owner, character, new_owner)
 
 
 def setup(bot: "InconnuBot"):

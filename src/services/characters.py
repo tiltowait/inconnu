@@ -144,6 +144,7 @@ class CharacterManager:
         else:
             owner_id = user.id
 
+        name = name.casefold()
         for character in await self.fetchall(guild, owner_id):
             if character.name.casefold() == name.casefold():
                 return True
@@ -212,6 +213,12 @@ class CharacterManager:
                 raise errors.WrongGuild(
                     f"{new_owner.display_name} is not in the same server as {character.name}!"
                 )
+            for char in await self.fetchall(new_owner.guild, new_owner):
+                if char.raw_name.casefold() == character.raw_name.casefold():
+                    raise errors.DuplicateCharacterError(
+                        f"{new_owner.display_name} already has a character named "
+                        f"{character.raw_name}"
+                    )
 
             character.user = new_owner.id
             await character.save()

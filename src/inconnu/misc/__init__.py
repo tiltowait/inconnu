@@ -12,6 +12,7 @@ from inconnu.misc.remorse import remorse
 from inconnu.misc.rouse import rouse
 from inconnu.misc.slake import slake
 from inconnu.misc.stain import stain
+from inconnu.misc.transfer import transfer_character
 
 __all__ = (
     "aggheal",
@@ -22,6 +23,7 @@ __all__ = (
     "frenzy",
     "mend",
     "percentile",
+    "transfer_character",
     "remorse",
     "rouse",
     "show_changelog",

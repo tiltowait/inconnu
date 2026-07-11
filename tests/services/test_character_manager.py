@@ -647,32 +647,43 @@ async def test_transfer_duplicate_name_other_guild_allowed(
     assert char.user == u12.id
 
 
-async def test_exists(
+@pytest.mark.parametrize(
+    "name",
+    ["Nadea Theron", "nadea theron", "NADEA THERON", "  Nadea   Theron  "],
+)
+async def test_has_character(
+    name: str,
+    mgrf: CharacterManager,
+    g1: Guild,
+    u11: Member,
+):
+    """has_character() matches case-insensitively and ignores extra whitespace."""
+    assert await mgrf.has_character(g1, u11, name)
+
+
+async def test_has_character_accepts_ids(mgrf: CharacterManager, g1: Guild, u11: Member):
+    """has_character() accepts raw guild and player IDs."""
+    assert await mgrf.has_character(g1.id, u11.id, "Nadea Theron")
+
+
+async def test_has_character_no_match(
     mgrf: CharacterManager,
     g1: Guild,
     g2: Guild,
     u11: Member,
     u12: Member,
-    c111: VChar,
-    spc11: VChar,
+    u21: Member,
 ):
-    exists = await mgrf.exists(g1, u11, c111.name, False)
-    assert exists
+    """has_character() is False for unknown names and other users/guilds."""
+    assert not await mgrf.has_character(g1, u11, "Sabrina Malenkova")
+    assert not await mgrf.has_character(g1, u12, "Nadea Theron")
+    assert not await mgrf.has_character(g2, u21, "Nadea Theron")
 
-    exists = await mgrf.exists(g1, u11, c111.name, True)
-    assert not exists
 
-    exists = await mgrf.exists(g1, u12, c111.name, False)
-    assert not exists
-
-    exists = await mgrf.exists(g2, u11, c111.name, False)
-    assert not exists
-
-    exists = await mgrf.exists(g1, u11, spc11.name, True)
-    assert exists
-
-    exists = await mgrf.exists(g1, u11, spc11.name, False)
-    assert not exists
+async def test_has_character_spc(mgrf: CharacterManager, g1: Guild, spc11: VChar):
+    """SPC ownership checks work via has_character() with SPC_OWNER."""
+    assert await mgrf.has_character(g1, VChar.SPC_OWNER, spc11.raw_name)
+    assert not await mgrf.has_character(g1, 1, spc11.raw_name)
 
 
 async def test_fetchone_admin(

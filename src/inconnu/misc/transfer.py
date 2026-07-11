@@ -1,6 +1,5 @@
 """Transfer character ownership."""
 
-
 import discord
 
 import errors

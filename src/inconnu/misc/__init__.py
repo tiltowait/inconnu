@@ -23,10 +23,10 @@ __all__ = (
     "frenzy",
     "mend",
     "percentile",
-    "transfer_character",
     "remorse",
     "rouse",
     "show_changelog",
     "slake",
     "stain",
+    "transfer_character",
 )

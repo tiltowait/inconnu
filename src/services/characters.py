@@ -11,7 +11,7 @@ from loguru import logger
 
 import errors
 from models.vchar import VChar
-from utils.text import pluralize
+from utils.text import clean_text, pluralize
 
 
 class CharacterManager:
@@ -129,47 +129,31 @@ class CharacterManager:
         chars = await self.fetchguild(guild_id)
         return len(chars)
 
-    async def exists(
+    async def has_character(
         self,
-        guild: discord.Guild,
-        user: discord.Member,
+        guild: discord.Guild | int,
+        player: discord.Member | int,
         name: str,
-        is_spc: bool,
     ) -> bool:
-        """Determine whether a user already has a named character."""
-        await self.initialize()
+        """Returns True if the player has a character by a given name."""
+        name = clean_text(name).casefold()
+        guild_id = guild.id if isinstance(guild, discord.Guild) else guild
+        player_id = player.id if isinstance(player, discord.Member) else player
 
-        if is_spc:
-            owner_id = VChar.SPC_OWNER
-        else:
-            owner_id = user.id
-
-        for character in await self.fetchall(guild, owner_id):
-            if character.name.casefold() == name.casefold():
+        for char in await self.fetchall(guild_id, player_id):
+            if char.raw_name.casefold() == name:
                 return True
-
         return False
 
     async def register(self, character: VChar):
         """Insert the character into the database and the cache."""
         await self.initialize()
 
-        # Acquire global lock to prevent race conditions on shared data structures
         async with self._lock:
-            try:
-                duplicate = next(
-                    char
-                    for char in self._characters
-                    if char.user == character.user
-                    and char.guild == character.guild
-                    and char.name.casefold() == character.name.casefold()
-                )
+            if await self.has_character(character.guild, character.user, character.raw_name):
                 raise errors.DuplicateCharacterError(
-                    f"Character '{duplicate.name}' already exists for this user in this guild."
+                    f"Character '{character.name}' already exists for this user in this guild."
                 )
-            except StopIteration:
-                # No duplicate found
-                pass
 
             await character.insert()
             self._id_cache[character.id_str] = character
@@ -211,6 +195,10 @@ class CharacterManager:
             if character.guild != new_owner.guild.id:
                 raise errors.WrongGuild(
                     f"{new_owner.display_name} is not in the same server as {character.name}!"
+                )
+            if await self.has_character(new_owner.guild, new_owner, character.raw_name):
+                raise errors.DuplicateCharacterError(
+                    f"{new_owner.display_name} already has a character named {character.raw_name}"
                 )
 
             character.user = new_owner.id

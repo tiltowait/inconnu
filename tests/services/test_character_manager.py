@@ -599,32 +599,91 @@ async def test_transfer_wrong_guild(mgrf: CharacterManager, u11: Member, u21: Me
         mock_save.assert_not_awaited()
 
 
-async def test_exists(
+@pytest.mark.parametrize("transform", [str, str.upper, str.lower])
+async def test_transfer_duplicate_name(
+    transform,
+    mgrf: CharacterManager,
+    g1: Guild,
+    u11: Member,
+    u12: Member,
+    c111: VChar,
+):
+    """Transfer raises DuplicateCharacterError if the recipient has a same-named character."""
+    duplicate = gen_char("vampire")
+    duplicate.name = transform(c111.name)
+    duplicate.guild = g1.id
+    duplicate.user = u12.id
+    await mgrf.register(duplicate)
+
+    char = await mgrf.fetchid(c111.id_str)
+    assert char is not None
+
+    with patch(VCHAR_SAVE, new_callable=AsyncMock) as mock_save:
+        with pytest.raises(DuplicateCharacterError):
+            await mgrf.transfer(char, u11, u12)
+        mock_save.assert_not_awaited()
+
+    assert char.user == u11.id
+
+
+async def test_transfer_duplicate_name_other_guild_allowed(
+    mgrf: CharacterManager,
+    g2: Guild,
+    u11: Member,
+    u12: Member,
+    c111: VChar,
+):
+    """A same-named character in a different guild does not block a transfer."""
+    other_guild_char = gen_char("vampire")
+    other_guild_char.name = c111.name
+    other_guild_char.guild = g2.id
+    other_guild_char.user = u12.id
+    await mgrf.register(other_guild_char)
+
+    char = await mgrf.fetchid(c111.id_str)
+    assert char is not None
+    await mgrf.transfer(char, u11, u12)
+
+    assert char.user == u12.id
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["Nadea Theron", "nadea theron", "NADEA THERON", "  Nadea   Theron  "],
+)
+async def test_has_character(
+    name: str,
+    mgrf: CharacterManager,
+    g1: Guild,
+    u11: Member,
+):
+    """has_character() matches case-insensitively and ignores extra whitespace."""
+    assert await mgrf.has_character(g1, u11, name)
+
+
+async def test_has_character_accepts_ids(mgrf: CharacterManager, g1: Guild, u11: Member):
+    """has_character() accepts raw guild and player IDs."""
+    assert await mgrf.has_character(g1.id, u11.id, "Nadea Theron")
+
+
+async def test_has_character_no_match(
     mgrf: CharacterManager,
     g1: Guild,
     g2: Guild,
     u11: Member,
     u12: Member,
-    c111: VChar,
-    spc11: VChar,
+    u21: Member,
 ):
-    exists = await mgrf.exists(g1, u11, c111.name, False)
-    assert exists
+    """has_character() is False for unknown names and other users/guilds."""
+    assert not await mgrf.has_character(g1, u11, "Sabrina Malenkova")
+    assert not await mgrf.has_character(g1, u12, "Nadea Theron")
+    assert not await mgrf.has_character(g2, u21, "Nadea Theron")
 
-    exists = await mgrf.exists(g1, u11, c111.name, True)
-    assert not exists
 
-    exists = await mgrf.exists(g1, u12, c111.name, False)
-    assert not exists
-
-    exists = await mgrf.exists(g2, u11, c111.name, False)
-    assert not exists
-
-    exists = await mgrf.exists(g1, u11, spc11.name, True)
-    assert exists
-
-    exists = await mgrf.exists(g1, u11, spc11.name, False)
-    assert not exists
+async def test_has_character_spc(mgrf: CharacterManager, g1: Guild, spc11: VChar):
+    """SPC ownership checks work via has_character() with SPC_OWNER."""
+    assert await mgrf.has_character(g1, VChar.SPC_OWNER, spc11.raw_name)
+    assert not await mgrf.has_character(g1, 1, spc11.raw_name)
 
 
 async def test_fetchone_admin(

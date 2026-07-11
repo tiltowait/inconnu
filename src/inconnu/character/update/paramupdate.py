@@ -24,10 +24,8 @@ async def update_name(character: VChar, new_name: str) -> str:
         raise ValueError(f"{new_name} is already this character's name!")
     if character.raw_name.casefold() != new_name.casefold():
         # We want to let them rename a character to fix capitalization
-        all_chars = await services.char_mgr.fetchall(character.guild, character.user)
-        for char in all_chars:
-            if char.raw_name.casefold() == new_name.casefold():
-                raise ValueError(f"You already have a character named `{new_name}`!")
+        if await services.char_mgr.has_character(character.guild, character.user, new_name):
+            raise ValueError(f"You already have a character named `{new_name}`!")
 
     old_name = character.name
     character.name = new_name

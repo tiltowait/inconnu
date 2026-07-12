@@ -29,7 +29,7 @@ inconnu = "main:main"
 
 [dependency-groups]
 dev = [
-    "pytest>=8.0.0,<9",
+    "pytest>=9.0.0,<10",
     "pytest-asyncio>=1.2.0,<2",
     "httpx>=0.28.1,<1",
     "pytest-cov>=7.0.0,<8",

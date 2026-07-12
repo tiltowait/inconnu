@@ -27,7 +27,9 @@ class ReferenceCommands(commands.Cog):
 
     @slash_command()
     @option(
-        "rating", description="The Blood Potency rating", choices=inconnu.options.ratings(1, 10)
+        "rating",
+        description="The Blood Potency rating",
+        choices=inconnu.options.ratings(1, 10),
     )
     async def bp(
         self,
@@ -95,6 +97,7 @@ class ReferenceCommands(commands.Cog):
     @option("date", description="(Optional) YYYYMMDD date to count from", default="19700101")
     @char_option("The character whose statistics will be looked up")
     @player_option()
+    @option("hidden", description="Whether to hide the results (default true)", default=True)
     async def statistics(
         self,
         ctx: AppCtx,
@@ -102,9 +105,10 @@ class ReferenceCommands(commands.Cog):
         date: str,
         character: str,
         player: discord.Member,
+        hidden: bool,
     ):
         """View roll statistics for your characters."""
-        await inconnu.reference.statistics(ctx, character, style, date, player=player)
+        await inconnu.reference.statistics(ctx, character, style, date, player, hidden)
 
     @slash_command()
     @option(
@@ -123,7 +127,8 @@ class ReferenceCommands(commands.Cog):
     # Roll statistics
 
     @commands.message_command(
-        name="Toggle Roll Statistics", contexts={discord.InteractionContextType.guild}
+        name="Toggle Roll Statistics",
+        contexts={discord.InteractionContextType.guild},
     )
     @commands.has_permissions(administrator=True)
     async def toggle_roll_statistics(self, ctx, message: discord.Message):

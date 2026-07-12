@@ -10,6 +10,7 @@ import db
 import services
 import ui
 from ctx import AppCtx
+from models import VChar
 from services.haven import haven
 from utils import get_avatar, player_lookup
 
@@ -18,7 +19,12 @@ DT_ST = "D"
 
 
 async def statistics(
-    ctx: AppCtx, character, style: str, date_rep: str, *, player: discord.Member | None
+    ctx: AppCtx,
+    character: str,
+    style: str,
+    date_rep: str,
+    player: discord.Member | None,
+    hidden: bool,
 ):
     """
     View the roll statistics for the user's characters.
@@ -48,9 +54,9 @@ async def statistics(
             return
 
         if style == "General":
-            await __general_statistics(ctx, date, owner)
+            await __general_statistics(ctx, date, owner, hidden)
         else:
-            await __traits_statistics(ctx, character, date, player=owner)
+            await __traits_statistics(ctx, character, date, hidden, player=owner)
 
     except ValueError:
         await ui.embeds.error(ctx, f"`{date_rep}` is not a valid date.")
@@ -59,7 +65,14 @@ async def statistics(
 
 
 @haven(__HELP_URL)
-async def __traits_statistics(ctx, character, date, *, player):
+async def __traits_statistics(
+    ctx: AppCtx,
+    character: VChar,
+    date: datetime,
+    hidden: bool,
+    *,
+    player: discord.Member,
+):
     """View the statistics for all traits since a given date."""
     pipeline = [
         {
@@ -106,18 +119,30 @@ async def __traits_statistics(ctx, character, date, *, player):
             # is useful information, too.
             stats[trait.name] = raw_stats[0]["traits"].get(trait.name, 0)
 
-        await __display_trait_statistics(ctx, character, stats, date, player)
+        await __display_trait_statistics(ctx, character, stats, date, player, hidden)
     else:
         if date.year < 2021:
             # Lifetime rolls
-            await ctx.respond(f"**{character.name}** has never made any trait rolls.")
+            await ctx.respond(
+                f"**{character.name}** has never made any trait rolls.", ephemeral=hidden
+            )
         else:
             # Rolls since a given date
             date_fmt = discord.utils.format_dt(date, DT_ST)
-            await ctx.respond(f"**{character.name}** hasn't made any trait rolls since {date_fmt}.")
+            await ctx.respond(
+                f"**{character.name}** hasn't made any trait rolls since {date_fmt}.",
+                ephemeral=hidden,
+            )
 
 
-async def __display_trait_statistics(ctx, character, stats, date, owner):
+async def __display_trait_statistics(
+    ctx: AppCtx,
+    character: VChar,
+    stats: dict[str, int],
+    date: datetime,
+    owner: discord.Member,
+    hidden: bool,
+):
     """Display the character traits in a paginated embed."""
     if date.year < 2021:
         title = f"{character.name}: Trait successes (Lifetime)"
@@ -148,16 +173,16 @@ async def __display_trait_statistics(ctx, character, stats, date, owner):
     footer += "of successes gained."
     embed.set_footer(text=footer)
 
-    await ctx.respond(embed=embed)
+    await ctx.respond(embed=embed, ephemeral=hidden)
 
 
-async def __general_statistics(ctx, date, owner):
+async def __general_statistics(ctx: AppCtx, date: datetime, owner: discord.Member, hidden: bool):
     """View the roll statistics for the user's characters."""
     col = db.characters
     pipeline = [
         {
             "$match": {
-                "guild": ctx.guild.id,
+                "guild": ctx.guild_id,
                 "user": owner.id,
             }
         },
@@ -228,12 +253,12 @@ async def __general_statistics(ctx, date, owner):
         return
 
     if await services.settings.accessible(ctx):
-        await __display_text(ctx, results, date)
+        await __display_text(ctx, results, date, hidden)
     else:
-        await __display_embed(ctx, results, date, owner)
+        await __display_embed(ctx, results, date, owner, hidden)
 
 
-async def __display_text(ctx, results, date):
+async def __display_text(ctx: AppCtx, results: list[dict], date: datetime, hidden: bool):
     """Display the results using plain text."""
     if date.year < 2021:
         fmt_date = "(Lifetime)"
@@ -256,10 +281,16 @@ async def __display_text(ctx, results, date):
 
         msg += "\n" + "\n".join(lines)
 
-    await ctx.respond(msg)
+    await ctx.respond(msg, ephemeral=hidden)
 
 
-async def __display_embed(ctx, results, date, owner):
+async def __display_embed(
+    ctx: AppCtx,
+    results: list[dict],
+    date: datetime,
+    owner: discord.Member,
+    hidden: bool,
+):
     """Display the statistics in an embed."""
     if date.year < 2021:
         fmt_date = "(Lifetime)"
@@ -284,4 +315,4 @@ async def __display_embed(ctx, results, date, owner):
 
         embed.add_field(name=character["name"], value="\n".join(lines))
 
-    await ctx.respond(embed=embed)
+    await ctx.respond(embed=embed, ephemeral=hidden)

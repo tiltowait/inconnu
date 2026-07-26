@@ -1,8 +1,9 @@
 """String manipulation utilities."""
 
 import re
+from collections.abc import Iterable
 from difflib import Differ
-from typing import Any, Iterable, Literal, overload
+from typing import Any, Literal, overload
 
 
 def clean_text(text: str) -> str:

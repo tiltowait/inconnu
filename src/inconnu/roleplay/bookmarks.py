@@ -1,6 +1,6 @@
 """Rolepost bookmarks."""
 
-from datetime import timezone
+from datetime import UTC
 
 import discord
 from discord.ext.commands import Paginator as Chunker
@@ -35,7 +35,7 @@ async def show_bookmarks(ctx: AppCtx):
         async for bookmark in cursor:
             title = bookmark["title"]
             url = bookmark["url"]
-            date = discord.utils.format_dt(bookmark["date"].replace(tzinfo=timezone.utc), "d")
+            date = discord.utils.format_dt(bookmark["date"].replace(tzinfo=UTC), "d")
             chunker.add_line(f"{date}: **[{title}]({url})**")
 
     post = ctx.bot.cmd_mention("post")

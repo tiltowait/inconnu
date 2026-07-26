@@ -55,31 +55,30 @@ def main():
     if args.env == "prod" and not yorn("THIS WILL AFFECT PROD!"):
         sys.exit("Canceling")
 
-    with client.start_session() as session:
-        with session.start_transaction():
-            flush("Setting 'add_empty'")
-            db.guilds.update_many(
-                {ADD_EMPTY_KEY: True},
-                {"$set": {NEW_RESONANCE_KEY: ResonanceMode.ADD_EMPTY.value}},
-                session=session,
-            )
-            print("done!")
+    with client.start_session() as session, session.start_transaction():
+        flush("Setting 'add_empty'")
+        db.guilds.update_many(
+            {ADD_EMPTY_KEY: True},
+            {"$set": {NEW_RESONANCE_KEY: ResonanceMode.ADD_EMPTY.value}},
+            session=session,
+        )
+        print("done!")
 
-            flush("Setting 'standard'")
-            db.guilds.update_many(
-                {ADD_EMPTY_KEY: {"$ne": True}},
-                {"$set": {NEW_RESONANCE_KEY: ResonanceMode.STANDARD.value}},
-                session=session,
-            )
-            print("done!")
+        flush("Setting 'standard'")
+        db.guilds.update_many(
+            {ADD_EMPTY_KEY: {"$ne": True}},
+            {"$set": {NEW_RESONANCE_KEY: ResonanceMode.STANDARD.value}},
+            session=session,
+        )
+        print("done!")
 
-            flush("Removing settings.add_empty_resonance")
-            db.guilds.update_many(
-                {},
-                {"$unset": {ADD_EMPTY_KEY: 1}},
-                session=session,
-            )
-            print("done!")
+        flush("Removing settings.add_empty_resonance")
+        db.guilds.update_many(
+            {},
+            {"$unset": {ADD_EMPTY_KEY: 1}},
+            session=session,
+        )
+        print("done!")
 
 
 if __name__ == "__main__":

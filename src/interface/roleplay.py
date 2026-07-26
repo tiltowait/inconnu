@@ -1,6 +1,6 @@
 """Roleplay commands."""
 
-from datetime import timezone
+from datetime import UTC
 from typing import TYPE_CHECKING
 
 import discord
@@ -273,7 +273,7 @@ class RoleplayCog(commands.Cog):
                     url=post_url(post["_id"]),
                     color=discord.Color.red(),
                 )
-                embed.timestamp = post["date"].replace(tzinfo=timezone.utc)
+                embed.timestamp = post["date"].replace(tzinfo=UTC)
 
                 try:
                     await channel.send(embed=embed)

@@ -1,6 +1,6 @@
 """experience/list.py - List XP expenditures/gains."""
 
-from datetime import timezone
+from datetime import UTC
 
 import discord
 from discord.ext.commands import Paginator as Chunker
@@ -56,7 +56,7 @@ async def __get_chunks(character: VChar):
     for index, entry in enumerate(reversed(character.experience.log)):
         # We need the date/time to be TZ-aware
         date = entry.date
-        date = date.replace(tzinfo=timezone.utc)
+        date = date.replace(tzinfo=UTC)
         date = discord.utils.format_dt(date, "d")
 
         exp = entry.amount

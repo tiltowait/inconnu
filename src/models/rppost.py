@@ -1,6 +1,6 @@
 """Rolepost models."""
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import discord
@@ -48,7 +48,7 @@ class RPPost(Document):
     @property
     def utc_date(self) -> datetime:
         """The UTC-aware post date."""
-        return self.date.replace(tzinfo=timezone.utc)
+        return self.date.replace(tzinfo=UTC)
 
     class Settings:
         name = "rp_posts"

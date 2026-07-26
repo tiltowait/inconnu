@@ -168,13 +168,16 @@ def __simulate(params, strategy):
 
         # Check reroll options
         if strategy is not None:
-            if strategy == "reroll_failures" and outcome.can_reroll_failures:
-                outcome.reroll(strategy)
-            elif strategy == "maximize_criticals" and outcome.can_maximize_criticals:
-                outcome.reroll(strategy)
-            elif strategy == "avoid_messy" and outcome.can_avoid_messy_critical:
-                outcome.reroll(strategy)
-            elif strategy == "risky" and outcome.can_risky_messy_critical:
+            if (
+                strategy == "reroll_failures"
+                and outcome.can_reroll_failures
+                or strategy == "maximize_criticals"
+                and outcome.can_maximize_criticals
+                or strategy == "avoid_messy"
+                and outcome.can_avoid_messy_critical
+                or strategy == "risky"
+                and outcome.can_risky_messy_critical
+            ):
                 outcome.reroll(strategy)
 
         totals["total_successes"] += outcome.total_successes

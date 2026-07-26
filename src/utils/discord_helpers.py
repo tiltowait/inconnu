@@ -1,6 +1,7 @@
 """Discord command and interaction helpers."""
 
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
 import discord
 from discord.ext.commands import Paginator

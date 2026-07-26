@@ -153,7 +153,7 @@ async def __display_trait_statistics(
     embed.set_author(name=owner.display_name, icon_url=get_avatar(owner))
 
     for group, subgroups in constants.GROUPED_TRAITS.items():
-        embed.add_field(name="​", value=f"**{group}**", inline=False)
+        embed.add_field(name="\u200b", value=f"**{group}**", inline=False)
         for subgroup, traits in subgroups.items():
             trait_list = []
             for trait in traits:
@@ -166,7 +166,7 @@ async def __display_trait_statistics(
     if stats:
         traits = [f"***{trait}:*** `{successes}`" for trait, successes in stats.items()]
         traits = "\n".join(traits)
-        embed.add_field(name="​", value=f"**USER-DEFINED**\n{traits}", inline=False)
+        embed.add_field(name="\u200b", value=f"**USER-DEFINED**\n{traits}", inline=False)
 
     footer = "The numbers represent the successes rolled for each trait during the time "
     footer += "period. All traits used in a roll are incremented equally by the number "

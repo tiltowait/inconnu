@@ -1,6 +1,6 @@
 """Guild cache tests."""
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 from unittest.mock import MagicMock
 
 import pytest

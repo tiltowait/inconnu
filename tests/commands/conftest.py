@@ -1,6 +1,6 @@
 """Command test configurations and mocks."""
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, Mock, PropertyMock, patch
 
 import discord

@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from datetime import datetime, time, timezone
+from datetime import UTC, datetime, time
 from typing import Any, cast
 
 import discord
@@ -472,13 +472,13 @@ class InconnuBot(discord.AutoShardedBot):
 # Tasks
 
 
-@tasks.loop(time=time(12, 0, tzinfo=timezone.utc))
+@tasks.loop(time=time(12, 0, tzinfo=UTC))
 async def cull_inactive():
     """Cull inactive characters and guilds."""
     await bot_tasks.cull()
 
 
-@tasks.loop(time=time(0, tzinfo=timezone.utc))
+@tasks.loop(time=time(0, tzinfo=UTC))
 async def check_premium_expiries():
     """Perform required actions on expired premium users."""
     await bot_tasks.premium.remove_expired_images()

@@ -32,7 +32,7 @@ def traits_embed(
     char_traits = character.traits  # This is an automatic copy
     specialties = []
     for group, subgroups in constants.GROUPED_TRAITS.items():
-        embed.add_field(name="​", value=f"**{group}**", inline=False)
+        embed.add_field(name="\u200b", value=f"**{group}**", inline=False)
         for subgroup, traits in subgroups.items():
             trait_list = []
             for trait in traits:
@@ -70,7 +70,7 @@ def traits_embed(
 
     # Fill in the custom stuff
     nbsp = "*None*"
-    embed.add_field(name="​", value="**USER-DEFINED**", inline=False)
+    embed.add_field(name="\u200b", value="**USER-DEFINED**", inline=False)
 
     chunk_fields(embed, "Disciplines", disciplines)
     chunk_fields(embed, "Specialties", specialties)

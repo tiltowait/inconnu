@@ -19,7 +19,7 @@ class _EmojiManager:
         self.loaded = False
 
     def __getitem__(self, emoji_name: str) -> str:
-        standard = {"bp_filled": ":red_circle:​", "bp_unfilled": ":o:​"}
+        standard = {"bp_filled": ":red_circle:\u200b", "bp_unfilled": ":o:\u200b"}
         emoji_map = {
             Damage.NONE.value: "no_dmg",
             Damage.SUPERFICIAL.value: "sup_dmg",

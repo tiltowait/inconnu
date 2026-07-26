@@ -55,7 +55,7 @@ class Gameplay(commands.Cog):
         "hunger",
         description="The character's Hunger level",
         choices=[OptionChoice("Use Current (or 0 for Mortals)", "current_hunger")]
-        + [OptionChoice(str(n), str(n)) for n in range(0, 6)],
+        + [OptionChoice(str(n), str(n)) for n in range(6)],
     )
     @option(
         "difficulty",

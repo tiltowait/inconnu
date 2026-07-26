@@ -2,7 +2,8 @@
 
 import functools
 import uuid
-from typing import Awaitable, Callable, Concatenate, cast
+from collections.abc import Awaitable, Callable
+from typing import Concatenate, cast
 
 import discord
 from discord import SelectOption

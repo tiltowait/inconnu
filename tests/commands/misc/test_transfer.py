@@ -1,6 +1,6 @@
 """Character transfer command tests."""
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord

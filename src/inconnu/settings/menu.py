@@ -1,7 +1,8 @@
 """Settings menu classes, methods, enums, and functions."""
 
+from collections.abc import Callable
 from enum import IntEnum, StrEnum, auto
-from typing import Any, Callable, Self, cast
+from typing import Any, Self, cast
 
 import discord
 from discord import (

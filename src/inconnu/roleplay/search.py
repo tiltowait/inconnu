@@ -1,7 +1,7 @@
 """Post search functionality."""
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -71,7 +71,7 @@ async def search(
 
     if character:
         if inconnu.character.valid_name(character):
-            query["header.char_name"] = re.compile(character, re.I)
+            query["header.char_name"] = re.compile(character, re.IGNORECASE)
         else:
             logger.debug("RP SEARCH: Ignoring invalid character name")
     if mentioning is not None:
@@ -162,7 +162,7 @@ def convert_dates(after: str, before: str) -> tuple[datetime | None, datetime | 
             parsed = datetime.strptime(dt, "%Y%m%d")
             if parsed.tzinfo is None:
                 return parsed
-            return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+            return parsed.astimezone(UTC).replace(tzinfo=None)
         except ValueError as err:
             raise SyntaxError(f"Invalid date: `{dt}`.\nAccepted format: YYYYMMDD.") from err
 

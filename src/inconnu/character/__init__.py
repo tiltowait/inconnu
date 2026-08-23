@@ -6,6 +6,7 @@ from inconnu.character.convictions import convictions_set, convictions_show
 from inconnu.character.delete import delete
 from inconnu.character.display import DisplayField, display, display_requested
 from inconnu.character.images import upload
+from inconnu.character.import_json import import_progeny
 from inconnu.character.update import update, update_help
 from utils.validation import valid_name
 
@@ -19,6 +20,7 @@ __all__ = (
     "display_requested",
     "edit_biography",
     "images",
+    "import_progeny",
     "show_biography",
     "update",
     "update_help",

@@ -68,6 +68,24 @@ class Characters(commands.Cog, name="Character Management"):
         wizard = self.bot.cmd_mention("character wizard")
         await ctx.respond(f"This command has been removed! Use {wizard} instead.", ephemeral=True)
 
+    @character.command(name="import")
+    @not_on_lockdown()
+    @option(
+        "source",
+        description="The app that exported the character",
+        choices=[OptionChoice("Progeny", "progeny")],
+    )
+    @option("file", description="The exported character JSON file")
+    async def character_import(
+        self,
+        ctx: AppCtx,
+        source: str,
+        file: discord.Attachment,
+    ):
+        """Import a character from a supported app."""
+        if source == "progeny":
+            await inconnu.character.import_progeny(ctx, file)
+
     @commands.slash_command(name="spc", contexts={discord.InteractionContextType.guild})
     @commands.has_permissions(administrator=True)
     async def spc_create(self, ctx: AppCtx):

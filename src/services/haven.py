@@ -2,7 +2,8 @@
 
 import functools
 import uuid
-from typing import Awaitable, Callable, Concatenate, cast
+from collections.abc import Awaitable, Callable
+from typing import Concatenate, cast
 
 import discord
 from discord import SelectOption
@@ -109,11 +110,13 @@ class Haven:
             raise errors.HandledError() from err
 
         except errors.NoCharactersError as err:
+            assert self.owner is not None
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await ui.embeds.error(self.ctx, errmsg)
             raise errors.HandledError() from err
 
         except errors.CharacterNotFoundError as err:
+            assert self.owner is not None
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await ui.embeds.error(self.ctx, errmsg)
             raise errors.HandledError() from err
@@ -166,17 +169,20 @@ class Haven:
 
         return cast(VChar, self.match)
 
-    async def _get_user_selection(self, err):
+    async def _get_user_selection(self, err: errors.UnspecifiedCharacterError):
         """Present the player's character options."""
-        err = _personalize_error(err, self.ctx, self.owner)
+        assert self.owner is not None
+        errmsg = _personalize_error(err, self.ctx, self.owner)
 
         view = self._create_view()
         if view is None:
-            err = "There are too many characters to display! Please use the `character` parameter."
+            errmsg = (
+                "There are too many characters to display! Please use the `character` parameter."
+            )
 
         await ui.embeds.error(
             self.ctx,
-            err,
+            errmsg,
             # ("Proper syntax", self.tip),
             author=self.owner,
             help=self.help,
@@ -198,6 +204,7 @@ class Haven:
                 # character may still be selected. Reject it with the same
                 # error an explicitly named character would get.
                 logger.debug("HAVEN: {} selected but fails filter", character.name)
+                assert self.owner is not None
                 await ui.embeds.error(
                     view.interaction,
                     _personalize_error(filter_err, self.ctx, self.owner),
@@ -268,7 +275,9 @@ class Haven:
         return view
 
 
-def player_lookup(ctx, player: discord.Member | None, allow_lookups: bool):
+def player_lookup(
+    ctx: AppCtx, player: discord.Member | None, allow_lookups: bool
+) -> discord.Member | discord.User:
     """
     Look up a player.
     Returns the sought-after player OR the ctx author if player is None.
@@ -281,15 +290,18 @@ def player_lookup(ctx, player: discord.Member | None, allow_lookups: bool):
 
     # Players are allowed to look up themselves
     if ctx.user != player:
-        logger.info("HAVEN: {} looked up {} ({})", ctx.user.name, player.name, ctx.guild.name)
+        guild = cast(discord.Guild, ctx.guild)
+        logger.info("HAVEN: {} looked up {} ({})", ctx.user.name, player.name, guild.name)
         if not (is_admin(ctx) or allow_lookups):
-            logger.info("HAVEN: Invalid player lookup by {} ({})", ctx.user.name, ctx.guild.name)
+            logger.info("HAVEN: Invalid player lookup by {} ({})", ctx.user.name, guild.name)
             raise LookupError("You don't have lookup permissions.")
 
     return player
 
 
-def _personalize_error(err, ctx, member):
+def _personalize_error(
+    err: str | Exception, ctx: AppCtx, member: discord.Member | discord.User
+) -> str | Exception:
     """Replace "You have" with "{member} has" if ctx.user and member don't match."""
     if member != ctx.user:
         err = str(err).replace("You have", f"{member.mention} has")

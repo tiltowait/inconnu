@@ -21,7 +21,9 @@ class DeletionResult(NamedTuple):
 
 
 @haven(__HELP_URL)
-async def delete(ctx: AppInvocation, character, traits_input: str, disciplines=False):
+async def delete(
+    ctx: AppInvocation, character: VChar, traits_input: str, disciplines: bool = False
+):
     """Delete character traits. Core attributes and abilities are set to 0."""
     try:
         traits = traits_input.split()
@@ -38,7 +40,9 @@ async def delete(ctx: AppInvocation, character, traits_input: str, disciplines=F
         await ui.embeds.error(ctx, err, character=character, help=__HELP_URL)
 
 
-async def __outcome_embed(ctx: AppInvocation, character, outcome, disciplines: bool):
+async def __outcome_embed(
+    ctx: AppInvocation, character: VChar, outcome: DeletionResult, disciplines: bool
+):
     """Display the operation outcome in an embed."""
     term = "Trait" if not disciplines else "Discipline"
 

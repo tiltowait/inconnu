@@ -32,10 +32,9 @@ def main():
             print(f"This operation would update {len(updates)} characters.")
             print("First:", updates[0])
         else:
-            with client.start_session() as session:
-                with session.start_transaction():
-                    res = db.characters.bulk_write(updates, session=session)
-                    print(f"Updated {res.modified_count} characters.")
+            with client.start_session() as session, session.start_transaction():
+                res = db.characters.bulk_write(updates, session=session)
+                print(f"Updated {res.modified_count} characters.")
     finally:
         client.close()
 

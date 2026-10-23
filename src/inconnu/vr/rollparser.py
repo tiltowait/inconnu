@@ -3,6 +3,7 @@
 import ast
 import operator as op
 import re
+from itertools import chain
 from typing import cast
 
 from loguru import logger
@@ -217,7 +218,7 @@ class RollParser:
                 f"***Hunger:*** `{_hunger}`\n"
                 f"***Difficulty:*** `{_difficulty}`"
             )
-            extra = " ".join(sum(qualified_stacks, []))
+            extra = " ".join(chain.from_iterable(qualified_stacks))
             extra = f"**Unexpected extra parameter(s):** `{extra}`"
 
             err = "Too many roll parameters given. Interpretation based on input:"

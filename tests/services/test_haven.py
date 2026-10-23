@@ -173,9 +173,9 @@ async def test_selection_of_filtered_character_is_rejected(mock_ctx: AppCtx):
     with (
         patch.object(Haven, "_create_view", return_value=view),
         patch(UI_ERROR, new_callable=AsyncMock) as mock_error,
+        pytest.raises(errors.HandledError),
     ):
-        with pytest.raises(errors.HandledError):
-            await haven._get_user_selection("Which character?")
+        await haven._get_user_selection("Which character?")
 
     assert haven.match is None
 
@@ -196,9 +196,9 @@ async def test_selection_timeout(mock_ctx: AppCtx):
     with (
         patch.object(Haven, "_create_view", return_value=view),
         patch(UI_ERROR, new_callable=AsyncMock),
+        pytest.raises(errors.HandledError),
     ):
-        with pytest.raises(errors.HandledError):
-            await haven._get_user_selection("Which character?")
+        await haven._get_user_selection("Which character?")
 
     assert haven.match is None
 
@@ -211,9 +211,9 @@ async def test_selection_unpresentable(mock_ctx: AppCtx):
     with (
         patch.object(Haven, "_create_view", return_value=None),
         patch(UI_ERROR, new_callable=AsyncMock) as mock_error,
+        pytest.raises(errors.HandledError),
     ):
-        with pytest.raises(errors.HandledError):
-            await haven._get_user_selection("Which character?")
+        await haven._get_user_selection("Which character?")
 
     assert "too many characters" in str(mock_error.await_args_list[-1].args[1]).lower()
 
@@ -243,9 +243,9 @@ async def test_fetch_explicit_character_failing_filter(mock_ctx: AppCtx):
     with (
         patch.object(services.char_mgr, "fetchone", AsyncMock(return_value=char)),
         patch(UI_ERROR, new_callable=AsyncMock) as mock_error,
+        pytest.raises(errors.HandledError),
     ):
-        with pytest.raises(errors.HandledError):
-            await haven.fetch()
+        await haven.fetch()
 
     assert "No dice" in str(mock_error.await_args_list[-1].args[1])
 
@@ -328,9 +328,9 @@ async def test_fetch_no_filter_survivors(mock_ctx: AppCtx):
         ),
         patch.object(services.char_mgr, "fetchall", AsyncMock(return_value=chars)),
         patch(UI_ERROR, new_callable=AsyncMock) as mock_error,
+        pytest.raises(errors.HandledError),
     ):
-        with pytest.raises(errors.HandledError):
-            await haven.fetch()
+        await haven.fetch()
 
     assert "no worthy characters" in str(mock_error.await_args_list[-1].args[1])
 

@@ -5,11 +5,12 @@ import copy
 import math
 import random
 from collections import Counter
+from collections.abc import Callable
 from datetime import UTC, datetime
 from enum import StrEnum
 from functools import total_ordering
 from types import SimpleNamespace
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 
 from beanie import Document, Insert, Replace, Save, SaveChanges, before_event
 from loguru import logger

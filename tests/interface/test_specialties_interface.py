@@ -49,9 +49,9 @@ def test_valid_syntax(syntax: str, expected: list[tuple[str, list[str]]]):
     tokens = tokenize(syntax)
     assert len(tokens) == len(expected)
 
-    for received, expected in zip(tokens, expected):
+    for received, exp in zip(tokens, expected):
         r_trait, r_specs = received
-        e_trait, e_specs = expected
+        e_trait, e_specs = exp
 
         assert r_trait == e_trait
         assert r_specs == e_specs
@@ -86,9 +86,8 @@ def test_add_specialties(syntax: str, expected: list, character: VChar):
     traits = add_specialties(character, syntax, Category.SPECIALTY)
     assert len(traits) == len(expected)
 
-    for trait, expected in zip(traits, expected):
-        trait, delta = trait
-        e_trait, e_specs, e_delta = expected
+    for (trait, delta), exp in zip(traits, expected):
+        e_trait, e_specs, e_delta = exp
         assert trait.name == e_trait
         assert trait.specialties == e_specs
         assert delta == e_delta
@@ -136,9 +135,8 @@ def test_remove_specialties(syntax: str, expected: list, specced: VChar):
     traits = remove_specialties(specced, syntax)
     assert len(traits) == len(expected)
 
-    for trait, expected in zip(traits, expected):
-        trait, delta = trait
-        e_trait, e_specs, e_delta = expected
+    for (trait, delta), exp in zip(traits, expected):
+        e_trait, e_specs, e_delta = exp
 
         assert trait.name == e_trait
         assert trait.specialties == e_specs

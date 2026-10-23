@@ -13,16 +13,16 @@ steps:
       - git clone "$CI_REPO_CLONE_URL" .
       - git checkout "$CI_COMMIT_SHA"
 
-  - name: lint
-    image: sh
-    failure: ignore
-    commands:
-      - ruff check
-
   - name: install-dev
     image: sh
     commands:
       - uv sync
+
+  - name: lint
+    image: sh
+    failure: ignore
+    commands:
+      - uv run ruff check
 
   - name: unit tests
     image: sh

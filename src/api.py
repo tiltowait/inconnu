@@ -92,14 +92,13 @@ async def _post(*, path: str, data: str) -> str:
     logger.debug("API: POST to {} with {}", path, str(data))
     url = urljoin(BASE_API, path)
 
-    async with async_timeout.timeout(60):
-        async with aiohttp.ClientSession(headers=HEADER) as session:
-            async with session.post(url, data=data) as response:
-                json = await response.json()
+    async with async_timeout.timeout(60), aiohttp.ClientSession(headers=HEADER) as session:
+        async with session.post(url, data=data) as response:
+            json = await response.json()
 
-                if not response.ok:
-                    raise ApiError(str(json))
-                return json
+            if not response.ok:
+                raise ApiError(str(json))
+            return json
 
 
 @measure
@@ -108,11 +107,10 @@ async def _delete(*, path: str) -> str:
     logger.debug("API: DELETE to {}", path)
     url = urljoin(BASE_API, path)
 
-    async with async_timeout.timeout(60):
-        async with aiohttp.ClientSession(headers=HEADER) as session:
-            async with session.delete(url) as response:
-                json = await response.json()
+    async with async_timeout.timeout(60), aiohttp.ClientSession(headers=HEADER) as session:
+        async with session.delete(url) as response:
+            json = await response.json()
 
-                if not response.ok:
-                    raise ApiError(str(json))
-                return json
+            if not response.ok:
+                raise ApiError(str(json))
+            return json

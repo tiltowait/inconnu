@@ -67,7 +67,7 @@ async def test_random_message_rejected_when_webhook_error(
     await delete_header(ctx_no_webhook, random_message)
 
     ctx_no_webhook.respond.assert_awaited_once()
-    args, kwargs = ctx_no_webhook.respond.await_args
+    args, _kwargs = ctx_no_webhook.respond.await_args
     assert "not an RP header" in args[0]
 
 
@@ -80,7 +80,7 @@ async def test_random_message_rejected_when_value_error(
     await delete_header(ctx, random_message)
 
     ctx.respond.assert_awaited_once()
-    args, kwargs = ctx.respond.await_args
+    args, _kwargs = ctx.respond.await_args
     assert "not an RP header" in args[0]
 
 
@@ -93,7 +93,7 @@ async def test_bot_message_no_record(ctx: AsyncMock, bot_message: discord.Messag
         await delete_header(ctx, bot_message)
 
     ctx.respond.assert_awaited_once()
-    args, kwargs = ctx.respond.await_args
+    args, _kwargs = ctx.respond.await_args
     assert "not an RP header" in args[0]
 
 
@@ -103,7 +103,7 @@ async def test_webhook_message_no_record(ctx: AsyncMock, webhook_message: discor
         await delete_header(ctx, webhook_message)
 
     ctx.respond.assert_awaited_once()
-    args, kwargs = ctx.respond.await_args
+    args, _kwargs = ctx.respond.await_args
     assert "not an RP header" in args[0]
 
 

@@ -1,7 +1,8 @@
 """Tests for services.characters.CharacterManager."""
 
 import asyncio
-from typing import AsyncGenerator, Generator, cast
+from collections.abc import AsyncGenerator, Generator
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest

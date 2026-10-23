@@ -1,6 +1,7 @@
 """constants.py - Define package-wide constants."""
 
 from enum import StrEnum
+from itertools import chain
 from typing import cast
 
 from flatdict import FlatDict
@@ -51,8 +52,8 @@ GROUPED_TRAITS = {
     },
 }
 
-ATTRIBUTES = set(sum(GROUPED_TRAITS["ATTRIBUTES"].values(), []))
-SKILLS = set(sum(GROUPED_TRAITS["SKILLS"].values(), []))
+ATTRIBUTES = set(chain.from_iterable(GROUPED_TRAITS["ATTRIBUTES"].values()))
+SKILLS = set(chain.from_iterable(GROUPED_TRAITS["SKILLS"].values()))
 ATTRIBUTES_AND_SKILLS = ATTRIBUTES.union(SKILLS)
 DISCIPLINES = [
     "Animalism",
@@ -91,4 +92,4 @@ def get_standard_traits() -> list[str]:
     """Generate a flattened list of all standard traits. We use a generator
     function to remove any possibility of modifying the source list."""
     trait_lists = cast(list[list[str]], FlatDict(GROUPED_TRAITS).values())
-    return sum(trait_lists, [])
+    return list(chain.from_iterable(trait_lists))

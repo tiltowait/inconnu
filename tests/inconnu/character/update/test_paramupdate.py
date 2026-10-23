@@ -44,9 +44,8 @@ async def test_update_name_same_name():
     """Renaming a character to its current name is rejected."""
     char = make_char("Nadea", user=1)
 
-    with patch_char_mgr(char):
-        with pytest.raises(ValueError, match="already this character's name"):
-            await update_name(char, "Nadea")
+    with patch_char_mgr(char), pytest.raises(ValueError, match="already this character's name"):
+        await update_name(char, "Nadea")
 
 
 async def test_update_name_capitalization_fix():
@@ -77,9 +76,8 @@ async def test_update_name_spc_same_name():
     spc = make_char("Nadea", user=VChar.SPC_OWNER)
     assert spc.is_spc
 
-    with patch_char_mgr(spc):
-        with pytest.raises(ValueError, match="already this character's name"):
-            await update_name(spc, "Nadea")
+    with patch_char_mgr(spc), pytest.raises(ValueError, match="already this character's name"):
+        await update_name(spc, "Nadea")
 
 
 async def test_update_name_spc_duplicate():

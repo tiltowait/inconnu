@@ -65,15 +65,15 @@ def make_header_subdoc() -> HeaderSubdoc:
 
 async def insert_rolepost(**overrides) -> RPPost:
     """Insert an RPPost into the mock database."""
-    defaults = dict(
-        guild=TEST_GUILD_ID,
-        channel=TEST_CHANNEL_ID,
-        user=TEST_USER_ID,
-        message_id=555555555,
-        header=make_header_subdoc(),
-        content="Test rolepost content",
-        url="https://discord.com/channels/1/2/3",
-    )
+    defaults = {
+        "guild": TEST_GUILD_ID,
+        "channel": TEST_CHANNEL_ID,
+        "user": TEST_USER_ID,
+        "message_id": 555555555,
+        "header": make_header_subdoc(),
+        "content": "Test rolepost content",
+        "url": "https://discord.com/channels/1/2/3",
+    }
     defaults.update(overrides)
     post = RPPost(**defaults)
     await post.insert()

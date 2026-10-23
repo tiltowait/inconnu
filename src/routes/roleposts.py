@@ -6,7 +6,6 @@ import discord
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
-from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import AnyUrl, BaseModel
 
 import inconnu
@@ -39,10 +38,8 @@ class Changelog(BaseModel):
     deletion_date: datetime | None
 
 
-@router.get("/changelog/{oid}")
-async def get_rolepost(
-    oid: PydanticObjectId, _: HTTPAuthorizationCredentials = Depends(verify_api_key)
-):
+@router.get("/changelog/{oid}", dependencies=[Depends(verify_api_key)])
+async def get_rolepost(oid: PydanticObjectId):
     """Fetch Rolepost data."""
     rolepost = await RPPost.find_one(RPPost.id == oid)
     if rolepost is None:

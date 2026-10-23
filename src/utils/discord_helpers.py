@@ -1,6 +1,7 @@
 """Discord command and interaction helpers."""
 
 from collections.abc import Awaitable, Callable
+from itertools import chain
 from typing import TYPE_CHECKING, Any
 
 import discord
@@ -57,7 +58,7 @@ def re_paginate(strings: list[str], *, page_len=2000) -> list[str]:
         strings.insert(i, delimiter)
 
     # Default case: paginate by newlines
-    lines = sum([string.split("\n") for string in strings], [])
+    lines = list(chain.from_iterable(string.split("\n") for string in strings))
     paginator = Paginator(prefix="", suffix="", max_size=page_len)
 
     try:
@@ -68,7 +69,7 @@ def re_paginate(strings: list[str], *, page_len=2000) -> list[str]:
         pass
 
     # Newlines failed; split by words
-    words = sum([string.split(" ") for string in strings], [])
+    words = list(chain.from_iterable(string.split(" ") for string in strings))
     paginator = Paginator(prefix="", suffix="", linesep=" ", max_size=page_len)
 
     try:

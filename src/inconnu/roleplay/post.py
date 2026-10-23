@@ -122,7 +122,7 @@ class PostModal(discord.ui.Modal):
             if cleaned := clean_text(tag):
                 cleaned_tags.append(cleaned)
 
-        return sorted(list(set(cleaned_tags)))  # Make sure the tags are unique
+        return sorted(set(cleaned_tags))  # Make sure the tags are unique
 
     async def callback(self, interaction: discord.Interaction):
         """Set the Rolepost content."""

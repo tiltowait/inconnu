@@ -4,7 +4,6 @@ import discord
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
-from fastapi.security import HTTPAuthorizationCredentials
 from loguru import logger
 
 import errors
@@ -162,11 +161,8 @@ async def get_guild_characters(
     return GuildChars(guild=char_guild, characters=profiles)
 
 
-@router.get("/characters/profile/{oid}")
-async def get_character_profile(
-    oid: PydanticObjectId,
-    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
-) -> CharData:
+@router.get("/characters/profile/{oid}", dependencies=[Depends(verify_api_key)])
+async def get_character_profile(oid: PydanticObjectId) -> CharData:
     """Fetch a character profile. This endpoint returns a non-sensitive character
     model with only name, ownership data, and public profile data."""
     if not await guild_cache.ready():
@@ -193,11 +189,8 @@ async def get_character_profile(
 # Wizard
 
 
-@router.get("/characters/wizard/{token}")
-async def get_wizard(
-    token: str,
-    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
-) -> WizardSchema:
+@router.get("/characters/wizard/{token}", dependencies=[Depends(verify_api_key)])
+async def get_wizard(token: str) -> WizardSchema:
     """Get the character wizard schema."""
     wizard = wizard_cache.get(token)
     if wizard is None:
@@ -209,12 +202,8 @@ async def get_wizard(
     )
 
 
-@router.post("/characters/wizard/{token}", status_code=201)
-async def create_character(
-    token: str,
-    data: CreationBody,
-    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
-) -> CreationSuccess:
+@router.post("/characters/wizard/{token}", status_code=201, dependencies=[Depends(verify_api_key)])
+async def create_character(token: str, data: CreationBody) -> CreationSuccess:
     """Create the character and insert it into the database."""
     wizard = wizard_cache.get(token)
     if wizard is None:

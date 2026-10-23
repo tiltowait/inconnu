@@ -34,10 +34,17 @@ dev = [
     "httpx>=0.28.1,<1",
     "pytest-cov>=7.0.0,<8",
     "mongomock-motor>=0.0.36,<1",
+    "ruff==0.16.5",
 ]
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
+ignore = ["B026", "BLE001", "DTZ", "RUF012", "SIM102", "SIM117", "TRY004"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["PERF402", "S110"]
 
 [tool.isort]
 profile = "black"

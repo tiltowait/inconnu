@@ -1,6 +1,7 @@
 """Web API authentication utilities."""
 
 import hmac
+from typing import Annotated
 
 from fastapi import Depends, Request
 from fastapi.exceptions import HTTPException
@@ -12,7 +13,7 @@ DISCORD_HEADER = "X-Discord-User-ID"
 
 
 async def verify_api_key(
-    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(HTTPBearer())],
 ) -> HTTPAuthorizationCredentials:
     """Validates the API bearer token."""
     if not hmac.compare_digest(credentials.credentials, settings.inconnu_api_token):
@@ -22,7 +23,7 @@ async def verify_api_key(
 
 async def get_authenticated_user(
     request: Request,
-    _: HTTPAuthorizationCredentials = Depends(verify_api_key),
+    _: Annotated[HTTPAuthorizationCredentials, Depends(verify_api_key)],
 ) -> int:
     """Get the authenticated user ID from headers after verifying API key."""
     user_id = request.headers.get(DISCORD_HEADER)

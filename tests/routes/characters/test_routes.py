@@ -355,7 +355,7 @@ async def test_create_character_valid_api_key(
     mock_bot,
 ):
     """Request with valid API key proceeds."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -375,7 +375,7 @@ async def test_create_character_invalid_token(
     valid_character_data, auth_headers, mock_wizard_cache_pop
 ):
     """Invalid wizard token returns 404."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = None
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -392,7 +392,7 @@ async def test_create_character_expired_token(
     valid_character_data, auth_headers, mock_wizard_cache_pop
 ):
     """Expired wizard token returns 404."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = None
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -413,7 +413,7 @@ async def test_create_character_invalid_name(
 ):
     """Invalid character name returns 422."""
     valid_character_data["name"] = "A" * 31  # Too long
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -430,7 +430,7 @@ async def test_create_character_health_out_of_range(
 ):
     """Health out of range (4-20) returns 422."""
     valid_character_data["health"] = 3  # Too low
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -448,7 +448,7 @@ async def test_create_character_mortal_with_blood_potency(
     """Mortal with blood potency > 0 returns 422."""
     valid_character_data["splat"] = VCharSplat.MORTAL
     valid_character_data["blood_potency"] = 1
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -466,7 +466,7 @@ async def test_create_character_too_many_convictions(
 ):
     """More than 3 convictions returns 422."""
     valid_character_data["convictions"] = ["One", "Two", "Three", "Four"]
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -483,7 +483,7 @@ async def test_create_character_specialty_on_wrong_type(
 ):
     """Specialty on attribute returns 422."""
     valid_character_data["traits"][0]["subtraits"] = ["Lifting"]  # Strength is an attribute
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -504,7 +504,7 @@ async def test_create_duplicate_character(
     mock_char_mgr_register,
 ):
     """Creating duplicate character (same name, guild, user) returns 422."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
     mock_char_mgr_register.side_effect = DuplicateCharacterError(
         "Character 'Test Character' already exists"
@@ -529,7 +529,7 @@ async def test_create_duplicate_character_case_insensitive(
 ):
     """Duplicate check is case-insensitive."""
     valid_character_data["name"] = "TEST CHARACTER"
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
     mock_char_mgr_register.side_effect = DuplicateCharacterError(
         "Character 'TEST CHARACTER' already exists"
@@ -557,7 +557,7 @@ async def test_create_vampire_success(
     mock_bot,
 ):
     """Valid vampire character created successfully."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -590,7 +590,7 @@ async def test_create_mortal_success(
     """Valid mortal character created successfully."""
     valid_character_data["splat"] = VCharSplat.MORTAL
     valid_character_data["blood_potency"] = 0
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -614,7 +614,7 @@ async def test_create_ghoul_success(
     """Valid ghoul character created successfully."""
     valid_character_data["splat"] = VCharSplat.GHOUL
     valid_character_data["blood_potency"] = 0
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -638,7 +638,7 @@ async def test_create_thin_blood_success(
     """Valid thin-blood character created successfully."""
     valid_character_data["splat"] = VCharSplat.THIN_BLOOD
     valid_character_data["blood_potency"] = 2
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -668,7 +668,7 @@ async def test_create_character_with_specialties(
             "subtraits": ["History", "Occult"],
         }
     )
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -718,7 +718,7 @@ async def test_character_field_mapping(
     mock_bot,
 ):
     """VChar fields correctly mapped from CreationBody."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -763,7 +763,7 @@ async def test_create_spc_character(
     mock_bot,
 ):
     """SPC character created with VChar.SPC_OWNER as user ID."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_spc_wizard_data
 
     with patch("routes.characters.routes.VChar.SPC_OWNER", 0):
@@ -793,7 +793,7 @@ async def test_create_regular_character_user_id(
     mock_bot,
 ):
     """Regular (non-SPC) character created with actual user ID."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -823,7 +823,7 @@ async def test_create_character_premium_user(
     mock_bot,
 ):
     """User with supporter role gets has_premium=True."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     # Mock supporter guild and member with role
@@ -871,7 +871,7 @@ async def test_create_character_non_premium_user(
     mock_bot,
 ):
     """User in supporter guild without role gets has_premium=False."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     # Mock supporter guild and member WITHOUT role
@@ -914,7 +914,7 @@ async def test_create_character_user_not_in_supporter_guild(
     mock_bot,
 ):
     """User not in supporter guild gets has_premium=False."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
     # Mock supporter guild but user not a member
@@ -948,7 +948,7 @@ async def test_create_spc_premium_check_uses_wizard_creator(
     mock_bot,
 ):
     """SPC character premium check uses wizard creator (wizard.user), not SPC_OWNER."""
-    mock_get, mock_delete = mock_wizard_cache_pop
+    mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_spc_wizard_data
 
     # Mock supporter guild

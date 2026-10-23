@@ -71,7 +71,7 @@ def __get_injury(damage: int):
         effect.append("Mortals die. Vampires enter immediate torpor.")
 
     injuries = []
-    for injury, effect in zip(injury, effect):
-        injuries.append(SimpleNamespace(injury=injury, effect=effect))
+    for inj, eff in zip(injury, effect):
+        injuries.append(SimpleNamespace(injury=inj, effect=eff))
 
     return injuries

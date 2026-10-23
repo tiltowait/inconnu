@@ -1,7 +1,7 @@
 """Post search functionality."""
 
 import re
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from typing import Any
 
@@ -147,22 +147,18 @@ async def search(
 
 
 def convert_dates(after: str, before: str) -> tuple[datetime | None, datetime | None]:
-    """Convert the before and after strings to proper datetimes.
-    Removes timezone info.
+    """Convert the before and after strings to proper (naive) datetimes.
 
     Raises:
         ValueError if before is after after.
         ParserError if a datetime can't be inferred."""
 
     def convert_tzs(dt: str | None) -> datetime | None:
-        """If the datetime has a timezone, convert it to UTC and remove it."""
+        """Parse a YYYYMMDD string into a naive datetime."""
         if dt is None:
             return None
         try:
-            parsed = datetime.strptime(dt, "%Y%m%d")
-            if parsed.tzinfo is None:
-                return parsed
-            return parsed.astimezone(UTC).replace(tzinfo=None)
+            return datetime.strptime(dt, "%Y%m%d")
         except ValueError as err:
             raise SyntaxError(f"Invalid date: `{dt}`.\nAccepted format: YYYYMMDD.") from err
 

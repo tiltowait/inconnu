@@ -53,9 +53,7 @@ async def test_import_progeny_registers_character(ctx, mock_respond):
     assert character.convictions == ["Protect the innocent"]
     assert character.profile.biography == "A short biography."
     assert [trait.name for trait in character.traits] == ["Brawl", "Strength"]
-    mock_respond.assert_awaited_once_with(
-        "Imported **Test Vampire** from Progeny.", ephemeral=True
-    )
+    mock_respond.assert_awaited_once_with("Imported **Test Vampire** from Progeny.", ephemeral=True)
 
 
 async def test_import_progeny_rejects_invalid_json(ctx):

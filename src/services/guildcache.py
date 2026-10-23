@@ -1,5 +1,6 @@
 """Guild/Member caching for cold start recovery."""
 
+import asyncio
 import functools
 
 import aiosqlite
@@ -9,6 +10,10 @@ from pydantic import BaseModel, Field
 
 from config import settings
 from utils.discord_helpers import get_avatar
+
+# Seconds to wait for a single guild's member chunk before giving up. py-cord's
+# chunk requests have no timeout of their own and can otherwise wait forever.
+CHUNK_TIMEOUT = 60.0
 
 
 class CachedMember(BaseModel):
@@ -128,14 +133,29 @@ class GuildCache:
         if isinstance(guilds, discord.Guild):
             guilds = [guilds]
 
-        # We need to wait for the guilds' caches to be populated. Since we
-        # aren't going to proceed until they're all finished, and since the
-        # fetchers are already running, we can just wait in a for loop. No
-        # need to add complexity with futures etc.
-        for guild in guilds:
-            if not guild.chunked:
-                await guild.chunk()
+        await self._chunk(guilds)
+        await self._write_guilds(guilds)
+        await self.db.commit()
 
+    async def _chunk(self, guilds: list[discord.Guild]):
+        """Ensure the guilds' member caches are populated. Guilds that time out
+        are logged and left with whatever members are already cached."""
+        for guild in guilds:
+            if guild.chunked:
+                continue
+            try:
+                await asyncio.wait_for(guild.chunk(), timeout=CHUNK_TIMEOUT)
+            except TimeoutError:
+                logger.warning(
+                    "Guild cache: timed out chunking {} ({}); caching {}/{} members",
+                    guild.name,
+                    guild.id,
+                    len(guild.members),
+                    guild.member_count,
+                )
+
+    async def _write_guilds(self, guilds: list[discord.Guild]):
+        """Write guilds and their members without committing."""
         data = [(g.id, g.name, g.icon.url if g.icon else None) for g in guilds]
         await self.db.executemany(
             """
@@ -146,10 +166,7 @@ class GuildCache:
             """,
             data,
         )
-        await self.db.commit()
-
-        members = [m for g in guilds for m in g.members]
-        await self.upsert_members(members)
+        await self._write_members([m for g in guilds for m in g.members])
 
     @validate
     async def delete_guild(self, guild: discord.Guild):
@@ -209,6 +226,11 @@ class GuildCache:
         if not members:
             return
 
+        await self._write_members(members)
+        await self.db.commit()
+
+    async def _write_members(self, members: list[discord.Member]):
+        """Write members without committing."""
         data = [(m.guild.id, m.id, m.display_name, get_avatar(m).url) for m in members]
         await self.db.executemany(
             """
@@ -219,7 +241,6 @@ class GuildCache:
             """,
             data,
         )
-        await self.db.commit()
 
     @validate
     async def delete_member(self, member: discord.Member):
@@ -270,8 +291,16 @@ class GuildCache:
     @validate
     async def refresh(self, guilds: list[discord.Guild]):
         """Clear all data and insert new guilds. For use in bot on_ready()."""
-        await self.db.execute("DELETE FROM guilds")
-        await self.upsert_guilds(guilds)
+        # Chunk before touching the database, so the wipe and rewrite happen
+        # in one short transaction and the old data stays readable meanwhile.
+        await self._chunk(guilds)
+        try:
+            await self.db.execute("DELETE FROM guilds")
+            await self._write_guilds(guilds)
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
         logger.info("Guild cache {} refreshed!", self.location)
         self._refreshed = True
 

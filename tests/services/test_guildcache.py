@@ -1,7 +1,8 @@
 """Guild cache tests."""
 
+import asyncio
 from collections.abc import AsyncGenerator
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from discord import Guild, Member
@@ -176,6 +177,34 @@ async def test_reset(gcf: GuildCache, g1: Guild, g2: Guild):
     guild = await gcf.fetchguild(g1.id)
     assert guild is not None
     assert guild.id == g1.id
+
+
+async def test_refresh_keeps_cache_readable_while_chunking(gcf: GuildCache, g2: Guild):
+    """The old data stays visible until the refresh's rewrite commits."""
+    readable_during_chunk = []
+
+    async def chunk():
+        readable_during_chunk.append(await gcf.ready())
+        readable_during_chunk.append(len(await gcf.fetchmembers(g2.id)))
+
+    g2.chunked = False
+    g2.chunk = chunk
+    await gcf.refresh([g2])
+
+    assert readable_during_chunk == [True, g2.member_count]
+    assert len(await gcf.fetchmembers(g2.id)) == g2.member_count
+
+
+async def test_chunk_timeout_does_not_hang(gcf: GuildCache, g1: Guild, g2: Guild):
+    """A guild whose chunk never arrives is skipped, and the refresh completes."""
+    g1.chunked = False
+    g1.chunk = AsyncMock(side_effect=lambda: asyncio.Event().wait())
+
+    with patch("services.guildcache.CHUNK_TIMEOUT", 0.01):
+        await gcf.refresh([g1, g2])
+
+    assert await gcf.fetchguild(g1.id) is not None
+    assert len(await gcf.fetchmembers(g2.id)) == g2.member_count
 
 
 async def test_fetchmember_nonexistent_guild(gce: GuildCache):

@@ -8,7 +8,7 @@ import discord
 import services
 import ui
 from constants import Damage
-from ctx import AppCtx
+from ctx import AppCtx, AppInvocation
 from inconnu.character.display import trackmoji
 from models import VChar
 from services.haven import haven
@@ -60,7 +60,7 @@ async def display_requested(
 
 
 async def display(
-    ctx: AppCtx,
+    ctx: AppInvocation,
     character: VChar,
     title: str | None = None,
     message: str | None = None,

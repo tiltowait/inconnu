@@ -2,6 +2,7 @@
 
 import asyncio
 from collections import OrderedDict
+from typing import cast
 
 import discord
 from discord.ui import Button
@@ -93,7 +94,7 @@ async def update(
                 character,
                 fields=fields,
                 color=color,
-                owner=haven.owner,
+                owner=cast(discord.Member, haven.owner),  # Haven only runs in guilds
                 message=update_message,
                 thumbnail=character.profile_image_url if not fields else None,
             ),

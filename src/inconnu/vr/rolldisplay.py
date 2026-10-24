@@ -5,6 +5,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import cast
 
 import discord
 from discord.ui import Button
@@ -119,7 +120,7 @@ class RollDisplay(ReportingView):
                 interaction,
                 self.character,
                 title="Willpower Spent",
-                owner=self.owner,
+                owner=cast(discord.Member, self.owner),  # Characters only exist in guilds
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
             )
 

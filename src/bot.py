@@ -57,10 +57,14 @@ class InconnuBot(discord.AutoShardedBot):
 
     def _load_cogs(self):
         """Load cogs from the interface package."""
-        for path in (Path(__file__).parent / "interface").glob("*.py"):
+        cog_dir = Path(__file__).parent / "interface"
+        for path in cog_dir.glob("*.py"):
             if not path.name.startswith("_"):
                 logger.debug("Loading {}", path.name)
                 self.load_extension(f"interface.{path.stem}")
+
+        if not self.extensions:
+            raise RuntimeError(f"No cogs found in {cog_dir}")
 
     @property
     def me(self) -> discord.ClientUser:

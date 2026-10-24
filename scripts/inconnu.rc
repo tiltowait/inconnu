@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# PROVIDE: inconnu
+# REQUIRE: DAEMON NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="inconnu"
+rcvar="inconnu_enable"
+
+load_rc_config $name
+
+: ${inconnu_enable:="NO"}
+: ${inconnu_user:="root"}
+: ${inconnu_dir:="/mnt/bot"}
+: ${inconnu_uv:="/usr/local/bin/uv"}
+: ${inconnu_env:="INCONNU_CONFIG_FILE=/usr/local/etc/inconnu.conf"}
+: ${inconnu_output:="/var/log/inconnu.out"}
+: ${inconnu_restart_delay:="30"}
+
+pidfile="/var/run/${name}.pid"
+command="/usr/sbin/daemon"
+command_args="-P ${pidfile} -R ${inconnu_restart_delay} -u ${inconnu_user} -o ${inconnu_output} \
+    /bin/sh -c 'cd ${inconnu_dir} && ${inconnu_uv} sync --frozen --no-dev && exec ${inconnu_uv} run --no-sync inconnu'"
+
+run_rc_command "$1"

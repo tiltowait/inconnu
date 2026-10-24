@@ -1,8 +1,9 @@
 """reference/probabilities.py - Calculate the probability of a given roll."""
 
 from collections import defaultdict
+from dataclasses import dataclass
 from math import comb
-from types import SimpleNamespace as SN
+from typing import NamedTuple
 
 import discord
 
@@ -13,14 +14,43 @@ from ctx import AppCtx
 from inconnu import vr as roll
 from services.haven import Haven
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
-__STRATEGIES = {
+HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
+STRATEGIES = {
     "reroll_failures": "Re-rolling Failures",
     "maximize_criticals": "Maximizing Crits",
     "avoid_messy": "Avoiding Messy Crits",
     "risky": "Riskily Avoiding Messy Crits",
 }
-__DISPLAY_MIN = 0.00005  # Anything smaller displays as 0.00%
+DISPLAY_MIN = 0.00005  # Anything smaller displays as 0.00%
+MAX_POOL = 100
+MAX_REROLL = 3
+
+# Category odds on a single die. Normal: failure (1-5), success (6-9), critical (10).
+# Hunger: bestial (1), failure (2-5), success (6-9), critical (10).
+NORMAL_ODDS = (0.5, 0.4, 0.1)
+HUNGER_ODDS = (0.1, 0.4, 0.4, 0.1)
+
+
+class RollParams(NamedTuple):
+    """The parameters of the roll whose probabilities are being calculated."""
+
+    pool: int
+    hunger: int
+    difficulty: int
+
+
+@dataclass
+class Probabilities:
+    """The probability of each roll outcome, plus average successes and margin."""
+
+    critical: float = 0.0
+    success: float = 0.0
+    messy: float = 0.0
+    fail: float = 0.0
+    total_fail: float = 0.0
+    bestial: float = 0.0
+    total_successes: float = 0.0
+    margin: float = 0.0
 
 
 async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
@@ -38,7 +68,7 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
                 tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",
                 char_filter=lambda c: roll.RollParser(c, syntax),
                 errmsg=f"None of your characters can roll `{syntax}`.",
-                help=__HELP_URL,
+                help=HELP_URL,
             )
             character = await haven.fetch()
 
@@ -46,24 +76,24 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
             character = None
 
         parser = roll.RollParser(character, syntax)
-        params = SN(pool=parser.pool, hunger=parser.hunger, difficulty=parser.difficulty)
-        probabilities = calculate(params.pool, params.hunger, params.difficulty, strategy)
+        params = RollParams(parser.pool, parser.hunger, parser.difficulty)
+        probabilities = calculate(*params, strategy)
 
         await __display_embed(ctx, params, strategy, probabilities)
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
-        await ui.embeds.error(ctx, err, character=character, help_url=__HELP_URL)
+        await ui.embeds.error(ctx, err, character=character, help_url=HELP_URL)
 
 
-async def __display_embed(ctx, params, strategy: str, probs: dict):
+async def __display_embed(ctx, params: RollParams, strategy: str, probs: Probabilities):
     """Display the probabilities in a nice embed."""
-    uncomplicated = probs["success"] + probs["critical"]
+    uncomplicated = probs.success + probs.critical
     description = f"**{uncomplicated:.2%}** success without complication"
-    description += f"\n**{probs['total_successes']:.2f}** average successes"
-    description += f"\n**{probs['margin']:.2f}** average margin"
+    description += f"\n**{probs.total_successes:.2f}** average successes"
+    description += f"\n**{probs.margin:.2f}** average margin"
 
     if strategy is not None:
-        description = f"**{__STRATEGIES[strategy]}**\n\n{description}"
+        description = f"**{STRATEGIES[strategy]}**\n\n{description}"
 
     embed = discord.Embed(
         title=f"Pool {params.pool} | Hunger {params.hunger} | DC {params.difficulty}",
@@ -86,35 +116,35 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     can_emoji = await services.settings.can_emoji(ctx)
     breakdown = []
 
-    if probs["critical"] >= __DISPLAY_MIN:
+    if probs.critical >= DISPLAY_MIN:
         crit = roll.dicemoji.emojify_die(10, False) if can_emoji else ""
-        crit += f"{probs['critical']:.2%} Critical Win"
+        crit += f"{probs.critical:.2%} Critical Win"
         breakdown.append(crit)
 
     success = roll.dicemoji.emojify_die(6, False) if can_emoji else ""
-    success += f"{probs['success']:.2%} Success"
+    success += f"{probs.success:.2%} Success"
     breakdown.append(success)
 
-    if probs["messy"] >= __DISPLAY_MIN:
+    if probs.messy >= DISPLAY_MIN:
         messy = roll.dicemoji.emojify_die(10, True) if can_emoji else ""
-        messy += f"{probs['messy']:.2%} Messy Critical"
+        messy += f"{probs.messy:.2%} Messy Critical"
         breakdown.append(messy)
 
     breakdown.append("------")
 
-    if probs["fail"] >= __DISPLAY_MIN:
+    if probs.fail >= DISPLAY_MIN:
         # Only show regular failure if there's a distinction between it and total failure
         fail = roll.dicemoji.emojify_die(3, False) if can_emoji else ""
-        fail += f"{probs['fail']:.2%} Failure"
+        fail += f"{probs.fail:.2%} Failure"
         breakdown.append(fail)
 
     total = roll.dicemoji.emojify_die(3, True) if can_emoji else ""
-    total += f"{probs['total_fail']:.2%} Total Failure"
+    total += f"{probs.total_fail:.2%} Total Failure"
     breakdown.append(total)
 
-    if probs["bestial"] >= __DISPLAY_MIN:
+    if probs.bestial >= DISPLAY_MIN:
         bestial = roll.dicemoji.emojify_die(1, True) if can_emoji else ""
-        bestial += f"{probs['bestial']:.2%} Bestial Failure"
+        bestial += f"{probs.bestial:.2%} Bestial Failure"
         breakdown.append(bestial)
 
     embed.add_field(name="Breakdown", value="\n".join(breakdown))
@@ -122,14 +152,9 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     await ctx.respond(embed=embed)
 
 
-# Category odds on a single die. Normal: failure (1-5), success (6-9), critical (10).
-# Hunger: bestial (1), failure (2-5), success (6-9), critical (10).
-_NORMAL_ODDS = (0.5, 0.4, 0.1)
-_HUNGER_ODDS = (0.1, 0.4, 0.4, 0.1)
-_MAX_REROLL = 3
-
-
-def calculate(pool: int, hunger: int, difficulty: int, strategy: str | None = None) -> dict:
+def calculate(
+    pool: int, hunger: int, difficulty: int, strategy: str | None = None
+) -> Probabilities:
     """Calculate the exact probability of each outcome, plus average successes and margin.
 
     Mirrors inconnu.Roll: pool includes hunger, and the reroll strategy is applied
@@ -139,22 +164,22 @@ def calculate(pool: int, hunger: int, difficulty: int, strategy: str | None = No
     if difficulty < 0:
         raise ValueError(f"Difficulty cannot be less than 0. (Got `{difficulty}`.)")
     pool = max(1, pool)
-    if pool > 100:
-        raise ValueError(f"Pool cannot exceed 100. (Got `{pool}`.)")
+    if pool > MAX_POOL:
+        raise ValueError(f"Pool cannot exceed {MAX_POOL}. (Got `{pool}`.)")
 
     normal_count = max(0, pool - hunger)
     hunger_count = min(pool, hunger)
 
     # Rerolled dice are normal dice, so their outcomes are drawn from the normal odds
-    rerolls = [_distribution(k, _NORMAL_ODDS) for k in range(_MAX_REROLL + 1)]
+    rerolls = [_distribution(k, NORMAL_ODDS) for k in range(MAX_REROLL + 1)]
 
     # We only care whether hunger dice contain *any* ones, so we collapse those states
     hunger_states = defaultdict(float)
-    for (ones, _, succ, tens), prob in _distribution(hunger_count, _HUNGER_ODDS):
+    for (ones, _, succ, tens), prob in _distribution(hunger_count, HUNGER_ODDS):
         hunger_states[(ones > 0, succ, tens)] += prob
 
-    probs = defaultdict(float)
-    for (fails, succ, tens), normal_prob in _distribution(normal_count, _NORMAL_ODDS):
+    probs = Probabilities()
+    for (fails, succ, tens), normal_prob in _distribution(normal_count, NORMAL_ODDS):
         for (bestial, h_succ, h_tens), hunger_prob in hunger_states.items():
             prob = normal_prob * hunger_prob
             hunger_state = (bestial, h_succ, h_tens, hunger_count)
@@ -176,7 +201,7 @@ def calculate(pool: int, hunger: int, difficulty: int, strategy: str | None = No
                     prob * reroll_prob,
                 )
 
-    probs["margin"] = probs["total_successes"] - difficulty
+    probs.margin = probs.total_successes - difficulty
     return probs
 
 
@@ -200,25 +225,32 @@ def _total_successes(succ: int, tens: int, h_succ: int, h_tens: int) -> int:
     return succ + h_succ + all_tens + all_tens - all_tens % 2
 
 
-def _tally(probs: dict, succ: int, tens: int, hunger_state: tuple, difficulty: int, prob: float):
+def _tally(
+    probs: Probabilities,
+    succ: int,
+    tens: int,
+    hunger_state: tuple,
+    difficulty: int,
+    prob: float,
+):
     """Add a final dice state's probability to its outcome and to the success average."""
     bestial, h_succ, h_tens, _ = hunger_state
     total = _total_successes(succ, tens, h_succ, h_tens)
-    probs["total_successes"] += prob * total
+    probs.total_successes += prob * total
 
     if total >= difficulty and total > 0:
-        if tens + h_tens >= 2:
-            outcome = "messy" if h_tens > 0 else "critical"
+        if tens + h_tens < 2:
+            probs.success += prob
+        elif h_tens > 0:
+            probs.messy += prob
         else:
-            outcome = "success"
+            probs.critical += prob
     elif bestial:
-        outcome = "bestial"
+        probs.bestial += prob
     elif total > 0:
-        outcome = "fail"
+        probs.fail += prob
     else:
-        outcome = "total_fail"
-
-    probs[outcome] += prob
+        probs.total_fail += prob
 
 
 def _can_reroll(
@@ -253,17 +285,17 @@ def _reroll(strategy: str, fails: int, succ: int, tens: int) -> tuple[int, int, 
 
     Mirrors the reroll helpers in inconnu.roll.roll."""
     if strategy == "reroll_failures":
-        return succ, tens, min(fails, _MAX_REROLL)
+        return succ, tens, min(fails, MAX_REROLL)
 
     if strategy == "maximize_criticals":
-        rerolled_fails = min(fails, _MAX_REROLL)
-        rerolled_succ = min(succ, _MAX_REROLL - rerolled_fails)
+        rerolled_fails = min(fails, MAX_REROLL)
+        rerolled_succ = min(succ, MAX_REROLL - rerolled_fails)
         return succ - rerolled_succ, tens, rerolled_fails + rerolled_succ
 
     if strategy == "avoid_messy":
-        rerolled_tens = min(tens, _MAX_REROLL)
+        rerolled_tens = min(tens, MAX_REROLL)
         return succ, tens - rerolled_tens, rerolled_tens
 
     # risky: all tens (at most three, per can_avoid_messy_critical) plus failures to make three
-    rerolled_fails = min(fails, _MAX_REROLL - tens)
+    rerolled_fails = min(fails, MAX_REROLL - tens)
     return succ, 0, tens + rerolled_fails

@@ -1,6 +1,7 @@
 """Tests for inconnu/reference/probabilities.py."""
 
 import time
+from dataclasses import asdict
 from itertools import combinations_with_replacement
 from math import factorial
 from unittest.mock import patch
@@ -92,19 +93,19 @@ def test_calculate_matches_roll(strategy: str | None):
                 expected = _reference(pool, hunger, difficulty, strategy)
                 actual = calculate(pool, hunger, difficulty, strategy)
                 params = (pool, hunger, difficulty, strategy)
-                assert {k: actual[k] for k in _KEYS} == pytest.approx(expected), params
+                assert asdict(actual) == pytest.approx(expected), params
 
 
 @pytest.mark.parametrize("strategy", _STRATEGIES)
 def test_calculate_outcomes_sum_to_one(strategy: str | None):
     """Test outcome probabilities are exhaustive for a large pool."""
     probs = calculate(30, 5, 8, strategy)
-    assert sum(probs[outcome] for outcome in _OUTCOMES) == pytest.approx(1.0)
+    assert sum(getattr(probs, outcome) for outcome in _OUTCOMES) == pytest.approx(1.0)
 
 
 def test_calculate_hunger_exceeding_pool():
     """Test hunger greater than the pool is capped to the pool, as in Roll."""
-    assert calculate(2, 4, 1) == pytest.approx(calculate(2, 2, 1))
+    assert asdict(calculate(2, 4, 1)) == pytest.approx(asdict(calculate(2, 2, 1)))
 
 
 def test_calculate_huge_pool_is_fast():

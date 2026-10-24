@@ -11,8 +11,10 @@ from discord.ui import Button
 
 import inconnu
 import services
-from ctx import AppInteraction
+from ctx import AppCtx, AppInteraction, AppInvocation
+from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
+from models import VChar
 from ui.views.reportingview import ReportingView
 from utils import get_avatar, get_message
 from utils.text import de_camel
@@ -35,7 +37,7 @@ class _Surge(Enum):
 class _ButtonState:
     """The owner's progress through the roll's buttons."""
 
-    strategy: str | None = None
+    strategy: Strategy | None = None
     wp_marked: bool = False
     surge: _Surge = _Surge.UNUSED
     timed_out: bool = False
@@ -49,7 +51,16 @@ class _ButtonState:
 class RollDisplay(ReportingView):
     """Display and manipulate roll outcomes. Provides buttons for rerolls, WP, and Rouse."""
 
-    def __init__(self, ctx, outcome, comment, character, owner, listener, timeout):
+    def __init__(
+        self,
+        ctx: AppCtx,
+        outcome: Roll,
+        comment: str | None,
+        character: VChar | None,
+        owner: discord.Member | discord.User,
+        listener: Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]] | None,
+        timeout: Callable[[Roll], Awaitable[None]] | None,
+    ):
         super().__init__(timeout=600)
         self.ctx = ctx
         self.outcome = outcome
@@ -81,19 +92,19 @@ class RollDisplay(ReportingView):
 
     async def reroll_failures(self, interaction: AppInteraction):
         """Re-roll up to three failing dice."""
-        await self._reroll(interaction, "reroll_failures")
+        await self._reroll(interaction, Strategy.REROLL_FAILURES)
 
     async def maximize_criticals(self, interaction: AppInteraction):
         """Re-roll up to three non-critical dice."""
-        await self._reroll(interaction, "maximize_criticals")
+        await self._reroll(interaction, Strategy.MAXIMIZE_CRITICALS)
 
     async def avoid_messy(self, interaction: AppInteraction):
         """Re-roll up to three critical dice."""
-        await self._reroll(interaction, "avoid_messy")
+        await self._reroll(interaction, Strategy.AVOID_MESSY)
 
     async def risky_avoid_messy(self, interaction: AppInteraction):
         """Re-roll up to three critical dice plus failures."""
-        await self._reroll(interaction, "risky")
+        await self._reroll(interaction, Strategy.RISKY)
 
     async def mark_wp(self, interaction: AppInteraction):
         """Mark Superficial Willpower damage for the reroll."""
@@ -117,12 +128,12 @@ class RollDisplay(ReportingView):
         await self._surge(interaction, False)
 
     async def rouse_with_reroll(self, interaction: AppInteraction):
-        """Make the surge's Rouse check with a reroll."""
+        """Make the surge's Rouse check, rolling two dice and keeping the higher."""
         await self._surge(interaction, True)
 
-    async def _reroll(self, interaction: AppInteraction, strategy: str):
+    async def _reroll(self, interaction: AppInteraction, strategy: Strategy):
         """Reroll the outcome with the given strategy."""
-        self.outcome.reroll(strategy)
+        self.outcome.reroll(strategy.value)
         self.state.strategy = strategy
         await self._update(interaction, embed=self.embed)
         await self._log_roll(interaction, None)
@@ -132,6 +143,10 @@ class RollDisplay(ReportingView):
 
     async def _surge(self, interaction: AppInteraction, reroll: bool):
         """Mark the surge as used and make the Rouse check."""
+        if self.character is None:
+            # Surge buttons only appear for characters
+            return
+
         if self.state.rerolled:
             self.state.surge = _Surge.AFTER_REROLL
         else:
@@ -144,10 +159,12 @@ class RollDisplay(ReportingView):
         self._render_buttons()
         await interaction.response.edit_message(view=self, **kwargs)
 
-    async def _log_roll(self, source, message_id: int | None):
+    async def _log_roll(self, source: AppInvocation, message_id: int | None):
         """Log the roll for statistics. Rerolls are logged without a message ID."""
-        guild_id = source.guild.id if source.guild is not None else None
-        channel_id = source.channel.id if source.guild is not None else None
+        if source.guild is not None and source.channel is not None:
+            guild_id, channel_id = source.guild.id, source.channel.id
+        else:
+            guild_id = channel_id = None
 
         await inconnu.stats.log_roll(
             guild_id,
@@ -222,36 +239,32 @@ class RollDisplay(ReportingView):
     def _reroll_buttons(self) -> list[Button]:
         """The Willpower reroll buttons. After a reroll, they're all disabled."""
         if not self.outcome.can_reroll:
-            # They don't have any Attributes in their pool. This will only show
-            # if they used a Trait in the roll. If they just used numbers, then
-            # they will always get re-roll buttons.
-            #
-            # Examples: Resolve + Composure: WP NOT allowed.
-            #           Strength + Brawl: WP allowed.
+            # None of the supplied Traits are Attributes. (This never fires if
+            # no Traits are given.)
             return [self._button("WP Unavailable (p.158)", SECONDARY, True)]
 
         strategies = [
             (
                 "Re-Roll Failures",
-                "reroll_failures",
+                Strategy.REROLL_FAILURES,
                 self.outcome.can_reroll_failures,
                 self.reroll_failures,
             ),
             (
                 "Max Crits",
-                "maximize_criticals",
+                Strategy.MAXIMIZE_CRITICALS,
                 self.outcome.can_maximize_criticals,
                 self.maximize_criticals,
             ),
             (
                 "Avoid Messy",
-                "avoid_messy",
+                Strategy.AVOID_MESSY,
                 self.outcome.can_avoid_messy_critical,
                 self.avoid_messy,
             ),
             (
                 "Risky Avoid",
-                "risky",
+                Strategy.RISKY,
                 self.outcome.can_risky_messy_critical,
                 self.risky_avoid_messy,
             ),
@@ -336,11 +349,11 @@ class RollDisplay(ReportingView):
             )
 
         embed.add_field(name="Dice", value=str(self.outcome.pool))
-        embed.add_field(name="Hunger", value=str(self.hunger))
+        embed.add_field(name="Hunger", value=self.hunger)
         embed.add_field(name="Difficulty", value=str(self.outcome.difficulty))
 
-        if self.outcome.pool_str:
-            embed.add_field(name="Pool", value=self.pool_str)
+        if pool_str := self.pool_str:
+            embed.add_field(name="Pool", value=pool_str)
 
         # Show what the roll originally was
         if self.state.rerolled:
@@ -363,7 +376,7 @@ class RollDisplay(ReportingView):
         return self.owner.display_name
 
     @property
-    def hunger(self) -> str | int:
+    def hunger(self) -> str:
         """
         The Hunger for the roll. This uses the character's Hunger if possible and
         falls back to the hunger dice count if unavailable.
@@ -384,11 +397,14 @@ class RollDisplay(ReportingView):
 
         # We were given a specific Hunger (or implicit 0), a character wasn't
         # given, or possibly both.
-        return self.outcome.hunger_rating
+        return str(self.outcome.hunger_rating)
 
     @property
-    def pool_str(self) -> str:
+    def pool_str(self) -> str | None:
         """The pool string, made nicer to read."""
+        if not self.outcome.pool_str:
+            return None
+
         splitted = de_camel(self.outcome.pool_str).split()
 
         # Uppercase each word in the pool. We can't use .title(), because
@@ -398,18 +414,25 @@ class RollDisplay(ReportingView):
         return " ".join(splitted)
 
     @property
-    def comment(self):
+    def comment(self) -> str | None:
         """The original comment, plus any impairment string."""
-        if self.character is not None:
-            if (impairment := self.character.impairment) is not None:
-                comment = (self._comment + "\n") if self._comment else ""
-                return comment + impairment
+        if self.character is not None and self.character.impairment is not None:
+            comment = (self._comment + "\n") if self._comment else ""
+            return comment + self.character.impairment
         return self._comment
 
     @property
-    def icon(self):
-        """The icon for the embed."""
-        if self.character is not None and not self.character.is_pc:
+    def icon(self) -> str | discord.Asset:
+        """
+        The embed author's icon. Normally, this is the roller's avatar.
+
+        SPCs are owned by the bot rather than a player, so showing the avatar
+        of whichever Storyteller rolled for one would be misleading. Instead,
+        SPC rolls use the guild's icon (or no icon, if the guild doesn't have
+        one). SPCs only exist in guilds; the guild check is for the type
+        checker.
+        """
+        if self.character is not None and not self.character.is_pc and self.ctx.guild is not None:
             return self.ctx.guild.icon or ""
         return get_avatar(self.owner)
 

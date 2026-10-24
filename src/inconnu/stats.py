@@ -10,8 +10,8 @@ from models import VChar, VGuild
 
 
 async def log_roll(
-    guild: int,
-    channel: int,
+    guild: int | None,
+    channel: int | None,
     user: int,
     message: int | None,
     char: VChar | None,
@@ -91,8 +91,8 @@ async def guild_renamed(guild: discord.Guild, new_name: str):
 
 
 def _gen_roll(
-    guild: int,
-    channel: int,
+    guild: int | None,
+    channel: int | None,
     user: int,
     message: int | None,
     char: VChar | None,

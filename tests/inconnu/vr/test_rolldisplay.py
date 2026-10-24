@@ -1,7 +1,8 @@
 """Tests for inconnu/vr/rolldisplay.py embed, button generation, and button presses."""
 
+from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass, field
-from typing import cast
+from typing import Any, cast
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import discord
@@ -18,6 +19,8 @@ from tests.characters import gen_char
 AVATAR = "https://example.com/avatar.png"
 GUILD_ICON = "https://example.com/guild.png"
 MESSAGE_ID = 4
+
+type PressHelper = Callable[["Screen"], Awaitable[None]]
 
 
 @pytest.fixture
@@ -52,14 +55,14 @@ def ctx() -> AppCtx:
 
 
 @pytest.fixture(autouse=True)
-def mock_can_emoji():
+def mock_can_emoji() -> Iterator[AsyncMock]:
     """Allow emoji by default."""
     with patch("services.settings.can_emoji", new_callable=AsyncMock, return_value=True) as mock:
         yield mock
 
 
 @pytest.fixture(autouse=True)
-def mock_emojis():
+def mock_emojis() -> Iterator[None]:
     """Replace dice emoji with readable placeholders."""
     names = [
         f"{kind}_{face}" for kind in ("ln", "h") for face in ("bestial", "crit", "succ", "fail")
@@ -69,14 +72,14 @@ def mock_emojis():
 
 
 @pytest.fixture(autouse=True)
-def mock_log_roll():
+def mock_log_roll() -> Iterator[AsyncMock]:
     """Prevent roll logging."""
     with patch("inconnu.stats.log_roll", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture(autouse=True)
-def mock_get_message():
+def mock_get_message() -> Iterator[AsyncMock]:
     """Give the first response a message ID."""
     message = MagicMock(spec=discord.Message)
     message.id = MESSAGE_ID
@@ -86,21 +89,21 @@ def mock_get_message():
 
 
 @pytest.fixture(autouse=True)
-def mock_rouse():
+def mock_rouse() -> Iterator[AsyncMock]:
     """Prevent surge Rouse checks."""
     with patch("inconnu.misc.rouse", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture(autouse=True)
-def mock_char_display():
+def mock_char_display() -> Iterator[AsyncMock]:
     """Prevent the Willpower Spent display."""
     with patch("inconnu.character.display", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture(autouse=True)
-def mock_char_save():
+def mock_char_save() -> Iterator[AsyncMock]:
     """Prevent character saves."""
     with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock:
         yield mock
@@ -172,7 +175,14 @@ def button_summary(buttons: list | None) -> list[tuple] | None:
     ],
 )
 async def test_embed_outcome_presentation(
-    ctx, owner, normal, hunger, difficulty, title, color, thumbnail
+    ctx: AppCtx,
+    owner: discord.Member,
+    normal: list[int],
+    hunger: list[int],
+    difficulty: int,
+    title: str,
+    color: int,
+    thumbnail: str,
 ):
     """Each outcome has its own title, color, and thumbnail."""
     display = make_display(ctx, owner, make_roll(normal, hunger, difficulty))
@@ -184,7 +194,7 @@ async def test_embed_outcome_presentation(
     assert embed.thumbnail.url == f"https://assets.inconnu.app/dice/{thumbnail}.webp"
 
 
-async def test_embed_after_reroll(ctx, owner):
+async def test_embed_after_reroll(ctx: AppCtx, owner: discord.Member):
     """Rerolls prefix the title, add the strategy, and show the original outcome."""
     roll = make_roll([6, 2], [], 2)
     display = make_display(ctx, owner, roll)
@@ -207,7 +217,7 @@ async def test_embed_after_reroll(ctx, owner):
 # Author line
 
 
-async def test_author_without_character(ctx, owner):
+async def test_author_without_character(ctx: AppCtx, owner: discord.Member):
     """Without a character, the author is the player, and DC 0 is omitted."""
     display = make_display(ctx, owner, make_roll([6], [], 0))
     embed = await render(display)
@@ -217,7 +227,7 @@ async def test_author_without_character(ctx, owner):
     assert embed.author.icon_url == AVATAR
 
 
-async def test_author_with_character(ctx, owner):
+async def test_author_with_character(ctx: AppCtx, owner: discord.Member):
     """A PC's name is shown with the player's avatar."""
     display = make_display(ctx, owner, make_roll([6], [], 3), character=make_char("vampire"))
     embed = await render(display)
@@ -227,7 +237,7 @@ async def test_author_with_character(ctx, owner):
     assert embed.author.icon_url == AVATAR
 
 
-async def test_author_with_spc(ctx, owner):
+async def test_author_with_spc(ctx: AppCtx, owner: discord.Member):
     """An SPC gets the SPC marker and the guild icon."""
     char = make_char("vampire")
     char.user = VChar.SPC_OWNER
@@ -242,7 +252,7 @@ async def test_author_with_spc(ctx, owner):
 # Dice field
 
 
-async def test_dice_field_emoji(ctx, owner):
+async def test_dice_field_emoji(ctx: AppCtx, owner: discord.Member):
     """Dice are shown as emoji in rolled order, normal then hunger."""
     display = make_display(ctx, owner, make_roll([2, 10, 6], [1, 7], 3))
     embed = await render(display)
@@ -253,7 +263,7 @@ async def test_dice_field_emoji(ctx, owner):
     assert not field.inline
 
 
-async def test_dice_field_emoji_max_pool(ctx, owner):
+async def test_dice_field_emoji_max_pool(ctx: AppCtx, owner: discord.Member):
     """A pool of exactly 30 still uses emoji."""
     display = make_display(ctx, owner, make_roll([6] * 30, []))
     embed = await render(display)
@@ -261,7 +271,9 @@ async def test_dice_field_emoji_max_pool(ctx, owner):
     assert ":ln_succ:" in embed.fields[0].value
 
 
-async def test_dice_field_text_when_emoji_disallowed(ctx, owner, mock_can_emoji):
+async def test_dice_field_text_when_emoji_disallowed(
+    ctx: AppCtx, owner: discord.Member, mock_can_emoji: AsyncMock
+):
     """Accessibility mode shows sorted dice as text."""
     mock_can_emoji.return_value = False
     display = make_display(ctx, owner, make_roll([2, 10, 6], [1, 7], 3))
@@ -273,7 +285,7 @@ async def test_dice_field_text_when_emoji_disallowed(ctx, owner, mock_can_emoji)
     assert not field.inline
 
 
-async def test_dice_field_text_when_pool_too_large(ctx, owner):
+async def test_dice_field_text_when_pool_too_large(ctx: AppCtx, owner: discord.Member):
     """Pools over 30 dice fall back to text."""
     display = make_display(ctx, owner, make_roll([6] * 31, []))
     embed = await render(display)
@@ -283,7 +295,9 @@ async def test_dice_field_text_when_pool_too_large(ctx, owner):
     )
 
 
-async def test_dice_field_text_hunger_only(ctx, owner, mock_can_emoji):
+async def test_dice_field_text_hunger_only(
+    ctx: AppCtx, owner: discord.Member, mock_can_emoji: AsyncMock
+):
     """With no normal dice, only the Hunger line is shown."""
     mock_can_emoji.return_value = False
     display = make_display(ctx, owner, make_roll([], [3, 8]))
@@ -295,7 +309,7 @@ async def test_dice_field_text_hunger_only(ctx, owner, mock_can_emoji):
 # Stat fields
 
 
-async def test_stat_fields(ctx, owner):
+async def test_stat_fields(ctx: AppCtx, owner: discord.Member):
     """Dice, Hunger, and Difficulty are inline fields in order."""
     display = make_display(ctx, owner, make_roll([6, 6, 6], [2, 2], 4))
     embed = await render(display)
@@ -315,7 +329,7 @@ async def test_stat_fields(ctx, owner):
         ("Wits + XYZ", "Wits + XYZ"),
     ],
 )
-async def test_pool_field(ctx, owner, pool_str, expected):
+async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str, expected: str):
     """Pool strings are de-cameled and capitalized without lowercasing."""
     display = make_display(ctx, owner, make_roll([6], [], pool_str=pool_str))
     embed = await render(display)
@@ -332,8 +346,8 @@ async def test_pool_field(ctx, owner, pool_str, expected):
 @pytest.mark.parametrize(
     "splat,char_hunger,hunger_dice,expected",
     [
-        (None, None, [5, 5], "2"),
-        (None, None, [], "0"),
+        (None, 0, [5, 5], "2"),
+        (None, 0, [], "0"),
         ("vampire", 0, [], "*Sated*"),
         ("vampire", 2, [5, 5], "2 (Current)"),
         ("vampire", 3, [5], "1"),
@@ -344,7 +358,14 @@ async def test_pool_field(ctx, owner, pool_str, expected):
         ("ghoul", 0, [], "*Mortal*"),
     ],
 )
-async def test_hunger_field(ctx, owner, splat, char_hunger, hunger_dice, expected):
+async def test_hunger_field(
+    ctx: AppCtx,
+    owner: discord.Member,
+    splat: str | None,
+    char_hunger: int,
+    hunger_dice: list[int],
+    expected: str,
+):
     """The Hunger field reflects the character's Hunger and splat."""
     char = make_char(splat, char_hunger) if splat is not None else None
     display = make_display(ctx, owner, make_roll([6], hunger_dice), character=char)
@@ -353,7 +374,7 @@ async def test_hunger_field(ctx, owner, splat, char_hunger, hunger_dice, expecte
     assert field_map(embed)["Hunger"] == expected
 
 
-async def test_hunger_field_sated_requires_no_hunger_dice(ctx, owner):
+async def test_hunger_field_sated_requires_no_hunger_dice(ctx: AppCtx, owner: discord.Member):
     """A Hunger 0 vampire who rolls Hunger dice anyway sees the rating."""
     display = make_display(
         ctx, owner, make_roll([6], [5], hunger_rating=1), character=make_char("vampire", 0)
@@ -366,7 +387,7 @@ async def test_hunger_field_sated_requires_no_hunger_dice(ctx, owner):
 # Footer
 
 
-async def test_footer_absent(ctx, owner):
+async def test_footer_absent(ctx: AppCtx, owner: discord.Member):
     """No comment and no impairment means no footer."""
     display = make_display(ctx, owner, make_roll([6], []), character=make_char("vampire"))
     embed = await render(display)
@@ -374,7 +395,7 @@ async def test_footer_absent(ctx, owner):
     assert embed.footer is None
 
 
-async def test_footer_comment(ctx, owner):
+async def test_footer_comment(ctx: AppCtx, owner: discord.Member):
     """The comment is the footer."""
     display = make_display(ctx, owner, make_roll([6], []), comment="Hello")
     embed = await render(display)
@@ -383,7 +404,7 @@ async def test_footer_comment(ctx, owner):
     assert embed.footer.text == "Hello"
 
 
-async def test_footer_impairment_only(ctx, owner):
+async def test_footer_impairment_only(ctx: AppCtx, owner: discord.Member):
     """Impairment is shown even without a comment."""
     char = make_char("vampire")
     char.willpower = "xxxxx"
@@ -394,7 +415,7 @@ async def test_footer_impairment_only(ctx, owner):
     assert embed.footer.text == char.impairment
 
 
-async def test_footer_comment_and_impairment(ctx, owner):
+async def test_footer_comment_and_impairment(ctx: AppCtx, owner: discord.Member):
     """Impairment is appended to the comment on a new line."""
     char = make_char("vampire")
     char.willpower = "xxxxx"
@@ -425,7 +446,9 @@ async def test_footer_comment_and_impairment(ctx, owner):
         (None, None, False),
     ],
 )
-async def test_surging(ctx, owner, pool_str, comment, expected):
+async def test_surging(
+    ctx: AppCtx, owner: discord.Member, pool_str: str | None, comment: str | None, expected: bool
+):
     """Vampires surge when "surge" appears in the pool or comment."""
     roll = make_roll([6], [], pool_str=pool_str)
     display = make_display(ctx, owner, roll, comment=comment, character=make_char("vampire"))
@@ -434,7 +457,7 @@ async def test_surging(ctx, owner, pool_str, comment, expected):
 
 
 @pytest.mark.parametrize("splat", ["thin-blood", "ghoul"])
-async def test_surging_other_splats(ctx, owner, splat):
+async def test_surging_other_splats(ctx: AppCtx, owner: discord.Member, splat: str):
     """Thin-bloods and ghouls can surge."""
     char = make_char(splat)
     display = make_display(ctx, owner, make_roll([6], []), comment="surge", character=char)
@@ -442,7 +465,7 @@ async def test_surging_other_splats(ctx, owner, splat):
     assert display.surging
 
 
-async def test_surging_mortal(ctx, owner):
+async def test_surging_mortal(ctx: AppCtx, owner: discord.Member):
     """Mortals never surge."""
     char = make_char("mortal")
     display = make_display(ctx, owner, make_roll([6], []), comment="surge", character=char)
@@ -450,14 +473,14 @@ async def test_surging_mortal(ctx, owner):
     assert not display.surging
 
 
-async def test_surging_no_character(ctx, owner):
+async def test_surging_no_character(ctx: AppCtx, owner: discord.Member):
     """Rolls without a character never surge."""
     display = make_display(ctx, owner, make_roll([6], []), comment="surge")
 
     assert not display.surging
 
 
-async def test_surging_from_impairment_comment(ctx, owner):
+async def test_surging_from_impairment_comment(ctx: AppCtx, owner: discord.Member):
     """Surge detection checks the comment as displayed, including impairment."""
     char = make_char("vampire")
     char.willpower = "xxxxx"
@@ -473,7 +496,7 @@ SECONDARY = discord.ButtonStyle.secondary
 DANGER = discord.ButtonStyle.danger
 
 
-async def test_buttons_all_enabled(ctx, owner):
+async def test_buttons_all_enabled(ctx: AppCtx, owner: discord.Member):
     """A messy crit with failures enables every strategy."""
     display = make_display(ctx, owner, make_roll([10, 2], [10], 1))
 
@@ -485,7 +508,7 @@ async def test_buttons_all_enabled(ctx, owner):
     ]
 
 
-async def test_buttons_partially_disabled(ctx, owner):
+async def test_buttons_partially_disabled(ctx: AppCtx, owner: discord.Member):
     """Unavailable strategies are shown but disabled."""
     display = make_display(ctx, owner, make_roll([6, 6], []))
 
@@ -497,7 +520,7 @@ async def test_buttons_partially_disabled(ctx, owner):
     ]
 
 
-async def test_buttons_max_crits_disabled(ctx, owner):
+async def test_buttons_max_crits_disabled(ctx: AppCtx, owner: discord.Member):
     """Max Crits is disabled when it can't help, even if failures can be rerolled."""
     display = make_display(ctx, owner, make_roll([2], [5]))
 
@@ -509,7 +532,7 @@ async def test_buttons_max_crits_disabled(ctx, owner):
     ]
 
 
-async def test_buttons_all_disabled(ctx, owner):
+async def test_buttons_all_disabled(ctx: AppCtx, owner: discord.Member):
     """With no useful strategy, all buttons are still shown, but disabled."""
     display = make_display(ctx, owner, make_roll([10], []))
 
@@ -521,7 +544,7 @@ async def test_buttons_all_disabled(ctx, owner):
     ]
 
 
-async def test_buttons_wp_unavailable(ctx, owner):
+async def test_buttons_wp_unavailable(ctx: AppCtx, owner: discord.Member):
     """Pools without Attributes or Skills can't use Willpower."""
     display = make_display(ctx, owner, make_roll([6, 2], [], pool_str="Hunger + Potence"))
 
@@ -530,7 +553,7 @@ async def test_buttons_wp_unavailable(ctx, owner):
     ]
 
 
-async def test_buttons_with_surge(ctx, owner):
+async def test_buttons_with_surge(ctx: AppCtx, owner: discord.Member):
     """Surging adds Rouse buttons on the second row."""
     display = make_display(
         ctx, owner, make_roll([6, 2], []), comment="surge", character=make_char("vampire")
@@ -546,7 +569,7 @@ async def test_buttons_with_surge(ctx, owner):
     ]
 
 
-async def test_buttons_wp_unavailable_with_surge(ctx, owner):
+async def test_buttons_wp_unavailable_with_surge(ctx: AppCtx, owner: discord.Member):
     """Rouse buttons still appear when Willpower is unavailable."""
     roll = make_roll([6, 2], [], pool_str="Potence")
     display = make_display(ctx, owner, roll, comment="surge", character=make_char("vampire"))
@@ -561,7 +584,7 @@ async def test_buttons_wp_unavailable_with_surge(ctx, owner):
 # Buttons (after reroll)
 
 
-async def test_buttons_rerolled_no_character(ctx, owner):
+async def test_buttons_rerolled_no_character(ctx: AppCtx, owner: discord.Member):
     """Character-less rerolls have no buttons."""
     screen = await show(make_display(ctx, owner, make_roll([6, 2], [])))
     await reroll(screen)
@@ -571,7 +594,7 @@ async def test_buttons_rerolled_no_character(ctx, owner):
     assert not screen.listening
 
 
-async def test_buttons_rerolled_with_character(ctx, owner):
+async def test_buttons_rerolled_with_character(ctx: AppCtx, owner: discord.Member):
     """Characters can mark Willpower after a reroll."""
     display = make_display(ctx, owner, make_roll([6, 2], []), character=make_char("vampire"))
     screen = await show(display)
@@ -580,7 +603,7 @@ async def test_buttons_rerolled_with_character(ctx, owner):
     assert screen.buttons == [("Mark WP Use", PRIMARY, False, None)]
 
 
-async def test_buttons_rerolled_with_surge(ctx, owner):
+async def test_buttons_rerolled_with_surge(ctx: AppCtx, owner: discord.Member):
     """Unused surges remain available after a reroll, on the first row."""
     display = make_display(
         ctx, owner, make_roll([6, 2], []), comment="surge", character=make_char("vampire")
@@ -595,7 +618,7 @@ async def test_buttons_rerolled_with_surge(ctx, owner):
     ]
 
 
-async def test_buttons_rerolled_after_surging(ctx, owner):
+async def test_buttons_rerolled_after_surging(ctx: AppCtx, owner: discord.Member):
     """Rouse buttons disappear once the surge is used."""
     display = make_display(
         ctx, owner, make_roll([6, 2], []), comment="surge", character=make_char("vampire")
@@ -625,7 +648,7 @@ class Screen:
     view: discord.ui.View | None = None
     ephemeral: list[str] = field(default_factory=list)
 
-    def record(self, **kwargs):
+    def record(self, **kwargs: Any):
         """Apply a message send or edit. Omitted keys keep their current values."""
         if "embed" in kwargs:
             self.embed = kwargs["embed"]
@@ -633,7 +656,7 @@ class Screen:
             self.view = kwargs["view"]
             self.buttons = button_summary(self.view.children) if self.view else None
 
-    def record_ephemeral(self, content: str, **_):
+    def record_ephemeral(self, content: str, **_: Any):
         """Record an ephemeral reply to a button press."""
         self.ephemeral.append(content)
 
@@ -643,7 +666,7 @@ class Screen:
         return self.view is not None and not self.view.is_finished()
 
 
-def fake_interaction(screen: Screen, user: discord.Member) -> AsyncMock:
+def fake_interaction(screen: Screen, user: discord.Member | discord.User) -> AsyncMock:
     """Create an interaction whose responses update the screen."""
     ctx = screen.display.ctx
     inter = AsyncMock(spec=discord.Interaction)
@@ -663,11 +686,11 @@ async def show(display: RollDisplay) -> Screen:
     screen = Screen(display)
     original = fake_interaction(screen, display.owner)
 
-    def respond(**kwargs):
+    def respond(**kwargs: Any):
         screen.record(**kwargs)
         return original
 
-    display.ctx.respond.side_effect = respond
+    cast(AsyncMock, display.ctx.respond).side_effect = respond
     await display.display()
     return screen
 
@@ -749,7 +772,7 @@ async def time_out(screen: Screen):
 # Showing a roll
 
 
-async def test_show_initial(ctx, owner):
+async def test_show_initial(ctx: AppCtx, owner: discord.Member):
     """The first send shows the embed and the reroll buttons."""
     screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2)))
     assert screen.embed is not None
@@ -764,21 +787,21 @@ async def test_show_initial(ctx, owner):
     assert screen.listening
 
 
-async def test_show_all_disabled_stops_listening(ctx, owner):
+async def test_show_all_disabled_stops_listening(ctx: AppCtx, owner: discord.Member):
     """If no button can be pressed, the buttons stop listening right away."""
     screen = await show(make_display(ctx, owner, make_roll([10], [])))
 
     assert not screen.listening
 
 
-async def test_show_wp_unavailable_stops_listening(ctx, owner):
+async def test_show_wp_unavailable_stops_listening(ctx: AppCtx, owner: discord.Member):
     """The lone WP Unavailable button doesn't listen."""
     screen = await show(make_display(ctx, owner, make_roll([6], [], pool_str="Potence")))
 
     assert not screen.listening
 
 
-async def test_show_wp_unavailable_with_surge_listens(ctx, owner):
+async def test_show_wp_unavailable_with_surge_listens(ctx: AppCtx, owner: discord.Member):
     """Rouse buttons keep the view listening when WP is unavailable."""
     roll = make_roll([6], [], pool_str="Potence")
     display = make_display(ctx, owner, roll, comment="surge", character=make_char("vampire"))
@@ -790,7 +813,7 @@ async def test_show_wp_unavailable_with_surge_listens(ctx, owner):
 # Ownership
 
 
-async def test_press_by_non_owner(ctx, owner, intruder):
+async def test_press_by_non_owner(ctx: AppCtx, owner: discord.Member, intruder: discord.Member):
     """Only the roll's owner can press its buttons."""
     screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2)))
     buttons = screen.buttons
@@ -816,7 +839,9 @@ async def test_press_by_non_owner(ctx, owner, intruder):
         (press_risky_avoid, "Risky Avoid", "Avoid Messy (Risky)"),
     ],
 )
-async def test_reroll_without_character(ctx, owner, press_strategy, label, descriptor):
+async def test_reroll_without_character(
+    ctx: AppCtx, owner: discord.Member, press_strategy: PressHelper, label: str, descriptor: str
+):
     """Without a character, the pressed button grays out and all buttons are disabled."""
     screen = await show(make_display(ctx, owner, make_roll([10, 2], [10], 1)))
 
@@ -835,7 +860,7 @@ async def test_reroll_without_character(ctx, owner, press_strategy, label, descr
     assert not screen.listening
 
 
-async def test_reroll_with_character(ctx, owner):
+async def test_reroll_with_character(ctx: AppCtx, owner: discord.Member):
     """With a character, the reroll buttons are replaced by Mark WP Use."""
     display = make_display(ctx, owner, make_roll([6, 2], [], 2), character=make_char("vampire"))
     screen = await show(display)
@@ -849,7 +874,7 @@ async def test_reroll_with_character(ctx, owner):
     assert screen.listening
 
 
-async def test_reroll_with_character_surging(ctx, owner):
+async def test_reroll_with_character_surging(ctx: AppCtx, owner: discord.Member):
     """Unused surge buttons carry over after a reroll."""
     display = make_display(
         ctx, owner, make_roll([6, 2], [], 2), comment="surge", character=make_char("vampire")
@@ -867,7 +892,7 @@ async def test_reroll_with_character_surging(ctx, owner):
 
 
 @pytest.mark.parametrize("has_character", [False, True])
-async def test_reroll_notifies_listener(ctx, owner, has_character):
+async def test_reroll_notifies_listener(ctx: AppCtx, owner: discord.Member, has_character: bool):
     """The listener receives the rerolled outcome."""
     char = make_char("vampire") if has_character else None
     roll = make_roll([6, 2], [], 2)
@@ -883,7 +908,9 @@ async def test_reroll_notifies_listener(ctx, owner, has_character):
 # Willpower
 
 
-async def test_mark_wp(ctx, owner, mock_char_save, mock_char_display):
+async def test_mark_wp(
+    ctx: AppCtx, owner: discord.Member, mock_char_save: AsyncMock, mock_char_display: AsyncMock
+):
     """Marking WP adds Superficial Willpower damage and disables the button."""
     char = make_char("vampire")
     screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), character=char))
@@ -909,7 +936,13 @@ async def test_mark_wp(ctx, owner, mock_char_save, mock_char_display):
     "press_surge,oblivion",
     [(press_rouse, False), (press_rouse_reroll, True)],
 )
-async def test_surge(ctx, owner, mock_rouse, press_surge, oblivion):
+async def test_surge(
+    ctx: AppCtx,
+    owner: discord.Member,
+    mock_rouse: AsyncMock,
+    press_surge: PressHelper,
+    oblivion: bool,
+):
     """Surging Rouses once and disables both surge buttons."""
     char = make_char("vampire")
     display = make_display(ctx, owner, make_roll([6, 2], [], 2), comment="surge", character=char)
@@ -929,7 +962,7 @@ async def test_surge(ctx, owner, mock_rouse, press_surge, oblivion):
     assert screen.listening
 
 
-async def test_surge_then_reroll(ctx, owner):
+async def test_surge_then_reroll(ctx: AppCtx, owner: discord.Member):
     """Used surges don't come back after a reroll."""
     display = make_display(
         ctx, owner, make_roll([6, 2], [], 2), comment="surge", character=make_char("vampire")
@@ -943,7 +976,7 @@ async def test_surge_then_reroll(ctx, owner):
     assert screen.buttons == [("Mark WP Use", PRIMARY, False, None)]
 
 
-async def test_reroll_then_surge(ctx, owner, mock_rouse):
+async def test_reroll_then_surge(ctx: AppCtx, owner: discord.Member, mock_rouse: AsyncMock):
     """Surging after a reroll leaves Mark WP Use available."""
     char = make_char("vampire")
     display = make_display(ctx, owner, make_roll([6, 2], [], 2), comment="surge", character=char)
@@ -964,7 +997,7 @@ async def test_reroll_then_surge(ctx, owner, mock_rouse):
 # Timeouts
 
 
-async def test_timeout(ctx, owner):
+async def test_timeout(ctx: AppCtx, owner: discord.Member):
     """Timing out disables the buttons and reports the final outcome."""
     roll = make_roll([6, 2], [], 2)
     handler = AsyncMock()
@@ -981,7 +1014,7 @@ async def test_timeout(ctx, owner):
     handler.assert_awaited_once_with(roll)
 
 
-async def test_timeout_after_reroll(ctx, owner):
+async def test_timeout_after_reroll(ctx: AppCtx, owner: discord.Member):
     """Post-reroll buttons are disabled on timeout, and the handler gets the new outcome."""
     roll = make_roll([6, 2], [], 2)
     handler = AsyncMock()
@@ -1000,7 +1033,7 @@ async def test_timeout_after_reroll(ctx, owner):
 # Stats
 
 
-async def test_stats_logged(ctx, owner, mock_log_roll):
+async def test_stats_logged(ctx: AppCtx, owner: discord.Member, mock_log_roll: AsyncMock):
     """The first display logs the message ID; rerolls log without one."""
     roll = make_roll([6, 2], [], 2)
     screen = await show(make_display(ctx, owner, roll, comment="Hi"))
@@ -1014,9 +1047,11 @@ async def test_stats_logged(ctx, owner, mock_log_roll):
     mock_log_roll.assert_awaited_with(2, 3, owner.id, None, None, roll, "Hi")
 
 
-async def test_stats_logged_in_dm(ctx, owner, mock_log_roll, mock_get_message):
+async def test_stats_logged_in_dm(
+    ctx: AppCtx, owner: discord.Member, mock_log_roll: AsyncMock, mock_get_message: AsyncMock
+):
     """DM rolls are logged without guild, channel, or message IDs."""
-    ctx.guild = None
+    cast(MagicMock, ctx).guild = None
     roll = make_roll([6, 2], [], 2)
     await show(make_display(ctx, owner, roll))
 

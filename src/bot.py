@@ -1,8 +1,8 @@
 """Bot instance and event handlers."""
 
 import asyncio
-import os
 from datetime import UTC, datetime, time
+from pathlib import Path
 from typing import Any, cast
 
 import discord
@@ -38,22 +38,29 @@ class InconnuBot(discord.AutoShardedBot):
         self.motd_given = set()
         self.webhook_cache: WebhookCache = None  # type:ignore
         self._guild_fetch_failures = TTLCache[int, bool](maxsize=200, ttl=1200)
-        logger.info("BOT: Instantiated")
 
+        self._check_config()
+        self._load_cogs()
+
+        logger.info("Bot instantiated")
+
+    def _check_config(self):
+        """Check and log various configuration options."""
         if settings.show_test_routes:
-            logger.info("CONFIG: Showing test routes")
+            logger.info("Showing test routes")
 
-        logger.info("CONFIG: Profile site set to {}", settings.profile_site)
-        logger.info("CONFIG: Admin guild: {}", settings.admin_server)
+        logger.info("Profile site set to {}", settings.profile_site)
+        logger.info("Admin guild: {}", settings.admin_server)
 
         if settings.debug_guilds:
-            logger.info("CONFIG: Debugging on {}", settings.debug_guilds)
+            logger.info("Debugging on {}", settings.debug_guilds)
 
-        # Add the cogs
-        for filename in os.listdir("./src/interface"):
-            if filename[0] != "_" and filename.endswith(".py"):
-                logger.debug("COGS: Loading {}", filename)
-                self.load_extension(f"interface.{filename[:-3]}")
+    def _load_cogs(self):
+        """Load cogs from the interface package."""
+        for path in (Path(__file__).parent / "interface").glob("*.py"):
+            if not path.name.startswith("_"):
+                logger.debug("Loading {}", path.name)
+                self.load_extension(f"interface.{path.stem}")
 
     @property
     def me(self) -> discord.ClientUser:

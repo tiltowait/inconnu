@@ -276,11 +276,16 @@ def _post_reroll(
     """The normal dice grid after applying the strategy wherever the roll allows it."""
     count = len(base) - 1
     rerolls = [_distribution(k, NORMAL_ODDS) for k in range(MAX_REROLL + 1)]
-    grid = [[0.0] * (count + 1) for _ in range(count + 1)]
 
-    for tens, row in enumerate(base):
+    # Rows that can't reroll are unchanged, so we only rebuild the ones that can
+    rows = _rerollable_rows(strategy, count)
+    grid = [row.copy() for row in base]
+    for tens in rows:
+        grid[tens] = [0.0] * (count + 1)
+
+    for tens in rows:
         for succ in range(count - tens + 1):
-            prob = row[succ]
+            prob = base[tens][succ]
             fails = count - tens - succ
 
             if not _can_reroll(strategy, fails, succ, tens, hunger_state, difficulty):
@@ -292,6 +297,16 @@ def _post_reroll(
                 grid[kept_tens + new_tens][kept_succ + new_succ] += prob * reroll_prob
 
     return grid
+
+
+def _rerollable_rows(strategy: Strategy, count: int) -> range:
+    """The numbers of normal tens with which the strategy can possibly reroll."""
+    match strategy:
+        case Strategy.AVOID_MESSY | Strategy.RISKY:
+            # Avoiding a messy critical requires no more than three normal tens
+            return range(min(count, MAX_REROLL) + 1)
+        case _:
+            return range(count + 1)
 
 
 def _score(probs: Probabilities, grid: list[list[float]], members: list, difficulty: int):

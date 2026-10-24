@@ -1,10 +1,12 @@
 """Tests for bot event handlers and guild cache integration."""
 
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
 
+import bot as bot_module
 from bot import InconnuBot
 from services import guild_cache
 
@@ -61,6 +63,17 @@ def make_mock_member(
 async def mark_cache_ready():
     """Mark cache as ready by calling refresh."""
     guild_cache._refreshed = True
+
+
+# Cog loading
+
+
+async def test_missing_cog_dir_raises(tmp_path: Path, monkeypatch):
+    """A missing interface directory fails loudly instead of loading no cogs."""
+    monkeypatch.setattr(bot_module, "__file__", str(tmp_path / "bot.py"))
+
+    with pytest.raises(RuntimeError, match="No cogs found"):
+        InconnuBot(intents=discord.Intents.none())
 
 
 # Guild event tests

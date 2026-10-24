@@ -432,6 +432,9 @@ class RollDisplay(ReportingView):
         SPC rolls use the guild's icon (or no icon, if the guild doesn't have
         one). SPCs only exist in guilds; the guild check is for the type
         checker.
+
+        Character profile images aren't used, because they're unreadable at
+        author-icon size.
         """
         if self.character is not None and not self.character.is_pc and self.ctx.guild is not None:
             return self.ctx.guild.icon or ""

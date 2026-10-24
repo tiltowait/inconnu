@@ -200,36 +200,27 @@ def calculate(
     normal_count = max(0, pool - hunger)
     hunger_count = min(pool, hunger)
 
-    # Rerolled dice are normal dice, so their outcomes are drawn from the normal odds
-    rerolls = [_distribution(k, NORMAL_ODDS) for k in range(MAX_REROLL + 1)]
-
     # We only care whether hunger dice contain *any* ones, so we collapse those states
     hunger_states = defaultdict(float)
     for (ones, _, succ, tens), prob in _distribution(hunger_count, HUNGER_ODDS):
         hunger_states[(ones > 0, succ, tens)] += prob
 
+    # Reroll checks only see part of the hunger dice, so hunger states that look the
+    # same to the check share a single post-reroll grid
+    groups = defaultdict(list)
+    for state, prob in hunger_states.items():
+        groups[_group_key(strategy, normal_count, state)].append((state, prob))
+
+    base = _normal_grid(normal_count)
     probs = Probabilities()
-    for (fails, succ, tens), normal_prob in _distribution(normal_count, NORMAL_ODDS):
-        for (bestial, h_succ, h_tens), hunger_prob in hunger_states.items():
-            prob = normal_prob * hunger_prob
+    for members in groups.values():
+        if strategy is None:
+            grid = base
+        else:
+            bestial, h_succ, h_tens = members[0][0]
             hunger_state = (bestial, h_succ, h_tens, hunger_count)
-
-            if strategy is None or not _can_reroll(
-                strategy, fails, succ, tens, hunger_state, difficulty
-            ):
-                _tally(probs, succ, tens, hunger_state, difficulty, prob)
-                continue
-
-            kept_succ, kept_tens, rerolled = _reroll(strategy, fails, succ, tens)
-            for (_, new_succ, new_tens), reroll_prob in rerolls[rerolled]:
-                _tally(
-                    probs,
-                    kept_succ + new_succ,
-                    kept_tens + new_tens,
-                    hunger_state,
-                    difficulty,
-                    prob * reroll_prob,
-                )
+            grid = _post_reroll(base, strategy, hunger_state, difficulty)
+        _score(probs, grid, members, difficulty)
 
     probs.margin = probs.total_successes - difficulty
     return probs
@@ -249,38 +240,109 @@ def _distribution(count: int, odds: tuple[float, ...]) -> list[tuple[tuple[int, 
     return states
 
 
-def _total_successes(succ: int, tens: int, h_succ: int, h_tens: int) -> int:
-    """Total successes, counting each pair of tens as four."""
-    all_tens = tens + h_tens
-    return succ + h_succ + all_tens + all_tens - all_tens % 2
+def _normal_grid(count: int) -> list[list[float]]:
+    """The probability of each normal dice result, indexed as grid[tens][successes].
+
+    Here, successes are 6-9 only. Failures are whatever dice remain."""
+    fail_odds, succ_odds, ten_odds = NORMAL_ODDS
+    grid = [[0.0] * (count + 1) for _ in range(count + 1)]
+    for tens in range(count + 1):
+        tens_prob = comb(count, tens) * ten_odds**tens
+        for succ in range(count - tens + 1):
+            fails = count - tens - succ
+            grid[tens][succ] = tens_prob * comb(count - tens, succ) * succ_odds**succ
+            grid[tens][succ] *= fail_odds**fails
+
+    return grid
 
 
-def _tally(
-    probs: Probabilities,
-    succ: int,
-    tens: int,
-    hunger_state: tuple,
-    difficulty: int,
-    prob: float,
-):
-    """Add a final dice state's probability to its outcome and to the success average."""
-    bestial, h_succ, h_tens, _ = hunger_state
-    total = _total_successes(succ, tens, h_succ, h_tens)
-    probs.total_successes += prob * total
+def _group_key(strategy: Strategy | None, normal_count: int, hunger_state: tuple):
+    """The part of a hunger state the strategy's reroll check depends on."""
+    _, h_succ, h_tens = hunger_state
 
-    if total >= difficulty and total > 0:
-        if tens + h_tens < 2:
-            probs.success += prob
-        elif h_tens > 0:
-            probs.messy += prob
-        else:
-            probs.critical += prob
-    elif bestial:
-        probs.bestial += prob
-    elif total > 0:
-        probs.fail += prob
-    else:
-        probs.total_fail += prob
+    match strategy:
+        case Strategy.AVOID_MESSY | Strategy.RISKY:
+            # Messy crits are only avoidable with one hunger ten; success depends on h_succ
+            return (h_succ, h_tens) if h_tens == 1 else None
+        case Strategy.MAXIMIZE_CRITICALS if normal_count == 1:
+            return h_tens > 0
+        case _:
+            return None
+
+
+def _post_reroll(
+    base: list[list[float]], strategy: Strategy, hunger_state: tuple, difficulty: int
+) -> list[list[float]]:
+    """The normal dice grid after applying the strategy wherever the roll allows it."""
+    count = len(base) - 1
+    rerolls = [_distribution(k, NORMAL_ODDS) for k in range(MAX_REROLL + 1)]
+    grid = [[0.0] * (count + 1) for _ in range(count + 1)]
+
+    for tens, row in enumerate(base):
+        for succ in range(count - tens + 1):
+            prob = row[succ]
+            fails = count - tens - succ
+
+            if not _can_reroll(strategy, fails, succ, tens, hunger_state, difficulty):
+                grid[tens][succ] += prob
+                continue
+
+            kept_succ, kept_tens, rerolled = _reroll(strategy, fails, succ, tens)
+            for (_, new_succ, new_tens), reroll_prob in rerolls[rerolled]:
+                grid[kept_tens + new_tens][kept_succ + new_succ] += prob * reroll_prob
+
+    return grid
+
+
+def _score(probs: Probabilities, grid: list[list[float]], members: list, difficulty: int):
+    """Add each hunger state's outcomes, given the normal dice grid it's rolled with."""
+    count = len(grid) - 1
+
+    # tails[tens][succ] is the probability of that many tens and at least succ successes
+    tails = []
+    avg_succ = 0.0
+    for row in grid:
+        tail = [0.0] * (count + 2)
+        for succ in range(count, -1, -1):
+            tail[succ] = tail[succ + 1] + row[succ]
+            avg_succ += succ * row[succ]
+        tails.append(tail)
+
+    target = max(difficulty, 1)
+    for (bestial, h_succ, h_tens), hunger_prob in members:
+        avg_total = avg_succ
+        for tens, tail in enumerate(tails):
+            mass = tail[0]
+            if mass == 0.0:
+                continue
+
+            # Successes from everything except normal 6-9s
+            all_tens = tens + h_tens
+            other = h_succ + 2 * all_tens - all_tens % 2
+            avg_total += mass * other
+
+            needed = target - other
+            hit = mass if needed <= 0 else tail[min(needed, count + 1)]
+            miss = mass - hit
+
+            if all_tens < 2:
+                probs.success += hunger_prob * hit
+            elif h_tens > 0:
+                probs.messy += hunger_prob * hit
+            else:
+                probs.critical += hunger_prob * hit
+
+            if bestial:
+                probs.bestial += hunger_prob * miss
+            elif other == 0:
+                # No successes at all is only possible without normal 6-9s
+                zero = grid[tens][0]
+                probs.total_fail += hunger_prob * zero
+                probs.fail += hunger_prob * (miss - zero)
+            else:
+                probs.fail += hunger_prob * miss
+
+        probs.total_successes += hunger_prob * avg_total
 
 
 def _can_reroll(
@@ -306,6 +368,12 @@ def _can_reroll(
 
         case Strategy.RISKY:
             return fails > 0 and _can_avoid_messy(succ, tens, h_succ, h_tens, difficulty)
+
+
+def _total_successes(succ: int, tens: int, h_succ: int, h_tens: int) -> int:
+    """Total successes, counting each pair of tens as four."""
+    all_tens = tens + h_tens
+    return succ + h_succ + all_tens + all_tens - all_tens % 2
 
 
 def _can_avoid_messy(succ: int, tens: int, h_succ: int, h_tens: int, difficulty: int) -> bool:

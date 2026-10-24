@@ -16,7 +16,7 @@ steps:
   - name: install-dev
     image: sh
     commands:
-      - uv sync
+      - uv sync --locked
 
   - name: lint
     image: sh
@@ -41,14 +41,6 @@ steps:
         from_secret: GITHUB_TOKEN
     commands:
       - uv run pytest -q
-
-  - name: uninstall-dev
-    image: sh
-    when:
-      - event: tag
-      - event: manual
-    commands:
-      - uv sync --no-dev
 
   - name: copy-artifacts
     image: sh

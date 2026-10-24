@@ -12,6 +12,7 @@ import services
 import ui
 from ctx import AppCtx
 from inconnu import vr as roll
+from models import VChar
 from services.haven import Haven
 
 HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
@@ -72,7 +73,7 @@ async def probability(
                 ctx,
                 character=char_name,
                 tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",
-                char_filter=lambda c: roll.RollParser(c, syntax),
+                char_filter=lambda c: _can_roll(c, syntax),
                 errmsg=f"None of your characters can roll `{syntax}`.",
                 help=HELP_URL,
             )
@@ -86,6 +87,11 @@ async def probability(
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
         await ui.embeds.error(ctx, err, character=character, help_url=HELP_URL)
+
+
+def _can_roll(character: VChar, syntax: str):
+    """Raise an exception if the character can't roll the syntax."""
+    roll.RollParser(character, syntax)
 
 
 async def __display_embed(

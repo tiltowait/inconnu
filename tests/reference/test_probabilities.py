@@ -89,7 +89,7 @@ def test_calculate_matches_roll(strategy: Strategy | None):
     """Test calculate() agrees exactly with Roll across small pools, hunger, and difficulty."""
     for pool in range(1, 6):
         for hunger in range(pool + 1):
-            for difficulty in range(6):
+            for difficulty in range(10):
                 expected = _reference(pool, hunger, difficulty, strategy)
                 actual = calculate(pool, hunger, difficulty, strategy)
                 params = (pool, hunger, difficulty, strategy)

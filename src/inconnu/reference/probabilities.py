@@ -182,6 +182,62 @@ async def __display_embed(
     await ctx.respond(embed=embed)
 
 
+# Probability calculation
+#
+# We originally calculated outcome probabilities via 10k simulated rolls using
+# real Roll objects. In the name of consistency, these outcomes were persisted
+# to a database collection.
+#
+# Simulated rolls are "close enough", but are off by ~1%, and the whole
+# implementation was slow: either because we had to roll a bunch, or because
+# we had to fetch from the database.
+#
+# The below implementation uses combinatorics to calculate exact probabilities.
+#
+# Overview
+#
+# A roll's outcome doesn't depend on exact faces, only on how many dice land in
+# each category. Normal dice: failure (1-5), success (6-9), or ten. Hunger dice:
+# one, failure (2-5), success (6-9), or ten. Rather than enumerate 10^pool face
+# combinations, we enumerate category counts and weight each by its multinomial
+# probability.
+#
+# 1. Hunger states. We enumerate every hunger dice result, collapsed to (any
+#    ones?, successes, tens), since the number of ones doesn't matter.
+# 2. Normal grid. grid[tens][successes] holds the probability of each normal
+#    dice result. Failures are implied by the remaining dice.
+# 3. Rerolls. A strategy rerolls at most three normal dice, so each rerollable
+#    cell's probability is redistributed over the (at most 10) ways the rerolled
+#    dice can land. Whether a cell may reroll sometimes depends on the hunger
+#    dice, but only a small part of them (see _group_key()). Hunger states that
+#    look the same to the reroll check share one post-reroll grid, so we build a
+#    handful of grids rather than one per hunger state. Avoid Messy and Risky
+#    can only reroll with three or fewer normal tens, so only those rows of the
+#    grid are rebuilt.
+# 4. Scoring. For each hunger state, we walk the grid's tens rows. Within a
+#    row, everything but normal successes is fixed, so suffix sums over
+#    successes tell us in one lookup how much of the row meets the difficulty.
+#    That mass is a success, critical, or messy critical (depending on tens);
+#    the rest is a failure, total failure, or bestial failure (depending on
+#    hunger ones).
+#
+# The logic intentionally mirrors Roll, and tests verify the two agree exactly
+# across every hunger, difficulty, and strategy combination for pools up to 5.
+# (Test time is exponential as pool size increases. Because 5 is sufficient to
+# cover every edge case, there is no value in testing larger pools.)
+#
+# Benchmark (pool 100, DC 4; Python 3.13, Apple M1 Pro)
+#
+#   Strategy              Hunger 5    Hunger 0
+#   None                    2.4 ms      1.6 ms
+#   Re-roll Failures        5.5 ms      5.1 ms
+#   Maximize Crits          6.2 ms      5.8 ms
+#   Avoid Messy             6.6 ms      1.8 ms
+#   Risky                   6.9 ms      1.8 ms
+#
+# Typical pools (15 dice or fewer) take under half a millisecond.
+
+
 def calculate(
     pool: int, hunger: int, difficulty: int, strategy: Strategy | None = None
 ) -> Probabilities:

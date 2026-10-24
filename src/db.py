@@ -19,7 +19,6 @@ guilds = _db.guilds
 headers = _db.headers
 interactions = _db.interactions
 log = _db.log
-probabilities = _db.probabilities
 rolls = _db.rolls
 rp_posts = _db.rp_posts
 supporters = _db.supporters

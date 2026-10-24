@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import StrEnum
 from math import comb
 from typing import NamedTuple
 
@@ -16,12 +17,6 @@ from models import VChar
 from services.haven import Haven
 
 HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
-STRATEGIES = {
-    "reroll_failures": "Re-rolling Failures",
-    "maximize_criticals": "Maximizing Crits",
-    "avoid_messy": "Avoiding Messy Crits",
-    "risky": "Riskily Avoiding Messy Crits",
-}
 DISPLAY_MIN = 0.00005  # Anything smaller displays as 0.00%
 MAX_POOL = 100
 MAX_REROLL = 3
@@ -30,6 +25,28 @@ MAX_REROLL = 3
 # Hunger: bestial (1), failure (2-5), success (6-9), critical (10).
 NORMAL_ODDS = (0.5, 0.4, 0.1)
 HUNGER_ODDS = (0.1, 0.4, 0.4, 0.1)
+
+
+class Strategy(StrEnum):
+    """A Willpower reroll strategy."""
+
+    REROLL_FAILURES = "reroll_failures"
+    MAXIMIZE_CRITICALS = "maximize_criticals"
+    AVOID_MESSY = "avoid_messy"
+    RISKY = "risky"
+
+    @property
+    def description(self) -> str:
+        """The strategy's display name."""
+        match self:
+            case Strategy.REROLL_FAILURES:
+                return "Re-rolling Failures"
+            case Strategy.MAXIMIZE_CRITICALS:
+                return "Maximizing Crits"
+            case Strategy.AVOID_MESSY:
+                return "Avoiding Messy Crits"
+            case Strategy.RISKY:
+                return "Riskily Avoiding Messy Crits"
 
 
 class RollParams(NamedTuple):
@@ -57,12 +74,14 @@ class Probabilities:
 async def probability(
     ctx: AppCtx,
     syntax: str,
-    strategy: str | None = None,
+    strategy_name: str | None = None,
     char_name: str | None = None,
 ):
     """Calculate the probabilities surrounding a roll."""
     character = None
     try:
+        strategy = Strategy(strategy_name) if strategy_name is not None else None
+
         if roll.needs_character(syntax):
             if ctx.guild is None:
                 await ctx.respond("Sorry, you can't use traits in DMs.")
@@ -95,7 +114,7 @@ def _can_roll(character: VChar, syntax: str):
 
 
 async def __display_embed(
-    ctx: AppCtx, params: RollParams, strategy: str | None, probs: Probabilities
+    ctx: AppCtx, params: RollParams, strategy: Strategy | None, probs: Probabilities
 ):
     """Display the probabilities in a nice embed."""
     uncomplicated = probs.success + probs.critical
@@ -104,7 +123,7 @@ async def __display_embed(
     description += f"\n**{probs.margin:.2f}** average margin"
 
     if strategy is not None:
-        description = f"**{STRATEGIES[strategy]}**\n\n{description}"
+        description = f"**{strategy.description}**\n\n{description}"
 
     embed = discord.Embed(
         title=f"Pool {params.pool} | Hunger {params.hunger} | DC {params.difficulty}",
@@ -164,7 +183,7 @@ async def __display_embed(
 
 
 def calculate(
-    pool: int, hunger: int, difficulty: int, strategy: str | None = None
+    pool: int, hunger: int, difficulty: int, strategy: Strategy | None = None
 ) -> Probabilities:
     """Calculate the exact probability of each outcome, plus average successes and margin.
 
@@ -265,48 +284,55 @@ def _tally(
 
 
 def _can_reroll(
-    strategy: str, fails: int, succ: int, tens: int, hunger_state: tuple, difficulty: int
+    strategy: Strategy, fails: int, succ: int, tens: int, hunger_state: tuple, difficulty: int
 ) -> bool:
     """Whether the strategy can be applied. Mirrors Roll's can_* properties."""
     _, h_succ, h_tens, hunger_count = hunger_state
     normal_count = fails + succ + tens
 
-    if strategy == "reroll_failures":
-        return fails > 0
+    match strategy:
+        case Strategy.REROLL_FAILURES:
+            return fails > 0
 
-    if strategy == "maximize_criticals":
-        if normal_count + hunger_count < 2:
-            return False
-        if normal_count == 1:
-            return tens == 0 and h_tens > 0
-        return tens != normal_count
+        case Strategy.MAXIMIZE_CRITICALS:
+            if normal_count + hunger_count < 2:
+                return False
+            if normal_count == 1:
+                return tens == 0 and h_tens > 0
+            return tens != normal_count
 
-    # avoid_messy and risky both require a messy critical with exactly one hunger ten
+        case Strategy.AVOID_MESSY:
+            return _can_avoid_messy(succ, tens, h_succ, h_tens, difficulty)
+
+        case Strategy.RISKY:
+            return fails > 0 and _can_avoid_messy(succ, tens, h_succ, h_tens, difficulty)
+
+
+def _can_avoid_messy(succ: int, tens: int, h_succ: int, h_tens: int, difficulty: int) -> bool:
+    """Whether the roll is a messy critical with exactly one hunger ten and few normal tens."""
     total = _total_successes(succ, tens, h_succ, h_tens)
     messy = tens + h_tens >= 2 and h_tens > 0 and total >= difficulty and total > 0
-    can_avoid = messy and h_tens == 1 and tens <= 3
-
-    if strategy == "avoid_messy":
-        return can_avoid
-    return can_avoid and fails > 0  # risky
+    return messy and h_tens == 1 and tens <= 3
 
 
-def _reroll(strategy: str, fails: int, succ: int, tens: int) -> tuple[int, int, int]:
+def _reroll(strategy: Strategy, fails: int, succ: int, tens: int) -> tuple[int, int, int]:
     """Apply a strategy to normal dice. Returns kept successes, kept tens, and dice rerolled.
 
     Mirrors the reroll helpers in inconnu.roll.roll."""
-    if strategy == "reroll_failures":
-        return succ, tens, min(fails, MAX_REROLL)
+    match strategy:
+        case Strategy.REROLL_FAILURES:
+            return succ, tens, min(fails, MAX_REROLL)
 
-    if strategy == "maximize_criticals":
-        rerolled_fails = min(fails, MAX_REROLL)
-        rerolled_succ = min(succ, MAX_REROLL - rerolled_fails)
-        return succ - rerolled_succ, tens, rerolled_fails + rerolled_succ
+        case Strategy.MAXIMIZE_CRITICALS:
+            rerolled_fails = min(fails, MAX_REROLL)
+            rerolled_succ = min(succ, MAX_REROLL - rerolled_fails)
+            return succ - rerolled_succ, tens, rerolled_fails + rerolled_succ
 
-    if strategy == "avoid_messy":
-        rerolled_tens = min(tens, MAX_REROLL)
-        return succ, tens - rerolled_tens, rerolled_tens
+        case Strategy.AVOID_MESSY:
+            rerolled_tens = min(tens, MAX_REROLL)
+            return succ, tens - rerolled_tens, rerolled_tens
 
-    # risky: all tens (at most three, per can_avoid_messy_critical) plus failures to make three
-    rerolled_fails = min(fails, MAX_REROLL - tens)
-    return succ, 0, tens + rerolled_fails
+        case Strategy.RISKY:
+            # All tens (at most three, per _can_avoid_messy) plus failures to make three
+            rerolled_fails = min(fails, MAX_REROLL - tens)
+            return succ, 0, tens + rerolled_fails

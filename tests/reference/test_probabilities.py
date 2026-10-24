@@ -9,18 +9,18 @@ from unittest.mock import patch
 import pytest
 
 import inconnu
-from inconnu.reference.probabilities import calculate
+from inconnu.reference.probabilities import Strategy, calculate
 from inconnu.roll.dicethrow import DiceThrow
 
 # Representative faces and their odds. Faces within a category behave identically.
 _NORMAL_FACES = ((1, 0.5), (6, 0.4), (10, 0.1))
 _HUNGER_FACES = ((1, 0.1), (2, 0.4), (6, 0.4), (10, 0.1))
-_STRATEGIES = (None, "reroll_failures", "maximize_criticals", "avoid_messy", "risky")
+_STRATEGIES = (None, *Strategy)
 _CHECKS = {
-    "reroll_failures": "can_reroll_failures",
-    "maximize_criticals": "can_maximize_criticals",
-    "avoid_messy": "can_avoid_messy_critical",
-    "risky": "can_risky_messy_critical",
+    Strategy.REROLL_FAILURES: "can_reroll_failures",
+    Strategy.MAXIMIZE_CRITICALS: "can_maximize_criticals",
+    Strategy.AVOID_MESSY: "can_avoid_messy_critical",
+    Strategy.RISKY: "can_risky_messy_critical",
 }
 _OUTCOMES = ("critical", "success", "messy", "fail", "total_fail", "bestial")
 _KEYS = (*_OUTCOMES, "total_successes", "margin")
@@ -45,7 +45,7 @@ def _make_roll(normal: list[int], hunger: list[int], difficulty: int) -> inconnu
     return roll
 
 
-def _reference(pool: int, hunger: int, difficulty: int, strategy: str | None) -> dict:
+def _reference(pool: int, hunger: int, difficulty: int, strategy: Strategy | None) -> dict:
     """Calculate exact probabilities by evaluating real Roll objects."""
     probs = dict.fromkeys(_KEYS, 0.0)
     queue = []
@@ -85,7 +85,7 @@ def _reference(pool: int, hunger: int, difficulty: int, strategy: str | None) ->
 
 
 @pytest.mark.parametrize("strategy", _STRATEGIES)
-def test_calculate_matches_roll(strategy: str | None):
+def test_calculate_matches_roll(strategy: Strategy | None):
     """Test calculate() agrees exactly with Roll across small pools, hunger, and difficulty."""
     for pool in range(1, 6):
         for hunger in range(pool + 1):
@@ -97,7 +97,7 @@ def test_calculate_matches_roll(strategy: str | None):
 
 
 @pytest.mark.parametrize("strategy", _STRATEGIES)
-def test_calculate_outcomes_sum_to_one(strategy: str | None):
+def test_calculate_outcomes_sum_to_one(strategy: Strategy | None):
     """Test outcome probabilities are exhaustive for a large pool."""
     probs = calculate(30, 5, 8, strategy)
     assert sum(getattr(probs, outcome) for outcome in _OUTCOMES) == pytest.approx(1.0)
@@ -111,7 +111,7 @@ def test_calculate_hunger_exceeding_pool():
 def test_calculate_huge_pool_is_fast():
     """Test a maximum-size pool with a reroll strategy completes quickly."""
     start = time.perf_counter()
-    calculate(100, 5, 20, "maximize_criticals")
+    calculate(100, 5, 20, Strategy.MAXIMIZE_CRITICALS)
     assert time.perf_counter() - start < 5
 
 

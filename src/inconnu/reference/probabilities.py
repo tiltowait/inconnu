@@ -53,8 +53,14 @@ class Probabilities:
     margin: float = 0.0
 
 
-async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
+async def probability(
+    ctx: AppCtx,
+    syntax: str,
+    strategy: str | None = None,
+    char_name: str | None = None,
+):
     """Calculate the probabilities surrounding a roll."""
+    character = None
     try:
         if roll.needs_character(syntax):
             if ctx.guild is None:
@@ -64,16 +70,13 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
             syntax = " ".join(syntax.split())
             haven = Haven(
                 ctx,
-                character=character,
+                character=char_name,
                 tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",
                 char_filter=lambda c: roll.RollParser(c, syntax),
                 errmsg=f"None of your characters can roll `{syntax}`.",
                 help=HELP_URL,
             )
             character = await haven.fetch()
-
-        else:
-            character = None
 
         parser = roll.RollParser(character, syntax)
         params = RollParams(parser.pool, parser.hunger, parser.difficulty)
@@ -85,7 +88,9 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
         await ui.embeds.error(ctx, err, character=character, help_url=HELP_URL)
 
 
-async def __display_embed(ctx, params: RollParams, strategy: str, probs: Probabilities):
+async def __display_embed(
+    ctx: AppCtx, params: RollParams, strategy: str | None, probs: Probabilities
+):
     """Display the probabilities in a nice embed."""
     uncomplicated = probs.success + probs.critical
     description = f"**{uncomplicated:.2%}** success without complication"

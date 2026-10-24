@@ -1,13 +1,12 @@
 """reference/probabilities.py - Calculate the probability of a given roll."""
 
 from collections import defaultdict
+from math import comb
 from types import SimpleNamespace as SN
 
 import discord
 
-import db
 import errors
-import inconnu
 import services
 import ui
 from ctx import AppCtx
@@ -21,6 +20,7 @@ __STRATEGIES = {
     "avoid_messy": "Avoiding Messy Crits",
     "risky": "Riskily Avoiding Messy Crits",
 }
+__DISPLAY_MIN = 0.00005  # Anything smaller displays as 0.00%
 
 
 async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
@@ -47,7 +47,7 @@ async def probability(ctx: AppCtx, syntax: str, strategy=None, character=None):
 
         parser = roll.RollParser(character, syntax)
         params = SN(pool=parser.pool, hunger=parser.hunger, difficulty=parser.difficulty)
-        probabilities = await __get_probabilities(params, strategy)
+        probabilities = calculate(params.pool, params.hunger, params.difficulty, strategy)
 
         await __display_embed(ctx, params, strategy, probabilities)
 
@@ -71,7 +71,6 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
         colour=0x000000,
     )
     embed.set_author(name="Outcome Probabilities")
-    embed.set_footer(text="Simulated over 10,000 runs")
 
     # Breakdown field
 
@@ -87,7 +86,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     can_emoji = await services.settings.can_emoji(ctx)
     breakdown = []
 
-    if probs["critical"] != 0:
+    if probs["critical"] >= __DISPLAY_MIN:
         crit = roll.dicemoji.emojify_die(10, False) if can_emoji else ""
         crit += f"{probs['critical']:.2%} Critical Win"
         breakdown.append(crit)
@@ -96,14 +95,14 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     success += f"{probs['success']:.2%} Success"
     breakdown.append(success)
 
-    if probs["messy"] != 0:
+    if probs["messy"] >= __DISPLAY_MIN:
         messy = roll.dicemoji.emojify_die(10, True) if can_emoji else ""
         messy += f"{probs['messy']:.2%} Messy Critical"
         breakdown.append(messy)
 
     breakdown.append("------")
 
-    if probs["fail"] != 0:
+    if probs["fail"] >= __DISPLAY_MIN:
         # Only show regular failure if there's a distinction between it and total failure
         fail = roll.dicemoji.emojify_die(3, False) if can_emoji else ""
         fail += f"{probs['fail']:.2%} Failure"
@@ -113,7 +112,7 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     total += f"{probs['total_fail']:.2%} Total Failure"
     breakdown.append(total)
 
-    if probs["bestial"] != 0:
+    if probs["bestial"] >= __DISPLAY_MIN:
         bestial = roll.dicemoji.emojify_die(1, True) if can_emoji else ""
         bestial += f"{probs['bestial']:.2%} Bestial Failure"
         breakdown.append(bestial)
@@ -123,72 +122,148 @@ async def __display_embed(ctx, params, strategy: str, probs: dict):
     await ctx.respond(embed=embed)
 
 
-async def __get_probabilities(params, strategy):
-    """Retrieve the probabilities from storage or, if not calculated yet, generate them."""
-    col = db.probabilities
+# Category odds on a single die. Normal: failure (1-5), success (6-9), critical (10).
+# Hunger: bestial (1), failure (2-5), success (6-9), critical (10).
+_NORMAL_ODDS = (0.5, 0.4, 0.1)
+_HUNGER_ODDS = (0.1, 0.4, 0.4, 0.1)
+_MAX_REROLL = 3
 
-    probs = await col.find_one(
-        {
-            "pool": params.pool,
-            "hunger": params.hunger,
-            "difficulty": params.difficulty,
-            "strategy": strategy,
-        }
-    )
 
-    if probs is None:
-        probs = __simulate(params, strategy)
+def calculate(pool: int, hunger: int, difficulty: int, strategy: str | None = None) -> dict:
+    """Calculate the exact probability of each outcome, plus average successes and margin.
 
-        # Save the probabilities
-        await col.insert_one(
-            {
-                "pool": params.pool,
-                "hunger": params.hunger,
-                "difficulty": params.difficulty,
-                "strategy": strategy,
-                "probabilities": probs,
-            }
-        )
-    else:
-        probabilities = probs["probabilities"]
-        probs = defaultdict(int)
-        probs.update(probabilities)
+    Mirrors inconnu.Roll: pool includes hunger, and the reroll strategy is applied
+    whenever the Roll's corresponding can_* check would allow it."""
+    if not 0 <= hunger <= 5:
+        raise ValueError(f"Hunger must be between 0 and 5. (Got `{hunger}`.)")
+    if difficulty < 0:
+        raise ValueError(f"Difficulty cannot be less than 0. (Got `{difficulty}`.)")
+    pool = max(1, pool)
+    if pool > 100:
+        raise ValueError(f"Pool cannot exceed 100. (Got `{pool}`.)")
 
+    normal_count = max(0, pool - hunger)
+    hunger_count = min(pool, hunger)
+
+    # Rerolled dice are normal dice, so their outcomes are drawn from the normal odds
+    rerolls = [_distribution(k, _NORMAL_ODDS) for k in range(_MAX_REROLL + 1)]
+
+    # We only care whether hunger dice contain *any* ones, so we collapse those states
+    hunger_states = defaultdict(float)
+    for (ones, _, succ, tens), prob in _distribution(hunger_count, _HUNGER_ODDS):
+        hunger_states[(ones > 0, succ, tens)] += prob
+
+    probs = defaultdict(float)
+    for (fails, succ, tens), normal_prob in _distribution(normal_count, _NORMAL_ODDS):
+        for (bestial, h_succ, h_tens), hunger_prob in hunger_states.items():
+            prob = normal_prob * hunger_prob
+            hunger_state = (bestial, h_succ, h_tens, hunger_count)
+
+            if strategy is None or not _can_reroll(
+                strategy, fails, succ, tens, hunger_state, difficulty
+            ):
+                _tally(probs, succ, tens, hunger_state, difficulty, prob)
+                continue
+
+            kept_succ, kept_tens, rerolled = _reroll(strategy, fails, succ, tens)
+            for (_, new_succ, new_tens), reroll_prob in rerolls[rerolled]:
+                _tally(
+                    probs,
+                    kept_succ + new_succ,
+                    kept_tens + new_tens,
+                    hunger_state,
+                    difficulty,
+                    prob * reroll_prob,
+                )
+
+    probs["margin"] = probs["total_successes"] - difficulty
     return probs
 
 
-def __simulate(params, strategy):
-    """Simulate 10,000 rolls and calculate the probabilities of each potential outcome."""
-    trials = 10000
-    totals = defaultdict(int)
-    outcomes = defaultdict(int)
+def _distribution(count: int, odds: tuple[float, ...]) -> list[tuple[tuple[int, ...], float]]:
+    """Every way count dice can fall into the categories given by odds, with probabilities."""
+    if len(odds) == 1:
+        return [((count,), odds[0] ** count)]
 
-    for _ in range(trials):
-        outcome = inconnu.Roll(params.pool, params.hunger, params.difficulty)
+    states = []
+    for first in range(count + 1):
+        first_prob = comb(count, first) * odds[0] ** first
+        for rest, rest_prob in _distribution(count - first, odds[1:]):
+            states.append(((first, *rest), first_prob * rest_prob))
 
-        # Check reroll options
-        if strategy is not None:
-            if (
-                strategy == "reroll_failures"
-                and outcome.can_reroll_failures
-                or strategy == "maximize_criticals"
-                and outcome.can_maximize_criticals
-                or strategy == "avoid_messy"
-                and outcome.can_avoid_messy_critical
-                or strategy == "risky"
-                and outcome.can_risky_messy_critical
-            ):
-                outcome.reroll(strategy)
+    return states
 
-        totals["total_successes"] += outcome.total_successes
-        totals["margin"] += outcome.margin
-        outcomes[outcome.outcome] += 1
 
-    probabilities = defaultdict(int)
-    probabilities["total_successes"] = totals["total_successes"] / trials
-    probabilities["margin"] = totals["margin"] / trials
+def _total_successes(succ: int, tens: int, h_succ: int, h_tens: int) -> int:
+    """Total successes, counting each pair of tens as four."""
+    all_tens = tens + h_tens
+    return succ + h_succ + all_tens + all_tens - all_tens % 2
 
-    for outcome, frequency in outcomes.items():
-        probabilities[outcome] = frequency / trials
 
-    return probabilities
+def _tally(probs: dict, succ: int, tens: int, hunger_state: tuple, difficulty: int, prob: float):
+    """Add a final dice state's probability to its outcome and to the success average."""
+    bestial, h_succ, h_tens, _ = hunger_state
+    total = _total_successes(succ, tens, h_succ, h_tens)
+    probs["total_successes"] += prob * total
+
+    if total >= difficulty and total > 0:
+        if tens + h_tens >= 2:
+            outcome = "messy" if h_tens > 0 else "critical"
+        else:
+            outcome = "success"
+    elif bestial:
+        outcome = "bestial"
+    elif total > 0:
+        outcome = "fail"
+    else:
+        outcome = "total_fail"
+
+    probs[outcome] += prob
+
+
+def _can_reroll(
+    strategy: str, fails: int, succ: int, tens: int, hunger_state: tuple, difficulty: int
+) -> bool:
+    """Whether the strategy can be applied. Mirrors Roll's can_* properties."""
+    _, h_succ, h_tens, hunger_count = hunger_state
+    normal_count = fails + succ + tens
+
+    if strategy == "reroll_failures":
+        return fails > 0
+
+    if strategy == "maximize_criticals":
+        if normal_count + hunger_count < 2:
+            return False
+        if normal_count == 1:
+            return tens == 0 and h_tens > 0
+        return tens != normal_count
+
+    # avoid_messy and risky both require a messy critical with exactly one hunger ten
+    total = _total_successes(succ, tens, h_succ, h_tens)
+    messy = tens + h_tens >= 2 and h_tens > 0 and total >= difficulty and total > 0
+    can_avoid = messy and h_tens == 1 and tens <= 3
+
+    if strategy == "avoid_messy":
+        return can_avoid
+    return can_avoid and fails > 0  # risky
+
+
+def _reroll(strategy: str, fails: int, succ: int, tens: int) -> tuple[int, int, int]:
+    """Apply a strategy to normal dice. Returns kept successes, kept tens, and dice rerolled.
+
+    Mirrors the reroll helpers in inconnu.roll.roll."""
+    if strategy == "reroll_failures":
+        return succ, tens, min(fails, _MAX_REROLL)
+
+    if strategy == "maximize_criticals":
+        rerolled_fails = min(fails, _MAX_REROLL)
+        rerolled_succ = min(succ, _MAX_REROLL - rerolled_fails)
+        return succ - rerolled_succ, tens, rerolled_fails + rerolled_succ
+
+    if strategy == "avoid_messy":
+        rerolled_tens = min(tens, _MAX_REROLL)
+        return succ, tens - rerolled_tens, rerolled_tens
+
+    # risky: all tens (at most three, per can_avoid_messy_critical) plus failures to make three
+    rerolled_fails = min(fails, _MAX_REROLL - tens)
+    return succ, 0, tens + rerolled_fails

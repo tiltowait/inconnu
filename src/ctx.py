@@ -21,7 +21,12 @@ else:
 
 
 class AppInteraction(discord.Interaction):
-    """A discord.Interaction with client and bot typed to InconnuBot."""
+    """A discord.Interaction with client and bot typed to InconnuBot, and user typed
+    as non-None."""
+
+    # py-cord types Interaction.user as optional, but every interaction we handle
+    # (commands, components, autocomplete, modals) has a user
+    user: discord.Member | discord.User  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @property
     def client(self) -> "InconnuBot":

@@ -443,6 +443,50 @@ async def test_update_with_custom_message(
     mock_char_save.assert_awaited()
 
 
+@pytest.mark.parametrize(
+    "automatic,expected",
+    [
+        (True, "You are physically impaired. Your physical rolls will receive a -2 penalty."),
+        (False, "You are physically impaired. Subtract 2 dice from physical pools."),
+    ],
+)
+@pytest.mark.usefixtures("mock_char_save")
+async def test_update_impairment_reminder(
+    vamp: VChar,
+    ctx: AppCtx,
+    mock_update_display: AsyncMock,
+    automatic: bool,
+    expected: str,
+):
+    """The impairment line depends on the user's auto-impairment setting."""
+    vamp.health = "/" * len(vamp.health)
+
+    with patch("services.settings.auto_impairment", new_callable=AsyncMock) as mock_setting:
+        mock_setting.return_value = automatic
+        await update(ctx, "hunger+1", character=vamp)
+
+    mock_setting.assert_awaited_once_with(ctx)
+    call_args = mock_update_display.await_args
+    assert call_args is not None
+    assert call_args.kwargs["message"].endswith(f"* {expected}")
+
+
+async def test_update_without_impairment(
+    vamp: VChar,
+    ctx: AppCtx,
+    mock_char_save: AsyncMock,
+    mock_update_display: AsyncMock,
+):
+    """Unimpaired characters get no reminder, and the setting isn't looked up."""
+    with patch("services.settings.auto_impairment", new_callable=AsyncMock) as mock_setting:
+        await update(ctx, "hunger+1", character=vamp)
+
+    mock_setting.assert_not_awaited()
+    call_args = mock_update_display.await_args
+    assert call_args is not None
+    assert "impaired" not in call_args.kwargs["message"]
+
+
 async def test_update_with_custom_fields(
     vamp: VChar,
     ctx: AppCtx,

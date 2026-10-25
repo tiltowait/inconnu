@@ -18,6 +18,7 @@ from pydantic import ConfigDict, Field
 
 import errors
 from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
+from models.impairment import Impairment
 from models.vchardocs import (
     VCharExperience,
     VCharExperienceEntry,
@@ -257,37 +258,31 @@ class VChar(Document):
         return self.stains > (10 - self.humanity)
 
     @property
-    def impairment(self):
-        """A string for describing the character's physical/mental impairment."""
-        if self.health.count(Damage.AGGRAVATED) == len(self.health):
-            if self.is_vampire:
-                return "You are IN TORPOR!"
-            return "You are DEAD!"
-
-        physical = Damage.NONE not in self.health
-        mental = Damage.NONE not in self.willpower
-        total = self.degeneration or (physical and mental)
-
-        if total:
-            return "You are totally impaired. Remember to subtract 2 dice from all pools."
-
-        if physical:
-            return "You are physically impaired. Subtract 2 dice from physical pools."
-
-        if mental:
-            return "You are mentally impaired. Subtract 2 dice from social and mental pools."
-
-        return None
+    def incapacitated(self) -> bool:
+        """Whether the character's Health is entirely Aggravated (torpor or death)."""
+        return self.health.count(Damage.AGGRAVATED) == len(self.health)
 
     @property
-    def physically_impaired(self):
-        """Whether the character is physically impaired."""
-        return Damage.NONE not in self.health or self.stains > (10 - self.humanity)
+    def physically_impaired(self) -> bool:
+        """Whether the character is physically impaired: every Health box is damaged,
+        or they're in degeneration."""
+        return Damage.NONE not in self.health or self.degeneration
 
     @property
-    def mentally_impaired(self):
-        """Whether the character is physically impaired."""
-        return Damage.NONE not in self.willpower or self.stains > (10 - self.humanity)
+    def mentally_impaired(self) -> bool:
+        """Whether the character is mentally impaired: every Willpower box is damaged,
+        or they're in degeneration."""
+        return Damage.NONE not in self.willpower or self.degeneration
+
+    @property
+    def impairment_state(self) -> Impairment:
+        """Which kinds of pools the character's impairment penalizes."""
+        state = Impairment.NONE
+        if self.physically_impaired:
+            state |= Impairment.PHYSICAL
+        if self.mentally_impaired:
+            state |= Impairment.MENTAL
+        return state
 
     @property
     def is_pc(self):

@@ -1,10 +1,13 @@
 """rollresult.py - Class for calculating the results of a roll."""
 
+from typing import Literal
+
 from bson import ObjectId
 
 import inconnu
 from constants import ATTRIBUTES_AND_SKILLS
 from inconnu.roll.dicethrow import DiceThrow
+from models import Impairment
 
 __MAX_REROLL = 3
 
@@ -12,15 +15,34 @@ __MAX_REROLL = 3
 class Roll:
     """A container class that determines the result of a roll."""
 
-    def __init__(self, pool, hunger, difficulty, max_hunger=5, pool_str=None, syntax=None):
+    def __init__(
+        self,
+        pool: int,
+        hunger: int,
+        difficulty: int,
+        max_hunger=5,
+        pool_str: str | None = None,
+        syntax: str | list[str] | None = None,
+        *,
+        impairment_penalty=Impairment.NONE,
+        base_pool: int | None = None,
+    ):
         """
         Args:
             pool (int): The pool's total size, including hunger
             hunger (int): The rolled hunger dice
             difficulty (int): The target number of successes
-            pool_str (Optional[int]): The pool's attribute + skill representation
+            max_hunger (int): The highest allowed Hunger rating
+            pool_str (str | None): The pool's attribute + skill representation
+            syntax (str | list[str] | None): The roll syntax as the user wrote it
+            impairment_penalty (Impairment): The impairment already subtracted
+                from the pool, if any. Recorded for display only.
+            base_pool (int | None): The pool's size before the impairment
+                penalty. Defaults to pool. Recorded for display only.
         """
         self.id = ObjectId()
+        self.impairment_penalty = impairment_penalty
+        self.base_pool = pool if base_pool is None else base_pool
         self.hunger_rating = hunger
 
         if not 0 <= hunger <= max_hunger:
@@ -39,10 +61,11 @@ class Roll:
         self.normal = DiceThrow(normal_dice)
         self.hunger = DiceThrow(hunger)
         self.difficulty = difficulty
-        self.strategy = None
-        self.descriptor = None
+        self.strategy: str | None = None
+        self.descriptor: str | None = None
         self.pool_str = pool_str
 
+        self.syntax: str | None
         if syntax is None:
             self.syntax = None
         elif isinstance(syntax, list):
@@ -65,7 +88,7 @@ class Roll:
     # Embed data
 
     @property
-    def embed_color(self):
+    def embed_color(self) -> int:
         """Determine the Discord embed color based on the result of the roll."""
         if self.is_critical:
             return 0x00FF00  # Green
@@ -82,7 +105,7 @@ class Roll:
         return 0x5C0700  # Dark red
 
     @property
-    def main_takeaway(self):
+    def main_takeaway(self) -> str:
         """The roll's main takeaway--i.e. "SUCCESS", "FAILURE", etc."""
         if self.is_critical:
             return "Critical"
@@ -99,7 +122,9 @@ class Roll:
         return "Bestial Failure"
 
     @property
-    def outcome(self):
+    def outcome(
+        self,
+    ) -> Literal["critical", "messy", "success", "fail", "total_fail", "bestial"]:
         """Simplified version of main_takeaway. Used in logs."""
         if self.is_critical:
             return "critical"
@@ -118,12 +143,12 @@ class Roll:
     # Roll Reflection
 
     @property
-    def pool(self):
+    def pool(self) -> int:
         """The total number of dice rolled."""
         return self.normal.count + self.hunger.count
 
     @property
-    def total_successes(self):
+    def total_successes(self) -> int:
         """The total number of successes."""
         total_tens = self.normal.tens + self.hunger.tens
         crits = total_tens - (total_tens % 2)
@@ -131,39 +156,39 @@ class Roll:
         return self.normal.successes + self.hunger.successes + crits
 
     @property
-    def margin(self):
+    def margin(self) -> int:
         """Return the roll's success margin."""
         return self.total_successes - self.difficulty
 
     @property
-    def is_critical(self):
+    def is_critical(self) -> bool:
         """Return true if the roll is a critical, but not messy, success."""
         critical = self.normal.tens >= 2 and self.hunger.tens == 0
         return critical and self.is_successful
 
     @property
-    def is_messy(self):
+    def is_messy(self) -> bool:
         """Return true if the roll is a messy critical."""
         messy = (self.normal.tens + self.hunger.tens) >= 2 and self.hunger.tens > 0
         return messy and self.is_successful
 
     @property
-    def is_successful(self):
+    def is_successful(self) -> bool:
         """Return true if the roll meets or exceeds its target."""
         return self.total_successes >= self.difficulty and self.total_successes > 0
 
     @property
-    def is_failure(self):
+    def is_failure(self) -> bool:
         """Return true if the target successes weren't achieved, but it isn't bestial."""
         return (self.hunger.ones == 0 and self.total_successes > 0) and not self.is_successful
 
     @property
-    def is_total_failure(self):
+    def is_total_failure(self) -> bool:
         """Return true if no successes were rolled, and no ones on hunger dice."""
         return self.total_successes == 0 and self.hunger.ones == 0
 
     @property
-    def is_bestial(self):
+    def is_bestial(self) -> bool:
         """Return true if the roll is a bestial failure."""
         bestial = self.hunger.ones > 0
         return bestial and not self.is_successful
@@ -172,12 +197,12 @@ class Roll:
     # in the pool! Use can_reroll for that.
 
     @property
-    def can_reroll_failures(self):
+    def can_reroll_failures(self) -> bool:
         """Whether there are any non-Hunger failures to re-roll."""
         return self.normal.failures > 0
 
     @property
-    def can_maximize_criticals(self):
+    def can_maximize_criticals(self) -> bool:
         """Whether there are any non-critical non-Hunger failures to re-roll."""
         if self.normal.count + self.hunger.count < 2:
             return False
@@ -187,7 +212,7 @@ class Roll:
         return self.normal.tens != self.normal.count
 
     @property
-    def can_avoid_messy_critical(self):
+    def can_avoid_messy_critical(self) -> bool:
         """Whether it's possible to avoid a messy critical, assuming we have one."""
         if not self.is_messy:
             return False
@@ -195,11 +220,11 @@ class Roll:
         return self.hunger.tens == 1 and self.normal.tens <= 3
 
     @property
-    def can_risky_messy_critical(self):
+    def can_risky_messy_critical(self) -> bool:
         """Whether a messy critical is possible *and* there are failures to re-roll."""
         return self.can_avoid_messy_critical and self.normal.failures > 0
 
-    def reroll(self, strategy):
+    def reroll(self, strategy: str):
         """Perform a reroll based on a given strategy."""
         if strategy == "reroll_failures":
             new_dice = _reroll_failures(self.normal.dice)
@@ -225,7 +250,7 @@ class Roll:
         self.normal = new_throw
 
 
-def _reroll_failures(dice: list) -> list:
+def _reroll_failures(dice: list[int]) -> list[int]:
     """Re-roll up to three failing dice."""
     new_dice = []
     rerolled = 0
@@ -240,7 +265,7 @@ def _reroll_failures(dice: list) -> list:
     return new_dice
 
 
-def _maximize_criticals(dice: list) -> list:
+def _maximize_criticals(dice: list[int]) -> list[int]:
     """Re-roll up to three non-critical dice."""
 
     # If there are 3 or more failure dice, we don't need to re-roll any successes.
@@ -280,7 +305,7 @@ def _maximize_criticals(dice: list) -> list:
     return new_dice
 
 
-def _avoid_messy(dice: list) -> list:
+def _avoid_messy(dice: list[int]) -> list[int]:
     """Re-roll up to three critical dice."""
     new_dice = []
     rerolled = 0
@@ -295,7 +320,7 @@ def _avoid_messy(dice: list) -> list:
     return new_dice
 
 
-def _risky_avoid_messy(dice: list) -> list:
+def _risky_avoid_messy(dice: list[int]) -> list[int]:
     """Re-roll up to three critical dice plus one or two failing dice."""
     new_dice = []
     tens_remaining = dice.count(10)

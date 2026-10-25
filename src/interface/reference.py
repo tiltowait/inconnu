@@ -11,7 +11,8 @@ from loguru import logger
 import inconnu
 import ui
 from ctx import AppCtx
-from inconnu.options import char_option, player_option
+from inconnu.options import char_option, impairment_option, player_option
+from models import ImpairmentCategory
 from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
 
 if TYPE_CHECKING:
@@ -63,15 +64,23 @@ class ReferenceCommands(commands.Cog):
         required=False,
     )
     @char_option("The character (if using traits)")
+    @impairment_option()
     async def probability(
         self,
         ctx: AppCtx,
         roll: str,
         reroll: str,
         character: str,
+        impairment_category: str | None,
     ):
         """Calculate outcome probabilities for a given roll."""
-        await inconnu.reference.probability(ctx, roll, reroll, character)
+        await inconnu.reference.probability(
+            ctx,
+            roll,
+            reroll,
+            character,
+            impairment_category=ImpairmentCategory.from_option(impairment_category),
+        )
 
     @slash_command()
     @option(

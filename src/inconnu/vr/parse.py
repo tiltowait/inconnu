@@ -14,7 +14,6 @@ import re
 from functools import partial
 
 import discord
-import discord.ext.commands
 from loguru import logger
 
 import errors
@@ -22,9 +21,9 @@ import services
 import ui
 from ctx import AppCtx
 from inconnu.roll import Roll
-from inconnu.vr.rolldisplay import RollDisplay
+from inconnu.vr.rolldisplay import RerollListener, RollDisplay, TimeoutHandler
 from inconnu.vr.rollparser import RollParser
-from models import VChar
+from models import IMPAIRMENT_DICE, Impairment, ImpairmentCategory, RollCategory, VChar
 from models.vchardocs import VCharTrait
 from services.haven import Haven
 
@@ -35,9 +34,11 @@ async def parse(
     ctx: AppCtx,
     raw_syntax: str,
     comment: str | None,
-    character: str | None,
+    char_name: str | None,
     player: discord.Member | None,
-):
+    *,
+    impairment_category: ImpairmentCategory | None = None,
+) -> VChar | None:
     """Parse the user's arguments and attempt to roll the dice."""
     raw_syntax = " ".join(raw_syntax.split())
     syntax = raw_syntax  # Save the raw in case we get a character error
@@ -65,15 +66,16 @@ async def parse(
         await ui.embeds.error(ctx, "You cannot roll traits in DMs!", help=__HELP_URL)
         return
 
-    # Determine the character being used, if any
+    # Determine the character being used, if any. Only guilds have characters,
+    # so in DMs, we ignore the character parameter if the user gave it.
+    character: VChar | None = None
     if ctx.guild is not None:
-        # Only guilds have characters
         try:
-            if character is not None or needs_character(syntax):
+            if char_name is not None or needs_character(syntax):
                 haven = Haven(
                     ctx,
                     owner=player,
-                    character=character,
+                    character=char_name,
                     char_filter=partial(_can_roll, syntax=syntax),
                     tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
                     help=__HELP_URL,
@@ -87,15 +89,16 @@ async def parse(
             return
         except errors.HandledError:
             return
-    else:
-        # Ignore the character parameter if the user gave it
-        character = None
 
     # Attempt to parse the user's roll syntax
     try:
         max_hunger = await services.settings.max_hunger(ctx.guild)
-        outcome = await perform_roll(character, syntax, max_hunger)
-        await display_outcome(ctx, owner, character, outcome, comment)
+        outcome = await perform_roll(
+            ctx, character, syntax, max_hunger, impairment_category=impairment_category
+        )
+        await display_outcome(
+            ctx, owner, character, outcome, comment, impairment_category=impairment_category
+        )
 
     except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
         if isinstance(err, errors.TraitError):
@@ -119,7 +122,7 @@ async def parse(
     return character
 
 
-def _can_roll(character, syntax):
+def _can_roll(character: VChar, syntax: str):
     """Raises an exception if the traits aren't found."""
     try:
         _ = RollParser(character, syntax)
@@ -160,21 +163,84 @@ def _can_roll(character, syntax):
 
 
 async def display_outcome(
-    ctx, player, character: VChar, results, comment, listener=None, timeout=None
+    ctx: AppCtx,
+    player: discord.Member | discord.User,
+    character: VChar | None,
+    results: Roll,
+    comment: str | None,
+    listener: RerollListener | None = None,
+    timeout: TimeoutHandler | None = None,
+    *,
+    impairment_category: ImpairmentCategory | None = None,
 ):
     """Display the roll results."""
-    roll_display = RollDisplay(ctx, results, comment, character, player, listener, timeout)
+    roll_display = RollDisplay(
+        ctx,
+        results,
+        comment,
+        character,
+        player,
+        listener,
+        timeout,
+        impairment_category=impairment_category,
+    )
 
     await roll_display.display()
 
 
-async def perform_roll(character: VChar, syntax, max_hunger=5):
-    """Public interface for __evaluate_syntax() that returns a Roll."""
+async def perform_roll(
+    ctx: AppCtx,
+    character: VChar | None,
+    syntax: str | list[str],
+    max_hunger=5,
+    *,
+    impairment_category: ImpairmentCategory | None = None,
+) -> Roll:
+    """Parse the syntax and roll the dice, applying any impairment penalty.
+
+    The pool string and syntax are left as the user wrote them; the penalty is
+    recorded on the Roll."""
     parser = RollParser(character, syntax)
-    return Roll(parser.pool, parser.hunger, parser.difficulty, max_hunger, parser.pool_str, syntax)
+    penalty = await impairment_penalty(ctx, character, parser.pool_str, impairment_category)
+    pool = parser.pool - IMPAIRMENT_DICE if penalty else parser.pool
+
+    return Roll(
+        pool,
+        parser.hunger,
+        parser.difficulty,
+        max_hunger,
+        parser.pool_str,
+        syntax,
+        impairment_penalty=penalty,
+        base_pool=parser.pool,
+    )
 
 
-def needs_character(syntax: str):
+async def impairment_penalty(
+    ctx: AppCtx,
+    character: VChar | None,
+    pool_str: str | None,
+    override: ImpairmentCategory | None = None,
+) -> Impairment:
+    """The Impairment that penalizes the roll, or Impairment.NONE if no penalty
+    applies. An override replaces the category detected from the pool and applies
+    even if the user turned off auto-impairment."""
+    if character is None:
+        return Impairment.NONE
+
+    category = override.roll_category if override else RollCategory.from_pool(pool_str)
+    impairment = character.impairment_state
+    if not impairment.penalizes(category):
+        return Impairment.NONE
+
+    # Checked last, so we only look up the setting when it matters
+    if override is None and not await services.settings.auto_impairment(ctx):
+        return Impairment.NONE
+
+    return impairment
+
+
+def needs_character(syntax: str) -> bool:
     """Determines whether a roll needs a character."""
     if not syntax:
         return False
@@ -182,42 +248,23 @@ def needs_character(syntax: str):
     return any(c.isalpha() or c in {"_", VCharTrait.DELIMITER} for c in syntax)
 
 
-async def stringify_mentions(ctx, sentence):
+async def stringify_mentions(ctx: AppCtx, sentence: str | None) -> str | None:
     """Replace all raw mentions and channels with their plaintext names."""
     if not sentence:
         return None
 
     # Use a set to avoid redundant lookups
     if matches := set(re.findall(r"<[@#]!?\d+>", sentence)):
-        member_converter = discord.ext.commands.MemberConverter()
-        channel_converter = discord.ext.commands.GuildChannelConverter()
-
         replacements = {}
         failed_lookups = 0
 
         for match in matches:
-            if match in replacements:
-                continue
-
-            if "@" in match:
-                # Member lookup
-                try:
-                    replacement = await member_converter.convert(ctx, match)
-                    replacements[match] = "@" + replacement.display_name
-                except discord.ext.commands.MemberNotFound:
-                    pass
+            if (name := await _mention_name(ctx, match)) is not None:
+                replacements[match] = name
             else:
-                # Channel lookup
-                try:
-                    replacement = await channel_converter.convert(ctx, match)
-                    replacements[match] = "#" + replacement.name
-                except discord.ext.commands.BadArgument:
-                    pass
-
-            # Realistically, there should be no failed lookups. If there are,
-            # the user is probably trying to lock up the bot. Give them three
-            # tries in case there's something weird going on before bailing.
-            if match not in replacements:
+                # Realistically, there should be no failed lookups. If there are,
+                # the user is probably trying to lock up the bot. Give them three
+                # tries in case there's something weird going on before bailing.
                 failed_lookups += 1
                 if failed_lookups == 3:
                     break
@@ -227,3 +274,28 @@ async def stringify_mentions(ctx, sentence):
             sentence = sentence.replace(match, replacement)
 
     return " ".join(sentence.split())
+
+
+async def _mention_name(ctx: AppCtx, mention: str) -> str | None:
+    """The plaintext name for a raw user or channel mention, or None if not found."""
+    snowflake = int(re.sub(r"\D", "", mention))
+
+    if mention.startswith("<#"):
+        if ctx.guild is None:
+            # Channels can only be looked up in guilds
+            return None
+        channel = ctx.guild.get_channel_or_thread(snowflake)
+        return f"#{channel.name}" if channel is not None else None
+
+    if ctx.guild is None:
+        # DMs have no members, but we can still find the user
+        user = ctx.bot.get_user(snowflake)
+        return f"@{user.display_name}" if user is not None else None
+
+    member = ctx.guild.get_member(snowflake)
+    if member is None:
+        try:
+            member = await ctx.guild.fetch_member(snowflake)
+        except discord.HTTPException:
+            return None
+    return f"@{member.display_name}"

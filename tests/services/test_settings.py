@@ -56,10 +56,11 @@ def mock_guild(guild_id: int = GUILD_ID):
     return guild
 
 
-def mock_vuser(accessibility: bool = False):
+def mock_vuser(accessibility=False, auto_impairment=True):
     """Create a mock VUser with settings."""
     vuser = MagicMock(spec=VUser)
     vuser.settings.accessibility = accessibility
+    vuser.settings.auto_impairment = auto_impairment
     return vuser
 
 
@@ -268,6 +269,20 @@ async def test_max_hunger_returns_guild_setting(mock_vguild_fetch, hunger):
 
     result = await services.settings.max_hunger(guild)
     assert result == hunger
+
+
+# Tests for auto_impairment()
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+async def test_auto_impairment_returns_user_setting(mock_vuser_fetch: AsyncMock, enabled: bool):
+    """Test that auto_impairment returns the invoking user's setting."""
+    ctx = mock_ctx()
+    mock_vuser_fetch.return_value = mock_vuser(auto_impairment=enabled)
+
+    result = await services.settings.auto_impairment(ctx)
+    assert result is enabled
+    mock_vuser_fetch.assert_awaited_once_with(USER_ID)
 
 
 # Tests for update_channel()

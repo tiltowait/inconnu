@@ -1,6 +1,7 @@
 """macros/roll.py - Rolling character macros."""
 
 import re
+from typing import cast
 from uuid import uuid4
 
 import discord
@@ -10,10 +11,13 @@ from loguru import logger
 import errors
 import inconnu
 import ui
-from ctx import AppCtx
+from ctx import AppCtx, AppInteraction, AppInvocation
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
+from inconnu.roll import Roll
 from inconnu.vr import display_outcome, perform_roll
+from models import ImpairmentCategory, VChar
+from models.vchardocs import VCharMacro
 from services.haven import Haven
 from utils import get_avatar
 
@@ -21,7 +25,13 @@ __HUNT_LISTENERS = {}
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/rolling"
 
 
-async def roll(ctx: AppCtx, syntax: str, character=None):
+async def roll(
+    ctx: AppCtx,
+    syntax: str,
+    char_name: str | None = None,
+    *,
+    impairment_category: ImpairmentCategory | None = None,
+):
     """Roll a macro."""
     try:
         # Get the basic macro details
@@ -34,7 +44,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
         # Get the character
         haven = Haven(
             ctx,
-            character=character,
+            character=char_name,
             char_filter=lambda c: c.find_macro(macro_name),
             tip=f"`/vm` `syntax:{syntax}` `character:CHARACTER`",
             help=__HELP_URL,
@@ -47,7 +57,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
         empty_macro = True
 
         macro = character.find_macro(macro_name)
-        outcome: inconnu.Roll | None = None
+        outcome: Roll | None = None
 
         if macro.pool:
             # Only roll if the macro has a pool
@@ -63,7 +73,9 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
             parameters.append(difficulty or str(macro.difficulty))
 
             try:
-                outcome = await perform_roll(character, parameters)
+                outcome = await perform_roll(
+                    ctx, character, parameters, impairment_category=impairment_category
+                )
             except errors.TraitNotFound as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
                 await ui.embeds.error(ctx, msg, character=character.name)
@@ -82,6 +94,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
                 macro.comment,
                 reroll_listener,
                 remove_hunt_listener,
+                impairment_category=impairment_category,
             )
 
             if macro.hunt:
@@ -108,7 +121,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
         return
 
 
-async def __rouse(ctx, character, macro) -> bool:
+async def __rouse(ctx: AppCtx, character: VChar, macro: VCharMacro) -> bool:
     """Perform a rouse check."""
     if macro.rouses > 0:
         if macro.comment is not None:
@@ -132,8 +145,9 @@ async def __rouse(ctx, character, macro) -> bool:
     return False
 
 
-async def reroll_listener(ctx, character, outcome):
+async def reroll_listener(ctx: AppInteraction, character: VChar | None, outcome: Roll):
     """Listens to roll events."""
+    character = cast(VChar, character)  # Macros always have a character
     if outcome.id in __HUNT_LISTENERS:
         old_inter = __HUNT_LISTENERS[outcome.id]
         if old_inter is None and outcome.is_successful:
@@ -146,13 +160,13 @@ async def reroll_listener(ctx, character, outcome):
         await remove_hunt_listener(outcome)
 
 
-async def remove_hunt_listener(outcome):
+async def remove_hunt_listener(outcome: Roll | None):
     """Stop listening for reroll events."""
     if outcome is not None and outcome.id in __HUNT_LISTENERS:
         del __HUNT_LISTENERS[outcome.id]
 
 
-async def __slake(ctx, character, outcome):
+async def __slake(ctx: AppInvocation, character: VChar, outcome: Roll | None):
     """Present a menu to slake Hunger."""
     if character.hunger > 0:
         # Show nothing if Hunger is 0
@@ -218,7 +232,12 @@ class _SlakeView(View):
 
     CANCEL_SLAKE = -1
 
-    def __init__(self, owner, character, outcome):
+    def __init__(
+        self,
+        owner: discord.Member | discord.User,
+        character: VChar,
+        outcome: Roll | None,
+    ):
         super().__init__(timeout=600)
         self.owner = owner
         self.character = character

@@ -5,7 +5,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import cast
+from typing import Any, cast
 
 import discord
 from discord.ui import Button
@@ -13,13 +13,17 @@ from discord.ui import Button
 import inconnu
 import services
 from ctx import AppCtx, AppInteraction, AppInvocation
+from inconnu.character.impairment import impairment_reminder, incapacitation_reminder
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
-from models import VChar
+from models import IMPAIRMENT_DICE, ImpairmentCategory, RollCategory, VChar
 from ui.views.reportingview import ReportingView
 from utils import get_avatar, get_message
 from utils.text import de_camel
 from utils.urls import web_asset
+
+type RerollListener = Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]]
+type TimeoutHandler = Callable[[Roll], Awaitable[None]]
 
 PRIMARY = discord.ButtonStyle.primary
 SECONDARY = discord.ButtonStyle.secondary
@@ -59,8 +63,10 @@ class RollDisplay(ReportingView):
         comment: str | None,
         character: VChar | None,
         owner: discord.Member | discord.User,
-        listener: Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]] | None,
-        timeout: Callable[[Roll], Awaitable[None]] | None,
+        listener: RerollListener | None,
+        timeout: TimeoutHandler | None,
+        *,
+        impairment_category: ImpairmentCategory | None = None,
     ):
         super().__init__(timeout=600)
         self.ctx = ctx
@@ -71,14 +77,19 @@ class RollDisplay(ReportingView):
         self.owner = owner
         self.listener = listener
         self.timeout_handler = timeout
+        self.impairment_category = impairment_category
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
+        self.auto_impairment = False  # Looked up when displayed
 
         self._render_buttons()
 
     async def display(self):
         """Send the roll."""
         self.use_emoji = await services.settings.can_emoji(self.ctx)
+        if self.character is not None:
+            # Only needed to word the Impairment reminder, which requires a character
+            self.auto_impairment = await services.settings.auto_impairment(self.ctx)
         inter = await self.ctx.respond(embed=self.embed, view=self)
         self.message = inter
 
@@ -155,7 +166,7 @@ class RollDisplay(ReportingView):
         await self._update(interaction)
         await inconnu.misc.rouse(interaction, self.character, 1, "Surge", reroll)
 
-    async def _update(self, interaction: AppInteraction, **kwargs):
+    async def _update(self, interaction: AppInteraction, **kwargs: Any):
         """Redraw the buttons and edit the message."""
         self._render_buttons()
         await interaction.response.edit_message(view=self, **kwargs)
@@ -402,9 +413,15 @@ class RollDisplay(ReportingView):
 
     @property
     def pool_str(self) -> str | None:
-        """The pool string, made nicer to read."""
+        """The pool string, made nicer to read, plus any impairment penalty. A
+        penalized number-only pool shows its pre-penalty size."""
+        penalty = None
+        if self.outcome.impairment_penalty:
+            impairment = self.outcome.impairment_penalty.description
+            penalty = f"- {IMPAIRMENT_DICE} ({impairment} impairment)"
+
         if not self.outcome.pool_str:
-            return None
+            return f"{self.outcome.base_pool} {penalty}" if penalty else None
 
         splitted = de_camel(self.outcome.pool_str).split()
 
@@ -412,15 +429,60 @@ class RollDisplay(ReportingView):
         # .title() will make everything else lowercase. "XYZ" would become
         # "Xyz", which is not desired.
         splitted = (t[0].upper() + t[1:] if t[0].islower() else t for t in splitted)
-        return " ".join(splitted)
+        pool_str = " ".join(splitted)
+
+        # Added after the capitalization above, which would otherwise turn
+        # "(physical impairment)" into "(physical Impairment)"
+        if penalty is not None:
+            pool_str += f" {penalty}"
+
+        return pool_str
 
     @property
     def comment(self) -> str | None:
-        """The original comment, plus any impairment string."""
-        if self.character is not None and self.character.impairment is not None:
+        """The original comment, plus any impairment note."""
+        if self.impairment_note is not None:
             comment = (self._comment + "\n") if self._comment else ""
-            return comment + self.character.impairment
+            return comment + self.impairment_note
         return self._comment
+
+    @property
+    def impairment_note(self) -> str | None:
+        """
+        The Impairment line for the comment, if any, in order of priority:
+
+        1. Torpor or death
+        2. An override notice, if the user's Impairment category changed whether
+           the character's Impairment applies to this roll
+        3. Nothing, if the penalty was applied (it's shown in the Pool field)
+        4. A reminder, if the character is impaired, worded for the user's
+           auto-impairment setting so auto users aren't told to subtract dice
+        """
+        if self.character is None:
+            return None
+        if self.character.incapacitated:
+            return incapacitation_reminder(self.character)
+        override = self.impairment_override
+        if override is ImpairmentCategory.IGNORE:
+            return "Override: Impairment ignored"
+        if override is not None:
+            return f"Override: {override.label} roll"
+        if self.outcome.impairment_penalty:
+            return None
+
+        return impairment_reminder(self.character, automatic=self.auto_impairment)
+
+    @property
+    def impairment_override(self) -> ImpairmentCategory | None:
+        """The user's Impairment category, if it changed whether the character's
+        Impairment applies to this roll. The user's setting doesn't factor in."""
+        if self.character is None or self.impairment_category is None:
+            return None
+
+        impairment = self.character.impairment_state
+        detected = impairment.penalizes(RollCategory.from_pool(self.outcome.pool_str))
+        chosen = impairment.penalizes(self.impairment_category.roll_category)
+        return self.impairment_category if detected != chosen else None
 
     @property
     def icon(self) -> str | discord.Asset:

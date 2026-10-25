@@ -39,6 +39,7 @@ class SettingsIDs(IntEnum):
     invocations/processes."""
 
     EMOJIS = auto()
+    AUTO_IMPAIRMENT = auto()
     OBLIVION = auto()
     RESONANCE = auto()
     EXPERIENCE = auto()
@@ -112,6 +113,27 @@ class SettingsMenu(discord.ui.DesignerView):
             TextDisplay("### Use emojis?\nUse custom emojis for dice, damage, etc."),
             accessory=button,
         )
+
+        if isinstance(self.scope, VUser):
+            # GAMEPLAY SETTINGS
+            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
+            container.add_text("## Gameplay")
+
+            auto_impairment = self.scope.settings.auto_impairment
+            button = Button(
+                label=self.button_label(auto_impairment),
+                style=self.button_style(auto_impairment),
+                id=SettingsIDs.AUTO_IMPAIRMENT,
+            )
+            button.callback = self.toggle_auto_impairment
+            container.add_section(
+                TextDisplay(
+                    "### Automatically apply Impairment?\n"
+                    "Subtract Impairment penalties from your rolls automatically. "
+                    "Use `impairment_category` to change it for a single roll."
+                ),
+                accessory=button,
+            )
 
         if isinstance(self.scope, VGuild):
             # GAMEPLAY SETTINGS
@@ -256,6 +278,20 @@ class SettingsMenu(discord.ui.DesignerView):
         await self.scope.save()
 
         self._log_update(interaction, "Use emojis", not self.scope.settings.accessibility)
+
+    async def toggle_auto_impairment(self, interaction: discord.Interaction):
+        """Toggle automatic impairment penalties (user only)."""
+        vuser = cast(VUser, self.scope)
+        vuser.settings.auto_impairment = not vuser.settings.auto_impairment
+
+        button = cast(Button, self.get_item(SettingsIDs.AUTO_IMPAIRMENT))
+        button.style = self.button_style(vuser.settings.auto_impairment)
+        button.label = self.button_label(vuser.settings.auto_impairment)
+
+        await interaction.edit(view=self)
+        await vuser.save()
+
+        self._log_update(interaction, "Auto impairment", vuser.settings.auto_impairment)
 
     async def set_oblivion_stains(self, interaction: discord.Interaction):
         """Set Oblivion stains mode."""

@@ -2,7 +2,6 @@
 
 import asyncio
 from collections import OrderedDict
-from typing import cast
 
 import discord
 from discord.ui import Button
@@ -13,6 +12,7 @@ import services
 import ui
 from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
+from inconnu.character.impairment import impairment_reminder
 from inconnu.character.update import paramupdate
 from models import VChar
 from services.haven import Haven
@@ -81,8 +81,11 @@ async def update(
                 color = discord.Color.red() if not color else color
             updates.extend(update_msg.split("\n"))
 
-        if (impairment := character.impairment) is not None:
-            updates.append(impairment)
+        if character.impairment_state:
+            # Incapacitation implies physical impairment, so it's covered too
+            automatic = await services.settings.auto_impairment(ctx)
+            if (impairment := impairment_reminder(character, automatic=automatic)) is not None:
+                updates.append(impairment)
 
         # Ignore generated output if we got a custom message
         if update_message is None:
@@ -94,7 +97,7 @@ async def update(
                 character,
                 fields=fields,
                 color=color,
-                owner=cast(discord.Member, haven.owner),  # Haven only runs in guilds
+                owner=haven.owner,
                 message=update_message,
                 thumbnail=character.profile_image_url if not fields else None,
             ),

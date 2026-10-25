@@ -52,9 +52,19 @@ GROUPED_TRAITS = {
     },
 }
 
+
 ATTRIBUTES = set(chain.from_iterable(GROUPED_TRAITS["ATTRIBUTES"].values()))
 SKILLS = set(chain.from_iterable(GROUPED_TRAITS["SKILLS"].values()))
 ATTRIBUTES_AND_SKILLS = ATTRIBUTES.union(SKILLS)
+
+# Impairment penalizes pools by their Attributes' category. Skills don't count,
+# because rolls freely pair Attributes and Skills across categories (e.g.
+# Composure + Firearms or Intelligence + Brawl).
+PHYSICAL_ATTRIBUTES = set(GROUPED_TRAITS["ATTRIBUTES"]["Physical"])
+MENTAL_SOCIAL_ATTRIBUTES = set(
+    GROUPED_TRAITS["ATTRIBUTES"]["Social"] + GROUPED_TRAITS["ATTRIBUTES"]["Mental"]
+)
+
 DISCIPLINES = [
     "Animalism",
     "Auspex",

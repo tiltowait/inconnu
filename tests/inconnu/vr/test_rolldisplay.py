@@ -12,8 +12,9 @@ from discord.ui import Button
 
 import inconnu
 from ctx import AppCtx
+from inconnu.character.impairment import impairment_reminder
 from inconnu.vr.rolldisplay import RollDisplay
-from models import VChar
+from models import Impairment, ImpairmentCategory, VChar
 from tests.characters import gen_char
 
 AVATAR = "https://example.com/avatar.png"
@@ -109,7 +110,16 @@ def mock_char_save() -> Iterator[AsyncMock]:
         yield mock
 
 
-def make_char(splat: str, hunger: int = 1) -> VChar:
+@pytest.fixture(autouse=True)
+def mock_auto_impairment() -> Iterator[AsyncMock]:
+    """The user's auto-impairment setting. Off by default, so reminders use the
+    manual wording."""
+    with patch("services.settings.auto_impairment", new_callable=AsyncMock) as mock:
+        mock.return_value = False
+        yield mock
+
+
+def make_char(splat: str, hunger=1) -> VChar:
     """Generate a PC with an ID and the given Hunger."""
     char = gen_char(splat)
     char.id = PydanticObjectId()
@@ -122,14 +132,21 @@ def make_char(splat: str, hunger: int = 1) -> VChar:
 def make_roll(
     normal: list[int],
     hunger: list[int],
-    difficulty: int = 0,
+    difficulty=0,
     pool_str: str | None = None,
     hunger_rating: int | None = None,
+    impairment_penalty=Impairment.NONE,
 ) -> inconnu.Roll:
     """Generate a roll with predetermined dice."""
     if hunger_rating is None:
         hunger_rating = len(hunger)
-    roll = inconnu.Roll(len(normal) + len(hunger), hunger_rating, difficulty, pool_str=pool_str)
+    roll = inconnu.Roll(
+        len(normal) + len(hunger),
+        hunger_rating,
+        difficulty,
+        pool_str=pool_str,
+        impairment_penalty=impairment_penalty,
+    )
     roll.normal.dice = normal
     roll.hunger.dice = hunger
     return roll
@@ -143,9 +160,19 @@ def make_display(
     character: VChar | None = None,
     listener: AsyncMock | None = None,
     timeout: AsyncMock | None = None,
+    impairment_category: ImpairmentCategory | None = None,
 ) -> RollDisplay:
     """Create a RollDisplay, optionally with a listener and timeout handler."""
-    return RollDisplay(ctx, roll, comment, character, owner, listener, timeout)
+    return RollDisplay(
+        ctx,
+        roll,
+        comment,
+        character,
+        owner,
+        listener,
+        timeout,
+        impairment_category=impairment_category,
+    )
 
 
 def field_map(embed: discord.Embed) -> dict[str, str]:
@@ -340,6 +367,34 @@ async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str, exp
     assert field.inline
 
 
+async def test_pool_field_with_impairment_penalty_number_pool(ctx: AppCtx, owner: discord.Member):
+    """A penalized number-only pool has no pool string, so the Pool field shows
+    its pre-penalty size and the penalty."""
+    roll = make_roll([6, 6, 6], [], impairment_penalty=Impairment.PHYSICAL)
+    roll.base_pool = 5
+    embed = await render(make_display(ctx, owner, roll, character=make_char("vampire")))
+
+    assert field_map(embed)["Pool"] == "5 - 2 (physical impairment)"
+
+
+@pytest.mark.parametrize(
+    "penalty,expected",
+    [
+        (Impairment.PHYSICAL, "Strength + Brawl - 2 (physical impairment)"),
+        (Impairment.MENTAL, "Strength + Brawl - 2 (mental impairment)"),
+        (Impairment.TOTAL, "Strength + Brawl - 2 (total impairment)"),
+    ],
+)
+async def test_pool_field_with_impairment_penalty(
+    ctx: AppCtx, owner: discord.Member, penalty: Impairment, expected: str
+):
+    """An applied penalty is shown in the Pool field, in lowercase."""
+    roll = make_roll([6], [], pool_str="Strength + Brawl", impairment_penalty=penalty)
+    embed = await render(make_display(ctx, owner, roll, character=make_char("vampire")))
+
+    assert field_map(embed)["Pool"] == expected
+
+
 # Hunger field
 
 
@@ -412,7 +467,7 @@ async def test_footer_impairment_only(ctx: AppCtx, owner: discord.Member):
     embed = await render(display)
     assert embed.footer is not None
 
-    assert embed.footer.text == char.impairment
+    assert embed.footer.text == impairment_reminder(char)
 
 
 async def test_footer_comment_and_impairment(ctx: AppCtx, owner: discord.Member):
@@ -423,7 +478,157 @@ async def test_footer_comment_and_impairment(ctx: AppCtx, owner: discord.Member)
     embed = await render(display)
     assert embed.footer is not None
 
-    assert embed.footer.text == f"Hello\n{char.impairment}"
+    assert embed.footer.text == f"Hello\n{impairment_reminder(char)}"
+
+
+# Impairment notes
+
+PHYSICALLY_IMPAIRED = "//////"
+
+
+async def test_footer_penalty_applied(ctx: AppCtx, owner: discord.Member):
+    """An applied penalty replaces the reminder; the Pool field shows it instead."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Strength + Brawl", impairment_penalty=Impairment.PHYSICAL)
+    embed = await render(make_display(ctx, owner, roll, comment="Hello", character=char))
+    assert embed.footer is not None
+
+    assert embed.footer.text == "Hello"
+
+
+@pytest.mark.parametrize("comment,expected", [(None, ""), ("Hello", "Hello\n")])
+async def test_footer_penalty_ignored(
+    ctx: AppCtx, owner: discord.Member, comment: str | None, expected: str
+):
+    """Ignoring a penalty that would apply shows an override notice."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Strength + Brawl")
+    display = make_display(
+        ctx, owner, roll, comment, char, impairment_category=ImpairmentCategory.IGNORE
+    )
+    embed = await render(display)
+    assert embed.footer is not None
+
+    assert embed.footer.text == expected + "Override: Impairment ignored"
+
+
+async def test_footer_reminder_with_auto_impairment(
+    ctx: AppCtx, owner: discord.Member, mock_auto_impairment: AsyncMock
+):
+    """Users with auto-impairment on aren't told to subtract dice themselves, even
+    on rolls the Impairment doesn't penalize."""
+    mock_auto_impairment.return_value = True
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Wits + Awareness")
+    embed = await render(make_display(ctx, owner, roll, character=char))
+    assert embed.footer is not None
+
+    assert embed.footer.text == (
+        "You are physically impaired. Your physical rolls will receive a -2 penalty."
+    )
+    mock_auto_impairment.assert_awaited_once_with(ctx)
+
+
+async def test_auto_impairment_not_looked_up_without_character(
+    ctx: AppCtx, owner: discord.Member, mock_auto_impairment: AsyncMock
+):
+    """Character-less rolls have no reminder to word, so the setting isn't needed."""
+    await render(make_display(ctx, owner, make_roll([6], [])))
+    mock_auto_impairment.assert_not_awaited()
+
+
+async def test_footer_ignored_penalty_that_would_not_apply(ctx: AppCtx, owner: discord.Member):
+    """Ignoring has no effect on rolls the impairment doesn't penalize, so the
+    reminder is shown instead of an override notice."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Wits + Awareness")
+    display = make_display(
+        ctx, owner, roll, character=char, impairment_category=ImpairmentCategory.IGNORE
+    )
+    embed = await render(display)
+    assert embed.footer is not None
+
+    assert embed.footer.text == impairment_reminder(char)
+
+
+@pytest.mark.parametrize(
+    "penalty,override",
+    [
+        (Impairment.PHYSICAL, None),
+        (Impairment.NONE, ImpairmentCategory.IGNORE),
+        (Impairment.NONE, ImpairmentCategory.MENTAL),
+        (Impairment.NONE, None),
+    ],
+)
+async def test_footer_incapacitation_takes_priority(
+    ctx: AppCtx,
+    owner: discord.Member,
+    penalty: Impairment,
+    override: ImpairmentCategory | None,
+):
+    """Torpor and death are always shown, whatever happened to the penalty."""
+    char = make_char("vampire")
+    char.health = "xxxxxx"
+    roll = make_roll([6], [], pool_str="Strength + Brawl", impairment_penalty=penalty)
+    display = make_display(ctx, owner, roll, "Hello", char, impairment_category=override)
+    embed = await render(display)
+    assert embed.footer is not None
+
+    assert embed.footer.text == "Hello\nYou are IN TORPOR!"
+
+
+async def test_footer_category_override_adds_penalty(ctx: AppCtx, owner: discord.Member):
+    """A category that makes the Impairment apply shows the penalty and why."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll(
+        [6], [], pool_str="Charisma + Performance", impairment_penalty=Impairment.PHYSICAL
+    )
+    display = make_display(
+        ctx, owner, roll, character=char, impairment_category=ImpairmentCategory.PHYSICAL
+    )
+    embed = await render(display)
+    assert embed.footer is not None
+
+    assert field_map(embed)["Pool"] == "Charisma + Performance - 2 (physical impairment)"
+    assert embed.footer.text == "Override: Physical roll"
+
+
+async def test_footer_category_override_removes_penalty(ctx: AppCtx, owner: discord.Member):
+    """A category that stops the Impairment applying replaces the reminder."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Strength + Brawl")
+    display = make_display(
+        ctx, owner, roll, character=char, impairment_category=ImpairmentCategory.MENTAL
+    )
+    embed = await render(display)
+    assert embed.footer is not None
+
+    assert embed.footer.text == "Override: Mental/Social roll"
+
+
+async def test_footer_category_override_without_effect(ctx: AppCtx, owner: discord.Member):
+    """Choosing the category the bot would have detected anyway isn't mentioned."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Strength + Brawl", impairment_penalty=Impairment.PHYSICAL)
+    display = make_display(
+        ctx,
+        owner,
+        roll,
+        comment="Hello",
+        character=char,
+        impairment_category=ImpairmentCategory.PHYSICAL,
+    )
+    embed = await render(display)
+    assert embed.footer is not None
+
+    assert embed.footer.text == "Hello"
 
 
 # Surging

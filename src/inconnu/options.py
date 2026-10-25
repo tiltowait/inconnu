@@ -4,6 +4,7 @@ import discord
 from discord.commands import Option, OptionChoice
 
 import services
+from models import ImpairmentCategory
 
 
 def ratings(low, high) -> list:
@@ -26,6 +27,23 @@ def char_option(description="The character to use", required=False, param="chara
             name=param,
             autocomplete=_available_characters,
             required=required,
+        )
+        return func
+
+    return decorator
+
+
+def impairment_option(param="impairment_category"):
+    """A command decorator letting users override a roll's Impairment category."""
+
+    def decorator(func):
+        func.__annotations__[param] = Option(
+            str,
+            "Change the roll's Impairment category, or ignore Impairment",
+            name=param,
+            choices=[OptionChoice(choice.label, choice.value) for choice in ImpairmentCategory],
+            required=False,
+            default=None,
         )
         return func
 

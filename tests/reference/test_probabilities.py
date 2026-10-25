@@ -1,16 +1,22 @@
 """Tests for inconnu/reference/probabilities.py."""
 
 import time
+from collections.abc import Iterator
 from dataclasses import asdict
 from itertools import combinations_with_replacement
 from math import factorial
-from unittest.mock import patch
+from typing import cast
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import discord
 import pytest
 
 import inconnu
-from inconnu.reference.probabilities import Strategy, calculate
+from ctx import AppCtx
+from inconnu.reference.probabilities import Strategy, calculate, probability
 from inconnu.roll.dicethrow import DiceThrow
+from models import ImpairmentCategory, VChar
+from tests.characters import gen_char
 
 # Representative faces and their odds. Faces within a category behave identically.
 _NORMAL_FACES = ((1, 0.5), (6, 0.4), (10, 0.1))
@@ -125,3 +131,85 @@ def test_calculate_invalid_parameters(pool: int, hunger: int, difficulty: int):
         inconnu.Roll(pool, hunger, difficulty)
     with pytest.raises(ValueError):
         calculate(pool, hunger, difficulty)
+
+
+# Impairment
+
+
+@pytest.fixture
+def impaired_vampire() -> VChar:
+    """A physically impaired vampire with a 5-dice physical pool."""
+    char = gen_char("vampire")
+    char.assign_traits({"Strength": 3, "Brawl": 2})
+    char.health = "/" * len(char.health)
+    return char
+
+
+@pytest.fixture
+def ctx() -> AppCtx:
+    """A guild context that records what it sends."""
+    ctx = MagicMock(spec=AppCtx)
+    ctx.guild = MagicMock(spec=discord.Guild)
+    ctx.respond = AsyncMock()
+    return ctx
+
+
+@pytest.fixture
+def mock_settings() -> Iterator[None]:
+    """Auto-impairment on; text instead of emoji."""
+    with (
+        patch("services.settings.auto_impairment", new_callable=AsyncMock, return_value=True),
+        patch("services.settings.can_emoji", new_callable=AsyncMock, return_value=False),
+    ):
+        yield
+
+
+@pytest.fixture
+def mock_haven(impaired_vampire: VChar) -> Iterator[MagicMock]:
+    """Make the character lookup return the impaired vampire."""
+    haven = MagicMock()
+    haven.fetch = AsyncMock(return_value=impaired_vampire)
+    with patch("inconnu.reference.probabilities.Haven", return_value=haven) as mock:
+        yield mock
+
+
+def sent_embed(ctx: AppCtx) -> discord.Embed:
+    """The embed the command responded with."""
+    call = cast(AsyncMock, ctx.respond).await_args
+    assert call is not None
+    return call.kwargs["embed"]
+
+
+@pytest.mark.usefixtures("mock_settings", "mock_haven")
+async def test_probability_applies_impairment(ctx: AppCtx):
+    """The odds are for the penalized pool, and the penalty is shown."""
+    await probability(ctx, "strength+brawl 0 1")
+    embed = sent_embed(ctx)
+
+    assert embed.title == "Pool 3 | Hunger 0 | DC 1"
+    assert embed.description is not None
+    assert embed.description.startswith("*Includes -2 (physical impairment)*\n\n")
+
+
+@pytest.mark.usefixtures("mock_settings", "mock_haven")
+async def test_probability_ignores_impairment(ctx: AppCtx):
+    """Ignoring Impairment shows the odds for the full pool."""
+    await probability(ctx, "strength+brawl 0 1", impairment_category=ImpairmentCategory.IGNORE)
+    embed = sent_embed(ctx)
+
+    assert embed.title == "Pool 5 | Hunger 0 | DC 1"
+    assert embed.description is not None
+    assert "impairment" not in embed.description
+
+
+@pytest.mark.usefixtures("mock_settings", "mock_haven")
+async def test_probability_impairment_with_strategy(ctx: AppCtx):
+    """The penalty is listed under the reroll strategy."""
+    await probability(ctx, "strength+brawl 0 1", "reroll_failures")
+    embed = sent_embed(ctx)
+
+    assert embed.description is not None
+    expected = (
+        f"**{Strategy.REROLL_FAILURES.description}**\n*Includes -2 (physical impairment)*\n\n"
+    )
+    assert embed.description.startswith(expected)

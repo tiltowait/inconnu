@@ -14,7 +14,6 @@ import re
 from functools import partial
 
 import discord
-import discord.ext.commands
 from loguru import logger
 
 import errors
@@ -216,35 +215,16 @@ async def stringify_mentions(ctx: AppCtx, sentence: str | None) -> str | None:
 
     # Use a set to avoid redundant lookups
     if matches := set(re.findall(r"<[@#]!?\d+>", sentence)):
-        member_converter = discord.ext.commands.MemberConverter()
-        channel_converter = discord.ext.commands.GuildChannelConverter()
-
         replacements = {}
         failed_lookups = 0
 
         for match in matches:
-            if match in replacements:
-                continue
-
-            if "@" in match:
-                # Member lookup
-                try:
-                    replacement = await member_converter.convert(ctx, match)
-                    replacements[match] = "@" + replacement.display_name
-                except discord.ext.commands.MemberNotFound:
-                    pass
+            if (name := await _mention_name(ctx, match)) is not None:
+                replacements[match] = name
             else:
-                # Channel lookup
-                try:
-                    replacement = await channel_converter.convert(ctx, match)
-                    replacements[match] = "#" + replacement.name
-                except discord.ext.commands.BadArgument:
-                    pass
-
-            # Realistically, there should be no failed lookups. If there are,
-            # the user is probably trying to lock up the bot. Give them three
-            # tries in case there's something weird going on before bailing.
-            if match not in replacements:
+                # Realistically, there should be no failed lookups. If there are,
+                # the user is probably trying to lock up the bot. Give them three
+                # tries in case there's something weird going on before bailing.
                 failed_lookups += 1
                 if failed_lookups == 3:
                     break
@@ -254,3 +234,28 @@ async def stringify_mentions(ctx: AppCtx, sentence: str | None) -> str | None:
             sentence = sentence.replace(match, replacement)
 
     return " ".join(sentence.split())
+
+
+async def _mention_name(ctx: AppCtx, mention: str) -> str | None:
+    """The plaintext name for a raw user or channel mention, or None if not found."""
+    snowflake = int(re.sub(r"\D", "", mention))
+
+    if mention.startswith("<#"):
+        if ctx.guild is None:
+            # Channels can only be looked up in guilds
+            return None
+        channel = ctx.guild.get_channel_or_thread(snowflake)
+        return f"#{channel.name}" if channel is not None else None
+
+    if ctx.guild is None:
+        # DMs have no members, but we can still find the user
+        user = ctx.bot.get_user(snowflake)
+        return f"@{user.display_name}" if user is not None else None
+
+    member = ctx.guild.get_member(snowflake)
+    if member is None:
+        try:
+            member = await ctx.guild.fetch_member(snowflake)
+        except discord.HTTPException:
+            return None
+    return f"@{member.display_name}"

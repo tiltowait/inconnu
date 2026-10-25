@@ -143,7 +143,7 @@ def test_create_view_too_many_characters(mock_ctx: AppCtx):
 async def test_selection_valid(mock_ctx: AppCtx):
     """Selecting a valid character sets the match and captures the interaction."""
     haven = Haven(mock_ctx)
-    haven.owner = mock_ctx.user
+    haven._owner = cast(discord.Member, mock_ctx.user)
     char = make_char("Alice")
     populate(haven, (char, None))
     view = make_view(haven.uuid + char.id_str)
@@ -163,7 +163,7 @@ async def test_selection_valid(mock_ctx: AppCtx):
 async def test_selection_of_filtered_character_is_rejected(mock_ctx: AppCtx):
     """Choosing a filter-failing character shows its stored error and aborts."""
     haven = Haven(mock_ctx)
-    haven.owner = mock_ctx.user
+    haven._owner = cast(discord.Member, mock_ctx.user)
     good = make_char("Alice")
     bad = make_char("Bob")
     filter_err = errors.InconnuError("Bob cannot do that")
@@ -189,7 +189,7 @@ async def test_selection_of_filtered_character_is_rejected(mock_ctx: AppCtx):
 async def test_selection_timeout(mock_ctx: AppCtx):
     """A view that finishes without a selection aborts."""
     haven = Haven(mock_ctx)
-    haven.owner = mock_ctx.user
+    haven._owner = cast(discord.Member, mock_ctx.user)
     populate(haven, (make_char("Alice"), None))
     view = make_view(None)
 
@@ -206,7 +206,7 @@ async def test_selection_timeout(mock_ctx: AppCtx):
 async def test_selection_unpresentable(mock_ctx: AppCtx):
     """When no view can be constructed, the user is informed and we abort."""
     haven = Haven(mock_ctx)
-    haven.owner = mock_ctx.user
+    haven._owner = cast(discord.Member, mock_ctx.user)
 
     with (
         patch.object(Haven, "_create_view", return_value=None),

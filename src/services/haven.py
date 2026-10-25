@@ -56,7 +56,7 @@ class Haven:
         self.uuid = uuid.uuid4().hex  # For ensuring button uniqueness
         self.ctx = ctx
         self._given_owner = owner
-        self.owner = None
+        self._owner: discord.Member | None = None  # Set in fetch()
         self.allow_lookups = allow_lookups
         self.tip = tip
         self.help = help
@@ -72,21 +72,29 @@ class Haven:
         # API call).
         self.new_interaction = None
 
+    @property
+    def owner(self) -> discord.Member:
+        """The character's owner. Only available after fetch()."""
+        if self._owner is None:
+            raise RuntimeError("Haven.owner accessed before fetch()")
+        return self._owner
+
     async def fetch(self):
         """Fetch the sole-matching character or raise a CharacterError."""
         guild = cast(discord.Guild, self.ctx.guild)
         try:
-            # Confirm ownership. We weren't able to do so in a sync context,
-            # but now that we're async, we can do so and send an error message
-            # if it's invalid.
-            self.owner = player_lookup(self.ctx, self._given_owner, self.allow_lookups)
+            # Owner is either the invoking user or the supplied owner. Only
+            # admins are allowed to select on players' behalf, so player_lookup
+            # raises LookupError for non-admins. Handling that exception
+            # requires an async context, which is why we don't assign _owner in
+            # init.
+            self._owner = player_lookup(self.ctx, self._given_owner, self.allow_lookups)
 
             # If the owner only has one character, or selected one, then we
             # can skip the rest of the fetch and filter routine
-            user = cast(discord.Member, self.owner)
             character = await services.char_mgr.fetchone(
                 guild,
-                user,
+                self.owner,
                 self.match,
             )
             logger.debug("HAVEN: Found explicit character: {}", character.name)
@@ -110,20 +118,17 @@ class Haven:
             raise errors.HandledError() from err
 
         except errors.NoCharactersError as err:
-            assert self.owner is not None
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await ui.embeds.error(self.ctx, errmsg)
             raise errors.HandledError() from err
 
         except errors.CharacterNotFoundError as err:
-            assert self.owner is not None
             errmsg = _personalize_error(err, self.ctx, self.owner)
             await ui.embeds.error(self.ctx, errmsg)
             raise errors.HandledError() from err
 
         except errors.UnspecifiedCharacterError as err:
             # Multiple possible characters. Fetch them all
-            assert self.owner is not None
             all_chars = await services.char_mgr.fetchall(guild.id, self.owner.id)
             if self.filter is not None:
                 # If we were given a filter, then we can only add those
@@ -171,7 +176,6 @@ class Haven:
 
     async def _get_user_selection(self, err: errors.UnspecifiedCharacterError):
         """Present the player's character options."""
-        assert self.owner is not None
         errmsg = _personalize_error(err, self.ctx, self.owner)
 
         view = self._create_view()
@@ -204,7 +208,6 @@ class Haven:
                 # character may still be selected. Reject it with the same
                 # error an explicitly named character would get.
                 logger.debug("HAVEN: {} selected but fails filter", character.name)
-                assert self.owner is not None
                 await ui.embeds.error(
                     view.interaction,
                     _personalize_error(filter_err, self.ctx, self.owner),
@@ -277,7 +280,7 @@ class Haven:
 
 def player_lookup(
     ctx: AppCtx, player: discord.Member | None, allow_lookups: bool
-) -> discord.Member | discord.User:
+) -> discord.Member:
     """
     Look up a player.
     Returns the sought-after player OR the ctx author if player is None.
@@ -286,7 +289,7 @@ def player_lookup(
     """
     if player is None:
         logger.debug("HAVEN: No lookup issued")
-        return ctx.user
+        return cast(discord.Member, ctx.user)  # Haven only runs in guilds
 
     # Players are allowed to look up themselves
     if ctx.user != player:

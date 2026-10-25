@@ -11,6 +11,7 @@ from beanie import PydanticObjectId
 from discord.ui import Button
 
 import inconnu
+from constants import Impairment
 from ctx import AppCtx
 from inconnu.vr.rolldisplay import RollDisplay
 from models import VChar
@@ -125,11 +126,18 @@ def make_roll(
     difficulty: int = 0,
     pool_str: str | None = None,
     hunger_rating: int | None = None,
+    impairment_penalty: Impairment = Impairment.NONE,
 ) -> inconnu.Roll:
     """Generate a roll with predetermined dice."""
     if hunger_rating is None:
         hunger_rating = len(hunger)
-    roll = inconnu.Roll(len(normal) + len(hunger), hunger_rating, difficulty, pool_str=pool_str)
+    roll = inconnu.Roll(
+        len(normal) + len(hunger),
+        hunger_rating,
+        difficulty,
+        pool_str=pool_str,
+        impairment_penalty=impairment_penalty,
+    )
     roll.normal.dice = normal
     roll.hunger.dice = hunger
     return roll
@@ -143,9 +151,19 @@ def make_display(
     character: VChar | None = None,
     listener: AsyncMock | None = None,
     timeout: AsyncMock | None = None,
+    ignore_impairment: bool = False,
 ) -> RollDisplay:
     """Create a RollDisplay, optionally with a listener and timeout handler."""
-    return RollDisplay(ctx, roll, comment, character, owner, listener, timeout)
+    return RollDisplay(
+        ctx,
+        roll,
+        comment,
+        character,
+        owner,
+        listener,
+        timeout,
+        ignore_impairment=ignore_impairment,
+    )
 
 
 def field_map(embed: discord.Embed) -> dict[str, str]:
@@ -340,6 +358,24 @@ async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str, exp
     assert field.inline
 
 
+@pytest.mark.parametrize(
+    "penalty,expected",
+    [
+        (Impairment.PHYSICAL, "Strength + Brawl -2 (physical impairment)"),
+        (Impairment.MENTAL, "Strength + Brawl -2 (mental impairment)"),
+        (Impairment.TOTAL, "Strength + Brawl -2 (total impairment)"),
+    ],
+)
+async def test_pool_field_with_impairment_penalty(
+    ctx: AppCtx, owner: discord.Member, penalty: Impairment, expected: str
+):
+    """An applied penalty is shown in the Pool field, in lowercase."""
+    roll = make_roll([6], [], pool_str="Strength + Brawl", impairment_penalty=penalty)
+    embed = await render(make_display(ctx, owner, roll, character=make_char("vampire")))
+
+    assert field_map(embed)["Pool"] == expected
+
+
 # Hunger field
 
 
@@ -424,6 +460,67 @@ async def test_footer_comment_and_impairment(ctx: AppCtx, owner: discord.Member)
     assert embed.footer is not None
 
     assert embed.footer.text == f"Hello\n{char.impairment_reminder}"
+
+
+# Impairment notes
+
+PHYSICALLY_IMPAIRED = "//////"
+
+
+async def test_footer_penalty_applied(ctx: AppCtx, owner: discord.Member):
+    """An applied penalty replaces the reminder; the Pool field shows it instead."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Strength + Brawl", impairment_penalty=Impairment.PHYSICAL)
+    embed = await render(make_display(ctx, owner, roll, comment="Hello", character=char))
+    assert embed.footer is not None
+
+    assert embed.footer.text == "Hello"
+
+
+@pytest.mark.parametrize("comment,expected", [(None, ""), ("Hello", "Hello\n")])
+async def test_footer_penalty_ignored(
+    ctx: AppCtx, owner: discord.Member, comment: str | None, expected: str
+):
+    """Ignoring a penalty that would apply shows an override notice."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Strength + Brawl")
+    display = make_display(ctx, owner, roll, comment, char, ignore_impairment=True)
+    embed = await render(display)
+    assert embed.footer is not None
+
+    assert embed.footer.text == expected + "Override: Impairment ignored"
+
+
+async def test_footer_ignored_penalty_that_would_not_apply(ctx: AppCtx, owner: discord.Member):
+    """Ignoring has no effect on rolls the impairment doesn't penalize, so the
+    reminder is shown instead of an override notice."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Wits + Awareness")
+    embed = await render(make_display(ctx, owner, roll, character=char, ignore_impairment=True))
+    assert embed.footer is not None
+
+    assert embed.footer.text == char.impairment_reminder
+
+
+@pytest.mark.parametrize(
+    "penalty,ignore",
+    [(Impairment.PHYSICAL, False), (Impairment.NONE, True), (Impairment.NONE, False)],
+)
+async def test_footer_incapacitation_takes_priority(
+    ctx: AppCtx, owner: discord.Member, penalty: Impairment, ignore: bool
+):
+    """Torpor and death are always shown, whatever happened to the penalty."""
+    char = make_char("vampire")
+    char.health = "xxxxxx"
+    roll = make_roll([6], [], pool_str="Strength + Brawl", impairment_penalty=penalty)
+    display = make_display(ctx, owner, roll, "Hello", char, ignore_impairment=ignore)
+    embed = await render(display)
+    assert embed.footer is not None
+
+    assert embed.footer.text == "Hello\nYou are IN TORPOR!"
 
 
 # Surging

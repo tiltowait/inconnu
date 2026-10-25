@@ -132,6 +132,19 @@ class Impairment(Flag):
     MENTAL = auto()
     TOTAL = PHYSICAL | MENTAL
 
+    @property
+    def description(self) -> str:
+        """The impairment's display name."""
+        match self:
+            case Impairment.PHYSICAL:
+                return "physical"
+            case Impairment.MENTAL:
+                return "mental"
+            case Impairment.TOTAL:
+                return "total"
+            case _:
+                return "none"
+
     def penalizes(self, category: RollCategory) -> bool:
         """Whether this impairment penalizes a roll of the given category. Rolls
         without a category, such as number-only pools, are never penalized."""

@@ -12,6 +12,7 @@ from discord.ui import Button
 
 import inconnu
 import services
+from constants import IMPAIRMENT_DICE, RollCategory
 from ctx import AppCtx, AppInteraction, AppInvocation
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
@@ -408,7 +409,7 @@ class RollDisplay(ReportingView):
 
     @property
     def pool_str(self) -> str | None:
-        """The pool string, made nicer to read."""
+        """The pool string, made nicer to read, plus any impairment penalty."""
         if not self.outcome.pool_str:
             return None
 
@@ -418,15 +419,46 @@ class RollDisplay(ReportingView):
         # .title() will make everything else lowercase. "XYZ" would become
         # "Xyz", which is not desired.
         splitted = (t[0].upper() + t[1:] if t[0].islower() else t for t in splitted)
-        return " ".join(splitted)
+        pool_str = " ".join(splitted)
+
+        # Added after the capitalization above, which would otherwise turn
+        # "(physical impairment)" into "(physical Impairment)"
+        if self.outcome.impairment_penalty:
+            impairment = self.outcome.impairment_penalty.description
+            pool_str += f" -{IMPAIRMENT_DICE} ({impairment} impairment)"
+
+        return pool_str
 
     @property
     def comment(self) -> str | None:
-        """The original comment, plus any impairment string."""
-        if self.character is not None and self.character.impairment_reminder is not None:
+        """The original comment, plus any impairment note."""
+        if self.impairment_note is not None:
             comment = (self._comment + "\n") if self._comment else ""
-            return comment + self.character.impairment_reminder
+            return comment + self.impairment_note
         return self._comment
+
+    @property
+    def impairment_note(self) -> str | None:
+        """
+        The impairment line for the comment, if any, in order of priority:
+
+        1. Torpor or death
+        2. Nothing, if the penalty was applied (it's shown in the Pool field)
+        3. An override notice, if the user ignored a penalty that would apply
+        4. A reminder, if the character is impaired
+        """
+        if self.character is None:
+            return None
+        if self.character.incapacitation_reminder is not None:
+            return self.character.incapacitation_reminder
+        if self.outcome.impairment_penalty:
+            return None
+
+        category = RollCategory.from_pool(self.outcome.pool_str)
+        if self.ignore_impairment and self.character.impairment_state.penalizes(category):
+            return "Override: Impairment ignored"
+
+        return self.character.impairment_reminder
 
     @property
     def icon(self) -> str | discord.Asset:

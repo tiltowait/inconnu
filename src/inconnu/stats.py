@@ -97,7 +97,7 @@ def _gen_roll(
     message: int | None,
     char: VChar | None,
     outcome,
-    comment: str,
+    comment: str | None,
 ):
     """Add a new roll outcome entry to the database."""
     return {
@@ -115,6 +115,7 @@ def _gen_roll(
         "margin": outcome.margin,
         "outcome": outcome.outcome,
         "pool": outcome.pool_str,
+        "impaired": bool(outcome.impairment_penalty),
         "comment": comment,
         "reroll": None,
         "use_in_stats": True,

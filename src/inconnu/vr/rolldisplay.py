@@ -5,7 +5,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import cast
+from typing import Any, cast
 
 import discord
 from discord.ui import Button
@@ -20,6 +20,9 @@ from ui.views.reportingview import ReportingView
 from utils import get_avatar, get_message
 from utils.text import de_camel
 from utils.urls import web_asset
+
+type RerollListener = Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]]
+type TimeoutHandler = Callable[[Roll], Awaitable[None]]
 
 PRIMARY = discord.ButtonStyle.primary
 SECONDARY = discord.ButtonStyle.secondary
@@ -59,8 +62,8 @@ class RollDisplay(ReportingView):
         comment: str | None,
         character: VChar | None,
         owner: discord.Member | discord.User,
-        listener: Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]] | None,
-        timeout: Callable[[Roll], Awaitable[None]] | None,
+        listener: RerollListener | None,
+        timeout: TimeoutHandler | None,
         *,
         ignore_impairment: bool = False,
     ):
@@ -158,7 +161,7 @@ class RollDisplay(ReportingView):
         await self._update(interaction)
         await inconnu.misc.rouse(interaction, self.character, 1, "Surge", reroll)
 
-    async def _update(self, interaction: AppInteraction, **kwargs):
+    async def _update(self, interaction: AppInteraction, **kwargs: Any):
         """Redraw the buttons and edit the message."""
         self._render_buttons()
         await interaction.response.edit_message(view=self, **kwargs)

@@ -22,7 +22,7 @@ import services
 import ui
 from ctx import AppCtx
 from inconnu.roll import Roll
-from inconnu.vr.rolldisplay import RollDisplay
+from inconnu.vr.rolldisplay import RerollListener, RollDisplay, TimeoutHandler
 from inconnu.vr.rollparser import RollParser
 from models import VChar
 from models.vchardocs import VCharTrait
@@ -35,11 +35,11 @@ async def parse(
     ctx: AppCtx,
     raw_syntax: str,
     comment: str | None,
-    character: str | None,
+    char_name: str | None,
     player: discord.Member | None,
     *,
     ignore_impairment: bool = False,
-):
+) -> VChar | None:
     """Parse the user's arguments and attempt to roll the dice."""
     raw_syntax = " ".join(raw_syntax.split())
     syntax = raw_syntax  # Save the raw in case we get a character error
@@ -67,15 +67,16 @@ async def parse(
         await ui.embeds.error(ctx, "You cannot roll traits in DMs!", help=__HELP_URL)
         return
 
-    # Determine the character being used, if any
+    # Determine the character being used, if any. Only guilds have characters,
+    # so in DMs, we ignore the character parameter if the user gave it.
+    character: VChar | None = None
     if ctx.guild is not None:
-        # Only guilds have characters
         try:
-            if character is not None or needs_character(syntax):
+            if char_name is not None or needs_character(syntax):
                 haven = Haven(
                     ctx,
                     owner=player,
-                    character=character,
+                    character=char_name,
                     char_filter=partial(_can_roll, syntax=syntax),
                     tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
                     help=__HELP_URL,
@@ -89,9 +90,6 @@ async def parse(
             return
         except errors.HandledError:
             return
-    else:
-        # Ignore the character parameter if the user gave it
-        character = None
 
     # Attempt to parse the user's roll syntax
     try:
@@ -125,7 +123,7 @@ async def parse(
     return character
 
 
-def _can_roll(character, syntax):
+def _can_roll(character: VChar, syntax: str):
     """Raises an exception if the traits aren't found."""
     try:
         _ = RollParser(character, syntax)
@@ -166,13 +164,13 @@ def _can_roll(character, syntax):
 
 
 async def display_outcome(
-    ctx,
-    player,
-    character: VChar,
-    results,
-    comment,
-    listener=None,
-    timeout=None,
+    ctx: AppCtx,
+    player: discord.Member | discord.User,
+    character: VChar | None,
+    results: Roll,
+    comment: str | None,
+    listener: RerollListener | None = None,
+    timeout: TimeoutHandler | None = None,
     *,
     ignore_impairment: bool = False,
 ):
@@ -191,13 +189,19 @@ async def display_outcome(
     await roll_display.display()
 
 
-async def perform_roll(character: VChar, syntax, max_hunger=5, *, ignore_impairment: bool = False):
+async def perform_roll(
+    character: VChar | None,
+    syntax: str | list[str],
+    max_hunger: int = 5,
+    *,
+    ignore_impairment: bool = False,
+) -> Roll:
     """Public interface for __evaluate_syntax() that returns a Roll."""
     parser = RollParser(character, syntax)
     return Roll(parser.pool, parser.hunger, parser.difficulty, max_hunger, parser.pool_str, syntax)
 
 
-def needs_character(syntax: str):
+def needs_character(syntax: str) -> bool:
     """Determines whether a roll needs a character."""
     if not syntax:
         return False
@@ -205,7 +209,7 @@ def needs_character(syntax: str):
     return any(c.isalpha() or c in {"_", VCharTrait.DELIMITER} for c in syntax)
 
 
-async def stringify_mentions(ctx, sentence):
+async def stringify_mentions(ctx: AppCtx, sentence: str | None) -> str | None:
     """Replace all raw mentions and channels with their plaintext names."""
     if not sentence:
         return None

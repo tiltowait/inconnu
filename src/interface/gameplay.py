@@ -194,7 +194,7 @@ class Gameplay(commands.Cog):
     @char_option("The character to heal")
     async def mend(
         self,
-        ctx,
+        ctx: AppCtx,
         character: str,
     ):
         """Mend Superficial damage. For vampires, amount is based on BP and costs a Rouse check."""

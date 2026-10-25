@@ -129,10 +129,8 @@ class Impairment(Flag):
     TOTAL = PHYSICAL | MENTAL
 
     def penalizes(self, category: RollCategory) -> bool:
-        """Whether this impairment penalizes a roll of the given category. Total
-        impairment penalizes every roll, even one whose category is unknown."""
-        if self is Impairment.TOTAL:
-            return True
+        """Whether this impairment penalizes a roll of the given category. Rolls
+        without a category, such as number-only pools, are never penalized."""
         physical = Impairment.PHYSICAL in self and RollCategory.PHYSICAL in category
         mental = Impairment.MENTAL in self and RollCategory.MENTAL in category
         return physical or mental

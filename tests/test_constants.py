@@ -50,13 +50,13 @@ NONE, PHYSICAL, MENTAL, MIXED = (
         (Impairment.NONE, []),
         (Impairment.PHYSICAL, [PHYSICAL, MIXED]),
         (Impairment.MENTAL, [MENTAL, MIXED]),
-        (Impairment.TOTAL, [NONE, PHYSICAL, MENTAL, MIXED]),
+        (Impairment.TOTAL, [PHYSICAL, MENTAL, MIXED]),
     ],
 )
 @pytest.mark.parametrize("category", [NONE, PHYSICAL, MENTAL, MIXED])
 def test_impairment_penalizes(
     impairment: Impairment, penalized: list[RollCategory], category: RollCategory
 ):
-    """Impairment penalizes rolls with an impaired category. Total impairment
-    penalizes every roll, including those with no category."""
+    """Impairment penalizes rolls with an impaired category. Rolls with no
+    category are never penalized, even by total impairment."""
     assert impairment.penalizes(category) is (category in penalized)

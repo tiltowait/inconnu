@@ -78,6 +78,7 @@ class VGuildSettings(BaseModel):
     add_empty_resonance: bool = False
     resonance: ResonanceMode = ResonanceMode.STANDARD
     max_hunger: int = Field(ge=5, le=10, default=5)
+    allow_hidden_dice: bool = True
 
     @property
     def use_emojis(self) -> bool:

@@ -41,6 +41,9 @@ async def parse(
     hide_dice=False,
 ) -> VChar | None:
     """Parse the user's arguments and attempt to roll the dice."""
+    if not await hidden_dice_allowed(ctx, hide_dice):
+        return
+
     raw_syntax = " ".join(raw_syntax.split())
     syntax = raw_syntax  # Save the raw in case we get a character error
     owner = ctx.user
@@ -167,6 +170,15 @@ def _can_roll(character: VChar, syntax: str):
         # This works, because SyntaxErrors aren't handled by Haven.
         msg += "\n\n**Vampires:** `POOL` `HUNGER` `DIFFICULTY`\n**Mortals:** `POOL` `DIFFICULTY`"
         raise SyntaxError(msg) from err
+
+
+async def hidden_dice_allowed(ctx: AppCtx, hide_dice: bool) -> bool:
+    """Whether the roll may go ahead. If the server doesn't allow hidden dice,
+    the user is told. Check before rolling anything, Rouse checks included."""
+    if hide_dice and not await services.settings.allow_hidden_dice(ctx.guild):
+        await ui.embeds.error(ctx, "This server doesn't allow hidden dice.")
+        return False
+    return True
 
 
 async def display_outcome(

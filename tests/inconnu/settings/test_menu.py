@@ -77,3 +77,50 @@ async def test_toggle_auto_impairment(ctx: AppCtx, mock_save: AsyncMock):
 
     await menu.toggle_auto_impairment(interaction)
     assert vuser.settings.auto_impairment
+
+
+def hidden_dice_button(menu: SettingsMenu) -> Button | None:
+    """The hidden dice toggle, if the menu has one."""
+    return cast(Button | None, menu.get_item(SettingsIDs.HIDDEN_DICE))
+
+
+@pytest.mark.parametrize(
+    "allowed,label,style",
+    [(True, "Yes", discord.ButtonStyle.primary), (False, "No", discord.ButtonStyle.secondary)],
+)
+@pytest.mark.parametrize("admin", [True, False])
+async def test_guild_menu_shows_hidden_dice(
+    ctx: AppCtx, allowed: bool, label: str, style: discord.ButtonStyle, admin: bool
+):
+    """The server menu's toggle reflects the setting, and only admins may use it."""
+    vguild = VGuild(guild=1, name="Test Guild")
+    vguild.settings.allow_hidden_dice = allowed
+    button = hidden_dice_button(SettingsMenu(ctx, vguild, admin=admin))
+
+    assert button is not None
+    assert button.label == label
+    assert button.style == style
+    assert button.disabled is not admin
+
+
+async def test_user_menu_has_no_hidden_dice(ctx: AppCtx):
+    """Hidden dice permission is a server setting, so users don't get it."""
+    assert hidden_dice_button(SettingsMenu(ctx, VUser(user=1), admin=True)) is None
+
+
+async def test_toggle_hidden_dice(ctx: AppCtx):
+    """Toggling flips the setting, updates the button, and saves."""
+    vguild = VGuild(guild=1, name="Test Guild")
+    menu = SettingsMenu(ctx, vguild, admin=True)
+    interaction = AsyncMock(spec=discord.Interaction)
+
+    with patch.object(VGuild, "save", new_callable=AsyncMock) as mock_save:
+        await menu.toggle_hidden_dice(interaction)
+
+    assert not vguild.settings.allow_hidden_dice
+    button = hidden_dice_button(menu)
+    assert button is not None
+    assert button.label == "No"
+    assert button.style == discord.ButtonStyle.secondary
+    interaction.edit.assert_awaited_once_with(view=menu)
+    mock_save.assert_awaited_once()

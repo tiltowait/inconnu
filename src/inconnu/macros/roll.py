@@ -16,7 +16,7 @@ from ctx import AppCtx, AppInteraction, AppInvocation
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
 from inconnu.roll import Roll
-from inconnu.vr import display_outcome, perform_roll
+from inconnu.vr import display_outcome, hidden_dice_allowed, perform_roll
 from models import ImpairmentCategory, VChar
 from models.vchardocs import VCharMacro
 from services.haven import Haven
@@ -35,6 +35,9 @@ async def roll(
     hide_dice=False,
 ):
     """Roll a macro."""
+    if not await hidden_dice_allowed(ctx, hide_dice):
+        return
+
     try:
         # Get the basic macro details
         macro_stack, hunger, difficulty = __normalize_syntax(syntax)

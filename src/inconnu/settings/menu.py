@@ -47,6 +47,7 @@ class SettingsIDs(IntEnum):
     CHANGELOG = auto()
     DELETION = auto()
     MAX_HUNGER = auto()
+    HIDDEN_DICE = auto()
 
 
 class OblivionOptions(StrEnum):
@@ -139,6 +140,25 @@ class SettingsMenu(discord.ui.DesignerView):
             # GAMEPLAY SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
             container.add_text("## Gameplay")
+
+            # Hidden dice
+            allow_hidden_dice = self.scope.settings.allow_hidden_dice
+            button = Button(
+                label=self.button_label(allow_hidden_dice),
+                style=self.button_style(allow_hidden_dice),
+                id=SettingsIDs.HIDDEN_DICE,
+                disabled=not admin,
+            )
+            button.callback = self.toggle_hidden_dice
+            container.add_section(
+                TextDisplay(
+                    "### Allow hidden dice?\n"
+                    "Let players use `dice:Hide` to show others only a roll's outcome and pool."
+                ),
+                accessory=button,
+            )
+
+            container.add_item(discord.ui.Separator())
 
             # Resonance mode
             current_resonance = self.scope.settings.resonance
@@ -292,6 +312,20 @@ class SettingsMenu(discord.ui.DesignerView):
         await vuser.save()
 
         self._log_update(interaction, "Auto impairment", vuser.settings.auto_impairment)
+
+    async def toggle_hidden_dice(self, interaction: discord.Interaction):
+        """Toggle whether players may hide their dice (server only)."""
+        vguild = cast(VGuild, self.scope)
+        vguild.settings.allow_hidden_dice = not vguild.settings.allow_hidden_dice
+
+        button = cast(Button, self.get_item(SettingsIDs.HIDDEN_DICE))
+        button.style = self.button_style(vguild.settings.allow_hidden_dice)
+        button.label = self.button_label(vguild.settings.allow_hidden_dice)
+
+        await interaction.edit(view=self)
+        await vguild.save()
+
+        self._log_update(interaction, "Allow hidden dice", vguild.settings.allow_hidden_dice)
 
     async def set_oblivion_stains(self, interaction: discord.Interaction):
         """Set Oblivion stains mode."""

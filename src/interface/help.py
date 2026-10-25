@@ -235,7 +235,7 @@ class Help(commands.Cog):
             name="Hidden dice",
             value=(
                 "Use `dice:Hide` to show others only the outcome and pool. You'll privately "
-                "see the full roll and its buttons."
+                "see the full roll and its buttons. Admins can disallow it in `/settings`."
             ),
             inline=False,
         )

@@ -28,6 +28,14 @@ def clear_hunt_listeners() -> Iterator[None]:
     HUNT_LISTENERS.clear()
 
 
+@pytest.fixture(autouse=True)
+def mock_allow_hidden_dice() -> Iterator[AsyncMock]:
+    """The server allows hidden dice by default."""
+    with patch("services.settings.allow_hidden_dice", new_callable=AsyncMock) as mock:
+        mock.return_value = True
+        yield mock
+
+
 @pytest.fixture
 def owner() -> discord.Member:
     """The hunter's player."""
@@ -225,3 +233,26 @@ async def test_failed_hunt_reroll_listener(
     await listener(inter, character, outcome)
 
     inter.respond.assert_awaited_once_with(embed=ANY, view=ANY, ephemeral=hide_dice)
+
+
+async def test_hidden_hunt_disallowed(
+    ctx: AppCtx,
+    mock_haven: MagicMock,
+    mock_display_outcome: AsyncMock,
+    mock_allow_hidden_dice: AsyncMock,
+):
+    """If the server disallows hidden dice, nothing is rolled or looked up."""
+    mock_allow_hidden_dice.return_value = False
+
+    with patch("inconnu.macros.roll.rouse", new_callable=AsyncMock) as mock_rouse:
+        await hunt(ctx, 6, True)
+
+    mock_haven.assert_not_called()
+    mock_rouse.assert_not_awaited()
+    mock_display_outcome.assert_not_awaited()
+    respond = cast(AsyncMock, ctx.respond)
+    assert respond.await_args is not None
+    assert respond.await_args.kwargs["ephemeral"] is True
+    assert (
+        respond.await_args.kwargs["embed"].description == "This server doesn't allow hidden dice."
+    )

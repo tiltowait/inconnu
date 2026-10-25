@@ -17,7 +17,8 @@ from loguru import logger
 from pydantic import ConfigDict, Field
 
 import errors
-from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage, Impairment
+from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
+from models.impairment import Impairment
 from models.vchardocs import (
     VCharExperience,
     VCharExperienceEntry,

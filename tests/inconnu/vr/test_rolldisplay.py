@@ -11,11 +11,10 @@ from beanie import PydanticObjectId
 from discord.ui import Button
 
 import inconnu
-from constants import Impairment
 from ctx import AppCtx
 from inconnu.character.impairment import impairment_reminder
 from inconnu.vr.rolldisplay import RollDisplay
-from models import VChar
+from models import Impairment, VChar
 from tests.characters import gen_char
 
 AVATAR = "https://example.com/avatar.png"

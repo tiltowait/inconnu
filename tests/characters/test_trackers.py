@@ -2,8 +2,8 @@
 
 import pytest
 
-from constants import Damage, Impairment
-from models import VChar
+from constants import Damage
+from models import Impairment, VChar
 from models.vchar import Tracker
 from tests.characters import gen_char
 

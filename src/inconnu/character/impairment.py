@@ -1,7 +1,6 @@
 """character/impairment.py - Describing a character's impairment to players."""
 
-from constants import IMPAIRMENT_DICE, Impairment
-from models import VChar
+from models import IMPAIRMENT_DICE, Impairment, VChar
 
 
 def incapacitation_reminder(character: VChar) -> str | None:

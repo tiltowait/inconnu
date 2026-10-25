@@ -8,10 +8,9 @@ import aiohttp
 import discord
 import pytest
 
-from constants import Impairment
 from ctx import AppCtx
 from inconnu.vr.parse import perform_roll, stringify_mentions
-from models import VChar
+from models import Impairment, VChar
 from tests.characters import gen_char
 
 MEMBER_ID = 280000000000000001

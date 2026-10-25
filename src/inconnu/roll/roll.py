@@ -3,8 +3,9 @@
 from bson import ObjectId
 
 import inconnu
-from constants import ATTRIBUTES_AND_SKILLS, Impairment
+from constants import ATTRIBUTES_AND_SKILLS
 from inconnu.roll.dicethrow import DiceThrow
+from models import Impairment
 
 __MAX_REROLL = 3
 

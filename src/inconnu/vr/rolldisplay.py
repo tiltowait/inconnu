@@ -12,12 +12,11 @@ from discord.ui import Button
 
 import inconnu
 import services
-from constants import IMPAIRMENT_DICE, RollCategory
 from ctx import AppCtx, AppInteraction, AppInvocation
 from inconnu.character.impairment import impairment_reminder, incapacitation_reminder
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
-from models import VChar
+from models import IMPAIRMENT_DICE, RollCategory, VChar
 from ui.views.reportingview import ReportingView
 from utils import get_avatar, get_message
 from utils.text import de_camel

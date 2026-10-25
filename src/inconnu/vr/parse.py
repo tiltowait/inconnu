@@ -19,12 +19,11 @@ from loguru import logger
 import errors
 import services
 import ui
-from constants import IMPAIRMENT_DICE, Impairment, RollCategory
 from ctx import AppCtx
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RerollListener, RollDisplay, TimeoutHandler
 from inconnu.vr.rollparser import RollParser
-from models import VChar
+from models import IMPAIRMENT_DICE, Impairment, RollCategory, VChar
 from models.vchardocs import VCharTrait
 from services.haven import Haven
 

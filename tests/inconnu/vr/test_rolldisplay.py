@@ -103,7 +103,7 @@ def mock_post_update() -> Iterator[AsyncMock]:
 @pytest.fixture(autouse=True)
 def mock_rouse() -> Iterator[AsyncMock]:
     """Prevent surge Rouse checks."""
-    with patch("inconnu.misc.rouse", new_callable=AsyncMock) as mock:
+    with patch("inconnu.misc.perform_rouse", new_callable=AsyncMock) as mock:
         yield mock
 
 

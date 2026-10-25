@@ -26,8 +26,15 @@ class ErrorReporter:
     """A utility that posts error messages in a specified channel."""
 
     def __init__(self):
-        self.bot: InconnuBot | None = None
+        self._bot: InconnuBot | None = None
         self.channel: discord.TextChannel | None = None
+
+    @property
+    def bot(self) -> "InconnuBot":
+        """The bot instance."""
+        if self._bot is None:
+            raise RuntimeError("prepare_channel() must be called first")
+        return self._bot
 
     @property
     def reinvite_message(self) -> discord.Embed:
@@ -52,7 +59,7 @@ class ErrorReporter:
 
     async def prepare_channel(self, bot: "InconnuBot"):
         """Attempt to get the error channel from the bot."""
-        self.bot = bot
+        self._bot = bot
         if settings.report_channel is not None:
             logger.info("REPORTER: Report channel ID: {}", settings.report_channel)
             channel = await bot.fetch_channel(settings.report_channel)
@@ -95,7 +102,10 @@ class ErrorReporter:
                 "https://docs.inconnu.app/advanced/troubleshooting#you-arent-able-to-upload-images"
             )
 
-            cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
+            if ctx.command is not None:
+                cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
+            else:
+                cmd_mention = "this feature"
             await ui.embeds.error(
                 ctx,
                 (f"Only patrons can use {cmd_mention}. Click the Patreon button to get started!"),
@@ -150,7 +160,7 @@ class ErrorReporter:
             raise error from error
 
         # Print the error to the log
-        if isinstance(ctx, discord.ApplicationContext):
+        if isinstance(ctx, discord.ApplicationContext) and ctx.command is not None:
             scope = ctx.command.qualified_name.upper()
         else:
             scope = "INTERACTION"
@@ -189,7 +199,7 @@ class ErrorReporter:
 
         # If we can, we use the command name to try to pinpoint where the error
         # took place. The stack trace usually makes this clear, but not always!
-        if isinstance(ctx, discord.ApplicationContext):
+        if isinstance(ctx, discord.ApplicationContext) and ctx.command is not None:
             command_name = ctx.command.qualified_name.upper()
         else:
             command_name = "INTERACTION"
@@ -239,7 +249,9 @@ async def post_update(
         # Update channels only exist in guilds
         return None
 
-    if update_channel := await get_update_channel(ctx.guild):
+    # The settings menu only offers text channels
+    update_channel = await get_update_channel(ctx.guild)
+    if isinstance(update_channel, discord.TextChannel):
         if embed is None:
             # Only updates with their own embed may omit the character
             assert character is not None

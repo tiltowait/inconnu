@@ -180,7 +180,7 @@ class RollDisplay(ReportingView):
         else:
             self.state.surge = _Surge.BEFORE_REROLL
         await self._update(interaction)
-        await inconnu.misc.rouse(
+        await inconnu.misc.perform_rouse(
             interaction, self.character, 1, "Surge", reroll, ephemeral=self.hide_dice
         )
 

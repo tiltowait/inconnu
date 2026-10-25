@@ -1,11 +1,13 @@
 """stats.py - Various packages for user statistics."""
 
 from datetime import UTC, datetime
+from typing import Any
 
 import discord
 from pymongo import ReturnDocument, UpdateOne
 
 import db
+from inconnu.roll import Roll
 from models import VChar, VGuild
 
 
@@ -15,16 +17,19 @@ async def log_roll(
     user: int,
     message: int | None,
     char: VChar | None,
-    outcome,
-    comment,
+    outcome: Roll,
+    comment: str | None,
 ):
     """
     Log a roll and its outcome. If the roll is a reroll, simply replace it.
     Args:
-        guild (int): The Discord ID of the guild where the roll was made
+        guild (int | None): The Discord ID of the guild where the roll was made (None in DMs)
+        channel (int | None): The Discord ID of the channel (None in DMs)
         user (int): The Discord ID of the user making the roll
-        charid (VChar): The character that made the roll (optional)
+        message (int | None): The roll message's ID, for toggling stats (None for rerolls)
+        char (VChar | None): The character that made the roll (optional)
         outcome (Roll): The roll's parameters and outcome
+        comment (str | None): The roll's comment, if any
     """
     rolls = db.rolls
 
@@ -49,7 +54,7 @@ async def toggle_roll_stats(message: int) -> bool | None:
     return None
 
 
-async def roll_message_deleted(*message_ids):
+async def roll_message_deleted(*message_ids: int):
     """Remove a set of rolls from stats calculation."""
     updates = []
     for message_id in message_ids:
@@ -58,7 +63,7 @@ async def roll_message_deleted(*message_ids):
     await db.rolls.bulk_write(updates)
 
 
-async def delete_rolls_in_channel(channel):
+async def delete_rolls_in_channel(channel: discord.abc.GuildChannel):
     """Delete all rolls in a channel."""
     await db.rolls.update_many({"channel": channel.id}, {"$set": {"use_in_stats": False}})
 
@@ -96,9 +101,9 @@ def _gen_roll(
     user: int,
     message: int | None,
     char: VChar | None,
-    outcome,
+    outcome: Roll,
     comment: str | None,
-):
+) -> dict[str, Any]:
     """Add a new roll outcome entry to the database."""
     return {
         "_id": outcome.id,
@@ -122,7 +127,7 @@ def _gen_roll(
     }
 
 
-def _gen_reroll(outcome):
+def _gen_reroll(outcome: Roll) -> dict[str, Any]:
     """
     Update a roll entry.
     Args:

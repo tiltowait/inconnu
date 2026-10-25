@@ -1,0 +1,1 @@
+"""Docs router tests package."""

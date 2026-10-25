@@ -31,6 +31,7 @@ async def rouse(
     reroll: bool,
     oblivion: str | bool = "show",
     message=None,
+    ephemeral=False,
 ):
     """
     Perform a remorse check on a given character and display the results.
@@ -40,9 +41,10 @@ async def rouse(
         purpose (str): The reason for the rouse
         reroll (bool): Whether failures should be re-rolled
         oblivion (bool, default False): Whether to show the Oblivion message.
+        ephemeral (bool, default False): Whether only the user sees the outcome
     """
     if character.splat == "ghoul":
-        await __damage_ghoul(ctx, character)
+        await __damage_ghoul(ctx, character, ephemeral)
     else:
         # Vampire
         outcome = await __rouse_roll(ctx.guild, character, count, reroll)
@@ -53,7 +55,9 @@ async def rouse(
             update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
         await character.save()
-        inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
+        inter = await __display_outcome(
+            ctx, character, outcome, purpose, oblivion, message, ephemeral
+        )
         msg = await get_message(inter)
 
         if character.hunger >= 4:
@@ -89,7 +93,9 @@ def __make_title(outcome):
     return title
 
 
-async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, message):
+async def __display_outcome(
+    ctx, character: VChar, outcome, purpose, oblivion, message, ephemeral: bool
+):
     """Process the rouse result and display to the user."""
     title = __make_title(outcome)
 
@@ -144,10 +150,11 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         color=color,
         thumbnail=thumbnail,
         view=view,
+        ephemeral=ephemeral,
     )
 
 
-async def __damage_ghoul(ctx, ghoul):
+async def __damage_ghoul(ctx, ghoul, ephemeral: bool):
     """Apply Aggravated damage to a ghoul and display."""
     ghoul.set_aggravated_hp(ghoul.aggravated_hp + 1)
     await inconnu.character.display(
@@ -157,6 +164,7 @@ async def __damage_ghoul(ctx, ghoul):
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
         fields=[("Health", inconnu.character.DisplayField.HEALTH)],
         footer="V5 Core, p.234",
+        ephemeral=ephemeral,
     )
     await ghoul.save()
 

@@ -143,6 +143,7 @@ class RollDisplay(ReportingView):
                 title="Willpower Spent",
                 owner=cast(discord.Member, self.owner),  # Characters only exist in guilds
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
+                ephemeral=self.hide_dice,
             )
 
     async def rouse(self, interaction: AppInteraction):
@@ -177,7 +178,9 @@ class RollDisplay(ReportingView):
         else:
             self.state.surge = _Surge.BEFORE_REROLL
         await self._update(interaction)
-        await inconnu.misc.rouse(interaction, self.character, 1, "Surge", reroll)
+        await inconnu.misc.rouse(
+            interaction, self.character, 1, "Surge", reroll, ephemeral=self.hide_dice
+        )
 
     async def _update(self, interaction: AppInteraction, **kwargs: Any):
         """Redraw the buttons and edit the message."""

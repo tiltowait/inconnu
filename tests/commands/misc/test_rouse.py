@@ -398,3 +398,26 @@ async def test_vamp_rouse_high_hunger_color(vamp: VChar, ctx: AppCtx, mock_char_
         color = call_args.kwargs.get("color")
         assert color is not None
         assert color == constants.ROUSE_FAIL_COLOR
+
+
+@pytest.mark.parametrize("splat", ["vamp", "ghoul"])
+@pytest.mark.parametrize("ephemeral", [False, True])
+@pytest.mark.usefixtures("mock_char_save")
+async def test_rouse_ephemeral(
+    request: pytest.FixtureRequest, ctx: AppCtx, splat: str, ephemeral: bool
+):
+    """The outcome is shown only to the user when requested."""
+    character: VChar = request.getfixturevalue(splat)
+
+    with (
+        patch("inconnu.d10", return_value=6),
+        patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
+        patch("services.character_update", new_callable=AsyncMock),
+        patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
+        patch("utils.get_message", new_callable=AsyncMock),
+    ):
+        await rouse(ctx, character, 1, "Surge", False, ephemeral=ephemeral)
+
+    call_args = mock_display.await_args
+    assert call_args is not None
+    assert call_args.kwargs["ephemeral"] is ephemeral

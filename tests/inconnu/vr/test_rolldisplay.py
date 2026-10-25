@@ -1302,12 +1302,19 @@ async def test_reroll_notifies_listener(ctx: AppCtx, owner: discord.Member, has_
 # Willpower
 
 
+@pytest.mark.parametrize("hide_dice", [False, True])
 async def test_mark_wp(
-    ctx: AppCtx, owner: discord.Member, mock_char_save: AsyncMock, mock_char_display: AsyncMock
+    ctx: AppCtx,
+    owner: discord.Member,
+    mock_char_save: AsyncMock,
+    mock_char_display: AsyncMock,
+    hide_dice: bool,
 ):
-    """Marking WP adds Superficial Willpower damage and disables the button."""
+    """Marking WP adds Superficial Willpower damage and disables the button.
+    Hidden rolls show the new Willpower privately."""
     char = make_char("vampire")
-    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), character=char))
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, character=char, hide_dice=hide_dice))
     with patch("inconnu.d10", return_value=10):
         await press_reroll_failures(screen)
 
@@ -1316,7 +1323,7 @@ async def test_mark_wp(
     assert char.superficial_wp == 1
     mock_char_save.assert_awaited_once()
     mock_char_display.assert_awaited_once_with(
-        ANY, char, title="Willpower Spent", owner=owner, fields=ANY
+        ANY, char, title="Willpower Spent", owner=owner, fields=ANY, ephemeral=hide_dice
     )
     assert screen.embed is not None
     assert screen.embed.title == "R: SUCCESS! (2)"
@@ -1326,6 +1333,7 @@ async def test_mark_wp(
 # Surging
 
 
+@pytest.mark.parametrize("hide_dice", [False, True])
 @pytest.mark.parametrize(
     "press_surge,oblivion",
     [(press_rouse, False), (press_rouse_reroll, True)],
@@ -1336,15 +1344,18 @@ async def test_surge(
     mock_rouse: AsyncMock,
     press_surge: PressHelper,
     oblivion: bool,
+    hide_dice: bool,
 ):
-    """Surging Rouses once and disables both surge buttons."""
+    """Surging Rouses once and disables both surge buttons. Hidden rolls show
+    the Rouse privately."""
     char = make_char("vampire")
-    display = make_display(ctx, owner, make_roll([6, 2], [], 2), comment="surge", character=char)
+    roll = make_roll([6, 2], [], 2)
+    display = make_display(ctx, owner, roll, "surge", char, hide_dice=hide_dice)
     screen = await show(display)
 
     await press_surge(screen)
 
-    mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", oblivion)
+    mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", oblivion, ephemeral=hide_dice)
     assert screen.buttons == [
         ("Re-Roll Failures", PRIMARY, False, None),
         ("Max Crits", PRIMARY, False, None),
@@ -1380,7 +1391,7 @@ async def test_reroll_then_surge(ctx: AppCtx, owner: discord.Member, mock_rouse:
         await press_reroll_failures(screen)
     await press_rouse(screen)
 
-    mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", False)
+    mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", False, ephemeral=False)
     assert screen.buttons == [
         ("Mark WP Use", PRIMARY, False, None),
         ("Rouse", SECONDARY, True, None),

@@ -9,8 +9,8 @@ import discord
 import pytest
 
 from ctx import AppCtx
-from inconnu.vr.parse import perform_roll, stringify_mentions
-from models import Impairment, ImpairmentCategory, VChar
+from inconnu.vr.parse import hidden_dice_allowed, parse, perform_roll, stringify_mentions
+from models import HiddenDicePerms, Impairment, ImpairmentCategory, VChar
 from tests.characters import gen_char
 
 MEMBER_ID = 280000000000000001
@@ -329,3 +329,64 @@ async def test_category_override_removes_penalty(
     assert roll.pool == 5
     assert roll.impairment_penalty == Impairment.NONE
     mock_auto_impairment.assert_not_awaited()
+
+
+# Hidden dice permission
+
+
+ADMINS_ONLY = "Only admins can hide their dice on this server."
+DISALLOWED = "This server doesn't allow hidden dice."
+
+
+@pytest.mark.parametrize(
+    "hide_dice,perms,admin,error",
+    [
+        (False, HiddenDicePerms.DISABLED, False, None),
+        (True, HiddenDicePerms.ENABLED, False, None),
+        (True, HiddenDicePerms.ADMIN_ONLY, True, None),
+        (True, HiddenDicePerms.ADMIN_ONLY, False, ADMINS_ONLY),
+        (True, HiddenDicePerms.DISABLED, True, DISALLOWED),
+        (True, HiddenDicePerms.DISABLED, False, DISALLOWED),
+    ],
+)
+async def test_hidden_dice_allowed(
+    hide_dice: bool, perms: HiddenDicePerms, admin: bool, error: str | None
+):
+    """Hiding dice is refused, with the reason, unless the server's permissions
+    allow it for this user. Disabled applies to admins, too."""
+    ctx = MagicMock(spec=AppCtx)
+    with (
+        patch(
+            "services.settings.hidden_dice_permissions",
+            new_callable=AsyncMock,
+            return_value=perms,
+        ),
+        patch("inconnu.vr.parse.is_admin", return_value=admin),
+        patch("ui.embeds.error", new_callable=AsyncMock) as mock_error,
+    ):
+        result = await hidden_dice_allowed(ctx, hide_dice)
+
+    assert result is (error is None)
+    if error is None:
+        mock_error.assert_not_awaited()
+    else:
+        mock_error.assert_awaited_once_with(ctx, error)
+
+
+async def test_parse_disallowed_hidden_dice():
+    """If the server disallows hidden dice, nothing is rolled."""
+    ctx = MagicMock(spec=AppCtx)
+    with (
+        patch(
+            "services.settings.hidden_dice_permissions",
+            new_callable=AsyncMock,
+            return_value=HiddenDicePerms.DISABLED,
+        ),
+        patch("ui.embeds.error", new_callable=AsyncMock),
+        patch("services.settings.max_hunger", new_callable=AsyncMock, return_value=5),
+        patch("inconnu.vr.parse.display_outcome", new_callable=AsyncMock),
+        patch("inconnu.vr.parse.perform_roll", new_callable=AsyncMock) as mock_roll,
+    ):
+        await parse(ctx, "5 0 0", None, None, None, hide_dice=True)
+
+    mock_roll.assert_not_awaited()

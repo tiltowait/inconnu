@@ -1,6 +1,8 @@
 """An error reporter."""
 
 import traceback
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 import discord
 import pymongo.errors
@@ -12,16 +14,27 @@ import errors
 import ui
 from config import settings
 from ctx import AppInvocation
+from models import VChar
 from services.log import report_database_error
 from utils import get_avatar
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class ErrorReporter:
     """A utility that posts error messages in a specified channel."""
 
     def __init__(self):
-        self.bot = None
-        self.channel = None
+        self._bot: InconnuBot | None = None
+        self.channel: discord.TextChannel | None = None
+
+    @property
+    def bot(self) -> "InconnuBot":
+        """The bot instance."""
+        if self._bot is None:
+            raise RuntimeError("prepare_channel() must be called first")
+        return self._bot
 
     @property
     def reinvite_message(self) -> discord.Embed:
@@ -44,12 +57,13 @@ class ErrorReporter:
         )
         return embed
 
-    async def prepare_channel(self, bot):
+    async def prepare_channel(self, bot: "InconnuBot"):
         """Attempt to get the error channel from the bot."""
-        self.bot = bot
+        self._bot = bot
         if settings.report_channel is not None:
             logger.info("REPORTER: Report channel ID: {}", settings.report_channel)
-            if (channel := await bot.fetch_channel(settings.report_channel)) is not None:
+            channel = await bot.fetch_channel(settings.report_channel)
+            if isinstance(channel, discord.TextChannel):
                 logger.info("REPORTER: Recording errors in #{}", channel.name)
                 self.channel = channel
             else:
@@ -88,7 +102,10 @@ class ErrorReporter:
                 "https://docs.inconnu.app/advanced/troubleshooting#you-arent-able-to-upload-images"
             )
 
-            cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
+            if ctx.command is not None:
+                cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
+            else:
+                cmd_mention = "this feature"
             await ui.embeds.error(
                 ctx,
                 (f"Only patrons can use {cmd_mention}. Click the Patreon button to get started!"),
@@ -143,16 +160,18 @@ class ErrorReporter:
             raise error from error
 
         # Print the error to the log
-        if isinstance(ctx, discord.ApplicationContext):
+        if isinstance(ctx, discord.ApplicationContext) and ctx.command is not None:
             scope = ctx.command.qualified_name.upper()
         else:
             scope = "INTERACTION"
         formatted = "".join(traceback.format_exception(error))
         logger.error("{}: {}", scope, formatted)
 
-    async def _report_unknown_error(self, respond, embed):
+    async def _report_unknown_error(
+        self, respond: Callable[..., Awaitable[object]], embed: discord.Embed
+    ):
         """Report an unknown exception."""
-        user_msg = f"{self.bot.user.mention} has encountered an error. Support has been notified!"
+        user_msg = f"{self.bot.me.mention} has encountered an error. Support has been notified!"
 
         try:
             await respond(user_msg, ephemeral=True)
@@ -162,23 +181,25 @@ class ErrorReporter:
             if self.channel is not None:
                 await self.channel.send(embed=embed)
 
-    async def error_embed(self, ctx, error) -> discord.Embed:
+    async def error_embed(self, ctx: AppInvocation, error: BaseException) -> discord.Embed:
         """Create an error embed."""
         if "50027" in str(error):
             description = "**Unrecoverable Discord error:** Invalid webhook token"
-            await ctx.channel.send(
-                (
-                    f"**Alert:** A Discord issue is currently impacting {self.bot.me.mention}'s "
-                    "responsiveness. Check status here: https://discordstatus.com"
-                ),
-                delete_after=15,
-            )
+            if isinstance(ctx.channel, discord.abc.Messageable):
+                await ctx.channel.send(
+                    (
+                        f"**Alert:** A Discord issue is currently impacting "
+                        f"{self.bot.me.mention}'s responsiveness. Check status here: "
+                        "https://discordstatus.com"
+                    ),
+                    delete_after=15,
+                )
         else:
             description = "\n".join(traceback.format_exception(error))
 
         # If we can, we use the command name to try to pinpoint where the error
         # took place. The stack trace usually makes this clear, but not always!
-        if isinstance(ctx, discord.ApplicationContext):
+        if isinstance(ctx, discord.ApplicationContext) and ctx.command is not None:
             command_name = ctx.command.qualified_name.upper()
         else:
             command_name = "INTERACTION"
@@ -206,32 +227,49 @@ class ErrorReporter:
         return embed
 
 
-async def character_update(*, ctx, character, title, message, **kwargs):
-    """Display character updates in the update channel."""
+async def post_update(
+    *,
+    ctx: AppInvocation,
+    character: VChar | None,
+    title: str,
+    message: str,
+    msg: discord.Message | None = None,
+    color: discord.Color | int | None = None,
+    embed: discord.Embed | None = None,
+) -> discord.Message | None:
+    """Post updates in the guild's update channel. Returns the sent
+    message, if any.
+
+    Without an embed, one is built from the title, message, character, color,
+    and a link to msg. With an embed, the message is sent alongside it, and the
+    rest is unused."""
     from services.settings import update_channel as get_update_channel
 
-    if update_channel := await get_update_channel(ctx.guild):
-        msg = kwargs.pop("msg", None)
-        if msg:
-            msg = msg.jump_url
+    if ctx.guild is None:
+        # Update channels only exist in guilds
+        return None
 
-        if "embed" not in kwargs:
+    # The settings menu only offers text channels
+    update_channel = await get_update_channel(ctx.guild)
+    if isinstance(update_channel, discord.TextChannel):
+        if embed is None:
+            # Only updates with their own embed may omit the character
+            assert character is not None
             embed = discord.Embed(
                 title=title,
                 description=message,
-                url=msg,
-                color=kwargs.pop("color", None),
+                url=msg.jump_url if msg else None,
+                color=color,
             )
             embed.set_author(name=character.name, icon_url=get_avatar(ctx.user))
             content = ""
         else:
-            embed = kwargs["embed"]
             content = message
 
         mentions = discord.AllowedMentions(users=False)
 
         try:
-            await update_channel.send(content, embed=embed, allowed_mentions=mentions)
+            return await update_channel.send(content, embed=embed, allowed_mentions=mentions)
         except discord.errors.Forbidden:
             logger.warning(
                 "UPDATE REPORT: No access to post in #{} on {}",

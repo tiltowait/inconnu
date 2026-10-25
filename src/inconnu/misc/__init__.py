@@ -9,7 +9,7 @@ from inconnu.misc.frenzy import frenzy
 from inconnu.misc.mend import mend
 from inconnu.misc.percentile import percentile
 from inconnu.misc.remorse import remorse
-from inconnu.misc.rouse import rouse
+from inconnu.misc.rouse import perform_rouse, rouse
 from inconnu.misc.slake import slake
 from inconnu.misc.stain import stain
 from inconnu.misc.transfer import transfer_character
@@ -23,6 +23,7 @@ __all__ = (
     "frenzy",
     "mend",
     "percentile",
+    "perform_rouse",
     "remorse",
     "rouse",
     "show_changelog",

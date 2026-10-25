@@ -11,6 +11,7 @@ from beanie import PydanticObjectId
 from discord.ui import Button
 
 import inconnu
+import services
 from ctx import AppCtx
 from inconnu.character.impairment import impairment_reminder
 from inconnu.vr.rolldisplay import RollDisplay
@@ -20,6 +21,7 @@ from tests.characters import gen_char
 AVATAR = "https://example.com/avatar.png"
 GUILD_ICON = "https://example.com/guild.png"
 MESSAGE_ID = 4
+JUMP_URL = "https://discord.com/channels/2/3/4"
 
 type PressHelper = Callable[["Screen"], Awaitable[None]]
 
@@ -84,15 +86,24 @@ def mock_get_message() -> Iterator[AsyncMock]:
     """Give the first response a message ID."""
     message = MagicMock(spec=discord.Message)
     message.id = MESSAGE_ID
+    message.jump_url = JUMP_URL
     with patch("inconnu.vr.rolldisplay.get_message", new_callable=AsyncMock) as mock:
         mock.return_value = message
         yield mock
 
 
 @pytest.fixture(autouse=True)
+def mock_post_update() -> Iterator[AsyncMock]:
+    """Stand in for the update channel. By default, the guild doesn't have
+    one; show() can give it one."""
+    with patch("services.post_update", new_callable=AsyncMock, return_value=None) as mock:
+        yield mock
+
+
+@pytest.fixture(autouse=True)
 def mock_rouse() -> Iterator[AsyncMock]:
     """Prevent surge Rouse checks."""
-    with patch("inconnu.misc.rouse", new_callable=AsyncMock) as mock:
+    with patch("inconnu.misc.perform_rouse", new_callable=AsyncMock) as mock:
         yield mock
 
 
@@ -161,6 +172,7 @@ def make_display(
     listener: AsyncMock | None = None,
     timeout: AsyncMock | None = None,
     impairment_category: ImpairmentCategory | None = None,
+    hide_dice=False,
 ) -> RollDisplay:
     """Create a RollDisplay, optionally with a listener and timeout handler."""
     return RollDisplay(
@@ -172,6 +184,7 @@ def make_display(
         listener,
         timeout,
         impairment_category=impairment_category,
+        hide_dice=hide_dice,
     )
 
 
@@ -222,7 +235,8 @@ async def test_embed_outcome_presentation(
 
 
 async def test_embed_after_reroll(ctx: AppCtx, owner: discord.Member):
-    """Rerolls prefix the title, add the strategy, and show the original outcome."""
+    """Rerolls keep the title and author line, and the Updates field shows the
+    strategy and the original outcome."""
     roll = make_roll([6, 2], [], 2)
     display = make_display(ctx, owner, roll)
 
@@ -232,13 +246,39 @@ async def test_embed_after_reroll(ctx: AppCtx, owner: discord.Member):
     embed = screen.embed
     assert embed is not None and embed.author is not None
 
-    assert embed.title == "R: SUCCESS! (2)"
-    assert embed.author.name == "tiltowait • DC 2 • Rerolling Failures"
+    assert embed.title == "SUCCESS! (2)"
+    assert embed.author.name == "tiltowait • DC 2"
+    assert field_map(embed)["Dice"] == "2"
 
     last = embed.fields[-1]
-    assert last.name == "Original Outcome"
-    assert last.value == "```Failure (1)```"
+    assert last.name == "Updates"
+    assert (
+        last.value == "`Reroll:` Rerolling Failures from `Failure (1)`"
+    )  # No WP line without a character
     assert not last.inline
+
+
+async def test_no_updates_field(ctx: AppCtx, owner: discord.Member):
+    """Without a surge or reroll, there's no Updates field."""
+    display = make_display(ctx, owner, make_roll([6, 2], [], 2), character=make_char("vampire"))
+    embed = await render(display)
+
+    assert "Updates" not in field_map(embed)
+
+
+async def test_updates_order(ctx: AppCtx, owner: discord.Member):
+    """Updates list the Surge, the reroll, then Willpower."""
+    roll = make_roll([6, 2], [], 2)
+    display = make_display(ctx, owner, roll, "surge", make_char("vampire"))
+    screen = await show(display)
+    await reroll(screen)
+    await press_rouse_reroll(screen)
+    await press_mark_wp(screen)
+    assert screen.embed is not None
+
+    assert field_map(screen.embed)["Updates"] == (
+        "`Surge:` Rouse Made w/ Re-roll\n`Reroll:` Rerolling Failures from `Failure (1)`\n`WP:` Marked"
+    )
 
 
 # Author line
@@ -694,6 +734,125 @@ async def test_surging_from_impairment_comment(ctx: AppCtx, owner: discord.Membe
     assert display.surging
 
 
+# Hidden dice
+
+
+async def test_hidden_embed(ctx: AppCtx, owner: discord.Member):
+    """Hidden rolls replace the dice and size fields with Margin and Difficulty
+    in the description, keeping the outcome and pool string."""
+    roll = make_roll([10, 6, 2], [1], 2, pool_str="Strength + Brawl")
+    char = make_char("vampire")
+    shown = await render(make_display(ctx, owner, roll, "Hello", char))
+    hidden = await render(make_display(ctx, owner, roll, "Hello", char, hide_dice=True))
+    assert hidden.author is not None and shown.author is not None
+    assert hidden.thumbnail is not None and shown.thumbnail is not None
+    assert hidden.footer is not None and shown.footer is not None
+
+    assert hidden.title == shown.title == "SUCCESS! (2)"
+    assert hidden.colour == shown.colour
+    assert hidden.author.name == shown.author.name == "Nadea Theron • DC 2"
+    assert hidden.thumbnail.url == shown.thumbnail.url
+    assert hidden.footer.text == shown.footer.text == "Hello"
+    assert hidden.description == "**Margin:** 0\n**Difficulty:** 2"
+    assert field_map(hidden) == {"Pool": "Strength + Brawl"}
+
+
+@pytest.mark.parametrize("use_emoji", [True, False])
+async def test_hidden_embed_has_no_dice(
+    ctx: AppCtx, owner: discord.Member, mock_can_emoji: AsyncMock, use_emoji: bool
+):
+    """Neither emoji nor text dice are shown."""
+    mock_can_emoji.return_value = use_emoji
+    roll = make_roll([10, 6, 2], [1], 2, pool_str="Strength + Brawl")
+    embed = await render(make_display(ctx, owner, roll, hide_dice=True))
+
+    assert embed.description == "**Margin:** 0\n**Difficulty:** 2"
+    assert field_map(embed) == {"Pool": "Strength + Brawl"}
+
+
+@pytest.mark.parametrize(
+    "pool_str,penalty,expected",
+    [
+        (None, Impairment.NONE, "`Hidden`"),
+        (None, Impairment.PHYSICAL, "`Hidden`"),
+        ("Strength + Brawl", Impairment.PHYSICAL, "Strength + Brawl"),
+    ],
+)
+async def test_hidden_pool_field(
+    ctx: AppCtx,
+    owner: discord.Member,
+    pool_str: str | None,
+    penalty: Impairment,
+    expected: str,
+):
+    """Number-only pools are hidden. Trait pools aren't, but their Impairment
+    penalty is, since it reveals the character's condition."""
+    roll = make_roll([6, 6, 6], [], pool_str=pool_str, impairment_penalty=penalty)
+    roll.base_pool = 5
+    embed = await render(make_display(ctx, owner, roll, hide_dice=True))
+
+    assert field_map(embed) == {"Pool": expected}
+
+
+@pytest.mark.parametrize(
+    "health,pool_str,override",
+    [
+        (PHYSICALLY_IMPAIRED, "Wits + Awareness", None),  # Reminder
+        (PHYSICALLY_IMPAIRED, "Strength + Brawl", ImpairmentCategory.IGNORE),  # Override
+        ("xxxxxx", "Strength + Brawl", None),  # Torpor
+    ],
+)
+async def test_hidden_footer_omits_impairment(
+    ctx: AppCtx,
+    owner: discord.Member,
+    health: str,
+    pool_str: str,
+    override: ImpairmentCategory | None,
+):
+    """Impairment notes reveal the character's condition, so only the roller's
+    private copy shows them. Everyone sees the comment."""
+    char = make_char("vampire")
+    char.health = health
+    roll = make_roll([6], [], pool_str=pool_str)
+    display = make_display(
+        ctx, owner, roll, "Hello", char, impairment_category=override, hide_dice=True
+    )
+    screen = await show(display)
+    assert screen.embed is not None and screen.embed.footer is not None
+    assert screen.private is not None and screen.private.embed is not None
+    assert screen.private.embed.footer is not None
+
+    assert screen.embed.footer.text == "Hello"
+    assert screen.private.embed.footer.text == display.comment
+    assert screen.private.embed.footer.text != "Hello"
+
+
+async def test_hidden_footer_without_comment(ctx: AppCtx, owner: discord.Member):
+    """With no comment, the public message has no footer, even if impaired."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Wits + Awareness")
+    embed = await render(make_display(ctx, owner, roll, character=char, hide_dice=True))
+
+    assert embed.footer is None or embed.footer.text is None
+
+
+async def test_hidden_embed_after_reroll(ctx: AppCtx, owner: discord.Member):
+    """Rerolls keep the dice hidden and still show the original outcome."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    await reroll(screen)
+    embed = screen.embed
+    assert embed is not None
+
+    assert embed.title == "SUCCESS! (2)"
+    assert embed.description == "**Margin:** 0\n**Difficulty:** 2"
+    assert field_map(embed) == {
+        "Pool": "`Hidden`",
+        "Updates": "`Reroll:` Rerolling Failures from `Failure (1)`",
+    }
+
+
 # Buttons (initial roll)
 
 PRIMARY = discord.ButtonStyle.primary
@@ -844,14 +1003,15 @@ async def test_buttons_rerolled_after_surging(ctx: AppCtx, owner: discord.Member
 
 
 @dataclass
-class Screen:
-    """What Discord currently shows for a roll message."""
+class Message:
+    """What Discord currently shows for one message."""
 
-    display: RollDisplay
+    handle: Any = None  # What RollDisplay was given to refer to the message
+    title: str | None = None  # Update channel posts only
+    content: str | None = None
     embed: discord.Embed | None = None
     buttons: list[tuple] | None = None
     view: discord.ui.View | None = None
-    ephemeral: list[str] = field(default_factory=list)
 
     def record(self, **kwargs: Any):
         """Apply a message send or edit. Omitted keys keep their current values."""
@@ -861,9 +1021,48 @@ class Screen:
             self.view = kwargs["view"]
             self.buttons = button_summary(self.view.children) if self.view else None
 
+
+@dataclass
+class Screen:
+    """What Discord currently shows for a roll. A hidden roll has two messages:
+    the public one, and the roller's private copy, which has the buttons."""
+
+    display: RollDisplay
+    public: Message = field(default_factory=Message)
+    private: Message | None = None
+    update_channel: list[Message] = field(default_factory=list)
+    ephemeral: list[str] = field(default_factory=list)
+
     def record_ephemeral(self, content: str, **_: Any):
         """Record an ephemeral reply to a button press."""
         self.ephemeral.append(content)
+
+    @property
+    def report(self) -> Message | None:
+        """A hidden roll's full-roll report in the update channel."""
+        return next((post for post in self.update_channel if post.title == "Hidden roll"), None)
+
+    @property
+    def controls(self) -> Message:
+        """The message with the buttons."""
+        if self.private is not None and self.private.view is not None:
+            return self.private
+        return self.public
+
+    @property
+    def embed(self) -> discord.Embed | None:
+        """The embed everyone sees."""
+        return self.public.embed
+
+    @property
+    def buttons(self) -> list[tuple] | None:
+        """The shown buttons, summarized."""
+        return self.controls.buttons
+
+    @property
+    def view(self) -> discord.ui.View | None:
+        """The view holding the shown buttons."""
+        return self.controls.view
 
     @property
     def listening(self) -> bool:
@@ -879,21 +1078,45 @@ def fake_interaction(screen: Screen, user: discord.Member | discord.User) -> Asy
     inter.guild = ctx.guild
     inter.channel = ctx.channel
     inter.response = AsyncMock(spec=discord.InteractionResponse)
-    inter.response.edit_message.side_effect = screen.record
+    # Button presses edit the message the button is on
+    inter.response.edit_message.side_effect = lambda **kwargs: screen.controls.record(**kwargs)
     inter.response.send_message.side_effect = screen.record_ephemeral
-    inter.edit_original_response.side_effect = screen.record
-    inter.edit.side_effect = screen.record
+    # The original interaction's response is the public message
+    inter.edit_original_response.side_effect = screen.public.record
+    inter.edit.side_effect = screen.public.record
     return inter
 
 
-async def show(display: RollDisplay) -> Screen:
-    """Send the roll and return what's shown."""
+async def show(display: RollDisplay, update_channel=False) -> Screen:
+    """Send the roll and return what's shown, optionally in a guild with an
+    update channel."""
     screen = Screen(display)
     original = fake_interaction(screen, display.owner)
 
-    def respond(**kwargs: Any):
-        screen.record(**kwargs)
-        return original
+    def post(
+        *, title: str, message: str, embed: discord.Embed | None = None, **_: Any
+    ) -> AsyncMock:
+        sent = AsyncMock(spec=discord.Message)
+        posted = Message(handle=sent, title=title, content=message, embed=embed)
+        sent.edit.side_effect = posted.record
+        screen.update_channel.append(posted)
+        return sent
+
+    if update_channel:
+        cast(AsyncMock, services.post_update).side_effect = post
+
+    def respond(ephemeral=False, **kwargs: Any):
+        if not ephemeral:
+            screen.public.handle = original
+            screen.public.record(**kwargs)
+            return original
+
+        # A followup only the roller can see
+        followup = AsyncMock(spec=discord.WebhookMessage)
+        screen.private = Message(handle=followup)
+        followup.edit.side_effect = screen.private.record
+        screen.private.record(**kwargs)
+        return followup
 
     cast(AsyncMock, display.ctx.respond).side_effect = respond
     await display.display()
@@ -1015,6 +1238,168 @@ async def test_show_wp_unavailable_with_surge_listens(ctx: AppCtx, owner: discor
     assert screen.listening
 
 
+async def test_show_has_no_private_copy(ctx: AppCtx, owner: discord.Member):
+    """Normal rolls are a single public message with the buttons."""
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2)))
+
+    assert screen.private is None
+    assert screen.public.buttons is not None
+
+
+# Hidden rolls
+
+
+async def test_show_hidden(ctx: AppCtx, owner: discord.Member):
+    """Everyone sees the redacted roll without buttons. The roller privately
+    gets the full roll and the buttons."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    assert screen.embed is not None and screen.private is not None
+    assert screen.private.embed is not None
+
+    assert "Dice" not in field_map(screen.embed)
+    assert screen.public.view is None
+    assert screen.private.embed.title == screen.embed.title == "FAILURE! (1)"
+    assert field_map(screen.private.embed)["Dice"] == "2"
+    assert screen.private.buttons == [
+        ("Re-Roll Failures", PRIMARY, False, None),
+        ("Max Crits", PRIMARY, False, None),
+        ("Avoid Messy", PRIMARY, True, None),
+        ("Risky Avoid", PRIMARY, True, None),
+    ]
+
+
+async def test_hidden_reroll_updates_both(ctx: AppCtx, owner: discord.Member):
+    """A reroll updates the private copy and the public message. The buttons
+    behave as on a normal roll."""
+    shown = await show(make_display(ctx, owner, make_roll([6, 2], [], 2)))
+    await reroll(shown)
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), hide_dice=True))
+    await reroll(screen)
+    assert screen.embed is not None and screen.private is not None
+    assert screen.private.embed is not None
+
+    assert screen.embed.title == screen.private.embed.title == "SUCCESS! (2)"
+    assert "Dice" not in field_map(screen.embed)
+    assert "Margin: 0" in field_map(screen.private.embed)
+    assert screen.public.view is None
+    assert screen.private.buttons == shown.buttons
+
+
+async def test_hidden_reroll_after_public_deleted(ctx: AppCtx, owner: discord.Member):
+    """Deleting the public message doesn't break the private copy's buttons."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    deleted = discord.NotFound(MagicMock(status=404), "Unknown Message")
+    screen.public.handle.edit.side_effect = deleted
+    await reroll(screen)
+    assert screen.private is not None and screen.private.embed is not None
+
+    assert screen.private.embed.title == "SUCCESS! (2)"
+
+
+async def test_hidden_timeout(ctx: AppCtx, owner: discord.Member):
+    """Timing out disables the private copy's buttons."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    await time_out(screen)
+    assert screen.private is not None and screen.private.buttons is not None
+
+    assert all(disabled for _, _, disabled, _ in screen.private.buttons)
+    assert screen.public.view is None
+
+
+# Update channel reports
+
+
+@pytest.mark.parametrize(
+    "character,author", [(False, "tiltowait • DC 2"), (True, "Nadea Theron • DC 2")]
+)
+async def test_hidden_report(ctx: AppCtx, owner: discord.Member, character: bool, author: str):
+    """Hidden rolls send the full roll to the update channel, with or without
+    a character, linking to the public message."""
+    char = make_char("vampire") if character else None
+    roll = make_roll([6, 2], [], 2)
+    display = make_display(ctx, owner, roll, "Hello", char, hide_dice=True)
+    screen = await show(display, update_channel=True)
+    assert screen.report is not None and screen.private is not None
+    assert screen.report.embed is not None and screen.report.embed.author is not None
+    assert screen.private.embed is not None
+
+    assert screen.report.content == f"Hidden roll: {JUMP_URL}"
+    assert screen.report.embed.to_dict() == screen.private.embed.to_dict()
+    assert screen.report.embed.author.name == author
+    assert field_map(screen.report.embed)["Dice"] == "2"
+
+
+async def test_hidden_report_reroll(ctx: AppCtx, owner: discord.Member):
+    """Rerolls update the report to the final outcome."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True), update_channel=True)
+    await reroll(screen)
+    assert screen.report is not None and screen.report.embed is not None
+
+    assert screen.report.embed.title == "SUCCESS! (2)"
+    assert (
+        field_map(screen.report.embed)["Updates"]
+        == "`Reroll:` Rerolling Failures from `Failure (1)`"
+    )
+    assert field_map(screen.report.embed)["Dice"] == "2"
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        discord.NotFound(MagicMock(status=404), "Unknown Message"),
+        discord.Forbidden(MagicMock(status=403), "Missing Access"),
+    ],
+)
+async def test_hidden_report_unavailable_on_reroll(
+    ctx: AppCtx, owner: discord.Member, error: discord.HTTPException
+):
+    """A deleted or inaccessible report doesn't break rerolls."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True), update_channel=True)
+    assert screen.report is not None
+    screen.report.handle.edit.side_effect = error
+    await reroll(screen)
+    assert screen.embed is not None
+
+    assert screen.embed.title == "SUCCESS! (2)"
+
+
+async def test_hidden_without_update_channel(ctx: AppCtx, owner: discord.Member):
+    """Without an update channel, nothing is reported, and rerolls still work."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    await reroll(screen)
+    assert screen.embed is not None
+
+    assert screen.report is None
+    assert screen.embed.title == "SUCCESS! (2)"
+
+
+async def test_shown_roll_not_reported(
+    ctx: AppCtx, owner: discord.Member, mock_post_update: AsyncMock
+):
+    """Normal rolls don't go to the update channel."""
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2)), update_channel=True)
+
+    assert screen.report is None
+    mock_post_update.assert_not_awaited()
+
+
+async def test_hidden_dm_roll_not_reported(
+    ctx: AppCtx, owner: discord.Member, mock_post_update: AsyncMock
+):
+    """DMs have no update channel."""
+    cast(MagicMock, ctx).guild = None
+    display = make_display(ctx, owner, make_roll([6, 2], [], 2), hide_dice=True)
+    await show(display, update_channel=True)
+
+    mock_post_update.assert_not_awaited()
+
+
 # Ownership
 
 
@@ -1053,9 +1438,8 @@ async def test_reroll_without_character(
     with patch("inconnu.d10", return_value=5):
         await press_strategy(screen)
 
-    assert screen.embed is not None and screen.embed.author is not None
-    assert screen.embed.title is not None and screen.embed.title.startswith("R: ")
-    assert screen.embed.author.name.endswith(descriptor)
+    assert screen.embed is not None
+    assert field_map(screen.embed)["Updates"] == f"`Reroll:` {descriptor} from `Messy Critical (4)`"
 
     expected = [
         (lbl, SECONDARY if lbl == label else PRIMARY, True, None)
@@ -1074,7 +1458,11 @@ async def test_reroll_with_character(ctx: AppCtx, owner: discord.Member):
         await press_reroll_failures(screen)
 
     assert screen.embed is not None
-    assert screen.embed.title == "R: SUCCESS! (2)"
+    assert screen.embed.title == "SUCCESS! (2)"
+    assert (
+        field_map(screen.embed)["Updates"]
+        == "`Reroll:` Rerolling Failures from `Failure (1)`\n`WP:` **Not Marked**"
+    )
     assert screen.buttons == [("Mark WP Use", PRIMARY, False, None)]
     assert screen.listening
 
@@ -1113,12 +1501,19 @@ async def test_reroll_notifies_listener(ctx: AppCtx, owner: discord.Member, has_
 # Willpower
 
 
+@pytest.mark.parametrize("hide_dice", [False, True])
 async def test_mark_wp(
-    ctx: AppCtx, owner: discord.Member, mock_char_save: AsyncMock, mock_char_display: AsyncMock
+    ctx: AppCtx,
+    owner: discord.Member,
+    mock_char_save: AsyncMock,
+    mock_char_display: AsyncMock,
+    hide_dice: bool,
 ):
-    """Marking WP adds Superficial Willpower damage and disables the button."""
+    """Marking WP adds Superficial Willpower damage, updates every copy of the
+    roll, and disables the button. Hidden rolls show the new Willpower privately."""
     char = make_char("vampire")
-    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), character=char))
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, character=char, hide_dice=hide_dice))
     with patch("inconnu.d10", return_value=10):
         await press_reroll_failures(screen)
 
@@ -1127,16 +1522,62 @@ async def test_mark_wp(
     assert char.superficial_wp == 1
     mock_char_save.assert_awaited_once()
     mock_char_display.assert_awaited_once_with(
-        ANY, char, title="Willpower Spent", owner=owner, fields=ANY
+        ANY, char, title="Willpower Spent", owner=owner, fields=ANY, ephemeral=hide_dice
     )
     assert screen.embed is not None
-    assert screen.embed.title == "R: SUCCESS! (2)"
+    assert screen.embed.title == "SUCCESS! (2)"
+    assert (
+        field_map(screen.embed)["Updates"]
+        == "`Reroll:` Rerolling Failures from `Failure (1)`\n`WP:` Marked"
+    )
+    if hide_dice:
+        assert screen.private is not None and screen.private.embed is not None
+        assert (
+            field_map(screen.private.embed)["Updates"]
+            == "`Reroll:` Rerolling Failures from `Failure (1)`\n`WP:` Marked"
+        )
     assert screen.buttons == [("Mark WP Use", SECONDARY, True, None)]
+
+
+@pytest.mark.parametrize("hide_dice", [False, True])
+async def test_mark_wp_posts_update(
+    ctx: AppCtx, owner: discord.Member, mock_get_message: AsyncMock, hide_dice: bool
+):
+    """Marking WP is posted to the update channel, linking to the public roll.
+    A hidden roll's report shows it, too."""
+    char = make_char("vampire")
+    roll = make_roll([6, 2], [], 2)
+    display = make_display(ctx, owner, roll, character=char, hide_dice=hide_dice)
+    screen = await show(display, update_channel=True)
+    await reroll(screen)
+    await press_mark_wp(screen)
+
+    wp_posts = [post for post in screen.update_channel if post.title == "Willpower Spent"]
+    assert [post.content for post in wp_posts] == ["**Nadea Theron** spent Willpower on a reroll."]
+    update = cast(AsyncMock, services.post_update).await_args
+    assert update is not None
+    assert update.kwargs["msg"] is mock_get_message.return_value
+
+    if hide_dice:
+        assert screen.report is not None and screen.report.embed is not None
+        assert field_map(screen.report.embed)["Updates"].endswith("`WP:` Marked")
+
+
+async def test_mark_wp_without_update_channel(ctx: AppCtx, owner: discord.Member):
+    """Without an update channel, marking WP still works."""
+    char = make_char("vampire")
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), character=char))
+    await reroll(screen)
+    await press_mark_wp(screen)
+
+    assert screen.update_channel == []
+    assert char.superficial_wp == 1
 
 
 # Surging
 
 
+@pytest.mark.parametrize("hide_dice", [False, True])
 @pytest.mark.parametrize(
     "press_surge,oblivion",
     [(press_rouse, False), (press_rouse_reroll, True)],
@@ -1147,15 +1588,22 @@ async def test_surge(
     mock_rouse: AsyncMock,
     press_surge: PressHelper,
     oblivion: bool,
+    hide_dice: bool,
 ):
-    """Surging Rouses once and disables both surge buttons."""
+    """Surging Rouses once, disables both surge buttons, and updates every copy
+    of the roll. Hidden rolls show the Rouse privately."""
     char = make_char("vampire")
-    display = make_display(ctx, owner, make_roll([6, 2], [], 2), comment="surge", character=char)
+    roll = make_roll([6, 2], [], 2)
+    display = make_display(ctx, owner, roll, "surge", char, hide_dice=hide_dice)
     screen = await show(display)
+    assert screen.embed is not None
+    assert field_map(screen.embed)["Updates"] == "`Surge:` **No Rouse**"
 
     await press_surge(screen)
 
-    mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", oblivion)
+    mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", oblivion, ephemeral=hide_dice)
+    status = "Rouse Made w/ Re-roll" if oblivion else "Rouse Made"
+    assert field_map(screen.embed)["Updates"] == f"`Surge:` {status}"
     assert screen.buttons == [
         ("Re-Roll Failures", PRIMARY, False, None),
         ("Max Crits", PRIMARY, False, None),
@@ -1191,7 +1639,7 @@ async def test_reroll_then_surge(ctx: AppCtx, owner: discord.Member, mock_rouse:
         await press_reroll_failures(screen)
     await press_rouse(screen)
 
-    mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", False)
+    mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", False, ephemeral=False)
     assert screen.buttons == [
         ("Mark WP Use", PRIMARY, False, None),
         ("Rouse", SECONDARY, True, None),
@@ -1243,13 +1691,15 @@ async def test_stats_logged(ctx: AppCtx, owner: discord.Member, mock_log_roll: A
     roll = make_roll([6, 2], [], 2)
     screen = await show(make_display(ctx, owner, roll, comment="Hi"))
 
-    mock_log_roll.assert_awaited_once_with(2, 3, owner.id, MESSAGE_ID, None, roll, "Hi")
+    mock_log_roll.assert_awaited_once_with(
+        2, 3, owner.id, MESSAGE_ID, None, roll, "Hi", hidden=False
+    )
 
     with patch("inconnu.d10", return_value=10):
         await press_reroll_failures(screen)
 
     assert mock_log_roll.await_count == 2
-    mock_log_roll.assert_awaited_with(2, 3, owner.id, None, None, roll, "Hi")
+    mock_log_roll.assert_awaited_with(2, 3, owner.id, None, None, roll, "Hi", hidden=False)
 
 
 async def test_stats_logged_in_dm(
@@ -1260,5 +1710,21 @@ async def test_stats_logged_in_dm(
     roll = make_roll([6, 2], [], 2)
     await show(make_display(ctx, owner, roll))
 
-    mock_log_roll.assert_awaited_once_with(None, None, owner.id, None, None, roll, None)
+    mock_log_roll.assert_awaited_once_with(
+        None, None, owner.id, None, None, roll, None, hidden=False
+    )
     mock_get_message.assert_not_awaited()
+
+
+async def test_stats_hidden(
+    ctx: AppCtx, owner: discord.Member, mock_log_roll: AsyncMock, mock_get_message: AsyncMock
+):
+    """Hidden rolls are logged as hidden, with the public message, so its
+    deletion still toggles stats."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+
+    mock_get_message.assert_awaited_once_with(screen.public.handle)
+    mock_log_roll.assert_awaited_once_with(
+        2, 3, owner.id, MESSAGE_ID, None, roll, None, hidden=True
+    )

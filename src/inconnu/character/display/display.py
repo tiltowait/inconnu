@@ -112,14 +112,15 @@ async def display(
 
         return msg
 
-    # We are editing the original message
-    assert ctx.message is not None
+    # We are editing the message with the pressed button. We edit through the
+    # interaction, because the message might be ephemeral.
     if view is None:
         # We need to remove the view
         msg_contents["view"] = None
     elif isinstance(view, ui.views.DisablingView):
-        view.message = ctx.message
-    return await ctx.message.edit(**msg_contents)
+        view.message = ctx
+    await ctx.response.edit_message(**msg_contents)
+    return ctx
 
 
 async def __get_embed(

@@ -1,12 +1,15 @@
 """misc/rouse.py - Perform rouse checks."""
 
-from types import SimpleNamespace
+from typing import NamedTuple, cast
+
+import discord
 
 import constants
 import errors
 import inconnu
 import services
 import ui
+from ctx import AppCtx, AppInvocation
 from models import VChar
 from services.haven import haven
 from utils import get_message
@@ -16,7 +19,19 @@ from utils.urls import web_asset
 __HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
 
 
-def _can_rouse(character):
+class _RouseOutcome(NamedTuple):
+    """The results of a set of Rouse checks."""
+
+    total: int
+    successes: int
+    failures: int
+    stains: int
+    frenzy: bool
+    gain: int
+    reroll: bool
+
+
+def _can_rouse(character: VChar):
     """Raises an error if the character is mortal."""
     if character.splat == "mortal":
         raise errors.CharacterError(f"{character.name} is a mortal.")
@@ -24,28 +39,49 @@ def _can_rouse(character):
 
 @haven(__HELP_URL, _can_rouse)
 async def rouse(
-    ctx,
+    ctx: AppCtx,
     character: VChar,
     count: int,
-    purpose: str,
+    purpose: str | None,
     reroll: bool,
     oblivion: str | bool = "show",
-    message=None,
+    message: str | None = None,
+    ephemeral=False,
+):
+    """Perform Rouse checks for the selected character and display the results.
+    See perform_rouse() for the arguments."""
+    await perform_rouse(ctx, character, count, purpose, reroll, oblivion, message, ephemeral)
+
+
+async def perform_rouse(
+    ctx: AppInvocation,
+    character: VChar,
+    count: int,
+    purpose: str | None,
+    reroll: bool,
+    oblivion: str | bool = "show",
+    message: str | None = None,
+    ephemeral=False,
 ):
     """
-    Perform a remorse check on a given character and display the results.
+    Perform Rouse checks for a character who's already been chosen, and display
+    the results. Ghouls take Aggravated damage instead.
     Args:
-        count (int): The number of rouse checks to make
-        character (str): (Optional): The name of a character
-        purpose (str): The reason for the rouse
+        character (VChar): The vampire or ghoul making the checks
+        count (int): The number of Rouse checks to make
+        purpose (str | None): The reason for the Rouse
         reroll (bool): Whether failures should be re-rolled
-        oblivion (bool, default False): Whether to show the Oblivion message.
+        oblivion (str | bool, default "show"): Whether to "show" the Oblivion
+            stains message, "apply" the stains, or neither (False)
+        message (str | None): A message to display with the outcome
+        ephemeral (bool, default False): Whether only the user sees the outcome
     """
     if character.splat == "ghoul":
-        await __damage_ghoul(ctx, character)
+        await __damage_ghoul(ctx, character, ephemeral)
     else:
-        # Vampire
-        outcome = await __rouse_roll(ctx.guild, character, count, reroll)
+        # Vampire. Characters only exist in guilds.
+        guild = cast(discord.Guild, ctx.guild)
+        outcome = await __rouse_roll(guild, character, count, reroll)
         update_msg = f"**{character.name}** "
         if outcome.gain:
             update_msg += f"__failed__ a Rouse check. Hunger is now `{character.hunger}`."
@@ -53,7 +89,9 @@ async def rouse(
             update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
         await character.save()
-        inter = await __display_outcome(ctx, character, outcome, purpose, oblivion, message)
+        inter = await __display_outcome(
+            ctx, character, outcome, purpose, oblivion, message, ephemeral
+        )
         msg = await get_message(inter)
 
         if character.hunger >= 4:
@@ -61,7 +99,7 @@ async def rouse(
         else:
             color = None
 
-        await services.character_update(
+        await services.post_update(
             ctx=ctx,
             msg=msg,
             character=character,
@@ -77,7 +115,7 @@ async def rouse(
         await character.save()
 
 
-def __make_title(outcome):
+def __make_title(outcome: _RouseOutcome) -> str:
     """Create the title for the output message."""
     if outcome.total == 1:
         title = "Rouse Success" if outcome.successes == 1 else "Rouse Failure"
@@ -89,7 +127,15 @@ def __make_title(outcome):
     return title
 
 
-async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, message):
+async def __display_outcome(
+    ctx: AppInvocation,
+    character: VChar,
+    outcome: _RouseOutcome,
+    purpose: str | None,
+    oblivion: str | bool,
+    message: str | None,
+    ephemeral: bool,
+) -> AppInvocation | discord.Interaction | discord.WebhookMessage:
     """Process the rouse result and display to the user."""
     title = __make_title(outcome)
 
@@ -144,10 +190,11 @@ async def __display_outcome(ctx, character: VChar, outcome, purpose, oblivion, m
         color=color,
         thumbnail=thumbnail,
         view=view,
+        ephemeral=ephemeral,
     )
 
 
-async def __damage_ghoul(ctx, ghoul):
+async def __damage_ghoul(ctx: AppInvocation, ghoul: VChar, ephemeral: bool):
     """Apply Aggravated damage to a ghoul and display."""
     ghoul.set_aggravated_hp(ghoul.aggravated_hp + 1)
     await inconnu.character.display(
@@ -157,11 +204,14 @@ async def __damage_ghoul(ctx, ghoul):
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
         fields=[("Health", inconnu.character.DisplayField.HEALTH)],
         footer="V5 Core, p.234",
+        ephemeral=ephemeral,
     )
     await ghoul.save()
 
 
-async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):
+async def __rouse_roll(
+    guild: discord.Guild, character: VChar, rolls: int, reroll: bool
+) -> _RouseOutcome:
     """Perform a Rouse roll."""
     successes = 0
     failures = 0
@@ -189,7 +239,7 @@ async def __rouse_roll(guild, character: VChar, rolls: int, reroll: bool):
 
     character.log("rouse", rolls)
 
-    return SimpleNamespace(
+    return _RouseOutcome(
         total=rolls,
         successes=successes,
         failures=failures,

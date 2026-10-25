@@ -108,7 +108,7 @@ async def __generate_report_task(ctx, msg, character, outcome):
     """Generate a report for the update channel."""
     verbed = "passed" if outcome.is_successful else "failed"
 
-    await services.character_update(
+    await services.post_update(
         ctx=ctx,
         msg=msg,
         character=character,

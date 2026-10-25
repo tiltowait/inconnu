@@ -3,6 +3,7 @@
 from inconnu.vr import dicemoji
 from inconnu.vr.parse import (
     display_outcome,
+    hidden_dice_allowed,
     impairment_penalty,
     needs_character,
     parse,
@@ -16,6 +17,7 @@ __all__ = (
     "RollParser",
     "dicemoji",
     "display_outcome",
+    "hidden_dice_allowed",
     "impairment_penalty",
     "needs_character",
     "parse",

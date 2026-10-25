@@ -1,6 +1,7 @@
 """macros/roll.py - Rolling character macros."""
 
 import re
+from functools import partial
 from typing import cast
 from uuid import uuid4
 
@@ -15,7 +16,7 @@ from ctx import AppCtx, AppInteraction, AppInvocation
 from inconnu.macros import macro_common
 from inconnu.misc import rouse
 from inconnu.roll import Roll
-from inconnu.vr import display_outcome, perform_roll
+from inconnu.vr import display_outcome, hidden_dice_allowed, perform_roll
 from models import ImpairmentCategory, VChar
 from models.vchardocs import VCharMacro
 from services.haven import Haven
@@ -31,8 +32,12 @@ async def roll(
     char_name: str | None = None,
     *,
     impairment_category: ImpairmentCategory | None = None,
+    hide_dice=False,
 ):
     """Roll a macro."""
+    if not await hidden_dice_allowed(ctx, hide_dice):
+        return
+
     try:
         # Get the basic macro details
         macro_stack, hunger, difficulty = __normalize_syntax(syntax)
@@ -92,14 +97,15 @@ async def roll(
                 character,
                 outcome,
                 macro.comment,
-                reroll_listener,
+                partial(reroll_listener, ephemeral=hide_dice),
                 remove_hunt_listener,
                 impairment_category=impairment_category,
+                hide_dice=hide_dice,
             )
 
             if macro.hunt:
                 if outcome.is_successful:
-                    await __slake(ctx, character, outcome)
+                    await __slake(ctx, character, outcome, hide_dice)
                 else:
                     __HUNT_LISTENERS[outcome.id] = None
 
@@ -145,14 +151,16 @@ async def __rouse(ctx: AppCtx, character: VChar, macro: VCharMacro) -> bool:
     return False
 
 
-async def reroll_listener(ctx: AppInteraction, character: VChar | None, outcome: Roll):
-    """Listens to roll events."""
+async def reroll_listener(
+    ctx: AppInteraction, character: VChar | None, outcome: Roll, ephemeral=False
+):
+    """Listens to roll events. Hidden rolls show the Slake menu privately."""
     character = cast(VChar, character)  # Macros always have a character
     if outcome.id in __HUNT_LISTENERS:
         old_inter = __HUNT_LISTENERS[outcome.id]
         if old_inter is None and outcome.is_successful:
             # They re-rolled into success
-            await __slake(ctx, character, None)
+            await __slake(ctx, character, None, ephemeral)
         elif old_inter is not None and not outcome.is_successful:
             # They re-rolled into failure
             await old_inter.delete()
@@ -166,7 +174,7 @@ async def remove_hunt_listener(outcome: Roll | None):
         del __HUNT_LISTENERS[outcome.id]
 
 
-async def __slake(ctx: AppInvocation, character: VChar, outcome: Roll | None):
+async def __slake(ctx: AppInvocation, character: VChar, outcome: Roll | None, ephemeral: bool):
     """Present a menu to slake Hunger."""
     if character.hunger > 0:
         # Show nothing if Hunger is 0
@@ -183,7 +191,7 @@ async def __slake(ctx: AppInvocation, character: VChar, outcome: Roll | None):
         )
 
         view = _SlakeView(ctx.user, character, outcome)
-        view.message = await ctx.respond(embed=embed, view=view)
+        view.message = await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
         if outcome is not None:
             __HUNT_LISTENERS[outcome.id] = view.message
@@ -289,9 +297,13 @@ class _SlakeView(View):
         custom_id = inter.data["custom_id"]
         slake_amount = self.buttons[custom_id]
 
+        # Once they've chosen, a reroll into failure shouldn't delete the result
+        await remove_hunt_listener(self.outcome)
+
         if slake_amount == _SlakeView.CANCEL_SLAKE:
-            await inter.message.delete()
-            await remove_hunt_listener(self.outcome)
+            # Through the interaction, because the menu might be ephemeral
+            await inter.response.defer()
+            await inter.delete_original_response()
         else:
             # await inter.message.delete()
             await inconnu.misc.slake(inter, self.character, slake_amount, edit_message=True)

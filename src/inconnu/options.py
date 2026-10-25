@@ -50,6 +50,23 @@ def impairment_option(param="impairment_category"):
     return decorator
 
 
+def dice_option(param="dice"):
+    """A command decorator letting users hide a roll's dice."""
+
+    def decorator(func):
+        func.__annotations__[param] = Option(
+            str,
+            "Show or hide the dice from others",
+            name=param,
+            choices=[OptionChoice("Show", "show"), OptionChoice("Hide", "hide")],
+            required=False,
+            default="show",
+        )
+        return func
+
+    return decorator
+
+
 def player_option(param="player", description="The character's owner (admin only)", required=False):
     """A command decorator letting users choose a user."""
 

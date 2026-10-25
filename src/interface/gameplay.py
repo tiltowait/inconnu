@@ -9,7 +9,7 @@ from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
-from inconnu.options import char_option, impairment_option, player_option
+from inconnu.options import char_option, dice_option, impairment_option, player_option
 from models import ImpairmentCategory, VChar
 
 if TYPE_CHECKING:
@@ -32,6 +32,7 @@ class Gameplay(commands.Cog):
     @char_option()
     @player_option()
     @impairment_option()
+    @dice_option()
     async def vr(
         self,
         ctx: AppCtx,
@@ -40,6 +41,7 @@ class Gameplay(commands.Cog):
         character: str,
         player: discord.Member,
         impairment_category: str | None,
+        dice: str,
     ):
         """Roll the dice using Thirst syntax. Syntax: POOL HUNGER DIFFICULTY."""
         await inconnu.vr.parse(
@@ -49,6 +51,7 @@ class Gameplay(commands.Cog):
             character,
             player,
             impairment_category=ImpairmentCategory.from_option(impairment_category),
+            hide_dice=dice == "hide",
         )
 
     # This beginner-friendly roll command is for users who find the main `/vr`
@@ -75,6 +78,7 @@ class Gameplay(commands.Cog):
     @char_option()
     @player_option()
     @impairment_option()
+    @dice_option()
     async def easy_roll(
         self,
         ctx: AppCtx,
@@ -85,6 +89,7 @@ class Gameplay(commands.Cog):
         character: str,
         player: discord.Member,
         impairment_category: str | None,
+        dice: str,
     ):
         """Roll the dice!"""
         syntax = f"{pool} {hunger} {difficulty}"
@@ -95,6 +100,7 @@ class Gameplay(commands.Cog):
             character,
             player,
             impairment_category=ImpairmentCategory.from_option(impairment_category),
+            hide_dice=dice == "hide",
         )
         if isinstance(char, VChar):
             if char.is_vampire:

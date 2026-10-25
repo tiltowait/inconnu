@@ -3,7 +3,7 @@
 import discord
 
 from ctx import AppCtx, AppInvocation
-from models import ExpPerms, ResonanceMode, VGuild, VUser
+from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
 from utils.permissions import is_admin
 
 # Accessibility
@@ -88,6 +88,14 @@ async def max_hunger(guild: discord.Guild):
     """Get the max Hunger rating allowed in rolls."""
     vguild = await VGuild.get_or_fetch(guild)
     return vguild.settings.max_hunger
+
+
+async def hidden_dice_permissions(guild: discord.Guild | None) -> HiddenDicePerms:
+    """Who may hide their dice. Anyone may in DMs."""
+    if guild is None:
+        return HiddenDicePerms.ENABLED
+    vguild = await VGuild.get_or_fetch(guild)
+    return vguild.settings.hidden_dice_permissions
 
 
 async def auto_impairment(ctx: AppInvocation) -> bool:

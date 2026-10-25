@@ -17,7 +17,7 @@ from discord.ui import Button, Select, TextDisplay
 from loguru import logger
 
 from ctx import AppCtx
-from models import ExpPerms, ResonanceMode, VGuild, VUser
+from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
 from utils.permissions import is_admin
 
 
@@ -47,6 +47,7 @@ class SettingsIDs(IntEnum):
     CHANGELOG = auto()
     DELETION = auto()
     MAX_HUNGER = auto()
+    HIDDEN_DICE = auto()
 
 
 class OblivionOptions(StrEnum):
@@ -139,6 +140,25 @@ class SettingsMenu(discord.ui.DesignerView):
             # GAMEPLAY SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
             container.add_text("## Gameplay")
+
+            # Hidden dice
+            options = [
+                SelectOption(
+                    label=perm.description,
+                    value=perm,
+                    default=self.scope.settings.hidden_dice_permissions == perm,
+                )
+                for perm in HiddenDicePerms
+            ]
+            select = Select(options=options, id=SettingsIDs.HIDDEN_DICE, disabled=not admin)
+            select.callback = self.set_hidden_dice_permissions
+            container.add_text(
+                "### Hidden dice\n"
+                "Who can use `dice:Hide` to show others only a roll's outcome and pool."
+            )
+            container.add_row(select)
+
+            container.add_item(discord.ui.Separator())
 
             # Resonance mode
             current_resonance = self.scope.settings.resonance
@@ -292,6 +312,20 @@ class SettingsMenu(discord.ui.DesignerView):
         await vuser.save()
 
         self._log_update(interaction, "Auto impairment", vuser.settings.auto_impairment)
+
+    async def set_hidden_dice_permissions(self, interaction: discord.Interaction):
+        """Set who may hide their dice (server only)."""
+        select = cast(Select, self.get_item(SettingsIDs.HIDDEN_DICE))
+        perms = cast(list[str], select.values)[0]
+        self._update_select_default(select, perms)
+
+        vguild = cast(VGuild, self.scope)
+        vguild.settings.hidden_dice_permissions = HiddenDicePerms(perms)
+
+        await interaction.edit(view=self)
+        await vguild.save()
+
+        self._log_update(interaction, "Hidden dice permissions", perms)
 
     async def set_oblivion_stains(self, interaction: discord.Interaction):
         """Set Oblivion stains mode."""

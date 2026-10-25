@@ -54,7 +54,7 @@ async def mend(ctx: AppCtx, character: VChar):
 
         inter = await __display_outcome(ctx, character, outcome)
         msg = await get_message(inter)
-        await services.character_update(
+        await services.post_update(
             ctx=ctx, character=character, title="Damage Mended", message=update_msg, msg=msg
         )
 

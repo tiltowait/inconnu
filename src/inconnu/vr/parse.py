@@ -23,9 +23,17 @@ from ctx import AppCtx
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RerollListener, RollDisplay, TimeoutHandler
 from inconnu.vr.rollparser import RollParser
-from models import IMPAIRMENT_DICE, Impairment, ImpairmentCategory, RollCategory, VChar
+from models import (
+    IMPAIRMENT_DICE,
+    HiddenDicePerms,
+    Impairment,
+    ImpairmentCategory,
+    RollCategory,
+    VChar,
+)
 from models.vchardocs import VCharTrait
 from services.haven import Haven
+from utils.permissions import is_admin
 
 __HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
 
@@ -38,8 +46,12 @@ async def parse(
     player: discord.Member | None,
     *,
     impairment_category: ImpairmentCategory | None = None,
+    hide_dice=False,
 ) -> VChar | None:
     """Parse the user's arguments and attempt to roll the dice."""
+    if not await hidden_dice_allowed(ctx, hide_dice):
+        return
+
     raw_syntax = " ".join(raw_syntax.split())
     syntax = raw_syntax  # Save the raw in case we get a character error
     owner = ctx.user
@@ -97,7 +109,13 @@ async def parse(
             ctx, character, syntax, max_hunger, impairment_category=impairment_category
         )
         await display_outcome(
-            ctx, owner, character, outcome, comment, impairment_category=impairment_category
+            ctx,
+            owner,
+            character,
+            outcome,
+            comment,
+            impairment_category=impairment_category,
+            hide_dice=hide_dice,
         )
 
     except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
@@ -162,6 +180,26 @@ def _can_roll(character: VChar, syntax: str):
         raise SyntaxError(msg) from err
 
 
+async def hidden_dice_allowed(ctx: AppCtx, hide_dice: bool) -> bool:
+    """Whether the roll may go ahead. If the user may not hide their dice, they're
+    told why. Check before rolling anything, Rouse checks included."""
+    if not hide_dice:
+        return True
+
+    match await services.settings.hidden_dice_permissions(ctx.guild):
+        case HiddenDicePerms.ENABLED:
+            return True
+        case HiddenDicePerms.ADMIN_ONLY if is_admin(ctx):
+            return True
+        case HiddenDicePerms.ADMIN_ONLY:
+            err = "Only admins can hide their dice on this server."
+        case HiddenDicePerms.DISABLED:
+            err = "This server doesn't allow hidden dice."
+
+    await ui.embeds.error(ctx, err)
+    return False
+
+
 async def display_outcome(
     ctx: AppCtx,
     player: discord.Member | discord.User,
@@ -172,6 +210,7 @@ async def display_outcome(
     timeout: TimeoutHandler | None = None,
     *,
     impairment_category: ImpairmentCategory | None = None,
+    hide_dice=False,
 ):
     """Display the roll results."""
     roll_display = RollDisplay(
@@ -183,6 +222,7 @@ async def display_outcome(
         listener,
         timeout,
         impairment_category=impairment_category,
+        hide_dice=hide_dice,
     )
 
     await roll_display.display()

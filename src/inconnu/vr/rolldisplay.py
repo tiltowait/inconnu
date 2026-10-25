@@ -5,7 +5,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, cast
+from typing import cast
 
 import discord
 from discord.ui import Button
@@ -45,6 +45,7 @@ class _ButtonState:
     strategy: Strategy | None = None
     wp_marked: bool = False
     surge: _Surge = _Surge.UNUSED
+    surge_reroll: bool = False  # Whether the surge's Rouse check rerolled a failure
     timed_out: bool = False
 
     @property
@@ -67,6 +68,7 @@ class RollDisplay(ReportingView):
         timeout: TimeoutHandler | None,
         *,
         impairment_category: ImpairmentCategory | None = None,
+        hide_dice=False,
     ):
         super().__init__(timeout=600)
         self.ctx = ctx
@@ -78,6 +80,10 @@ class RollDisplay(ReportingView):
         self.listener = listener
         self.timeout_handler = timeout
         self.impairment_category = impairment_category
+        self.hide_dice = hide_dice
+        self.redacted_message: discord.Interaction | discord.WebhookMessage | None = None
+        self.report_message: discord.Message | None = None
+        self.public_message: discord.Message | None = None  # Guild rolls only
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
         self.auto_impairment = False  # Looked up when displayed
@@ -90,14 +96,24 @@ class RollDisplay(ReportingView):
         if self.character is not None:
             # Only needed to word the Impairment reminder, which requires a character
             self.auto_impairment = await services.settings.auto_impairment(self.ctx)
-        inter = await self.ctx.respond(embed=self.embed, view=self)
-        self.message = inter
+        if self.hide_dice:
+            # Everyone sees the redacted roll. The roller privately gets the
+            # full roll and the buttons.
+            public = await self.ctx.respond(embed=self.redacted_embed)
+            self.redacted_message = public
+            self.message = await self.ctx.respond(embed=self.full_embed, view=self, ephemeral=True)
+        else:
+            public = await self.ctx.respond(embed=self.full_embed, view=self)
+            self.message = public
 
         # Logging the message ID lets the roll be toggled for statistics
         # purposes. DM rolls aren't tracked, so they don't need it.
         message_id = None
         if self.ctx.guild is not None:
-            message_id = (await get_message(inter)).id
+            self.public_message = await get_message(public)
+            message_id = self.public_message.id
+            if self.hide_dice:
+                await self._report(self.public_message)
         await self._log_roll(self.ctx, message_id)
 
     # Button actions
@@ -133,6 +149,14 @@ class RollDisplay(ReportingView):
                 title="Willpower Spent",
                 owner=cast(discord.Member, self.owner),  # Characters only exist in guilds
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
+                ephemeral=self.hide_dice,
+            )
+            await services.post_update(
+                ctx=interaction,
+                character=self.character,
+                title="Willpower Spent",
+                message=f"**{self.character.name}** spent Willpower on a reroll.",
+                msg=self.public_message,
             )
 
     async def rouse(self, interaction: AppInteraction):
@@ -147,7 +171,7 @@ class RollDisplay(ReportingView):
         """Reroll the outcome with the given strategy."""
         self.outcome.reroll(strategy.value)
         self.state.strategy = strategy
-        await self._update(interaction, embed=self.embed)
+        await self._update(interaction)
         await self._log_roll(interaction, None)
 
         if self.listener:
@@ -163,13 +187,38 @@ class RollDisplay(ReportingView):
             self.state.surge = _Surge.AFTER_REROLL
         else:
             self.state.surge = _Surge.BEFORE_REROLL
+        self.state.surge_reroll = reroll
         await self._update(interaction)
-        await inconnu.misc.rouse(interaction, self.character, 1, "Surge", reroll)
+        await inconnu.misc.perform_rouse(
+            interaction, self.character, 1, "Surge", reroll, ephemeral=self.hide_dice
+        )
 
-    async def _update(self, interaction: AppInteraction, **kwargs: Any):
-        """Redraw the buttons and edit the message."""
+    async def _report(self, public: discord.Message):
+        """Send a hidden roll's full outcome to the update channel, if the
+        guild has one, so the ST can see the dice."""
+        self.report_message = await services.post_update(
+            ctx=self.ctx,
+            character=self.character,
+            title="Hidden roll",
+            message=f"Hidden roll: {public.jump_url}",
+            embed=self.full_embed,
+        )
+
+    async def _update_copies(self):
+        """Bring a hidden roll's public message and update channel report up to
+        date. Either may have been deleted."""
+        if self.redacted_message is not None:
+            with contextlib.suppress(discord.NotFound):
+                await self.redacted_message.edit(embed=self.redacted_embed)
+        if self.report_message is not None:
+            with contextlib.suppress(discord.NotFound, discord.Forbidden):
+                await self.report_message.edit(embed=self.full_embed)
+
+    async def _update(self, interaction: AppInteraction):
+        """Redraw the buttons and embed, and bring the roll's copies up to date."""
         self._render_buttons()
-        await interaction.response.edit_message(view=self, **kwargs)
+        await interaction.response.edit_message(embed=self.full_embed, view=self)
+        await self._update_copies()
 
     async def _log_roll(self, source: AppInvocation, message_id: int | None):
         """Log the roll for statistics. Rerolls are logged without a message ID."""
@@ -186,6 +235,7 @@ class RollDisplay(ReportingView):
             self.character,
             self.outcome,
             self.comment,
+            hidden=self.hide_dice,
         )
 
     # View hooks
@@ -316,11 +366,19 @@ class RollDisplay(ReportingView):
     # Embed
 
     @property
-    def embed(self) -> discord.Embed:
-        """The graphical representation of the roll."""
+    def full_embed(self) -> discord.Embed:
+        """An embed that shows the roll's entire outcome: total successes,
+        margin, and the number of dice and their results."""
+        return self._embed(hidden=False)
+
+    @property
+    def redacted_embed(self) -> discord.Embed:
+        """An embed that shows only the roll's total successes and margin."""
+        return self._embed(hidden=True)
+
+    def _embed(self, hidden: bool) -> discord.Embed:
+        """Build the embed, with or without the dice."""
         title = self.outcome.main_takeaway.upper() + "!"
-        if self.state.rerolled:
-            title = f"R: {title}"
         if not self.outcome.is_total_failure and not self.outcome.is_bestial:
             title += f" ({self.outcome.total_successes})"
 
@@ -330,13 +388,32 @@ class RollDisplay(ReportingView):
         author_field = self.character_name
         if self.outcome.difficulty > 0:
             author_field += f" • DC {self.outcome.difficulty}"
-        if self.outcome.descriptor is not None:
-            author_field += f" • {self.outcome.descriptor}"
 
         embed.set_author(name=author_field, icon_url=self.icon)
         embed.set_thumbnail(url=self.thumbnail_url)
 
-        # Disclosure fields
+        if hidden:
+            embed.description = (
+                f"**Margin:** {self.outcome.margin}\n**Difficulty:** {self.outcome.difficulty}"
+            )
+            # A number-only pool would reveal its size, and an Impairment
+            # penalty would reveal the character's condition
+            embed.add_field(name="Pool", value=self.readable_pool or "`Hidden`")
+        else:
+            self._add_dice_fields(embed)
+
+        if updates := self.updates:
+            embed.add_field(name="Updates", value=updates, inline=False)
+
+        # Impairment notes would also reveal the character's condition
+        footer = self._comment if hidden else self.comment
+        if footer is not None:
+            embed.set_footer(text=footer)
+
+        return embed
+
+    def _add_dice_fields(self, embed: discord.Embed):
+        """Add the dice, pool size, Hunger, Difficulty, and pool string fields."""
         if self.outcome.pool <= 30 and self.use_emoji:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
@@ -366,19 +443,6 @@ class RollDisplay(ReportingView):
 
         if pool_str := self.pool_str:
             embed.add_field(name="Pool", value=pool_str)
-
-        # Show what the roll originally was
-        if self.state.rerolled:
-            embed.add_field(
-                name="Original Outcome",
-                value=f"```{self.original_outcome}```",
-                inline=False,
-            )
-
-        if self.comment is not None:
-            embed.set_footer(text=self.comment)
-
-        return embed
 
     @property
     def character_name(self) -> str:
@@ -413,15 +477,26 @@ class RollDisplay(ReportingView):
 
     @property
     def pool_str(self) -> str | None:
-        """The pool string, made nicer to read, plus any impairment penalty. A
-        penalized number-only pool shows its pre-penalty size."""
+        """The readable pool plus any impairment penalty. A penalized
+        number-only pool shows its pre-penalty size."""
         penalty = None
         if self.outcome.impairment_penalty:
             impairment = self.outcome.impairment_penalty.description
             penalty = f"- {IMPAIRMENT_DICE} ({impairment} impairment)"
 
-        if not self.outcome.pool_str:
+        pool_str = self.readable_pool
+        if pool_str is None:
             return f"{self.outcome.base_pool} {penalty}" if penalty else None
+
+        # Added after readable_pool's capitalization, which would otherwise
+        # turn "(physical impairment)" into "(physical Impairment)"
+        return f"{pool_str} {penalty}" if penalty else pool_str
+
+    @property
+    def readable_pool(self) -> str | None:
+        """The pool string, made nicer to read, or None for number-only pools."""
+        if not self.outcome.pool_str:
+            return None
 
         splitted = de_camel(self.outcome.pool_str).split()
 
@@ -429,14 +504,7 @@ class RollDisplay(ReportingView):
         # .title() will make everything else lowercase. "XYZ" would become
         # "Xyz", which is not desired.
         splitted = (t[0].upper() + t[1:] if t[0].islower() else t for t in splitted)
-        pool_str = " ".join(splitted)
-
-        # Added after the capitalization above, which would otherwise turn
-        # "(physical impairment)" into "(physical Impairment)"
-        if penalty is not None:
-            pool_str += f" {penalty}"
-
-        return pool_str
+        return " ".join(splitted)
 
     @property
     def comment(self) -> str | None:
@@ -517,6 +585,28 @@ class RollDisplay(ReportingView):
             return web_asset("dice/total-fail.webp")
 
         return web_asset("dice/bestial.webp")
+
+    @property
+    def updates(self) -> str | None:
+        """The roll's Surge, reroll, and Willpower status, one line each, if
+        any apply. What hasn't been done yet is bolded."""
+        lines = []
+        if self.surging:
+            if self.state.surge == _Surge.UNUSED:
+                status = "**No Rouse**"
+            elif self.state.surge_reroll:
+                status = "Rouse Made w/ Re-roll"
+            else:
+                status = "Rouse Made"
+            lines.append(f"`Surge:` {status}")
+
+        if self.state.rerolled:
+            lines.append(f"`Reroll:` {self.outcome.descriptor} from `{self.original_outcome}`")
+            if self.character is not None:
+                # Only characters have Willpower to mark
+                lines.append("`WP:` Marked" if self.state.wp_marked else "`WP:` **Not Marked**")
+
+        return "\n".join(lines) or None
 
     @property
     def surging(self) -> bool:

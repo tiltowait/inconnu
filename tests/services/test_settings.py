@@ -56,7 +56,7 @@ def mock_guild(guild_id: int = GUILD_ID):
     return guild
 
 
-def mock_vuser(accessibility: bool = False, auto_impairment: bool = True):
+def mock_vuser(accessibility=False, auto_impairment=True):
     """Create a mock VUser with settings."""
     vuser = MagicMock(spec=VUser)
     vuser.settings.accessibility = accessibility

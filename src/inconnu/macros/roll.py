@@ -30,7 +30,7 @@ async def roll(
     syntax: str,
     char_name: str | None = None,
     *,
-    ignore_impairment: bool = False,
+    ignore_impairment=False,
 ):
     """Roll a macro."""
     try:

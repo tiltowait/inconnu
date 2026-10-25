@@ -37,7 +37,7 @@ async def parse(
     char_name: str | None,
     player: discord.Member | None,
     *,
-    ignore_impairment: bool = False,
+    ignore_impairment=False,
 ) -> VChar | None:
     """Parse the user's arguments and attempt to roll the dice."""
     raw_syntax = " ".join(raw_syntax.split())
@@ -171,7 +171,7 @@ async def display_outcome(
     listener: RerollListener | None = None,
     timeout: TimeoutHandler | None = None,
     *,
-    ignore_impairment: bool = False,
+    ignore_impairment=False,
 ):
     """Display the roll results."""
     roll_display = RollDisplay(
@@ -192,9 +192,9 @@ async def perform_roll(
     ctx: AppCtx,
     character: VChar | None,
     syntax: str | list[str],
-    max_hunger: int = 5,
+    max_hunger=5,
     *,
-    ignore_impairment: bool = False,
+    ignore_impairment=False,
 ) -> Roll:
     """Parse the syntax and roll the dice, applying any impairment penalty.
 

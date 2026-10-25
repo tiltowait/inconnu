@@ -110,7 +110,7 @@ def mock_char_save() -> Iterator[AsyncMock]:
         yield mock
 
 
-def make_char(splat: str, hunger: int = 1) -> VChar:
+def make_char(splat: str, hunger=1) -> VChar:
     """Generate a PC with an ID and the given Hunger."""
     char = gen_char(splat)
     char.id = PydanticObjectId()
@@ -123,10 +123,10 @@ def make_char(splat: str, hunger: int = 1) -> VChar:
 def make_roll(
     normal: list[int],
     hunger: list[int],
-    difficulty: int = 0,
+    difficulty=0,
     pool_str: str | None = None,
     hunger_rating: int | None = None,
-    impairment_penalty: Impairment = Impairment.NONE,
+    impairment_penalty=Impairment.NONE,
 ) -> inconnu.Roll:
     """Generate a roll with predetermined dice."""
     if hunger_rating is None:
@@ -151,7 +151,7 @@ def make_display(
     character: VChar | None = None,
     listener: AsyncMock | None = None,
     timeout: AsyncMock | None = None,
-    ignore_impairment: bool = False,
+    ignore_impairment=False,
 ) -> RollDisplay:
     """Create a RollDisplay, optionally with a listener and timeout handler."""
     return RollDisplay(

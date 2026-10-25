@@ -22,7 +22,7 @@ class Roll:
         pool_str=None,
         syntax=None,
         *,
-        impairment_penalty: Impairment = Impairment.NONE,
+        impairment_penalty=Impairment.NONE,
     ):
         """
         Args:

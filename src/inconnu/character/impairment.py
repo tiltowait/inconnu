@@ -12,7 +12,7 @@ def incapacitation_reminder(character: VChar) -> str | None:
     return "You are DEAD!"
 
 
-def impairment_reminder(character: VChar, *, automatic: bool = False) -> str | None:
+def impairment_reminder(character: VChar, *, automatic=False) -> str | None:
     """A description of the character's impairment, if any. Incapacitation takes
     priority. If the penalty is applied automatically, say which rolls receive it;
     otherwise, remind the player to subtract the dice themselves."""

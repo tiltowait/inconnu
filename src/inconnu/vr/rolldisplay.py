@@ -66,7 +66,7 @@ class RollDisplay(ReportingView):
         listener: RerollListener | None,
         timeout: TimeoutHandler | None,
         *,
-        ignore_impairment: bool = False,
+        ignore_impairment=False,
     ):
         super().__init__(timeout=600)
         self.ctx = ctx

@@ -1,6 +1,6 @@
 # Copyright
 
-The **Inconnu** logo is Copyright © 2021-2023 by tiltowait. The source code is distributed under the MIT license.
+The **Inconnu** logo is Copyright © 2021-2026 by tiltowait. The source code is distributed under the MIT license.
 
 ### Dark Pack
 

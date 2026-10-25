@@ -4,6 +4,22 @@ description: Commands that don't fit any other category.
 
 # Miscellaneous
 
+## Blood Potency
+
+```
+/bp rating:<rating>
+```
+
+Looks up the effects of a Blood Potency rating (1–10).
+
+## Changelog
+
+```
+/changelog hidden:[True/False]
+```
+
+Shows **Inconnu's** most recent changes. Only you see it unless you set `hidden:False`.
+
 ## Coin Flip
 
 ```
@@ -19,6 +35,14 @@ Need a quick coin toss? This will generate heads or tails.
 ```
 
 Displays general information and help links.
+
+## Help
+
+```
+/help section:<section>
+```
+
+Shows quick help for a topic.
 
 ## Invite
 
@@ -36,14 +60,11 @@ You can calculate roll outcome probabilities using the `/probability` command.
 /probability roll:<roll> reroll:[strategy] character:[character] impairment_category:[category]
 ```
 
-The `ROLL` parameter can be any valid roll, such as `7 3 2` (pool 7, hunger 3, difficulty 2) or even a trait-based roll like `Resolve + Academics 2 4`.
-
-The `STRATEGY` parameter allows you to specify a specific [Willpower re-roll strategy](../guides/quickstart/willpower-re-rolls.md).
-
-|            |                                                                                                               | Notes                                                                                             |
-| ---------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `roll`     | The roll syntax to use                                                                                        | May be any valid roll, [including trait-based rolls](../guides/quickstart/rolling-with-traits.md) |
-| `strategy` | Run the simulations using a specific [Willpower re-roll strategy](../guides/quickstart/willpower-re-rolls.md) | Optional                                                                                          |
+| Option | Description | Notes |
+| --- | --- | --- |
+| `roll` | The pool, Hunger, and difficulty, such as `7 3 2` or `Resolve + Academics 2 4` | May use [traits](../guides/quickstart/rolling-with-traits.md) |
+| `reroll` | Calculate using a [Willpower re-roll strategy](../guides/quickstart/willpower-re-rolls.md) | Optional |
+| `character` | The character whose traits to use | Optional |
 | `impairment_category` | Change the roll's [Impairment](rolls/impairment.md) category, or ignore Impairment | Optional |
 
 ## Random Numbers
@@ -56,10 +77,13 @@ Want to see how many rolls you've made? How many successes, crits, bestial failu
 
 Additionally, this command can show statistics for a specific trait. Currently, this is limited to showing the number of rolls made and number of successes gleaned in a given time period.
 
-| Parameter | Description                            | Notes                                                                                                                                    |
-| --------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `style`   | The type of stats lookup to make       | "General" shows basic statistics, like number of criticals, etc.; "Traits" shows number of successes for each Attribute and Skill rolled |
-| `date`    | Limit results to rolls after this date | Optional; YYYYMMDD format                                                                                                                |
+| Option | Description | Notes |
+| --- | --- | --- |
+| `style` | The type of stats lookup to make | "General" shows basic statistics, like number of criticals; "Traits" shows number of successes for each Attribute and Skill rolled |
+| `date` | Limit results to rolls after this date | Optional; `YYYYMMDD` format |
+| `hidden` | Show the results only to you | Default `True` |
 
 > [!NOTE]
 > If `date` is omitted, it will show all statistics for the character(s) the bot has ever recorded.
+
+Admins can leave a roll out of statistics, or put it back, by right-clicking it and choosing **Apps → Toggle Roll Statistics**.

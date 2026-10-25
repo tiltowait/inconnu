@@ -7,7 +7,7 @@ The following shortcuts encompass common actions. Using them prevents needing to
 
 ## Aggravated Healing
 
-The `/aggheal` command automatically heals your character by one Aggravated damage and rolls three Rouse checks, displaying the results (and any ensuing Hunger Frenzies) in a single command.
+The `/aggheal` command automatically heals your character by one Aggravated damage and rolls three Rouse checks, displaying the results in a single command.
 
 > [!NOTE]
 > Only vampires and thin-bloods make Rouse checks.
@@ -27,7 +27,7 @@ The `/aggheal` command automatically heals your character by one Aggravated dama
 Each night a character wakes, they heal Superficial Willpower damage and make a Rouse check. **Inconnu** automates this process with the `/awaken` command. It will even tell you if you were unfortunate enough to fall into torpor!
 
 > [!NOTE]
-> Instead of making a Rouse check, mortals and ghouls will heal a number of Superficial Health damage equal to their Stamina rating.
+> Instead of making a Rouse check, mortals heal Superficial Health damage equal to their Stamina rating. Ghouls heal twice that.
 
 ## Blush of Life
 
@@ -40,10 +40,10 @@ This command performs a "blush of life" check for your character, taking your Hu
 ## Crippling Injuries
 
 ```
-/cripple damage:[DAMAGE]
+/cripple damage:<DAMAGE>
 ```
 
-This command rolls against the "crippling injury" table foudn on p.303. If a character is not supplied, then it is necessary to provide a `damage` value.
+This command rolls against the "crippling injury" table found on p.303.
 
 | Parameter | Description                          |
 | --------- | ------------------------------------ |
@@ -58,22 +58,24 @@ This command rolls against the "crippling injury" table foudn on p.303. If a cha
 | Parameter    | Description                        |
 | ------------ | ---------------------------------- |
 | `difficulty` | The difficulty of the frenzy check |
-| `penalty`    | A dice penalty to apply            |
-| `bonus`      | Bonus dice to apply to the roll    |
+| `penalty`    | `Brujah Fury` (the Brujah bane) or `Malkavian Terror` (-2 dice) |
+| `bonus`      | `Cold Dead Hunger`, `The Dream`, `Gentle Mind`, `Jewel in the Garden`, `The Heart of Darkness`, or 1–7 extra dice |
 
-Per _V5_, p.219, Inconnu will roll your current Willpower plus 1/3 of Humanity, rounded down, and tell you the results.
+Per _V5_, p.219, **Inconnu** rolls your current Willpower plus 1/3 of Humanity, rounded down, and tells you the results. The pool is never less than one die.
 
 ## Mending damage
 
-To mend Superficial damage, simply type `/mend`. This will mend the appropriate amount of damage based on your Blood Potency (using the V5 Companion errata) or Stamina (for mortals) and perform a Rouse check.
+To mend Superficial damage, simply type `/mend`. This will mend the appropriate amount of damage based on your Blood Potency (using the V5 Companion errata) or Stamina (for mortals and ghouls). Vampires also make a Rouse check.
 
 ## Remorse Checks
 
 When a character has Stains, you may perform a Remorse Check. This check follows the rules in the V5 core book: **Inconnu** rolls dice equal to the number of unmarked Humanity boxes, to a minimum of 1. If the result is a success, Humanity is maintained. If it fails, Humanity is automatically deducted by one. In either case, all accumulated Stains are removed.
 
 ```
-/remorse min_override:[OVERRIDE]
+/remorse min_override:[OVERRIDE] lasombra_alt:[True/False]
 ```
+
+`lasombra_alt` applies the alternate Lasombra bane, removing dice equal to your Bane Severity.
 
 > [!NOTE]
 > **What is `min_override`?** This parameter facilitates loresheets that allow you to roll a minimum number of dice on Remorse checks. _**Most players can ignore this parameter!**_ If you use it, the response embed will say so.

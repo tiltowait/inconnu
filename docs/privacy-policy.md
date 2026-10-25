@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Inconnu** stores Discord user IDs over everyone who uses it, as well as Discord server IDs for all servers on which it is installed. None of this data is personally identifiable and is essential for the bot's functionality.
+**Inconnu** stores Discord user IDs of everyone who uses it, as well as Discord server IDs for all servers on which it is installed. None of this data is personally identifiable and is essential for the bot's functionality.
 
 Additionally, **Inconnu** must store character data in order to make use of its advanced features. You should not post anything personally identifiable in character names, custom traits, macro names, comments, etc., as these may be visible to other users.
 

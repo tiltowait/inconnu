@@ -10,10 +10,12 @@ Every time you roll, four buttons will display at the bottom of the roll view:
 
 * **Re-Roll Failures:** Re-roll only those dice that were unsuccessful. This is far and away the most commonly pressed button.
 * **Max Crits:** Re-roll up to three failing dice. If fewer than three dice are failures, **Inconnu** will re-roll normal successes (but not tens) in order to make up the difference.
-* **Avoid Messy:** Re-roll tens in order to attempt to avoid a Messy Critical. This button will not be available if the roll's outcome is not messy to begin with.
-* **Risky Avoid:** Just like `Avoid Messy`, this button also re-rolls tens. If there are fewer than three tens, however, it will begin re-rolling failure dice. Use this button if losing the crit would see you fail the roll. Otherwise, `Avoid Messy` is the better option nine times out of ten.
+* **Avoid Messy:** Re-roll tens in order to attempt to avoid a Messy Critical. This button is only available when a re-roll can avoid the Messy Critical: exactly one Hunger ten, and no more than three normal tens.
+* **Risky Avoid:** Just like `Avoid Messy`, this button also re-rolls tens. If there are fewer than three tens, however, it will begin re-rolling failure dice, so it needs at least one failure. Use this button if losing the crit would see you fail the roll. Otherwise, `Avoid Messy` is the better option nine times out of ten.
 
 > [!WARNING]
-> **Be careful!** `Re-Roll Failures` and `Max Crits` can lead the unwary into Messy Critical territory. Always check whether the any of the Hunger dice are tens before deciding whether to use Willpower.
+> **Be careful!** `Re-Roll Failures` and `Max Crits` can lead the unwary into Messy Critical territory. Always check whether any of the Hunger dice are tens before deciding whether to use Willpower.
 
-Once you've made your selection, if you're rolling with a character, **Inconnu** will give you a prompt to mark off the spent point of Willpower. This way, you don't have to waste time using `/character adjust`!
+If your pool names traits but none of them is an Attribute or Skill, the buttons are replaced by **WP Unavailable**.
+
+Once you've re-rolled, if you're rolling with a character, a **Mark WP Use** button marks off the spent point of Willpower, so you don't have to use `/character adjust`. If the server has a [character updates channel](../../advanced/server-settings.md#character-updates-channel), **Inconnu** notes it there, too.

@@ -1,6 +1,6 @@
 # Terms of Service
 
-"Be excellent to each other." **Inconnu** is provided free of charge. Do not use it to harrass anyone or otherwise make a nuisance of yourself. **Inconnu** is provided without warranty, either explicit or expressed.
+"Be excellent to each other." **Inconnu** is provided free of charge. Do not use it to harass anyone or otherwise make a nuisance of yourself. **Inconnu** is provided without warranty, either express or implied.
 
 ### User-Generated Content
 

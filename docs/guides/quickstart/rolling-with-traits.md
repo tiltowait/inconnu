@@ -19,7 +19,7 @@ While you can supply raw numbers for each of these parameters, **Inconnu** reall
 > **Example:** Nadea is performing research at the library. She's at _hunger 2_, and the information is hard to find, so the roll is against _difficulty 4_. The pool is _Resolve_ plus _Academics_, and she has a research specialty that grants her a bonus die.
 >
 > ```
-> /roll pool:resolve + academics + 1 hunger:Current Hunger difficulty:4
+> /roll pool:resolve + academics + 1 hunger:Use Current difficulty:4
 > ```
 >
 > From this syntax, **Inconnu** interprets the following:

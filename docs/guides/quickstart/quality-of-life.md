@@ -10,20 +10,20 @@ Before we conclude, let's take a look at a few common tasks.
 
 ### Awakening
 
-When your character wakes for the session, you heal Superficial Willpower damage equal to the higher of your Composure or Resolve. Vampires make a single Rouse check, and mortals and ghouls heal Superficial Health damage equal to their stamina rating. **Inconnu** lets you do all this with a single command: `/awaken`.
+When your character wakes for the session, you heal Superficial Willpower damage equal to the higher of your Composure or Resolve. Vampires make a single Rouse check. Mortals heal Superficial Health damage equal to their Stamina, and ghouls heal twice that. **Inconnu** lets you do all this with a single command: `/awaken`.
 
 Finally, you may invoke the Blush of Life with the `/bol` command, which takes your character's Humanity into account: Humanity 8 gets to re-roll the Rouse check, and Humanity 9 and 10 don't need to Rouse at all. Speaking of Rouses ...
 
 ### Rousing the blood
 
-**Inconnu** can perform a Rouse check and automatically update your Hunger with a single command: `/rouse`. This command has several optional parameters allowing you to specify the `number` of Rouse checks to make, whether failures should be `reroll`ed, and the reason you are making the check.
+**Inconnu** can perform a Rouse check and automatically update your Hunger with a single command: `/rouse`. This command has several optional parameters allowing you to specify the `count` of Rouse checks to make, whether failures should be `reroll`ed, and the `purpose` of the check.
 
 ### Slaking hunger
 
 Rather than issuing lengthy `/character adjust` commands to set your Hunger level every time your character feeds, you can use the `/slake` command.
 
 > [!NOTE]
-> **What about frenzy?** If you slake Hunger while at Hunger 4 or 5, the `/slake` message will show a red **Frenzy** button. Clicking this button, if the Storyteller tells you to, will automatically perform a frenzy check at the indicated DC.
+> **What about frenzy?** If you slake Hunger while at Hunger 4 or 5, the `/slake` message will show a red **Hunger Frenzy** button. Clicking this button, if the Storyteller tells you to, will automatically perform a frenzy check at the indicated DC.
 
 ### Humanity and Remorse
 

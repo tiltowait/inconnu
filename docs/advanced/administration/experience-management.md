@@ -6,9 +6,7 @@ description: >-
 
 # Experience Management
 
-
-
-Experience can be awarded or `deducted` from characters with `/experience award` and `/experience deduct`, respectively. Both commands have the following parameters:
+Experience can be awarded to or deducted from characters with `/experience award` and `/experience deduct`, respectively. Both commands have the following parameters:
 
 | Parameter   | Description                                              |
 | ----------- | -------------------------------------------------------- |
@@ -19,7 +17,7 @@ Experience can be awarded or `deducted` from characters with `/experience award`
 | `reason`    | An admin-given note about the reason for the change      |
 
 > [!NOTE]
-> Players and admins may view their characters' experience logs with the `/experience log` command.
+> Players and admins may view their characters' experience logs with the `/experience log` command. Admins can also right-click a user and choose **Apps → Experience Log**.
 
 **To remove a log entry**, use the `/experience remove entry` command. This takes a `player`, `character`, and `log_index` parameter. The `log_index` is the log entry number as shown by `/experience log`.
 

@@ -263,14 +263,16 @@ class VChar(Document):
         return self.health.count(Damage.AGGRAVATED) == len(self.health)
 
     @property
-    def physically_impaired(self):
-        """Whether the character is physically impaired."""
-        return Damage.NONE not in self.health or self.stains > (10 - self.humanity)
+    def physically_impaired(self) -> bool:
+        """Whether the character is physically impaired: every Health box is damaged,
+        or they're in degeneration."""
+        return Damage.NONE not in self.health or self.degeneration
 
     @property
-    def mentally_impaired(self):
-        """Whether the character is physically impaired."""
-        return Damage.NONE not in self.willpower or self.stains > (10 - self.humanity)
+    def mentally_impaired(self) -> bool:
+        """Whether the character is mentally impaired: every Willpower box is damaged,
+        or they're in degeneration."""
+        return Damage.NONE not in self.willpower or self.degeneration
 
     @property
     def impairment_state(self) -> Impairment:

@@ -71,7 +71,7 @@ def test_apply_damage(character: VChar):
 def test_impairment_state(
     character: VChar, health: str, willpower: str, stains: int, expected: Impairment
 ):
-    """Impairment comes from full Health and Willpower tracks, or degeneration."""
+    """Impairment comes from fully damaged Health and Willpower tracks, or degeneration."""
     character.health = health
     character.willpower = willpower
     character.stains = stains

@@ -1,9 +1,9 @@
 """Tests for constants.py."""
 
-from constants import ATTRIBUTES_AND_SKILLS, MENTAL_SOCIAL_TRAITS, PHYSICAL_TRAITS
+from constants import ATTRIBUTES, MENTAL_SOCIAL_ATTRIBUTES, PHYSICAL_ATTRIBUTES
 
 
-def test_trait_categories_partition_attributes_and_skills():
-    """Every Attribute and Skill is either physical or mental/social, never both."""
-    assert PHYSICAL_TRAITS.isdisjoint(MENTAL_SOCIAL_TRAITS)
-    assert PHYSICAL_TRAITS | MENTAL_SOCIAL_TRAITS == ATTRIBUTES_AND_SKILLS
+def test_attribute_categories_partition_attributes():
+    """Every Attribute is either physical or mental/social, never both."""
+    assert PHYSICAL_ATTRIBUTES.isdisjoint(MENTAL_SOCIAL_ATTRIBUTES)
+    assert PHYSICAL_ATTRIBUTES | MENTAL_SOCIAL_ATTRIBUTES == ATTRIBUTES

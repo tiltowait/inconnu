@@ -15,12 +15,16 @@ from models import Impairment, RollCategory
         ("Wits + Awareness", RollCategory.MENTAL),
         ("Charisma + Persuasion", RollCategory.MENTAL),
         ("Resolve + Oblivion + PowerBonus", RollCategory.MENTAL),
-        ("Strength + Intimidation", RollCategory.MIXED),
+        ("Strength + Intimidation", RollCategory.PHYSICAL),
+        ("Composure + Firearms", RollCategory.MENTAL),
+        ("Intelligence + Brawl", RollCategory.MENTAL),
+        ("Strength + Wits", RollCategory.MIXED),
+        ("Brawl + 2", RollCategory.NONE),
         ("Potence", RollCategory.NONE),
     ],
 )
 def test_roll_category_from_pool(pool: str | None, expected: RollCategory):
-    """A pool's category comes from its Attributes and Skills."""
+    """A pool's category comes from its Attributes. Skills are ignored."""
     assert RollCategory.from_pool(pool) == expected
 
 

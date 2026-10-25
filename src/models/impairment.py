@@ -3,14 +3,15 @@
 from enum import Flag, auto
 from typing import Self
 
-from constants import MENTAL_SOCIAL_TRAITS, PHYSICAL_TRAITS
+from constants import MENTAL_SOCIAL_ATTRIBUTES, PHYSICAL_ATTRIBUTES
 
 # The number of dice impairment removes from a pool
 IMPAIRMENT_DICE = 2
 
 
 class RollCategory(Flag):
-    """The trait categories in a roll's pool. Mental covers social and mental traits."""
+    """The Attribute categories in a roll's pool. Mental covers social and mental
+    Attributes."""
 
     NONE = 0
     PHYSICAL = auto()
@@ -19,14 +20,15 @@ class RollCategory(Flag):
 
     @classmethod
     def from_pool(cls, pool: str | None) -> Self:
-        """The categories of the Attributes and Skills in a pool string. Pools
-        without any, such as number-only pools, have no category."""
+        """The categories of the Attributes in a pool string. Skills are ignored,
+        since they can pair with any Attribute. Pools without Attributes, such as
+        number-only pools, have no category."""
         category = cls(cls.NONE)  # Constructed via cls so the type stays Self
         if pool:
             elements = set(pool.split())
-            if elements & PHYSICAL_TRAITS:
+            if elements & PHYSICAL_ATTRIBUTES:
                 category |= cls.PHYSICAL
-            if elements & MENTAL_SOCIAL_TRAITS:
+            if elements & MENTAL_SOCIAL_ATTRIBUTES:
                 category |= cls.MENTAL
         return category
 

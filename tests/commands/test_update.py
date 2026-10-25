@@ -450,10 +450,10 @@ async def test_update_with_custom_message(
         (False, "You are physically impaired. Subtract 2 dice from physical pools."),
     ],
 )
+@pytest.mark.usefixtures("mock_char_save")
 async def test_update_impairment_reminder(
     vamp: VChar,
     ctx: AppCtx,
-    mock_char_save: AsyncMock,
     mock_update_display: AsyncMock,
     automatic: bool,
     expected: str,

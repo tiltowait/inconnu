@@ -202,9 +202,8 @@ async def test_penalty_applied_once(ctx: AppCtx, vampire: VChar, mock_auto_impai
     mock_auto_impairment.assert_awaited_once_with(ctx)
 
 
-async def test_penalty_records_impairment_state(
-    ctx: AppCtx, vampire: VChar, mock_auto_impairment: AsyncMock
-):
+@pytest.mark.usefixtures("mock_auto_impairment")
+async def test_penalty_records_impairment_state(ctx: AppCtx, vampire: VChar):
     """The recorded penalty is the character's impairment, not the roll's category."""
     vampire.health = PHYSICALLY_IMPAIRED
     vampire.willpower = MENTALLY_IMPAIRED
@@ -214,9 +213,8 @@ async def test_penalty_records_impairment_state(
     assert roll.impairment_penalty == Impairment.TOTAL
 
 
-async def test_penalty_removes_normal_dice_first(
-    ctx: AppCtx, vampire: VChar, mock_auto_impairment: AsyncMock
-):
+@pytest.mark.usefixtures("mock_auto_impairment")
+async def test_penalty_removes_normal_dice_first(ctx: AppCtx, vampire: VChar):
     """Hunger dice are kept; the penalty comes out of the normal dice."""
     vampire.health = PHYSICALLY_IMPAIRED
     roll = await perform_roll(ctx, vampire, "strength+brawl 2 0")
@@ -225,9 +223,8 @@ async def test_penalty_removes_normal_dice_first(
     assert roll.hunger.count == 2
 
 
-async def test_penalty_survives_reroll(
-    ctx: AppCtx, vampire: VChar, mock_auto_impairment: AsyncMock
-):
+@pytest.mark.usefixtures("mock_auto_impairment")
+async def test_penalty_survives_reroll(ctx: AppCtx, vampire: VChar):
     """Rerolls change the dice, not the pool, so the penalty isn't reapplied."""
     vampire.health = PHYSICALLY_IMPAIRED
     roll = await perform_roll(ctx, vampire, "strength+brawl 0 0")

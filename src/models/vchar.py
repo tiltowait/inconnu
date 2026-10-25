@@ -17,7 +17,7 @@ from loguru import logger
 from pydantic import ConfigDict, Field
 
 import errors
-from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
+from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage, Impairment
 from models.vchardocs import (
     VCharExperience,
     VCharExperienceEntry,
@@ -288,6 +288,16 @@ class VChar(Document):
     def mentally_impaired(self):
         """Whether the character is physically impaired."""
         return Damage.NONE not in self.willpower or self.stains > (10 - self.humanity)
+
+    @property
+    def impairment_state(self) -> Impairment:
+        """Which kinds of pools the character's impairment penalizes."""
+        state = Impairment.NONE
+        if self.physically_impaired:
+            state |= Impairment.PHYSICAL
+        if self.mentally_impaired:
+            state |= Impairment.MENTAL
+        return state
 
     @property
     def is_pc(self):

@@ -1,6 +1,6 @@
 """constants.py - Define package-wide constants."""
 
-from enum import StrEnum
+from enum import Flag, StrEnum, auto
 from itertools import chain
 from typing import cast
 
@@ -86,6 +86,15 @@ class Damage(StrEnum):
     NONE = "."
     SUPERFICIAL = "/"
     AGGRAVATED = "x"
+
+
+class Impairment(Flag):
+    """A character's impairment. Mental impairment covers social and mental pools."""
+
+    NONE = 0
+    PHYSICAL = auto()
+    MENTAL = auto()
+    TOTAL = PHYSICAL | MENTAL
 
 
 def get_standard_traits() -> list[str]:

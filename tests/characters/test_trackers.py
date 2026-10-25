@@ -2,7 +2,7 @@
 
 import pytest
 
-from constants import Damage
+from constants import Damage, Impairment
 from models import VChar
 from tests.characters import gen_char
 
@@ -53,6 +53,29 @@ def test_apply_damage(character: VChar):
     assert character.superficial_wp == 2
     assert character.aggravated_wp == 3
     assert character.mentally_impaired
+
+
+@pytest.mark.parametrize(
+    "health,willpower,stains,expected",
+    [
+        ("......", ".....", 0, Impairment.NONE),
+        ("./////", "..///", 3, Impairment.NONE),  # Stains at the threshold: not degenerate
+        ("//////", ".....", 0, Impairment.PHYSICAL),
+        ("xxxxxx", ".....", 0, Impairment.PHYSICAL),
+        ("......", "/////", 0, Impairment.MENTAL),
+        ("//////", "xxxxx", 0, Impairment.TOTAL),
+        ("......", ".....", 4, Impairment.TOTAL),  # Degeneration
+    ],
+)
+def test_impairment_state(
+    character: VChar, health: str, willpower: str, stains: int, expected: Impairment
+):
+    """Impairment comes from full Health and Willpower tracks, or degeneration."""
+    character.health = health
+    character.willpower = willpower
+    character.stains = stains
+
+    assert character.impairment_state == expected
 
 
 def test_set_damage(character: VChar):

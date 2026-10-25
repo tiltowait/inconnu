@@ -10,7 +10,7 @@
 
 If **Inconnu** isn't showing its emoji, check that it has the _Use External Emoji_ permission for that channel. Additionally, the `@everyone` role requires this permission as well. This is a hard Discord requirement for the slash commands feature required since September 2022.
 
-If the settings are correct, ensure that accessibility mode is off, both on [a server level](server-settings.md#accessibility) and [a user level](../command-reference/miscellaneous.md#accessibility-mode).
+If the permissions are correct, check that emojis are turned on in both [your settings](server-settings.md#use-emojis) and [the server's](server-settings.md#use-emojis-server).
 
 ### Inconnu's replies are blank
 

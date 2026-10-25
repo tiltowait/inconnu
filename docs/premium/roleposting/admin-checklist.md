@@ -7,6 +7,6 @@ description: >-
 # Admin checklist
 
 * [x] If added before July 2023, re-invite **Inconnu** using the link above or via the `/invite` command.
-* [x] Set the RP changelog channel: `/settings set changelog_channel:`
-* [x] Set the RP deletions channel: `/settings set deletion_channel:`
+* [x] Set the Rolepost changelog channel in `/settings scope:Server`
+* [x] Set the Rolepost deletion channel in `/settings scope:Server`
 * [x] Try using `/post`!

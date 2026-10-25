@@ -44,6 +44,8 @@
 
 * [Rolls](command-reference/rolls/README.md)
   * [⚡ Advanced: Roll shorthand](command-reference/rolls/advanced-roll-shorthand.md)
+  * [🤕 Impairment](command-reference/rolls/impairment.md)
+  * [🙈 Hidden dice](command-reference/rolls/hidden-dice.md)
 * [Characters](command-reference/characters/README.md)
   * [Creation](command-reference/characters/creation.md)
   * [Displaying](command-reference/characters/displaying.md)
@@ -71,7 +73,7 @@
   * [Experience Management](advanced/administration/experience-management.md)
   * [Character Transfers](advanced/administration/character-transfers.md)
 * [🎭 Character and Player Parameters](advanced/character-and-player-parameters.md)
-* [⚙️ Server Settings](advanced/server-settings.md)
+* [⚙️ Settings](advanced/server-settings.md)
 * [🛠️ Troubleshooting](advanced/troubleshooting.md)
 
 ***

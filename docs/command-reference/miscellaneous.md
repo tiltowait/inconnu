@@ -4,20 +4,6 @@ description: Commands that don't fit any other category.
 
 # Miscellaneous
 
-## Accessibility Mode
-
-```
-/accessibility enable:<Yes/No>
-```
-
-When Accessibility Mode is enabled, **Inconnu** will use plain text instead of emoji for dice rolls and trackers. This command affects only the user; to set it server-wide, see [Server Settings](../advanced/server-settings.md#accessibility).
-
-> [!NOTE]
-> Accessibility Mode, when enabled, follows you across servers.
-
-> [!WARNING]
-> If the server has Accessibility Mode enabled, this command will do nothing.
-
 ## Coin Flip
 
 ```
@@ -47,7 +33,7 @@ Displays a link to invite the bot. (Tip: You can also get a link by clicking on 
 You can calculate roll outcome probabilities using the `/probability` command.
 
 ```
-/probability roll:<roll> reroll:[strategy]
+/probability roll:<roll> reroll:[strategy] character:[character] impairment_category:[category]
 ```
 
 The `ROLL` parameter can be any valid roll, such as `7 3 2` (pool 7, hunger 3, difficulty 2) or even a trait-based roll like `Resolve + Academics 2 4`.
@@ -58,6 +44,7 @@ The `STRATEGY` parameter allows you to specify a specific [Willpower re-roll str
 | ---------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `roll`     | The roll syntax to use                                                                                        | May be any valid roll, [including trait-based rolls](../guides/quickstart/rolling-with-traits.md) |
 | `strategy` | Run the simulations using a specific [Willpower re-roll strategy](../guides/quickstart/willpower-re-rolls.md) | Optional                                                                                          |
+| `impairment_category` | Change the roll's [Impairment](rolls/impairment.md) category, or ignore Impairment | Optional |
 
 ## Random Numbers
 

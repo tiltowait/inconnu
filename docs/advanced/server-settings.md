@@ -2,55 +2,115 @@
 description: Learn about Inconnu's customization options.
 ---
 
-# ⚙️ Server Settings
+# ⚙️ Settings
 
-**Inconnu** has a few customizable behaviors, which are adjustable using the `/settings set` command available to server administrators. Anyone can use the `/settings show` command to see the server's current configuration. Read below for an explanation of the parameters.
+**Inconnu** has personal settings and server settings, both shown in a menu:
 
-### `experience_permissions`
+```
+/settings scope:<Yourself/Server>
+```
+
+Anyone can change their own settings, which follow them across servers. Anyone can view the server settings, but only server admins can change them.
+
+## Your settings
+
+### Use emojis
 
 > [!NOTE]
-> **Default:** `Unrestricted`
+> **Default:** `Yes`
 
-This parameter specifies whether users may edit their own XP totals. The options are `Unrestricted`, `Unspent XP only`, `Lifetime XP only`, and `Restricted (admins only)`.
+Use custom emojis for dice and trackers. When off, **Inconnu** uses plain text instead. If the server turns emojis off, they're off for everyone.
 
-**Recommended reading:** `/experience` commands.
+### Automatically apply Impairment
 
-### `oblivion_stains`
+> [!NOTE]
+> **Default:** `Yes`
+
+Subtract [Impairment](../command-reference/rolls/impairment.md) penalties from your rolls automatically. When off, **Inconnu** reminds you of your Impairment instead. The `impairment_category` roll option still applies a penalty either way.
+
+## Server settings
+
+### Use emojis (server)
+
+> [!NOTE]
+> **Default:** `Yes`
+
+Turns custom emojis off for the whole server. Players can't turn them back on for themselves.
+
+### Hidden dice
+
+> [!NOTE]
+> **Default:** `Anyone can hide their dice`
+
+Who may use `dice:Hide` to [hide their dice](../command-reference/rolls/hidden-dice.md) from other players. The options are:
+
+* Anyone can hide their dice
+* Only admins can hide their dice
+* No one can hide their dice (this includes admins)
+
+### Resonance mode
+
+> [!NOTE]
+> **Default:** `Use V5 core distribution`
+
+The Resonance probabilities `/resonance` uses:
+
+* **Use V5 core distribution**
+* **Use alternate distribution from Tattered Facade**
+* **Add 16.7% chance for Empty Resonance:** The core distribution, plus a chance of Empty Resonance, which came with the Oblivion Discipline but never made it into the core table
+
+### Oblivion stains
 
 > [!NOTE]
 > **Default:** `1s and 10s (RAW)`
 
-When making a Rouse check, you may have noticed an occasional message informing you to apply a stain if it was an Oblivion roll. This is due to the rule introduced in _Chicago by Night_ and _Cults of the Blood Gods_ that a Rouse check for an Oblivion power, Ritual, or Ceremony grants a Stain on a 1 or a 10.
-
-With the `oblivion_stains` parameter, you may customize this behavior to only show the message on 10s, 1s, or never.
+_Chicago by Night_ and _Cults of the Blood Gods_ say a Rouse check for an Oblivion power, Ritual, or Ceremony grants a Stain on a 1 or a 10. **Inconnu** reminds players of this after Rouse checks. This setting changes when it does: on `1s and 10s (RAW)`, `1s only`, `10s only`, or `Never`.
 
 > [!NOTE]
-> **This parameter affects macros.** Macros created with the `staining` parameter set to `Yes` will automatically apply a stain should the Rouse check result in the value chosen here.
+> **This setting affects macros.** Macros created with `staining:Yes` automatically apply a Stain when the Rouse check matches this setting.
 
-### `update_channel`
-
-> [!NOTE]
-> **Default:** `None`
-
-**Inconnu** uses ephemeral messages to communicate with players when they update their characters. While this saves on clutter, it means that server administrators can't see what's happening. With this parameter set, **Inconnu** will list character updates in a single location—helpful if you have a less scrupulous player who decides to set all their traits to 5s!
-
-### `add_empty_resonance`
+### Max hunger
 
 > [!NOTE]
-> **Default:** `No`
+> **Default:** `5 (RAW)`
 
-When the Oblivion Discipline was added, it came with a new Resonance, called "Empty". Unfortunately, Empty Resonance was never added to the table of random Resonances. With this parameter enabled, the `/resonance` command will add Empty Resonance to its list of possible random Resonances.
+Raises the maximum Hunger in rolls from 5 to 10. It doesn't change characters' maximum Hunger.
 
-### `accessibility`
-
-> [!NOTE]
-> **Default:** `No`
-
-This enables or disables accessibility mode for the entire server. Users may not override this parameter if set to `Yes`.
-
-### `max_hunger`
+### Experience
 
 > [!NOTE]
-> **Default:** `5`
+> **Default:** `Players can adjust unspent and lifetime XP`
 
-An experimental setting, this allows you to increase the max Hunger rating in rolls from 5 to 10. Note that, at present, this has no effect on characters' max Hunger.
+Whether players can edit their own XP. The options are:
+
+* Players can adjust unspent and lifetime XP
+* Players can adjust unspent XP only
+* Players can adjust lifetime XP only
+* Only admins can adjust XP
+
+**Recommended reading:** [Experience Management](administration/experience-management.md).
+
+### Character updates channel
+
+> [!NOTE]
+> **Default:** None
+
+**Inconnu** tells players about their character updates privately. That saves clutter, but it means admins can't see what's happening. Set a channel, and **Inconnu** also posts there:
+
+* Character updates, such as trait and tracker changes
+* Willpower spent on re-rolls
+* The full results of [hidden rolls](../command-reference/rolls/hidden-dice.md)
+
+### Rolepost changelog channel
+
+> [!NOTE]
+> **Default:** None
+
+Where **Inconnu** posts when someone edits a `/post`. See [RP changelog](../premium/roleposting/rp-changelog.md).
+
+### Rolepost deletion channel
+
+> [!NOTE]
+> **Default:** None
+
+Where **Inconnu** posts when a `/post` is deleted. See [RP changelog](../premium/roleposting/rp-changelog.md#post-deletions).

@@ -223,6 +223,15 @@ class Help(commands.Cog):
             inline=False,
         )
         embed.add_field(
+            name="Impairment",
+            value=(
+                "Impaired characters automatically lose 2 dice on affected rolls. If "
+                "a power or rule negates it, use `ignore_impairment`. To subtract it "
+                "yourself instead, turn it off in `/settings` `scope:Yourself`."
+            ),
+            inline=False,
+        )
+        embed.add_field(
             name="Create a character",
             value="`/character create`\nYou can use character attributes in rolls.",
             inline=False,
@@ -413,7 +422,10 @@ class Help(commands.Cog):
         )
         embed.add_field(
             name="Use",
-            value="`/vm`\n**Example:** `/vm syntax:hunt`. You may override Hunger and Difficulty.",
+            value=(
+                "`/vm`\n**Example:** `/vm syntax:hunt`. You may override Hunger and Difficulty, "
+                "or skip Impairment with `ignore_impairment`."
+            ),
         )
         embed.add_field(
             name="Deletion",

@@ -19,6 +19,7 @@ from loguru import logger
 import errors
 import services
 import ui
+from constants import IMPAIRMENT_DICE, Impairment, RollCategory
 from ctx import AppCtx
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RerollListener, RollDisplay, TimeoutHandler
@@ -94,7 +95,7 @@ async def parse(
     try:
         max_hunger = await services.settings.max_hunger(ctx.guild)
         outcome = await perform_roll(
-            character, syntax, max_hunger, ignore_impairment=ignore_impairment
+            ctx, character, syntax, max_hunger, ignore_impairment=ignore_impairment
         )
         await display_outcome(
             ctx, owner, character, outcome, comment, ignore_impairment=ignore_impairment
@@ -189,15 +190,49 @@ async def display_outcome(
 
 
 async def perform_roll(
+    ctx: AppCtx,
     character: VChar | None,
     syntax: str | list[str],
     max_hunger: int = 5,
     *,
     ignore_impairment: bool = False,
 ) -> Roll:
-    """Public interface for __evaluate_syntax() that returns a Roll."""
+    """Parse the syntax and roll the dice, applying any impairment penalty.
+
+    This is the only place the penalty is applied. The pool string and syntax
+    are left as the user wrote them; the penalty is recorded on the Roll."""
     parser = RollParser(character, syntax)
-    return Roll(parser.pool, parser.hunger, parser.difficulty, max_hunger, parser.pool_str, syntax)
+    penalty = await _impairment_penalty(ctx, character, parser.pool_str, ignore_impairment)
+    pool = parser.pool - IMPAIRMENT_DICE if penalty else parser.pool
+
+    return Roll(
+        pool,
+        parser.hunger,
+        parser.difficulty,
+        max_hunger,
+        parser.pool_str,
+        syntax,
+        impairment_penalty=penalty,
+    )
+
+
+async def _impairment_penalty(
+    ctx: AppCtx, character: VChar | None, pool_str: str | None, ignore: bool
+) -> Impairment:
+    """The impairment that penalizes the roll, or Impairment.NONE if no penalty
+    should be applied automatically."""
+    if ignore or character is None:
+        return Impairment.NONE
+
+    impairment = character.impairment_state
+    if not impairment.penalizes(RollCategory.from_pool(pool_str)):
+        return Impairment.NONE
+
+    # Checked last, so we only look up the setting when it matters
+    if not await services.settings.auto_impairment(ctx):
+        return Impairment.NONE
+
+    return impairment
 
 
 def needs_character(syntax: str) -> bool:

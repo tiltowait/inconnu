@@ -98,6 +98,10 @@ class Damage(StrEnum):
     AGGRAVATED = "x"
 
 
+# The number of dice impairment removes from a pool
+IMPAIRMENT_DICE = 2
+
+
 class RollCategory(Flag):
     """The trait categories in a roll's pool. Mental covers social and mental traits."""
 

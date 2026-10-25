@@ -74,7 +74,7 @@ async def roll(
 
             try:
                 outcome = await perform_roll(
-                    character, parameters, ignore_impairment=ignore_impairment
+                    ctx, character, parameters, ignore_impairment=ignore_impairment
                 )
             except errors.TraitNotFound as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"

@@ -3,7 +3,7 @@
 from bson import ObjectId
 
 import inconnu
-from constants import ATTRIBUTES_AND_SKILLS
+from constants import ATTRIBUTES_AND_SKILLS, Impairment
 from inconnu.roll.dicethrow import DiceThrow
 
 __MAX_REROLL = 3
@@ -12,15 +12,28 @@ __MAX_REROLL = 3
 class Roll:
     """A container class that determines the result of a roll."""
 
-    def __init__(self, pool, hunger, difficulty, max_hunger=5, pool_str=None, syntax=None):
+    def __init__(
+        self,
+        pool,
+        hunger,
+        difficulty,
+        max_hunger=5,
+        pool_str=None,
+        syntax=None,
+        *,
+        impairment_penalty: Impairment = Impairment.NONE,
+    ):
         """
         Args:
             pool (int): The pool's total size, including hunger
             hunger (int): The rolled hunger dice
             difficulty (int): The target number of successes
             pool_str (Optional[int]): The pool's attribute + skill representation
+            impairment_penalty (Impairment): The impairment already subtracted
+                from the pool, if any. Recorded for display only.
         """
         self.id = ObjectId()
+        self.impairment_penalty = impairment_penalty
         self.hunger_rating = hunger
 
         if not 0 <= hunger <= max_hunger:

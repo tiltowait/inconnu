@@ -128,8 +128,8 @@ class SettingsMenu(discord.ui.DesignerView):
             button.callback = self.toggle_auto_impairment
             container.add_section(
                 TextDisplay(
-                    "### Automatically apply impairment?\n"
-                    "Subtract impairment penalties from your rolls automatically. "
+                    "### Automatically apply Impairment?\n"
+                    "Subtract Impairment penalties from your rolls automatically. "
                     "Use `ignore_impairment` to remove it for a single roll."
                 ),
                 accessory=button,

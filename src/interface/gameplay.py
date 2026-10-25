@@ -33,7 +33,7 @@ class Gameplay(commands.Cog):
     @player_option()
     @option(
         "ignore_impairment",
-        description="Ignore impairment penalties (e.g. from powers that negate them)",
+        description="Ignore Impairment penalties (e.g. from powers that negate them)",
         default=False,
     )
     async def vr(
@@ -75,7 +75,7 @@ class Gameplay(commands.Cog):
     @player_option()
     @option(
         "ignore_impairment",
-        description="Ignore impairment penalties (e.g. from powers that negate them)",
+        description="Ignore Impairment penalties (e.g. from powers that negate them)",
         default=False,
     )
     async def easy_roll(

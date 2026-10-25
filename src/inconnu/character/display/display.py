@@ -16,7 +16,7 @@ from utils import get_avatar
 from utils.text import pluralize
 from utils.urls import docs_url, profile_url
 
-__HELP_URL = docs_url("command-reference/characters/displaying")
+__HELP_URL = docs_url("command-reference/characters#character-display")
 
 # Display fields
 

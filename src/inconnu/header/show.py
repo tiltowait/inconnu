@@ -14,7 +14,7 @@ from utils import get_avatar
 from utils.permissions import is_supporter
 from utils.urls import docs_url, profile_url
 
-__HELP_URL = docs_url("command-reference/characters/rp-headers")
+__HELP_URL = docs_url("command-reference/characters#rp-headers")
 
 
 @haven(__HELP_URL)

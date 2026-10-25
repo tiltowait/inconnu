@@ -106,11 +106,11 @@ Whether players can edit their own XP. The options are:
 > [!NOTE]
 > **Default:** None
 
-Where **Inconnu** posts when someone edits a `/post`. See [RP changelog](../premium/roleposting/rp-changelog.md).
+Where **Inconnu** posts when someone edits a `/post`. See [Changelog channel](../premium/roleposting.md#changelog-channel).
 
 ### Rolepost deletion channel
 
 > [!NOTE]
 > **Default:** None
 
-Where **Inconnu** posts when a `/post` is deleted. See [RP changelog](../premium/roleposting/rp-changelog.md#post-deletions).
+Where **Inconnu** posts when a `/post` is deleted. See [Deletion channel](../premium/roleposting.md#deletion-channel).

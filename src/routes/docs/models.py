@@ -33,8 +33,10 @@ class DocPage(BaseModel):
 
 
 class DocsBundle(BaseModel):
-    """Every docs page plus the sidebar. version changes whenever they do."""
+    """Every docs page plus the sidebar and redirects. version changes whenever
+    they do. redirects maps old page paths to their new path and anchor."""
 
     version: str
     nav: list[NavSection]
     pages: list[DocPage]
+    redirects: dict[str, str] = Field(default_factory=dict)

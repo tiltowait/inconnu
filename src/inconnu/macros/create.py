@@ -9,7 +9,7 @@ from models import VChar
 from services.haven import haven
 from utils.urls import docs_url
 
-__HELP_URL = docs_url("command-reference/macros/creation")
+__HELP_URL = docs_url("command-reference/macros#macro-create")
 
 
 @haven(__HELP_URL)

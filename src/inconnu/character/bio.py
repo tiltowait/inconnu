@@ -10,7 +10,7 @@ from services.haven import haven
 from utils.text import clean_text
 from utils.urls import docs_url
 
-__HELP_URL = docs_url("command-reference/characters/profiles#profile")
+__HELP_URL = docs_url("command-reference/characters#character-profile")
 
 
 @haven(__HELP_URL)

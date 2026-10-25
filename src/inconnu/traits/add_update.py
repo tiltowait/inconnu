@@ -15,11 +15,11 @@ from utils.text import pluralize
 from utils.urls import docs_url
 
 __HELP_URL = {
-    False: docs_url("command-reference/traits/adding-traits"),
-    True: docs_url("command-reference/traits/updating-traits"),
+    False: docs_url("command-reference/traits#traits-add"),
+    True: docs_url("command-reference/traits#traits-update"),
 }
-__HELP_ADD = docs_url("command-reference/traits/adding-traits")
-__HELP_UPDATE = docs_url("command-reference/traits/updating-traits")
+__HELP_ADD = docs_url("command-reference/traits#traits-add")
+__HELP_UPDATE = docs_url("command-reference/traits#traits-update")
 
 
 @haven(__HELP_ADD)

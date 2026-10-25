@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from routes.docs import loader
+from routes.docs.models import DocPage
 
 SUMMARY = """# Table of contents
 
@@ -69,6 +70,22 @@ def test_real_docs_load():
 def test_page_path(file: str, expected: str):
     """READMEs stand for their directory; other pages drop .md."""
     assert loader.page_path(file) == expected
+
+
+@pytest.mark.parametrize(
+    "markdown,expected",
+    [
+        ("# 🥇 Specialties", {"-specialties"}),  # The space after the emoji remains
+        ("### You aren't able to upload images", {"you-arent-able-to-upload-images"}),
+        ("### `experience_permissions`", {"experience_permissions"}),
+        ("### Use emojis (server)", {"use-emojis-server"}),
+        ("## Notes\n## Notes\n## Notes", {"notes", "notes-1", "notes-2"}),
+        ("```\n# comment\n```\n## Real", {"real"}),
+    ],
+)
+def test_heading_anchors(markdown: str, expected: set[str]):
+    """Anchors follow GitHub's rules, and code blocks aren't headings."""
+    assert loader.heading_anchors(markdown) == expected
 
 
 def test_parse_page_frontmatter():
@@ -162,3 +179,51 @@ def test_assets(tmp_path: Path):
     """Assets are listed by name."""
     write_docs(tmp_path, {"README.md": "# Home\n"})
     assert loader.assets(tmp_path) == {"image.png": tmp_path / "assets" / "image.png"}
+
+
+def redirect_pages() -> list[DocPage]:
+    """Pages for redirect tests: a macro reference with a heading per command."""
+    return [
+        loader.parse_page("command-reference/macros.md", "# Macros\n\n## /macro create\n"),
+        loader.parse_page("README.md", "# Home\n"),
+    ]
+
+
+def test_parse_redirects():
+    """Redirects map old paths to new paths, with or without anchors."""
+    text = (
+        "# A comment\n"
+        "command-reference/macros/creation: command-reference/macros#macro-create\n"
+        "old/home: ''\n"
+    )
+    assert loader.parse_redirects(text, redirect_pages()) == {
+        "command-reference/macros/creation": "command-reference/macros#macro-create",
+        "old/home": "",
+    }
+
+
+@pytest.mark.parametrize(
+    "text,error",
+    [
+        ("command-reference/macros: README", "redirects a live page: command-reference/macros"),
+        ("old: command-reference/gone", "redirects old to a missing page: command-reference/gone"),
+        ("old: command-reference/macros#macro-gone", "missing heading: command-reference/macros#"),
+    ],
+)
+def test_parse_redirects_invalid(text: str, error: str):
+    """Redirecting a live page, or to a missing page or heading, is an error."""
+    with pytest.raises(ValueError, match=error):
+        loader.parse_redirects(text, redirect_pages())
+
+
+def test_load_redirects(tmp_path: Path):
+    """Redirects are loaded when redirects.yml exists, and change the version."""
+    write_docs(tmp_path, {"README.md": "# Home\n"})
+    bundle = loader.load(tmp_path)
+    assert bundle.redirects == {}
+
+    (tmp_path / "redirects.yml").write_text("old: ''\n")
+    redirected = loader.load(tmp_path)
+
+    assert redirected.redirects == {"old": ""}
+    assert redirected.version != bundle.version

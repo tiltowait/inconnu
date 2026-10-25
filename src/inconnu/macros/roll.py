@@ -24,7 +24,7 @@ from utils import get_avatar
 from utils.urls import docs_url
 
 __HUNT_LISTENERS = {}
-__HELP_URL = docs_url("command-reference/macros/rolling")
+__HELP_URL = docs_url("command-reference/macros#vm")
 
 
 async def roll(

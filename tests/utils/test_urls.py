@@ -1,34 +1,12 @@
 """Tests for URL generation, including that the bot's docs links resolve."""
 
 import ast
-import re
 from pathlib import Path
-
-import pytest
 
 from routes.docs import loader
 from utils.urls import docs_url
 
 SRC = Path(__file__).parents[2] / "src"
-
-
-def heading_anchors(markdown: str) -> set[str]:
-    """The anchors for a page's headings, using GitHub's rules: lowercase, drop
-    punctuation and emoji, spaces become hyphens, and repeats get -1, -2, ..."""
-    anchors = set()
-    counts: dict[str, int] = {}
-    in_code = False
-    for line in markdown.splitlines():
-        if line.startswith("```"):
-            in_code = not in_code
-            continue
-        if in_code or not (match := re.match(r"#{1,6} (.+)", line)):
-            continue
-        slug = re.sub(r"[^\w\- ]", "", match.group(1).strip().lower()).replace(" ", "-")
-        count = counts.get(slug, 0)
-        counts[slug] = count + 1
-        anchors.add(slug if count == 0 else f"{slug}-{count}")
-    return anchors
 
 
 def docs_url_calls() -> list[tuple[str, int, str | None]]:
@@ -61,22 +39,6 @@ def test_docs_url():
     )
 
 
-@pytest.mark.parametrize(
-    "markdown,expected",
-    [
-        ("# 🥇 Specialties", {"-specialties"}),  # The space after the emoji remains
-        ("### You aren't able to upload images", {"you-arent-able-to-upload-images"}),
-        ("### `experience_permissions`", {"experience_permissions"}),
-        ("### Use emojis (server)", {"use-emojis-server"}),
-        ("## Notes\n## Notes\n## Notes", {"notes", "notes-1", "notes-2"}),
-        ("```\n# comment\n```\n## Real", {"real"}),
-    ],
-)
-def test_heading_anchors(markdown: str, expected: set[str]):
-    """Anchors follow GitHub's rules, and code blocks aren't headings."""
-    assert heading_anchors(markdown) == expected
-
-
 def test_docs_links_resolve():
     """Every docs_url() call names a real docs page, and any anchor names a
     heading on that page."""
@@ -93,7 +55,7 @@ def test_docs_links_resolve():
         path, _, anchor = page.partition("#")
         if path not in pages:
             problems.append(f"{where}: no docs page '{path}'")
-        elif anchor and anchor not in heading_anchors(pages[path].markdown):
+        elif anchor and anchor not in loader.heading_anchors(pages[path].markdown):
             problems.append(f"{where}: no heading '#{anchor}' on '{path}'")
 
     assert not problems, "\n".join(problems)

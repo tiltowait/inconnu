@@ -12,11 +12,11 @@
 With this command, you can upload an image from your computer or phone. You may upload multiple images per character.
 
 > [!NOTE]
-> The first image in your list is considered the character's main profile image and will be displayed in many embeds, such as the one shown for [`/character display`.](../command-reference/characters/displaying.md)
+> The first image in your list is considered the character's main profile image and will be displayed in many embeds, such as the one shown for [`/character display`.](../command-reference/characters.md#character-display)
 
 ## Viewing
 
-The `/character images` and `/character profile` commands both show a pager to scroll through your uploaded images. In addition, the [`/header`](../command-reference/characters/rp-headers.md#posting-the-header) command will display a random image associated with your character.
+The `/character images` and `/character profile` commands both show a pager to scroll through your uploaded images. In addition, the [`/header`](../command-reference/characters.md#header) command will display a random image associated with your character.
 
 ### Modifying
 

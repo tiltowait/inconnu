@@ -17,4 +17,4 @@ Don't care about managing characters? Trait pools don't interest you? That's fin
 
 But if you stop here, you're missing out on the dozens of features **Inconnu** offers. Read on for more info.
 
-[⚡ Advanced: Roll shorthand](../../command-reference/rolls/advanced-roll-shorthand.md)
+[`/vr`: the faster roll command](../../command-reference/rolls/README.md#vr)

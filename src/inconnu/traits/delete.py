@@ -11,7 +11,7 @@ from models import VChar
 from services.haven import haven
 from utils.urls import docs_url
 
-__HELP_URL = docs_url("command-reference/traits/removing-traits")
+__HELP_URL = docs_url("command-reference/traits#traits-delete")
 
 
 class DeletionResult(NamedTuple):

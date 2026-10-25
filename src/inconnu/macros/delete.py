@@ -7,7 +7,7 @@ from models import VChar
 from services.haven import haven
 from utils.urls import docs_url
 
-__HELP_URL = docs_url("command-reference/macros/deletion")
+__HELP_URL = docs_url("command-reference/macros#macro-delete")
 
 
 @haven(__HELP_URL)

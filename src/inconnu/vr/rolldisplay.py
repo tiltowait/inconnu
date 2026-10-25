@@ -423,9 +423,9 @@ class RollDisplay(ReportingView):
     @property
     def comment(self) -> str | None:
         """The original comment, plus any impairment string."""
-        if self.character is not None and self.character.impairment is not None:
+        if self.character is not None and self.character.impairment_reminder is not None:
             comment = (self._comment + "\n") if self._comment else ""
-            return comment + self.character.impairment
+            return comment + self.character.impairment_reminder
         return self._comment
 
     @property

@@ -122,17 +122,17 @@ def test_humanity(character: VChar):
     ],
 )
 def test_impairment(tracker: Tracker, damage: Damage, impairment: str, character: VChar):
-    assert character.impairment is None, "Character should start with no impairment"
+    assert character.impairment_reminder is None, "Character should start with no impairment"
 
     character.set_damage(tracker, damage, 20)
-    assert character.impairment is not None
+    assert character.impairment_reminder is not None
     if tracker == Tracker.HEALTH and damage == Damage.AGGRAVATED:
         if character.is_vampire:
-            assert "TORPOR" in character.impairment, "Vampire should be in torpor"
+            assert "TORPOR" in character.impairment_reminder, "Vampire should be in torpor"
         else:
-            assert "DEAD" in character.impairment, "Human should be dead"
+            assert "DEAD" in character.impairment_reminder, "Human should be dead"
     else:
-        assert impairment in character.impairment
+        assert impairment in character.impairment_reminder
 
 
 @pytest.mark.parametrize("attribute", ["Resolve", "Composure", "Stamina"])
@@ -263,11 +263,11 @@ def test_set_aggravated_hp_full_tracker(character: VChar):
     assert character.superficial_hp == 0
     assert character.health == "xxxxxx"
 
-    assert character.impairment is not None
+    assert character.impairment_reminder is not None
     if character.is_vampire:
-        assert "TORPOR" in character.impairment
+        assert "TORPOR" in character.impairment_reminder
     else:
-        assert "DEAD" in character.impairment
+        assert "DEAD" in character.impairment_reminder
 
 
 def test_set_aggravated_hp_preserves_superficial_order(character: VChar):

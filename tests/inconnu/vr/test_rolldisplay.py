@@ -412,7 +412,7 @@ async def test_footer_impairment_only(ctx: AppCtx, owner: discord.Member):
     embed = await render(display)
     assert embed.footer is not None
 
-    assert embed.footer.text == char.impairment
+    assert embed.footer.text == char.impairment_reminder
 
 
 async def test_footer_comment_and_impairment(ctx: AppCtx, owner: discord.Member):
@@ -423,7 +423,7 @@ async def test_footer_comment_and_impairment(ctx: AppCtx, owner: discord.Member)
     embed = await render(display)
     assert embed.footer is not None
 
-    assert embed.footer.text == f"Hello\n{char.impairment}"
+    assert embed.footer.text == f"Hello\n{char.impairment_reminder}"
 
 
 # Surging

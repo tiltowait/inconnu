@@ -80,7 +80,7 @@ async def update(
                 color = discord.Color.red() if not color else color
             updates.extend(update_msg.split("\n"))
 
-        if (impairment := character.impairment) is not None:
+        if (impairment := character.impairment_reminder) is not None:
             updates.append(impairment)
 
         # Ignore generated output if we got a custom message

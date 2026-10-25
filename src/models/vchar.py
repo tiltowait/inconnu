@@ -257,7 +257,7 @@ class VChar(Document):
         return self.stains > (10 - self.humanity)
 
     @property
-    def impairment(self):
+    def impairment_reminder(self):
         """A string for describing the character's physical/mental impairment."""
         if self.health.count(Damage.AGGRAVATED) == len(self.health):
             if self.is_vampire:

@@ -1,7 +1,7 @@
 """delete.py - Character deletion facilities."""
 
 import asyncio
-from typing import cast
+from typing import Any, cast
 
 import discord
 from discord.ui import InputText, Modal
@@ -11,7 +11,8 @@ import api
 import errors
 import services
 import ui
-from ctx import AppCtx
+from ctx import AppCtx, AppInteraction
+from models import VChar
 
 __HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
 
@@ -36,8 +37,8 @@ async def delete(ctx: AppCtx, character_name: str):
 class _DeletionModal(Modal):
     """A modal that requires the user to type the character's name before deleting."""
 
-    def __init__(self, *args, **kwargs) -> None:
-        self.character = kwargs.pop("character")
+    def __init__(self, *args: Any, **kwargs: Any):
+        self.character: VChar = kwargs.pop("character")
         super().__init__(*args, **kwargs)
 
         self.add_item(
@@ -57,7 +58,7 @@ class _DeletionModal(Modal):
             await asyncio.gather(
                 interaction.response.send_message(msg),
                 services.post_update(
-                    ctx=interaction,
+                    ctx=cast(AppInteraction, interaction),
                     character=self.character,
                     title="Character Deleted",
                     message=f"**{interaction.user.mention}** deleted **{self.character.name}**.",

@@ -1,16 +1,21 @@
 """views/convictionsmodal.py - Allow users to enter their Convictions."""
 
 import asyncio
+from collections.abc import Awaitable
+from typing import cast
 
+import discord
 from discord.ui import InputText, Modal
 
 import services
+from ctx import AppInteraction
+from models import VChar
 
 
 class ConvictionsModal(Modal):
     """A modal that lets the user set their characters' Convictions."""
 
-    def __init__(self, character, report=True):
+    def __init__(self, character: VChar, report=True):
         super().__init__(title="Convictions")
         self.character = character
         self.report = report
@@ -42,7 +47,7 @@ class ConvictionsModal(Modal):
             )
         )
 
-    async def callback(self, interaction):
+    async def callback(self, interaction: discord.Interaction):
         """Set the character's Convictions."""
         first = self.children[0].value
         second = self.children[1].value
@@ -69,7 +74,7 @@ class ConvictionsModal(Modal):
 
         self.character.convictions = new_convictions
 
-        tasks = [self.character.save()]
+        tasks: list[Awaitable[object]] = [self.character.save()]
         if self.report:
             tasks.append(
                 interaction.response.send_message(
@@ -78,7 +83,7 @@ class ConvictionsModal(Modal):
             )
             tasks.append(
                 services.post_update(
-                    ctx=interaction,
+                    ctx=cast(AppInteraction, interaction),
                     character=self.character,
                     title="Changed Convictions",
                     message=update_message,
@@ -90,7 +95,7 @@ class ConvictionsModal(Modal):
         await asyncio.gather(*tasks)
 
 
-def _pop_first(convictions_list) -> str:
+def _pop_first(convictions_list: list[str]) -> str:
     """Pop the first item in the list, returning an empty string if out of bounds."""
     try:
         return convictions_list.pop(0)

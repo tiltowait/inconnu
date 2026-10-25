@@ -93,10 +93,10 @@ def mock_get_message() -> Iterator[AsyncMock]:
 
 
 @pytest.fixture(autouse=True)
-def mock_character_update() -> Iterator[AsyncMock]:
+def mock_post_update() -> Iterator[AsyncMock]:
     """Stand in for the update channel. By default, the guild doesn't have
     one; show() can give it one."""
-    with patch("services.character_update", new_callable=AsyncMock, return_value=None) as mock:
+    with patch("services.post_update", new_callable=AsyncMock, return_value=None) as mock:
         yield mock
 
 
@@ -1295,24 +1295,24 @@ async def test_hidden_without_update_channel(ctx: AppCtx, owner: discord.Member)
 
 
 async def test_shown_roll_not_reported(
-    ctx: AppCtx, owner: discord.Member, mock_character_update: AsyncMock
+    ctx: AppCtx, owner: discord.Member, mock_post_update: AsyncMock
 ):
     """Normal rolls don't go to the update channel."""
     screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2)), update_channel=True)
 
     assert screen.report is None
-    mock_character_update.assert_not_awaited()
+    mock_post_update.assert_not_awaited()
 
 
 async def test_hidden_dm_roll_not_reported(
-    ctx: AppCtx, owner: discord.Member, mock_character_update: AsyncMock
+    ctx: AppCtx, owner: discord.Member, mock_post_update: AsyncMock
 ):
     """DMs have no update channel."""
     cast(MagicMock, ctx).guild = None
     display = make_display(ctx, owner, make_roll([6, 2], [], 2), hide_dice=True)
     await show(display, update_channel=True)
 
-    mock_character_update.assert_not_awaited()
+    mock_post_update.assert_not_awaited()
 
 
 # Ownership

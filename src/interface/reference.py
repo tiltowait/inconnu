@@ -63,15 +63,23 @@ class ReferenceCommands(commands.Cog):
         required=False,
     )
     @char_option("The character (if using traits)")
+    @option(
+        "ignore_impairment",
+        description="Ignore Impairment penalties (e.g. from powers that negate them)",
+        default=False,
+    )
     async def probability(
         self,
         ctx: AppCtx,
         roll: str,
         reroll: str,
         character: str,
+        ignore_impairment: bool,
     ):
         """Calculate outcome probabilities for a given roll."""
-        await inconnu.reference.probability(ctx, roll, reroll, character)
+        await inconnu.reference.probability(
+            ctx, roll, reroll, character, ignore_impairment=ignore_impairment
+        )
 
     @slash_command()
     @option(

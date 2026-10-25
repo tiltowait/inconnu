@@ -13,7 +13,7 @@ import ui
 from ctx import AppCtx
 from inconnu import vr as roll
 from inconnu.roll import Strategy
-from models import VChar
+from models import IMPAIRMENT_DICE, Impairment, VChar
 from services.haven import Haven
 
 HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
@@ -54,8 +54,10 @@ async def probability(
     syntax: str,
     strategy_name: str | None = None,
     char_name: str | None = None,
+    ignore_impairment=False,
 ):
-    """Calculate the probabilities surrounding a roll."""
+    """Calculate the probabilities surrounding a roll, including any Impairment
+    penalty the roll would receive."""
     character = None
     try:
         strategy = Strategy(strategy_name) if strategy_name is not None else None
@@ -77,10 +79,12 @@ async def probability(
             character = await haven.fetch()
 
         parser = roll.RollParser(character, syntax)
-        params = RollParams(parser.pool, parser.hunger, parser.difficulty)
+        penalty = await roll.impairment_penalty(ctx, character, parser.pool_str, ignore_impairment)
+        pool = parser.pool - IMPAIRMENT_DICE if penalty else parser.pool
+        params = RollParams(pool, parser.hunger, parser.difficulty)
         probabilities = calculate(*params, strategy)
 
-        await __display_embed(ctx, params, strategy, probabilities)
+        await __display_embed(ctx, params, strategy, probabilities, penalty)
 
     except (SyntaxError, ValueError, errors.TraitError) as err:
         await ui.embeds.error(ctx, err, character=character, help_url=HELP_URL)
@@ -92,7 +96,11 @@ def _can_roll(character: VChar, syntax: str):
 
 
 async def __display_embed(
-    ctx: AppCtx, params: RollParams, strategy: Strategy | None, probs: Probabilities
+    ctx: AppCtx,
+    params: RollParams,
+    strategy: Strategy | None,
+    probs: Probabilities,
+    penalty: Impairment,
 ):
     """Display the probabilities in a nice embed."""
     uncomplicated = probs.success + probs.critical
@@ -100,8 +108,13 @@ async def __display_embed(
     description += f"\n**{probs.total_successes:.2f}** average successes"
     description += f"\n**{probs.margin:.2f}** average margin"
 
+    notes = []
     if strategy is not None:
-        description = f"**{strategy.description}**\n\n{description}"
+        notes.append(f"**{strategy.description}**")
+    if penalty:
+        notes.append(f"*Includes -{IMPAIRMENT_DICE} ({penalty.description} impairment)*")
+    if notes:
+        description = "\n".join(notes) + f"\n\n{description}"
 
     embed = discord.Embed(
         title=f"Pool {params.pool} | Hunger {params.hunger} | DC {params.difficulty}",

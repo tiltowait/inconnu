@@ -201,7 +201,7 @@ async def perform_roll(
     This is the only place the penalty is applied. The pool string and syntax
     are left as the user wrote them; the penalty is recorded on the Roll."""
     parser = RollParser(character, syntax)
-    penalty = await _impairment_penalty(ctx, character, parser.pool_str, ignore_impairment)
+    penalty = await impairment_penalty(ctx, character, parser.pool_str, ignore_impairment)
     pool = parser.pool - IMPAIRMENT_DICE if penalty else parser.pool
 
     return Roll(
@@ -215,7 +215,7 @@ async def perform_roll(
     )
 
 
-async def _impairment_penalty(
+async def impairment_penalty(
     ctx: AppCtx, character: VChar | None, pool_str: str | None, ignore: bool
 ) -> Impairment:
     """The impairment that penalizes the roll, or Impairment.NONE if no penalty

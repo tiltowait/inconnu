@@ -90,6 +90,12 @@ async def max_hunger(guild: discord.Guild):
     return vguild.settings.max_hunger
 
 
+async def auto_impairment(ctx: AppInvocation) -> bool:
+    """Whether to automatically apply impairment penalties to the user's rolls."""
+    vuser = await VUser.get_or_fetch(ctx.user.id)
+    return vuser.settings.auto_impairment
+
+
 # Update Channels
 
 

@@ -161,6 +161,7 @@ def make_display(
     listener: AsyncMock | None = None,
     timeout: AsyncMock | None = None,
     impairment_category: ImpairmentCategory | None = None,
+    hide_dice=False,
 ) -> RollDisplay:
     """Create a RollDisplay, optionally with a listener and timeout handler."""
     return RollDisplay(
@@ -172,6 +173,7 @@ def make_display(
         listener,
         timeout,
         impairment_category=impairment_category,
+        hide_dice=hide_dice,
     )
 
 
@@ -692,6 +694,78 @@ async def test_surging_from_impairment_comment(ctx: AppCtx, owner: discord.Membe
     display = make_display(ctx, owner, make_roll([6], []), comment="surge", character=char)
 
     assert display.surging
+
+
+# Hidden dice
+
+
+async def test_hidden_embed(ctx: AppCtx, owner: discord.Member):
+    """Hidden rolls replace the dice and size fields with Margin and Difficulty
+    in the description, keeping the outcome and pool string."""
+    roll = make_roll([10, 6, 2], [1], 2, pool_str="Strength + Brawl")
+    char = make_char("vampire")
+    shown = await render(make_display(ctx, owner, roll, "Hello", char))
+    hidden = await render(make_display(ctx, owner, roll, "Hello", char, hide_dice=True))
+    assert hidden.author is not None and shown.author is not None
+    assert hidden.thumbnail is not None and shown.thumbnail is not None
+    assert hidden.footer is not None and shown.footer is not None
+
+    assert hidden.title == shown.title == "SUCCESS! (2)"
+    assert hidden.colour == shown.colour
+    assert hidden.author.name == shown.author.name == "Nadea Theron • DC 2"
+    assert hidden.thumbnail.url == shown.thumbnail.url
+    assert hidden.footer.text == shown.footer.text == "Hello"
+    assert hidden.description == "**Margin:** 0\n**Difficulty:** 2"
+    assert field_map(hidden) == {"Pool": "Strength + Brawl"}
+
+
+@pytest.mark.parametrize("use_emoji", [True, False])
+async def test_hidden_embed_has_no_dice(
+    ctx: AppCtx, owner: discord.Member, mock_can_emoji: AsyncMock, use_emoji: bool
+):
+    """Neither emoji nor text dice are shown."""
+    mock_can_emoji.return_value = use_emoji
+    roll = make_roll([10, 6, 2], [1], 2, pool_str="Strength + Brawl")
+    embed = await render(make_display(ctx, owner, roll, hide_dice=True))
+
+    assert embed.description == "**Margin:** 0\n**Difficulty:** 2"
+    assert field_map(embed) == {"Pool": "Strength + Brawl"}
+
+
+@pytest.mark.parametrize(
+    "pool_str,penalty,expected",
+    [
+        (None, Impairment.NONE, "Hidden"),
+        (None, Impairment.PHYSICAL, "Hidden"),
+        ("Strength + Brawl", Impairment.PHYSICAL, "Strength + Brawl - 2 (physical impairment)"),
+    ],
+)
+async def test_hidden_pool_field(
+    ctx: AppCtx,
+    owner: discord.Member,
+    pool_str: str | None,
+    penalty: Impairment,
+    expected: str,
+):
+    """Number-only pools are hidden, even with a penalty. Trait pools aren't."""
+    roll = make_roll([6, 6, 6], [], pool_str=pool_str, impairment_penalty=penalty)
+    roll.base_pool = 5
+    embed = await render(make_display(ctx, owner, roll, hide_dice=True))
+
+    assert field_map(embed) == {"Pool": expected}
+
+
+async def test_hidden_embed_after_reroll(ctx: AppCtx, owner: discord.Member):
+    """Rerolls keep the dice hidden and still show the original outcome."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    await reroll(screen)
+    embed = screen.embed
+    assert embed is not None
+
+    assert embed.title == "R: SUCCESS! (2)"
+    assert embed.description == "**Margin:** 0\n**Difficulty:** 2"
+    assert field_map(embed) == {"Pool": "Hidden", "Original Outcome": "```Failure (1)```"}
 
 
 # Buttons (initial roll)

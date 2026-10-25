@@ -92,7 +92,7 @@ class RollDisplay(ReportingView):
         if self.character is not None:
             # Only needed to word the Impairment reminder, which requires a character
             self.auto_impairment = await services.settings.auto_impairment(self.ctx)
-        inter = await self.ctx.respond(embed=self.embed, view=self)
+        inter = await self.ctx.respond(embed=self.redacted_embed, view=self)
         self.message = inter
 
         # Logging the message ID lets the roll be toggled for statistics
@@ -149,7 +149,7 @@ class RollDisplay(ReportingView):
         """Reroll the outcome with the given strategy."""
         self.outcome.reroll(strategy.value)
         self.state.strategy = strategy
-        await self._update(interaction, embed=self.embed)
+        await self._update(interaction, embed=self.redacted_embed)
         await self._log_roll(interaction, None)
 
         if self.listener:
@@ -318,8 +318,18 @@ class RollDisplay(ReportingView):
     # Embed
 
     @property
-    def embed(self) -> discord.Embed:
-        """The graphical representation of the roll."""
+    def full_embed(self) -> discord.Embed:
+        """An embed that shows the roll's entire outcome: total successes,
+        margin, and the number of dice and their results."""
+        return self._embed(hidden=False)
+
+    @property
+    def redacted_embed(self) -> discord.Embed:
+        """An embed that shows only the roll's total successes and margin."""
+        return self._embed(hidden=True)
+
+    def _embed(self, hidden: bool) -> discord.Embed:
+        """Build the embed, with or without the dice."""
         title = self.outcome.main_takeaway.upper() + "!"
         if self.state.rerolled:
             title = f"R: {title}"
@@ -338,7 +348,31 @@ class RollDisplay(ReportingView):
         embed.set_author(name=author_field, icon_url=self.icon)
         embed.set_thumbnail(url=self.thumbnail_url)
 
-        # Disclosure fields
+        if hidden:
+            embed.description = (
+                f"**Margin:** {self.outcome.margin}\n**Difficulty:** {self.outcome.difficulty}"
+            )
+            # A number-only pool would reveal its size
+            pool_str = self.pool_str if self.outcome.pool_str else None
+            embed.add_field(name="Pool", value=pool_str or "Hidden")
+        else:
+            self._add_dice_fields(embed)
+
+        # Show what the roll originally was
+        if self.state.rerolled:
+            embed.add_field(
+                name="Original Outcome",
+                value=f"```{self.original_outcome}```",
+                inline=False,
+            )
+
+        if self.comment is not None:
+            embed.set_footer(text=self.comment)
+
+        return embed
+
+    def _add_dice_fields(self, embed: discord.Embed):
+        """Add the dice, pool size, Hunger, Difficulty, and pool string fields."""
         if self.outcome.pool <= 30 and self.use_emoji:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
@@ -368,19 +402,6 @@ class RollDisplay(ReportingView):
 
         if pool_str := self.pool_str:
             embed.add_field(name="Pool", value=pool_str)
-
-        # Show what the roll originally was
-        if self.state.rerolled:
-            embed.add_field(
-                name="Original Outcome",
-                value=f"```{self.original_outcome}```",
-                inline=False,
-            )
-
-        if self.comment is not None:
-            embed.set_footer(text=self.comment)
-
-        return embed
 
     @property
     def character_name(self) -> str:

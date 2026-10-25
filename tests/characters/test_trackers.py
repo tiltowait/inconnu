@@ -4,6 +4,7 @@ import pytest
 
 from constants import Damage, Impairment
 from models import VChar
+from models.vchar import Tracker
 from tests.characters import gen_char
 
 
@@ -32,23 +33,23 @@ def test_hunger(character: VChar):
 
 def test_apply_damage(character: VChar):
     """Test damage application and wrapping."""
-    character.apply_damage("health", Damage.SUPERFICIAL, 3)
+    character.apply_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)
     assert character.health == "...///"
 
-    character.apply_damage("health", Damage.AGGRAVATED, 1)
+    character.apply_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)
     assert character.health == "..///x"
 
-    character.apply_damage("health", Damage.SUPERFICIAL, 2)
+    character.apply_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 2)
     assert character.health == "/////x"
     assert character.physically_impaired
     assert not character.mentally_impaired
 
-    character.apply_damage("health", Damage.SUPERFICIAL, 2)
+    character.apply_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 2)
     assert character.health == "///xxx"
     assert character.superficial_hp == 3
     assert character.aggravated_hp == 3
 
-    character.apply_damage("willpower", Damage.SUPERFICIAL, 8)
+    character.apply_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, 8)
     assert character.willpower == "//xxx"
     assert character.superficial_wp == 2
     assert character.aggravated_wp == 3
@@ -80,16 +81,16 @@ def test_impairment_state(
 
 def test_set_damage(character: VChar):
     """Test the set_damage() method."""
-    character.set_damage("health", Damage.SUPERFICIAL, 3)
+    character.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)
     assert character.health == "...///"
 
-    character.set_damage("health", Damage.SUPERFICIAL, 20)
+    character.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 20)
     assert character.health == "//////"
 
-    character.set_damage("health", Damage.AGGRAVATED, 1)
+    character.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)
     assert character.health == "/////x"
 
-    character.set_damage("health", Damage.AGGRAVATED, 0)
+    character.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 0)
     assert character.health == "./////"
 
 
@@ -115,16 +116,17 @@ def test_humanity(character: VChar):
 @pytest.mark.parametrize(
     "tracker, damage, impairment",
     [
-        ["health", Damage.AGGRAVATED, ""],  # Depends on char type
-        ["health", Damage.SUPERFICIAL, "physically"],
-        ["willpower", Damage.SUPERFICIAL, "mentally"],
+        [Tracker.HEALTH, Damage.AGGRAVATED, ""],  # Depends on char type
+        [Tracker.HEALTH, Damage.SUPERFICIAL, "physically"],
+        [Tracker.WILLPOWER, Damage.SUPERFICIAL, "mentally"],
     ],
 )
-def test_impairment(tracker: str, damage: Damage, impairment: str, character: VChar):
+def test_impairment(tracker: Tracker, damage: Damage, impairment: str, character: VChar):
     assert character.impairment is None, "Character should start with no impairment"
 
     character.set_damage(tracker, damage, 20)
-    if tracker == "health" and damage == Damage.AGGRAVATED:
+    assert character.impairment is not None
+    if tracker == Tracker.HEALTH and damage == Damage.AGGRAVATED:
         if character.is_vampire:
             assert "TORPOR" in character.impairment, "Vampire should be in torpor"
         else:
@@ -178,7 +180,7 @@ def test_set_aggravated_hp_basic(character: VChar):
 
 def test_set_aggravated_hp_zero(character: VChar):
     """Test setting aggravated health to zero."""
-    character.apply_damage("health", Damage.AGGRAVATED, 3)
+    character.apply_damage(Tracker.HEALTH, Damage.AGGRAVATED, 3)
     assert character.aggravated_hp == 3
 
     character.set_aggravated_hp(0)
@@ -207,7 +209,7 @@ def test_set_aggravated_hp_decrease(character: VChar):
 def test_set_aggravated_hp_with_superficial(character: VChar):
     """Test setting aggravated HP when superficial damage exists."""
     # Add superficial damage first
-    character.apply_damage("health", Damage.SUPERFICIAL, 2)
+    character.apply_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 2)
     assert character.superficial_hp == 2
     assert character.health == "....//"
 
@@ -220,7 +222,7 @@ def test_set_aggravated_hp_with_superficial(character: VChar):
 
 def test_set_aggravated_hp_overwrites_superficial(character: VChar):
     """Test that setting high aggravated can overwrite superficial."""
-    character.apply_damage("health", Damage.SUPERFICIAL, 3)
+    character.apply_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)
     assert character.superficial_hp == 3
 
     # Set aggravated to 5 - should push out superficial
@@ -261,6 +263,7 @@ def test_set_aggravated_hp_full_tracker(character: VChar):
     assert character.superficial_hp == 0
     assert character.health == "xxxxxx"
 
+    assert character.impairment is not None
     if character.is_vampire:
         assert "TORPOR" in character.impairment
     else:
@@ -270,7 +273,7 @@ def test_set_aggravated_hp_full_tracker(character: VChar):
 def test_set_aggravated_hp_preserves_superficial_order(character: VChar):
     """Test that superficial damage stays on the left when setting aggravated."""
     character.set_aggravated_hp(2)
-    character.apply_damage("health", Damage.SUPERFICIAL, 2)
+    character.apply_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 2)
 
     assert character.health == "..//xx"
     assert character.superficial_hp == 2
@@ -292,7 +295,7 @@ def test_set_superficial_wp_basic(character: VChar):
 
 def test_set_superficial_wp_zero(character: VChar):
     """Test setting superficial willpower to zero."""
-    character.apply_damage("willpower", Damage.SUPERFICIAL, 3)
+    character.apply_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, 3)
     assert character.superficial_wp == 3
 
     character.set_superficial_wp(0)
@@ -321,7 +324,7 @@ def test_set_superficial_wp_decrease(character: VChar):
 def test_set_superficial_wp_with_aggravated(character: VChar):
     """Test setting superficial WP when aggravated damage exists."""
     # Add aggravated damage first
-    character.apply_damage("willpower", Damage.AGGRAVATED, 1)
+    character.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 1)
     assert character.aggravated_wp == 1
     assert character.willpower == "....x"
 
@@ -382,7 +385,7 @@ def test_set_superficial_wp_extreme_overflow(character: VChar):
 def test_set_superficial_wp_with_existing_aggravated(character: VChar):
     """Test superficial wrapping with existing aggravated damage."""
     # Set 2 aggravated first
-    character.apply_damage("willpower", Damage.AGGRAVATED, 2)
+    character.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 2)
     assert character.willpower == "...xx"
 
     # Now set 4 superficial - should wrap 1 into aggravated
@@ -395,7 +398,7 @@ def test_set_superficial_wp_with_existing_aggravated(character: VChar):
 
 def test_set_superficial_wp_preserves_aggravated_order(character: VChar):
     """Test that aggravated damage stays on the right when setting superficial."""
-    character.apply_damage("willpower", Damage.AGGRAVATED, 1)
+    character.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 1)
     character.set_superficial_wp(2)
 
     assert character.willpower == "..//x"
@@ -420,7 +423,7 @@ def test_aggravated_hp_and_superficial_wp_independent(character: VChar):
 def test_set_aggravated_hp_then_apply_damage(character: VChar):
     """Test that set_aggravated_hp works correctly before apply_damage."""
     character.set_aggravated_hp(1)
-    character.apply_damage("health", Damage.SUPERFICIAL, 2)
+    character.apply_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 2)
 
     assert character.aggravated_hp == 1
     assert character.superficial_hp == 2
@@ -430,7 +433,7 @@ def test_set_aggravated_hp_then_apply_damage(character: VChar):
 def test_set_superficial_wp_then_apply_damage(character: VChar):
     """Test that set_superficial_wp works correctly before apply_damage."""
     character.set_superficial_wp(2)
-    character.apply_damage("willpower", Damage.AGGRAVATED, 1)
+    character.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 1)
 
     assert character.superficial_wp == 2
     assert character.aggravated_wp == 1

@@ -7,7 +7,7 @@ import pytest
 
 import services.settings
 from ctx import AppCtx
-from models import ExpPerms, ResonanceMode, VGuild, VUser
+from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
 
 # Test constants
 USER_ID = 123
@@ -74,7 +74,7 @@ def mock_vguild(
     update_channel: int | None = None,
     changelog_channel: int | None = None,
     deletion_channel: int | None = None,
-    allow_hidden_dice=True,
+    hidden_dice_permissions=HiddenDicePerms.ENABLED,
 ):
     """Create a mock VGuild with settings."""
     vguild = MagicMock(spec=VGuild)
@@ -87,7 +87,7 @@ def mock_vguild(
     vguild.settings.update_channel = update_channel
     vguild.settings.changelog_channel = changelog_channel
     vguild.settings.deletion_channel = deletion_channel
-    vguild.settings.allow_hidden_dice = allow_hidden_dice
+    vguild.settings.hidden_dice_permissions = hidden_dice_permissions
     return vguild
 
 
@@ -273,21 +273,23 @@ async def test_max_hunger_returns_guild_setting(mock_vguild_fetch, hunger):
     assert result == hunger
 
 
-# Tests for allow_hidden_dice()
+# Tests for hidden_dice_permissions()
 
 
-async def test_allow_hidden_dice_in_dm(mock_vguild_fetch):
-    """DMs always allow hidden dice."""
-    assert await services.settings.allow_hidden_dice(None)
+async def test_hidden_dice_permissions_in_dm(mock_vguild_fetch):
+    """Anyone may hide their dice in DMs."""
+    assert await services.settings.hidden_dice_permissions(None) == HiddenDicePerms.ENABLED
     mock_vguild_fetch.assert_not_awaited()
 
 
-@pytest.mark.parametrize("allowed", [True, False])
-async def test_allow_hidden_dice_returns_guild_setting(mock_vguild_fetch, allowed: bool):
-    """Test that allow_hidden_dice returns the guild setting."""
-    mock_vguild_fetch.return_value = mock_vguild(allow_hidden_dice=allowed)
+@pytest.mark.parametrize("perms", list(HiddenDicePerms))
+async def test_hidden_dice_permissions_returns_guild_setting(
+    mock_vguild_fetch, perms: HiddenDicePerms
+):
+    """Test that hidden_dice_permissions returns the guild setting."""
+    mock_vguild_fetch.return_value = mock_vguild(hidden_dice_permissions=perms)
 
-    assert await services.settings.allow_hidden_dice(mock_guild()) is allowed
+    assert await services.settings.hidden_dice_permissions(mock_guild()) == perms
 
 
 # Tests for auto_impairment()

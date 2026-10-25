@@ -2,16 +2,16 @@
 
 from collections.abc import Iterator
 from typing import cast
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import discord
 import pytest
-from discord.ui import Button
+from discord.ui import Button, Select
 
 from bot import InconnuBot
 from ctx import AppCtx
 from inconnu.settings.menu import SettingsIDs, SettingsMenu
-from models import VGuild, VUser
+from models import HiddenDicePerms, VGuild, VUser
 
 
 @pytest.fixture
@@ -79,48 +79,45 @@ async def test_toggle_auto_impairment(ctx: AppCtx, mock_save: AsyncMock):
     assert vuser.settings.auto_impairment
 
 
-def hidden_dice_button(menu: SettingsMenu) -> Button | None:
-    """The hidden dice toggle, if the menu has one."""
-    return cast(Button | None, menu.get_item(SettingsIDs.HIDDEN_DICE))
+def hidden_dice_select(menu: SettingsMenu) -> Select | None:
+    """The hidden dice permissions select, if the menu has one."""
+    return cast(Select | None, menu.get_item(SettingsIDs.HIDDEN_DICE))
 
 
-@pytest.mark.parametrize(
-    "allowed,label,style",
-    [(True, "Yes", discord.ButtonStyle.primary), (False, "No", discord.ButtonStyle.secondary)],
-)
+@pytest.mark.parametrize("perms", list(HiddenDicePerms))
 @pytest.mark.parametrize("admin", [True, False])
-async def test_guild_menu_shows_hidden_dice(
-    ctx: AppCtx, allowed: bool, label: str, style: discord.ButtonStyle, admin: bool
-):
-    """The server menu's toggle reflects the setting, and only admins may use it."""
+async def test_guild_menu_shows_hidden_dice(ctx: AppCtx, perms: HiddenDicePerms, admin: bool):
+    """The server menu's select defaults to the setting, and only admins may use it."""
     vguild = VGuild(guild=1, name="Test Guild")
-    vguild.settings.allow_hidden_dice = allowed
-    button = hidden_dice_button(SettingsMenu(ctx, vguild, admin=admin))
+    vguild.settings.hidden_dice_permissions = perms
+    select = hidden_dice_select(SettingsMenu(ctx, vguild, admin=admin))
 
-    assert button is not None
-    assert button.label == label
-    assert button.style == style
-    assert button.disabled is not admin
+    assert select is not None
+    assert [opt.value for opt in select.options if opt.default] == [perms]
+    assert [opt.label for opt in select.options] == [p.description for p in HiddenDicePerms]
+    assert select.disabled is not admin
 
 
 async def test_user_menu_has_no_hidden_dice(ctx: AppCtx):
     """Hidden dice permission is a server setting, so users don't get it."""
-    assert hidden_dice_button(SettingsMenu(ctx, VUser(user=1), admin=True)) is None
+    assert hidden_dice_select(SettingsMenu(ctx, VUser(user=1), admin=True)) is None
 
 
-async def test_toggle_hidden_dice(ctx: AppCtx):
-    """Toggling flips the setting, updates the button, and saves."""
+async def test_set_hidden_dice_permissions(ctx: AppCtx):
+    """Choosing an option updates the setting and the select's default, and saves."""
     vguild = VGuild(guild=1, name="Test Guild")
     menu = SettingsMenu(ctx, vguild, admin=True)
+    select = hidden_dice_select(menu)
+    assert select is not None
     interaction = AsyncMock(spec=discord.Interaction)
 
-    with patch.object(VGuild, "save", new_callable=AsyncMock) as mock_save:
-        await menu.toggle_hidden_dice(interaction)
+    with (
+        patch.object(Select, "values", new_callable=PropertyMock, return_value=["admin_only"]),
+        patch.object(VGuild, "save", new_callable=AsyncMock) as mock_save,
+    ):
+        await menu.set_hidden_dice_permissions(interaction)
 
-    assert not vguild.settings.allow_hidden_dice
-    button = hidden_dice_button(menu)
-    assert button is not None
-    assert button.label == "No"
-    assert button.style == discord.ButtonStyle.secondary
+    assert vguild.settings.hidden_dice_permissions == HiddenDicePerms.ADMIN_ONLY
+    assert [opt.value for opt in select.options if opt.default] == [HiddenDicePerms.ADMIN_ONLY]
     interaction.edit.assert_awaited_once_with(view=menu)
     mock_save.assert_awaited_once()

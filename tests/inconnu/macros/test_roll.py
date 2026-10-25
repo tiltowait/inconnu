@@ -12,7 +12,7 @@ from ctx import AppCtx
 from inconnu.macros.roll import _SlakeView, reroll_listener
 from inconnu.macros.roll import roll as roll_macro
 from inconnu.roll import Roll
-from models import VChar
+from models import HiddenDicePerms, VChar
 from models.vchardocs import VCharMacro
 from services.haven import Haven
 from tests.characters import gen_char
@@ -29,10 +29,10 @@ def clear_hunt_listeners() -> Iterator[None]:
 
 
 @pytest.fixture(autouse=True)
-def mock_allow_hidden_dice() -> Iterator[AsyncMock]:
+def mock_hidden_dice_permissions() -> Iterator[AsyncMock]:
     """The server allows hidden dice by default."""
-    with patch("services.settings.allow_hidden_dice", new_callable=AsyncMock) as mock:
-        mock.return_value = True
+    with patch("services.settings.hidden_dice_permissions", new_callable=AsyncMock) as mock:
+        mock.return_value = HiddenDicePerms.ENABLED
         yield mock
 
 
@@ -239,10 +239,10 @@ async def test_hidden_hunt_disallowed(
     ctx: AppCtx,
     mock_haven: MagicMock,
     mock_display_outcome: AsyncMock,
-    mock_allow_hidden_dice: AsyncMock,
+    mock_hidden_dice_permissions: AsyncMock,
 ):
     """If the server disallows hidden dice, nothing is rolled or looked up."""
-    mock_allow_hidden_dice.return_value = False
+    mock_hidden_dice_permissions.return_value = HiddenDicePerms.DISABLED
 
     with patch("inconnu.macros.roll.rouse", new_callable=AsyncMock) as mock_rouse:
         await hunt(ctx, 6, True)

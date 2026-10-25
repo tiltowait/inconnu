@@ -36,6 +36,25 @@ class ExpPerms(StrEnum):
                 return "Only admins can adjust XP"
 
 
+class HiddenDicePerms(StrEnum):
+    """An enum for who may hide their dice."""
+
+    ENABLED = "enabled"
+    ADMIN_ONLY = "admin_only"
+    DISABLED = "disabled"
+
+    @property
+    def description(self) -> str:
+        """Human-readable description."""
+        match self:
+            case HiddenDicePerms.ENABLED:
+                return "Anyone can hide their dice"
+            case HiddenDicePerms.ADMIN_ONLY:
+                return "Only admins can hide their dice"
+            case HiddenDicePerms.DISABLED:
+                return "No one can hide their dice"
+
+
 class ResonanceMode(StrEnum):
     """An enum for a guild's Resonance setting."""
 
@@ -78,7 +97,7 @@ class VGuildSettings(BaseModel):
     add_empty_resonance: bool = False
     resonance: ResonanceMode = ResonanceMode.STANDARD
     max_hunger: int = Field(ge=5, le=10, default=5)
-    allow_hidden_dice: bool = True
+    hidden_dice_permissions: HiddenDicePerms = HiddenDicePerms.ENABLED
 
     @property
     def use_emojis(self) -> bool:

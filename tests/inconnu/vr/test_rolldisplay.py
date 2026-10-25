@@ -236,6 +236,7 @@ async def test_embed_after_reroll(ctx: AppCtx, owner: discord.Member):
 
     assert embed.title == "R: SUCCESS! (2)"
     assert embed.author.name == "tiltowait • DC 2 • Rerolling Failures"
+    assert field_map(embed)["Dice"] == "2"
 
     last = embed.fields[-1]
     assert last.name == "Original Outcome"
@@ -918,14 +919,13 @@ async def test_buttons_rerolled_after_surging(ctx: AppCtx, owner: discord.Member
 
 
 @dataclass
-class Screen:
-    """What Discord currently shows for a roll message."""
+class Message:
+    """What Discord currently shows for one message."""
 
-    display: RollDisplay
+    handle: Any = None  # What RollDisplay was given to refer to the message
     embed: discord.Embed | None = None
     buttons: list[tuple] | None = None
     view: discord.ui.View | None = None
-    ephemeral: list[str] = field(default_factory=list)
 
     def record(self, **kwargs: Any):
         """Apply a message send or edit. Omitted keys keep their current values."""
@@ -935,9 +935,42 @@ class Screen:
             self.view = kwargs["view"]
             self.buttons = button_summary(self.view.children) if self.view else None
 
+
+@dataclass
+class Screen:
+    """What Discord currently shows for a roll. A hidden roll has two messages:
+    the public one, and the roller's private copy, which has the buttons."""
+
+    display: RollDisplay
+    public: Message = field(default_factory=Message)
+    private: Message | None = None
+    ephemeral: list[str] = field(default_factory=list)
+
     def record_ephemeral(self, content: str, **_: Any):
         """Record an ephemeral reply to a button press."""
         self.ephemeral.append(content)
+
+    @property
+    def controls(self) -> Message:
+        """The message with the buttons."""
+        if self.private is not None and self.private.view is not None:
+            return self.private
+        return self.public
+
+    @property
+    def embed(self) -> discord.Embed | None:
+        """The embed everyone sees."""
+        return self.public.embed
+
+    @property
+    def buttons(self) -> list[tuple] | None:
+        """The shown buttons, summarized."""
+        return self.controls.buttons
+
+    @property
+    def view(self) -> discord.ui.View | None:
+        """The view holding the shown buttons."""
+        return self.controls.view
 
     @property
     def listening(self) -> bool:
@@ -953,10 +986,12 @@ def fake_interaction(screen: Screen, user: discord.Member | discord.User) -> Asy
     inter.guild = ctx.guild
     inter.channel = ctx.channel
     inter.response = AsyncMock(spec=discord.InteractionResponse)
-    inter.response.edit_message.side_effect = screen.record
+    # Button presses edit the message the button is on
+    inter.response.edit_message.side_effect = lambda **kwargs: screen.controls.record(**kwargs)
     inter.response.send_message.side_effect = screen.record_ephemeral
-    inter.edit_original_response.side_effect = screen.record
-    inter.edit.side_effect = screen.record
+    # The original interaction's response is the public message
+    inter.edit_original_response.side_effect = screen.public.record
+    inter.edit.side_effect = screen.public.record
     return inter
 
 
@@ -965,9 +1000,18 @@ async def show(display: RollDisplay) -> Screen:
     screen = Screen(display)
     original = fake_interaction(screen, display.owner)
 
-    def respond(**kwargs: Any):
-        screen.record(**kwargs)
-        return original
+    def respond(ephemeral=False, **kwargs: Any):
+        if not ephemeral:
+            screen.public.handle = original
+            screen.public.record(**kwargs)
+            return original
+
+        # A followup only the roller can see
+        followup = AsyncMock(spec=discord.WebhookMessage)
+        screen.private = Message(handle=followup)
+        followup.edit.side_effect = screen.private.record
+        screen.private.record(**kwargs)
+        return followup
 
     cast(AsyncMock, display.ctx.respond).side_effect = respond
     await display.display()
@@ -1087,6 +1131,77 @@ async def test_show_wp_unavailable_with_surge_listens(ctx: AppCtx, owner: discor
     screen = await show(display)
 
     assert screen.listening
+
+
+async def test_show_has_no_private_copy(ctx: AppCtx, owner: discord.Member):
+    """Normal rolls are a single public message with the buttons."""
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2)))
+
+    assert screen.private is None
+    assert screen.public.buttons is not None
+
+
+# Hidden rolls
+
+
+async def test_show_hidden(ctx: AppCtx, owner: discord.Member):
+    """Everyone sees the redacted roll without buttons. The roller privately
+    gets the full roll and the buttons."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    assert screen.embed is not None and screen.private is not None
+    assert screen.private.embed is not None
+
+    assert "Dice" not in field_map(screen.embed)
+    assert screen.public.view is None
+    assert screen.private.embed.title == screen.embed.title == "FAILURE! (1)"
+    assert field_map(screen.private.embed)["Dice"] == "2"
+    assert screen.private.buttons == [
+        ("Re-Roll Failures", PRIMARY, False, None),
+        ("Max Crits", PRIMARY, False, None),
+        ("Avoid Messy", PRIMARY, True, None),
+        ("Risky Avoid", PRIMARY, True, None),
+    ]
+
+
+async def test_hidden_reroll_updates_both(ctx: AppCtx, owner: discord.Member):
+    """A reroll updates the private copy and the public message. The buttons
+    behave as on a normal roll."""
+    shown = await show(make_display(ctx, owner, make_roll([6, 2], [], 2)))
+    await reroll(shown)
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), hide_dice=True))
+    await reroll(screen)
+    assert screen.embed is not None and screen.private is not None
+    assert screen.private.embed is not None
+
+    assert screen.embed.title == screen.private.embed.title == "R: SUCCESS! (2)"
+    assert "Dice" not in field_map(screen.embed)
+    assert "Margin: 0" in field_map(screen.private.embed)
+    assert screen.public.view is None
+    assert screen.private.buttons == shown.buttons
+
+
+async def test_hidden_reroll_after_public_deleted(ctx: AppCtx, owner: discord.Member):
+    """Deleting the public message doesn't break the private copy's buttons."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    deleted = discord.NotFound(MagicMock(status=404), "Unknown Message")
+    screen.public.handle.edit.side_effect = deleted
+    await reroll(screen)
+    assert screen.private is not None and screen.private.embed is not None
+
+    assert screen.private.embed.title == "R: SUCCESS! (2)"
+
+
+async def test_hidden_timeout(ctx: AppCtx, owner: discord.Member):
+    """Timing out disables the private copy's buttons."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    await time_out(screen)
+    assert screen.private is not None and screen.private.buttons is not None
+
+    assert all(disabled for _, _, disabled, _ in screen.private.buttons)
+    assert screen.public.view is None
 
 
 # Ownership
@@ -1336,3 +1451,12 @@ async def test_stats_logged_in_dm(
 
     mock_log_roll.assert_awaited_once_with(None, None, owner.id, None, None, roll, None)
     mock_get_message.assert_not_awaited()
+
+
+async def test_stats_hidden_logs_public_message(
+    ctx: AppCtx, owner: discord.Member, mock_get_message: AsyncMock
+):
+    """Hidden rolls log the public message, so its deletion still toggles stats."""
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), hide_dice=True))
+
+    mock_get_message.assert_awaited_once_with(screen.public.handle)

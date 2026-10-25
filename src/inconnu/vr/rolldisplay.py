@@ -80,6 +80,7 @@ class RollDisplay(ReportingView):
         self.timeout_handler = timeout
         self.impairment_category = impairment_category
         self.hide_dice = hide_dice
+        self.redacted_message: discord.Interaction | discord.WebhookMessage | None = None
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
         self.auto_impairment = False  # Looked up when displayed
@@ -92,14 +93,21 @@ class RollDisplay(ReportingView):
         if self.character is not None:
             # Only needed to word the Impairment reminder, which requires a character
             self.auto_impairment = await services.settings.auto_impairment(self.ctx)
-        inter = await self.ctx.respond(embed=self.redacted_embed, view=self)
-        self.message = inter
+        if self.hide_dice:
+            # Everyone sees the redacted roll. The roller privately gets the
+            # full roll and the buttons.
+            public = await self.ctx.respond(embed=self.redacted_embed)
+            self.redacted_message = public
+            self.message = await self.ctx.respond(embed=self.full_embed, view=self, ephemeral=True)
+        else:
+            public = await self.ctx.respond(embed=self.full_embed, view=self)
+            self.message = public
 
         # Logging the message ID lets the roll be toggled for statistics
         # purposes. DM rolls aren't tracked, so they don't need it.
         message_id = None
         if self.ctx.guild is not None:
-            message_id = (await get_message(inter)).id
+            message_id = (await get_message(public)).id
         await self._log_roll(self.ctx, message_id)
 
     # Button actions
@@ -149,7 +157,10 @@ class RollDisplay(ReportingView):
         """Reroll the outcome with the given strategy."""
         self.outcome.reroll(strategy.value)
         self.state.strategy = strategy
-        await self._update(interaction, embed=self.redacted_embed)
+        await self._update(interaction, embed=self.full_embed)
+        if self.redacted_message is not None:
+            with contextlib.suppress(discord.NotFound):
+                await self.redacted_message.edit(embed=self.redacted_embed)
         await self._log_roll(interaction, None)
 
         if self.listener:

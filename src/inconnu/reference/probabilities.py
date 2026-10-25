@@ -2,7 +2,6 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import StrEnum
 from math import comb
 from typing import NamedTuple
 
@@ -13,6 +12,7 @@ import services
 import ui
 from ctx import AppCtx
 from inconnu import vr as roll
+from inconnu.roll import Strategy
 from models import VChar
 from services.haven import Haven
 
@@ -25,28 +25,6 @@ MAX_REROLL = 3
 # Hunger: bestial (1), failure (2-5), success (6-9), critical (10).
 NORMAL_ODDS = (0.5, 0.4, 0.1)
 HUNGER_ODDS = (0.1, 0.4, 0.4, 0.1)
-
-
-class Strategy(StrEnum):
-    """A Willpower reroll strategy."""
-
-    REROLL_FAILURES = "reroll_failures"
-    MAXIMIZE_CRITICALS = "maximize_criticals"
-    AVOID_MESSY = "avoid_messy"
-    RISKY = "risky"
-
-    @property
-    def description(self) -> str:
-        """The strategy's display name."""
-        match self:
-            case Strategy.REROLL_FAILURES:
-                return "Re-rolling Failures"
-            case Strategy.MAXIMIZE_CRITICALS:
-                return "Maximizing Crits"
-            case Strategy.AVOID_MESSY:
-                return "Avoiding Messy Crits"
-            case Strategy.RISKY:
-                return "Riskily Avoiding Messy Crits"
 
 
 class RollParams(NamedTuple):

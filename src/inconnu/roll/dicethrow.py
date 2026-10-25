@@ -6,9 +6,9 @@ import inconnu
 class DiceThrow:
     """Roll a specified number of dice and allow the user to query its statistics."""
 
-    def __init__(self, dice):
+    def __init__(self, dice: int | list[int]):
         if isinstance(dice, int):
-            self.dice = inconnu.d10(dice)
+            self.dice: list[int] = inconnu.d10(dice)
         else:
             self.dice = dice
 

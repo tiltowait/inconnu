@@ -1,307 +1,314 @@
-"""rolldisplay.py - A class for managing the display of roll outcomes and rerolls."""
+"""rolldisplay.py - A View for displaying roll outcomes and handling rerolls."""
 
+import contextlib
 import re
-import uuid
-from enum import StrEnum
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from enum import Enum, auto
+from typing import cast
 
 import discord
 from discord.ui import Button
 
 import inconnu
 import services
+from ctx import AppCtx, AppInteraction, AppInvocation
+from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
-from ui.views import DisablingView
+from models import VChar
+from ui.views.reportingview import ReportingView
 from utils import get_avatar, get_message
-from utils.text import contains_digit, de_camel
+from utils.text import de_camel
 from utils.urls import web_asset
 
-
-class _ButtonID(StrEnum):
-    """Button IDs used in re-rolls."""
-
-    REROLL_FAILURES = "reroll_failures"
-    MAXIMIZE_CRITICALS = "maximize_criticals"
-    AVOID_MESSY = "avoid_messy"
-    RISKY_AVOID_MESSY = "risky"
-    WILLPOWER = "willpower"
-
-    def unique(self):
-        """Return the string value of the case, uniquely identified."""
-        return f"{self} {uuid.uuid4()}"
+PRIMARY = discord.ButtonStyle.primary
+SECONDARY = discord.ButtonStyle.secondary
+DANGER = discord.ButtonStyle.danger
 
 
-class _RollControls(DisablingView):
-    """A View that has a dynamic number of roll buttons."""
+class _Surge(Enum):
+    """When the Blood Surge was used, if at all."""
 
-    def __init__(self, has_character, callback, timeout_handler, owner, buttons):
+    UNUSED = auto()
+    BEFORE_REROLL = auto()
+    AFTER_REROLL = auto()
+
+
+@dataclass
+class _ButtonState:
+    """The owner's progress through the roll's buttons."""
+
+    strategy: Strategy | None = None
+    wp_marked: bool = False
+    surge: _Surge = _Surge.UNUSED
+    timed_out: bool = False
+
+    @property
+    def rerolled(self) -> bool:
+        """Whether a Willpower reroll has been made."""
+        return self.strategy is not None
+
+
+class RollDisplay(ReportingView):
+    """Display and manipulate roll outcomes. Provides buttons for rerolls, WP, and Rouse."""
+
+    def __init__(
+        self,
+        ctx: AppCtx,
+        outcome: Roll,
+        comment: str | None,
+        character: VChar | None,
+        owner: discord.Member | discord.User,
+        listener: Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]] | None,
+        timeout: Callable[[Roll], Awaitable[None]] | None,
+    ):
         super().__init__(timeout=600)
-        self.has_character = has_character
-        self.callback = callback
-        self.timeout_handler = timeout_handler
-        self.owner = owner
-
-        stop = True
-        for button in buttons:
-            if not button.disabled:
-                stop = False
-            button.callback = self.button_pressed
-            self.add_item(button)
-
-        if stop:
-            # All of the buttons are disabled, so we don't need to listen
-            self.stop()
-
-    async def button_pressed(self, interaction):
-        """Handle button presses."""
-        # I'm not sure why, but suddenly I'm getting IndexErrors when setting
-        # button states. No idea how this is possible, and it feels like a
-        # Discord bug. Nevertheless, here's a kludge to make the error go away
-        # for now.
-        if not self.children:
-            # No clue what to do, since it shouldn't even be possible to get
-            # here, so just shrug and disable everything.
-            await self.disable_items(interaction)
-            return
-
-        if self.owner != interaction.user:
-            await interaction.response.send_message(
-                "This button doesn't belong to you!", ephemeral=True
-            )
-        else:
-            button_id = interaction.data["custom_id"].split()[0]  # Remove the unique ID
-
-            if contains_digit(button_id):
-                # This was a surge button, which are always last. Let's disable them
-                self.children[-1].disabled = True
-                self.children[-1].style = discord.ButtonStyle.secondary
-                self.children[-2].disabled = True
-                self.children[-2].style = discord.ButtonStyle.secondary
-                await interaction.response.edit_message(view=self)
-            elif button_id == _ButtonID.WILLPOWER:
-                # Mark WP is always the first button
-                self.children[0].disabled = True
-                self.children[0].style = discord.ButtonStyle.secondary
-                await interaction.response.edit_message(view=self)
-            else:
-                if not self.has_character:
-                    # Find the pressed button and make it gray
-                    for child in self.children:
-                        # We need the full custom id here, not just the button ID
-                        if child.custom_id == interaction.data["custom_id"]:
-                            child.style = discord.ButtonStyle.secondary
-                    await self.disable_items(interaction)
-                else:
-                    self.stop()
-
-            await self.callback(interaction)
-
-    async def on_timeout(self):
-        """Inform the RollDisplay that we've timed out."""
-        await super().on_timeout()
-        if self.timeout_handler is not None:
-            await self.timeout_handler()
-
-
-class RollDisplay:
-    """Display and manipulate roll outcomes. Provides buttons for rerolls, wp, and rouse."""
-
-    def __init__(self, ctx, outcome, comment, character, owner, listener, timeout):
         self.ctx = ctx
         self.outcome = outcome
         self.original_outcome = f"{outcome.main_takeaway} ({outcome.total_successes})"
         self._comment = comment
         self.character = character
         self.owner = owner
-        self.rerolled = False
-        self.surged = False
-        self.msg = None  # Used for disabling the buttons at the end of the timeout
-        self.controls = None
         self.listener = listener
         self.timeout_handler = timeout
+        self.state = _ButtonState()
+        self.use_emoji = True  # Looked up when displayed
 
-    async def display(self, alt_ctx=None):
-        """Display the roll."""
-        # We might be responding to a button
-        ctx = alt_ctx or self.ctx
-        msg_contents = {}
+        self._render_buttons()
 
-        if buttons := self.buttons:
-            self.controls = _RollControls(
-                self.character is not None,
-                self.respond_to_button,
-                self.reroll_timeout,
-                self.owner,
-                buttons,
-            )
-            msg_contents["view"] = self.controls
+    async def display(self):
+        """Send the roll."""
+        self.use_emoji = await services.settings.can_emoji(self.ctx)
+        inter = await self.ctx.respond(embed=self.embed, view=self)
+        self.message = inter
 
-        msg_contents["embed"] = await self.get_embed()
+        # Logging the message ID lets the roll be toggled for statistics
+        # purposes. DM rolls aren't tracked, so they don't need it.
+        message_id = None
+        if self.ctx.guild is not None:
+            message_id = (await get_message(inter)).id
+        await self._log_roll(self.ctx, message_id)
 
-        if not self.rerolled:
-            inter = await ctx.respond(**msg_contents)
-        else:
-            # We need this if statement, because if there *is* a character, we
-            # don't waste time disabling the buttons, because we're just going
-            # to overwrite them with a new view. Unfortunately, we need to use
-            # a different method call in this instance, and we *also* need to
-            # acquire the inter object differently.
-            if self.character is not None:
-                # Interaction is not a followup
-                await ctx.response.edit_message(**msg_contents)
-                inter = ctx
-            else:
-                # The interaction is a followup
-                inter = await ctx.edit_original_response(**msg_contents)
+    # Button actions
 
-        if self.controls is not None:
-            # Attach the interaction so we can disable the buttons when appropriate
-            self.controls.message = inter
+    async def reroll_failures(self, interaction: AppInteraction):
+        """Re-roll up to three failing dice."""
+        await self._reroll(interaction, Strategy.REROLL_FAILURES)
 
-        # Log the roll. Doing it here captures normal rolls, re-rolls, and
-        # macros. We get the roll's message ID so we can toggle the message
-        # for statistics purposes.
+    async def maximize_criticals(self, interaction: AppInteraction):
+        """Re-roll up to three non-critical dice."""
+        await self._reroll(interaction, Strategy.MAXIMIZE_CRITICALS)
 
-        if ctx.guild is not None:
-            if not self.rerolled:
-                msg = await get_message(inter)
-                msg_id = msg.id
-            else:
-                msg_id = None
+    async def avoid_messy(self, interaction: AppInteraction):
+        """Re-roll up to three critical dice."""
+        await self._reroll(interaction, Strategy.AVOID_MESSY)
 
-            await inconnu.stats.log_roll(
-                ctx.guild.id,
-                ctx.channel.id,
-                self.owner.id,
-                msg_id,
-                self.character,
-                self.outcome,
-                self.comment,
-            )
-        else:
-            # If this is a DM roll, we don't keep stats, so we don't need to
-            # get the message ID
-            await inconnu.stats.log_roll(
-                None, None, self.owner.id, None, self.character, self.outcome, self.comment
-            )
+    async def risky_avoid_messy(self, interaction: AppInteraction):
+        """Re-roll up to three critical dice plus failures."""
+        await self._reroll(interaction, Strategy.RISKY)
 
-    async def respond_to_button(self, btn):
-        """Respond to the buttons."""
-        button_id = btn.data["custom_id"].split()[0]
+    async def mark_wp(self, interaction: AppInteraction):
+        """Mark Superficial Willpower damage for the reroll."""
+        self.state.wp_marked = True
+        await self._update(interaction)
 
-        if button_id == _ButtonID.WILLPOWER:
-            if self.character is not None:
-                sup_wp = self.character.superficial_wp + 1
-                self.character.set_superficial_wp(sup_wp)
-                await self.character.save()
+        if self.character is not None:
+            self.character.set_superficial_wp(self.character.superficial_wp + 1)
+            await self.character.save()
 
             await inconnu.character.display(
-                btn,
+                interaction,
                 self.character,
                 title="Willpower Spent",
-                owner=self.owner,
+                owner=cast(discord.Member, self.owner),  # Characters only exist in guilds
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
             )
 
-        elif contains_digit(button_id):
-            if button_id == self.character.id_str:
-                # elif contains_digit(button_id):  # Surge buttons are just charids
-                self.surged = True
-                await inconnu.misc.rouse(btn, self.character, 1, "Surge", False)
+    async def rouse(self, interaction: AppInteraction):
+        """Make the surge's Rouse check."""
+        await self._surge(interaction, False)
 
-            elif button_id == self.character.id_str + "-rr":
-                # Fluent X
-                self.surged = True
-                await inconnu.misc.rouse(btn, self.character, 1, "Surge", True)
+    async def rouse_with_reroll(self, interaction: AppInteraction):
+        """Make the surge's Rouse check, rolling two dice and keeping the higher."""
+        await self._surge(interaction, True)
 
+    async def _reroll(self, interaction: AppInteraction, strategy: Strategy):
+        """Reroll the outcome with the given strategy."""
+        self.outcome.reroll(strategy.value)
+        self.state.strategy = strategy
+        await self._update(interaction, embed=self.embed)
+        await self._log_roll(interaction, None)
+
+        if self.listener:
+            await self.listener(interaction, self.character, self.outcome)
+
+    async def _surge(self, interaction: AppInteraction, reroll: bool):
+        """Mark the surge as used and make the Rouse check."""
+        if self.character is None:
+            # Surge buttons only appear for characters
+            return
+
+        if self.state.rerolled:
+            self.state.surge = _Surge.AFTER_REROLL
         else:
-            # We're rerolling
-            strategy = button_id
-            self.outcome.reroll(strategy)
-            self.rerolled = True
+            self.state.surge = _Surge.BEFORE_REROLL
+        await self._update(interaction)
+        await inconnu.misc.rouse(interaction, self.character, 1, "Surge", reroll)
 
-            await self.display(btn)
-            if self.listener:
-                await self.listener(btn, self.character, self.outcome)
+    async def _update(self, interaction: AppInteraction, **kwargs):
+        """Redraw the buttons and edit the message."""
+        self._render_buttons()
+        await interaction.response.edit_message(view=self, **kwargs)
 
-    async def reroll_timeout(self):
-        """Inform the listener we have timed out."""
+    async def _log_roll(self, source: AppInvocation, message_id: int | None):
+        """Log the roll for statistics. Rerolls are logged without a message ID."""
+        if source.guild is not None and source.channel is not None:
+            guild_id, channel_id = source.guild.id, source.channel.id
+        else:
+            guild_id = channel_id = None
+
+        await inconnu.stats.log_roll(
+            guild_id,
+            channel_id,
+            self.owner.id,
+            message_id,
+            self.character,
+            self.outcome,
+            self.comment,
+        )
+
+    # View hooks
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """Only the roll's owner may press its buttons."""
+        return interaction.user == self.owner
+
+    async def on_check_failure(self, interaction: discord.Interaction):
+        """Tell the presser the buttons aren't theirs."""
+        await interaction.response.send_message(
+            "This button doesn't belong to you!", ephemeral=True
+        )
+
+    async def on_timeout(self):
+        """Disable the buttons and inform the timeout handler."""
+        self.state.timed_out = True
+        self._render_buttons()
+
+        if self.message is not None:
+            with contextlib.suppress(discord.NotFound):
+                await self.message.edit(view=self)
+
         if self.timeout_handler is not None:
             await self.timeout_handler(self.outcome)
 
-    @property
-    def character_name(self) -> str:
-        """The character's display name. Either the character name or the player name."""
-        if self.character is not None:
-            character_name = self.character.name
-        else:
-            character_name = self.owner.display_name
+    # Buttons
 
-        return character_name
+    def _render_buttons(self):
+        """Rebuild the buttons from the current state."""
+        self.clear_items()
+        for button in self._buttons():
+            if self.state.timed_out:
+                button.disabled = True
+            self.add_item(button)
 
-    @property
-    def hunger(self) -> str | int:
-        """
-        The Hunger for the roll. This uses the character's Hunger if possible and
-        falls back to the hunger dice count if unavailable.
-        """
-        if self.character is not None:
-            if self.character.is_vampire:
-                if self.character.hunger == 0 and self.outcome.hunger.count == 0:
-                    # Vampires are rarely at Hunger 0, so it can raise a few
-                    # eyebrows when STs see a 0 here. Often, it means the player
-                    # forgot to input Hunger. Saying "sated" when Hunger is
-                    # actually 0 helps to assure onlookers that a Hunger rating of
-                    # zero is correct.
-                    return "*Sated*"
-                elif self.character.hunger == self.outcome.hunger_rating:
-                    return f"{self.outcome.hunger_rating} (Current)"
+        if all(child.disabled for child in self.children):  # type: ignore[attr-defined]
+            # Nothing can be pressed, so we don't need to listen
+            self.stop()
+
+    def _buttons(self) -> list[Button]:
+        """The buttons for the current state."""
+        if not self.state.rerolled:
+            buttons = self._reroll_buttons()
+            if self.surging:
+                used = self.state.surge != _Surge.UNUSED
+                buttons.extend(self._surge_buttons(used, row=1))
+            return buttons
+
+        if self.character is None:
+            # Without a character, there's nothing to do after a reroll
+            return self._reroll_buttons()
+
+        marked = self.state.wp_marked
+        buttons = [
+            self._button("Mark WP Use", SECONDARY if marked else PRIMARY, marked, self.mark_wp)
+        ]
+        if self.surging and self.state.surge != _Surge.BEFORE_REROLL:
+            used = self.state.surge == _Surge.AFTER_REROLL
+            buttons.extend(self._surge_buttons(used))
+        return buttons
+
+    def _reroll_buttons(self) -> list[Button]:
+        """The Willpower reroll buttons. After a reroll, they're all disabled."""
+        if not self.outcome.can_reroll:
+            # None of the supplied Traits are Attributes. (This never fires if
+            # no Traits are given.)
+            return [self._button("WP Unavailable (p.158)", SECONDARY, True)]
+
+        strategies = [
+            (
+                "Re-Roll Failures",
+                Strategy.REROLL_FAILURES,
+                self.outcome.can_reroll_failures,
+                self.reroll_failures,
+            ),
+            (
+                "Max Crits",
+                Strategy.MAXIMIZE_CRITICALS,
+                self.outcome.can_maximize_criticals,
+                self.maximize_criticals,
+            ),
+            (
+                "Avoid Messy",
+                Strategy.AVOID_MESSY,
+                self.outcome.can_avoid_messy_critical,
+                self.avoid_messy,
+            ),
+            (
+                "Risky Avoid",
+                Strategy.RISKY,
+                self.outcome.can_risky_messy_critical,
+                self.risky_avoid_messy,
+            ),
+        ]
+
+        buttons = []
+        for label, strategy, available, callback in strategies:
+            if self.state.rerolled:
+                style = SECONDARY if strategy == self.state.strategy else PRIMARY
+                buttons.append(self._button(label, style, True, callback))
             else:
-                return "*Mortal*"
+                buttons.append(self._button(label, PRIMARY, not available, callback))
+        return buttons
 
-        # We were given a specific Hunger (or implicit 0), a character wasn't
-        # given, or possibly both.
-        return self.outcome.hunger_rating
+    def _surge_buttons(self, used: bool, row: int | None = None) -> list[Button]:
+        """The Rouse buttons for a Blood Surge."""
+        style = SECONDARY if used else DANGER
+        return [
+            self._button("Rouse", style, used, self.rouse, row),
+            self._button("Rouse w/ Reroll", style, used, self.rouse_with_reroll, row),
+        ]
+
+    @staticmethod
+    def _button(
+        label: str,
+        style: discord.ButtonStyle,
+        disabled: bool,
+        callback: Callable[[AppInteraction], Awaitable[None]] | None = None,
+        row: int | None = None,
+    ) -> Button:
+        """Create a button with the given callback."""
+        button = Button(label=label, style=style, disabled=disabled, row=row)
+        if callback is not None:
+            button.callback = callback  # type: ignore[method-assign]
+        return button
+
+    # Embed
 
     @property
-    def comment(self):
-        """The original comment, plus any impairment string."""
-        if self.character is not None:
-            if (impairment := self.character.impairment) is not None:
-                comment = (self._comment + "\n") if self._comment else ""
-                return comment + impairment
-        return self._comment
-
-    @property
-    def icon(self) -> str:
-        """The icon for the embed."""
-        if self.character is not None:
-            guild_icon = self.ctx.guild.icon or ""
-            icon = get_avatar(self.owner) if self.character.is_pc else guild_icon
-        else:
-            icon = get_avatar(self.owner)
-
-        return icon
-
-    @property
-    def thumbnail_url(self) -> str:
-        """The URL for the embed thumbnail."""
-        if self.outcome.is_critical:
-            return web_asset("dice/crit.webp")
-        if self.outcome.is_messy:
-            return web_asset("dice/messy.webp")
-        if self.outcome.is_successful:
-            return web_asset("dice/success.webp")
-        if self.outcome.is_failure:
-            return web_asset("dice/fail.webp")
-        if self.outcome.is_total_failure:
-            return web_asset("dice/total-fail.webp")
-
-        return web_asset("dice/bestial.webp")
-
-    async def get_embed(self) -> discord.Embed:
+    def embed(self) -> discord.Embed:
         """The graphical representation of the roll."""
         title = self.outcome.main_takeaway.upper() + "!"
-        if self.rerolled:
+        if self.state.rerolled:
             title = f"R: {title}"
         if not self.outcome.is_total_failure and not self.outcome.is_bestial:
             title += f" ({self.outcome.total_successes})"
@@ -319,8 +326,7 @@ class RollDisplay:
         embed.set_thumbnail(url=self.thumbnail_url)
 
         # Disclosure fields
-        can_emoji = await services.settings.can_emoji(self.ctx)
-        if self.outcome.pool <= 30 and can_emoji:
+        if self.outcome.pool <= 30 and self.use_emoji:
             normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
             hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
             embed.add_field(
@@ -344,23 +350,14 @@ class RollDisplay:
             )
 
         embed.add_field(name="Dice", value=str(self.outcome.pool))
-        embed.add_field(name="Hunger", value=str(self.hunger))
+        embed.add_field(name="Hunger", value=self.hunger)
         embed.add_field(name="Difficulty", value=str(self.outcome.difficulty))
 
-        if self.outcome.pool_str:
-            # Make pool strings nicer to read
-            splitted = de_camel(self.outcome.pool_str).split()
-
-            # Uppercase each word in the pool. We can't use .title(), because
-            # .title() will make everything else lowercase. "XYZ" would become
-            # "Xyz", which is not desired.
-            splitted = (t[0].upper() + t[1:] if t[0].islower() else t for t in splitted)
-            pool_str = " ".join(splitted)
-
+        if pool_str := self.pool_str:
             embed.add_field(name="Pool", value=pool_str)
 
         # Show what the roll originally was
-        if self.rerolled:
+        if self.state.rerolled:
             embed.add_field(
                 name="Original Outcome",
                 value=f"```{self.original_outcome}```",
@@ -373,112 +370,97 @@ class RollDisplay:
         return embed
 
     @property
+    def character_name(self) -> str:
+        """The character's display name. Either the character name or the player name."""
+        if self.character is not None:
+            return self.character.name
+        return self.owner.display_name
+
+    @property
+    def hunger(self) -> str:
+        """
+        The Hunger for the roll. This uses the character's Hunger if possible and
+        falls back to the hunger dice count if unavailable.
+        """
+        if self.character is not None:
+            if self.character.is_vampire:
+                if self.character.hunger == 0 and self.outcome.hunger.count == 0:
+                    # Vampires are rarely at Hunger 0, so it can raise a few
+                    # eyebrows when STs see a 0 here. Often, it means the player
+                    # forgot to input Hunger. Saying "sated" when Hunger is
+                    # actually 0 helps to assure onlookers that a Hunger rating of
+                    # zero is correct.
+                    return "*Sated*"
+                elif self.character.hunger == self.outcome.hunger_rating:
+                    return f"{self.outcome.hunger_rating} (Current)"
+            else:
+                return "*Mortal*"
+
+        # We were given a specific Hunger (or implicit 0), a character wasn't
+        # given, or possibly both.
+        return str(self.outcome.hunger_rating)
+
+    @property
+    def pool_str(self) -> str | None:
+        """The pool string, made nicer to read."""
+        if not self.outcome.pool_str:
+            return None
+
+        splitted = de_camel(self.outcome.pool_str).split()
+
+        # Uppercase each word in the pool. We can't use .title(), because
+        # .title() will make everything else lowercase. "XYZ" would become
+        # "Xyz", which is not desired.
+        splitted = (t[0].upper() + t[1:] if t[0].islower() else t for t in splitted)
+        return " ".join(splitted)
+
+    @property
+    def comment(self) -> str | None:
+        """The original comment, plus any impairment string."""
+        if self.character is not None and self.character.impairment is not None:
+            comment = (self._comment + "\n") if self._comment else ""
+            return comment + self.character.impairment
+        return self._comment
+
+    @property
+    def icon(self) -> str | discord.Asset:
+        """
+        The embed author's icon. Normally, this is the roller's avatar.
+
+        SPCs are owned by the bot rather than a player, so showing the avatar
+        of whichever Storyteller rolled for one would be misleading. Instead,
+        SPC rolls use the guild's icon (or no icon, if the guild doesn't have
+        one). SPCs only exist in guilds; the guild check is for the type
+        checker.
+
+        Character profile images aren't used, because they're unreadable at
+        author-icon size.
+        """
+        if self.character is not None and not self.character.is_pc and self.ctx.guild is not None:
+            return self.ctx.guild.icon or ""
+        return get_avatar(self.owner)
+
+    @property
+    def thumbnail_url(self) -> str:
+        """The URL for the embed thumbnail."""
+        if self.outcome.is_critical:
+            return web_asset("dice/crit.webp")
+        if self.outcome.is_messy:
+            return web_asset("dice/messy.webp")
+        if self.outcome.is_successful:
+            return web_asset("dice/success.webp")
+        if self.outcome.is_failure:
+            return web_asset("dice/fail.webp")
+        if self.outcome.is_total_failure:
+            return web_asset("dice/total-fail.webp")
+
+        return web_asset("dice/bestial.webp")
+
+    @property
     def surging(self) -> bool:
         """Whether the roll uses a Blood Surge."""
         if self.character is None or self.character.splat == "mortal":
             return False
 
         search = f"{self.outcome.pool_str} {self.comment}"
-        match = re.match(r"^.*(\s+surge|surge\s+.*|surge)$", search, re.IGNORECASE | re.DOTALL)
-        return match is not None
-
-    @property
-    def buttons(self) -> list | None:
-        """Generate the buttons for Willpower re-rolls and surging."""
-        buttons = []
-
-        if self.rerolled:
-            if self.character is not None:
-                buttons.append(
-                    Button(
-                        label="Mark WP Use",
-                        custom_id=_ButtonID.WILLPOWER.unique(),
-                        style=discord.ButtonStyle.primary,
-                    )
-                )
-                if not self.surged and self.surging:
-                    buttons.append(
-                        Button(
-                            label="Rouse",
-                            custom_id=self.character.id_str,
-                            style=discord.ButtonStyle.danger,
-                        )
-                    )
-                    buttons.append(
-                        Button(
-                            label="Rouse w/ Reroll",
-                            custom_id=self.character.id_str + "-rr",
-                            style=discord.ButtonStyle.danger,
-                        )
-                    )
-            return buttons or None
-
-        # We haven't re-rolled
-
-        if not self.outcome.can_reroll:
-            # They don't have any Attributes in their pool. This will only show
-            # if they used a trait in the roll. If they just used numbers, then
-            # they will always get re-roll buttons.
-            buttons.append(
-                Button(
-                    label="WP Unavailable (p.158)",
-                    style=discord.ButtonStyle.secondary,
-                    disabled=True,
-                )
-            )
-        else:
-            buttons.append(
-                Button(
-                    label="Re-Roll Failures",
-                    custom_id=_ButtonID.REROLL_FAILURES.unique(),
-                    style=discord.ButtonStyle.primary,
-                    disabled=not self.outcome.can_reroll_failures,
-                )
-            )
-
-            buttons.append(
-                Button(
-                    label="Max Crits",
-                    custom_id=_ButtonID.MAXIMIZE_CRITICALS.unique(),
-                    style=discord.ButtonStyle.primary,
-                    disabled=not self.outcome.can_maximize_criticals,
-                )
-            )
-
-            buttons.append(
-                Button(
-                    label="Avoid Messy",
-                    custom_id=_ButtonID.AVOID_MESSY.unique(),
-                    style=discord.ButtonStyle.primary,
-                    disabled=not self.outcome.can_avoid_messy_critical,
-                )
-            )
-
-            buttons.append(
-                Button(
-                    label="Risky Avoid",
-                    custom_id=_ButtonID.RISKY_AVOID_MESSY.unique(),
-                    style=discord.ButtonStyle.primary,
-                    disabled=not self.outcome.can_risky_messy_critical,
-                )
-            )
-
-        if self.surging:
-            buttons.append(
-                Button(
-                    label="Rouse",
-                    custom_id=self.character.id_str,
-                    style=discord.ButtonStyle.danger,
-                    row=1,
-                )
-            )
-            buttons.append(
-                Button(
-                    label="Rouse w/ Reroll",
-                    custom_id=self.character.id_str + "-rr",
-                    style=discord.ButtonStyle.danger,
-                    row=1,
-                )
-            )
-
-        return buttons or None
+        return re.search(r"\bsurge\b", search, re.IGNORECASE) is not None

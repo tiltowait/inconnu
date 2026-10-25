@@ -12,6 +12,7 @@ import services
 import ui
 from ctx import AppCtx
 from inconnu.character.display import DisplayField, display
+from inconnu.character.impairment import impairment_reminder
 from inconnu.character.update import paramupdate
 from models import VChar
 from services.haven import Haven
@@ -80,7 +81,8 @@ async def update(
                 color = discord.Color.red() if not color else color
             updates.extend(update_msg.split("\n"))
 
-        if (impairment := character.impairment_reminder) is not None:
+        automatic = await services.settings.auto_impairment(ctx)
+        if (impairment := impairment_reminder(character, automatic=automatic)) is not None:
             updates.append(impairment)
 
         # Ignore generated output if we got a custom message

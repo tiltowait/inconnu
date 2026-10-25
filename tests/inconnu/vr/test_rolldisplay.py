@@ -13,6 +13,7 @@ from discord.ui import Button
 import inconnu
 from constants import Impairment
 from ctx import AppCtx
+from inconnu.character.impairment import impairment_reminder
 from inconnu.vr.rolldisplay import RollDisplay
 from models import VChar
 from tests.characters import gen_char
@@ -448,7 +449,7 @@ async def test_footer_impairment_only(ctx: AppCtx, owner: discord.Member):
     embed = await render(display)
     assert embed.footer is not None
 
-    assert embed.footer.text == char.impairment_reminder
+    assert embed.footer.text == impairment_reminder(char)
 
 
 async def test_footer_comment_and_impairment(ctx: AppCtx, owner: discord.Member):
@@ -459,7 +460,7 @@ async def test_footer_comment_and_impairment(ctx: AppCtx, owner: discord.Member)
     embed = await render(display)
     assert embed.footer is not None
 
-    assert embed.footer.text == f"Hello\n{char.impairment_reminder}"
+    assert embed.footer.text == f"Hello\n{impairment_reminder(char)}"
 
 
 # Impairment notes
@@ -502,7 +503,7 @@ async def test_footer_ignored_penalty_that_would_not_apply(ctx: AppCtx, owner: d
     embed = await render(make_display(ctx, owner, roll, character=char, ignore_impairment=True))
     assert embed.footer is not None
 
-    assert embed.footer.text == char.impairment_reminder
+    assert embed.footer.text == impairment_reminder(char)
 
 
 @pytest.mark.parametrize(

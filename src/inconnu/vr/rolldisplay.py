@@ -14,6 +14,7 @@ import inconnu
 import services
 from constants import IMPAIRMENT_DICE, RollCategory
 from ctx import AppCtx, AppInteraction, AppInvocation
+from inconnu.character.impairment import impairment_reminder, incapacitation_reminder
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
 from models import VChar
@@ -449,8 +450,8 @@ class RollDisplay(ReportingView):
         """
         if self.character is None:
             return None
-        if self.character.incapacitation_reminder is not None:
-            return self.character.incapacitation_reminder
+        if self.character.incapacitated:
+            return incapacitation_reminder(self.character)
         if self.outcome.impairment_penalty:
             return None
 
@@ -458,7 +459,7 @@ class RollDisplay(ReportingView):
         if self.ignore_impairment and self.character.impairment_state.penalizes(category):
             return "Override: Impairment ignored"
 
-        return self.character.impairment_reminder
+        return impairment_reminder(self.character)
 
     @property
     def icon(self) -> str | discord.Asset:

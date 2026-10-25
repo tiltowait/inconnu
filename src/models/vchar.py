@@ -257,34 +257,9 @@ class VChar(Document):
         return self.stains > (10 - self.humanity)
 
     @property
-    def incapacitation_reminder(self) -> str | None:
-        """A reminder that the character is in torpor or dead, if applicable."""
-        if self.health.count(Damage.AGGRAVATED) == len(self.health):
-            if self.is_vampire:
-                return "You are IN TORPOR!"
-            return "You are DEAD!"
-        return None
-
-    @property
-    def impairment_reminder(self):
-        """A string for describing the character's physical/mental impairment."""
-        if self.incapacitation_reminder is not None:
-            return self.incapacitation_reminder
-
-        physical = Damage.NONE not in self.health
-        mental = Damage.NONE not in self.willpower
-        total = self.degeneration or (physical and mental)
-
-        if total:
-            return "You are totally impaired. Remember to subtract 2 dice from all pools."
-
-        if physical:
-            return "You are physically impaired. Subtract 2 dice from physical pools."
-
-        if mental:
-            return "You are mentally impaired. Subtract 2 dice from social and mental pools."
-
-        return None
+    def incapacitated(self) -> bool:
+        """Whether the character's Health is entirely Aggravated (torpor or death)."""
+        return self.health.count(Damage.AGGRAVATED) == len(self.health)
 
     @property
     def physically_impaired(self):

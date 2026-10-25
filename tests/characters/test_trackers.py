@@ -88,17 +88,10 @@ def test_impairment_state(
         ("xxxxxx", True),
     ],
 )
-def test_incapacitation_reminder(character: VChar, health: str, incapacitated: bool):
-    """Only a fully aggravated Health track incapacitates: torpor for vampires, death
-    for everyone else."""
+def test_incapacitated(character: VChar, health: str, incapacitated: bool):
+    """Only a fully aggravated Health track incapacitates."""
     character.health = health
-
-    if not incapacitated:
-        assert character.incapacitation_reminder is None
-    elif character.is_vampire:
-        assert character.incapacitation_reminder == "You are IN TORPOR!"
-    else:
-        assert character.incapacitation_reminder == "You are DEAD!"
+    assert character.incapacitated is incapacitated
 
 
 def test_set_damage(character: VChar):
@@ -133,28 +126,6 @@ def test_humanity(character: VChar):
     character.humanity -= 1
     assert character.humanity == 6
     assert character.stains == 0
-
-
-@pytest.mark.parametrize(
-    "tracker, damage, impairment",
-    [
-        [Tracker.HEALTH, Damage.AGGRAVATED, ""],  # Depends on char type
-        [Tracker.HEALTH, Damage.SUPERFICIAL, "physically"],
-        [Tracker.WILLPOWER, Damage.SUPERFICIAL, "mentally"],
-    ],
-)
-def test_impairment(tracker: Tracker, damage: Damage, impairment: str, character: VChar):
-    assert character.impairment_reminder is None, "Character should start with no impairment"
-
-    character.set_damage(tracker, damage, 20)
-    assert character.impairment_reminder is not None
-    if tracker == Tracker.HEALTH and damage == Damage.AGGRAVATED:
-        if character.is_vampire:
-            assert "TORPOR" in character.impairment_reminder, "Vampire should be in torpor"
-        else:
-            assert "DEAD" in character.impairment_reminder, "Human should be dead"
-    else:
-        assert impairment in character.impairment_reminder
 
 
 @pytest.mark.parametrize("attribute", ["Resolve", "Composure", "Stamina"])
@@ -285,11 +256,7 @@ def test_set_aggravated_hp_full_tracker(character: VChar):
     assert character.superficial_hp == 0
     assert character.health == "xxxxxx"
 
-    assert character.impairment_reminder is not None
-    if character.is_vampire:
-        assert "TORPOR" in character.impairment_reminder
-    else:
-        assert "DEAD" in character.impairment_reminder
+    assert character.incapacitated
 
 
 def test_set_aggravated_hp_preserves_superficial_order(character: VChar):

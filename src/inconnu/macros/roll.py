@@ -21,7 +21,7 @@ __HUNT_LISTENERS = {}
 __HELP_URL = "https://docs.inconnu.app/command-reference/macros/rolling"
 
 
-async def roll(ctx: AppCtx, syntax: str, character=None):
+async def roll(ctx: AppCtx, syntax: str, character=None, *, ignore_impairment: bool = False):
     """Roll a macro."""
     try:
         # Get the basic macro details
@@ -63,7 +63,9 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
             parameters.append(difficulty or str(macro.difficulty))
 
             try:
-                outcome = await perform_roll(character, parameters)
+                outcome = await perform_roll(
+                    character, parameters, ignore_impairment=ignore_impairment
+                )
             except errors.TraitNotFound as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
                 await ui.embeds.error(ctx, msg, character=character.name)
@@ -82,6 +84,7 @@ async def roll(ctx: AppCtx, syntax: str, character=None):
                 macro.comment,
                 reroll_listener,
                 remove_hunt_listener,
+                ignore_impairment=ignore_impairment,
             )
 
             if macro.hunt:

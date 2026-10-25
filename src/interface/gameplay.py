@@ -31,6 +31,11 @@ class Gameplay(commands.Cog):
     @option("comment", description="A description of the roll", required=False)
     @char_option()
     @player_option()
+    @option(
+        "ignore_impairment",
+        description="Ignore impairment penalties (e.g. from powers that negate them)",
+        default=False,
+    )
     async def vr(
         self,
         ctx: AppCtx,
@@ -38,9 +43,12 @@ class Gameplay(commands.Cog):
         comment: str,
         character: str,
         player: discord.Member,
+        ignore_impairment: bool,
     ):
         """Roll the dice using Thirst syntax. Syntax: POOL HUNGER DIFFICULTY."""
-        await inconnu.vr.parse(ctx, syntax, comment, character, player)
+        await inconnu.vr.parse(
+            ctx, syntax, comment, character, player, ignore_impairment=ignore_impairment
+        )
 
     # This beginner-friendly roll command is for users who find the main `/vr`
     # command confusing/difficult. This one is slower to use (especially on
@@ -65,6 +73,11 @@ class Gameplay(commands.Cog):
     @option("comment", description="A comment to display with the roll", required=False)
     @char_option()
     @player_option()
+    @option(
+        "ignore_impairment",
+        description="Ignore impairment penalties (e.g. from powers that negate them)",
+        default=False,
+    )
     async def easy_roll(
         self,
         ctx: AppCtx,
@@ -74,10 +87,13 @@ class Gameplay(commands.Cog):
         comment: str,
         character: str,
         player: discord.Member,
+        ignore_impairment: bool,
     ):
         """Roll the dice!"""
         syntax = f"{pool} {hunger} {difficulty}"
-        char = await inconnu.vr.parse(ctx, syntax, comment, character, player)
+        char = await inconnu.vr.parse(
+            ctx, syntax, comment, character, player, ignore_impairment=ignore_impairment
+        )
         if isinstance(char, VChar):
             if char.is_vampire:
                 if hunger != "current_hunger" and char.hunger == int(hunger):

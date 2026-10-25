@@ -37,6 +37,8 @@ async def parse(
     comment: str | None,
     character: str | None,
     player: discord.Member | None,
+    *,
+    ignore_impairment: bool = False,
 ):
     """Parse the user's arguments and attempt to roll the dice."""
     raw_syntax = " ".join(raw_syntax.split())
@@ -94,8 +96,12 @@ async def parse(
     # Attempt to parse the user's roll syntax
     try:
         max_hunger = await services.settings.max_hunger(ctx.guild)
-        outcome = await perform_roll(character, syntax, max_hunger)
-        await display_outcome(ctx, owner, character, outcome, comment)
+        outcome = await perform_roll(
+            character, syntax, max_hunger, ignore_impairment=ignore_impairment
+        )
+        await display_outcome(
+            ctx, owner, character, outcome, comment, ignore_impairment=ignore_impairment
+        )
 
     except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
         if isinstance(err, errors.TraitError):
@@ -160,15 +166,32 @@ def _can_roll(character, syntax):
 
 
 async def display_outcome(
-    ctx, player, character: VChar, results, comment, listener=None, timeout=None
+    ctx,
+    player,
+    character: VChar,
+    results,
+    comment,
+    listener=None,
+    timeout=None,
+    *,
+    ignore_impairment: bool = False,
 ):
     """Display the roll results."""
-    roll_display = RollDisplay(ctx, results, comment, character, player, listener, timeout)
+    roll_display = RollDisplay(
+        ctx,
+        results,
+        comment,
+        character,
+        player,
+        listener,
+        timeout,
+        ignore_impairment=ignore_impairment,
+    )
 
     await roll_display.display()
 
 
-async def perform_roll(character: VChar, syntax, max_hunger=5):
+async def perform_roll(character: VChar, syntax, max_hunger=5, *, ignore_impairment: bool = False):
     """Public interface for __evaluate_syntax() that returns a Roll."""
     parser = RollParser(character, syntax)
     return Roll(parser.pool, parser.hunger, parser.difficulty, max_hunger, parser.pool_str, syntax)

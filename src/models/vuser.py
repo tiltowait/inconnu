@@ -9,6 +9,7 @@ class VUserSettings(BaseModel):
     """Represents individual user settings."""
 
     accessibility: bool = False
+    auto_impairment: bool = True
 
     @property
     def use_emojis(self) -> bool:

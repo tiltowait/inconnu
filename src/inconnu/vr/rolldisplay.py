@@ -61,6 +61,8 @@ class RollDisplay(ReportingView):
         owner: discord.Member | discord.User,
         listener: Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]] | None,
         timeout: Callable[[Roll], Awaitable[None]] | None,
+        *,
+        ignore_impairment: bool = False,
     ):
         super().__init__(timeout=600)
         self.ctx = ctx
@@ -71,6 +73,7 @@ class RollDisplay(ReportingView):
         self.owner = owner
         self.listener = listener
         self.timeout_handler = timeout
+        self.ignore_impairment = ignore_impairment
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
 

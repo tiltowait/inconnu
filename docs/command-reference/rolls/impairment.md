@@ -2,7 +2,7 @@
 description: How Inconnu applies Impairment penalties to your rolls.
 ---
 
-# 🤕 Impairment
+# Impairment
 
 When a character is Impaired, **Inconnu** removes 2 dice from the affected rolls for you.
 

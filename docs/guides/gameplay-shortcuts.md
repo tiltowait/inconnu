@@ -1,4 +1,4 @@
-# 🎲 Gameplay Shortcuts
+# Gameplay Shortcuts
 
 The following shortcuts encompass common actions. Using them prevents needing to issue complex `/character update` commands.
 

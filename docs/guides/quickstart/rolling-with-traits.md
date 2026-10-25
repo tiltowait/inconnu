@@ -4,7 +4,7 @@ description: >-
   Attributes and Skills.
 ---
 
-# 🎲 Rolling with traits
+# Rolling with traits
 
 > [!NOTE]
 > **Basic roll syntax:**

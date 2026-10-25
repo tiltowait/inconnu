@@ -2,7 +2,7 @@
 description: Sky's the limit.
 ---
 
-# 🔡 Custom traits
+# Custom traits
 
 Running homebrew? Have some merits or flaws you roll? You can track these (and any other trait with a 0-5 rating) with **custom traits**.
 

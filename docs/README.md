@@ -11,6 +11,6 @@ Inconnu is an advanced Discord dicebot for Vampire: The Masquerade 5th Edition. 
 > * Need a V20 bot? [Check out \[Tzimisce\], the easiest V20 dice roller](https://www.storyteller-bot.com/)
 > * [Support Inconnu's development!](https://www.patreon.com/tiltowait)
 
-Click one of the links in the sidebar or read on for the quickstart guide!
+Pick a page below, or start with the Quickstart!
 
-[✨ Quickstart](guides/quickstart/README.md)
+[Quickstart](guides/quickstart/README.md)

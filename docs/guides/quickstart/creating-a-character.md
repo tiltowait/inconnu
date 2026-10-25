@@ -2,7 +2,7 @@
 description: Character creation in Inconnu is easy.
 ---
 
-# 🎭 Creating a character
+# Creating a character
 
 You may store as many characters on as many servers as you like. Each character is unique to the server on which you created it. Simply type:
 

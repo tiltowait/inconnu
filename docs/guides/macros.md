@@ -2,7 +2,7 @@
 description: Follow this guide to learn all about macros!
 ---
 
-# 🧲 Macros
+# Macros
 
 Macros automate your rolls. With a single command, you can roll a complex pool, make a Rouse check, earn Stains for Oblivion rolls, and even slake Hunger. A character can have as many macros as you need.
 

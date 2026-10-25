@@ -1,4 +1,4 @@
-# 🎭 Character and Player Parameters
+# Character and Player Parameters
 
 Many commands offer optional `character` and `player` parameters, which are used to facilitate lookups.
 

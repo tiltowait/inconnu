@@ -2,7 +2,7 @@
 description: Roll without showing everyone your dice.
 ---
 
-# 🙈 Hidden dice
+# Hidden dice
 
 `/vr`, `/roll`, and `/vm` take a `dice` option. Set it to `Hide` to keep your dice to yourself:
 

@@ -4,7 +4,7 @@ description: >-
   as their characters.
 ---
 
-# 🎭 Roleposting
+# Roleposting
 
 Roleposting lets you post a message "from" your character rather than your Discord username. It ties in to your **Inconnu** characters' stats and lets you tag, bookmark, and search your posts.
 

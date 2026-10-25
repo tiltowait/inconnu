@@ -2,7 +2,7 @@
 description: Learn about Inconnu's customization options.
 ---
 
-# ⚙️ Settings
+# Settings
 
 **Inconnu** has personal settings and server settings, both shown in a menu:
 

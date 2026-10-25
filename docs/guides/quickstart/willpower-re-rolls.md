@@ -2,7 +2,7 @@
 description: Easily re-roll up to three normal dice.
 ---
 
-# ⚡ Willpower re-rolls
+# Willpower re-rolls
 
 V5's rules as written ("RAW") allow you to re-roll up to three normal dice by spending a point of Willpower, so long as the roll incorporates an Attribute or a Skill—and so does **Inconnu**!
 

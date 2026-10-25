@@ -1,4 +1,4 @@
-# 📸 Character Images
+# Character Images
 
 > [!WARNING]
 > Please read the [Terms of Service](../terms-of-service.md) and [Privacy Policy](../privacy-policy.md) regarding images.

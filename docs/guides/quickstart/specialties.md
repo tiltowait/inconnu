@@ -1,4 +1,4 @@
-# 🥇 Specialties
+# Specialties
 
 When you create a character in V5, you are given several skill specialties that add a single die to appropriate rolls. You can enter them in the [character wizard](creating-a-character.md), or add them afterward.
 

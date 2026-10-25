@@ -4,7 +4,7 @@ description: >-
   basic use is a cinch.
 ---
 
-# 💡 Just the basics
+# Just the basics
 
 Don't care about managing characters? Trait pools don't interest you? That's fine; you can still use **Inconnu** via the basic roll syntax below.
 

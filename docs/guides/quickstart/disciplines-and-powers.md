@@ -1,4 +1,4 @@
-# 🪄 Disciplines & powers
+# Disciplines & powers
 
 While **Inconnu** is not a reference tool, it can nonetheless track your character's Discipline ratings and known powers. There's no requirement that the name you give a Discipline is "official"; you can call them whatever you want!
 

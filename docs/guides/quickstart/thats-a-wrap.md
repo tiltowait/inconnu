@@ -2,7 +2,7 @@
 description: You've finished the tutorial.
 ---
 
-# ✅ That's a wrap!
+# That's a wrap!
 
 You should now have what you need to use **Inconnu** effectively. If you ever forget how to use a certain command, there is a comprehensive help system behind the `/help` command.
 

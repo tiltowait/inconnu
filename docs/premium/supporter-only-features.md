@@ -1,4 +1,4 @@
-# 💰 Supporter-only features
+# Supporter-only features
 
 **Inconnu's** core features are and always will be free. Certain features, however, require [becoming a patron](https://www.patreon.com/tiltowait) to use.
 

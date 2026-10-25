@@ -4,7 +4,7 @@ description: >-
   take a look at just a few of them.
 ---
 
-# 💙 Quality of life
+# Quality of life
 
 Before we conclude, let's take a look at a few common tasks.
 

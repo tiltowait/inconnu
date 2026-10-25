@@ -1,4 +1,4 @@
-# 🛠️ Troubleshooting
+# Troubleshooting
 
 **Inconnu** requires the following permissions:
 

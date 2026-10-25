@@ -1,4 +1,4 @@
-# ❗ Administration
+# Administration
 
 **Inconnu** features a number of administration commands ranging from server settings to character management.
 

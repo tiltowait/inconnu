@@ -40,7 +40,7 @@ async def aggheal(ctx, character):
 
     inter = await __display_outcome(ctx, character, outcome)
     msg = await get_message(inter)
-    await services.character_update(
+    await services.post_update(
         ctx=ctx,
         msg=msg,
         character=character,

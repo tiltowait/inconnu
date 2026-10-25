@@ -187,7 +187,7 @@ class RollDisplay(ReportingView):
     async def _report(self, public: discord.Message):
         """Send a hidden roll's full outcome to the update channel, if the
         guild has one, so the ST can see the dice."""
-        self.report_message = await services.character_update(
+        self.report_message = await services.post_update(
             ctx=self.ctx,
             character=self.character,
             title="Hidden roll",

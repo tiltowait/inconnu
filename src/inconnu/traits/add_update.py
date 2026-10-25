@@ -114,7 +114,7 @@ async def __display_results(ctx, outcome, character: VChar, disciplines: bool):
         msg += ", ".join(outcome.assigned)
 
         tasks.append(
-            services.character_update(
+            services.post_update(
                 ctx=ctx, character=character, title=f"{term} Updated", message=msg, color=0xFF9400
             )
         )

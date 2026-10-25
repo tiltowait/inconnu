@@ -105,7 +105,7 @@ async def update(
         )
         if update_message:  # May not always be true in the future
             msg = await get_message(inter)
-            await services.character_update(
+            await services.post_update(
                 ctx=ctx,
                 msg=msg,
                 character=character,

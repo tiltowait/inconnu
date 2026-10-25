@@ -77,7 +77,7 @@ class ConvictionsModal(Modal):
                 )
             )
             tasks.append(
-                services.character_update(
+                services.post_update(
                     ctx=interaction,
                     character=self.character,
                     title="Changed Convictions",

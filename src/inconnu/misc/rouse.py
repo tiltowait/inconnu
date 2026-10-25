@@ -65,7 +65,7 @@ async def rouse(
         else:
             color = None
 
-        await services.character_update(
+        await services.post_update(
             ctx=ctx,
             msg=msg,
             character=character,

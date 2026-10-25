@@ -80,7 +80,7 @@ async def _add_or_remove(
                 msg = f"__{ctx.user.mention} updated {character.name}'s {cat}__\n"
                 msg += embed.description
                 tasks.append(
-                    services.character_update(
+                    services.post_update(
                         ctx=ctx,
                         character=character,
                         title=title,

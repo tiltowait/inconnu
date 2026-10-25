@@ -56,7 +56,7 @@ class _DeletionModal(Modal):
 
             await asyncio.gather(
                 interaction.response.send_message(msg),
-                services.character_update(
+                services.post_update(
                     ctx=interaction,
                     character=self.character,
                     title="Character Deleted",

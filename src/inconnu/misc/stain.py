@@ -63,7 +63,7 @@ async def __report(ctx, inter, character, delta):
 
     msg = await get_message(inter)
 
-    await services.character_update(
+    await services.post_update(
         ctx=ctx,
         msg=msg,
         character=character,

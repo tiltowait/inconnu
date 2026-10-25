@@ -206,8 +206,8 @@ class ErrorReporter:
         return embed
 
 
-async def character_update(*, ctx, character, title, message, **kwargs) -> discord.Message | None:
-    """Display character updates in the update channel. Returns the sent
+async def post_update(*, ctx, character, title, message, **kwargs) -> discord.Message | None:
+    """Post updates in the guild's update channel. Returns the sent
     message, if any."""
     from services.settings import update_channel as get_update_channel
 

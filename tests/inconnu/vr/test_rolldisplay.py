@@ -1021,7 +1021,7 @@ async def show(display: RollDisplay, update_channel=False) -> Screen:
         return sent
 
     if update_channel:
-        cast(AsyncMock, services.character_update).side_effect = report
+        cast(AsyncMock, services.post_update).side_effect = report
 
     def respond(ephemeral=False, **kwargs: Any):
         if not ephemeral:

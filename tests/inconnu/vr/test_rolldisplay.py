@@ -235,7 +235,8 @@ async def test_embed_outcome_presentation(
 
 
 async def test_embed_after_reroll(ctx: AppCtx, owner: discord.Member):
-    """Rerolls prefix the title, add the strategy, and show the original outcome."""
+    """Rerolls keep the title and author line, and the Updates field shows the
+    strategy and the original outcome."""
     roll = make_roll([6, 2], [], 2)
     display = make_display(ctx, owner, roll)
 
@@ -245,14 +246,39 @@ async def test_embed_after_reroll(ctx: AppCtx, owner: discord.Member):
     embed = screen.embed
     assert embed is not None and embed.author is not None
 
-    assert embed.title == "R: SUCCESS! (2)"
-    assert embed.author.name == "tiltowait • DC 2 • Rerolling Failures"
+    assert embed.title == "SUCCESS! (2)"
+    assert embed.author.name == "tiltowait • DC 2"
     assert field_map(embed)["Dice"] == "2"
 
     last = embed.fields[-1]
-    assert last.name == "Original Outcome"
-    assert last.value == "```Failure (1)```"
+    assert last.name == "Updates"
+    assert (
+        last.value == "`Reroll:` Rerolling Failures from `Failure (1)`"
+    )  # No WP line without a character
     assert not last.inline
+
+
+async def test_no_updates_field(ctx: AppCtx, owner: discord.Member):
+    """Without a surge or reroll, there's no Updates field."""
+    display = make_display(ctx, owner, make_roll([6, 2], [], 2), character=make_char("vampire"))
+    embed = await render(display)
+
+    assert "Updates" not in field_map(embed)
+
+
+async def test_updates_order(ctx: AppCtx, owner: discord.Member):
+    """Updates list the Surge, the reroll, then Willpower."""
+    roll = make_roll([6, 2], [], 2)
+    display = make_display(ctx, owner, roll, "surge", make_char("vampire"))
+    screen = await show(display)
+    await reroll(screen)
+    await press_rouse_reroll(screen)
+    await press_mark_wp(screen)
+    assert screen.embed is not None
+
+    assert field_map(screen.embed)["Updates"] == (
+        "`Surge:` Rouse Made w/ Re-roll\n`Reroll:` Rerolling Failures from `Failure (1)`\n`WP:` Marked"
+    )
 
 
 # Author line
@@ -747,8 +773,8 @@ async def test_hidden_embed_has_no_dice(
 @pytest.mark.parametrize(
     "pool_str,penalty,expected",
     [
-        (None, Impairment.NONE, "Hidden"),
-        (None, Impairment.PHYSICAL, "Hidden"),
+        (None, Impairment.NONE, "`Hidden`"),
+        (None, Impairment.PHYSICAL, "`Hidden`"),
         ("Strength + Brawl", Impairment.PHYSICAL, "Strength + Brawl"),
     ],
 )
@@ -819,9 +845,12 @@ async def test_hidden_embed_after_reroll(ctx: AppCtx, owner: discord.Member):
     embed = screen.embed
     assert embed is not None
 
-    assert embed.title == "R: SUCCESS! (2)"
+    assert embed.title == "SUCCESS! (2)"
     assert embed.description == "**Margin:** 0\n**Difficulty:** 2"
-    assert field_map(embed) == {"Pool": "Hidden", "Original Outcome": "```Failure (1)```"}
+    assert field_map(embed) == {
+        "Pool": "`Hidden`",
+        "Updates": "`Reroll:` Rerolling Failures from `Failure (1)`",
+    }
 
 
 # Buttons (initial roll)
@@ -978,6 +1007,7 @@ class Message:
     """What Discord currently shows for one message."""
 
     handle: Any = None  # What RollDisplay was given to refer to the message
+    title: str | None = None  # Update channel posts only
     content: str | None = None
     embed: discord.Embed | None = None
     buttons: list[tuple] | None = None
@@ -1000,12 +1030,17 @@ class Screen:
     display: RollDisplay
     public: Message = field(default_factory=Message)
     private: Message | None = None
-    report: Message | None = None  # In the guild's update channel
+    update_channel: list[Message] = field(default_factory=list)
     ephemeral: list[str] = field(default_factory=list)
 
     def record_ephemeral(self, content: str, **_: Any):
         """Record an ephemeral reply to a button press."""
         self.ephemeral.append(content)
+
+    @property
+    def report(self) -> Message | None:
+        """A hidden roll's full-roll report in the update channel."""
+        return next((post for post in self.update_channel if post.title == "Hidden roll"), None)
 
     @property
     def controls(self) -> Message:
@@ -1058,14 +1093,17 @@ async def show(display: RollDisplay, update_channel=False) -> Screen:
     screen = Screen(display)
     original = fake_interaction(screen, display.owner)
 
-    def report(*, message: str, embed: discord.Embed, **_: Any) -> AsyncMock:
+    def post(
+        *, title: str, message: str, embed: discord.Embed | None = None, **_: Any
+    ) -> AsyncMock:
         sent = AsyncMock(spec=discord.Message)
-        screen.report = Message(handle=sent, content=message, embed=embed)
-        sent.edit.side_effect = screen.report.record
+        posted = Message(handle=sent, title=title, content=message, embed=embed)
+        sent.edit.side_effect = posted.record
+        screen.update_channel.append(posted)
         return sent
 
     if update_channel:
-        cast(AsyncMock, services.post_update).side_effect = report
+        cast(AsyncMock, services.post_update).side_effect = post
 
     def respond(ephemeral=False, **kwargs: Any):
         if not ephemeral:
@@ -1241,7 +1279,7 @@ async def test_hidden_reroll_updates_both(ctx: AppCtx, owner: discord.Member):
     assert screen.embed is not None and screen.private is not None
     assert screen.private.embed is not None
 
-    assert screen.embed.title == screen.private.embed.title == "R: SUCCESS! (2)"
+    assert screen.embed.title == screen.private.embed.title == "SUCCESS! (2)"
     assert "Dice" not in field_map(screen.embed)
     assert "Margin: 0" in field_map(screen.private.embed)
     assert screen.public.view is None
@@ -1257,7 +1295,7 @@ async def test_hidden_reroll_after_public_deleted(ctx: AppCtx, owner: discord.Me
     await reroll(screen)
     assert screen.private is not None and screen.private.embed is not None
 
-    assert screen.private.embed.title == "R: SUCCESS! (2)"
+    assert screen.private.embed.title == "SUCCESS! (2)"
 
 
 async def test_hidden_timeout(ctx: AppCtx, owner: discord.Member):
@@ -1301,8 +1339,11 @@ async def test_hidden_report_reroll(ctx: AppCtx, owner: discord.Member):
     await reroll(screen)
     assert screen.report is not None and screen.report.embed is not None
 
-    assert screen.report.embed.title == "R: SUCCESS! (2)"
-    assert field_map(screen.report.embed)["Original Outcome"] == "```Failure (1)```"
+    assert screen.report.embed.title == "SUCCESS! (2)"
+    assert (
+        field_map(screen.report.embed)["Updates"]
+        == "`Reroll:` Rerolling Failures from `Failure (1)`"
+    )
     assert field_map(screen.report.embed)["Dice"] == "2"
 
 
@@ -1324,7 +1365,7 @@ async def test_hidden_report_unavailable_on_reroll(
     await reroll(screen)
     assert screen.embed is not None
 
-    assert screen.embed.title == "R: SUCCESS! (2)"
+    assert screen.embed.title == "SUCCESS! (2)"
 
 
 async def test_hidden_without_update_channel(ctx: AppCtx, owner: discord.Member):
@@ -1335,7 +1376,7 @@ async def test_hidden_without_update_channel(ctx: AppCtx, owner: discord.Member)
     assert screen.embed is not None
 
     assert screen.report is None
-    assert screen.embed.title == "R: SUCCESS! (2)"
+    assert screen.embed.title == "SUCCESS! (2)"
 
 
 async def test_shown_roll_not_reported(
@@ -1397,9 +1438,8 @@ async def test_reroll_without_character(
     with patch("inconnu.d10", return_value=5):
         await press_strategy(screen)
 
-    assert screen.embed is not None and screen.embed.author is not None
-    assert screen.embed.title is not None and screen.embed.title.startswith("R: ")
-    assert screen.embed.author.name.endswith(descriptor)
+    assert screen.embed is not None
+    assert field_map(screen.embed)["Updates"] == f"`Reroll:` {descriptor} from `Messy Critical (4)`"
 
     expected = [
         (lbl, SECONDARY if lbl == label else PRIMARY, True, None)
@@ -1418,7 +1458,11 @@ async def test_reroll_with_character(ctx: AppCtx, owner: discord.Member):
         await press_reroll_failures(screen)
 
     assert screen.embed is not None
-    assert screen.embed.title == "R: SUCCESS! (2)"
+    assert screen.embed.title == "SUCCESS! (2)"
+    assert (
+        field_map(screen.embed)["Updates"]
+        == "`Reroll:` Rerolling Failures from `Failure (1)`\n`WP:` **Not Marked**"
+    )
     assert screen.buttons == [("Mark WP Use", PRIMARY, False, None)]
     assert screen.listening
 
@@ -1465,8 +1509,8 @@ async def test_mark_wp(
     mock_char_display: AsyncMock,
     hide_dice: bool,
 ):
-    """Marking WP adds Superficial Willpower damage and disables the button.
-    Hidden rolls show the new Willpower privately."""
+    """Marking WP adds Superficial Willpower damage, updates every copy of the
+    roll, and disables the button. Hidden rolls show the new Willpower privately."""
     char = make_char("vampire")
     roll = make_roll([6, 2], [], 2)
     screen = await show(make_display(ctx, owner, roll, character=char, hide_dice=hide_dice))
@@ -1481,8 +1525,53 @@ async def test_mark_wp(
         ANY, char, title="Willpower Spent", owner=owner, fields=ANY, ephemeral=hide_dice
     )
     assert screen.embed is not None
-    assert screen.embed.title == "R: SUCCESS! (2)"
+    assert screen.embed.title == "SUCCESS! (2)"
+    assert (
+        field_map(screen.embed)["Updates"]
+        == "`Reroll:` Rerolling Failures from `Failure (1)`\n`WP:` Marked"
+    )
+    if hide_dice:
+        assert screen.private is not None and screen.private.embed is not None
+        assert (
+            field_map(screen.private.embed)["Updates"]
+            == "`Reroll:` Rerolling Failures from `Failure (1)`\n`WP:` Marked"
+        )
     assert screen.buttons == [("Mark WP Use", SECONDARY, True, None)]
+
+
+@pytest.mark.parametrize("hide_dice", [False, True])
+async def test_mark_wp_posts_update(
+    ctx: AppCtx, owner: discord.Member, mock_get_message: AsyncMock, hide_dice: bool
+):
+    """Marking WP is posted to the update channel, linking to the public roll.
+    A hidden roll's report shows it, too."""
+    char = make_char("vampire")
+    roll = make_roll([6, 2], [], 2)
+    display = make_display(ctx, owner, roll, character=char, hide_dice=hide_dice)
+    screen = await show(display, update_channel=True)
+    await reroll(screen)
+    await press_mark_wp(screen)
+
+    wp_posts = [post for post in screen.update_channel if post.title == "Willpower Spent"]
+    assert [post.content for post in wp_posts] == ["**Nadea Theron** spent Willpower on a reroll."]
+    update = cast(AsyncMock, services.post_update).await_args
+    assert update is not None
+    assert update.kwargs["msg"] is mock_get_message.return_value
+
+    if hide_dice:
+        assert screen.report is not None and screen.report.embed is not None
+        assert field_map(screen.report.embed)["Updates"].endswith("`WP:` Marked")
+
+
+async def test_mark_wp_without_update_channel(ctx: AppCtx, owner: discord.Member):
+    """Without an update channel, marking WP still works."""
+    char = make_char("vampire")
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), character=char))
+    await reroll(screen)
+    await press_mark_wp(screen)
+
+    assert screen.update_channel == []
+    assert char.superficial_wp == 1
 
 
 # Surging
@@ -1501,16 +1590,20 @@ async def test_surge(
     oblivion: bool,
     hide_dice: bool,
 ):
-    """Surging Rouses once and disables both surge buttons. Hidden rolls show
-    the Rouse privately."""
+    """Surging Rouses once, disables both surge buttons, and updates every copy
+    of the roll. Hidden rolls show the Rouse privately."""
     char = make_char("vampire")
     roll = make_roll([6, 2], [], 2)
     display = make_display(ctx, owner, roll, "surge", char, hide_dice=hide_dice)
     screen = await show(display)
+    assert screen.embed is not None
+    assert field_map(screen.embed)["Updates"] == "`Surge:` **No Rouse**"
 
     await press_surge(screen)
 
     mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", oblivion, ephemeral=hide_dice)
+    status = "Rouse Made w/ Re-roll" if oblivion else "Rouse Made"
+    assert field_map(screen.embed)["Updates"] == f"`Surge:` {status}"
     assert screen.buttons == [
         ("Re-Roll Failures", PRIMARY, False, None),
         ("Max Crits", PRIMARY, False, None),

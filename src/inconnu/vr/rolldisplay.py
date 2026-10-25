@@ -5,7 +5,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, cast
+from typing import cast
 
 import discord
 from discord.ui import Button
@@ -45,6 +45,7 @@ class _ButtonState:
     strategy: Strategy | None = None
     wp_marked: bool = False
     surge: _Surge = _Surge.UNUSED
+    surge_reroll: bool = False  # Whether the surge's Rouse check rerolled a failure
     timed_out: bool = False
 
     @property
@@ -82,6 +83,7 @@ class RollDisplay(ReportingView):
         self.hide_dice = hide_dice
         self.redacted_message: discord.Interaction | discord.WebhookMessage | None = None
         self.report_message: discord.Message | None = None
+        self.public_message: discord.Message | None = None  # Guild rolls only
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
         self.auto_impairment = False  # Looked up when displayed
@@ -108,10 +110,10 @@ class RollDisplay(ReportingView):
         # purposes. DM rolls aren't tracked, so they don't need it.
         message_id = None
         if self.ctx.guild is not None:
-            public_message = await get_message(public)
-            message_id = public_message.id
+            self.public_message = await get_message(public)
+            message_id = self.public_message.id
             if self.hide_dice:
-                await self._report(public_message)
+                await self._report(self.public_message)
         await self._log_roll(self.ctx, message_id)
 
     # Button actions
@@ -149,6 +151,13 @@ class RollDisplay(ReportingView):
                 fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
                 ephemeral=self.hide_dice,
             )
+            await services.post_update(
+                ctx=interaction,
+                character=self.character,
+                title="Willpower Spent",
+                message=f"**{self.character.name}** spent Willpower on a reroll.",
+                msg=self.public_message,
+            )
 
     async def rouse(self, interaction: AppInteraction):
         """Make the surge's Rouse check."""
@@ -162,8 +171,7 @@ class RollDisplay(ReportingView):
         """Reroll the outcome with the given strategy."""
         self.outcome.reroll(strategy.value)
         self.state.strategy = strategy
-        await self._update(interaction, embed=self.full_embed)
-        await self._update_copies()
+        await self._update(interaction)
         await self._log_roll(interaction, None)
 
         if self.listener:
@@ -179,6 +187,7 @@ class RollDisplay(ReportingView):
             self.state.surge = _Surge.AFTER_REROLL
         else:
             self.state.surge = _Surge.BEFORE_REROLL
+        self.state.surge_reroll = reroll
         await self._update(interaction)
         await inconnu.misc.perform_rouse(
             interaction, self.character, 1, "Surge", reroll, ephemeral=self.hide_dice
@@ -197,7 +206,7 @@ class RollDisplay(ReportingView):
 
     async def _update_copies(self):
         """Bring a hidden roll's public message and update channel report up to
-        date with a reroll. Either may have been deleted."""
+        date. Either may have been deleted."""
         if self.redacted_message is not None:
             with contextlib.suppress(discord.NotFound):
                 await self.redacted_message.edit(embed=self.redacted_embed)
@@ -205,10 +214,11 @@ class RollDisplay(ReportingView):
             with contextlib.suppress(discord.NotFound, discord.Forbidden):
                 await self.report_message.edit(embed=self.full_embed)
 
-    async def _update(self, interaction: AppInteraction, **kwargs: Any):
-        """Redraw the buttons and edit the message."""
+    async def _update(self, interaction: AppInteraction):
+        """Redraw the buttons and embed, and bring the roll's copies up to date."""
         self._render_buttons()
-        await interaction.response.edit_message(view=self, **kwargs)
+        await interaction.response.edit_message(embed=self.full_embed, view=self)
+        await self._update_copies()
 
     async def _log_roll(self, source: AppInvocation, message_id: int | None):
         """Log the roll for statistics. Rerolls are logged without a message ID."""
@@ -369,8 +379,6 @@ class RollDisplay(ReportingView):
     def _embed(self, hidden: bool) -> discord.Embed:
         """Build the embed, with or without the dice."""
         title = self.outcome.main_takeaway.upper() + "!"
-        if self.state.rerolled:
-            title = f"R: {title}"
         if not self.outcome.is_total_failure and not self.outcome.is_bestial:
             title += f" ({self.outcome.total_successes})"
 
@@ -380,8 +388,6 @@ class RollDisplay(ReportingView):
         author_field = self.character_name
         if self.outcome.difficulty > 0:
             author_field += f" • DC {self.outcome.difficulty}"
-        if self.outcome.descriptor is not None:
-            author_field += f" • {self.outcome.descriptor}"
 
         embed.set_author(name=author_field, icon_url=self.icon)
         embed.set_thumbnail(url=self.thumbnail_url)
@@ -396,13 +402,8 @@ class RollDisplay(ReportingView):
         else:
             self._add_dice_fields(embed)
 
-        # Show what the roll originally was
-        if self.state.rerolled:
-            embed.add_field(
-                name="Original Outcome",
-                value=f"```{self.original_outcome}```",
-                inline=False,
-            )
+        if updates := self.updates:
+            embed.add_field(name="Updates", value=updates, inline=False)
 
         # Impairment notes would also reveal the character's condition
         footer = self._comment if hidden else self.comment
@@ -584,6 +585,28 @@ class RollDisplay(ReportingView):
             return web_asset("dice/total-fail.webp")
 
         return web_asset("dice/bestial.webp")
+
+    @property
+    def updates(self) -> str | None:
+        """The roll's Surge, reroll, and Willpower status, one line each, if
+        any apply. What hasn't been done yet is bolded."""
+        lines = []
+        if self.surging:
+            if self.state.surge == _Surge.UNUSED:
+                status = "**No Rouse**"
+            elif self.state.surge_reroll:
+                status = "Rouse Made w/ Re-roll"
+            else:
+                status = "Rouse Made"
+            lines.append(f"`Surge:` {status}")
+
+        if self.state.rerolled:
+            lines.append(f"`Reroll:` {self.outcome.descriptor} from `{self.original_outcome}`")
+            if self.character is not None:
+                # Only characters have Willpower to mark
+                lines.append("`WP:` Marked" if self.state.wp_marked else "`WP:` **Not Marked**")
+
+        return "\n".join(lines) or None
 
     @property
     def surging(self) -> bool:

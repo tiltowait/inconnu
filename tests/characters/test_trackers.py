@@ -79,6 +79,28 @@ def test_impairment_state(
     assert character.impairment_state == expected
 
 
+@pytest.mark.parametrize(
+    "health,incapacitated",
+    [
+        ("......", False),
+        ("//////", False),
+        ("/xxxxx", False),
+        ("xxxxxx", True),
+    ],
+)
+def test_incapacitation_reminder(character: VChar, health: str, incapacitated: bool):
+    """Only a fully aggravated Health track incapacitates: torpor for vampires, death
+    for everyone else."""
+    character.health = health
+
+    if not incapacitated:
+        assert character.incapacitation_reminder is None
+    elif character.is_vampire:
+        assert character.incapacitation_reminder == "You are IN TORPOR!"
+    else:
+        assert character.incapacitation_reminder == "You are DEAD!"
+
+
 def test_set_damage(character: VChar):
     """Test the set_damage() method."""
     character.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)

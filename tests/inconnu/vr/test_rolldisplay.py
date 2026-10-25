@@ -749,7 +749,7 @@ async def test_hidden_embed_has_no_dice(
     [
         (None, Impairment.NONE, "Hidden"),
         (None, Impairment.PHYSICAL, "Hidden"),
-        ("Strength + Brawl", Impairment.PHYSICAL, "Strength + Brawl - 2 (physical impairment)"),
+        ("Strength + Brawl", Impairment.PHYSICAL, "Strength + Brawl"),
     ],
 )
 async def test_hidden_pool_field(
@@ -759,12 +759,56 @@ async def test_hidden_pool_field(
     penalty: Impairment,
     expected: str,
 ):
-    """Number-only pools are hidden, even with a penalty. Trait pools aren't."""
+    """Number-only pools are hidden. Trait pools aren't, but their Impairment
+    penalty is, since it reveals the character's condition."""
     roll = make_roll([6, 6, 6], [], pool_str=pool_str, impairment_penalty=penalty)
     roll.base_pool = 5
     embed = await render(make_display(ctx, owner, roll, hide_dice=True))
 
     assert field_map(embed) == {"Pool": expected}
+
+
+@pytest.mark.parametrize(
+    "health,pool_str,override",
+    [
+        (PHYSICALLY_IMPAIRED, "Wits + Awareness", None),  # Reminder
+        (PHYSICALLY_IMPAIRED, "Strength + Brawl", ImpairmentCategory.IGNORE),  # Override
+        ("xxxxxx", "Strength + Brawl", None),  # Torpor
+    ],
+)
+async def test_hidden_footer_omits_impairment(
+    ctx: AppCtx,
+    owner: discord.Member,
+    health: str,
+    pool_str: str,
+    override: ImpairmentCategory | None,
+):
+    """Impairment notes reveal the character's condition, so only the roller's
+    private copy shows them. Everyone sees the comment."""
+    char = make_char("vampire")
+    char.health = health
+    roll = make_roll([6], [], pool_str=pool_str)
+    display = make_display(
+        ctx, owner, roll, "Hello", char, impairment_category=override, hide_dice=True
+    )
+    screen = await show(display)
+    assert screen.embed is not None and screen.embed.footer is not None
+    assert screen.private is not None and screen.private.embed is not None
+    assert screen.private.embed.footer is not None
+
+    assert screen.embed.footer.text == "Hello"
+    assert screen.private.embed.footer.text == display.comment
+    assert screen.private.embed.footer.text != "Hello"
+
+
+async def test_hidden_footer_without_comment(ctx: AppCtx, owner: discord.Member):
+    """With no comment, the public message has no footer, even if impaired."""
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Wits + Awareness")
+    embed = await render(make_display(ctx, owner, roll, character=char, hide_dice=True))
+
+    assert embed.footer is None or embed.footer.text is None
 
 
 async def test_hidden_embed_after_reroll(ctx: AppCtx, owner: discord.Member):

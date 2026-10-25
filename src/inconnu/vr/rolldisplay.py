@@ -390,9 +390,9 @@ class RollDisplay(ReportingView):
             embed.description = (
                 f"**Margin:** {self.outcome.margin}\n**Difficulty:** {self.outcome.difficulty}"
             )
-            # A number-only pool would reveal its size
-            pool_str = self.pool_str if self.outcome.pool_str else None
-            embed.add_field(name="Pool", value=pool_str or "Hidden")
+            # A number-only pool would reveal its size, and an Impairment
+            # penalty would reveal the character's condition
+            embed.add_field(name="Pool", value=self.readable_pool or "`Hidden`")
         else:
             self._add_dice_fields(embed)
 
@@ -404,8 +404,10 @@ class RollDisplay(ReportingView):
                 inline=False,
             )
 
-        if self.comment is not None:
-            embed.set_footer(text=self.comment)
+        # Impairment notes would also reveal the character's condition
+        footer = self._comment if hidden else self.comment
+        if footer is not None:
+            embed.set_footer(text=footer)
 
         return embed
 
@@ -474,15 +476,26 @@ class RollDisplay(ReportingView):
 
     @property
     def pool_str(self) -> str | None:
-        """The pool string, made nicer to read, plus any impairment penalty. A
-        penalized number-only pool shows its pre-penalty size."""
+        """The readable pool plus any impairment penalty. A penalized
+        number-only pool shows its pre-penalty size."""
         penalty = None
         if self.outcome.impairment_penalty:
             impairment = self.outcome.impairment_penalty.description
             penalty = f"- {IMPAIRMENT_DICE} ({impairment} impairment)"
 
-        if not self.outcome.pool_str:
+        pool_str = self.readable_pool
+        if pool_str is None:
             return f"{self.outcome.base_pool} {penalty}" if penalty else None
+
+        # Added after readable_pool's capitalization, which would otherwise
+        # turn "(physical impairment)" into "(physical Impairment)"
+        return f"{pool_str} {penalty}" if penalty else pool_str
+
+    @property
+    def readable_pool(self) -> str | None:
+        """The pool string, made nicer to read, or None for number-only pools."""
+        if not self.outcome.pool_str:
+            return None
 
         splitted = de_camel(self.outcome.pool_str).split()
 
@@ -490,14 +503,7 @@ class RollDisplay(ReportingView):
         # .title() will make everything else lowercase. "XYZ" would become
         # "Xyz", which is not desired.
         splitted = (t[0].upper() + t[1:] if t[0].islower() else t for t in splitted)
-        pool_str = " ".join(splitted)
-
-        # Added after the capitalization above, which would otherwise turn
-        # "(physical impairment)" into "(physical Impairment)"
-        if penalty is not None:
-            pool_str += f" {penalty}"
-
-        return pool_str
+        return " ".join(splitted)
 
     @property
     def comment(self) -> str | None:

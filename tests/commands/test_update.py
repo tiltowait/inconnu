@@ -471,6 +471,22 @@ async def test_update_impairment_reminder(
     assert call_args.kwargs["message"].endswith(f"* {expected}")
 
 
+async def test_update_without_impairment(
+    vamp: VChar,
+    ctx: AppCtx,
+    mock_char_save: AsyncMock,
+    mock_update_display: AsyncMock,
+):
+    """Unimpaired characters get no reminder, and the setting isn't looked up."""
+    with patch("services.settings.auto_impairment", new_callable=AsyncMock) as mock_setting:
+        await update(ctx, "hunger+1", character=vamp)
+
+    mock_setting.assert_not_awaited()
+    call_args = mock_update_display.await_args
+    assert call_args is not None
+    assert "impaired" not in call_args.kwargs["message"]
+
+
 async def test_update_with_custom_fields(
     vamp: VChar,
     ctx: AppCtx,

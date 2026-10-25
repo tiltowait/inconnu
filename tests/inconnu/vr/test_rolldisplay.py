@@ -110,6 +110,15 @@ def mock_char_save() -> Iterator[AsyncMock]:
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def mock_auto_impairment() -> Iterator[AsyncMock]:
+    """The user's auto-impairment setting. Off by default, so reminders use the
+    manual wording."""
+    with patch("services.settings.auto_impairment", new_callable=AsyncMock) as mock:
+        mock.return_value = False
+        yield mock
+
+
 def make_char(splat: str, hunger=1) -> VChar:
     """Generate a PC with an ID and the given Hunger."""
     char = gen_char(splat)
@@ -358,6 +367,15 @@ async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str, exp
     assert field.inline
 
 
+async def test_pool_field_with_impairment_penalty_number_pool(ctx: AppCtx, owner: discord.Member):
+    """A penalized number-only pool has no pool string, so the Pool field shows
+    just the penalty."""
+    roll = make_roll([6, 6, 6], [], impairment_penalty=Impairment.PHYSICAL)
+    embed = await render(make_display(ctx, owner, roll, character=make_char("vampire")))
+
+    assert field_map(embed)["Pool"] == "-2 (physical impairment)"
+
+
 @pytest.mark.parametrize(
     "penalty,expected",
     [
@@ -493,6 +511,32 @@ async def test_footer_penalty_ignored(
     assert embed.footer is not None
 
     assert embed.footer.text == expected + "Override: Impairment ignored"
+
+
+async def test_footer_reminder_with_auto_impairment(
+    ctx: AppCtx, owner: discord.Member, mock_auto_impairment: AsyncMock
+):
+    """Users with auto-impairment on aren't told to subtract dice themselves, even
+    on rolls the Impairment doesn't penalize."""
+    mock_auto_impairment.return_value = True
+    char = make_char("vampire")
+    char.health = PHYSICALLY_IMPAIRED
+    roll = make_roll([6], [], pool_str="Wits + Awareness")
+    embed = await render(make_display(ctx, owner, roll, character=char))
+    assert embed.footer is not None
+
+    assert embed.footer.text == (
+        "You are physically impaired. Your physical rolls will receive a -2 penalty."
+    )
+    mock_auto_impairment.assert_awaited_once_with(ctx)
+
+
+async def test_auto_impairment_not_looked_up_without_character(
+    ctx: AppCtx, owner: discord.Member, mock_auto_impairment: AsyncMock
+):
+    """Character-less rolls have no reminder to word, so the setting isn't needed."""
+    await render(make_display(ctx, owner, make_roll([6], [])))
+    mock_auto_impairment.assert_not_awaited()
 
 
 async def test_footer_ignored_penalty_that_would_not_apply(ctx: AppCtx, owner: discord.Member):

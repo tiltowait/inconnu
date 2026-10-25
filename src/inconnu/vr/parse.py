@@ -198,8 +198,8 @@ async def perform_roll(
 ) -> Roll:
     """Parse the syntax and roll the dice, applying any impairment penalty.
 
-    This is the only place the penalty is applied. The pool string and syntax
-    are left as the user wrote them; the penalty is recorded on the Roll."""
+    The pool string and syntax are left as the user wrote them; the penalty is
+    recorded on the Roll."""
     parser = RollParser(character, syntax)
     penalty = await impairment_penalty(ctx, character, parser.pool_str, impairment_category)
     pool = parser.pool - IMPAIRMENT_DICE if penalty else parser.pool

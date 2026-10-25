@@ -81,9 +81,11 @@ async def update(
                 color = discord.Color.red() if not color else color
             updates.extend(update_msg.split("\n"))
 
-        automatic = await services.settings.auto_impairment(ctx)
-        if (impairment := impairment_reminder(character, automatic=automatic)) is not None:
-            updates.append(impairment)
+        if character.impairment_state:
+            # Incapacitation implies physical impairment, so it's covered too
+            automatic = await services.settings.auto_impairment(ctx)
+            if (impairment := impairment_reminder(character, automatic=automatic)) is not None:
+                updates.append(impairment)
 
         # Ignore generated output if we got a custom message
         if update_message is None:

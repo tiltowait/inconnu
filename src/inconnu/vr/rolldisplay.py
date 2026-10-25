@@ -80,12 +80,16 @@ class RollDisplay(ReportingView):
         self.impairment_category = impairment_category
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
+        self.auto_impairment = False  # Looked up when displayed
 
         self._render_buttons()
 
     async def display(self):
         """Send the roll."""
         self.use_emoji = await services.settings.can_emoji(self.ctx)
+        if self.character is not None:
+            # Only needed to word the Impairment reminder, which requires a character
+            self.auto_impairment = await services.settings.auto_impairment(self.ctx)
         inter = await self.ctx.respond(embed=self.embed, view=self)
         self.message = inter
 
@@ -409,9 +413,15 @@ class RollDisplay(ReportingView):
 
     @property
     def pool_str(self) -> str | None:
-        """The pool string, made nicer to read, plus any impairment penalty."""
+        """The pool string, made nicer to read, plus any impairment penalty. A
+        penalized number-only pool shows just the penalty."""
+        penalty = None
+        if self.outcome.impairment_penalty:
+            impairment = self.outcome.impairment_penalty.description
+            penalty = f"-{IMPAIRMENT_DICE} ({impairment} impairment)"
+
         if not self.outcome.pool_str:
-            return None
+            return penalty
 
         splitted = de_camel(self.outcome.pool_str).split()
 
@@ -423,9 +433,8 @@ class RollDisplay(ReportingView):
 
         # Added after the capitalization above, which would otherwise turn
         # "(physical impairment)" into "(physical Impairment)"
-        if self.outcome.impairment_penalty:
-            impairment = self.outcome.impairment_penalty.description
-            pool_str += f" -{IMPAIRMENT_DICE} ({impairment} impairment)"
+        if penalty is not None:
+            pool_str += f" {penalty}"
 
         return pool_str
 
@@ -446,7 +455,8 @@ class RollDisplay(ReportingView):
         2. An override notice, if the user's Impairment category changed whether
            the character's Impairment applies to this roll
         3. Nothing, if the penalty was applied (it's shown in the Pool field)
-        4. A reminder, if the character is impaired
+        4. A reminder, if the character is impaired, worded for the user's
+           auto-impairment setting so auto users aren't told to subtract dice
         """
         if self.character is None:
             return None
@@ -460,7 +470,7 @@ class RollDisplay(ReportingView):
         if self.outcome.impairment_penalty:
             return None
 
-        return impairment_reminder(self.character)
+        return impairment_reminder(self.character, automatic=self.auto_impairment)
 
     @property
     def impairment_override(self) -> ImpairmentCategory | None:

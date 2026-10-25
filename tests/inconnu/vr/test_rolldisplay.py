@@ -11,6 +11,7 @@ from beanie import PydanticObjectId
 from discord.ui import Button
 
 import inconnu
+import services
 from ctx import AppCtx
 from inconnu.character.impairment import impairment_reminder
 from inconnu.vr.rolldisplay import RollDisplay
@@ -20,6 +21,7 @@ from tests.characters import gen_char
 AVATAR = "https://example.com/avatar.png"
 GUILD_ICON = "https://example.com/guild.png"
 MESSAGE_ID = 4
+JUMP_URL = "https://discord.com/channels/2/3/4"
 
 type PressHelper = Callable[["Screen"], Awaitable[None]]
 
@@ -84,8 +86,17 @@ def mock_get_message() -> Iterator[AsyncMock]:
     """Give the first response a message ID."""
     message = MagicMock(spec=discord.Message)
     message.id = MESSAGE_ID
+    message.jump_url = JUMP_URL
     with patch("inconnu.vr.rolldisplay.get_message", new_callable=AsyncMock) as mock:
         mock.return_value = message
+        yield mock
+
+
+@pytest.fixture(autouse=True)
+def mock_character_update() -> Iterator[AsyncMock]:
+    """Stand in for the update channel. By default, the guild doesn't have
+    one; show() can give it one."""
+    with patch("services.character_update", new_callable=AsyncMock, return_value=None) as mock:
         yield mock
 
 
@@ -923,6 +934,7 @@ class Message:
     """What Discord currently shows for one message."""
 
     handle: Any = None  # What RollDisplay was given to refer to the message
+    content: str | None = None
     embed: discord.Embed | None = None
     buttons: list[tuple] | None = None
     view: discord.ui.View | None = None
@@ -944,6 +956,7 @@ class Screen:
     display: RollDisplay
     public: Message = field(default_factory=Message)
     private: Message | None = None
+    report: Message | None = None  # In the guild's update channel
     ephemeral: list[str] = field(default_factory=list)
 
     def record_ephemeral(self, content: str, **_: Any):
@@ -995,10 +1008,20 @@ def fake_interaction(screen: Screen, user: discord.Member | discord.User) -> Asy
     return inter
 
 
-async def show(display: RollDisplay) -> Screen:
-    """Send the roll and return what's shown."""
+async def show(display: RollDisplay, update_channel=False) -> Screen:
+    """Send the roll and return what's shown, optionally in a guild with an
+    update channel."""
     screen = Screen(display)
     original = fake_interaction(screen, display.owner)
+
+    def report(*, message: str, embed: discord.Embed, **_: Any) -> AsyncMock:
+        sent = AsyncMock(spec=discord.Message)
+        screen.report = Message(handle=sent, content=message, embed=embed)
+        sent.edit.side_effect = screen.report.record
+        return sent
+
+    if update_channel:
+        cast(AsyncMock, services.character_update).side_effect = report
 
     def respond(ephemeral=False, **kwargs: Any):
         if not ephemeral:
@@ -1202,6 +1225,94 @@ async def test_hidden_timeout(ctx: AppCtx, owner: discord.Member):
 
     assert all(disabled for _, _, disabled, _ in screen.private.buttons)
     assert screen.public.view is None
+
+
+# Update channel reports
+
+
+@pytest.mark.parametrize(
+    "character,author", [(False, "tiltowait • DC 2"), (True, "Nadea Theron • DC 2")]
+)
+async def test_hidden_report(ctx: AppCtx, owner: discord.Member, character: bool, author: str):
+    """Hidden rolls send the full roll to the update channel, with or without
+    a character, linking to the public message."""
+    char = make_char("vampire") if character else None
+    roll = make_roll([6, 2], [], 2)
+    display = make_display(ctx, owner, roll, "Hello", char, hide_dice=True)
+    screen = await show(display, update_channel=True)
+    assert screen.report is not None and screen.private is not None
+    assert screen.report.embed is not None and screen.report.embed.author is not None
+    assert screen.private.embed is not None
+
+    assert screen.report.content == f"Hidden roll: {JUMP_URL}"
+    assert screen.report.embed.to_dict() == screen.private.embed.to_dict()
+    assert screen.report.embed.author.name == author
+    assert field_map(screen.report.embed)["Dice"] == "2"
+
+
+async def test_hidden_report_reroll(ctx: AppCtx, owner: discord.Member):
+    """Rerolls update the report to the final outcome."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True), update_channel=True)
+    await reroll(screen)
+    assert screen.report is not None and screen.report.embed is not None
+
+    assert screen.report.embed.title == "R: SUCCESS! (2)"
+    assert field_map(screen.report.embed)["Original Outcome"] == "```Failure (1)```"
+    assert field_map(screen.report.embed)["Dice"] == "2"
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        discord.NotFound(MagicMock(status=404), "Unknown Message"),
+        discord.Forbidden(MagicMock(status=403), "Missing Access"),
+    ],
+)
+async def test_hidden_report_unavailable_on_reroll(
+    ctx: AppCtx, owner: discord.Member, error: discord.HTTPException
+):
+    """A deleted or inaccessible report doesn't break rerolls."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True), update_channel=True)
+    assert screen.report is not None
+    screen.report.handle.edit.side_effect = error
+    await reroll(screen)
+    assert screen.embed is not None
+
+    assert screen.embed.title == "R: SUCCESS! (2)"
+
+
+async def test_hidden_without_update_channel(ctx: AppCtx, owner: discord.Member):
+    """Without an update channel, nothing is reported, and rerolls still work."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    await reroll(screen)
+    assert screen.embed is not None
+
+    assert screen.report is None
+    assert screen.embed.title == "R: SUCCESS! (2)"
+
+
+async def test_shown_roll_not_reported(
+    ctx: AppCtx, owner: discord.Member, mock_character_update: AsyncMock
+):
+    """Normal rolls don't go to the update channel."""
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2)), update_channel=True)
+
+    assert screen.report is None
+    mock_character_update.assert_not_awaited()
+
+
+async def test_hidden_dm_roll_not_reported(
+    ctx: AppCtx, owner: discord.Member, mock_character_update: AsyncMock
+):
+    """DMs have no update channel."""
+    cast(MagicMock, ctx).guild = None
+    display = make_display(ctx, owner, make_roll([6, 2], [], 2), hide_dice=True)
+    await show(display, update_channel=True)
+
+    mock_character_update.assert_not_awaited()
 
 
 # Ownership

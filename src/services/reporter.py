@@ -206,8 +206,9 @@ class ErrorReporter:
         return embed
 
 
-async def character_update(*, ctx, character, title, message, **kwargs):
-    """Display character updates in the update channel."""
+async def character_update(*, ctx, character, title, message, **kwargs) -> discord.Message | None:
+    """Display character updates in the update channel. Returns the sent
+    message, if any."""
     from services.settings import update_channel as get_update_channel
 
     if update_channel := await get_update_channel(ctx.guild):
@@ -231,7 +232,7 @@ async def character_update(*, ctx, character, title, message, **kwargs):
         mentions = discord.AllowedMentions(users=False)
 
         try:
-            await update_channel.send(content, embed=embed, allowed_mentions=mentions)
+            return await update_channel.send(content, embed=embed, allowed_mentions=mentions)
         except discord.errors.Forbidden:
             logger.warning(
                 "UPDATE REPORT: No access to post in #{} on {}",

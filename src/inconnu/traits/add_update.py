@@ -2,6 +2,7 @@
 
 import asyncio
 import re
+from collections.abc import Awaitable
 from types import SimpleNamespace
 
 import services
@@ -104,7 +105,7 @@ def __partition_traits(character, traits):
 
 async def __display_results(ctx, outcome, character: VChar, disciplines: bool):
     """Display the results of the operation."""
-    tasks = [__results_embed(ctx, outcome, character, disciplines)]
+    tasks: list[Awaitable[object]] = [__results_embed(ctx, outcome, character, disciplines)]
 
     # Message for the update channel
     if outcome.assigned:

@@ -81,6 +81,7 @@ class RollDisplay(ReportingView):
         self.impairment_category = impairment_category
         self.hide_dice = hide_dice
         self.redacted_message: discord.Interaction | discord.WebhookMessage | None = None
+        self.report_message: discord.Message | None = None
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
         self.auto_impairment = False  # Looked up when displayed
@@ -107,7 +108,10 @@ class RollDisplay(ReportingView):
         # purposes. DM rolls aren't tracked, so they don't need it.
         message_id = None
         if self.ctx.guild is not None:
-            message_id = (await get_message(public)).id
+            public_message = await get_message(public)
+            message_id = public_message.id
+            if self.hide_dice:
+                await self._report(public_message)
         await self._log_roll(self.ctx, message_id)
 
     # Button actions
@@ -159,9 +163,7 @@ class RollDisplay(ReportingView):
         self.outcome.reroll(strategy.value)
         self.state.strategy = strategy
         await self._update(interaction, embed=self.full_embed)
-        if self.redacted_message is not None:
-            with contextlib.suppress(discord.NotFound):
-                await self.redacted_message.edit(embed=self.redacted_embed)
+        await self._update_copies()
         await self._log_roll(interaction, None)
 
         if self.listener:
@@ -181,6 +183,27 @@ class RollDisplay(ReportingView):
         await inconnu.misc.rouse(
             interaction, self.character, 1, "Surge", reroll, ephemeral=self.hide_dice
         )
+
+    async def _report(self, public: discord.Message):
+        """Send a hidden roll's full outcome to the update channel, if the
+        guild has one, so the ST can see the dice."""
+        self.report_message = await services.character_update(
+            ctx=self.ctx,
+            character=self.character,
+            title="Hidden roll",
+            message=f"Hidden roll: {public.jump_url}",
+            embed=self.full_embed,
+        )
+
+    async def _update_copies(self):
+        """Bring a hidden roll's public message and update channel report up to
+        date with a reroll. Either may have been deleted."""
+        if self.redacted_message is not None:
+            with contextlib.suppress(discord.NotFound):
+                await self.redacted_message.edit(embed=self.redacted_embed)
+        if self.report_message is not None:
+            with contextlib.suppress(discord.NotFound, discord.Forbidden):
+                await self.report_message.edit(embed=self.full_embed)
 
     async def _update(self, interaction: AppInteraction, **kwargs: Any):
         """Redraw the buttons and edit the message."""

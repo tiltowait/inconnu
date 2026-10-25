@@ -15,7 +15,7 @@ import inconnu
 from ctx import AppCtx
 from inconnu.reference.probabilities import Strategy, calculate, probability
 from inconnu.roll.dicethrow import DiceThrow
-from models import VChar
+from models import ImpairmentCategory, VChar
 from tests.characters import gen_char
 
 # Representative faces and their odds. Faces within a category behave identically.
@@ -193,8 +193,8 @@ async def test_probability_applies_impairment(ctx: AppCtx):
 
 @pytest.mark.usefixtures("mock_settings", "mock_haven")
 async def test_probability_ignores_impairment(ctx: AppCtx):
-    """ignore_impairment shows the odds for the full pool."""
-    await probability(ctx, "strength+brawl 0 1", ignore_impairment=True)
+    """Ignoring Impairment shows the odds for the full pool."""
+    await probability(ctx, "strength+brawl 0 1", impairment_category=ImpairmentCategory.IGNORE)
     embed = sent_embed(ctx)
 
     assert embed.title == "Pool 5 | Hunger 0 | DC 1"

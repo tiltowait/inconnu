@@ -13,7 +13,7 @@ import ui
 from ctx import AppCtx
 from inconnu import vr as roll
 from inconnu.roll import Strategy
-from models import IMPAIRMENT_DICE, Impairment, VChar
+from models import IMPAIRMENT_DICE, Impairment, ImpairmentCategory, VChar
 from services.haven import Haven
 
 HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
@@ -54,7 +54,7 @@ async def probability(
     syntax: str,
     strategy_name: str | None = None,
     char_name: str | None = None,
-    ignore_impairment=False,
+    impairment_category: ImpairmentCategory | None = None,
 ):
     """Calculate the probabilities surrounding a roll, including any Impairment
     penalty the roll would receive."""
@@ -79,7 +79,9 @@ async def probability(
             character = await haven.fetch()
 
         parser = roll.RollParser(character, syntax)
-        penalty = await roll.impairment_penalty(ctx, character, parser.pool_str, ignore_impairment)
+        penalty = await roll.impairment_penalty(
+            ctx, character, parser.pool_str, impairment_category
+        )
         pool = parser.pool - IMPAIRMENT_DICE if penalty else parser.pool
         params = RollParams(pool, parser.hunger, parser.difficulty)
         probabilities = calculate(*params, strategy)

@@ -130,7 +130,7 @@ class SettingsMenu(discord.ui.DesignerView):
                 TextDisplay(
                     "### Automatically apply Impairment?\n"
                     "Subtract Impairment penalties from your rolls automatically. "
-                    "Use `ignore_impairment` to remove it for a single roll."
+                    "Use `impairment_category` to change it for a single roll."
                 ),
                 accessory=button,
             )

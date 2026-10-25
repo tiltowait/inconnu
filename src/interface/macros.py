@@ -9,7 +9,8 @@ from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
-from inconnu.options import char_option
+from inconnu.options import char_option, impairment_option
+from models import ImpairmentCategory
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -21,20 +22,21 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @slash_command(contexts={discord.InteractionContextType.guild})
     @option("syntax", description="The macro to roll, plus Hunger and Difficulty")
     @char_option()
-    @option(
-        "ignore_impairment",
-        description="Ignore Impairment penalties (e.g. from powers that negate them)",
-        default=False,
-    )
+    @impairment_option()
     async def vm(
         self,
         ctx: AppCtx,
         syntax: str,
         character: str,
-        ignore_impairment: bool,
+        impairment_category: str | None,
     ):
         """Roll a macro. You may modify the pool, hunger, and difficulty on the fly."""
-        await inconnu.macros.roll(ctx, syntax, character, ignore_impairment=ignore_impairment)
+        await inconnu.macros.roll(
+            ctx,
+            syntax,
+            character,
+            impairment_category=ImpairmentCategory.from_option(impairment_category),
+        )
 
     # Macros command group
 

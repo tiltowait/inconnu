@@ -9,8 +9,8 @@ from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
-from inconnu.options import char_option, player_option
-from models import VChar
+from inconnu.options import char_option, impairment_option, player_option
+from models import ImpairmentCategory, VChar
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -31,11 +31,7 @@ class Gameplay(commands.Cog):
     @option("comment", description="A description of the roll", required=False)
     @char_option()
     @player_option()
-    @option(
-        "ignore_impairment",
-        description="Ignore Impairment penalties (e.g. from powers that negate them)",
-        default=False,
-    )
+    @impairment_option()
     async def vr(
         self,
         ctx: AppCtx,
@@ -43,11 +39,16 @@ class Gameplay(commands.Cog):
         comment: str,
         character: str,
         player: discord.Member,
-        ignore_impairment: bool,
+        impairment_category: str | None,
     ):
         """Roll the dice using Thirst syntax. Syntax: POOL HUNGER DIFFICULTY."""
         await inconnu.vr.parse(
-            ctx, syntax, comment, character, player, ignore_impairment=ignore_impairment
+            ctx,
+            syntax,
+            comment,
+            character,
+            player,
+            impairment_category=ImpairmentCategory.from_option(impairment_category),
         )
 
     # This beginner-friendly roll command is for users who find the main `/vr`
@@ -73,11 +74,7 @@ class Gameplay(commands.Cog):
     @option("comment", description="A comment to display with the roll", required=False)
     @char_option()
     @player_option()
-    @option(
-        "ignore_impairment",
-        description="Ignore Impairment penalties (e.g. from powers that negate them)",
-        default=False,
-    )
+    @impairment_option()
     async def easy_roll(
         self,
         ctx: AppCtx,
@@ -87,12 +84,17 @@ class Gameplay(commands.Cog):
         comment: str,
         character: str,
         player: discord.Member,
-        ignore_impairment: bool,
+        impairment_category: str | None,
     ):
         """Roll the dice!"""
         syntax = f"{pool} {hunger} {difficulty}"
         char = await inconnu.vr.parse(
-            ctx, syntax, comment, character, player, ignore_impairment=ignore_impairment
+            ctx,
+            syntax,
+            comment,
+            character,
+            player,
+            impairment_category=ImpairmentCategory.from_option(impairment_category),
         )
         if isinstance(char, VChar):
             if char.is_vampire:

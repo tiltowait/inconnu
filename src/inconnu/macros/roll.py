@@ -16,7 +16,7 @@ from inconnu.macros import macro_common
 from inconnu.misc import rouse
 from inconnu.roll import Roll
 from inconnu.vr import display_outcome, perform_roll
-from models import VChar
+from models import ImpairmentCategory, VChar
 from models.vchardocs import VCharMacro
 from services.haven import Haven
 from utils import get_avatar
@@ -30,7 +30,7 @@ async def roll(
     syntax: str,
     char_name: str | None = None,
     *,
-    ignore_impairment=False,
+    impairment_category: ImpairmentCategory | None = None,
 ):
     """Roll a macro."""
     try:
@@ -74,7 +74,7 @@ async def roll(
 
             try:
                 outcome = await perform_roll(
-                    ctx, character, parameters, ignore_impairment=ignore_impairment
+                    ctx, character, parameters, impairment_category=impairment_category
                 )
             except errors.TraitNotFound as err:
                 msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
@@ -94,7 +94,7 @@ async def roll(
                 macro.comment,
                 reroll_listener,
                 remove_hunt_listener,
-                ignore_impairment=ignore_impairment,
+                impairment_category=impairment_category,
             )
 
             if macro.hunt:

@@ -16,7 +16,7 @@ from ctx import AppCtx, AppInteraction, AppInvocation
 from inconnu.character.impairment import impairment_reminder, incapacitation_reminder
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
-from models import IMPAIRMENT_DICE, RollCategory, VChar
+from models import IMPAIRMENT_DICE, ImpairmentCategory, RollCategory, VChar
 from ui.views.reportingview import ReportingView
 from utils import get_avatar, get_message
 from utils.text import de_camel
@@ -66,7 +66,7 @@ class RollDisplay(ReportingView):
         listener: RerollListener | None,
         timeout: TimeoutHandler | None,
         *,
-        ignore_impairment=False,
+        impairment_category: ImpairmentCategory | None = None,
     ):
         super().__init__(timeout=600)
         self.ctx = ctx
@@ -77,7 +77,7 @@ class RollDisplay(ReportingView):
         self.owner = owner
         self.listener = listener
         self.timeout_handler = timeout
-        self.ignore_impairment = ignore_impairment
+        self.impairment_category = impairment_category
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
 
@@ -440,25 +440,39 @@ class RollDisplay(ReportingView):
     @property
     def impairment_note(self) -> str | None:
         """
-        The impairment line for the comment, if any, in order of priority:
+        The Impairment line for the comment, if any, in order of priority:
 
         1. Torpor or death
-        2. Nothing, if the penalty was applied (it's shown in the Pool field)
-        3. An override notice, if the user ignored a penalty that would apply
+        2. An override notice, if the user's Impairment category changed whether
+           the character's Impairment applies to this roll
+        3. Nothing, if the penalty was applied (it's shown in the Pool field)
         4. A reminder, if the character is impaired
         """
         if self.character is None:
             return None
         if self.character.incapacitated:
             return incapacitation_reminder(self.character)
+        override = self.impairment_override
+        if override is ImpairmentCategory.IGNORE:
+            return "Override: Impairment ignored"
+        if override is not None:
+            return f"Override: {override.label} roll"
         if self.outcome.impairment_penalty:
             return None
 
-        category = RollCategory.from_pool(self.outcome.pool_str)
-        if self.ignore_impairment and self.character.impairment_state.penalizes(category):
-            return "Override: Impairment ignored"
-
         return impairment_reminder(self.character)
+
+    @property
+    def impairment_override(self) -> ImpairmentCategory | None:
+        """The user's Impairment category, if it changed whether the character's
+        Impairment applies to this roll. The user's setting doesn't factor in."""
+        if self.character is None or self.impairment_category is None:
+            return None
+
+        impairment = self.character.impairment_state
+        detected = impairment.penalizes(RollCategory.from_pool(self.outcome.pool_str))
+        chosen = impairment.penalizes(self.impairment_category.roll_category)
+        return self.impairment_category if detected != chosen else None
 
     @property
     def icon(self) -> str | discord.Asset:

@@ -23,7 +23,7 @@ from ctx import AppCtx
 from inconnu.roll import Roll
 from inconnu.vr.rolldisplay import RerollListener, RollDisplay, TimeoutHandler
 from inconnu.vr.rollparser import RollParser
-from models import IMPAIRMENT_DICE, Impairment, RollCategory, VChar
+from models import IMPAIRMENT_DICE, Impairment, ImpairmentCategory, RollCategory, VChar
 from models.vchardocs import VCharTrait
 from services.haven import Haven
 
@@ -37,7 +37,7 @@ async def parse(
     char_name: str | None,
     player: discord.Member | None,
     *,
-    ignore_impairment=False,
+    impairment_category: ImpairmentCategory | None = None,
 ) -> VChar | None:
     """Parse the user's arguments and attempt to roll the dice."""
     raw_syntax = " ".join(raw_syntax.split())
@@ -94,10 +94,10 @@ async def parse(
     try:
         max_hunger = await services.settings.max_hunger(ctx.guild)
         outcome = await perform_roll(
-            ctx, character, syntax, max_hunger, ignore_impairment=ignore_impairment
+            ctx, character, syntax, max_hunger, impairment_category=impairment_category
         )
         await display_outcome(
-            ctx, owner, character, outcome, comment, ignore_impairment=ignore_impairment
+            ctx, owner, character, outcome, comment, impairment_category=impairment_category
         )
 
     except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
@@ -171,7 +171,7 @@ async def display_outcome(
     listener: RerollListener | None = None,
     timeout: TimeoutHandler | None = None,
     *,
-    ignore_impairment=False,
+    impairment_category: ImpairmentCategory | None = None,
 ):
     """Display the roll results."""
     roll_display = RollDisplay(
@@ -182,7 +182,7 @@ async def display_outcome(
         player,
         listener,
         timeout,
-        ignore_impairment=ignore_impairment,
+        impairment_category=impairment_category,
     )
 
     await roll_display.display()
@@ -194,14 +194,14 @@ async def perform_roll(
     syntax: str | list[str],
     max_hunger=5,
     *,
-    ignore_impairment=False,
+    impairment_category: ImpairmentCategory | None = None,
 ) -> Roll:
     """Parse the syntax and roll the dice, applying any impairment penalty.
 
     This is the only place the penalty is applied. The pool string and syntax
     are left as the user wrote them; the penalty is recorded on the Roll."""
     parser = RollParser(character, syntax)
-    penalty = await impairment_penalty(ctx, character, parser.pool_str, ignore_impairment)
+    penalty = await impairment_penalty(ctx, character, parser.pool_str, impairment_category)
     pool = parser.pool - IMPAIRMENT_DICE if penalty else parser.pool
 
     return Roll(
@@ -216,19 +216,24 @@ async def perform_roll(
 
 
 async def impairment_penalty(
-    ctx: AppCtx, character: VChar | None, pool_str: str | None, ignore: bool
+    ctx: AppCtx,
+    character: VChar | None,
+    pool_str: str | None,
+    override: ImpairmentCategory | None = None,
 ) -> Impairment:
-    """The impairment that penalizes the roll, or Impairment.NONE if no penalty
-    should be applied automatically."""
-    if ignore or character is None:
+    """The Impairment that penalizes the roll, or Impairment.NONE if no penalty
+    applies. An override replaces the category detected from the pool and applies
+    even if the user turned off auto-impairment."""
+    if character is None:
         return Impairment.NONE
 
+    category = override.roll_category if override else RollCategory.from_pool(pool_str)
     impairment = character.impairment_state
-    if not impairment.penalizes(RollCategory.from_pool(pool_str)):
+    if not impairment.penalizes(category):
         return Impairment.NONE
 
     # Checked last, so we only look up the setting when it matters
-    if not await services.settings.auto_impairment(ctx):
+    if override is None and not await services.settings.auto_impairment(ctx):
         return Impairment.NONE
 
     return impairment

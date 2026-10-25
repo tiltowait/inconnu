@@ -10,7 +10,7 @@ import pytest
 
 from ctx import AppCtx
 from inconnu.vr.parse import perform_roll, stringify_mentions
-from models import Impairment, VChar
+from models import Impairment, ImpairmentCategory, VChar
 from tests.characters import gen_char
 
 MEMBER_ID = 280000000000000001
@@ -267,9 +267,11 @@ async def test_no_penalty(
 async def test_no_penalty_when_ignored(
     ctx: AppCtx, vampire: VChar, mock_auto_impairment: AsyncMock
 ):
-    """ignore_impairment skips the penalty without a settings lookup."""
+    """Ignoring Impairment skips the penalty without a settings lookup."""
     vampire.health = PHYSICALLY_IMPAIRED
-    roll = await perform_roll(ctx, vampire, "strength+brawl 0 0", ignore_impairment=True)
+    roll = await perform_roll(
+        ctx, vampire, "strength+brawl 0 0", impairment_category=ImpairmentCategory.IGNORE
+    )
 
     assert roll.pool == 5
     assert roll.impairment_penalty == Impairment.NONE
@@ -291,6 +293,37 @@ async def test_no_penalty_when_setting_off(
 async def test_no_penalty_without_character(ctx: AppCtx, mock_auto_impairment: AsyncMock):
     """Character-less rolls are never penalized."""
     roll = await perform_roll(ctx, None, "5 0 0")
+
+    assert roll.pool == 5
+    assert roll.impairment_penalty == Impairment.NONE
+    mock_auto_impairment.assert_not_awaited()
+
+
+@pytest.mark.parametrize("setting", [True, False])
+async def test_category_override_applies_penalty(
+    ctx: AppCtx, vampire: VChar, mock_auto_impairment: AsyncMock, setting: bool
+):
+    """Choosing a category the character is impaired in applies the penalty, even
+    with auto-impairment turned off."""
+    mock_auto_impairment.return_value = setting
+    vampire.health = PHYSICALLY_IMPAIRED
+    roll = await perform_roll(
+        ctx, vampire, "wits+awareness 0 0", impairment_category=ImpairmentCategory.PHYSICAL
+    )
+
+    assert roll.pool == 2
+    assert roll.impairment_penalty == Impairment.PHYSICAL
+    mock_auto_impairment.assert_not_awaited()
+
+
+async def test_category_override_removes_penalty(
+    ctx: AppCtx, vampire: VChar, mock_auto_impairment: AsyncMock
+):
+    """Choosing a category the character isn't impaired in removes the penalty."""
+    vampire.health = PHYSICALLY_IMPAIRED
+    roll = await perform_roll(
+        ctx, vampire, "strength+brawl 0 0", impairment_category=ImpairmentCategory.MENTAL
+    )
 
     assert roll.pool == 5
     assert roll.impairment_penalty == Impairment.NONE

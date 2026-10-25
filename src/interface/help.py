@@ -226,7 +226,7 @@ class Help(commands.Cog):
             name="Impairment",
             value=(
                 "Impaired characters automatically lose 2 dice on affected rolls. If "
-                "a power or rule negates it, use `ignore_impairment`. To subtract it "
+                "a power or rule negates it, use `impairment_category:Ignore`. To subtract it "
                 "yourself instead, turn it off in `/settings` `scope:Yourself`."
             ),
             inline=False,
@@ -424,7 +424,7 @@ class Help(commands.Cog):
             name="Use",
             value=(
                 "`/vm`\n**Example:** `/vm syntax:hunt`. You may override Hunger and Difficulty, "
-                "or skip Impairment with `ignore_impairment`."
+                "or change Impairment with `impairment_category`."
             ),
         )
         embed.add_field(

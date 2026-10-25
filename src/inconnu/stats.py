@@ -19,6 +19,8 @@ async def log_roll(
     char: VChar | None,
     outcome: Roll,
     comment: str | None,
+    *,
+    hidden=False,
 ):
     """
     Log a roll and its outcome. If the roll is a reroll, simply replace it.
@@ -30,11 +32,12 @@ async def log_roll(
         char (VChar | None): The character that made the roll (optional)
         outcome (Roll): The roll's parameters and outcome
         comment (str | None): The roll's comment, if any
+        hidden (bool): Whether the dice were hidden from others
     """
     rolls = db.rolls
 
     if await rolls.find_one({"_id": outcome.id}) is None:
-        roll = _gen_roll(guild, channel, user, message, char, outcome, comment)
+        roll = _gen_roll(guild, channel, user, message, char, outcome, comment, hidden=hidden)
         await rolls.insert_one(roll)
     else:
         reroll = _gen_reroll(outcome)
@@ -103,6 +106,8 @@ def _gen_roll(
     char: VChar | None,
     outcome: Roll,
     comment: str | None,
+    *,
+    hidden=False,
 ) -> dict[str, Any]:
     """Add a new roll outcome entry to the database."""
     return {
@@ -121,6 +126,7 @@ def _gen_roll(
         "outcome": outcome.outcome,
         "pool": outcome.pool_str,
         "impaired": bool(outcome.impairment_penalty),
+        "hidden": hidden,
         "comment": comment,
         "reroll": None,
         "use_in_stats": True,

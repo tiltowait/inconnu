@@ -232,6 +232,14 @@ class Help(commands.Cog):
             inline=False,
         )
         embed.add_field(
+            name="Hidden dice",
+            value=(
+                "Use `dice:Hide` to show others only the outcome and pool. You'll privately "
+                "see the full roll and its buttons."
+            ),
+            inline=False,
+        )
+        embed.add_field(
             name="Create a character",
             value="`/character create`\nYou can use character attributes in rolls.",
             inline=False,
@@ -424,7 +432,7 @@ class Help(commands.Cog):
             name="Use",
             value=(
                 "`/vm`\n**Example:** `/vm syntax:hunt`. You may override Hunger and Difficulty, "
-                "or change Impairment with `impairment_category`."
+                "change Impairment with `impairment_category`, or hide the dice with `dice:Hide`."
             ),
         )
         embed.add_field(

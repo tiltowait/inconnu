@@ -1443,13 +1443,15 @@ async def test_stats_logged(ctx: AppCtx, owner: discord.Member, mock_log_roll: A
     roll = make_roll([6, 2], [], 2)
     screen = await show(make_display(ctx, owner, roll, comment="Hi"))
 
-    mock_log_roll.assert_awaited_once_with(2, 3, owner.id, MESSAGE_ID, None, roll, "Hi")
+    mock_log_roll.assert_awaited_once_with(
+        2, 3, owner.id, MESSAGE_ID, None, roll, "Hi", hidden=False
+    )
 
     with patch("inconnu.d10", return_value=10):
         await press_reroll_failures(screen)
 
     assert mock_log_roll.await_count == 2
-    mock_log_roll.assert_awaited_with(2, 3, owner.id, None, None, roll, "Hi")
+    mock_log_roll.assert_awaited_with(2, 3, owner.id, None, None, roll, "Hi", hidden=False)
 
 
 async def test_stats_logged_in_dm(
@@ -1460,14 +1462,21 @@ async def test_stats_logged_in_dm(
     roll = make_roll([6, 2], [], 2)
     await show(make_display(ctx, owner, roll))
 
-    mock_log_roll.assert_awaited_once_with(None, None, owner.id, None, None, roll, None)
+    mock_log_roll.assert_awaited_once_with(
+        None, None, owner.id, None, None, roll, None, hidden=False
+    )
     mock_get_message.assert_not_awaited()
 
 
-async def test_stats_hidden_logs_public_message(
-    ctx: AppCtx, owner: discord.Member, mock_get_message: AsyncMock
+async def test_stats_hidden(
+    ctx: AppCtx, owner: discord.Member, mock_log_roll: AsyncMock, mock_get_message: AsyncMock
 ):
-    """Hidden rolls log the public message, so its deletion still toggles stats."""
-    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), hide_dice=True))
+    """Hidden rolls are logged as hidden, with the public message, so its
+    deletion still toggles stats."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
 
     mock_get_message.assert_awaited_once_with(screen.public.handle)
+    mock_log_roll.assert_awaited_once_with(
+        2, 3, owner.id, MESSAGE_ID, None, roll, None, hidden=True
+    )

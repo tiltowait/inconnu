@@ -202,6 +202,7 @@ class RollDisplay(ReportingView):
             self.character,
             self.outcome,
             self.comment,
+            hidden=self.hide_dice,
         )
 
     # View hooks

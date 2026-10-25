@@ -22,3 +22,12 @@ def test_roll_entry_records_impairment(penalty: Impairment, impaired: bool):
     entry = _gen_roll(1, 2, 3, 4, None, roll, None)
 
     assert entry["impaired"] is impaired
+
+
+@pytest.mark.parametrize("hidden", [False, True])
+def test_roll_entry_records_hidden(hidden: bool):
+    """Roll entries record whether the dice were hidden."""
+    roll = inconnu.Roll(5, 0, 0)
+    entry = _gen_roll(1, 2, 3, 4, None, roll, None, hidden=hidden)
+
+    assert entry["hidden"] is hidden

@@ -414,14 +414,14 @@ class RollDisplay(ReportingView):
     @property
     def pool_str(self) -> str | None:
         """The pool string, made nicer to read, plus any impairment penalty. A
-        penalized number-only pool shows just the penalty."""
+        penalized number-only pool shows its pre-penalty size."""
         penalty = None
         if self.outcome.impairment_penalty:
             impairment = self.outcome.impairment_penalty.description
-            penalty = f"-{IMPAIRMENT_DICE} ({impairment} impairment)"
+            penalty = f"- {IMPAIRMENT_DICE} ({impairment} impairment)"
 
         if not self.outcome.pool_str:
-            return penalty
+            return f"{self.outcome.base_pool} {penalty}" if penalty else None
 
         splitted = de_camel(self.outcome.pool_str).split()
 

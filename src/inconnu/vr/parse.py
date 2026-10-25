@@ -212,6 +212,7 @@ async def perform_roll(
         parser.pool_str,
         syntax,
         impairment_penalty=penalty,
+        base_pool=parser.pool,
     )
 
 

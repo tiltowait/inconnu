@@ -369,19 +369,20 @@ async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str, exp
 
 async def test_pool_field_with_impairment_penalty_number_pool(ctx: AppCtx, owner: discord.Member):
     """A penalized number-only pool has no pool string, so the Pool field shows
-    just the penalty."""
+    its pre-penalty size and the penalty."""
     roll = make_roll([6, 6, 6], [], impairment_penalty=Impairment.PHYSICAL)
+    roll.base_pool = 5
     embed = await render(make_display(ctx, owner, roll, character=make_char("vampire")))
 
-    assert field_map(embed)["Pool"] == "-2 (physical impairment)"
+    assert field_map(embed)["Pool"] == "5 - 2 (physical impairment)"
 
 
 @pytest.mark.parametrize(
     "penalty,expected",
     [
-        (Impairment.PHYSICAL, "Strength + Brawl -2 (physical impairment)"),
-        (Impairment.MENTAL, "Strength + Brawl -2 (mental impairment)"),
-        (Impairment.TOTAL, "Strength + Brawl -2 (total impairment)"),
+        (Impairment.PHYSICAL, "Strength + Brawl - 2 (physical impairment)"),
+        (Impairment.MENTAL, "Strength + Brawl - 2 (mental impairment)"),
+        (Impairment.TOTAL, "Strength + Brawl - 2 (total impairment)"),
     ],
 )
 async def test_pool_field_with_impairment_penalty(
@@ -593,7 +594,7 @@ async def test_footer_category_override_adds_penalty(ctx: AppCtx, owner: discord
     embed = await render(display)
     assert embed.footer is not None
 
-    assert field_map(embed)["Pool"] == "Charisma + Performance -2 (physical impairment)"
+    assert field_map(embed)["Pool"] == "Charisma + Performance - 2 (physical impairment)"
     assert embed.footer.text == "Override: Physical roll"
 
 

@@ -196,6 +196,7 @@ async def test_penalty_applied_once(ctx: AppCtx, vampire: VChar, mock_auto_impai
     roll = await perform_roll(ctx, vampire, "strength+brawl 0 0")
 
     assert roll.pool == 3
+    assert roll.base_pool == 5
     assert roll.impairment_penalty == Impairment.PHYSICAL
     assert roll.pool_str == "Strength + Brawl"
     assert roll.syntax == "strength+brawl 0 0"

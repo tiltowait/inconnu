@@ -38,6 +38,7 @@ async def parse(
     player: discord.Member | None,
     *,
     impairment_category: ImpairmentCategory | None = None,
+    hide_dice=False,
 ) -> VChar | None:
     """Parse the user's arguments and attempt to roll the dice."""
     raw_syntax = " ".join(raw_syntax.split())
@@ -97,7 +98,13 @@ async def parse(
             ctx, character, syntax, max_hunger, impairment_category=impairment_category
         )
         await display_outcome(
-            ctx, owner, character, outcome, comment, impairment_category=impairment_category
+            ctx,
+            owner,
+            character,
+            outcome,
+            comment,
+            impairment_category=impairment_category,
+            hide_dice=hide_dice,
         )
 
     except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
@@ -172,6 +179,7 @@ async def display_outcome(
     timeout: TimeoutHandler | None = None,
     *,
     impairment_category: ImpairmentCategory | None = None,
+    hide_dice=False,
 ):
     """Display the roll results."""
     roll_display = RollDisplay(
@@ -183,6 +191,7 @@ async def display_outcome(
         listener,
         timeout,
         impairment_category=impairment_category,
+        hide_dice=hide_dice,
     )
 
     await roll_display.display()

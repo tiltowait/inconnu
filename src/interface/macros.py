@@ -9,7 +9,7 @@ from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
-from inconnu.options import char_option, impairment_option
+from inconnu.options import char_option, dice_option, impairment_option
 from models import ImpairmentCategory
 
 if TYPE_CHECKING:
@@ -23,12 +23,14 @@ class Macros(commands.Cog, name="Macro Utilities"):
     @option("syntax", description="The macro to roll, plus Hunger and Difficulty")
     @char_option()
     @impairment_option()
+    @dice_option()
     async def vm(
         self,
         ctx: AppCtx,
         syntax: str,
         character: str,
         impairment_category: str | None,
+        dice: str,
     ):
         """Roll a macro. You may modify the pool, hunger, and difficulty on the fly."""
         await inconnu.macros.roll(
@@ -36,6 +38,7 @@ class Macros(commands.Cog, name="Macro Utilities"):
             syntax,
             character,
             impairment_category=ImpairmentCategory.from_option(impairment_category),
+            hide_dice=dice == "hide",
         )
 
     # Macros command group

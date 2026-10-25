@@ -67,6 +67,7 @@ class RollDisplay(ReportingView):
         timeout: TimeoutHandler | None,
         *,
         impairment_category: ImpairmentCategory | None = None,
+        hide_dice=False,
     ):
         super().__init__(timeout=600)
         self.ctx = ctx
@@ -78,6 +79,7 @@ class RollDisplay(ReportingView):
         self.listener = listener
         self.timeout_handler = timeout
         self.impairment_category = impairment_category
+        self.hide_dice = hide_dice
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
         self.auto_impairment = False  # Looked up when displayed

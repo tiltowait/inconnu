@@ -31,6 +31,7 @@ async def roll(
     char_name: str | None = None,
     *,
     impairment_category: ImpairmentCategory | None = None,
+    hide_dice=False,
 ):
     """Roll a macro."""
     try:
@@ -95,6 +96,7 @@ async def roll(
                 reroll_listener,
                 remove_hunt_listener,
                 impairment_category=impairment_category,
+                hide_dice=hide_dice,
             )
 
             if macro.hunt:

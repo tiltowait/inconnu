@@ -5,8 +5,9 @@ import ui
 from ctx import AppCtx
 from models import VChar
 from services.haven import haven
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/macros/deletion"
+__HELP_URL = docs_url("command-reference/macros/deletion")
 
 
 @haven(__HELP_URL)

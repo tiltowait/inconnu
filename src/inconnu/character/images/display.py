@@ -11,8 +11,9 @@ from ctx import AppCtx
 from models import VChar
 from services.haven import haven
 from ui.views import ReportingView
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
+__HELP_URL = docs_url("premium/character-images")
 
 
 def _has_image(character: VChar):

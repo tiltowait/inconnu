@@ -7,8 +7,9 @@ import discord
 import inconnu
 from ctx import AppCtx
 from utils import get_avatar
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#crippling-injuries"
+__HELP_URL = docs_url("guides/gameplay-shortcuts#crippling-injuries")
 
 
 async def cripple(ctx: AppCtx, damage: int):

@@ -15,8 +15,9 @@ from inconnu import vr as roll
 from inconnu.roll import Strategy
 from models import IMPAIRMENT_DICE, Impairment, ImpairmentCategory, VChar
 from services.haven import Haven
+from utils.urls import docs_url
 
-HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#probability-calculation"
+HELP_URL = docs_url("command-reference/miscellaneous#probability-calculation")
 DISPLAY_MIN = 0.00005  # Anything smaller displays as 0.00%
 MAX_POOL = 100
 MAX_REROLL = 3

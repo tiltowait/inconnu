@@ -9,8 +9,9 @@ from models import VChar
 from services.haven import haven
 from utils import parse_parameters
 from utils.text import strtobool
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/macros/updating"
+__HELP_URL = docs_url("command-reference/macros/updating")
 __VALID_KEYS = {
     "name": "The macro's name (letters and underscores only)",
     "pool": "The macro's pool",

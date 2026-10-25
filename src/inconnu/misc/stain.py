@@ -7,8 +7,9 @@ from constants import Damage
 from services.haven import haven
 from utils import get_message
 from utils.text import pluralize
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#applying-stains"
+__HELP_URL = docs_url("guides/gameplay-shortcuts#applying-stains")
 
 
 @haven(__HELP_URL)

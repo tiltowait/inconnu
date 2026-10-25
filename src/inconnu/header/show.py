@@ -12,9 +12,9 @@ from models.rpheader import HeaderSubdoc
 from services.haven import haven
 from utils import get_avatar
 from utils.permissions import is_supporter
-from utils.urls import profile_url
+from utils.urls import docs_url, profile_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/characters/rp-headers"
+__HELP_URL = docs_url("command-reference/characters/rp-headers")
 
 
 @haven(__HELP_URL)

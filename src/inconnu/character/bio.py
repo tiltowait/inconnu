@@ -8,8 +8,9 @@ import errors
 import ui
 from services.haven import haven
 from utils.text import clean_text
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#profile"
+__HELP_URL = docs_url("command-reference/characters/profiles#profile")
 
 
 @haven(__HELP_URL)

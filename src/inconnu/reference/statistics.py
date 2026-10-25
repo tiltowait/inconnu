@@ -13,8 +13,9 @@ from ctx import AppCtx
 from models import VChar
 from services.haven import haven
 from utils import get_avatar, player_lookup
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/miscellaneous#statistics"
+__HELP_URL = docs_url("command-reference/miscellaneous#statistics")
 DT_ST = "D"
 
 

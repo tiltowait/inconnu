@@ -13,8 +13,9 @@ import services
 import ui
 from ctx import AppCtx, AppInteraction
 from models import VChar
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/characters/deletion"
+__HELP_URL = docs_url("command-reference/characters/deletion")
 
 
 async def delete(ctx: AppCtx, character_name: str):

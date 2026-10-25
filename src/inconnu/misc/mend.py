@@ -11,8 +11,9 @@ from ctx import AppCtx
 from models import VChar
 from services.haven import haven
 from utils import get_message
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#mending-damage"
+__HELP_URL = docs_url("guides/gameplay-shortcuts#mending-damage")
 
 
 class MendOutcome(NamedTuple):

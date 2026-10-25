@@ -8,8 +8,9 @@ import services
 import ui
 from services.haven import haven
 from utils import get_message
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#slaking-hunger"
+__HELP_URL = docs_url("guides/gameplay-shortcuts#slaking-hunger")
 
 
 def _can_slake(character):

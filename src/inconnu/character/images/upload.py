@@ -11,8 +11,9 @@ import ui
 from ctx import AppCtx
 from models import VChar
 from services.haven import haven
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/premium/character-images"
+__HELP_URL = docs_url("premium/character-images")
 VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
 
 

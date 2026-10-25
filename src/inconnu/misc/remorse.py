@@ -9,8 +9,9 @@ from models import VChar
 from services.haven import haven
 from utils import get_message
 from utils.text import pluralize
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#remorse-checks"
+__HELP_URL = docs_url("guides/gameplay-shortcuts#remorse-checks")
 
 
 def _can_remorse(character):

@@ -13,8 +13,9 @@ from services.haven import haven
 from ui.views import DisablingView
 from utils import get_avatar
 from utils.permissions import is_admin
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
+__HELP_URL = docs_url("advanced/administration/experience-management")
 
 
 @haven(__HELP_URL)

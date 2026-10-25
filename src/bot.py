@@ -22,6 +22,7 @@ from models import RPPost, VChar
 from services import WebhookCache
 from services.reporter import reporter
 from utils import cmd_replace, raw_command_options
+from utils.urls import docs_url
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -164,7 +165,7 @@ class InconnuBot(discord.AutoShardedBot):
                 description=(
                     f"You may now upload profile images via {upload_mention}. "
                     "(Use it in a server, not from this DM!)\n\n"
-                    "[Read more here!](https://docs.inconnu.app/guides/premium/character-images)"
+                    f"[Read more here!]({docs_url('premium/character-images')})"
                 ),
                 color=discord.Color.green(),
             )

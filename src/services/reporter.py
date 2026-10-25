@@ -17,6 +17,7 @@ from ctx import AppInvocation
 from models import VChar
 from services.log import report_database_error
 from utils import get_avatar
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -98,9 +99,7 @@ class ErrorReporter:
             await ui.embeds.error(ctx, str(error), title="One moment, please")
             return
         if isinstance(error, errors.NotPremium):
-            troubleshoot_url = (
-                "https://docs.inconnu.app/advanced/troubleshooting#you-arent-able-to-upload-images"
-            )
+            troubleshoot_url = docs_url("advanced/troubleshooting#you-arent-able-to-upload-images")
 
             if ctx.command is not None:
                 cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
@@ -114,7 +113,7 @@ class ErrorReporter:
                     f"[Check the troubleshooting page.]({troubleshoot_url})",
                 ),
                 title="Premium feature",
-                help="https://docs.inconnu.app/guides/premium",
+                help=docs_url("premium/supporter-only-features"),
             )
             return
         if isinstance(error, commands.NotOwner):

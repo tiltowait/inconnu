@@ -52,9 +52,19 @@ GROUPED_TRAITS = {
     },
 }
 
+
 ATTRIBUTES = set(chain.from_iterable(GROUPED_TRAITS["ATTRIBUTES"].values()))
 SKILLS = set(chain.from_iterable(GROUPED_TRAITS["SKILLS"].values()))
 ATTRIBUTES_AND_SKILLS = ATTRIBUTES.union(SKILLS)
+
+# Impairment penalizes pools by their traits' category
+PHYSICAL_TRAITS = set(chain.from_iterable(group["Physical"] for group in GROUPED_TRAITS.values()))
+MENTAL_SOCIAL_TRAITS = set(
+    chain.from_iterable(
+        group[category] for group in GROUPED_TRAITS.values() for category in ("Social", "Mental")
+    )
+)
+
 DISCIPLINES = [
     "Animalism",
     "Auspex",

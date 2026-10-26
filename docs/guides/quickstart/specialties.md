@@ -6,7 +6,7 @@ You can add specialties in the [character wizard](creating-a-character.md) or la
 > **Adding specialties**
 >
 > ```
-> /specialties add specialties:<TRAIT1>=<SPEC1>,<SPEC2>,...<SPECN> [TRAIT2]=...
+> /specialties add specialties:<TRAIT1>=<SPEC1>,[SPEC2],... [TRAIT2]=...
 > ```
 
 You can add several specialties at once.

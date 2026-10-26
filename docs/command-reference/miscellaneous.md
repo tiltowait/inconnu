@@ -34,7 +34,7 @@ Flips a coin.
 /info
 ```
 
-Displays general information and help links.
+Shows general information and help links.
 
 ## Help
 
@@ -79,7 +79,7 @@ With `style:Traits`, it shows rolls and successes for each Attribute and Skill i
 
 | Option | Description | Notes |
 | --- | --- | --- |
-| `style` | The type of stats lookup to make | "General" shows basic statistics, like number of criticals; "Traits" shows number of successes for each Attribute and Skill rolled |
+| `style` | The type of stats lookup to make | `General` or `Traits` |
 | `date` | Limit results to rolls after this date | Optional; `YYYYMMDD` format |
 | `hidden` | Show the results only to you | Default `True` |
 

@@ -1,10 +1,10 @@
 # Character Transfers
 
 ```
-/transfer current_owner:CURRENT_OWNER character:CHARACTER new_owner:NEW_OWNER
+/transfer current_owner:<current_owner> character:<character> new_owner:<new_owner>
 ```
 
-This command will transfer a character from its current owner to a new one. Both users will be pinged when this operation is complete.
+Transfers a character to a new owner and pings both players.
 
 > [!NOTE]
-> If you transfer a character to **Inconnu**, that character will become an SPC and usable by any server admin.
+> If you transfer a character to **Inconnu**, it becomes an SPC, usable by any admin.

@@ -64,7 +64,7 @@ The Resonance probabilities `/resonance` uses:
 > [!NOTE]
 > **Default:** `1s and 10s (RAW)`
 
-_Chicago by Night_ and _Cults of the Blood Gods_ say a Rouse Check for an Oblivion power, Ritual, or Ceremony grants a Stain on a 1 or a 10. **Inconnu** reminds players of this after Rouse Checks. This setting changes when it does: on `1s and 10s (RAW)`, `1s only`, `10s only`, or `Never`.
+Rouse Checks for Oblivion powers, Rituals, and Ceremonies grant Stains on a 1 or a 10. **Inconnu** reminds players of this after Rouse Checks. This setting chooses which results trigger the reminder: `1s and 10s (RAW)`, `1s only`, `10s only`, or `Never`.
 
 > [!NOTE]
 > **This setting affects macros.** Macros created with `staining:Yes` automatically apply a Stain when the Rouse Check matches this setting.

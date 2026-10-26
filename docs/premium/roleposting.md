@@ -20,8 +20,8 @@ Opens a dialogue where you write your post: up to **8000 characters** across two
 
 ![/post uses Discord's modal dialogue.](../assets/post_example.png "/post uses Discord's modal dialogue.")
 
-> [!NOTE]
-> **Tip:** Write your post in an external editor or the main Discord text box, so you can look at other posts without losing your progress.
+> [!TIP]
+> Write your post in an external editor or the main Discord text box, so you can look at other posts without losing your progress.
 
 | Option | Description | Notes |
 | --- | --- | --- |
@@ -99,9 +99,9 @@ Click a result's character name or snippet to jump to the post.
 
 Admins should:
 
-* [x] Re-invite **Inconnu** with `/invite` if it was added before July 2023 (see [Troubleshooting](#troubleshooting)).
-* [x] Set the **Rolepost changelog channel** and **Rolepost deletion channel** in [`/settings scope:Server`](../advanced/server-settings.md#rolepost-changelog-channel).
-* [x] Try `/post`!
+1. Re-invite **Inconnu** with `/invite` if it was added before July 2023 (see [Troubleshooting](#troubleshooting)).
+2. Set the **Rolepost changelog channel** and **Rolepost deletion channel** in [`/settings scope:Server`](../advanced/server-settings.md#rolepost-changelog-channel).
+3. Try `/post`!
 
 ### Changelog channel
 

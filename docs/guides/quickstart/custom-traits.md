@@ -4,7 +4,7 @@ description: Sky's the limit.
 
 # Custom Traits
 
-Running homebrew? Have some Merits or Flaws you roll? You can track these (and any other Trait with a 0-5 rating) with **custom Traits**.
+Running homebrew? Have some Merits or Flaws you roll? You can track these (and any other Trait with a 0–5 rating) with **custom Traits**.
 
 ### Adding Traits
 

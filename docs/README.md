@@ -10,7 +10,7 @@ description: >-
 
 New here? Start with the [Quickstart](guides/quickstart/README.md). To add **Inconnu** to your server, [invite it](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=536872960&scope=bot%20applications.commands).
 
-Playing V20 or _Chronicles of Darkness_? Try [Botch (V20) or Beat (CofD)](https://docs.botch.lol).
+Playing _V20_ or _Chronicles of Darkness_? Try [Botch (V20) or Beat (CofD)](https://docs.botch.lol).
 
 ## Dice rolling
 

@@ -19,7 +19,7 @@ Uploads a PNG, WebP, or JPEG image from your computer or phone, up to 5 MB.
 
 ## Viewing
 
-Scroll through all of a character's images with `/character images` or `/character profile`. Any [`/header`](../command-reference/characters.md#header)s used will show a random image.
+Page through a character's images with `/character images` or `/character profile`. [`/header`](../command-reference/characters.md#header) posts show a random image.
 
 ## Modifying
 

@@ -2,7 +2,7 @@
 
 "Be excellent to each other." **Inconnu** is provided free of charge. Do not use it to harass anyone or otherwise make a nuisance of yourself. **Inconnu** is provided without warranty, either express or implied.
 
-### User-Generated Content
+## User-Generated Content
 
 There are three types of content you can give **Inconnu**:
 

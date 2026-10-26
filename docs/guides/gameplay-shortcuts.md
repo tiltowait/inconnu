@@ -15,7 +15,7 @@ These commands handle common actions and update your character, so you don't nee
 ## Applying Stains
 
 ```
-/stain delta:<DELTA>
+/stain delta:<delta>
 ```
 
 `delta` is the number of Stains to add (positive) or remove (negative).
@@ -40,12 +40,12 @@ Makes the Blush of Life's Rouse Check, accounting for Humanity: it's `/rouse cou
 ## Crippling Injuries
 
 ```
-/cripple damage:<DAMAGE>
+/cripple damage:<damage>
 ```
 
 Rolls on the crippling injury table (p.303) for your total Aggravated damage, `damage`.
 
-## Frenzy checks
+## Frenzy Checks
 
 ```
 /frenzy difficulty:<difficulty> penalty:[penalty] bonus:[bonus]
@@ -59,16 +59,16 @@ Rolls on the crippling injury table (p.303) for your total Aggravated damage, `d
 
 Rolls your current Willpower plus a third of your Humanity, rounded down (_V5_, p.219), with a minimum of one die.
 
-## Mending damage
+## Mending Damage
 
-`/mend` heals Superficial damage based on your Blood Potency (per the V5 Companion errata), or Stamina for mortals and ghouls. Vampires also make a Rouse Check.
+`/mend` heals Superficial damage based on your Blood Potency (per the _V5 Companion_ errata), or Stamina for mortals and ghouls. Vampires also make a Rouse Check.
 
 ## Remorse Checks
 
 Rolls one die per unmarked Humanity box (minimum 1). On a success, Humanity holds; on a failure, it drops by 1. Either way, Stains are cleared.
 
 ```
-/remorse min_override:[OVERRIDE] lasombra_alt:[True/False]
+/remorse min_override:[override] lasombra_alt:[True/False]
 ```
 
 `lasombra_alt` applies the alternate Lasombra Bane, removing dice equal to your Bane Severity.

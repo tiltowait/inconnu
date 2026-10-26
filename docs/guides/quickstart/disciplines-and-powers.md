@@ -6,7 +6,7 @@
 > **Adding Disciplines**
 >
 > ```
-> /disciplines add disciplines:DISC1=VALUE [DISC2=VALUE2] ...
+> /disciplines add disciplines:<DISC1=RATING> [DISC2=RATING2] ...
 > ```
 >
 > You can add multiple Disciplines at once.

@@ -7,15 +7,15 @@
 
 Members also need the _Use Application Commands_ permission, since all of **Inconnu's** commands are slash commands.
 
-### Inconnu isn't showing emoji
+## Inconnu isn't showing emoji
 
 If **Inconnu** isn't showing emoji, check that they're turned on in both [your settings](server-settings.md#use-emojis) and [the server's](server-settings.md#use-emojis-server).
 
-### Inconnu's replies are blank
+## Inconnu's replies are blank
 
 In Discord's settings, under _Appearance → Messages_, turn on _Show embeds and link previews_. If replies are still blank, antivirus software may be blocking them; some versions of McAfee do.
 
-### You aren't able to upload images
+## You aren't able to upload images
 
 Make sure you've done the following:
 

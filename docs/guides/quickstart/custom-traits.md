@@ -15,7 +15,7 @@ Running homebrew? Have some Merits or Flaws you roll? You can track these (and a
 > /traits add traits:<TRAIT=RATING> [TRAIT2=RATING2] [TRAIT3=RATING3] ...
 > ```
 
-As you can see, you can add several Traits at once; you don't need to enter them one at a time. Let's look at an example.
+You can add several Traits at once. For example:
 
 > [!TIP]
 > **Example:** Nadea has 3 dots in _Status_, _2_ in _Fame_, and the _Stunning_ Merit, which gives two dice.
@@ -51,12 +51,12 @@ As you can see, you can add several Traits at once; you don't need to enter them
 
 ### Updating and deleting Traits
 
-For safety, **Inconnu** doesn't allow you to `add` a Trait you already have. To modify an existing Trait, use the `/traits update traits:` command. This has the same syntax as `/traits add`.
+For safety, you can't `add` a Trait you already have. To change one, use `/traits update traits:`, which takes the same syntax.
 
-Deleting Traits, on the other hand, can be done with `/traits delete traits:`. You can delete multiple Traits at once; simply separate them with spaces.
+To delete Traits, use `/traits delete traits:`, separating names with spaces. This also deletes any associated [specialties](specialties.md) or [powers](disciplines-and-powers.md#powers).
 
 > [!WARNING]
-> Unlike with rolls, Trait modification and deletion require you to be _explicit_ in your typing. You can't write _ac_ to represent _Academics_. This is done to prevent you from accidentally creating a bunch of useless Traits or modifying/deleting the wrong thing.
+> Unlike rolls, updates and deletions need full names: _ac_ won't match _Academics_. That keeps you from changing or deleting the wrong Trait.
 
 > [!NOTE]
-> **If you delete a core Trait,** such as Strength or Athletics, **Inconnu** will instead make it a 0-dot Trait. This way, you won't receive errors if called to roll for a core Trait you accidentally deleted.
+> Deleting a core Trait, such as Strength or Athletics, sets it to 0 instead.

@@ -26,7 +26,7 @@ Shows **Inconnu's** most recent changes. Only you see it unless you set `hidden:
 /coinflip
 ```
 
-Need a quick coin toss? This will generate heads or tails.
+Flips a coin.
 
 ## General Information
 
@@ -50,11 +50,11 @@ Shows quick help for a topic.
 /invite
 ```
 
-Displays a link to invite the bot. (Tip: You can also get a link by clicking on the bot's profile.)
+Shows a link to invite the bot. You can also find one on the bot's profile.
 
 ## Probability Calculation
 
-You can calculate roll outcome probabilities using the `/probability` command.
+Calculates the odds of each outcome for a roll.
 
 ```
 /probability roll:<roll> reroll:[strategy] character:[character] impairment_category:[category]
@@ -69,13 +69,13 @@ You can calculate roll outcome probabilities using the `/probability` command.
 
 ## Random Numbers
 
-A random number between 1 and `ceiling` (default `100`) may be rolled with the `/random` command.
+`/random` rolls a number from 1 to `ceiling` (default `100`).
 
 ## Statistics
 
-Want to see how many rolls you've made? How many successes, crits, bestial failures, and the like? How many times you've used a Willpower re-roll? The `/statistics` command will show all of this information for each of your characters on the server.
+`/statistics` shows roll statistics for each of your characters on the server: rolls made, successes, criticals, bestial failures, Willpower re-rolls, and more.
 
-Additionally, this command can show statistics for a specific Trait. Currently, this is limited to showing the number of rolls made and number of successes gleaned in a given time period.
+With `style:Traits`, it shows rolls and successes for each Attribute and Skill instead.
 
 | Option | Description | Notes |
 | --- | --- | --- |
@@ -84,6 +84,6 @@ Additionally, this command can show statistics for a specific Trait. Currently, 
 | `hidden` | Show the results only to you | Default `True` |
 
 > [!NOTE]
-> If `date` is omitted, it will show all statistics for the character(s) the bot has ever recorded.
+> Without `date`, it covers every roll on record.
 
 Admins can leave a roll out of statistics, or put it back, by right-clicking it and choosing **Apps → Toggle Roll Statistics**.

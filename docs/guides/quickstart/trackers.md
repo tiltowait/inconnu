@@ -6,12 +6,12 @@ description: >-
 
 # Trackers
 
-As you saw when you [created your character](creating-a-character.md), each character has base trackers: Health, Willpower, and Humanity, plus Hunger and Blood Potency for vampires. In addition, **Inconnu** tracks both _lifetime_ XP and _unspent_ XP. Modifying these is done with the `/character adjust` command.
+As you saw when you [created your character](creating-a-character.md), each character has trackers: Health, Willpower, and Humanity, plus Hunger and Blood Potency for vampires. **Inconnu** also tracks _lifetime_ and _unspent_ XP. You change these with `/character adjust`.
 
-This command has over a dozen optional parameters for modifying nearly every aspect of your character.
+Its optional parameters cover nearly every aspect of your character.
 
 > [!TIP]
-> **Example:** Nadea has taken two levels of Superficial Health damage, one level of Aggravated Health damage, and one level of Superficial Willpower damage.
+> **Example:** Nadea takes two Superficial Health damage, one Aggravated Health damage, and one Superficial Willpower damage.
 >
 > ```
 > /character adjust sup_hp:+2 agg_hp:+1 sup_wp:+1
@@ -19,7 +19,7 @@ This command has over a dozen optional parameters for modifying nearly every asp
 
 ### Plus, minus, or nothing
 
-In the example above, we wrote `+2` and `+1`. We could of course have reduced damage by subtracting (with `-`) instead. But what happens if we leave off `+` or `-`? In that case, **Inconnu** will _set_ the value to that level rather than adding or subtracting from the current value. If you have three levels of Superficial Health damage, `sup_hp:2` (without the plus sign) will reduce your damage to two boxes.
+In the example, `+2` and `+1` add damage, and `-` would remove it. Leave off the sign, and **Inconnu** _sets_ the value instead: with three Superficial Health damage, `sup_hp:2` brings it down to two.
 
 > [!NOTE]
-> **Why can't I just subtract Health?** New users sometimes get confused about having to "add" damage versus "subtracting" Health. There's an important distinction: the `health` parameter reflects the overall size (number of boxes) of your Health track. When you "add" damage, you are _applying_ it.
+> **Why not just subtract Health?** The `health` parameter sets the size of your Health track. Damage is tracked separately, so you add damage rather than subtracting Health.

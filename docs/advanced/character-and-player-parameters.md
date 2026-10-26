@@ -1,11 +1,11 @@
 # Character and Player Parameters
 
-Many commands offer optional `character` and `player` parameters, which are used to facilitate lookups.
+Many commands take optional `character` and `player` options.
 
-* `character`: If you have more than one character, you may use this parameter to specify which character to use for a given command. If you do not supply the parameter, **Inconnu** will do its best to figure out which character you want. If it cannot, then a menu will pop up requesting you to select the character.
-* `player`: In most instances, use of the `player` parameter is limited to server administrators. With it, administrators can view, roll as, or make changes to a character owned by another user.
+* `character`: Which of your characters to use. Without it, **Inconnu** picks the one that fits, or shows a menu to choose from.
+* `player`: Usually admin-only. Lets admins view, roll as, or change another player's character.
 
 > [!NOTE]
 > **Automatic Character Filtering**
 >
-> If you don't specify a `character`, **Inconnu** will attempt to filter based on context. For instance, if you have a mortal and a vampire character, then running `/bol` will automatically use the vampire, because mortals can't use the Blush of Life. Similarly, if one of your characters has a custom Trait called _Necromancy_, then using `/roll` with _Necromancy_ in the pool will signify you want to use that character.
+> Without a `character`, **Inconnu** narrows your characters by context. If you have a mortal and a vampire, `/bol` uses the vampire, since mortals can't Blush. If only one character has a _Necromancy_ Trait, rolling _Necromancy_ uses that one.

@@ -6,7 +6,7 @@ description: >-
 
 # Just the basics
 
-Don't care about managing characters? Trait pools don't interest you? That's fine; you can still use **Inconnu** via the basic roll syntax below.
+Don't care about managing characters? Trait pools don't interest you? You can still roll with plain numbers:
 
 > [!NOTE]
 > **Basic Roll Syntax**

@@ -12,18 +12,18 @@
 /character image upload
 ```
 
-With this command, you can upload an image from your computer or phone. You may upload multiple images per character.
+Uploads a PNG, WebP, or JPEG image from your computer or phone, up to 5 MB.
 
 > [!NOTE]
-> The first image in your list is considered the character's main profile image and will be displayed in many embeds, such as the one shown for [`/character display`.](../command-reference/characters.md#character-display)
+> Your first image is the character's main image, shown in embeds such as [`/character display`](../command-reference/characters.md#character-display)'s.
 
 ## Viewing
 
-The `/character images` and `/character profile` commands both show a pager to scroll through your uploaded images. In addition, the [`/header`](../command-reference/characters.md#header) command will display a random image associated with your character.
+Scroll through all of a character's images with `/character images` or `/character profile`. Any [`/header`](../command-reference/characters.md#header)s used will show a random image.
 
 ## Modifying
 
-While you can't edit the images directly (that requires a separate upload), the `/character images` command has a "Manage" button. Clicking this button toggles management mode, where **Make First** and **Make Last** reorder your images and **Delete** removes one.
+`/character images` has a **Manage** button: **Make First** and **Make Last** reorder your images, and **Delete** removes one.
 
 > [!CAUTION]
-> **Deletion is permanent!** There is no confirmation dialogue. Always keep a backup of your images.
+> **Deletion is permanent,** with no confirmation.

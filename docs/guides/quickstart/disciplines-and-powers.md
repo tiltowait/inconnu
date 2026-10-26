@@ -1,6 +1,6 @@
 # Disciplines & powers
 
-While **Inconnu** is not a reference tool, it can nonetheless track your character's Discipline ratings and known powers. There's no requirement that the name you give a Discipline is "official"; you can call them whatever you want!
+**Inconnu** tracks your character's Discipline ratings and known powers. Names don't have to be official; call them whatever you like!
 
 > [!NOTE]
 > **Adding Disciplines**
@@ -9,7 +9,7 @@ While **Inconnu** is not a reference tool, it can nonetheless track your charact
 > /disciplines add disciplines:DISC1=VALUE [DISC2=VALUE2] ...
 > ```
 >
-> You can add multiple Disciplines at a time.
+> You can add multiple Disciplines at once.
 
 > [!TIP]
 > **Example**
@@ -24,9 +24,9 @@ While **Inconnu** is not a reference tool, it can nonetheless track your charact
 
 ### Powers
 
-While not a requirement, you can add powers to a Discipline and use them in rolls just like specialties. Unlike specialties, however, using a power doesn't add dice. It's purely a way to reduce ambiguity in roll output.
+You can also add powers to a Discipline and roll them like specialties. Unlike specialties, they don't add dice; they just make your roll output clearer.
 
-The syntax is identical to [adding specialties](specialties.md):
+The syntax matches [adding specialties](specialties.md):
 
 > [!NOTE]
 > **Adding powers**
@@ -37,7 +37,7 @@ The syntax is identical to [adding specialties](specialties.md):
 
 ![Discord screenshot showing powers add](../../assets/powers_add.png "Example")
 
-The same holds true for removing and rolling powers. Powers and Disciplines can be found in the output of `/traits list`.
+Removing and rolling powers work the same way, and `/traits list` shows your Disciplines and powers.
 
 > [!NOTE]
 > **Power bonus is automatically added** to rolls that include a Discipline if your Blood Potency is 2 or higher! No need to use a custom Trait.

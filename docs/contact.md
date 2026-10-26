@@ -1,5 +1,5 @@
 # Contact
 
-Feedback and bug reports should be sent to the official server. In addition, should a user be found uploading illegal content through the bot, please don't hesitate to reach out.
+Send feedback and bug reports to the official server. Please also reach out there if you find someone uploading illegal content through the bot.
 
 [Join the official Discord server](https://discord.gg/QHnCdSPeEE)

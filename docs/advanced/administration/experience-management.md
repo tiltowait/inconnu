@@ -6,7 +6,7 @@ description: >-
 
 # Experience Management
 
-Experience can be awarded to or deducted from characters with `/experience award` and `/experience deduct`, respectively. Both commands have the following parameters:
+`/experience award` and `/experience deduct` add or remove a character's XP. Both take:
 
 | Parameter   | Description                                              |
 | ----------- | -------------------------------------------------------- |
@@ -19,30 +19,30 @@ Experience can be awarded to or deducted from characters with `/experience award
 > [!NOTE]
 > Players and admins may view their characters' experience logs with the `/experience log` command. Admins can also right-click a user and choose **Apps → Experience Log**.
 
-**To remove a log entry**, use the `/experience remove entry` command. This takes a `player`, `character`, and `log_index` parameter. The `log_index` is the log entry number as shown by `/experience log`.
+**To remove a log entry**, use `/experience remove entry` with `player`, `character`, and `log_index` (the entry's number in `/experience log`).
 
-When removing an entry, the confirmation message will give the admin an option to reverse the XP change; i.e. if the entry was an award of 10 lifetime XP, a button will appear that, when clicked, will subtract 10 lifetime XP.
+The confirmation offers a button to reverse the entry's XP change, such as subtracting 10 lifetime XP for a 10-XP award.
 
 ### Bulk experience
 
-If you manage a large server, the `/bulk award xp` command can save a lot of time. This command pops up a modal dialogue with the following required parameters:
+`/bulk award xp` awards XP to many characters at once. It opens a dialogue with two fields:
 
 | Parameter       | Description                                                  |
 | --------------- | ------------------------------------------------------------ |
 | Reason          | The reason the XP is being granted. **Example:** "Weekly XP" |
 | Experience list | A list of characters and the XP to grant, separated by line. |
 
-The `list` must follow this format:
+Each line of the list follows this format:
 
 ```
 N xp <@User ID> Character name
 ```
 
-Where `N` is the amount of XP to give that character, `User ID` is the player's Discord ID, and `Character name` is the character's name.
+`<@User ID>` is a user mention, using the player's Discord ID.
 
-If there are any errors in your input (misspelled character name, invalid user, etc.), then **no** experience will be rewarded. You will instead see a list of lines **Inconnu** understood, followed by a list of error lines.
+If any line has an error, such as a misspelled character name, **no** XP is awarded; **Inconnu** shows which lines it understood and which failed.
 
-#### Syntax example:
+#### Example
 
 ```
 5 xp <@1234567890> Nadea Theron

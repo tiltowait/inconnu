@@ -13,7 +13,7 @@ A Trait is anything you can roll: Attributes, Skills, Disciplines, and any custo
 The character wizard sets your Attributes, Skills, and (for vampires) Blood Potency. You can add, update, and remove Traits whenever you like.
 
 > [!WARNING]
-> **Universal Traits:** Every character has `willpower`, `humanity`, `surge`, `potency`, and `hunger`. You can roll them, and they update with your character's trackers, but you can't create or delete Traits with those names.
+> **Universal Traits:** Every character has `willpower` and `humanity`, and vampires also have `hunger`, `surge`, `potency`, and `bane` (Bane Severity). You can roll them, and they update with your character's trackers, but you can't create or delete Traits with those names.
 
 ## /traits add
 

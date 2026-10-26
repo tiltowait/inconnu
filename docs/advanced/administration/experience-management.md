@@ -13,7 +13,7 @@ Experience can be awarded to or deducted from characters with `/experience award
 | `player`    | The player who owns the character                        |
 | `character` | The character from whom to award/deduct XP               |
 | `amount`    | The amount of XP to award/deduct                         |
-| `scope`     | Whether to apply the operation to lifetime or current XP |
+| `scope`     | Whether to apply the operation to lifetime or unspent XP |
 | `reason`    | An admin-given note about the reason for the change      |
 
 > [!NOTE]

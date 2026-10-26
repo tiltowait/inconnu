@@ -6,7 +6,7 @@ description: >-
 
 # Trackers
 
-As you saw when you [created your character](creating-a-character.md), each character has base trackers: Humanity, Health, Willpower, Hunger, and Blood Potency. In addition, **Inconnu** tracks both _lifetime_ XP and _unspent_ XP. Modifying these is done with the `/character adjust` command.
+As you saw when you [created your character](creating-a-character.md), each character has base trackers: Health, Willpower, and Humanity, plus Hunger and Blood Potency for vampires. In addition, **Inconnu** tracks both _lifetime_ XP and _unspent_ XP. Modifying these is done with the `/character adjust` command.
 
 This command has over a dozen optional parameters for modifying nearly every aspect of your character.
 

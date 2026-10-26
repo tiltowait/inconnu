@@ -40,4 +40,4 @@ The syntax is identical to [adding specialties](specialties.md):
 The same holds true for removing and rolling powers. Powers and Disciplines can be found in the output of `/traits list`.
 
 > [!NOTE]
-> **Power bonus** **is automatically added** if your Blood Potency is 2 or higher! No need to use a custom Trait.
+> **Power bonus is automatically added** to rolls that include a Discipline if your Blood Potency is 2 or higher! No need to use a custom Trait.

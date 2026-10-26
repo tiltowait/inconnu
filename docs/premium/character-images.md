@@ -23,7 +23,7 @@ The `/character images` and `/character profile` commands both show a pager to s
 
 ## Modifying
 
-While you can't edit the images directly (that requires a separate upload), the `/character images` command has a "Manage" button. Clicking this button toggles management mode, which lets you change the order of your images or delete them.
+While you can't edit the images directly (that requires a separate upload), the `/character images` command has a "Manage" button. Clicking this button toggles management mode, where **Make First** and **Make Last** reorder your images and **Delete** removes one.
 
 > [!CAUTION]
 > **Deletion is permanent!** There is no confirmation dialogue. Always keep a backup of your images.

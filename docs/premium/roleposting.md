@@ -45,7 +45,7 @@ In the dialogue, you can give the post a **bookmark title**, which lists it in `
 
 ### Editing and deleting
 
-Right-click your post and choose **Apps → Post: Edit** or **Apps → Post: Delete**. On mobile, long-press the message and tap **Apps**.
+Right-click your post and choose **Apps → Post: Edit** or **Apps → Post: Delete**. On mobile, long-press the message and tap **Apps**. A long post is split across several messages, so you edit each one separately, up to 2000 characters.
 
 ## /pmnh
 
@@ -62,7 +62,7 @@ Lists your bookmarked posts, newest first. Click a bookmark's title to jump to t
 
 ## /tags
 
-Lists your tags alphabetically, with how many times you've used each. Select tags to see the posts that have all of them, and click the character name to jump to a post.
+Lists your tags, most-used first, with how many times you've used each. Select tags to see the posts that have all of them, and click the character name to jump to a post.
 
 ![You can select multiple tags at once.](../assets/tags_demo.png "You can select multiple tags at once.")
 

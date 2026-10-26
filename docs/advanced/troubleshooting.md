@@ -4,7 +4,9 @@
 
 * **Send Messages:** Should be obvious, no?
 * **Use External Emoji:** For displaying individual dice throws and tracker boxes
-* **Use Slash Commands:** All of **Inconnu's** commands use slash commands
+* **Manage Webhooks:** For [Roleposting](../premium/roleposting.md)
+
+Members also need the _Use Application Commands_ permission, since all of **Inconnu's** commands are slash commands.
 
 ### Inconnu isn't showing emoji
 

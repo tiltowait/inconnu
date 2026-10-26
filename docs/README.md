@@ -14,7 +14,7 @@ Playing V20 or _Chronicles of Darkness_? Try [Botch (V20) or Beat (CofD)](https:
 
 ## Dice rolling
 
-[Roll](command-reference/rolls/README.md) a pool with Hunger and a Difficulty, using numbers, [Traits](guides/quickstart/rolling-with-traits.md), or both. Every roll offers [Willpower re-rolls](guides/quickstart/willpower-re-rolls.md) and Blood Surges, **Inconnu** applies [Impairment](command-reference/rolls/impairment.md) for you, and you can [hide your dice](command-reference/rolls/hidden-dice.md) from other players.
+[Roll](command-reference/rolls/README.md) a pool with Hunger and a Difficulty, using numbers, [Traits](guides/quickstart/rolling-with-traits.md), or both. Rolls support [Willpower re-rolls](guides/quickstart/willpower-re-rolls.md) and Blood Surges, **Inconnu** applies [Impairment](command-reference/rolls/impairment.md) for you, and you can [hide your dice](command-reference/rolls/hidden-dice.md) from other players.
 
 ## Characters
 

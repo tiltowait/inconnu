@@ -13,10 +13,10 @@ description: >-
 > /roll pool:<POOL> hunger:<HUNGER> difficulty:<DIFFICULTY>
 > ```
 
-While you can supply raw numbers for each of these parameters, **Inconnu** really shines when you use _traits_. Traits are the Attributes and Skills you supplied while making the character, plus any custom Traits you might define later.
+While you can supply raw numbers for each of these parameters, **Inconnu** really shines when you use _Traits_. Traits are the Attributes and Skills you supplied while making the character, plus any custom Traits you might define later.
 
 > [!TIP]
-> **Example:** Nadea is performing research at the library. She's at _hunger 2_, and the information is hard to find, so the roll is against _difficulty 4_. The pool is _Resolve_ plus _Academics_, and she has a research specialty that grants her a bonus die.
+> **Example:** Nadea is performing research at the library. She's at _Hunger 2_, and the information is hard to find, so the roll is against _Difficulty 4_. The pool is _Resolve_ plus _Academics_, and she has a research specialty that grants her a bonus die.
 >
 > ```
 > /roll pool:resolve + academics + 1 hunger:Use Current difficulty:4

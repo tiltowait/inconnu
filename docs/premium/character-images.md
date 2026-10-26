@@ -21,7 +21,7 @@ With this command, you can upload an image from your computer or phone. You may 
 
 The `/character images` and `/character profile` commands both show a pager to scroll through your uploaded images. In addition, the [`/header`](../command-reference/characters.md#header) command will display a random image associated with your character.
 
-### Modifying
+## Modifying
 
 While you can't edit the images directly (that requires a separate upload), the `/character images` command has a "Manage" button. Clicking this button toggles management mode, which lets you change the order of your images or delete them.
 

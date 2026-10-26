@@ -11,6 +11,8 @@ from loguru import logger
 import errors
 from models.vchardocs import VCharTrait
 
+DELIMITER = re.escape(VCharTrait.DELIMITER)
+
 
 class RollParser:
     """Parse user roll input."""
@@ -23,19 +25,7 @@ class RollParser:
 
         # Convert the syntax into tokens, if necessary
         if isinstance(raw_syntax, str):
-            if self.has_invalid_characters(raw_syntax):
-                raise SyntaxError("Invalid syntax.")
-
-            # Fix spacing
-            if VCharTrait.DELIMITER == ".":
-                # Period matches any character in regex, so we have to escape it
-                pat = r"\s*\.\s*"
-            else:
-                pat = r"\s*" + VCharTrait.DELIMITER + r"\s*"
-            syntax = re.sub(pat, VCharTrait.DELIMITER, raw_syntax)
-            syntax = re.sub(r"\s*([+-])\s*", r" \g<1> ", syntax)
-
-            self.tokens = syntax.split()
+            self.tokens = self.tokenize(raw_syntax)
         else:
             self.tokens = map(str, raw_syntax)
 
@@ -152,10 +142,6 @@ class RollParser:
 
         # Determine which stack is which. Order goes pool, hunger, difficulty.
 
-        if not qualified_stacks:
-            # This shouldn't be possible to reach, but just in case ...
-            raise SyntaxError("You have to supply roll syntax!")
-
         self._parameters["q_pool_stack"] = qualified_stacks.pop(0)
         self._parameters["i_pool_stack"] = interpolated_stacks.pop(0)
 
@@ -170,35 +156,32 @@ class RollParser:
 
         # Only the pool is required, so we need to provide defaults if the other
         # stacks aren't given
+        for stack in (
+            "q_hunger_stack",
+            "i_hunger_stack",
+            "q_difficulty_stack",
+            "i_difficulty_stack",
+        ):
+            self._parameters[stack] = ["0"]
 
         if not qualified_stacks:
             # They only gave us a pool
-            self._parameters["q_hunger_stack"] = ["0"]
-            self._parameters["i_hunger_stack"] = ["0"]
-            self._parameters["q_difficulty_stack"] = ["0"]
-            self._parameters["i_difficulty_stack"] = ["0"]
             return
 
         # The user provided pool and hunger
         if self.character is None or self.character.is_vampire:
             self._parameters["q_hunger_stack"] = qualified_stacks.pop(0)
             self._parameters["i_hunger_stack"] = interpolated_stacks.pop(0)
-        else:
+        elif interpolated_stacks[0] == ["0"]:
             # This is a mortal character. Mortals don't have Hunger, so we'll
-            # ignore it and set it to 0; however, many players are used to
-            # inputting Hunger on all rolls and may have put a 0 for Hunger.
-            # In that case, we will remove the 0 at the top of the stack.
-            self._parameters["q_hunger_stack"] = ["0"]
-            self._parameters["i_hunger_stack"] = ["0"]
-
-            if interpolated_stacks[0] == ["0"]:
-                del qualified_stacks[0]
-                del interpolated_stacks[0]
+            # ignore it; however, many players are used to inputting Hunger on
+            # all rolls and may have put a 0 for Hunger. In that case, we will
+            # remove the 0 at the top of the stack.
+            del qualified_stacks[0]
+            del interpolated_stacks[0]
 
         if not qualified_stacks:
             # Difficulty was not provided
-            self._parameters["q_difficulty_stack"] = ["0"]
-            self._parameters["i_difficulty_stack"] = ["0"]
             return
 
         # They gave us all three (pool, hunger, and difficulty)
@@ -210,7 +193,7 @@ class RollParser:
             # First, get human-readable representations of the stacks
             _pool = self.pool_str or " ".join(self._parameters["q_pool_stack"])
             if (_hunger := " ".join(self._parameters["q_hunger_stack"])) == "Hunger":
-                _hunger = "Current Hunger "
+                _hunger = "Current Hunger"
             _difficulty = " ".join(self._parameters["q_difficulty_stack"])
 
             interpretation = (
@@ -241,9 +224,21 @@ class RollParser:
             raise SyntaxError("Invalid syntax!") from err
 
     @classmethod
+    def tokenize(cls, syntax: str) -> list[str]:
+        """Split roll syntax into operators and operands. Raises SyntaxError if
+        the syntax has invalid characters."""
+        if cls.has_invalid_characters(syntax):
+            raise SyntaxError("Invalid syntax.")
+
+        # Whitespace around the delimiter is ignored, so "brawl . kindred" is
+        # one operand
+        syntax = re.sub(rf"\s*{DELIMITER}\s*", VCharTrait.DELIMITER, syntax)
+        return re.findall(r"[+-]|[^\s+-]+", syntax)
+
+    @classmethod
     def has_invalid_characters(cls, syntax) -> bool:
         """Check whether the roll has invalid characters."""
-        return re.search(r"[^\w\+\-\s" + VCharTrait.DELIMITER + "]", syntax) is not None
+        return re.search(rf"[^\w+\-\s{DELIMITER}]", syntax) is not None
 
     @classmethod
     def possible_spec_use(cls, syntax: str) -> bool:

@@ -120,7 +120,7 @@ class AdminCog(commands.Cog):
             if message is None:
                 message = await ctx.respond(msg, ephemeral=True)
             else:
-                message.edit(content=msg)
+                await message.edit(content=msg)
             await asyncio.sleep(15)
 
         if self.bot.user is not None:

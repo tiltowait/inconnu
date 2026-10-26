@@ -7,7 +7,7 @@ from bson import ObjectId
 
 from config import settings
 
-DOCS_SITE = "https://docs.inconnu.app/"
+DOCS_SITE = "https://inconnu.app/docs/"
 
 
 def docs_url(page: str) -> str:

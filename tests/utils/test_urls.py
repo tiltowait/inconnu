@@ -32,10 +32,10 @@ def docs_url_calls() -> list[tuple[str, int, str | None]]:
 
 def test_docs_url():
     """Docs URLs point at the docs site, keeping any anchor."""
-    assert docs_url("guides/quickstart") == "https://docs.inconnu.app/guides/quickstart"
+    assert docs_url("guides/quickstart") == "https://inconnu.app/docs/guides/quickstart"
     assert (
         docs_url("guides/gameplay-shortcuts#rouse-checks")
-        == "https://docs.inconnu.app/guides/gameplay-shortcuts#rouse-checks"
+        == "https://inconnu.app/docs/guides/gameplay-shortcuts#rouse-checks"
     )
 
 
@@ -66,6 +66,6 @@ def test_no_hardcoded_docs_urls():
     hardcoded = [
         path.relative_to(SRC).as_posix()
         for path in SRC.rglob("*.py")
-        if path != SRC / "utils" / "urls.py" and "docs.inconnu.app" in path.read_text()
+        if path != SRC / "utils" / "urls.py" and "inconnu.app/docs" in path.read_text()
     ]
     assert not hardcoded

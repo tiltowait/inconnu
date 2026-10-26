@@ -4,8 +4,9 @@ import errors
 import inconnu
 from models import VChar
 from services.haven import haven
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#blush-of-life"
+__HELP_URL = docs_url("guides/gameplay-shortcuts#blush-of-life")
 
 
 def _can_blush(character):

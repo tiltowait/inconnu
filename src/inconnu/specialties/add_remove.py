@@ -13,8 +13,9 @@ from inconnu.specialties.tokenize import SYNTAX, tokenize
 from models.vchar import VChar
 from services.haven import haven
 from utils.text import format_join
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/quickstart/specialties"
+__HELP_URL = docs_url("guides/quickstart/specialties")
 
 
 class Action(Enum):

@@ -34,8 +34,9 @@ from models import (
 from models.vchardocs import VCharTrait
 from services.haven import Haven
 from utils.permissions import is_admin
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/quickstart/rolling-with-traits"
+__HELP_URL = docs_url("guides/quickstart/rolling-with-traits")
 
 
 async def parse(

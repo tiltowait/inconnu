@@ -1,0 +1,55 @@
+# Old docs paths and where they live now. Old links survive in Discord messages
+# and bookmarks, so add an entry whenever a page moves or is merged. Targets are
+# checked when the docs load.
+
+# Macros
+command-reference/macros/creation: command-reference/macros#macro-create
+command-reference/macros/rolling: command-reference/macros#vm
+command-reference/macros/updating: command-reference/macros#macro-update
+command-reference/macros/listing: command-reference/macros#macro-list
+command-reference/macros/deletion: command-reference/macros#macro-delete
+guides/macros/your-first-macro: guides/macros#your-first-macro
+guides/macros/rolling-macros: guides/macros#rolling-a-macro
+guides/macros/optional-modifiers: guides/macros#optional-modifiers
+guides/macros/updating-your-macros: guides/macros#making-it-a-hunt
+guides/macros/deleting-macros: command-reference/macros#macro-delete
+guides/macros/advanced-rouse-only-macros: guides/macros#rouse-only-macros
+
+# Characters
+command-reference/characters/creation: command-reference/characters#character-wizard
+command-reference/characters/displaying: command-reference/characters#character-display
+command-reference/characters/updates: command-reference/characters#character-update
+command-reference/characters/deletion: command-reference/characters#character-delete
+command-reference/characters/profiles: command-reference/characters#character-profile
+command-reference/characters/rp-headers: command-reference/characters#rp-headers
+guides/quickstart/profiles: command-reference/characters#character-profile
+
+# Traits
+command-reference/traits/what-are-traits: command-reference/traits#what-are-traits
+command-reference/traits/adding-traits: command-reference/traits#traits-add
+command-reference/traits/updating-traits: command-reference/traits#traits-update
+command-reference/traits/displaying-traits: command-reference/traits#traits-list
+command-reference/traits/removing-traits: command-reference/traits#traits-delete
+
+# Rolls
+command-reference/rolls/advanced-roll-shorthand: command-reference/rolls#vr
+
+# Roleposting
+premium/roleposting/post: premium/roleposting#post
+premium/roleposting/bookmarks: premium/roleposting#bookmarks
+premium/roleposting/tags: premium/roleposting#tags
+premium/roleposting/search: premium/roleposting#search
+premium/roleposting/rp-changelog: premium/roleposting#changelog-channel
+premium/roleposting/admin-checklist: premium/roleposting#server-setup
+premium/roleposting/troubleshooting: premium/roleposting#troubleshooting
+
+# Merged into the docs home page
+inconnu/basic-features: ''
+
+# Removed; the premium pages and the site footer cover them
+premium/supporter-only-features: premium/character-images
+copyright: ''
+
+# Links the bot once sent to pages that never existed
+guides/premium: premium/character-images
+guides/premium/character-images: premium/character-images

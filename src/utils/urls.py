@@ -7,6 +7,15 @@ from bson import ObjectId
 
 from config import settings
 
+DOCS_SITE = "https://inconnu.app/docs/"
+
+
+def docs_url(page: str) -> str:
+    """Generate a docs URL. page is a docs page's path, optionally with a heading
+    anchor, such as "guides/gameplay-shortcuts#rouse-checks". Pass it as a string
+    literal: tests check that every call names a real page and heading."""
+    return urljoin(DOCS_SITE, page)
+
 
 def profile_url(charid: str | ObjectId | PydanticObjectId) -> str:
     """Generate a profile URL for the character."""

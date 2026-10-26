@@ -9,8 +9,9 @@ from ctx import AppCtx, AppInvocation
 from models import VChar
 from services.haven import haven
 from utils.text import format_join
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/traits/displaying-traits"
+__HELP_URL = docs_url("command-reference/traits#traits-list")
 
 
 @haven(__HELP_URL)

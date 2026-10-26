@@ -8,8 +8,9 @@ import inconnu
 from ctx import AppCtx
 from models import VChar
 from services.haven import haven
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#awakening"
+__HELP_URL = docs_url("guides/gameplay-shortcuts#awakening")
 
 
 @haven(__HELP_URL)

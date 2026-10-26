@@ -2,8 +2,9 @@
 
 import ui
 from services.haven import haven
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/characters/profiles#convictions"
+__HELP_URL = docs_url("command-reference/characters#character-convictions")
 
 
 @haven(__HELP_URL)

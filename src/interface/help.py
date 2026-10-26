@@ -13,7 +13,7 @@ import inconnu
 from constants import PATREON, SUPPORT_URL
 from ctx import AppCtx
 from utils import cmd_replace
-from utils.urls import web_asset
+from utils.urls import docs_url, web_asset
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -49,7 +49,7 @@ class _HelpView(View):
             self.add_item(
                 Button(
                     label="New? Click here!",
-                    url="https://docs.inconnu.app/guides/quickstart",
+                    url=docs_url("guides/quickstart"),
                     row=1,
                 )
             )
@@ -309,7 +309,7 @@ class Help(commands.Cog):
         )
 
         buttons = [
-            Button(label="Documentation", url="https://docs.inconnu.app/command-reference/traits"),
+            Button(label="Documentation", url=docs_url("command-reference/traits")),
             Button(label="Server", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
@@ -352,7 +352,7 @@ class Help(commands.Cog):
         buttons = [
             Button(
                 label="Documentation",
-                url="https://docs.inconnu.app/guides/quickstart/specialties",
+                url=docs_url("guides/quickstart/specialties"),
             ),
             Button(label="Server", url=SUPPORT_URL),
         ]
@@ -411,7 +411,7 @@ class Help(commands.Cog):
         buttons = [
             Button(
                 label="Documentation",
-                url="https://docs.inconnu.app/guides/quickstart/disciplines-and-powers",
+                url=docs_url("guides/quickstart/disciplines-and-powers"),
             ),
             Button(label="Server", url=SUPPORT_URL),
         ]
@@ -447,7 +447,7 @@ class Help(commands.Cog):
         )
 
         buttons = [
-            Button(label="Documentation", url="https://docs.inconnu.app/command-reference/macros"),
+            Button(label="Documentation", url=docs_url("command-reference/macros")),
             Button(label="Server", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)
@@ -463,7 +463,7 @@ class Help(commands.Cog):
         embed = self._empty_embed(
             title="Roleposting",
             description=(
-                "This feature is for [premium users only](https://docs.inconnu.app/guides/premium)."
+                f"This feature is for [premium users only]({docs_url('premium/roleposting')})."
             ),
         )
         embed.add_field(
@@ -509,7 +509,7 @@ class Help(commands.Cog):
         embed.set_footer(text="If your membership lapses, you may still access your old posts.")
 
         buttons = [
-            Button(label="Documentation", url="https://docs.inconnu.app/premium/roleposting"),
+            Button(label="Documentation", url=docs_url("premium/roleposting")),
             Button(label="Server", url=SUPPORT_URL),
         ]
         view = _HelpView(*buttons)

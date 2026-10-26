@@ -17,6 +17,7 @@ from inconnu.character.update import paramupdate
 from models import VChar
 from services.haven import Haven
 from utils import get_message, parse_parameters
+from utils.urls import docs_url
 
 __MATCHES = {}
 
@@ -37,7 +38,7 @@ __KEYS = {
     "potency": "+/- The character's Blood Potency",
 }
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/characters/updates"
+__HELP_URL = docs_url("command-reference/characters#character-update")
 
 
 async def update(
@@ -188,7 +189,7 @@ async def update_help(ctx: AppCtx, err: str | None = None, ephemeral=True):
 
     documentation = Button(
         label="Full Documentation",
-        url="https://docs.inconnu.app/command-reference/characters/updates",
+        url=docs_url("command-reference/characters#character-update"),
     )
     support = Button(label="Support", url=constants.SUPPORT_URL)
     view = ui.views.ReportingView(documentation, support)

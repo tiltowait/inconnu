@@ -22,6 +22,7 @@ dependencies = [
     "aiosqlite>=0.22.1",
     "async-timeout>=5.0.1",
     "pydantic-settings>=2.14.1",
+    "pyyaml>=6.0.3",
 ]
 
 [project.scripts]
@@ -35,6 +36,7 @@ dev = [
     "pytest-cov>=7.0.0,<8",
     "mongomock-motor>=0.0.36,<1",
     "ruff==0.16.5",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 
 [tool.ruff]

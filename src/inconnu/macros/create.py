@@ -7,8 +7,9 @@ from ctx import AppCtx
 from inconnu.macros import macro_common
 from models import VChar
 from services.haven import haven
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/macros/creation"
+__HELP_URL = docs_url("command-reference/macros#macro-create")
 
 
 @haven(__HELP_URL)

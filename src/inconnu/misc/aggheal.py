@@ -9,8 +9,9 @@ from constants import ROUSE_FAIL_COLOR, Damage
 from models import VChar
 from services.haven import haven
 from utils import get_message
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/guides/gameplay-shortcuts#aggravated-healing"
+__HELP_URL = docs_url("guides/gameplay-shortcuts#aggravated-healing")
 
 
 def _can_aggheal(character):

@@ -16,12 +16,12 @@ from services.haven import haven
 from utils import get_avatar, re_paginate
 from utils.text import clean_text, pull_mentions
 from utils.text import diff as text_diff
-from utils.urls import post_url
+from utils.urls import docs_url, post_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
-__HELP_URL = "https://docs.inconnu.app/premium/roleposting"
+__HELP_URL = docs_url("premium/roleposting")
 
 
 class PostModal(discord.ui.Modal):

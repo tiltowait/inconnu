@@ -9,8 +9,9 @@ from ctx import AppInvocation
 from inconnu.traits import traitcommon
 from models import VChar
 from services.haven import haven
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/traits/removing-traits"
+__HELP_URL = docs_url("command-reference/traits#traits-delete")
 
 
 class DeletionResult(NamedTuple):

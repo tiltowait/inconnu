@@ -9,8 +9,9 @@ from ctx import AppCtx
 from models import VChar
 from services.haven import haven
 from utils import get_avatar
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/advanced/administration/experience-management"
+__HELP_URL = docs_url("advanced/administration/experience-management")
 
 
 @haven(__HELP_URL)

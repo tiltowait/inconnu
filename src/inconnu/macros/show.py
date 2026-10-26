@@ -12,8 +12,9 @@ from models import VChar
 from services.haven import haven
 from utils import get_avatar
 from utils.text import paginate
+from utils.urls import docs_url
 
-__HELP_URL = "https://docs.inconnu.app/command-reference/macros/listing"
+__HELP_URL = docs_url("command-reference/macros#macro-list")
 
 
 def _has_macros(character: VChar):

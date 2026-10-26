@@ -463,8 +463,7 @@ class Help(commands.Cog):
         embed = self._empty_embed(
             title="Roleposting",
             description=(
-                "This feature is for "
-                f"[premium users only]({docs_url('premium/roleposting')})."
+                f"This feature is for [premium users only]({docs_url('premium/roleposting')})."
             ),
         )
         embed.add_field(

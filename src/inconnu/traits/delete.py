@@ -71,7 +71,7 @@ def __delete_traits(character: VChar, *traits: str) -> DeletionResult:
     """
     deleted = []
     errs = []
-    standard_traits = (t.lower() for t in constants.get_standard_traits())
+    standard_traits = {t.lower() for t in constants.get_standard_traits()}
 
     for trait_name in traits:
         if trait_name.lower() in standard_traits:

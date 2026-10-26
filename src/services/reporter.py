@@ -133,6 +133,9 @@ class ErrorReporter:
             )
             await respond(embed=embed, ephemeral=True)
             return
+        if isinstance(error, errors.InvalidAttachment):
+            await ui.embeds.error(ctx, str(error), title="Invalid file")
+            return
         if isinstance(error, errors.HandledError):
             logger.debug("REPORTER: Ignoring a HandledError")
             return

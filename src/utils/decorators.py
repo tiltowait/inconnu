@@ -1,5 +1,9 @@
 """Command decorators."""
 
+from collections.abc import Awaitable, Callable
+from pathlib import PurePath
+from typing import Any, cast
+
 import discord
 from discord.ext import commands
 from loguru import logger
@@ -7,6 +11,12 @@ from loguru import logger
 import errors
 from ctx import AppCtx
 from utils.permissions import get_or_fetch_supporter
+
+
+def _app_check(predicate: Callable[[AppCtx], bool | Awaitable[bool]]):
+    """commands.check() for slash commands. py-cord types its predicate as taking a
+    prefix-command Context, though slash commands pass an ApplicationContext."""
+    return commands.check(cast(Any, predicate))
 
 
 def not_on_lockdown():
@@ -32,4 +42,33 @@ async def _check_supporter(ctx: AppCtx, user: discord.Member | None = None):
 
 def premium():
     """A decorator for commands that only work for supporters."""
-    return commands.check(_check_supporter)
+    return _app_check(_check_supporter)
+
+
+def attachment(*, extensions: list[str] | None = None, filesize: int | None = None):
+    """A decorator restricting the command's attachments to the given extensions
+    and maximum file size (in bytes)."""
+    allowed = {ext.lower().lstrip(".") for ext in extensions or []}
+
+    def predicate(ctx: AppCtx):
+        resolved = (ctx.interaction.data or {}).get("resolved", {})
+        for file in resolved.get("attachments", {}).values():
+            suffix = PurePath(file["filename"]).suffix.lower().lstrip(".")
+            if allowed and suffix not in allowed:
+                types = ", ".join(f"`.{ext}`" for ext in sorted(allowed))
+                raise errors.InvalidAttachment(f"Allowed file types: {types}.")
+            if filesize is not None and file["size"] > filesize:
+                raise errors.InvalidAttachment(
+                    f"The file must be no larger than {_format_size(filesize)}."
+                )
+        return True
+
+    return _app_check(predicate)
+
+
+def _format_size(size: int) -> str:
+    """Format a byte count as a human-readable size."""
+    for unit, scale in (("MB", 1_000_000), ("KB", 1_000)):
+        if size >= scale:
+            return f"{size / scale:g} {unit}"
+    return f"{size} bytes"

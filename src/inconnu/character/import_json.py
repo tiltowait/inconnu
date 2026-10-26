@@ -11,15 +11,9 @@ from ctx import AppCtx
 from models import VChar
 from routes.characters.models import CreationBody
 
-MAX_IMPORT_SIZE = 1_000_000
-
 
 async def import_progeny(ctx: AppCtx, attachment: discord.Attachment):
     """Import a Progeny JSON export for the invoking user."""
-    if attachment.size > MAX_IMPORT_SIZE:
-        await ui.embeds.error(ctx, "The JSON file must be smaller than 1 MB.")
-        return
-
     try:
         data = CreationBody.model_validate_json(await attachment.read())
     except ValidationError as err:

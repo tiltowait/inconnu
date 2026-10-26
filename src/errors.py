@@ -12,6 +12,10 @@ class LockdownError(CheckFailure):
     """An exception raised if the bot is on lockdown."""
 
 
+class InvalidAttachment(CheckFailure):
+    """An exception raised if an attachment's type or size isn't allowed."""
+
+
 class InconnuError(Exception):
     """Base error all others inherit from."""
 

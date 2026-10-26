@@ -24,7 +24,7 @@ Once your character exists, add [Traits](traits.md) for anything the wizard didn
 /character import source:Progeny file:<file>
 ```
 
-Imports a character exported from [Progeny](https://progeny.odin-matthias.de/) as a JSON file.
+Imports a character exported from [Progeny](https://progeny.odin-matthias.de/) as a JSON file, up to 1 MB.
 
 ## /character display
 

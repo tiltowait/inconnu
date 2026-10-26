@@ -1,12 +1,13 @@
-"""Tests for services/reporter.py's update channel reports."""
+"""Tests for services/reporter.py's error handling and update channel reports."""
 
 from typing import cast
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import discord
 
+import errors
 from ctx import AppCtx
-from services.reporter import post_update
+from services.reporter import ErrorReporter, post_update
 from tests.characters import gen_char
 
 
@@ -15,6 +16,21 @@ def make_ctx() -> AppCtx:
     ctx = MagicMock(spec=AppCtx)
     ctx.guild = MagicMock(spec=discord.Guild)
     return ctx
+
+
+async def test_invalid_attachment_shows_error():
+    """Rejected attachments show the reason, not the unknown-error report."""
+    ctx = make_ctx()
+    error = errors.InvalidAttachment("Allowed file types: `.png`.")
+    reporter = ErrorReporter()
+    with (
+        patch("ui.embeds.error", new_callable=AsyncMock) as mock_error,
+        patch.object(reporter, "_report_unknown_error", new_callable=AsyncMock) as mock_unknown,
+    ):
+        await reporter.report_error(ctx, error)
+
+    mock_error.assert_awaited_once_with(ctx, str(error), title="Invalid file")
+    mock_unknown.assert_not_awaited()
 
 
 async def test_post_update_returns_sent_message():

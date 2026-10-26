@@ -71,12 +71,15 @@ def __delete_traits(character: VChar, *traits: str) -> DeletionResult:
     """
     deleted = []
     errs = []
-    standard_traits = (t.lower() for t in constants.get_standard_traits())
+    standard_traits = {t.lower() for t in constants.get_standard_traits()}
 
     for trait_name in traits:
         if trait_name.lower() in standard_traits:
-            # Set attributes and skills to 0 for better UX
+            # Set attributes and skills to 0 for better UX, clearing their specialties
             _, trait = character.assign_traits({trait_name: 0})
+            for core in character.traits:
+                if core.name in trait and core.has_specialties:
+                    character.remove_specialties(core.name, core.specialties)
             deleted.extend(trait.keys())
         else:
             try:

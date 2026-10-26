@@ -69,17 +69,3 @@ async def test_import_progeny_rejects_invalid_json(ctx):
     show_error.assert_awaited_once()
     assert "Invalid Progeny JSON" in show_error.await_args.args[1]
 
-
-async def test_import_progeny_rejects_large_file(ctx):
-    attachment = json_attachment(progeny_export())
-    attachment.size = 1_000_001
-
-    with (
-        patch("services.char_mgr.register", new_callable=AsyncMock) as register,
-        patch("ui.embeds.error", new_callable=AsyncMock) as show_error,
-    ):
-        await import_progeny(ctx, attachment)
-
-    attachment.read.assert_not_awaited()
-    register.assert_not_awaited()
-    show_error.assert_awaited_once_with(ctx, "The JSON file must be smaller than 1 MB.")

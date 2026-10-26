@@ -1,7 +1,5 @@
 """Character image uploading."""
 
-from urllib.parse import urlparse
-
 import discord
 from loguru import logger
 
@@ -14,7 +12,6 @@ from services.haven import haven
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("premium/character-images")
-VALID_EXTENSIONS = [".png", ".webp", ".jpg", ".jpeg"]
 
 
 @haven(__HELP_URL)
@@ -22,14 +19,6 @@ async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment)
     """Upload an image. Only premium users can use this feature."""
     if ctx.guild is None:
         await ui.embeds.error(ctx, "This command is unavailable in DMs.")
-        return
-    if not valid_url(image.url):
-        embed = ui.embeds.ErrorEmbed(
-            ctx.user,
-            "This is not a valid image file!",
-            ("Allowed extensions", ", ".join(VALID_EXTENSIONS)),
-        )
-        await ctx.respond(embed=embed, ephemeral=True)
         return
 
     if not ctx.interaction.response.is_done():
@@ -68,13 +57,3 @@ async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment)
         }
     )
 
-
-def valid_url(url: str) -> bool:
-    """Check whether a URL is a valid image URL."""
-    parsed = urlparse(url.lower())
-    logger.debug("IMAGES: Checking validity of {}", url)
-
-    for extension in VALID_EXTENSIONS:
-        if parsed.path.endswith(extension):
-            return True
-    return False

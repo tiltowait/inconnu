@@ -24,7 +24,7 @@ Once your character exists, add [Traits](traits.md) for anything the wizard didn
 /character import source:Progeny file:<file>
 ```
 
-Imports a character exported from Progeny as a JSON file.
+Imports a character exported from [Progeny](https://progeny.odin-matthias.de/) as a JSON file.
 
 ## /character display
 
@@ -102,7 +102,7 @@ Opens a dialogue to edit the profile.
 
 Shows a profile. Anyone can view anyone's profile. Some of **Inconnu's** responses link to your profile on the web.
 
-## /character Convictions
+## /character convictions
 
 ```
 /character convictions edit:<character>

@@ -51,14 +51,14 @@ async def test_rejected_extension(filename: str):
         await check(make_ctx((filename, 100)), extensions=[".png", ".jpg"])
 
 
-@pytest.mark.parametrize("size,allowed", [(999, True), (1_000, True), (1_001, False)])
+@pytest.mark.parametrize("size,allowed", [(1023, True), (1024, True), (1025, False)])
 async def test_filesize(size: int, allowed: bool):
     ctx = make_ctx(("file.json", size))
     if allowed:
-        assert await check(ctx, filesize=1_000)
+        assert await check(ctx, filesize=1024)
     else:
         with pytest.raises(errors.InvalidAttachment, match="1 KB"):
-            await check(ctx, filesize=1_000)
+            await check(ctx, filesize=1024)
 
 
 async def test_every_attachment_checked():
@@ -77,7 +77,7 @@ async def test_no_attachments():
 
 @pytest.mark.parametrize(
     "size,expected",
-    [(500, "500 bytes"), (1_000, "1 KB"), (2_500_000, "2.5 MB"), (5_000_000, "5 MB")],
+    [(1023, "1023 bytes"), (1024, "1 KB"), (1536, "1.5 KB"), (5 * 1024**2, "5 MB")],
 )
 def test_format_size(size: int, expected: str):
     assert _format_size(size) == expected

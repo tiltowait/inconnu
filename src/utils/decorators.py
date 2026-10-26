@@ -67,8 +67,8 @@ def attachment(*, extensions: list[str] | None = None, filesize: int | None = No
 
 
 def _format_size(size: int) -> str:
-    """Format a byte count as a human-readable size."""
-    for unit, scale in (("MB", 1_000_000), ("KB", 1_000)):
+    """Format a byte count as a human-readable, base-2 size."""
+    for unit, scale in (("MB", 1024**2), ("KB", 1024)):
         if size >= scale:
             return f"{size / scale:g} {unit}"
     return f"{size} bytes"

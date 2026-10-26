@@ -76,6 +76,7 @@ class Characters(commands.Cog, name="Character Management"):
         choices=[OptionChoice("Progeny", "progeny")],
     )
     @option("file", description="The exported character JSON file")
+    @decorators.attachment(extensions=[".json"], filesize=1024**2)
     async def character_import(
         self,
         ctx: AppCtx,
@@ -311,6 +312,7 @@ class Characters(commands.Cog, name="Character Management"):
 
     @images.command(name="upload")
     @decorators.premium()
+    @decorators.attachment(extensions=[".png", ".webp", ".jpg", ".jpeg"], filesize=5 * 1024**2)
     @option("image", description="The image file to upload")
     @char_option()
     async def upload_image(

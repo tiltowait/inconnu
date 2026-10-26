@@ -16,7 +16,7 @@ Commands that take `player` let admins work with other players' characters.
 
 Gives you a link to the web-based character creator. Follow the prompts on the website. Admins can set `spc:Yes` to make a Storyteller character.
 
-Once your character exists, add [traits](traits.md) for anything the wizard didn't cover.
+Once your character exists, add [Traits](traits.md) for anything the wizard didn't cover.
 
 ## /character import
 
@@ -32,7 +32,7 @@ Imports a character exported from Progeny as a JSON file.
 /character display character:[character] player:[player]
 ```
 
-Shows the character's Health, Willpower, Humanity, experience, and other trackers. The **Traits** button shows their Attributes, Skills, and other traits. If you have several characters and don't name one, you can pick from a list.
+Shows the character's Health, Willpower, Humanity, experience, and other trackers. The **Traits** button shows their Attributes, Skills, and other Traits. If you have several characters and don't name one, you can pick from a list.
 
 ## /character update
 
@@ -84,11 +84,11 @@ The same changes as `/character update`, chosen from individual options instead 
 **Inconnu** asks you to confirm first.
 
 > [!CAUTION]
-> **This cannot be undone!** Deleting a character also deletes its traits, macros, and images.
+> **This cannot be undone!** Deleting a character also deletes its Traits, macros, and images.
 
 ## /character profile
 
-Every character has a public profile with a biography and description. [Supporters](../premium/supporter-only-features.md) can also add [images](../premium/character-images.md).
+Every character has a public profile with a biography and description. [Supporters](https://www.patreon.com/tiltowait) can also add [images](../premium/character-images.md).
 
 ```
 /character profile edit:<character>
@@ -102,7 +102,7 @@ Opens a dialogue to edit the profile.
 
 Shows a profile. Anyone can view anyone's profile. Some of **Inconnu's** responses link to your profile on the web.
 
-## /character convictions
+## /character Convictions
 
 ```
 /character convictions edit:<character>

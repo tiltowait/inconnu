@@ -20,7 +20,7 @@ While **Inconnu** is not a reference tool, it can nonetheless track your charact
 > /disciplines add disciplines:Auspex=2 Oblivion=3
 > ```
 
-![Discord screenshot showing disciplines add](../../assets/disciplines_add.png "Example")
+![Discord screenshot showing Disciplines add](../../assets/disciplines_add.png "Example")
 
 ### Powers
 
@@ -40,4 +40,4 @@ The syntax is identical to [adding specialties](specialties.md):
 The same holds true for removing and rolling powers. Powers and Disciplines can be found in the output of `/traits list`.
 
 > [!NOTE]
-> **Power bonus** **is automatically added** if your Blood Potency is 2 or higher! No need to use a custom trait.
+> **Power bonus** **is automatically added** if your Blood Potency is 2 or higher! No need to use a custom Trait.

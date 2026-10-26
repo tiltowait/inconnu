@@ -1,19 +1,17 @@
 # Table of contents
 
-* [Inconnu](README.md)
-  * [Basic Features](inconnu/basic-features.md)
-* [About Discord Slash Commands](https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ)
+* [Introduction](README.md)
 
 ## Guides
 
 * [Quickstart](guides/quickstart/README.md)
   * [Just the basics](guides/quickstart/just-the-basics.md)
   * [Creating a character](guides/quickstart/creating-a-character.md)
-  * [Rolling with traits](guides/quickstart/rolling-with-traits.md)
+  * [Rolling with Traits](guides/quickstart/rolling-with-traits.md)
   * [Willpower re-rolls](guides/quickstart/willpower-re-rolls.md)
   * [Specialties](guides/quickstart/specialties.md)
   * [Disciplines & powers](guides/quickstart/disciplines-and-powers.md)
-  * [Custom traits](guides/quickstart/custom-traits.md)
+  * [Custom Traits](guides/quickstart/custom-traits.md)
   * [Trackers](guides/quickstart/trackers.md)
   * [Quality of life](guides/quickstart/quality-of-life.md)
   * [That's a wrap!](guides/quickstart/thats-a-wrap.md)
@@ -22,7 +20,6 @@
 
 ## Premium
 
-* [Supporter-only features](premium/supporter-only-features.md)
 * [Character Images](premium/character-images.md)
 * [Roleposting](premium/roleposting.md)
 
@@ -50,5 +47,4 @@
 * [Terms of Service](terms-of-service.md)
 * [Privacy Policy](privacy-policy.md)
 * [Contact](contact.md)
-* [Copyright](copyright.md)
 * [Changelog](https://github.com/tiltowait/inconnu/releases)

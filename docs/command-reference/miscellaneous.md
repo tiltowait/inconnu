@@ -62,9 +62,9 @@ You can calculate roll outcome probabilities using the `/probability` command.
 
 | Option | Description | Notes |
 | --- | --- | --- |
-| `roll` | The pool, Hunger, and difficulty, such as `7 3 2` or `Resolve + Academics 2 4` | May use [traits](../guides/quickstart/rolling-with-traits.md) |
+| `roll` | The pool, Hunger, and Difficulty, such as `7 3 2` or `Resolve + Academics 2 4` | May use [Traits](../guides/quickstart/rolling-with-traits.md) |
 | `reroll` | Calculate using a [Willpower re-roll strategy](../guides/quickstart/willpower-re-rolls.md) | Optional |
-| `character` | The character whose traits to use | Optional |
+| `character` | The character whose Traits to use | Optional |
 | `impairment_category` | Change the roll's [Impairment](rolls/impairment.md) category, or ignore Impairment | Optional |
 
 ## Random Numbers
@@ -75,7 +75,7 @@ A random number between 1 and `ceiling` (default `100`) may be rolled with the `
 
 Want to see how many rolls you've made? How many successes, crits, bestial failures, and the like? How many times you've used a Willpower re-roll? The `/statistics` command will show all of this information for each of your characters on the server.
 
-Additionally, this command can show statistics for a specific trait. Currently, this is limited to showing the number of rolls made and number of successes gleaned in a given time period.
+Additionally, this command can show statistics for a specific Trait. Currently, this is limited to showing the number of rolls made and number of successes gleaned in a given time period.
 
 | Option | Description | Notes |
 | --- | --- | --- |

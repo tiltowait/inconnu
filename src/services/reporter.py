@@ -113,7 +113,7 @@ class ErrorReporter:
                     f"[Check the troubleshooting page.]({troubleshoot_url})",
                 ),
                 title="Premium feature",
-                help=docs_url("premium/supporter-only-features"),
+                help=docs_url("premium/character-images"),
             )
             return
         if isinstance(error, commands.NotOwner):

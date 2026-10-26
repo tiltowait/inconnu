@@ -1,19 +1,19 @@
 ---
-description: Commands for adding, updating, and removing traits.
+description: Commands for adding, updating, and removing Traits.
 ---
 
 # Traits
 
-New to **Inconnu**? The [Quickstart](../guides/quickstart/README.md) walks you through traits.
+New to **Inconnu**? The [Quickstart](../guides/quickstart/README.md) walks you through Traits.
 
-## What are traits?
+## What are Traits?
 
-A trait is anything you can roll: Attributes, Skills, Disciplines, and any custom traits you add. Specialties and Discipline powers attach to a trait.
+A Trait is anything you can roll: Attributes, Skills, Disciplines, and any custom Traits you add. Specialties and Discipline powers attach to a Trait.
 
-The character wizard sets your Attributes, Skills, and (for vampires) Blood Potency. You can add, update, and remove traits whenever you like.
+The character wizard sets your Attributes, Skills, and (for vampires) Blood Potency. You can add, update, and remove Traits whenever you like.
 
 > [!WARNING]
-> **Universal traits:** Every character has `willpower`, `humanity`, `surge`, `potency`, and `hunger`. You can roll them, and they update with your character's trackers, but you can't create or delete traits with those names.
+> **Universal Traits:** Every character has `willpower`, `humanity`, `surge`, `potency`, and `hunger`. You can roll them, and they update with your character's trackers, but you can't create or delete Traits with those names.
 
 ## /traits add
 
@@ -21,17 +21,17 @@ The character wizard sets your Attributes, Skills, and (for vampires) Blood Pote
 /traits add traits:<trait=rating ...> character:[character]
 ```
 
-Adds one or more traits.
+Adds one or more Traits.
 
 > [!TIP]
-> **Example:** Adding Oblivion 4, Fortitude 2, and a custom trait, Stunning 2:
+> **Example:** Adding Oblivion 4, Fortitude 2, and a custom Trait, Stunning 2:
 >
 > ```
 > /traits add traits:Oblivion=4 Fortitude=2 Stunning=2 character:Nadea
 > ```
 
 > [!CAUTION]
-> Adding a trait that already exists is an error. Use `/traits update` instead.
+> Adding a Trait that already exists is an error. Use `/traits update` instead.
 
 ## /traits update
 
@@ -39,7 +39,7 @@ Adds one or more traits.
 /traits update traits:<trait=rating ...> character:[character]
 ```
 
-Changes the ratings of one or more existing traits. Use each trait's full name.
+Changes the ratings of one or more existing Traits. Use each Trait's full name.
 
 > [!TIP]
 > **Example:** Raising Nadea's Awareness to 3:
@@ -54,7 +54,7 @@ Changes the ratings of one or more existing traits. Use each trait's full name.
 /traits list character:[character] player:[player]
 ```
 
-Shows the character's traits, grouped by category, plus their specialties and powers.
+Shows the character's Traits, grouped by category, plus their specialties and powers.
 
 ## /traits delete
 
@@ -62,7 +62,7 @@ Shows the character's traits, grouped by category, plus their specialties and po
 /traits delete traits:<trait ...> character:[character]
 ```
 
-Removes one or more traits.
+Removes one or more Traits.
 
 > [!TIP]
 > **Example:** Removing Oblivion and Fortitude:

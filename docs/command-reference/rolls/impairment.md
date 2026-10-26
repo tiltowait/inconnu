@@ -21,7 +21,7 @@ If every Health box is Aggravated, **Inconnu** also tells you that you're in tor
 * **Physical:** Strength, Dexterity, Stamina
 * **Social and Mental:** Charisma, Manipulation, Composure, Intelligence, Wits, Resolve
 
-Skills, Disciplines, and custom traits don't affect the category. A pool with both a Physical and a Social or Mental Attribute is penalized by either kind of Impairment. Pools without an Attribute, such as `7` or `Auspex + Awareness`, are never penalized automatically.
+Skills, Disciplines, and custom Traits don't affect the category. A pool with both a Physical and a Social or Mental Attribute is penalized by either kind of Impairment. Pools without an Attribute, such as `7` or `Auspex + Awareness`, are never penalized automatically.
 
 The penalty shows in the roll's **Pool** field:
 

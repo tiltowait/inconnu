@@ -8,4 +8,4 @@ Many commands offer optional `character` and `player` parameters, which are used
 > [!NOTE]
 > **Automatic Character Filtering**
 >
-> If you don't specify a `character`, **Inconnu** will attempt to filter based on context. For instance, if you have a mortal and a vampire character, then running `/bol` will automatically use the vampire, because mortals can't use the Blush of Life. Similarly, if one of your characters has a custom trait called _Necromancy_, then using `/roll` with _Necromancy_ in the pool will signify you want to use that character.
+> If you don't specify a `character`, **Inconnu** will attempt to filter based on context. For instance, if you have a mortal and a vampire character, then running `/bol` will automatically use the vampire, because mortals can't use the Blush of Life. Similarly, if one of your characters has a custom Trait called _Necromancy_, then using `/roll` with _Necromancy_ in the pool will signify you want to use that character.

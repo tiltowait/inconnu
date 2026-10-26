@@ -6,6 +6,9 @@ description: >-
 
 # Roleposting
 
+> [!IMPORTANT]
+> **Roleposting is for supporters.** [Become a patron](https://www.patreon.com/tiltowait) of any tier to post as your characters.
+
 Roleposting lets you post a message "from" your character rather than your Discord username. It ties in to your **Inconnu** characters' stats and lets you tag, bookmark, and search your posts.
 
 > [!TIP]
@@ -38,7 +41,7 @@ To change "this post only" options permanently, [update the header](../command-r
 
 ### Bookmarks and tags
 
-In the dialogue, you can give the post a **bookmark title**, which lists it in `/bookmarks`, and **tags**, separated by semicolons, for `/tags`. Players use tags to track awakening scenes, Discipline use, rolls of particular traits, scenes with particular characters, and more.
+In the dialogue, you can give the post a **bookmark title**, which lists it in `/bookmarks`, and **tags**, separated by semicolons, for `/tags`. Players use tags to track awakening scenes, Discipline use, rolls of particular Traits, scenes with particular characters, and more.
 
 ### Editing and deleting
 

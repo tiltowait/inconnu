@@ -10,15 +10,15 @@ Before we conclude, let's take a look at a few common tasks.
 
 ### Awakening
 
-When your character wakes for the session, you heal Superficial Willpower damage equal to the higher of your Composure or Resolve. Vampires make a single Rouse check. Mortals heal Superficial Health damage equal to their Stamina, and ghouls heal twice that. **Inconnu** lets you do all this with a single command: `/awaken`.
+When your character wakes for the session, you heal Superficial Willpower damage equal to the higher of your Composure or Resolve. Vampires make a single Rouse Check. Mortals heal Superficial Health damage equal to their Stamina, and ghouls heal twice that. **Inconnu** lets you do all this with a single command: `/awaken`.
 
-Finally, you may invoke the Blush of Life with the `/bol` command, which takes your character's Humanity into account: Humanity 8 gets to re-roll the Rouse check, and Humanity 9 and 10 don't need to Rouse at all. Speaking of Rouses ...
+Finally, you may invoke the Blush of Life with the `/bol` command, which takes your character's Humanity into account: Humanity 8 gets to re-roll the Rouse Check, and Humanity 9 and 10 don't need to Rouse at all. Speaking of Rouses ...
 
 ### Rousing the blood
 
-**Inconnu** can perform a Rouse check and automatically update your Hunger with a single command: `/rouse`. This command has several optional parameters allowing you to specify the `count` of Rouse checks to make, whether failures should be `reroll`ed, and the `purpose` of the check.
+**Inconnu** can perform a Rouse Check and automatically update your Hunger with a single command: `/rouse`. This command has several optional parameters allowing you to specify the `count` of Rouse Checks to make, whether failures should be `reroll`ed, and the `purpose` of the check.
 
-### Slaking hunger
+### Slaking Hunger
 
 Rather than issuing lengthy `/character adjust` commands to set your Hunger level every time your character feeds, you can use the `/slake` command.
 
@@ -36,7 +36,7 @@ When your Storyteller tells you to, you can perform a Remorse Check by entering 
 
 ### Frenzy
 
-In V5, a frenzy check comprises unspent Willpower plus one-third of the character's Humanity rating. Rather than making you do math, **Inconnu** can do it for you with the `/frenzy` command. Simply specify a difficulty and roll the dice.
+In V5, a frenzy check comprises unspent Willpower plus one-third of the character's Humanity rating. Rather than making you do math, **Inconnu** can do it for you with the `/frenzy` command. Simply specify a Difficulty and roll the dice.
 
 > [!NOTE]
 > **Bonuses and penalties?** `/frenzy`'s optional parameters allow you to specify bonuses and penalties to the frenzy's dice pool. For most users, these parameters can be safely ignored.

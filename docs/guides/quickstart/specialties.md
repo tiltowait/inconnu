@@ -1,15 +1,15 @@
 # Specialties
 
-When you create a character in V5, you are given several skill specialties that add a single die to appropriate rolls. You can enter them in the [character wizard](creating-a-character.md), or add them afterward.
+When you create a character in V5, you are given several Skill specialties that add a single die to appropriate rolls. You can enter them in the [character wizard](creating-a-character.md), or add them afterward.
 
 > [!NOTE]
-> **Adding Specialties**
+> **Adding specialties**
 >
 > ```
 > /specialties add specialties:<TRAIT1>=<SPEC1>,<SPEC2>,...<SPECN> [TRAIT2]=...
 > ```
 
-As you can see, you can add multiple specialties at a time. You can treat these specialties as normal skills and attributes; they are automatically worth one die each. You can add them to your rolls just like you add any other skill.
+As you can see, you can add multiple specialties at a time. You can treat these specialties as normal Skills and Attributes; they are automatically worth one die each. You can add them to your rolls just like you add any other Skill.
 
 > [!TIP]
 > **Example:** Nadea has a Medicine specialty called _Cadavers_.
@@ -23,7 +23,7 @@ As you can see, you can add multiple specialties at a time. You can treat these 
 To remove specialties, you use the same syntax:
 
 > [!WARNING]
-> **Removing Specialties**
+> **Removing specialties**
 >
 > ```
 > /specialties remove specialties:<TRAIT1>=<SPEC1>,[SPEC2]...
@@ -33,7 +33,7 @@ To remove specialties, you use the same syntax:
 
 You can see your specialties near the bottom of the `/traits list` command:
 
-![Discord screenshot showing specialties in traits list](../../assets/specialties_list.png "Example display")
+![Discord screenshot showing specialties in Traits list](../../assets/specialties_list.png "Example display")
 
 ### Rolling
 
@@ -42,7 +42,7 @@ You can roll with a specialty using "dot-syntax". For example, if you have a Bra
 ![Discord screenshot showing a specialty roll](../../assets/roll_specialty.png "Example roll")
 
 > [!NOTE]
-> Just like normal traits, you can use shorthand so long as **Inconnu** can tell what specialty and skill combo you're referring to. Instead of `brawl.kindred`, you might write `brawl.kin`, `b.k`, or even `.k`—so long as what you type is unambiguous.
+> Just like normal Traits, you can use shorthand so long as **Inconnu** can tell what specialty and Skill combo you're referring to. Instead of `brawl.kindred`, you might write `brawl.kin`, `b.k`, or even `.k`—so long as what you type is unambiguous.
 
 When you roll with a specialty, one die is automatically added to the dice pool. In addition, the specialty is written in parentheses after the Skill (e.g. "Brawl (Kindred)").
 

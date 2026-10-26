@@ -43,6 +43,13 @@ premium/roleposting/rp-changelog: premium/roleposting#changelog-channel
 premium/roleposting/admin-checklist: premium/roleposting#server-setup
 premium/roleposting/troubleshooting: premium/roleposting#troubleshooting
 
+# Merged into the docs home page
+inconnu/basic-features: ''
+
+# Removed; the premium pages and the site footer cover them
+premium/supporter-only-features: premium/character-images
+copyright: ''
+
 # Links the bot once sent to pages that never existed
-guides/premium: premium/supporter-only-features
+guides/premium: premium/character-images
 guides/premium/character-images: premium/character-images

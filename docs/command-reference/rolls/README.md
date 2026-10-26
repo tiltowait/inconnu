@@ -4,7 +4,7 @@ description: The /roll and /vr commands.
 
 # Rolls
 
-New to rolling? Start with [Just the basics](../../guides/quickstart/just-the-basics.md) and [Rolling with traits](../../guides/quickstart/rolling-with-traits.md).
+New to rolling? Start with [Just the basics](../../guides/quickstart/just-the-basics.md) and [Rolling with Traits](../../guides/quickstart/rolling-with-traits.md).
 
 ## /roll
 
@@ -29,10 +29,10 @@ New to rolling? Start with [Just the basics](../../guides/quickstart/just-the-ba
 /vr syntax:<pool> [hunger] [difficulty]
 ```
 
-The same as `/roll`, with the pool, Hunger, and difficulty typed together in `syntax`. It's quicker, especially on mobile, and will feel familiar to Thirst users. `/vr` takes the same other options as `/roll`.
+The same as `/roll`, with the pool, Hunger, and Difficulty typed together in `syntax`. It's quicker, especially on mobile, and will feel familiar to Thirst users. `/vr` takes the same other options as `/roll`.
 
 > [!TIP]
-> **Example:** Intelligence + Investigation, with current Hunger, at difficulty 3:
+> **Example:** Intelligence + Investigation, with current Hunger, at Difficulty 3:
 >
 > ```
 > /vr syntax:intelligence+investigation hunger 3
@@ -40,16 +40,16 @@ The same as `/roll`, with the pool, Hunger, and difficulty typed together in `sy
 
 ### Trait shorthand
 
-You only need to type enough of a trait's name to identify it. **Inconnu** finds every trait starting with what you typed; if only one matches, that's the trait.
+You only need to type enough of a Trait's name to identify it. **Inconnu** finds every Trait starting with what you typed; if only one matches, that's the Trait.
 
-The standard character sheet has seven traits starting with "S": Science, Stamina, Stealth, Streetwise, Strength, Subterfuge, and Survival. `s` matches all seven, and `st` still matches four, but `sta` matches only Stamina. So this rolls Intelligence + Investigation with current Hunger at difficulty 3:
+The standard character sheet has seven Traits starting with "S": Science, Stamina, Stealth, Streetwise, Strength, Subterfuge, and Survival. `s` matches all seven, and `st` still matches four, but `sta` matches only Stamina. So this rolls Intelligence + Investigation with current Hunger at Difficulty 3:
 
 ```
 /vr syntax:inte+inv hun 3
 ```
 
 > [!NOTE]
-> Macros save the full trait names, so later traits can't make them ambiguous.
+> Macros save the full Trait names, so later Traits can't make them ambiguous.
 
 > [!WARNING]
-> [Custom traits](../../guides/quickstart/custom-traits.md) count, too. Add a trait called "Staking", and you'll need `stam` for Stamina and `stak` for Staking.
+> [Custom Traits](../../guides/quickstart/custom-traits.md) count, too. Add a Trait called "Staking", and you'll need `stam` for Stamina and `stak` for Staking.

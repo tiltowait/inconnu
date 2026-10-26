@@ -1,6 +1,6 @@
 ---
 description: >-
-  In addition to Attributes, Skills, and custom traits, Inconnu keeps track of
+  In addition to Attributes, Skills, and custom Traits, Inconnu keeps track of
   Health, Willpower, Humanity, Hunger, and more.
 ---
 
@@ -22,4 +22,4 @@ This command has over a dozen optional parameters for modifying nearly every asp
 In the example above, we wrote `+2` and `+1`. We could of course have reduced damage by subtracting (with `-`) instead. But what happens if we leave off `+` or `-`? In that case, **Inconnu** will _set_ the value to that level rather than adding or subtracting from the current value. If you have three levels of Superficial Health damage, `sup_hp:2` (without the plus sign) will reduce your damage to two boxes.
 
 > [!NOTE]
-> **Why can't I just subtract health?** New users sometimes get confused about having to "add" damage versus "subtracting" health. There's an important distinction: the `health` parameter reflects the overall size (number of boxes) of your health track. When you "add" damage, you are _applying_ it.
+> **Why can't I just subtract Health?** New users sometimes get confused about having to "add" damage versus "subtracting" Health. There's an important distinction: the `health` parameter reflects the overall size (number of boxes) of your Health track. When you "add" damage, you are _applying_ it.

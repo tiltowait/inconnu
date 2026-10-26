@@ -59,17 +59,17 @@ The Resonance probabilities `/resonance` uses:
 * **Use alternate distribution from Tattered Facade**
 * **Add 16.7% chance for Empty Resonance:** The core distribution, plus a chance of Empty Resonance, which came with the Oblivion Discipline but never made it into the core table
 
-### Oblivion stains
+### Oblivion Stains
 
 > [!NOTE]
 > **Default:** `1s and 10s (RAW)`
 
-_Chicago by Night_ and _Cults of the Blood Gods_ say a Rouse check for an Oblivion power, Ritual, or Ceremony grants a Stain on a 1 or a 10. **Inconnu** reminds players of this after Rouse checks. This setting changes when it does: on `1s and 10s (RAW)`, `1s only`, `10s only`, or `Never`.
+_Chicago by Night_ and _Cults of the Blood Gods_ say a Rouse Check for an Oblivion power, Ritual, or Ceremony grants a Stain on a 1 or a 10. **Inconnu** reminds players of this after Rouse Checks. This setting changes when it does: on `1s and 10s (RAW)`, `1s only`, `10s only`, or `Never`.
 
 > [!NOTE]
-> **This setting affects macros.** Macros created with `staining:Yes` automatically apply a Stain when the Rouse check matches this setting.
+> **This setting affects macros.** Macros created with `staining:Yes` automatically apply a Stain when the Rouse Check matches this setting.
 
-### Max hunger
+### Max Hunger
 
 > [!NOTE]
 > **Default:** `5 (RAW)`
@@ -97,7 +97,7 @@ Whether players can edit their own XP. The options are:
 
 **Inconnu** tells players about their character updates privately. That saves clutter, but it means admins can't see what's happening. Set a channel, and **Inconnu** also posts there:
 
-* Character updates, such as trait and tracker changes
+* Character updates, such as Trait and tracker changes
 * Willpower spent on re-rolls
 * The full results of [hidden rolls](../command-reference/rolls/hidden-dice.md)
 

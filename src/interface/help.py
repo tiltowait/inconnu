@@ -464,7 +464,7 @@ class Help(commands.Cog):
             title="Roleposting",
             description=(
                 "This feature is for "
-                f"[premium users only]({docs_url('premium/supporter-only-features')})."
+                f"[premium users only]({docs_url('premium/roleposting')})."
             ),
         )
         embed.add_field(

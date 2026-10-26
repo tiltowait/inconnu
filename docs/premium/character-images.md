@@ -1,5 +1,8 @@
 # Character Images
 
+> [!IMPORTANT]
+> **Character images are for supporters.** [Become a patron](https://www.patreon.com/tiltowait) of any tier to upload them.
+
 > [!WARNING]
 > Please read the [Terms of Service](../terms-of-service.md) and [Privacy Policy](../privacy-policy.md) regarding images.
 

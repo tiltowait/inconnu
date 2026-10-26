@@ -8,7 +8,7 @@ There are three types of content you can give **Inconnu**:
 
 * Intellectual, in the form of character names, biographies, and descriptions
 * Text, in the form of comments and other material you use in bot commands
-* Images, if you are a [premium user](premium/supporter-only-features.md)
+* Images, if you are a [premium user](premium/character-images.md)
 
 By using **Inconnu**, you grant permission to upload, transmit, display, and store the above data. Certain data will be available on the web as part of your character profile pages, while the rest will only be available within Discord itself.
 

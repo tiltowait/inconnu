@@ -10,7 +10,7 @@ from discord.ui import Button, Select
 
 from bot import InconnuBot
 from ctx import AppCtx
-from inconnu.settings.menu import SettingsIDs, SettingsMenu
+from inconnu.settings.menu import OblivionOptions, SettingsIDs, SettingsMenu
 from models import HiddenDicePerms, VGuild, VUser
 
 
@@ -121,3 +121,13 @@ async def test_set_hidden_dice_permissions(ctx: AppCtx):
     assert [opt.value for opt in select.options if opt.default] == [HiddenDicePerms.ADMIN_ONLY]
     interaction.edit.assert_awaited_once_with(view=menu)
     mock_save.assert_awaited_once()
+
+
+@pytest.mark.parametrize("option", list(OblivionOptions))
+async def test_guild_menu_shows_oblivion_stains(ctx: AppCtx, option: OblivionOptions):
+    """The menu opens with every saved Oblivion setting, including Never."""
+    vguild = VGuild(guild=1, name="Test Guild")
+    vguild.settings.oblivion_stains = option.to_list()
+    select = cast(Select, SettingsMenu(ctx, vguild, admin=True).get_item(SettingsIDs.OBLIVION))
+
+    assert [opt.value for opt in select.options if opt.default] == [option]

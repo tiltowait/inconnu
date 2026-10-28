@@ -150,6 +150,11 @@ def _can_roll(character: VChar, syntax: str):
         # HungerInPool so we can show the correct error message. Otherwise, we
         # get "None of your characters can roll x + hunger".
         pass
+    except (errors.HungerIsntHunger, errors.InvalidDifficulty) as err:
+        # A misused trait fails the same way for every character, so asking
+        # which character to use would be pointless. SyntaxErrors aren't
+        # handled by Haven, so this shows the error immediately.
+        raise SyntaxError(str(err)) from err
     except errors.TooManyParameters as err:
         # Vampires take the most parameters, so we always want to show the
         # error message if it's too many for a vampire. Mortals, however, have

@@ -231,12 +231,13 @@ def test_leading_operators(syntax: str, pool_str: str | None, pool: int, charact
         ("stren+br hunger 3", 7, 2, 3),
         ("stren+br current_hunger 3", 7, 2, 3),
         ("stren+br 1+1 4-1", 7, 2, 3),
-        ("stren+br str res", 7, 3, 4),
+        ("stren+br hunger + 1 2", 7, 3, 2),
+        ("stren+br current_hunger - 1", 7, 1, 0),
         ("7 3 2", 7, 3, 2),
     ],
 )
 def test_vampire_stacks(syntax: str, pool: int, hunger: int, difficulty: int, character: VChar):
-    """Stacks go pool, Hunger, Difficulty, and Hunger and Difficulty may use traits."""
+    """Stacks go pool, Hunger, Difficulty, and Hunger and Difficulty may use arithmetic."""
     character.hunger = 2
     p = RollParser(character, syntax)
     assert p.pool == pool
@@ -271,10 +272,12 @@ def test_mortal_stacks(syntax: str, hunger: int, difficulty: int, mortal: VChar)
     assert p.difficulty == difficulty
 
 
-def test_mortal_nonzero_hunger_and_difficulty(mortal: VChar):
-    """A mortal's nonzero Hunger is read as Difficulty, so a Difficulty is extra."""
+@pytest.mark.parametrize("syntax", ["stren+br 2 3", "stren+br stren 3", "stren+br finance 3"])
+def test_mortal_nonzero_hunger_and_difficulty(syntax: str, mortal: VChar):
+    """A mortal's nonzero Hunger is read as Difficulty, so a Difficulty is extra.
+    Too many parameters wins over an invalid or unknown Difficulty."""
     with pytest.raises(errors.TooManyParameters):
-        RollParser(mortal, "stren+br 2 3")
+        RollParser(mortal, syntax)
 
 
 def test_mortal_hunger_keyword(mortal: VChar):
@@ -295,7 +298,8 @@ def test_no_character_stacks():
     [
         ("stren+br 1 2 3", 4, "Strength + Brawl", "1", "2", "3"),
         ("stren+br hunger 2 3 4", 5, "Strength + Brawl", "Current Hunger", "2", "3 4"),
-        ("stren+br 1 2 res", 4, "Strength + Brawl", "1", "2", "Resolve"),
+        # Extras are shown as typed
+        ("stren+br 1 2 res", 4, "Strength + Brawl", "1", "2", "res"),
         ("7 1 2 3", 4, "7", "1", "2", "3"),
     ],
 )
@@ -347,3 +351,81 @@ def test_eval_expr_rejects_names():
     """Only numbers can be evaluated."""
     with pytest.raises(TypeError):
         eval_expr("strength + 1")
+
+
+# Hunger and Difficulty rules
+#
+# Hunger is numbers, current_hunger, or a token that resolves to Hunger, with
+# arithmetic. Difficulty is numbers only, with arithmetic.
+
+
+@pytest.fixture
+def hungry() -> VChar:
+    """A Hungry vampire with the traits players most often misroll."""
+    char = gen_char("vampire")
+    char.hunger = 3
+    char.assign_traits(
+        {
+            "Strength": 3,
+            "Dexterity": 2,
+            "Intelligence": 2,
+            "Brawl": 4,
+            "Stealth": 1,
+            "Finance": 2,
+        }
+    )
+    return char
+
+
+@pytest.mark.parametrize(
+    "syntax",
+    [
+        # A missing "+" before Surge, the most common misroll in the roll history
+        "strength + brawl surge 2",
+        "strength + brawl surge hunger",
+        # No operators at all
+        "intelligence finance hunger",
+        # Traits as Hunger
+        "strength + brawl finance 2",
+        "strength + brawl strength resolve",
+        # Hunger arithmetic with a trait other than Hunger
+        "strength + brawl hunger + surge 2",
+        "strength + brawl 1 + finance 2",
+    ],
+)
+def test_hunger_isnt_hunger(syntax: str, hungry: VChar):
+    """Hunger only accepts numbers and Hunger."""
+    with pytest.raises(errors.HungerIsntHunger):
+        RollParser(hungry, syntax)
+
+
+@pytest.mark.parametrize(
+    "syntax",
+    [
+        # Hunger and Difficulty swapped
+        "dexterity + stealth 5 hunger",
+        # A trait in Difficulty
+        "strength + brawl 2 3 + surge",
+        "strength + brawl 2 finance",
+    ],
+)
+def test_invalid_difficulty(syntax: str, hungry: VChar):
+    """Difficulty only accepts numbers."""
+    with pytest.raises(errors.InvalidDifficulty):
+        RollParser(hungry, syntax)
+
+
+@pytest.mark.parametrize(
+    "syntax,hunger,difficulty",
+    [
+        ("strength + brawl 2 4 + 1", 2, 5),
+        ("strength + brawl 2 4 - 1", 2, 3),
+        ("strength + brawl hunger 4 + 4 + 5", 3, 13),
+        ("7 3 2 + 1", 3, 3),
+    ],
+)
+def test_difficulty_arithmetic(syntax: str, hunger: int, difficulty: int, hungry: VChar):
+    """Difficulty still allows number-only arithmetic."""
+    p = RollParser(hungry, syntax)
+    assert p.hunger == hunger
+    assert p.difficulty == difficulty

@@ -243,12 +243,17 @@ async def perform_roll(
     max_hunger=5,
     *,
     impairment_category: ImpairmentCategory | None = None,
+    default_hunger="0",
+    default_difficulty="0",
 ) -> Roll:
     """Parse the syntax and roll the dice, applying any impairment penalty.
+    The defaults fill in Hunger and Difficulty if the syntax omits them.
 
     The pool string and syntax are left as the user wrote them; the penalty is
     recorded on the Roll."""
-    parser = RollParser(character, syntax)
+    parser = RollParser(
+        character, syntax, default_hunger=default_hunger, default_difficulty=default_difficulty
+    )
     penalty = await impairment_penalty(ctx, character, parser.pool_str, impairment_category)
     pool = parser.pool - IMPAIRMENT_DICE if penalty else parser.pool
 

@@ -256,3 +256,107 @@ async def test_hidden_hunt_disallowed(
     assert (
         respond.await_args.kwargs["embed"].description == "This server doesn't allow hidden dice."
     )
+
+
+# Macro modifiers
+
+
+@pytest.fixture
+def mock_punch(character: VChar) -> Iterator[MagicMock]:
+    """Select the character, which has a Hungry Strength macro."""
+    character.assign_traits({"Strength": 3, "Brawl": 1})
+    character.macros.append(
+        VCharMacro(
+            name="punch",
+            pool=["Strength"],
+            hunger=True,
+            difficulty=2,
+            rouses=0,
+            reroll_rouses=False,
+            staining="show",
+            hunt=False,
+            comment=None,
+        )
+    )
+    haven = MagicMock(spec=Haven)
+    haven.fetch = AsyncMock(return_value=character)
+    with patch("inconnu.macros.roll.Haven", return_value=haven) as mock:
+        yield mock
+
+
+@pytest.mark.parametrize(
+    "syntax,pool_str,pool,hunger,difficulty",
+    [
+        ("punch", "Strength", 3, 3, 2),
+        ("punch 1", "Strength", 3, 1, 2),
+        ("punch 1 4", "Strength", 3, 1, 4),
+        ("punch + brawl", "Strength + Brawl", 4, 3, 2),
+        ("punch + brawl 1", "Strength + Brawl", 4, 1, 2),
+        ("punch + br - 1 1 0", "Strength + Brawl - 1", 3, 1, 0),
+        ("punch hun", "Strength", 3, 3, 2),
+        ("punch hunger - 1", "Strength", 3, 2, 2),
+    ],
+)
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_modifiers(
+    ctx: AppCtx,
+    mock_display_outcome: AsyncMock,
+    syntax: str,
+    pool_str: str,
+    pool: int,
+    hunger: int,
+    difficulty: int,
+):
+    """Modifiers, Hunger, and Difficulty follow the macro name, as in /vr."""
+    await roll_macro(ctx, syntax)
+
+    assert mock_display_outcome.await_args is not None
+    outcome = mock_display_outcome.await_args.args[3]
+    assert outcome.pool_str == pool_str
+    assert outcome.pool == pool
+    assert outcome.hunger.count == hunger
+    assert outcome.difficulty == difficulty
+
+
+@pytest.mark.parametrize("syntax", ["punch surge", "punch 1 res", "punch 1 2 3"])
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_roll_errors_are_shown(ctx: AppCtx, syntax: str):
+    """Invalid Hunger, Difficulty, and extra parameters are shown, not raised."""
+    with patch("ui.embeds.error", new_callable=AsyncMock) as mock_error:
+        await roll_macro(ctx, syntax)
+
+    mock_error.assert_awaited_once()
+
+
+async def roll_error(ctx: AppCtx, syntax: str) -> str:
+    """Roll the macro and return the error message shown."""
+    with patch("ui.embeds.error", new_callable=AsyncMock) as mock_error:
+        await roll_macro(ctx, syntax)
+
+    mock_error.assert_awaited_once()
+    assert mock_error.await_args is not None
+    return str(mock_error.await_args.args[1])
+
+
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_deleted_trait(ctx: AppCtx, character: VChar):
+    """A trait missing from the macro's own pool was probably deleted."""
+    character.macros[-1].pool = ["Strength", "+", "Dominate"]
+    message = await roll_error(ctx, "punch")
+    assert "`Dominate`" in message
+    assert "Perhaps you deleted it?" in message
+
+
+@pytest.mark.parametrize(
+    "syntax,expected",
+    [
+        ("punch + lung", "has no trait named `lung`"),
+        ("punch + s", "`s` is ambiguous"),  # Strength or Surge
+    ],
+)
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_modifier_trait_errors(ctx: AppCtx, syntax: str, expected: str):
+    """Trait errors in the player's modifiers are shown as-is."""
+    message = await roll_error(ctx, syntax)
+    assert expected in message
+    assert "deleted" not in message

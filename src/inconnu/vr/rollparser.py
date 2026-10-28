@@ -17,11 +17,23 @@ DELIMITER = re.escape(VCharTrait.DELIMITER)
 class RollParser:
     """Parse user roll input."""
 
-    def __init__(self, character, raw_syntax, expand_only=False, power_bonus=True):
+    def __init__(
+        self,
+        character,
+        raw_syntax,
+        expand_only=False,
+        power_bonus=True,
+        *,
+        default_hunger="0",
+        default_difficulty="0",
+    ):
+        """The defaults fill in Hunger and Difficulty if the syntax omits them."""
         self.character = character
         self._parameters = {}
         self.expand_only = expand_only
         self.power_bonus = power_bonus
+        self.default_hunger = default_hunger
+        self.default_difficulty = default_difficulty
 
         # Convert the syntax into tokens, if necessary
         if isinstance(raw_syntax, str):
@@ -97,28 +109,15 @@ class RollParser:
             errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"
             raise errors.HungerInPool(errmsg)
 
-        # Only the pool is required, so we need to provide defaults if the other
-        # stacks aren't given
-        for stack in (
-            "q_hunger_stack",
-            "i_hunger_stack",
-            "q_difficulty_stack",
-            "i_difficulty_stack",
-        ):
-            self._parameters[stack] = ["0"]
-
-        if not stacks:
-            # They only gave us a pool
-            return
-
-        # The user provided pool and hunger
+        # Only the pool is required, so the defaults fill in Hunger and
+        # Difficulty if they aren't given
         if self.character is None or self.character.is_vampire:
             # Hunger is the only trait allowed here, so a prefix of "hunger"
             # always means Hunger, even if it could also match Hunter or
             # Humanity. Other words aren't looked up, so the error is the same
             # for every character.
             hunger = []
-            for token in stacks.pop(0):
+            for token in stacks.pop(0) if stacks else [self.default_hunger]:
                 if token in "+-" or token.isdigit():
                     hunger.append(token)
                 elif token.lower() == "current_hunger" or "hunger".startswith(token.lower()):
@@ -142,15 +141,13 @@ class RollParser:
             # However, many players are used to inputting Hunger on all rolls
             # and may have put a 0 for Hunger. In that case, we will remove the
             # 0 at the top of the stack.
-            if stacks[0] in (["0"], ["current_hunger"]):
+            if stacks and stacks[0] in (["0"], ["current_hunger"]):
                 del stacks[0]
 
-        if not stacks:
-            # Difficulty was not provided
-            return
+            self._parameters["q_hunger_stack"] = ["0"]
+            self._parameters["i_hunger_stack"] = ["0"]
 
-        # They gave us all three (pool, hunger, and difficulty)
-        difficulty = stacks.pop(0)
+        difficulty = stacks.pop(0) if stacks else [self.default_difficulty]
 
         if stacks:
             # They gave us too many stacks! Show our interpretation as well as the extra

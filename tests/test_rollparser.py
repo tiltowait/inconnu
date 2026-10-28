@@ -466,3 +466,26 @@ def test_hunger_isnt_a_trait(hungry: VChar):
     """A word that isn't a trait is still the wrong kind of Hunger."""
     with pytest.raises(errors.HungerIsntHunger, match="not `lung`"):
         RollParser(hungry, "strength + brawl lung 2")
+
+
+@pytest.mark.parametrize(
+    "syntax,hunger,difficulty",
+    [
+        ("stren+br", 2, 3),
+        ("stren+br 1", 1, 3),
+        ("stren+br 1 4", 1, 4),
+        ("stren+br hunger + 1", 3, 3),
+    ],
+)
+def test_default_hunger_and_difficulty(syntax: str, hunger: int, difficulty: int, character: VChar):
+    """Defaults fill in a missing Hunger and Difficulty, as macros need."""
+    character.hunger = 2
+    p = RollParser(character, syntax, default_hunger="current_hunger", default_difficulty="3")
+    assert p.hunger == hunger
+    assert p.difficulty == difficulty
+
+
+def test_mortal_default_difficulty(mortal: VChar):
+    """A mortal's Hunger position is still read as Difficulty."""
+    p = RollParser(mortal, "stren+br 4", default_hunger="current_hunger", default_difficulty="3")
+    assert p.difficulty == 4

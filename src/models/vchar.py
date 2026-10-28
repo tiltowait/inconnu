@@ -9,7 +9,6 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from enum import StrEnum
 from functools import total_ordering
-from types import SimpleNamespace
 from typing import Any, ClassVar
 
 from beanie import Document, Insert, Replace, Save, SaveChanges, before_event
@@ -20,6 +19,7 @@ import errors
 from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
 from models.impairment import Impairment
 from models.vchardocs import (
+    TraitMatch,
     VCharExperience,
     VCharExperienceEntry,
     VCharHeader,
@@ -382,7 +382,7 @@ class VChar(Document):
                 return True
         return False
 
-    def find_trait(self, name: str, exact=False) -> SimpleNamespace:
+    def find_trait(self, name: str, exact=False) -> TraitMatch:
         """
         Finds the closest matching trait.
         Raises AmbiguousTraitError if more than one are found.

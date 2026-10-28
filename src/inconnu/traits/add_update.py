@@ -3,7 +3,7 @@
 import asyncio
 import re
 from collections.abc import Awaitable
-from types import SimpleNamespace
+from typing import NamedTuple
 
 import services
 import ui
@@ -22,6 +22,23 @@ __HELP_URL = {
 }
 __HELP_ADD = docs_url("command-reference/traits#traits-add")
 __HELP_UPDATE = docs_url("command-reference/traits#traits-update")
+
+
+class AssignmentResult(NamedTuple):
+    """Contains the outcome of adding or updating traits."""
+
+    assigned: list[str]
+    unassigned: list[str]
+    errors: list[str]
+    updating: bool
+    track_adjustment: str
+
+
+class TraitPartition(NamedTuple):
+    """Traits the character owns and doesn't own, with their ratings."""
+
+    owned: dict[str, int | None]
+    unowned: dict[str, int | None]
 
 
 @haven(__HELP_ADD)
@@ -83,7 +100,9 @@ async def __assign(
         await ui.embeds.error(ctx, err, character=character, help=__HELP_URL[allow_overwrite])
 
 
-async def __handle_traits(character: VChar, traits: dict, overwriting: bool, disciplines: bool):
+async def __handle_traits(
+    character: VChar, traits: dict, overwriting: bool, disciplines: bool
+) -> AssignmentResult:
     """
     Add the rated traits to the character directly.
     Args:
@@ -113,7 +132,7 @@ async def __handle_traits(character: VChar, traits: dict, overwriting: bool, dis
     assigned = [f"{trait}: `{rating}`" for trait, rating in assigned.items()]
     await character.save()
 
-    return SimpleNamespace(
+    return AssignmentResult(
         assigned=assigned,
         unassigned=unassigned,
         errors=error_traits,
@@ -122,7 +141,7 @@ async def __handle_traits(character: VChar, traits: dict, overwriting: bool, dis
     )
 
 
-def __partition_traits(character, traits):
+def __partition_traits(character: VChar, traits: dict[str, int | None]) -> TraitPartition:
     """Partition the list of traits into owned and unowned groups."""
     owned = {}
     unowned = {}
@@ -133,7 +152,7 @@ def __partition_traits(character, traits):
         else:
             unowned[trait] = rating
 
-    return SimpleNamespace(owned=owned, unowned=unowned)
+    return TraitPartition(owned=owned, unowned=unowned)
 
 
 async def __display_results(ctx, outcome, character: VChar, disciplines: bool):

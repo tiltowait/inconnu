@@ -1,6 +1,6 @@
 """misc/cripple.py - Roll against the crippling injury chart."""
 
-from types import SimpleNamespace
+from typing import NamedTuple
 
 import discord
 
@@ -10,6 +10,13 @@ from utils import get_avatar
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("guides/gameplay-shortcuts#crippling-injuries")
+
+
+class Injury(NamedTuple):
+    """A crippling injury and its effect."""
+
+    injury: str
+    effect: str
 
 
 async def cripple(ctx: AppCtx, damage: int):
@@ -73,6 +80,6 @@ def __get_injury(damage: int):
 
     injuries = []
     for inj, eff in zip(injury, effect):
-        injuries.append(SimpleNamespace(injury=inj, effect=eff))
+        injuries.append(Injury(injury=inj, effect=eff))
 
     return injuries

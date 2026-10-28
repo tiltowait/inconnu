@@ -1,6 +1,6 @@
 """misc/aggheal.py - Heal aggravated damage."""
 
-from types import SimpleNamespace
+from typing import NamedTuple
 
 import errors
 import inconnu
@@ -12,6 +12,13 @@ from utils import get_message
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("guides/gameplay-shortcuts#aggravated-healing")
+
+
+class AggHealOutcome(NamedTuple):
+    """The outcome of healing Aggravated damage."""
+
+    gain: int
+    torpor: bool
 
 
 def _can_aggheal(character):
@@ -50,7 +57,7 @@ async def aggheal(ctx, character):
     )
 
 
-async def __heal(character: VChar):
+async def __heal(character: VChar) -> AggHealOutcome:
     """
     Heal agg damage.
     Does not check if the character has agg damage!
@@ -73,7 +80,7 @@ async def __heal(character: VChar):
         character.log("rouse", 3)
 
     await character.save()
-    return SimpleNamespace(gain=hunger_gain, torpor=torpor)
+    return AggHealOutcome(gain=hunger_gain, torpor=torpor)
 
 
 async def __display_outcome(ctx, character, outcome):

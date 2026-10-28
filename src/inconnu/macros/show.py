@@ -1,6 +1,6 @@
 """macros/show.py - Displaying character macros."""
 
-from types import SimpleNamespace
+from typing import NamedTuple
 
 import discord
 from discord.ext import pages
@@ -15,6 +15,13 @@ from utils.text import paginate
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("command-reference/macros#macro-list")
+
+
+class MacroField(NamedTuple):
+    """An embed field describing a macro."""
+
+    name: str
+    value: str
 
 
 def _has_macros(character: VChar):
@@ -71,6 +78,6 @@ def __generate_fields(macros):
         value += "\n**Hunt:** " + ("`Yes`" if macro.hunt else "`No`")
         value += f"\n**Comment:** `{macro.comment or 'None'}`"
 
-        fields.append(SimpleNamespace(name=macro.name.upper(), value=value))
+        fields.append(MacroField(name=macro.name.upper(), value=value))
 
     return fields

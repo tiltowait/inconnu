@@ -1,6 +1,6 @@
 """misc/remorse.py - Perform a remorse check."""
 
-from types import SimpleNamespace as SN
+from typing import NamedTuple
 
 import errors
 import inconnu
@@ -12,6 +12,17 @@ from utils.text import pluralize
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("guides/gameplay-shortcuts#remorse-checks")
+
+
+class RemorseOutcome(NamedTuple):
+    """The outcome of a Remorse roll."""
+
+    remorseful: bool
+    minimum: int
+    dice: list[int]
+    overrode: bool
+    nominal: int
+    lasombra_alt: bool
 
 
 def _can_remorse(character):
@@ -62,7 +73,7 @@ async def __display_outcome(ctx, character: VChar, outcome):
     )
 
 
-def __remorse_roll(character: VChar, minimum: int, lasombra_alt: bool) -> SN:
+def __remorse_roll(character: VChar, minimum: int, lasombra_alt: bool) -> RemorseOutcome:
     """Perform a remorse roll."""
     unfilled = 10 - character.humanity - character.stains
     rolls = max(unfilled, minimum)
@@ -87,7 +98,7 @@ def __remorse_roll(character: VChar, minimum: int, lasombra_alt: bool) -> SN:
 
     character.log("remorse")
 
-    return SN(
+    return RemorseOutcome(
         remorseful=successful,
         minimum=minimum,
         dice=dice,

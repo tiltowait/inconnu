@@ -3,8 +3,7 @@
 import itertools
 from datetime import UTC, datetime
 from enum import StrEnum
-from types import SimpleNamespace as SN
-from typing import ClassVar, Literal, overload
+from typing import ClassVar, Literal, NamedTuple, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -70,6 +69,17 @@ class VCharMacro(BaseModel):
     staining: str
     hunt: bool
     comment: str | None
+
+
+class TraitMatch(NamedTuple):
+    """A trait (and any specialties) matching a user's identifier."""
+
+    name: str
+    rating: int
+    exact: bool
+    key: str
+    type: str
+    discipline: bool
 
 
 class VCharTrait(BaseModel):
@@ -178,7 +188,7 @@ class VCharTrait(BaseModel):
             except ValueError:
                 continue
 
-    def matching(self, identifier: str, exact: bool) -> list[SN]:
+    def matching(self, identifier: str, exact: bool) -> list[TraitMatch]:
         """Returns the fully qualified name if a string matches, or None."""
         matches = []
         if groups := self.expanding(identifier, exact, False):
@@ -200,7 +210,7 @@ class VCharTrait(BaseModel):
                     rating += len(expanded[1:])
 
                 matches.append(
-                    SN(
+                    TraitMatch(
                         name=full_name,
                         rating=rating,
                         exact=normalized == key.lower(),

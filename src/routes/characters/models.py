@@ -150,24 +150,29 @@ class CreationBody(BaseModel):
     @classmethod
     def validate_traits(cls, v: list[VCharTrait]) -> list[VCharTrait]:
         """Validate all trait names and specialties."""
-        # Validate trait names
-        trait_names = [trait.name for trait in v]
-        validate_trait_names(*trait_names)
+        # The validators raise SyntaxError for invalid characters, but pydantic
+        # only turns ValueErrors into validation errors (a 422 rather than a 500)
+        try:
+            # Validate trait names
+            trait_names = [trait.name for trait in v]
+            validate_trait_names(*trait_names)
 
-        # Validate specialties
-        for trait in v:
-            if trait.raw_subtraits:
-                # Only skills, custom traits, and disciplines can have subtraits
-                if trait.type not in (
-                    VCharTrait.Type.SKILL,
-                    VCharTrait.Type.CUSTOM,
-                    VCharTrait.Type.DISCIPLINE,
-                ):
-                    raise ValueError(
-                        f"Trait `{trait.name}` of type `{trait.type}` cannot have subtraits."
-                    )
-                # Validate specialty names
-                validate_specialty_names(*trait.raw_subtraits)
+            # Validate specialties
+            for trait in v:
+                if trait.raw_subtraits:
+                    # Only skills, custom traits, and disciplines can have subtraits
+                    if trait.type not in (
+                        VCharTrait.Type.SKILL,
+                        VCharTrait.Type.CUSTOM,
+                        VCharTrait.Type.DISCIPLINE,
+                    ):
+                        raise ValueError(
+                            f"Trait `{trait.name}` of type `{trait.type}` cannot have subtraits."
+                        )
+                    # Validate specialty names
+                    validate_specialty_names(*trait.raw_subtraits)
+        except SyntaxError as err:
+            raise ValueError(str(err)) from err
 
         return v
 

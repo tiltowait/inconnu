@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import partial
 from math import comb
 from typing import NamedTuple
 
@@ -13,7 +14,7 @@ import ui
 from ctx import AppCtx
 from inconnu import vr as roll
 from inconnu.roll import Strategy
-from models import IMPAIRMENT_DICE, Impairment, ImpairmentCategory, VChar
+from models import IMPAIRMENT_DICE, Impairment, ImpairmentCategory
 from services.haven import Haven
 from utils.urls import docs_url
 
@@ -73,7 +74,7 @@ async def probability(
                 ctx,
                 character=char_name,
                 tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",
-                char_filter=lambda c: _can_roll(c, syntax),
+                char_filter=partial(roll.validate_roll, syntax=syntax),
                 errmsg=f"None of your characters can roll `{syntax}`.",
                 help=HELP_URL,
             )
@@ -89,13 +90,8 @@ async def probability(
 
         await __display_embed(ctx, params, strategy, probabilities, penalty)
 
-    except (SyntaxError, ValueError, errors.TraitError) as err:
+    except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
         await ui.embeds.error(ctx, err, character=character, help_url=HELP_URL)
-
-
-def _can_roll(character: VChar, syntax: str):
-    """Raise an exception if the character can't roll the syntax."""
-    roll.RollParser(character, syntax)
 
 
 async def __display_embed(

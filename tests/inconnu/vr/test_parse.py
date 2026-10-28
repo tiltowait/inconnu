@@ -8,8 +8,15 @@ import aiohttp
 import discord
 import pytest
 
+import errors
 from ctx import AppCtx
-from inconnu.vr.parse import hidden_dice_allowed, parse, perform_roll, stringify_mentions
+from inconnu.vr.parse import (
+    hidden_dice_allowed,
+    parse,
+    perform_roll,
+    stringify_mentions,
+    validate_roll,
+)
 from models import HiddenDicePerms, Impairment, ImpairmentCategory, VChar
 from tests.characters import gen_char
 
@@ -390,3 +397,34 @@ async def test_parse_disallowed_hidden_dice():
         await parse(ctx, "5 0 0", None, None, None, hide_dice=True)
 
     mock_roll.assert_not_awaited()
+
+
+# Character filter
+
+
+@pytest.mark.parametrize(
+    "syntax,message",
+    [
+        ("strength + brawl awareness 2", "Hunger must be a number"),
+        ("strength + brawl finance 2", "Hunger must be a number"),  # Not even a trait
+        ("strength + brawl 2 wits", "Difficulty must be a number"),
+    ],
+)
+def test_validate_roll_stops_on_misused_traits(syntax: str, message: str, vampire: VChar):
+    """A misused trait fails the same way for every character, so the search
+    stops with the specific error instead of asking which character to use."""
+    with pytest.raises(SyntaxError, match=message):
+        validate_roll(vampire, syntax)
+
+
+def test_validate_roll_rejects_missing_traits(vampire: VChar):
+    """A character without a pool trait is filtered out."""
+    with pytest.raises(errors.TraitNotFound):
+        validate_roll(vampire, "strength + finance 2")
+
+
+def test_validate_roll_hunger_beats_similar_traits(vampire: VChar):
+    """A Hunger prefix means Hunger, even if the character has a trait it
+    could also match, so the character isn't filtered out."""
+    vampire.assign_traits({"Hunter": 2})
+    validate_roll(vampire, "strength + brawl hun")

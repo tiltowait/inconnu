@@ -1,6 +1,5 @@
 """macros/roll.py - Rolling character macros."""
 
-import re
 from functools import partial
 from typing import cast
 from uuid import uuid4
@@ -41,8 +40,7 @@ async def roll(
 
     try:
         # Get the basic macro details
-        macro_stack, hunger, difficulty = __normalize_syntax(syntax)
-        macro_name = macro_stack.pop(0)
+        macro_name, modifiers = __normalize_syntax(syntax)
 
         if not macro_common.is_macro_name_valid(macro_name):
             raise ValueError("Macro names may only contain letters and underscores.")
@@ -68,23 +66,36 @@ async def roll(
         if macro.pool:
             # Only roll if the macro has a pool
             empty_macro = False
-            parameters = macro.pool.copy()
-            parameters.extend(macro_stack)
-
-            # Macros can contain hunger by default, but the user can override
-            if hunger is None:
-                hunger = "current_hunger" if macro.hunger else "0"
-
-            parameters.append(hunger)
-            parameters.append(difficulty or str(macro.difficulty))
+            parameters = macro.pool + modifiers
 
             try:
+                # Macros can contain hunger by default, but the user can override
                 outcome = await perform_roll(
-                    ctx, character, parameters, impairment_category=impairment_category
+                    ctx,
+                    character,
+                    parameters,
+                    impairment_category=impairment_category,
+                    default_hunger="current_hunger" if macro.hunger else "0",
+                    default_difficulty=str(macro.difficulty),
                 )
-            except errors.TraitNotFound as err:
-                msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
-                await ui.embeds.error(ctx, msg, character=character.name)
+            except errors.TraitError as err:
+                if isinstance(err, errors.TraitNotFound) and err.trait in macro.pool:
+                    # The trait existed when the macro was saved, so it was deleted
+                    msg = f"{character.name} has no trait `{err.trait}`. Perhaps you deleted it?"
+                    await ui.embeds.error(ctx, msg, character=character.name)
+                else:
+                    # The player's modifiers are at fault
+                    await ui.embeds.error(
+                        ctx,
+                        err,
+                        character=character.name,
+                        help=__HELP_URL,
+                        view=ui.views.TraitsView(character, ctx.user),
+                        ephemeral=True,
+                    )
+                return
+            except errors.RollError as err:
+                await ui.embeds.error(ctx, err, character=character.name, help=__HELP_URL)
                 return
 
         # We show the rouse check first, because display_outcome() is blocking
@@ -198,42 +209,14 @@ async def __slake(ctx: AppInvocation, character: VChar, outcome: Roll | None, ep
             __HUNT_LISTENERS[outcome.id] = view.message
 
 
-def __normalize_syntax(syntax: str) -> tuple[list[str], str | None, str | None]:
-    syntax = re.sub(r"([+-])", r" \g<1> ", syntax)
-    stack = syntax.split()
-    params = []
+def __normalize_syntax(syntax: str) -> tuple[str, list[str]]:
+    """Split the macro name from the modifiers, Hunger, and Difficulty after
+    it. The roll parser handles those along with the macro's pool."""
+    tokens = inconnu.vr.RollParser.tokenize(syntax)
+    if not tokens:
+        raise SyntaxError("You must supply a macro name.")
 
-    while len(stack) > 1 and stack[-2] not in "+-":
-        params.insert(0, stack.pop())
-
-    params.insert(0, stack)
-
-    if len(params) == 1:
-        params.append(None)
-
-    if len(params) == 2:
-        params.append(None)
-
-    # At this point, the stack contains the following items
-    # 0: Pool (list that will be parsed by the standard roll parser)
-    # 1: Hunger ("0" or the user's input)
-    # 2: Difficulty (None or the user's input)
-
-    # We validate the pool stack later, but we will validate hunger and difficulty
-    # here. We don't modify anything; the roll parser will do that for us. Instead,
-    # we simply check for validity.
-
-    if params[1] is not None and params[1].lower() != "hunger":  # "hunger" is a valid option here
-        if not 0 <= int(params[1]) <= 5:
-            raise ValueError("Hunger must be between 0 and 5.")
-
-    difficulty = params[2]
-    if difficulty is not None:
-        difficulty = int(difficulty)
-        if difficulty < 0:
-            raise ValueError("Difficulty cannot be less than 0.")
-
-    return (params[0], params[1], params[2])
+    return tokens[0], tokens[1:]
 
 
 class _SlakeView(View):

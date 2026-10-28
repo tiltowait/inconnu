@@ -11,31 +11,33 @@ from loguru import logger
 import errors
 from models.vchardocs import VCharTrait
 
+DELIMITER = re.escape(VCharTrait.DELIMITER)
+
 
 class RollParser:
     """Parse user roll input."""
 
-    def __init__(self, character, raw_syntax, expand_only=False, power_bonus=True):
+    def __init__(
+        self,
+        character,
+        raw_syntax,
+        expand_only=False,
+        power_bonus=True,
+        *,
+        default_hunger="0",
+        default_difficulty="0",
+    ):
+        """The defaults fill in Hunger and Difficulty if the syntax omits them."""
         self.character = character
         self._parameters = {}
         self.expand_only = expand_only
         self.power_bonus = power_bonus
+        self.default_hunger = default_hunger
+        self.default_difficulty = default_difficulty
 
         # Convert the syntax into tokens, if necessary
         if isinstance(raw_syntax, str):
-            if self.has_invalid_characters(raw_syntax):
-                raise SyntaxError("Invalid syntax.")
-
-            # Fix spacing
-            if VCharTrait.DELIMITER == ".":
-                # Period matches any character in regex, so we have to escape it
-                pat = r"\s*\.\s*"
-            else:
-                pat = r"\s*" + VCharTrait.DELIMITER + r"\s*"
-            syntax = re.sub(pat, VCharTrait.DELIMITER, raw_syntax)
-            syntax = re.sub(r"\s*([+-])\s*", r" \g<1> ", syntax)
-
-            self.tokens = syntax.split()
+            self.tokens = self.tokenize(raw_syntax)
         else:
             self.tokens = map(str, raw_syntax)
 
@@ -84,80 +86,19 @@ class RollParser:
 
     def _create_stacks(self):
         """Create both the fully qualified stacks and the interpolated stacks."""
-        using_discipline = False
-
         # A "fully qualified" stack has the canonical names of the character's
         # traits. For instance, `wi` will be interpreted to Wits, and `aw` will
         # become Awareness.
         #
         # An "interpolated" stack replaces the trait names with the ratings.
+        #
+        # Order goes pool, hunger, difficulty. Only the pool may contain any
+        # trait; hunger may only contain Hunger, and difficulty only numbers.
 
-        qualified_stacks = []
-        interpolated_stacks = []
-
-        # When we encounter two operands in a row, the user has switched
-        # parameter types (e.g. pool -> hunger -> difficulty). When this
-        # happens, we wrap up the current stack and start a new one.
-
-        current_qualified = []
-        current_interpolated = []
-        expecting_operand = True
-
-        for token in self.tokens:
-            if token in "+-":
-                # We don't prevent anyone from using multiple operators in a
-                # row, so they could technically write 3 + - + - 2, and it will
-                # work despite being somewhat nonsensical.
-                current_qualified.append(token)
-                current_interpolated.append(token)
-                expecting_operand = True
-                continue
-
-            if not expecting_operand:
-                # We expected +/-. Since we didn't get one, we're looking at the
-                # next parameter type. Start up and begin processing the next
-                # stack.
-                qualified_stacks.append(current_qualified)
-                interpolated_stacks.append(current_interpolated)
-
-                current_qualified = []
-                current_interpolated = []
-
-            if token == "current_hunger":
-                token = "hunger" if self.character.is_vampire else "0"
-
-            if token.isdigit():
-                # Digits require no interpolation, so just add it to the stacks
-                current_qualified.append(token)
-                current_interpolated.append(token)
-            else:
-                # We have a character trait, which needs to be qualified and
-                # interpolated before adding it to the stacks
-                trait = self.character.find_trait(token)
-                if self.expand_only:
-                    current_qualified.append(trait.key)
-                else:
-                    current_qualified.append(trait.name)
-
-                current_interpolated.append(str(trait.rating))
-
-                if trait.discipline:
-                    logger.debug("ROLLPARSER: Discipline detected")
-                    using_discipline = True
-
-            expecting_operand = False
-
-        qualified_stacks.append(current_qualified)
-        interpolated_stacks.append(current_interpolated)
-
-        # Determine which stack is which. Order goes pool, hunger, difficulty.
-
-        if not qualified_stacks:
-            # This shouldn't be possible to reach, but just in case ...
-            raise SyntaxError("You have to supply roll syntax!")
-
-        self._parameters["q_pool_stack"] = qualified_stacks.pop(0)
-        self._parameters["i_pool_stack"] = interpolated_stacks.pop(0)
+        stacks = self._split_stacks(self.tokens)
+        q_pool, i_pool, using_discipline = self._qualify(stacks.pop(0))
+        self._parameters["q_pool_stack"] = q_pool
+        self._parameters["i_pool_stack"] = i_pool
 
         if self.power_bonus and using_discipline and self.character.power_bonus > 0:
             logger.debug("ROLLPARSER: Adding power bonus")
@@ -168,63 +109,122 @@ class RollParser:
             errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"
             raise errors.HungerInPool(errmsg)
 
-        # Only the pool is required, so we need to provide defaults if the other
-        # stacks aren't given
-
-        if not qualified_stacks:
-            # They only gave us a pool
-            self._parameters["q_hunger_stack"] = ["0"]
-            self._parameters["i_hunger_stack"] = ["0"]
-            self._parameters["q_difficulty_stack"] = ["0"]
-            self._parameters["i_difficulty_stack"] = ["0"]
-            return
-
-        # The user provided pool and hunger
+        # Only the pool is required, so the defaults fill in Hunger and
+        # Difficulty if they aren't given
         if self.character is None or self.character.is_vampire:
-            self._parameters["q_hunger_stack"] = qualified_stacks.pop(0)
-            self._parameters["i_hunger_stack"] = interpolated_stacks.pop(0)
+            # Hunger is the only trait allowed here, so a prefix of "hunger"
+            # always means Hunger, even if it could also match Hunter or
+            # Humanity. Other words aren't looked up, so the error is the same
+            # for every character.
+            hunger = []
+            for token in stacks.pop(0) if stacks else [self.default_hunger]:
+                if token in "+-" or token.isdigit():
+                    hunger.append(token)
+                elif token.lower() == "current_hunger" or "hunger".startswith(token.lower()):
+                    hunger.append("hunger")
+                else:
+                    raise errors.HungerIsntHunger(
+                        f"Hunger must be a number or `hunger`, not `{token}`.\n"
+                        f"*Hint: Did you mean `+ {token}`?*"
+                    )
+
+            q_hunger, i_hunger, _ = self._qualify(hunger)
+            self._parameters["q_hunger_stack"] = q_hunger
+            self._parameters["i_hunger_stack"] = i_hunger
         else:
-            # This is a mortal character. Mortals don't have Hunger, so we'll
-            # ignore it and set it to 0; however, many players are used to
-            # inputting Hunger on all rolls and may have put a 0 for Hunger.
-            # In that case, we will remove the 0 at the top of the stack.
+            # This is a mortal character. Mortals don't have Hunger, so asking
+            # for it is an error.
+            for token in chain.from_iterable(stacks):
+                if token and "hunger".startswith(token.lower()):
+                    raise errors.TraitNotFound(self.character, token)
+
+            # However, many players are used to inputting Hunger on all rolls
+            # and may have put a 0 for Hunger. In that case, we will remove the
+            # 0 at the top of the stack.
+            if stacks and stacks[0] in (["0"], ["current_hunger"]):
+                del stacks[0]
+
             self._parameters["q_hunger_stack"] = ["0"]
             self._parameters["i_hunger_stack"] = ["0"]
 
-            if interpolated_stacks[0] == ["0"]:
-                del qualified_stacks[0]
-                del interpolated_stacks[0]
+        difficulty = stacks.pop(0) if stacks else [self.default_difficulty]
 
-        if not qualified_stacks:
-            # Difficulty was not provided
-            self._parameters["q_difficulty_stack"] = ["0"]
-            self._parameters["i_difficulty_stack"] = ["0"]
-            return
-
-        # They gave us all three (pool, hunger, and difficulty)
-        self._parameters["q_difficulty_stack"] = qualified_stacks.pop(0)
-        self._parameters["i_difficulty_stack"] = interpolated_stacks.pop(0)
-
-        if qualified_stacks:
+        if stacks:
             # They gave us too many stacks! Show our interpretation as well as the extra
             # First, get human-readable representations of the stacks
             _pool = self.pool_str or " ".join(self._parameters["q_pool_stack"])
             if (_hunger := " ".join(self._parameters["q_hunger_stack"])) == "Hunger":
-                _hunger = "Current Hunger "
-            _difficulty = " ".join(self._parameters["q_difficulty_stack"])
+                _hunger = "Current Hunger"
+            _difficulty = " ".join(difficulty)
 
             interpretation = (
                 f"***Pool:*** `{_pool}`\n"
                 f"***Hunger:*** `{_hunger}`\n"
                 f"***Difficulty:*** `{_difficulty}`"
             )
-            extra = " ".join(chain.from_iterable(qualified_stacks))
+            extra = " ".join(chain.from_iterable(stacks))
             extra = f"**Unexpected extra parameter(s):** `{extra}`"
 
             err = "Too many roll parameters given. Interpretation based on input:"
-            raise errors.TooManyParameters(
-                3 + len(qualified_stacks), f"{err}\n\n{interpretation}\n\n{extra}"
+            raise errors.TooManyParameters(3 + len(stacks), f"{err}\n\n{interpretation}\n\n{extra}")
+
+        if not all(token in "+-" or token.isdigit() for token in difficulty):
+            raise errors.InvalidDifficulty(
+                f"Difficulty must be a number, not `{' '.join(difficulty)}`."
             )
+
+        self._parameters["q_difficulty_stack"] = difficulty
+        self._parameters["i_difficulty_stack"] = difficulty
+
+    @staticmethod
+    def _split_stacks(tokens) -> list[list[str]]:
+        """Split the tokens into stacks. When we encounter two operands in a
+        row, the user has switched parameter types (e.g. pool -> hunger ->
+        difficulty), so we wrap up the current stack and start a new one."""
+        stacks = [[]]
+        expecting_operand = True
+
+        for token in tokens:
+            if token in "+-":
+                # We don't prevent anyone from using multiple operators in a
+                # row, so they could technically write 3 + - + - 2, and it will
+                # work despite being somewhat nonsensical.
+                expecting_operand = True
+            elif not expecting_operand:
+                stacks.append([])
+            else:
+                expecting_operand = False
+            stacks[-1].append(token)
+
+        return stacks
+
+    def _qualify(self, stack: list[str]) -> tuple[list[str], list[str], bool]:
+        """Qualify and interpolate a stack. Returns the qualified stack, the
+        interpolated stack, and whether a Discipline was used."""
+        qualified = []
+        interpolated = []
+        using_discipline = False
+
+        for token in stack:
+            if token == "current_hunger":
+                token = "hunger" if self.character.is_vampire else "0"
+
+            if token in "+-" or token.isdigit():
+                # Operators and digits require no interpolation
+                qualified.append(token)
+                interpolated.append(token)
+            else:
+                # We have a character trait, which needs to be qualified and
+                # interpolated before adding it to the stacks
+                trait = self.character.find_trait(token)
+                qualified.append(trait.key if self.expand_only else trait.name)
+                interpolated.append(str(trait.rating))
+
+                if trait.discipline:
+                    logger.debug("ROLLPARSER: Discipline detected")
+                    using_discipline = True
+
+        return qualified, interpolated, using_discipline
 
     def _evaluate_stacks(self):
         """Convert the pool, hunger, and difficulty into values."""
@@ -241,9 +241,21 @@ class RollParser:
             raise SyntaxError("Invalid syntax!") from err
 
     @classmethod
+    def tokenize(cls, syntax: str) -> list[str]:
+        """Split roll syntax into operators and operands. Raises SyntaxError if
+        the syntax has invalid characters."""
+        if cls.has_invalid_characters(syntax):
+            raise SyntaxError("Invalid syntax.")
+
+        # Whitespace around the delimiter is ignored, so "brawl . kindred" is
+        # one operand
+        syntax = re.sub(rf"\s*{DELIMITER}\s*", VCharTrait.DELIMITER, syntax)
+        return re.findall(r"[+-]|[^\s+-]+", syntax)
+
+    @classmethod
     def has_invalid_characters(cls, syntax) -> bool:
         """Check whether the roll has invalid characters."""
-        return re.search(r"[^\w\+\-\s" + VCharTrait.DELIMITER + "]", syntax) is not None
+        return re.search(rf"[^\w+\-\s{DELIMITER}]", syntax) is not None
 
     @classmethod
     def possible_spec_use(cls, syntax: str) -> bool:

@@ -89,7 +89,7 @@ async def parse(
                     ctx,
                     owner=player,
                     character=char_name,
-                    char_filter=partial(_can_roll, syntax=syntax),
+                    char_filter=partial(validate_roll, syntax=syntax),
                     tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
                     help=__HELP_URL,
                     errmsg=f"None of your characters can roll `{syntax}`.",
@@ -141,8 +141,10 @@ async def parse(
     return character
 
 
-def _can_roll(character: VChar, syntax: str):
-    """Raises an exception if the traits aren't found."""
+def validate_roll(character: VChar, syntax: str):
+    """Raise an exception if the character can't roll the syntax. Used to
+    filter characters, so errors that the character choice can't fix stop the
+    search with a SyntaxError."""
     try:
         _ = RollParser(character, syntax)
     except (errors.AmbiguousTraitError, errors.HungerInPool):
@@ -150,6 +152,11 @@ def _can_roll(character: VChar, syntax: str):
         # HungerInPool so we can show the correct error message. Otherwise, we
         # get "None of your characters can roll x + hunger".
         pass
+    except (errors.HungerIsntHunger, errors.InvalidDifficulty) as err:
+        # A misused trait fails the same way for every character, so asking
+        # which character to use would be pointless. SyntaxErrors aren't
+        # handled by Haven, so this shows the error immediately.
+        raise SyntaxError(str(err)) from err
     except errors.TooManyParameters as err:
         # Vampires take the most parameters, so we always want to show the
         # error message if it's too many for a vampire. Mortals, however, have
@@ -236,12 +243,17 @@ async def perform_roll(
     max_hunger=5,
     *,
     impairment_category: ImpairmentCategory | None = None,
+    default_hunger="0",
+    default_difficulty="0",
 ) -> Roll:
     """Parse the syntax and roll the dice, applying any impairment penalty.
+    The defaults fill in Hunger and Difficulty if the syntax omits them.
 
     The pool string and syntax are left as the user wrote them; the penalty is
     recorded on the Roll."""
-    parser = RollParser(character, syntax)
+    parser = RollParser(
+        character, syntax, default_hunger=default_hunger, default_difficulty=default_difficulty
+    )
     penalty = await impairment_penalty(ctx, character, parser.pool_str, impairment_category)
     pool = parser.pool - IMPAIRMENT_DICE if penalty else parser.pool
 

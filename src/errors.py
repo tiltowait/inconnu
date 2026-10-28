@@ -44,6 +44,14 @@ class HungerInPool(RollError):
     """An exception raised if Hunger is used in a roll pool."""
 
 
+class HungerIsntHunger(RollError):
+    """An exception raised if a roll's Hunger uses a trait other than Hunger."""
+
+
+class InvalidDifficulty(RollError):
+    """An exception raised if a roll's Difficulty isn't made of numbers."""
+
+
 class TooManyParameters(RollError):
     """An exception raised if too many roll parameters are given."""
 

@@ -213,3 +213,25 @@ async def test_probability_impairment_with_strategy(ctx: AppCtx):
         f"**{Strategy.REROLL_FAILURES.description}**\n*Includes -2 (physical impairment)*\n\n"
     )
     assert embed.description.startswith(expected)
+
+
+@pytest.mark.usefixtures("mock_settings")
+async def test_probability_uses_roll_filter(ctx: AppCtx, mock_haven: MagicMock):
+    """Characters are filtered like /vr's, so misused traits show the specific error."""
+    await probability(ctx, "strength+brawl 0 1")
+    char_filter = mock_haven.call_args.kwargs["char_filter"]
+
+    char = gen_char("vampire")
+    char.assign_traits({"Strength": 3, "Brawl": 2})
+    with pytest.raises(SyntaxError, match="Hunger must be a number"):
+        char_filter(char, syntax="strength + brawl brawl 1")
+
+
+@pytest.mark.parametrize("syntax", ["strength + hunger 1", "strength+brawl brawl 1"])
+@pytest.mark.usefixtures("mock_settings", "mock_haven")
+async def test_probability_shows_roll_errors(ctx: AppCtx, syntax: str):
+    """Roll errors are shown to the user rather than escaping."""
+    with patch("ui.embeds.error", new_callable=AsyncMock) as mock_error:
+        await probability(ctx, syntax)
+
+    mock_error.assert_awaited_once()

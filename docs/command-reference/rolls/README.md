@@ -38,6 +38,8 @@ The same as `/roll`, with the pool, Hunger, and Difficulty typed together in `sy
 > /vr syntax:intelligence+investigation hunger 3
 > ```
 
+Hunger can be a number, `hunger` (your current Hunger; any abbreviation works, even `h`), or simple math like `hunger + 1`. Difficulty must be a number. Traits go only in the pool.
+
 ### Trait shorthand
 
 You only need to type enough of a Trait's name to identify it. **Inconnu** finds every Trait starting with what you typed; if only one matches, that's the Trait.

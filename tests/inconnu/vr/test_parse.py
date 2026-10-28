@@ -406,6 +406,7 @@ async def test_parse_disallowed_hidden_dice():
     "syntax,message",
     [
         ("strength + brawl awareness 2", "Hunger must be a number"),
+        ("strength + brawl finance 2", "Hunger must be a number"),  # Not even a trait
         ("strength + brawl 2 wits", "Difficulty must be a number"),
     ],
 )
@@ -417,6 +418,13 @@ def test_validate_roll_stops_on_misused_traits(syntax: str, message: str, vampir
 
 
 def test_validate_roll_rejects_missing_traits(vampire: VChar):
-    """A character without the trait is filtered out."""
+    """A character without a pool trait is filtered out."""
     with pytest.raises(errors.TraitNotFound):
-        validate_roll(vampire, "strength + brawl finance 2")
+        validate_roll(vampire, "strength + finance 2")
+
+
+def test_validate_roll_hunger_beats_similar_traits(vampire: VChar):
+    """A Hunger prefix means Hunger, even if the character has a trait it
+    could also match, so the character isn't filtered out."""
+    vampire.assign_traits({"Hunter": 2})
+    validate_roll(vampire, "strength + brawl hun")

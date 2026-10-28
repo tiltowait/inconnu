@@ -113,13 +113,23 @@ class RollParser:
 
         # The user provided pool and hunger
         if self.character is None or self.character.is_vampire:
-            q_hunger, i_hunger, _ = self._qualify(stacks.pop(0))
-            for token in q_hunger:
-                if not (token in "+-" or token.isdigit() or token == "Hunger"):
+            # Hunger is the only trait allowed here, so a prefix of "hunger"
+            # always means Hunger, even if it could also match Hunter or
+            # Humanity. Other words aren't looked up, so the error is the same
+            # for every character.
+            hunger = []
+            for token in stacks.pop(0):
+                if token in "+-" or token.isdigit():
+                    hunger.append(token)
+                elif token.lower() == "current_hunger" or "hunger".startswith(token.lower()):
+                    hunger.append("hunger")
+                else:
                     raise errors.HungerIsntHunger(
-                        f"Hunger must be a number or `hunger`, not **{token}**."
+                        f"Hunger must be a number or `hunger`, not `{token}`.\n"
+                        f"*Hint: Did you mean `+ {token}`?*"
                     )
 
+            q_hunger, i_hunger, _ = self._qualify(hunger)
             self._parameters["q_hunger_stack"] = q_hunger
             self._parameters["i_hunger_stack"] = i_hunger
         else:

@@ -429,3 +429,40 @@ def test_difficulty_arithmetic(syntax: str, hunger: int, difficulty: int, hungry
     p = RollParser(hungry, syntax)
     assert p.hunger == hunger
     assert p.difficulty == difficulty
+
+
+@pytest.mark.parametrize(
+    "syntax,typed",
+    [
+        ("strength + brawl surge 2", "surge"),
+        ("intelligence finance hunger", "finance"),
+        ("strength + brawl fin 2", "fin"),
+        ("strength + brawl hunger + Fin 2", "Fin"),
+    ],
+)
+def test_hunger_isnt_hunger_hint(syntax: str, typed: str, hungry: VChar):
+    """The error shows the trait as typed, since the same input may name
+    different traits on different characters, and suggests adding it to the
+    pool instead."""
+    with pytest.raises(errors.HungerIsntHunger) as exc_info:
+        RollParser(hungry, syntax)
+
+    message = str(exc_info.value)
+    assert f"not `{typed}`" in message
+    assert f"*Hint: Did you mean `+ {typed}`?*" in message
+
+
+@pytest.mark.parametrize("token", ["h", "hu", "hun", "Hung", "hunge", "HUNGER", "current_hunger"])
+def test_hunger_prefixes_beat_similar_traits(token: str, hungry: VChar):
+    """In the Hunger position, a prefix of "hunger" always means Hunger, even
+    when it would also match Hunter or Humanity."""
+    hungry.assign_traits({"Hunter": 2})
+    p = RollParser(hungry, f"strength + brawl {token} 1")
+    assert p.hunger == 3
+    assert p.difficulty == 1
+
+
+def test_hunger_isnt_a_trait(hungry: VChar):
+    """A word that isn't a trait is still the wrong kind of Hunger."""
+    with pytest.raises(errors.HungerIsntHunger, match="not `lung`"):
+        RollParser(hungry, "strength + brawl lung 2")

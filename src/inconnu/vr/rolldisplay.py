@@ -241,8 +241,10 @@ class RollDisplay(ReportingView):
     # View hooks
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        """Only the roll's owner may press its buttons."""
-        return interaction.user == self.owner
+        """Only the roll's owner and the user who made the roll may press its
+        buttons. They differ when an admin rolls for a player, and a hidden
+        roll's buttons are only shown to the user who made it."""
+        return interaction.user in (self.owner, self.ctx.user)
 
     async def on_check_failure(self, interaction: discord.Interaction):
         """Tell the presser the buttons aren't theirs."""

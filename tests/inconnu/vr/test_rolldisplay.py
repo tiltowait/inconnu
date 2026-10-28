@@ -1417,6 +1417,21 @@ async def test_press_by_non_owner(ctx: AppCtx, owner: discord.Member, intruder: 
     assert screen.listening
 
 
+@pytest.mark.parametrize("hide_dice", [False, True])
+async def test_press_by_roller_for_player(
+    ctx: AppCtx, owner: discord.Member, intruder: discord.Member, hide_dice: bool
+):
+    """An admin who rolls for a player can press the buttons. A hidden roll's
+    buttons are only shown to them."""
+    cast(MagicMock, ctx).user = intruder
+    screen = await show(make_display(ctx, owner, make_roll([6, 2], [], 2), hide_dice=hide_dice))
+
+    await press_reroll_failures(screen, by=intruder)
+
+    assert screen.ephemeral == []
+    assert screen.display.state.strategy is not None
+
+
 # Rerolls
 
 

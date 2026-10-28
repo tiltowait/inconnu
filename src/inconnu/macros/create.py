@@ -67,8 +67,8 @@ async def create(
     except (
         SyntaxError,
         errors.AmbiguousTraitError,
-        errors.HungerInPool,
         errors.MacroAlreadyExistsError,
+        errors.RollError,
         errors.TraitNotFound,
     ) as err:
         await ui.embeds.error(ctx, err, help=__HELP_URL, character=character.name)

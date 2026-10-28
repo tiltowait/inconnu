@@ -40,8 +40,8 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
 
     except (
         errors.AmbiguousTraitError,
-        errors.HungerInPool,
         errors.MacroNotFoundError,
+        errors.RollError,
         errors.TraitNotFound,
         SyntaxError,
         ValueError,

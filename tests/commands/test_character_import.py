@@ -68,4 +68,3 @@ async def test_import_progeny_rejects_invalid_json(ctx):
     register.assert_not_awaited()
     show_error.assert_awaited_once()
     assert "Invalid Progeny JSON" in show_error.await_args.args[1]
-

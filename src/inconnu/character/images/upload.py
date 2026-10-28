@@ -56,4 +56,3 @@ async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment)
             "timestamp": discord.utils.utcnow(),
         }
     )
-

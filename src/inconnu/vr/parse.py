@@ -89,7 +89,7 @@ async def parse(
                     ctx,
                     owner=player,
                     character=char_name,
-                    char_filter=partial(_can_roll, syntax=syntax),
+                    char_filter=partial(validate_roll, syntax=syntax),
                     tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
                     help=__HELP_URL,
                     errmsg=f"None of your characters can roll `{syntax}`.",
@@ -141,8 +141,10 @@ async def parse(
     return character
 
 
-def _can_roll(character: VChar, syntax: str):
-    """Raises an exception if the traits aren't found."""
+def validate_roll(character: VChar, syntax: str):
+    """Raise an exception if the character can't roll the syntax. Used to
+    filter characters, so errors that the character choice can't fix stop the
+    search with a SyntaxError."""
     try:
         _ = RollParser(character, syntax)
     except (errors.AmbiguousTraitError, errors.HungerInPool):

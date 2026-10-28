@@ -11,11 +11,11 @@ import pytest
 import errors
 from ctx import AppCtx
 from inconnu.vr.parse import (
-    _can_roll,
     hidden_dice_allowed,
     parse,
     perform_roll,
     stringify_mentions,
+    validate_roll,
 )
 from models import HiddenDicePerms, Impairment, ImpairmentCategory, VChar
 from tests.characters import gen_char
@@ -409,14 +409,14 @@ async def test_parse_disallowed_hidden_dice():
         ("strength + brawl 2 wits", "Difficulty must be a number"),
     ],
 )
-def test_can_roll_stops_on_misused_traits(syntax: str, message: str, vampire: VChar):
+def test_validate_roll_stops_on_misused_traits(syntax: str, message: str, vampire: VChar):
     """A misused trait fails the same way for every character, so the search
     stops with the specific error instead of asking which character to use."""
     with pytest.raises(SyntaxError, match=message):
-        _can_roll(vampire, syntax)
+        validate_roll(vampire, syntax)
 
 
-def test_can_roll_rejects_missing_traits(vampire: VChar):
+def test_validate_roll_rejects_missing_traits(vampire: VChar):
     """A character without the trait is filtered out."""
     with pytest.raises(errors.TraitNotFound):
-        _can_roll(vampire, "strength + brawl finance 2")
+        validate_roll(vampire, "strength + brawl finance 2")

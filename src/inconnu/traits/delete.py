@@ -5,10 +5,10 @@ from typing import NamedTuple
 import constants
 import errors
 import ui
-from ctx import AppInvocation
+from ctx import AppCtx, AppInvocation
 from inconnu.traits import traitcommon
 from models import VChar
-from services.haven import haven
+from services.haven import Haven
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("command-reference/traits#traits-delete")
@@ -21,11 +21,9 @@ class DeletionResult(NamedTuple):
     errors: list[str]
 
 
-@haven(__HELP_URL)
-async def delete(
-    ctx: AppInvocation, character: VChar, traits_input: str, disciplines: bool = False
-):
-    """Delete character traits. Core attributes and abilities are set to 0."""
+async def delete(ctx: AppCtx, char_name: str | None, traits_input: str, disciplines: bool = False):
+    """Delete character traits. Core attributes and abilities are set to 0. Only
+    characters with at least one of the traits are offered for selection."""
     try:
         traits = traits_input.split()
         if not traits:
@@ -33,12 +31,32 @@ async def delete(
             raise SyntaxError("You must supply a list of traits or disciplines to delete.")
 
         traitcommon.validate_trait_names(*traits, disciplines=disciplines)
-        outcome = __delete_traits(character, *traits)
-        await __outcome_embed(ctx, character, outcome, disciplines)
-        await character.save()
 
     except (ValueError, SyntaxError) as err:
-        await ui.embeds.error(ctx, err, character=character, help=__HELP_URL)
+        await ui.embeds.error(ctx, err, character=char_name, help=__HELP_URL)
+        return
+
+    # Every character can "delete" a core trait, as it's just set to 0
+    standard_traits = {t.lower() for t in constants.get_standard_traits()}
+    if any(trait.lower() in standard_traits for trait in traits):
+        char_filter = None
+    else:
+        char_filter = traitcommon.any_trait_filter(*traits)
+
+    haven = Haven(
+        ctx,
+        character=char_name,
+        char_filter=char_filter,
+        errmsg=traitcommon.missing_traits_message(*traits),
+        help=__HELP_URL,
+    )
+    character = await haven.fetch()
+    if haven.new_interaction is not None:
+        ctx.interaction = haven.new_interaction
+
+    outcome = __delete_traits(character, *traits)
+    await __outcome_embed(ctx, character, outcome, disciplines)
+    await character.save()
 
 
 async def __outcome_embed(

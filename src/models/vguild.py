@@ -116,12 +116,17 @@ class VGuild(Document):
     settings: VGuildSettings = Field(default_factory=VGuildSettings)
 
     def join(self):
-        """Register the join date."""
+        """Register the join date and mark the guild active, so a guild that
+        returns isn't culled."""
         self.joined = utcnow()
+        self.active = True
+        self.left = None
 
     def leave(self):
-        """Register the left date."""
+        """Register the left date and mark the guild inactive, so it's culled
+        after 30 days."""
         self.left = utcnow()
+        self.active = False
 
     @classmethod
     @alru_cache(maxsize=1024)

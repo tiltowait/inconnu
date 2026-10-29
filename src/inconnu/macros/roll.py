@@ -10,6 +10,7 @@ from loguru import logger
 
 import errors
 import inconnu
+import services
 import ui
 from ctx import AppCtx, AppInteraction, AppInvocation
 from inconnu.macros import macro_common
@@ -43,7 +44,10 @@ async def roll(
         macro_name, modifiers = __normalize_syntax(syntax)
 
         if not macro_common.is_macro_name_valid(macro_name):
-            raise ValueError("Macro names may only contain letters and underscores.")
+            await ui.embeds.error(
+                ctx, "Macro names may only contain letters and underscores.", help=__HELP_URL
+            )
+            return
 
         # Get the character
         haven = Haven(
@@ -70,10 +74,12 @@ async def roll(
 
             try:
                 # Macros can contain hunger by default, but the user can override
+                max_hunger = await services.settings.max_hunger(ctx.guild)
                 outcome = await perform_roll(
                     ctx,
                     character,
                     parameters,
+                    max_hunger,
                     impairment_category=impairment_category,
                     default_hunger="current_hunger" if macro.hunger else "0",
                     default_difficulty=str(macro.difficulty),
@@ -94,7 +100,9 @@ async def roll(
                         ephemeral=True,
                     )
                 return
-            except errors.RollError as err:
+            except (errors.RollError, ValueError) as err:
+                # ValueErrors come from Roll's range checks (Hunger, Difficulty,
+                # pool size), and their messages are better than "Unknown syntax"
                 await ui.embeds.error(ctx, err, character=character.name, help=__HELP_URL)
                 return
 

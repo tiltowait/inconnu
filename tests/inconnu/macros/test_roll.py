@@ -36,6 +36,14 @@ def mock_hidden_dice_permissions() -> Iterator[AsyncMock]:
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def mock_max_hunger() -> Iterator[AsyncMock]:
+    """The server uses the standard max Hunger."""
+    with patch("services.settings.max_hunger", new_callable=AsyncMock) as mock:
+        mock.return_value = 5
+        yield mock
+
+
 @pytest.fixture
 def owner() -> discord.Member:
     """The hunter's player."""
@@ -360,3 +368,37 @@ async def test_macro_modifier_trait_errors(ctx: AppCtx, syntax: str, expected: s
     message = await roll_error(ctx, syntax)
     assert expected in message
     assert "deleted" not in message
+
+
+@pytest.mark.parametrize(
+    "syntax,expected",
+    [
+        ("punch 6", "Hunger must be between 0 and 5"),
+        ("punch + 100", "Pool cannot exceed 100"),
+    ],
+)
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_range_errors_are_shown(ctx: AppCtx, syntax: str, expected: str):
+    """Out-of-range Hunger, Difficulty, and pools show why, not "Unknown syntax"."""
+    message = await roll_error(ctx, syntax)
+    assert expected in message
+    assert "Unknown syntax" not in message
+
+
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_uses_server_max_hunger(
+    ctx: AppCtx, mock_display_outcome: AsyncMock, mock_max_hunger: AsyncMock
+):
+    """Macros allow Hunger up to the server's max, as /vr does."""
+    mock_max_hunger.return_value = 10
+    await roll_macro(ctx, "punch + 5 7")
+
+    assert mock_display_outcome.await_args is not None
+    outcome = mock_display_outcome.await_args.args[3]
+    assert outcome.hunger.count == 7
+
+
+async def test_invalid_macro_name(ctx: AppCtx):
+    """An invalid macro name says why, rather than "Unknown syntax"."""
+    message = await roll_error(ctx, "punch2")
+    assert message == "Macro names may only contain letters and underscores."

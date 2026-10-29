@@ -93,6 +93,21 @@ async def test_vamp_awaken_blush_turns_off(
     mock_char_save.assert_awaited()
 
 
+async def test_vamp_awaken_blush_na_unchanged(
+    vamp: VChar,
+    ctx: AppCtx,
+    mock_char_save: AsyncMock,
+):
+    """A vampire whose Blush is N/A (set at Humanity 9+) keeps it on awakening."""
+    vamp.header.blush = -1
+
+    with patch("inconnu.d10", return_value=7):
+        await awaken(ctx, vamp)
+
+    assert vamp.header.blush == -1
+    mock_char_save.assert_awaited()
+
+
 async def test_vamp_awaken_logs_correctly(
     vamp: VChar,
     ctx: AppCtx,

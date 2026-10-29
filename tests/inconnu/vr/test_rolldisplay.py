@@ -83,10 +83,11 @@ def mock_log_roll() -> Iterator[AsyncMock]:
 
 @pytest.fixture(autouse=True)
 def mock_get_message() -> Iterator[AsyncMock]:
-    """Give the first response a message ID."""
+    """Give the first response a message ID and a channel."""
     message = MagicMock(spec=discord.Message)
     message.id = MESSAGE_ID
     message.jump_url = JUMP_URL
+    message.channel = MagicMock(spec=discord.TextChannel)
     with patch("inconnu.vr.rolldisplay.get_message", new_callable=AsyncMock) as mock:
         mock.return_value = message
         yield mock
@@ -1032,6 +1033,7 @@ class Screen:
     private: Message | None = None
     update_channel: list[Message] = field(default_factory=list)
     ephemeral: list[str] = field(default_factory=list)
+    command: AsyncMock | None = None  # The roll command's interaction
 
     def record_ephemeral(self, content: str, **_: Any):
         """Record an ephemeral reply to a button press."""
@@ -1092,6 +1094,7 @@ async def show(display: RollDisplay, update_channel=False) -> Screen:
     update channel."""
     screen = Screen(display)
     original = fake_interaction(screen, display.owner)
+    screen.command = original
 
     def post(
         *, title: str, message: str, embed: discord.Embed | None = None, **_: Any
@@ -1118,8 +1121,17 @@ async def show(display: RollDisplay, update_channel=False) -> Screen:
         screen.private.record(**kwargs)
         return followup
 
+    # Edits through the channel, rather than the interaction, also change the public message
+    channel_copy = AsyncMock(spec=discord.PartialMessage)
+    channel_copy.edit.side_effect = screen.public.record
+    public_message = cast(AsyncMock, inconnu.vr.rolldisplay.get_message).return_value
+    public_message.channel.get_partial_message.return_value = channel_copy
+
     cast(AsyncMock, display.ctx.respond).side_effect = respond
     await display.display()
+    if display.hide_dice:
+        # RollDisplay refers to a hidden roll's public message through the channel
+        screen.public.handle = channel_copy
     return screen
 
 
@@ -1296,6 +1308,22 @@ async def test_hidden_reroll_after_public_deleted(ctx: AppCtx, owner: discord.Me
     assert screen.private is not None and screen.private.embed is not None
 
     assert screen.private.embed.title == "SUCCESS! (2)"
+
+
+async def test_hidden_reroll_after_token_expires(ctx: AppCtx, owner: discord.Member):
+    """The public message still updates after the roll command's token expires
+    (15 minutes), which presses can outlast by keeping the buttons alive."""
+    roll = make_roll([6, 2], [], 2)
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True))
+    assert screen.command is not None
+    response = MagicMock(status=401, reason="Unauthorized")
+    expired = discord.HTTPException(response, {"code": 50027, "message": "Invalid Webhook Token"})
+    screen.command.edit.side_effect = expired
+    screen.command.edit_original_response.side_effect = expired
+    await reroll(screen)
+    assert screen.embed is not None
+
+    assert screen.embed.title == "SUCCESS! (2)"
 
 
 async def test_hidden_timeout(ctx: AppCtx, owner: discord.Member):
@@ -1739,7 +1767,7 @@ async def test_stats_hidden(
     roll = make_roll([6, 2], [], 2)
     screen = await show(make_display(ctx, owner, roll, hide_dice=True))
 
-    mock_get_message.assert_awaited_once_with(screen.public.handle)
+    mock_get_message.assert_awaited_once_with(screen.command)
     mock_log_roll.assert_awaited_once_with(
         2, 3, owner.id, MESSAGE_ID, None, roll, None, hidden=True
     )

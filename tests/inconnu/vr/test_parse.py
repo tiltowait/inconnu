@@ -390,7 +390,7 @@ async def test_hidden_dice_refused_in_dms():
     ):
         assert await hidden_dice_allowed(ctx, True) is False
 
-    mock_error.assert_awaited_once_with(ctx, "You can only hide your dice on a server.")
+    mock_error.assert_awaited_once_with(ctx, "Hidden dice are not available in DMs.")
     mock_perms.assert_not_awaited()
 
 

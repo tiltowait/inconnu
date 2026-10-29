@@ -273,6 +273,7 @@ OPERATORS = {ast.Add: op.add, ast.Sub: op.sub, ast.UAdd: op.pos, ast.USub: op.ne
 
 def eval_expr(expr: str) -> int:
     """Evaluate a mathematical string expression. Safer than using eval."""
+    expr = re.sub(r"\b0+(?=\d)", "", expr)  # Strip leading 0s
     return eval_(ast.parse(expr, mode="eval").body)
 
 

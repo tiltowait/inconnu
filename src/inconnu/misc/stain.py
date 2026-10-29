@@ -24,6 +24,11 @@ async def stain(ctx, character, delta, *, player):
 
         total_stains = max(0, min(10, character.stains + delta))
         delta = total_stains - character.stains
+        if delta == 0:
+            # Clamping absorbed the whole change
+            if total_stains == 10:
+                raise ValueError(f"**{character.name}** already has `10` Stains.")
+            raise ValueError(f"**{character.name}** has no Stains to remove.")
 
         # Determine degeneration
         if delta > 0 and total_stains > (10 - character.humanity):
@@ -53,7 +58,7 @@ async def stain(ctx, character, delta, *, player):
         await character.save()
 
     except ValueError as err:
-        # Delta was 0
+        # Delta was 0, or clamping made it 0
         await ui.embeds.error(ctx, err, help=__HELP_URL)
 
 

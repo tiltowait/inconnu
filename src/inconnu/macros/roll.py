@@ -1,15 +1,18 @@
 """macros/roll.py - Rolling character macros."""
 
+import contextlib
 from functools import partial
 from typing import cast
 from uuid import uuid4
 
 import discord
+from bson import ObjectId
 from discord.ui import Button, View
 from loguru import logger
 
 import errors
 import inconnu
+import services
 import ui
 from ctx import AppCtx, AppInteraction, AppInvocation
 from inconnu.macros import macro_common
@@ -22,7 +25,9 @@ from services.haven import Haven
 from utils import get_avatar
 from utils.urls import docs_url
 
-__HUNT_LISTENERS = {}
+type _HuntListeners = dict[ObjectId, _SlakeView | None]
+
+__HUNT_LISTENERS: _HuntListeners = {}
 __HELP_URL = docs_url("command-reference/macros#vm")
 
 
@@ -43,7 +48,10 @@ async def roll(
         macro_name, modifiers = __normalize_syntax(syntax)
 
         if not macro_common.is_macro_name_valid(macro_name):
-            raise ValueError("Macro names may only contain letters and underscores.")
+            await ui.embeds.error(
+                ctx, "Macro names may only contain letters and underscores.", help=__HELP_URL
+            )
+            return
 
         # Get the character
         haven = Haven(
@@ -70,10 +78,14 @@ async def roll(
 
             try:
                 # Macros can contain hunger by default, but the user can override
+                # Characters only exist in guilds
+                guild = cast(discord.Guild, ctx.guild)
+                max_hunger = await services.settings.max_hunger(guild)
                 outcome = await perform_roll(
                     ctx,
                     character,
                     parameters,
+                    max_hunger,
                     impairment_category=impairment_category,
                     default_hunger="current_hunger" if macro.hunger else "0",
                     default_difficulty=str(macro.difficulty),
@@ -94,8 +106,18 @@ async def roll(
                         ephemeral=True,
                     )
                 return
-            except errors.RollError as err:
-                await ui.embeds.error(ctx, err, character=character.name, help=__HELP_URL)
+            except (errors.RollError, ValueError) as err:
+                # ValueErrors come from Roll's range checks (Hunger, Difficulty,
+                # pool size), and their messages are better than "Unknown syntax".
+                # The input shows what the player typed, since the error shows
+                # the macro's pool instead of its name.
+                await ui.embeds.error(
+                    ctx,
+                    err,
+                    ("Your Input", f"/vm syntax:`{syntax}`"),
+                    character=character.name,
+                    help=__HELP_URL,
+                )
                 return
 
         # We show the rouse check first, because display_outcome() is blocking
@@ -169,13 +191,13 @@ async def reroll_listener(
     """Listens to roll events. Hidden rolls show the Slake menu privately."""
     character = cast(VChar, character)  # Macros always have a character
     if outcome.id in __HUNT_LISTENERS:
-        old_inter = __HUNT_LISTENERS[outcome.id]
-        if old_inter is None and outcome.is_successful:
+        menu = __HUNT_LISTENERS[outcome.id]
+        if menu is None and outcome.is_successful:
             # They re-rolled into success
             await __slake(ctx, character, None, ephemeral)
-        elif old_inter is not None and not outcome.is_successful:
+        elif menu is not None and not outcome.is_successful:
             # They re-rolled into failure
-            await old_inter.delete()
+            await menu.close()
 
         await remove_hunt_listener(outcome)
 
@@ -206,7 +228,7 @@ async def __slake(ctx: AppInvocation, character: VChar, outcome: Roll | None, ep
         view.message = await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
         if outcome is not None:
-            __HUNT_LISTENERS[outcome.id] = view.message
+            __HUNT_LISTENERS[outcome.id] = view
 
 
 def __normalize_syntax(syntax: str) -> tuple[str, list[str]]:
@@ -233,8 +255,8 @@ class _SlakeView(View):
         super().__init__(timeout=600)
         self.owner = owner
         self.character = character
-        self.buttons = {}
-        self.message = None
+        self.buttons: dict[str, int] = {}
+        self.message: discord.Interaction | discord.WebhookMessage | None = None
         self.outcome = outcome
 
         for hunger in range(1, character.hunger + 1):
@@ -278,7 +300,7 @@ class _SlakeView(View):
             return
 
         self.stop()
-        custom_id = inter.data["custom_id"]
+        custom_id = cast(str, inter.custom_id)  # Button presses always have one
         slake_amount = self.buttons[custom_id]
 
         # Once they've chosen, a reroll into failure shouldn't delete the result
@@ -293,8 +315,19 @@ class _SlakeView(View):
             await inconnu.misc.slake(inter, self.character, slake_amount, edit_message=True)
             await inconnu.reference.resonance(inter, character=self.character.name)
 
+    async def close(self):
+        """Stop listening and delete the menu, which might be ephemeral."""
+        self.stop()  # A stopped view never times out
+        if self.message is None:
+            return
+        # Someone else, such as a mod, may have deleted it already
+        with contextlib.suppress(discord.NotFound):
+            if isinstance(self.message, discord.Interaction):
+                await self.message.delete_original_response()
+            else:
+                await self.message.delete()
+
     async def on_timeout(self):
-        """Delete the message."""
-        self.stop()
-        await self.message.delete()
+        """Delete the menu."""
+        await self.close()
         await remove_hunt_listener(self.outcome)

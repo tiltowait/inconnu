@@ -193,6 +193,9 @@ async def hidden_dice_allowed(ctx: AppCtx, hide_dice: bool) -> bool:
     told why. Check before rolling anything, Rouse checks included."""
     if not hide_dice:
         return True
+    if ctx.guild is None:
+        await ui.embeds.error(ctx, "Hidden dice are not available in DMs.")
+        return False
 
     match await services.settings.hidden_dice_permissions(ctx.guild):
         case HiddenDicePerms.ENABLED:

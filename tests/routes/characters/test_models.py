@@ -303,7 +303,7 @@ def test_trait_name_invalid_characters():
             "subtraits": [],
         }
     )
-    with pytest.raises((ValidationError, SyntaxError)) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "letters and underscores" in str(exc_info.value).lower()
 
@@ -319,7 +319,7 @@ def test_trait_name_with_apostrophe_rejected():
             "subtraits": [],
         }
     )
-    with pytest.raises((ValidationError, SyntaxError)) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "letters and underscores" in str(exc_info.value).lower()
 
@@ -451,7 +451,7 @@ def test_specialty_name_invalid_characters():
         type=VCharTrait.Type.SKILL,
         raw_subtraits=["Running-Fast"],
     )
-    with pytest.raises((ValidationError, SyntaxError)) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "letters and underscores" in str(exc_info.value).lower()
 

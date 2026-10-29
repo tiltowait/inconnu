@@ -380,6 +380,20 @@ async def test_hidden_dice_allowed(
         mock_error.assert_awaited_once_with(ctx, error)
 
 
+async def test_hidden_dice_refused_in_dms():
+    """Dice can't be hidden in DMs, which have no other players to hide them from."""
+    ctx = MagicMock(spec=AppCtx)
+    ctx.guild = None
+    with (
+        patch("services.settings.hidden_dice_permissions", new_callable=AsyncMock) as mock_perms,
+        patch("ui.embeds.error", new_callable=AsyncMock) as mock_error,
+    ):
+        assert await hidden_dice_allowed(ctx, True) is False
+
+    mock_error.assert_awaited_once_with(ctx, "Hidden dice are not available in DMs.")
+    mock_perms.assert_not_awaited()
+
+
 async def test_parse_disallowed_hidden_dice():
     """If the server disallows hidden dice, nothing is rolled."""
     ctx = MagicMock(spec=AppCtx)

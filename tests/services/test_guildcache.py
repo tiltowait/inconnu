@@ -119,6 +119,19 @@ async def test_full_guild_upsert(gce: GuildCache, g2: Guild):
     assert member.guild.id == g2.id
 
 
+async def test_fetchmember_skips_guild_members(gce: GuildCache, g2: Guild):
+    """Fetching one member doesn't load the rest of the guild's members."""
+    await gce.upsert_guilds(g2)
+    m2 = g2.members[1]
+
+    with patch.object(gce, "fetchmembers", wraps=gce.fetchmembers) as mock_fetchmembers:
+        member = await gce.fetchmember(m2.guild.id, m2.id)
+
+    assert member is not None
+    assert member.guild.members == []
+    mock_fetchmembers.assert_not_called()
+
+
 async def test_fetchguild_populates_members(gcf: GuildCache, g2: Guild):
     guild = await gcf.fetchguild(g2.id)
     assert guild is not None

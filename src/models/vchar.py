@@ -243,8 +243,9 @@ class VChar(Document):
         if self.header.blush == new_blush:
             logger.debug("VCHAR: {}'s Blush of Life ({}) is unchanged", self.name, new_blush)
             return
-        if self.header.blush >= 0:
-            # We only want to update blush of full vampires
+        if self.is_vampire and not self.is_thin_blood:
+            # We only want to update blush of full vampires. Checked by splat,
+            # because a vampire whose header was set at Humanity 9+ has blush -1
             self.header.blush = new_blush
             logger.debug("VCHAR: Setting {}'s Blush of Life to {}", self.name, new_blush)
         else:

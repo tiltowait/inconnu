@@ -36,6 +36,14 @@ def mock_hidden_dice_permissions() -> Iterator[AsyncMock]:
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def mock_max_hunger() -> Iterator[AsyncMock]:
+    """The server uses the standard max Hunger."""
+    with patch("services.settings.max_hunger", new_callable=AsyncMock) as mock:
+        mock.return_value = 5
+        yield mock
+
+
 @pytest.fixture
 def owner() -> discord.Member:
     """The hunter's player."""
@@ -113,10 +121,21 @@ def make_interaction(owner: discord.Member) -> AsyncMock:
     return inter
 
 
+def show_menu(
+    owner: discord.Member, character: VChar, outcome: Roll
+) -> tuple[_SlakeView, AsyncMock]:
+    """Show the Slake menu for a successful hunt and listen for rerolls."""
+    view = _SlakeView(owner, character, outcome)
+    menu = AsyncMock(spec=discord.WebhookMessage)
+    view.message = menu
+    HUNT_LISTENERS[outcome.id] = view
+    return view, menu
+
+
 async def press(view: _SlakeView, inter: AsyncMock, slake_amount: int):
     """Press the menu button that slakes the given amount."""
     custom_id = next(cid for cid, amount in view.buttons.items() if amount == slake_amount)
-    inter.data = {"custom_id": custom_id}
+    inter.custom_id = custom_id
     await view.callback(inter)
 
 
@@ -137,22 +156,22 @@ async def test_reroll_into_success_shows_menu(
 async def test_reroll_into_failure_deletes_menu(
     owner: discord.Member, character: VChar, outcome: Roll
 ):
-    """Rerolling a successful hunt into failure deletes the unused menu."""
-    menu = AsyncMock(spec=discord.WebhookMessage)
-    HUNT_LISTENERS[outcome.id] = menu
+    """Rerolling a successful hunt into failure deletes the unused menu and
+    stops its view, so it doesn't time out and delete the menu again."""
+    view, menu = show_menu(owner, character, outcome)
     outcome.normal.dice = [2]
 
     await reroll_listener(make_interaction(owner), character, outcome)
 
     menu.delete.assert_awaited_once()
+    assert view.is_finished()
     assert outcome.id not in HUNT_LISTENERS
 
 
 async def test_dont_slake_deletes_menu(owner: discord.Member, character: VChar, outcome: Roll):
     """Declining deletes the menu through the interaction, which works even
     when the menu is ephemeral."""
-    HUNT_LISTENERS[outcome.id] = AsyncMock(spec=discord.WebhookMessage)
-    view = _SlakeView(owner, character, outcome)
+    view, _ = show_menu(owner, character, outcome)
     inter = make_interaction(owner)
 
     await press(view, inter, _SlakeView.CANCEL_SLAKE)
@@ -172,9 +191,7 @@ async def test_slaking_keeps_result_after_failed_reroll(
     outcome: Roll,
 ):
     """Once they've slaked, rerolling the hunt into failure leaves the result alone."""
-    menu = AsyncMock(spec=discord.WebhookMessage)
-    HUNT_LISTENERS[outcome.id] = menu
-    view = _SlakeView(owner, character, outcome)
+    view, menu = show_menu(owner, character, outcome)
     inter = make_interaction(owner)
 
     await press(view, inter, 1)
@@ -183,6 +200,30 @@ async def test_slaking_keeps_result_after_failed_reroll(
 
     mock_slake.assert_awaited_once_with(inter, character, 1, edit_message=True)
     menu.delete.assert_not_awaited()
+
+
+async def test_timeout_after_menu_deleted(owner: discord.Member, character: VChar, outcome: Roll):
+    """A menu someone else deleted, such as a mod, doesn't break the timeout."""
+    view, menu = show_menu(owner, character, outcome)
+    menu.delete.side_effect = discord.NotFound(MagicMock(status=404), "Unknown Message")
+
+    await view.on_timeout()
+
+    menu.delete.assert_awaited_once()
+    assert outcome.id not in HUNT_LISTENERS
+
+
+async def test_timeout_deletes_interaction_menu(
+    owner: discord.Member, character: VChar, outcome: Roll
+):
+    """A menu sent as the interaction's response is deleted through the interaction."""
+    view = _SlakeView(owner, character, outcome)
+    menu = AsyncMock(spec=discord.Interaction)
+    view.message = menu
+
+    await view.on_timeout()
+
+    menu.delete_original_response.assert_awaited_once()
 
 
 # Rolling the macro
@@ -360,3 +401,49 @@ async def test_macro_modifier_trait_errors(ctx: AppCtx, syntax: str, expected: s
     message = await roll_error(ctx, syntax)
     assert expected in message
     assert "deleted" not in message
+
+
+@pytest.mark.parametrize(
+    "syntax,expected",
+    [
+        ("punch 6", "Hunger must be between 0 and 5"),
+        ("punch + 100", "Pool cannot exceed 100"),
+    ],
+)
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_range_errors_are_shown(ctx: AppCtx, syntax: str, expected: str):
+    """Out-of-range Hunger, Difficulty, and pools show why, not "Unknown syntax"."""
+    message = await roll_error(ctx, syntax)
+    assert expected in message
+    assert "Unknown syntax" not in message
+
+
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_uses_server_max_hunger(
+    ctx: AppCtx, mock_display_outcome: AsyncMock, mock_max_hunger: AsyncMock
+):
+    """Macros allow Hunger up to the server's max, as /vr does."""
+    mock_max_hunger.return_value = 10
+    await roll_macro(ctx, "punch + 5 7")
+
+    assert mock_display_outcome.await_args is not None
+    outcome = mock_display_outcome.await_args.args[3]
+    assert outcome.hunger.count == 7
+
+
+async def test_invalid_macro_name(ctx: AppCtx):
+    """An invalid macro name says why, rather than "Unknown syntax"."""
+    message = await roll_error(ctx, "punch2")
+    assert message == "Macro names may only contain letters and underscores."
+
+
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_roll_error_shows_input(ctx: AppCtx):
+    """Roll errors show the player's input, since they describe the macro's
+    pool rather than its name."""
+    with patch("ui.embeds.error", new_callable=AsyncMock) as mock_error:
+        await roll_macro(ctx, "punch 1 2 3")
+
+    assert mock_error.await_args is not None
+    assert "Strength" in str(mock_error.await_args.args[1])
+    assert mock_error.await_args.args[2] == ("Your Input", "/vm syntax:`punch 1 2 3`")

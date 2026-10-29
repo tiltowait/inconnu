@@ -292,7 +292,7 @@ async def test_vamp_rouse_at_hunger_5(vamp: VChar, ctx: AppCtx, mock_char_save: 
     with (
         patch("inconnu.d10", return_value=6),  # Success
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
-        patch("services.post_update", new_callable=AsyncMock),
+        patch("services.post_update", new_callable=AsyncMock) as mock_report,
         patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
@@ -301,6 +301,13 @@ async def test_vamp_rouse_at_hunger_5(vamp: VChar, ctx: AppCtx, mock_char_save: 
         # Hunger stays at 5
         assert vamp.hunger == 5
         mock_char_save.assert_awaited()
+
+        # The update channel reports the pass and the required frenzy check
+        report_args = mock_report.await_args
+        assert report_args is not None
+        report = report_args.kwargs["message"]
+        assert "__passed__" in report
+        assert "frenzy" in report.lower()
 
         # Verify frenzy warning appears
         call_args = mock_display.await_args
@@ -317,7 +324,7 @@ async def test_vamp_rouse_hunger_5_failure(vamp: VChar, ctx: AppCtx, mock_char_s
     with (
         patch("inconnu.d10", return_value=3),  # Failure
         patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
-        patch("services.post_update", new_callable=AsyncMock),
+        patch("services.post_update", new_callable=AsyncMock) as mock_report,
         patch.object(services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[]),
         patch("utils.get_message", new_callable=AsyncMock),
     ):
@@ -326,6 +333,15 @@ async def test_vamp_rouse_hunger_5_failure(vamp: VChar, ctx: AppCtx, mock_char_s
         # Hunger stays at 5
         assert vamp.hunger == 5
         mock_char_save.assert_awaited()
+
+        # The update channel reports the failure and its consequences, since
+        # Hunger didn't rise
+        report_args = mock_report.await_args
+        assert report_args is not None
+        report = report_args.kwargs["message"]
+        assert "__failed__" in report
+        assert "torpor" in report.lower()
+        assert "frenzy" in report.lower()
 
         # Verify torpor/frenzy warning appears
         call_args = mock_display.await_args

@@ -252,8 +252,9 @@ class GuildCache:
 
     @validate
     async def fetchmember(self, guild_id: int, member_id: int) -> CachedMember | None:
-        """Fetch a cached member."""
-        cguild = await self.fetchguild(guild_id)
+        """Fetch a cached member. The member's guild doesn't include its
+        members, since loading them would make this scale with guild size."""
+        cguild = await self.fetchguild(guild_id, members=False)
         if cguild is None:
             return None
 

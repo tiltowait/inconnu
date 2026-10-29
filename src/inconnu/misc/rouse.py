@@ -83,8 +83,15 @@ async def perform_rouse(
         guild = cast(discord.Guild, ctx.guild)
         outcome = await __rouse_roll(guild, character, count, reroll)
         update_msg = f"**{character.name}** "
-        if outcome.gain:
+        if outcome.failures and outcome.frenzy:
+            update_msg += (
+                "__failed__ a Rouse check at Hunger `5`. "
+                "Torpor if awakening; otherwise, a frenzy check."
+            )
+        elif outcome.failures:
             update_msg += f"__failed__ a Rouse check. Hunger is now `{character.hunger}`."
+        elif outcome.frenzy:
+            update_msg += "__passed__ a Rouse check at Hunger `5`, but must make a frenzy check."
         else:
             update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
@@ -108,10 +115,9 @@ async def perform_rouse(
             color=color,
         )
 
-        # Yes, we already committed. This is because pre_update() clamps Hunger
-        # within valid boundaries. Unfortunately, __display_outcome() runs
-        # VChar.log(), which needs to be saved.
-        # TODO: Move logging outside of __display_outcome()
+        # Saved again, because __display_outcome() may apply Oblivion stains
+        # and log them.
+        # TODO: Move stain application and logging outside of __display_outcome()
         await character.save()
 
 
@@ -235,7 +241,7 @@ async def __rouse_roll(
     starting_hunger = character.hunger
     frenzy = starting_hunger == 5
     character.hunger += failures
-    gain = starting_hunger - character.hunger
+    gain = character.hunger - starting_hunger
 
     character.log("rouse", rolls)
 

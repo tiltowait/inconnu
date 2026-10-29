@@ -84,16 +84,14 @@ async def resonance_mode(guild: discord.Guild | None) -> ResonanceMode:
     return vguild.settings.resonance
 
 
-async def max_hunger(guild: discord.Guild):
-    """Get the max Hunger rating allowed in rolls."""
+async def max_hunger(guild: discord.Guild | None) -> int:
+    """Get the max Hunger rating allowed in rolls. DMs use the default."""
     vguild = await VGuild.get_or_fetch(guild)
     return vguild.settings.max_hunger
 
 
-async def hidden_dice_permissions(guild: discord.Guild | None) -> HiddenDicePerms:
-    """Who may hide their dice. Anyone may in DMs."""
-    if guild is None:
-        return HiddenDicePerms.ENABLED
+async def hidden_dice_permissions(guild: discord.Guild) -> HiddenDicePerms:
+    """Who may hide their dice on the server."""
     vguild = await VGuild.get_or_fetch(guild)
     return vguild.settings.hidden_dice_permissions
 

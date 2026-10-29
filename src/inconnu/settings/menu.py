@@ -78,6 +78,9 @@ class OblivionOptions(StrEnum):
     @classmethod
     def from_list(cls, val: list[int]) -> Self:
         """Construct an OblivionOption from a list."""
+        if not val:
+            # NONE is stored as an empty list (see to_list())
+            return cls(cls.NONE)
         str_val = " ".join(map(str, val))
         return cls(str_val)
 

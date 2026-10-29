@@ -39,7 +39,7 @@ async def create(
                 ctx,
                 "Macro names can only contain letters and underscores.",
                 character=character.name,
-                help_url=__HELP_URL,
+                help=__HELP_URL,
             )
             return
 
@@ -67,8 +67,8 @@ async def create(
     except (
         SyntaxError,
         errors.AmbiguousTraitError,
-        errors.HungerInPool,
         errors.MacroAlreadyExistsError,
+        errors.RollError,
         errors.TraitNotFound,
     ) as err:
         await ui.embeds.error(ctx, err, help=__HELP_URL, character=character.name)

@@ -341,10 +341,30 @@ def test_list_input(character: VChar):
     assert p.difficulty == 3
 
 
-@pytest.mark.parametrize("expr,value", [("7", 7), ("3 + 4", 7), ("3 - 4", -1), ("- 2 + + 3", 1)])
+@pytest.mark.parametrize(
+    "expr,value",
+    [
+        ("7", 7),
+        ("3 + 4", 7),
+        ("3 - 4", -1),
+        ("- 2 + + 3", 1),
+        ("03", 3),
+        ("00", 0),
+        ("0", 0),
+        ("100 - 010", 90),
+    ],
+)
 def test_eval_expr(expr: str, value: int):
     """Addition, subtraction, and unary signs are evaluated."""
     assert eval_expr(expr) == value
+
+
+def test_leading_zeros(character: VChar):
+    """Numbers with leading zeros are read as plain numbers."""
+    p = RollParser(character, "strength + 02 01 03")
+    assert p.pool == 5
+    assert p.hunger == 1
+    assert p.difficulty == 3
 
 
 def test_eval_expr_rejects_names():

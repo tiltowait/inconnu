@@ -88,7 +88,7 @@ def test_valid_macro_name_single_letter():
         "AwesomePower",
     ],
 )
-def test_valid_macro_names_parametrized(name):
+def test_valid_macro_names_parametrized(name: str):
     """Test various valid macro names."""
     assert macro_common.is_macro_name_valid(name)
 
@@ -106,6 +106,15 @@ def test_valid_macro_names_parametrized(name):
         "",
     ],
 )
-def test_invalid_macro_names_parametrized(name):
+def test_invalid_macro_names_parametrized(name: str):
     """Test various invalid macro names."""
     assert not macro_common.is_macro_name_valid(name)
+
+
+@pytest.mark.parametrize(
+    "length,valid",
+    [(macro_common.NAME_LEN, True), (macro_common.NAME_LEN + 1, False)],
+)
+def test_macro_name_length(length: int, valid: bool):
+    """Names may be up to NAME_LEN characters, matching /macro create's limit."""
+    assert macro_common.is_macro_name_valid("a" * length) is valid

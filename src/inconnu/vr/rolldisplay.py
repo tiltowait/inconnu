@@ -81,7 +81,7 @@ class RollDisplay(ReportingView):
         self.timeout_handler = timeout
         self.impairment_category = impairment_category
         self.hide_dice = hide_dice
-        self.redacted_message: discord.Interaction | discord.WebhookMessage | None = None
+        self.redacted_message: discord.PartialMessage | None = None  # Hidden rolls only
         self.report_message: discord.Message | None = None
         self.public_message: discord.Message | None = None  # Guild rolls only
         self.state = _ButtonState()
@@ -100,7 +100,6 @@ class RollDisplay(ReportingView):
             # Everyone sees the redacted roll. The roller privately gets the
             # full roll and the buttons.
             public = await self.ctx.respond(embed=self.redacted_embed)
-            self.redacted_message = public
             self.message = await self.ctx.respond(embed=self.full_embed, view=self, ephemeral=True)
         else:
             public = await self.ctx.respond(embed=self.full_embed, view=self)
@@ -113,6 +112,12 @@ class RollDisplay(ReportingView):
             self.public_message = await get_message(public)
             message_id = self.public_message.id
             if self.hide_dice:
+                # Edited through the channel, because the command's token
+                # expires after 15 minutes, but presses keep the buttons alive
+                # Hidden rolls are guild-only; threads and voice channels have
+                # the same method
+                channel = cast(discord.TextChannel, self.public_message.channel)
+                self.redacted_message = channel.get_partial_message(message_id)
                 await self._report(self.public_message)
         await self._log_roll(self.ctx, message_id)
 
@@ -208,7 +213,7 @@ class RollDisplay(ReportingView):
         """Bring a hidden roll's public message and update channel report up to
         date. Either may have been deleted."""
         if self.redacted_message is not None:
-            with contextlib.suppress(discord.NotFound):
+            with contextlib.suppress(discord.NotFound, discord.Forbidden):
                 await self.redacted_message.edit(embed=self.redacted_embed)
         if self.report_message is not None:
             with contextlib.suppress(discord.NotFound, discord.Forbidden):
@@ -241,8 +246,10 @@ class RollDisplay(ReportingView):
     # View hooks
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        """Only the roll's owner may press its buttons."""
-        return interaction.user == self.owner
+        """Only the roll's owner and the user who made the roll may press its
+        buttons. They differ when an admin rolls for a player, and a hidden
+        roll's buttons are only shown to the user who made it."""
+        return interaction.user in (self.owner, self.ctx.user)
 
     async def on_check_failure(self, interaction: discord.Interaction):
         """Tell the presser the buttons aren't theirs."""

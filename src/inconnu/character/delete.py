@@ -32,7 +32,7 @@ async def delete(ctx: AppCtx, character_name: str):
         await ctx.send_modal(modal)
 
     except errors.CharacterError as err:
-        await ui.embeds.error(ctx, err, help_url=__HELP_URL)
+        await ui.embeds.error(ctx, err, help=__HELP_URL)
 
 
 class _DeletionModal(Modal):

@@ -62,7 +62,7 @@ async def statistics(
     except ValueError:
         await ui.embeds.error(ctx, f"`{date_rep}` is not a valid date.")
     except LookupError as err:
-        await ui.embeds.error(ctx, err, help_url=__HELP_URL)
+        await ui.embeds.error(ctx, err, help=__HELP_URL)
 
 
 @haven(__HELP_URL)

@@ -91,7 +91,7 @@ async def probability(
         await __display_embed(ctx, params, strategy, probabilities, penalty)
 
     except (SyntaxError, ValueError, errors.TraitError, errors.RollError) as err:
-        await ui.embeds.error(ctx, err, character=character, help_url=HELP_URL)
+        await ui.embeds.error(ctx, err, character=character, help=HELP_URL)
 
 
 async def __display_embed(
@@ -302,7 +302,9 @@ def _normal_grid(count: int) -> list[list[float]]:
     return grid
 
 
-def _group_key(strategy: Strategy | None, normal_count: int, hunger_state: tuple):
+def _group_key(
+    strategy: Strategy | None, normal_count: int, hunger_state: tuple[bool, int, int]
+) -> tuple[int, int] | bool | None:
     """The part of a hunger state the strategy's reroll check depends on."""
     _, h_succ, h_tens = hunger_state
 
@@ -317,7 +319,10 @@ def _group_key(strategy: Strategy | None, normal_count: int, hunger_state: tuple
 
 
 def _post_reroll(
-    base: list[list[float]], strategy: Strategy, hunger_state: tuple, difficulty: int
+    base: list[list[float]],
+    strategy: Strategy,
+    hunger_state: tuple[bool, int, int, int],
+    difficulty: int,
 ) -> list[list[float]]:
     """The normal dice grid after applying the strategy wherever the roll allows it."""
     count = len(base) - 1
@@ -355,7 +360,12 @@ def _rerollable_rows(strategy: Strategy, count: int) -> range:
             return range(count + 1)
 
 
-def _score(probs: Probabilities, grid: list[list[float]], members: list, difficulty: int):
+def _score(
+    probs: Probabilities,
+    grid: list[list[float]],
+    members: list[tuple[tuple[bool, int, int], float]],
+    difficulty: int,
+):
     """Add each hunger state's outcomes, given the normal dice grid it's rolled with."""
     count = len(grid) - 1
 
@@ -407,7 +417,12 @@ def _score(probs: Probabilities, grid: list[list[float]], members: list, difficu
 
 
 def _can_reroll(
-    strategy: Strategy, fails: int, succ: int, tens: int, hunger_state: tuple, difficulty: int
+    strategy: Strategy,
+    fails: int,
+    succ: int,
+    tens: int,
+    hunger_state: tuple[bool, int, int, int],
+    difficulty: int,
 ) -> bool:
     """Whether the strategy can be applied. Mirrors Roll's can_* properties."""
     _, h_succ, h_tens, hunger_count = hunger_state

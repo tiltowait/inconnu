@@ -39,7 +39,7 @@ async def create(
                 ctx,
                 "Macro names can only contain letters and underscores.",
                 character=character.name,
-                help_url=__HELP_URL,
+                help=__HELP_URL,
             )
             return
 

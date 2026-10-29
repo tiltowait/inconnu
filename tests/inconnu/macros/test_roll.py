@@ -193,6 +193,36 @@ async def test_slaking_keeps_result_after_failed_reroll(
     menu.delete.assert_not_awaited()
 
 
+async def test_timeout_after_reroll_deleted_menu(
+    owner: discord.Member, character: VChar, outcome: Roll
+):
+    """A menu deleted by a reroll into failure doesn't break its view's timeout."""
+    view = _SlakeView(owner, character, outcome)
+    menu = AsyncMock(spec=discord.WebhookMessage)
+    menu.delete.side_effect = discord.NotFound(MagicMock(status=404), "Unknown Message")
+    view.message = menu
+    HUNT_LISTENERS[outcome.id] = menu
+
+    outcome.normal.dice = [2]
+    await reroll_listener(make_interaction(owner), character, outcome)
+    await view.on_timeout()
+
+    assert menu.delete.await_count == 2
+
+
+async def test_timeout_deletes_interaction_menu(
+    owner: discord.Member, character: VChar, outcome: Roll
+):
+    """A menu sent as the interaction's response is deleted through the interaction."""
+    view = _SlakeView(owner, character, outcome)
+    menu = AsyncMock(spec=discord.Interaction)
+    view.message = menu
+
+    await view.on_timeout()
+
+    menu.delete_original_response.assert_awaited_once()
+
+
 # Rolling the macro
 
 

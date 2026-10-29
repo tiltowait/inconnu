@@ -5,6 +5,7 @@ from typing import cast
 from uuid import uuid4
 
 import discord
+from bson import ObjectId
 from discord.ui import Button, View
 from loguru import logger
 
@@ -23,7 +24,9 @@ from services.haven import Haven
 from utils import get_avatar
 from utils.urls import docs_url
 
-__HUNT_LISTENERS = {}
+type _SlakeMenu = discord.Interaction | discord.WebhookMessage
+
+__HUNT_LISTENERS: dict[ObjectId, _SlakeMenu | None] = {}
 __HELP_URL = docs_url("command-reference/macros#vm")
 
 
@@ -74,7 +77,9 @@ async def roll(
 
             try:
                 # Macros can contain hunger by default, but the user can override
-                max_hunger = await services.settings.max_hunger(ctx.guild)
+                # Characters only exist in guilds
+                guild = cast(discord.Guild, ctx.guild)
+                max_hunger = await services.settings.max_hunger(guild)
                 outcome = await perform_roll(
                     ctx,
                     character,
@@ -183,9 +188,21 @@ async def reroll_listener(
             await __slake(ctx, character, None, ephemeral)
         elif old_inter is not None and not outcome.is_successful:
             # They re-rolled into failure
-            await old_inter.delete()
+            await _delete_menu(old_inter)
 
         await remove_hunt_listener(outcome)
+
+
+async def _delete_menu(menu: _SlakeMenu):
+    """Delete a Slake menu, which might be ephemeral. A menu that's already
+    gone is ignored: a reroll into failure deletes it before its view times out."""
+    try:
+        if isinstance(menu, discord.Interaction):
+            await menu.delete_original_response()
+        else:
+            await menu.delete()
+    except discord.NotFound:
+        pass
 
 
 async def remove_hunt_listener(outcome: Roll | None):
@@ -241,8 +258,8 @@ class _SlakeView(View):
         super().__init__(timeout=600)
         self.owner = owner
         self.character = character
-        self.buttons = {}
-        self.message = None
+        self.buttons: dict[str, int] = {}
+        self.message: _SlakeMenu | None = None
         self.outcome = outcome
 
         for hunger in range(1, character.hunger + 1):
@@ -304,5 +321,6 @@ class _SlakeView(View):
     async def on_timeout(self):
         """Delete the message."""
         self.stop()
-        await self.message.delete()
+        if self.message is not None:
+            await _delete_menu(self.message)
         await remove_hunt_listener(self.outcome)

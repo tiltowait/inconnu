@@ -276,12 +276,6 @@ async def test_max_hunger_returns_guild_setting(mock_vguild_fetch, hunger):
 # Tests for hidden_dice_permissions()
 
 
-async def test_hidden_dice_permissions_in_dm(mock_vguild_fetch):
-    """Anyone may hide their dice in DMs."""
-    assert await services.settings.hidden_dice_permissions(None) == HiddenDicePerms.ENABLED
-    mock_vguild_fetch.assert_not_awaited()
-
-
 @pytest.mark.parametrize("perms", list(HiddenDicePerms))
 async def test_hidden_dice_permissions_returns_guild_setting(
     mock_vguild_fetch, perms: HiddenDicePerms

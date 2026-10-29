@@ -32,3 +32,5 @@ If the server has a [character updates channel](../../advanced/server-settings.m
 ### Server permissions
 
 Server admins choose who may hide their dice in [`/settings scope:Server`](../../advanced/server-settings.md#hidden-dice). If you're not allowed to, **Inconnu** tells you before rolling anything, including a macro's Rouse Checks.
+
+Hidden dice cannot be used in DMs.

@@ -23,6 +23,36 @@ async def test_stain_delta_zero_fails(vamp: VChar, ctx: AppCtx):
 
 
 @pytest.mark.parametrize(
+    "initial_stains,delta,expected",
+    [
+        (10, 1, "already has `10` Stains"),
+        (0, -1, "has no Stains to remove"),
+    ],
+)
+async def test_stain_no_change_fails(
+    initial_stains: int,
+    delta: int,
+    expected: str,
+    vamp: VChar,
+    ctx: AppCtx,
+    mock_char_save: AsyncMock,
+    mock_character_display: AsyncMock,
+):
+    """A change that clamping cancels out is an error, not "Removed 0 Stains"."""
+    vamp.stains = initial_stains
+
+    with patch("ui.embeds.error", new_callable=AsyncMock) as mock_error:
+        await stain(ctx, vamp, delta, player=ctx.user)
+
+    mock_error.assert_awaited_once()
+    assert mock_error.await_args is not None
+    assert expected in str(mock_error.await_args.args[1])
+    assert vamp.stains == initial_stains
+    mock_character_display.assert_not_awaited()
+    mock_char_save.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
     "initial_stains,delta,expected_stains",
     [
         (0, 1, 1),  # Add 1 stain

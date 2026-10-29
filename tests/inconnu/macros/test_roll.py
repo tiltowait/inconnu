@@ -432,3 +432,15 @@ async def test_invalid_macro_name(ctx: AppCtx):
     """An invalid macro name says why, rather than "Unknown syntax"."""
     message = await roll_error(ctx, "punch2")
     assert message == "Macro names may only contain letters and underscores."
+
+
+@pytest.mark.usefixtures("mock_punch")
+async def test_macro_roll_error_shows_input(ctx: AppCtx):
+    """Roll errors show the player's input, since they describe the macro's
+    pool rather than its name."""
+    with patch("ui.embeds.error", new_callable=AsyncMock) as mock_error:
+        await roll_macro(ctx, "punch 1 2 3")
+
+    assert mock_error.await_args is not None
+    assert "Strength" in str(mock_error.await_args.args[1])
+    assert mock_error.await_args.args[2] == ("Your Input", "/vm syntax:`punch 1 2 3`")

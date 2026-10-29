@@ -107,8 +107,16 @@ async def roll(
                 return
             except (errors.RollError, ValueError) as err:
                 # ValueErrors come from Roll's range checks (Hunger, Difficulty,
-                # pool size), and their messages are better than "Unknown syntax"
-                await ui.embeds.error(ctx, err, character=character.name, help=__HELP_URL)
+                # pool size), and their messages are better than "Unknown syntax".
+                # The input shows what the player typed, since the error shows
+                # the macro's pool instead of its name.
+                await ui.embeds.error(
+                    ctx,
+                    err,
+                    ("Your Input", f"/vm syntax:`{syntax}`"),
+                    character=character.name,
+                    help=__HELP_URL,
+                )
                 return
 
         # We show the rouse check first, because display_outcome() is blocking

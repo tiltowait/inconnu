@@ -41,6 +41,8 @@ async def delete_header(ctx: AppCtx, message: discord.Message):
             await message.delete()
         else:
             logger.debug("Deleting header via webhook.delete_message()")
+            # Not a bot message, so it's a webhook message, which requires a webhook
+            assert webhook is not None
             await webhook.delete_message(message.id)
         await ctx.respond("RP header deleted!", ephemeral=True, delete_after=3)
     except discord.errors.Forbidden:
@@ -48,9 +50,4 @@ async def delete_header(ctx: AppCtx, message: discord.Message):
             "Something went wrong. Unable to delete the header. This may be a permissions issue.",
             ephemeral=True,
         )
-        logger.warning(
-            "Unable to delete header {} in #{} on {}",
-            record["message"],
-            ctx.channel.name,
-            ctx.guild.name,
-        )
+        logger.warning("Unable to delete header {}", message.jump_url)

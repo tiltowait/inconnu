@@ -1,7 +1,7 @@
 """An error reporter."""
 
 import traceback
-from collections.abc import Awaitable, Callable
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
@@ -14,13 +14,22 @@ import errors
 import ui
 from config import settings
 from ctx import AppInvocation
-from models import VChar
 from services.log import report_database_error
-from utils import get_avatar
 from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
+
+MAX_DESCRIPTION = 4096  # Discord's embed description limit
+INVALID_WEBHOOK_TOKEN = 50027  # Discord error code
+
+
+def error_scope(ctx: AppInvocation) -> str:
+    """The command the error happened in, or INTERACTION for components and the like. The
+    stack trace usually makes this clear, but not always!"""
+    if isinstance(ctx, discord.ApplicationContext) and ctx.command is not None:
+        return ctx.command.qualified_name.upper()
+    return "INTERACTION"
 
 
 class ErrorReporter:
@@ -44,8 +53,8 @@ class ErrorReporter:
         embed = discord.Embed(
             title="Please re-invite Inconnu",
             description=(
-                f"**Inconnu** has encountered an error. Please [re-invite]({invite}) "
-                "the bot and try again."
+                f"**Inconnu** has encountered an error. [Re-inviting]({invite}) "
+                "the bot may fix it. No character data/settings will be lost."
             ),
             color=discord.Color.red(),
         )
@@ -61,155 +70,144 @@ class ErrorReporter:
     async def prepare_channel(self, bot: "InconnuBot"):
         """Attempt to get the error channel from the bot."""
         self._bot = bot
-        if settings.report_channel is not None:
-            logger.info("REPORTER: Report channel ID: {}", settings.report_channel)
-            channel = await bot.fetch_channel(settings.report_channel)
-            if isinstance(channel, discord.TextChannel):
-                logger.info("REPORTER: Recording errors in #{}", channel.name)
-                self.channel = channel
-            else:
-                logger.warning("REPORTER: Unhandled exceptions channel invalid")
-        else:
-            logger.warning("REPORTER: Unhandled exceptions report channel not set")
+        if settings.report_channel is None:
+            logger.warning("Unhandled exceptions report channel not set")
+            return
 
-    async def report_error(self, ctx: AppInvocation, error: discord.DiscordException):
+        logger.info("Report channel ID: {}", settings.report_channel)
+        try:
+            channel = await bot.fetch_channel(settings.report_channel)
+        except (discord.HTTPException, discord.InvalidData) as err:
+            logger.warning("Couldn't fetch the report channel: {}", str(err))
+            return
+
+        if isinstance(channel, discord.TextChannel):
+            logger.info("Recording errors in #{}", channel.name)
+            self.channel = channel
+        else:
+            logger.warning("Unhandled exceptions channel invalid")
+
+    async def report_error(self, ctx: AppInvocation, error: Exception):
         """Report an error, switching between known and unknown."""
         error = getattr(error, "original", error)
-        if isinstance(ctx, discord.ApplicationContext):
-            respond = ctx.respond
+
+        match error:
+            case commands.NoPrivateMessage():
+                await ctx.respond(
+                    "Sorry, this command can only be run in a server!", ephemeral=True
+                )
+            case commands.MissingPermissions():
+                await ctx.respond("Sorry, you don't have permission to do this!", ephemeral=True)
+            case discord.NotFound() | errors.HandledError():
+                # NotFound just means a button tried to disable when its message no longer
+                # exists. We don't care, and there's nothing we can do about it anyway.
+                pass
+            case errors.NotReady():
+                await ui.embeds.error(ctx, str(error), title="One moment, please")
+            case errors.NotPremium():
+                await self._report_not_premium(ctx)
+            case commands.NotOwner():
+                await ctx.respond(
+                    f"Sorry, only {ctx.bot.me.mention}'s owner may issue this command!",
+                    ephemeral=True,
+                )
+            case errors.LockdownError() if ctx.bot.lockdown:
+                await self._report_lockdown(ctx, ctx.bot.lockdown)
+            case errors.InvalidAttachment():
+                await ui.embeds.error(ctx, str(error), title="Invalid file")
+            case discord.DiscordServerError():
+                # There's nothing we can do about these
+                logger.error("Discord server error detected")
+            case AttributeError() if "PartialMessageable" in str(error):
+                logger.opt(exception=error).warning("Got a PartialMessageable in an error.")
+                await ctx.respond(embed=self.reinvite_message)
+            case discord.HTTPException() if error.code == INVALID_WEBHOOK_TOKEN:
+                # A Discord issue, but we still want to know about it
+                await self._outage_alert(ctx)
+                await self._report_unknown(ctx, error)
+            case _:
+                await self._report_unknown(ctx, error)
+
+    async def _report_not_premium(self, ctx: AppInvocation):
+        """Tell the user the feature requires premium."""
+        troubleshoot_url = docs_url("advanced/troubleshooting#you-arent-able-to-upload-images")
+
+        if ctx.command is not None:
+            cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
         else:
-            if ctx.response.is_done():
-                respond = ctx.followup.send
-            else:
-                respond = ctx.response.send_message
+            cmd_mention = "this feature"
+        await ui.embeds.error(
+            ctx,
+            (f"Only patrons can use {cmd_mention}. Click the Patreon button to get started!"),
+            (
+                "Already a patron?",
+                f"[Check the troubleshooting page.]({troubleshoot_url})",
+            ),
+            title="Premium feature",
+            help=docs_url("premium/character-images"),
+        )
 
-        # Known exceptions
+    async def _report_lockdown(self, ctx: AppInvocation, lockdown: datetime):
+        """Tell the user when maintenance is scheduled."""
+        timestamp = discord.utils.format_dt(lockdown, "R")
+        err = f"{ctx.bot.me.mention} is undergoing maintenance {timestamp}."
+        embed = ui.embeds.ErrorEmbed(
+            ctx.user,
+            err,
+            title="Command temporarily unavailable",
+            footer="Sorry for any inconvenience.",
+        )
+        await ctx.respond(embed=embed, ephemeral=True)
 
-        if isinstance(error, commands.NoPrivateMessage):
-            await respond("Sorry, this command can only be run in a server!", ephemeral=True)
-            return
-        if isinstance(error, commands.MissingPermissions):
-            await respond("Sorry, you don't have permission to do this!", ephemeral=True)
-            return
-        if isinstance(error, discord.errors.NotFound):
-            # This just means a button tried to disable when its message no longer exists.
-            # We don't care, and there's nothing we can do about it anyway.
-            return
-        if isinstance(error, errors.NotReady):
-            await ui.embeds.error(ctx, str(error), title="One moment, please")
-            return
-        if isinstance(error, errors.NotPremium):
-            troubleshoot_url = docs_url("advanced/troubleshooting#you-arent-able-to-upload-images")
-
-            if ctx.command is not None:
-                cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
-            else:
-                cmd_mention = "this feature"
-            await ui.embeds.error(
-                ctx,
-                (f"Only patrons can use {cmd_mention}. Click the Patreon button to get started!"),
+    async def _outage_alert(self, ctx: AppInvocation):
+        """Warn the channel that a Discord issue is affecting the bot."""
+        if isinstance(ctx.channel, discord.abc.Messageable):
+            await ctx.channel.send(
                 (
-                    "Already a patron?",
-                    f"[Check the troubleshooting page.]({troubleshoot_url})",
+                    f"**Alert:** A Discord issue is currently impacting "
+                    f"{self.bot.me.mention}'s responsiveness. Check status here: "
+                    "https://discordstatus.com"
                 ),
-                title="Premium feature",
-                help=docs_url("premium/character-images"),
+                delete_after=15,
             )
-            return
-        if isinstance(error, commands.NotOwner):
-            await respond(
-                f"Sorry, only {ctx.bot.me.mention}'s owner may issue this command!",
-                ephemeral=True,
-            )
-            return
-        if isinstance(error, errors.LockdownError) and ctx.bot.lockdown:
-            timestamp = discord.utils.format_dt(ctx.bot.lockdown, "R")
-            err = f"{ctx.bot.me.mention} is undergoing maintenance {timestamp}."
-            embed = ui.embeds.ErrorEmbed(
-                ctx.user,
-                err,
-                title="Command temporarily unavailable",
-                footer="Sorry for any inconvenience.",
-            )
-            await respond(embed=embed, ephemeral=True)
-            return
-        if isinstance(error, errors.InvalidAttachment):
-            await ui.embeds.error(ctx, str(error), title="Invalid file")
-            return
-        if isinstance(error, errors.HandledError):
-            logger.debug("REPORTER: Ignoring a HandledError")
-            return
-        if isinstance(error, discord.errors.DiscordServerError):
-            # There's nothing we can do about these
-            logger.error("REPORTER: Discord server error detected")
-            return
-        if isinstance(error, AttributeError) and "PartialMessageable" in str(error):
-            await respond(embed=self.reinvite_message)
-            return
 
-        # Unknown errors and database errors are logged to a channel
-
+    async def _report_unknown(self, ctx: AppInvocation, error: BaseException):
+        """Log an unknown error, notify the user, and post it to the report channel."""
         if isinstance(error, pymongo.errors.PyMongoError):
             await report_database_error(self.bot, ctx)
 
-        # Unknown exceptions
-        embed = await self.error_embed(ctx, error)
-        try:
-            await self._report_unknown_error(respond, embed)
-        except discord.HTTPException:
-            embed.description = "The error was too long to fit! Check the logs."
-            await self._report_unknown_error(respond, embed)
-            raise error from error
-
-        # Print the error to the log
-        if isinstance(ctx, discord.ApplicationContext) and ctx.command is not None:
-            scope = ctx.command.qualified_name.upper()
-        else:
-            scope = "INTERACTION"
+        # Log first, so the error is recorded even if reporting fails
         formatted = "".join(traceback.format_exception(error))
-        logger.error("{}: {}", scope, formatted)
+        logger.error("{}: {}", error_scope(ctx), formatted)
 
-    async def _report_unknown_error(
-        self, respond: Callable[..., Awaitable[object]], embed: discord.Embed
-    ):
-        """Report an unknown exception."""
+        embed = await self.error_embed(ctx, error)
         user_msg = f"{self.bot.me.mention} has encountered an error. Support has been notified!"
 
         try:
-            await respond(user_msg, ephemeral=True)
-        except (discord.NotFound, discord.HTTPException) as err:
-            logger.error("REPORTER: Couldn't inform user of an error: {}", str(err))
+            await ctx.respond(user_msg, ephemeral=True)
+        except discord.HTTPException as err:
+            logger.error("Couldn't inform user of an error: {}", str(err))
         finally:
             if self.channel is not None:
-                await self.channel.send(embed=embed)
+                try:
+                    await self.channel.send(embed=embed)
+                except discord.HTTPException as err:
+                    logger.error("Couldn't post an error report: {}", str(err))
 
     async def error_embed(self, ctx: AppInvocation, error: BaseException) -> discord.Embed:
         """Create an error embed."""
-        if "50027" in str(error):
+        if isinstance(error, discord.HTTPException) and error.code == INVALID_WEBHOOK_TOKEN:
             description = "**Unrecoverable Discord error:** Invalid webhook token"
-            if isinstance(ctx.channel, discord.abc.Messageable):
-                await ctx.channel.send(
-                    (
-                        f"**Alert:** A Discord issue is currently impacting "
-                        f"{self.bot.me.mention}'s responsiveness. Check status here: "
-                        "https://discordstatus.com"
-                    ),
-                    delete_after=15,
-                )
         else:
-            description = "\n".join(traceback.format_exception(error))
-
-        # If we can, we use the command name to try to pinpoint where the error
-        # took place. The stack trace usually makes this clear, but not always!
-        if isinstance(ctx, discord.ApplicationContext) and ctx.command is not None:
-            command_name = ctx.command.qualified_name.upper()
-        else:
-            command_name = "INTERACTION"
+            description = "".join(traceback.format_exception(error))
+            if len(description) > MAX_DESCRIPTION:
+                # Keep the end, where the innermost frames and the error message are
+                description = "…" + description[-(MAX_DESCRIPTION - 1) :]
 
         error_name = type(error).__name__
 
         embed = discord.Embed(
-            title=f"{command_name}: {error_name}",
+            title=f"{error_scope(ctx)}: {error_name}",
             description=description,
             color=0xFF0000,
             timestamp=discord.utils.utcnow(),
@@ -223,61 +221,10 @@ class ErrorReporter:
             guild_icon = ""
 
         embed.set_author(
-            name=f"{ctx.user.name} ({ctx.user.id} on {guild_name}", icon_url=guild_icon
+            name=f"{ctx.user.name} ({ctx.user.id}) on {guild_name}", icon_url=guild_icon
         )
 
         return embed
-
-
-async def post_update(
-    *,
-    ctx: AppInvocation,
-    character: VChar | None,
-    title: str,
-    message: str,
-    msg: discord.Message | None = None,
-    color: discord.Color | int | None = None,
-    embed: discord.Embed | None = None,
-) -> discord.Message | None:
-    """Post updates in the guild's update channel. Returns the sent
-    message, if any.
-
-    Without an embed, one is built from the title, message, character, color,
-    and a link to msg. With an embed, the message is sent alongside it, and the
-    rest is unused."""
-    from services.settings import update_channel as get_update_channel
-
-    if ctx.guild is None:
-        # Update channels only exist in guilds
-        return None
-
-    # The settings menu only offers text channels
-    update_channel = await get_update_channel(ctx.guild)
-    if isinstance(update_channel, discord.TextChannel):
-        if embed is None:
-            # Only updates with their own embed may omit the character
-            assert character is not None
-            embed = discord.Embed(
-                title=title,
-                description=message,
-                url=msg.jump_url if msg else None,
-                color=color,
-            )
-            embed.set_author(name=character.name, icon_url=get_avatar(ctx.user))
-            content = ""
-        else:
-            content = message
-
-        mentions = discord.AllowedMentions(users=False)
-
-        try:
-            return await update_channel.send(content, embed=embed, allowed_mentions=mentions)
-        except discord.errors.Forbidden:
-            logger.warning(
-                "UPDATE REPORT: No access to post in #{} on {}",
-                update_channel.name,
-                update_channel.guild.name,
-            )
 
 
 reporter = ErrorReporter()

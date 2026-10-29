@@ -1,5 +1,6 @@
 """macros/roll.py - Rolling character macros."""
 
+import contextlib
 from functools import partial
 from typing import cast
 from uuid import uuid4
@@ -24,9 +25,9 @@ from services.haven import Haven
 from utils import get_avatar
 from utils.urls import docs_url
 
-type _SlakeMenu = discord.Interaction | discord.WebhookMessage
+type _HuntListeners = dict[ObjectId, _SlakeView | None]
 
-__HUNT_LISTENERS: dict[ObjectId, _SlakeMenu | None] = {}
+__HUNT_LISTENERS: _HuntListeners = {}
 __HELP_URL = docs_url("command-reference/macros#vm")
 
 
@@ -190,27 +191,15 @@ async def reroll_listener(
     """Listens to roll events. Hidden rolls show the Slake menu privately."""
     character = cast(VChar, character)  # Macros always have a character
     if outcome.id in __HUNT_LISTENERS:
-        old_inter = __HUNT_LISTENERS[outcome.id]
-        if old_inter is None and outcome.is_successful:
+        menu = __HUNT_LISTENERS[outcome.id]
+        if menu is None and outcome.is_successful:
             # They re-rolled into success
             await __slake(ctx, character, None, ephemeral)
-        elif old_inter is not None and not outcome.is_successful:
+        elif menu is not None and not outcome.is_successful:
             # They re-rolled into failure
-            await _delete_menu(old_inter)
+            await menu.close()
 
         await remove_hunt_listener(outcome)
-
-
-async def _delete_menu(menu: _SlakeMenu):
-    """Delete a Slake menu, which might be ephemeral. A menu that's already
-    gone is ignored: a reroll into failure deletes it before its view times out."""
-    try:
-        if isinstance(menu, discord.Interaction):
-            await menu.delete_original_response()
-        else:
-            await menu.delete()
-    except discord.NotFound:
-        pass
 
 
 async def remove_hunt_listener(outcome: Roll | None):
@@ -239,7 +228,7 @@ async def __slake(ctx: AppInvocation, character: VChar, outcome: Roll | None, ep
         view.message = await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
         if outcome is not None:
-            __HUNT_LISTENERS[outcome.id] = view.message
+            __HUNT_LISTENERS[outcome.id] = view
 
 
 def __normalize_syntax(syntax: str) -> tuple[str, list[str]]:
@@ -267,7 +256,7 @@ class _SlakeView(View):
         self.owner = owner
         self.character = character
         self.buttons: dict[str, int] = {}
-        self.message: _SlakeMenu | None = None
+        self.message: discord.Interaction | discord.WebhookMessage | None = None
         self.outcome = outcome
 
         for hunger in range(1, character.hunger + 1):
@@ -311,7 +300,7 @@ class _SlakeView(View):
             return
 
         self.stop()
-        custom_id = inter.data["custom_id"]
+        custom_id = cast(str, inter.custom_id)  # Button presses always have one
         slake_amount = self.buttons[custom_id]
 
         # Once they've chosen, a reroll into failure shouldn't delete the result
@@ -326,9 +315,19 @@ class _SlakeView(View):
             await inconnu.misc.slake(inter, self.character, slake_amount, edit_message=True)
             await inconnu.reference.resonance(inter, character=self.character.name)
 
+    async def close(self):
+        """Stop listening and delete the menu, which might be ephemeral."""
+        self.stop()  # A stopped view never times out
+        if self.message is None:
+            return
+        # Someone else, such as a mod, may have deleted it already
+        with contextlib.suppress(discord.NotFound):
+            if isinstance(self.message, discord.Interaction):
+                await self.message.delete_original_response()
+            else:
+                await self.message.delete()
+
     async def on_timeout(self):
-        """Delete the message."""
-        self.stop()
-        if self.message is not None:
-            await _delete_menu(self.message)
+        """Delete the menu."""
+        await self.close()
         await remove_hunt_listener(self.outcome)

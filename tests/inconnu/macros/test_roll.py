@@ -121,10 +121,21 @@ def make_interaction(owner: discord.Member) -> AsyncMock:
     return inter
 
 
+def show_menu(
+    owner: discord.Member, character: VChar, outcome: Roll
+) -> tuple[_SlakeView, AsyncMock]:
+    """Show the Slake menu for a successful hunt and listen for rerolls."""
+    view = _SlakeView(owner, character, outcome)
+    menu = AsyncMock(spec=discord.WebhookMessage)
+    view.message = menu
+    HUNT_LISTENERS[outcome.id] = view
+    return view, menu
+
+
 async def press(view: _SlakeView, inter: AsyncMock, slake_amount: int):
     """Press the menu button that slakes the given amount."""
     custom_id = next(cid for cid, amount in view.buttons.items() if amount == slake_amount)
-    inter.data = {"custom_id": custom_id}
+    inter.custom_id = custom_id
     await view.callback(inter)
 
 
@@ -145,22 +156,22 @@ async def test_reroll_into_success_shows_menu(
 async def test_reroll_into_failure_deletes_menu(
     owner: discord.Member, character: VChar, outcome: Roll
 ):
-    """Rerolling a successful hunt into failure deletes the unused menu."""
-    menu = AsyncMock(spec=discord.WebhookMessage)
-    HUNT_LISTENERS[outcome.id] = menu
+    """Rerolling a successful hunt into failure deletes the unused menu and
+    stops its view, so it doesn't time out and delete the menu again."""
+    view, menu = show_menu(owner, character, outcome)
     outcome.normal.dice = [2]
 
     await reroll_listener(make_interaction(owner), character, outcome)
 
     menu.delete.assert_awaited_once()
+    assert view.is_finished()
     assert outcome.id not in HUNT_LISTENERS
 
 
 async def test_dont_slake_deletes_menu(owner: discord.Member, character: VChar, outcome: Roll):
     """Declining deletes the menu through the interaction, which works even
     when the menu is ephemeral."""
-    HUNT_LISTENERS[outcome.id] = AsyncMock(spec=discord.WebhookMessage)
-    view = _SlakeView(owner, character, outcome)
+    view, _ = show_menu(owner, character, outcome)
     inter = make_interaction(owner)
 
     await press(view, inter, _SlakeView.CANCEL_SLAKE)
@@ -180,9 +191,7 @@ async def test_slaking_keeps_result_after_failed_reroll(
     outcome: Roll,
 ):
     """Once they've slaked, rerolling the hunt into failure leaves the result alone."""
-    menu = AsyncMock(spec=discord.WebhookMessage)
-    HUNT_LISTENERS[outcome.id] = menu
-    view = _SlakeView(owner, character, outcome)
+    view, menu = show_menu(owner, character, outcome)
     inter = make_interaction(owner)
 
     await press(view, inter, 1)
@@ -193,21 +202,15 @@ async def test_slaking_keeps_result_after_failed_reroll(
     menu.delete.assert_not_awaited()
 
 
-async def test_timeout_after_reroll_deleted_menu(
-    owner: discord.Member, character: VChar, outcome: Roll
-):
-    """A menu deleted by a reroll into failure doesn't break its view's timeout."""
-    view = _SlakeView(owner, character, outcome)
-    menu = AsyncMock(spec=discord.WebhookMessage)
+async def test_timeout_after_menu_deleted(owner: discord.Member, character: VChar, outcome: Roll):
+    """A menu someone else deleted, such as a mod, doesn't break the timeout."""
+    view, menu = show_menu(owner, character, outcome)
     menu.delete.side_effect = discord.NotFound(MagicMock(status=404), "Unknown Message")
-    view.message = menu
-    HUNT_LISTENERS[outcome.id] = menu
 
-    outcome.normal.dice = [2]
-    await reroll_listener(make_interaction(owner), character, outcome)
     await view.on_timeout()
 
-    assert menu.delete.await_count == 2
+    menu.delete.assert_awaited_once()
+    assert outcome.id not in HUNT_LISTENERS
 
 
 async def test_timeout_deletes_interaction_menu(

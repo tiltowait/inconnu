@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/github/license/tiltowait/inconnu" alt="MIT license" />
 </p>
 
-**Inconnu** is a Discord dicebot for *Vampire: The Masquerade 5th Edition*. In addition to basic rolls, it offers a number of advanced options and quality-of-life features, such as character integration, trait-based pools, and more. [For a full rundown of **Inconnu's** features, read the documentation.](https://docs.inconnu.app)
+**Inconnu** is a Discord dicebot for *Vampire: The Masquerade 5th Edition*. In addition to basic rolls, it offers a number of advanced options and quality-of-life features, such as character integration, trait-based pools, and more. [For a full rundown of **Inconnu's** features, read the documentation.](https://inconnu.app/docs/)
 
 **See also:** [inconnu-app](https://github.com/the-second-city/inconnu-app), the web frontend for **Inconnu**.
 
@@ -19,18 +19,18 @@
 
 * [Invite Inconnu to your server](https://discord.com/api/oauth2/authorize?client_id=882409882119196704&permissions=537135104&scope=bot%20applications.commands)
 * [Official server](https://discord.gg/QHnCdSPeEE)
-* [Full documentation](https://docs.inconnu.app)
+* [Full documentation](https://inconnu.app/docs/)
 
 ### Basic Usage
 
 An **Inconnu** roll uses the following syntax: `/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`.
 
-*But that's not all!* **Inconnu** tracks character stats, allowing you to write human-readable dice pools, such as *"strength + brawl"*, rather than a simple number. For more information, [check the documentation](https://docs.inconnu.app).
+*But that's not all!* **Inconnu** tracks character stats, allowing you to write human-readable dice pools, such as *"strength + brawl"*, rather than a simple number. For more information, [check the documentation](https://inconnu.app/docs/).
 
 ## Required Permissions
 
 * **Send Messages:** For sending update messages in server-configured channels
-* **Manage Webhooks:** Used by the [premium "Roleposting" feature](https://docs.inconnu.app/premium/roleposting)
+* **Manage Webhooks:** Used by the [premium "Roleposting" feature](https://inconnu.app/docs/premium/roleposting)
 
 ## Troubleshooting
 

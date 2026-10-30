@@ -30,7 +30,9 @@ def mention_embed_commands(bot: InconnuBot, embed: discord.Embed):
         field.value = mention_commands(bot, field.value) or ""
 
 
-async def cmd_replace_respond(ctx: AppInvocation, content: str | None = None, **kwargs: Any):
+async def cmd_replace_respond(
+    ctx: AppInvocation, content: str | None = None, **kwargs: Any
+) -> discord.Interaction | discord.WebhookMessage:
     """Substitute command names for command mentions and respond."""
     content = mention_commands(ctx.bot, content)
 

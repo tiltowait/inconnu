@@ -63,6 +63,7 @@ AUTHOR_ID = 200
 def make_reply(
     *,
     bot_author: bool = False,
+    reply: bool = True,
     reference: bool = True,
     resolved: bool = True,
     to_webhook: bool = True,
@@ -71,6 +72,9 @@ def make_reply(
     """A reply to a message, by default a resolved reply to one of our webhooks."""
     message = MagicMock(spec=discord.Message)
     message.author.bot = bot_author
+    message.type = (
+        discord.MessageType.reply if reply else discord.MessageType.thread_starter_message
+    )
     message.mentions = [MagicMock(spec=discord.Member, id=m) for m in mentions or []]
     message.reply = AsyncMock()
 
@@ -114,6 +118,7 @@ async def mock_find_post() -> AsyncGenerator[AsyncMock, None]:
     "kwargs",
     [
         {"bot_author": True},
+        {"reply": False},
         {"reference": False},
         {"resolved": False},
         {"to_webhook": False},

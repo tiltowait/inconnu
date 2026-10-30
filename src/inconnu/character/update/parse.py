@@ -9,7 +9,7 @@ from discord.ui import Button
 import constants
 import services
 import ui
-from ctx import AppCtx
+from ctx import AppCtx, AppInvocation
 from inconnu.character.display import DisplayField, display
 from inconnu.character.impairment import impairment_reminder
 from inconnu.character.update import paramupdate
@@ -162,12 +162,14 @@ async def __update_character(ctx: AppCtx, character: VChar, param: str, value: s
     return func(character, value)
 
 
-async def update_help(ctx: AppCtx, err: Exception | str | None = None, ephemeral: bool = True):
+async def update_help(
+    ctx: AppInvocation, err: Exception | str | None = None, ephemeral: bool = True
+):
     """Display a help message that details the available keys."""
     color = None if err is None else 0xFF0000
     embed = discord.Embed(title="Character Tracking", color=color)
-    embed.set_author(name=ctx.bot.me.display_name)
-    embed.set_thumbnail(url=ctx.bot.me.avatar)
+    embed.set_author(name=ctx.client.me.display_name)
+    embed.set_thumbnail(url=ctx.client.me.avatar)
 
     if err is not None:
         embed.add_field(name="Error", value=str(err), inline=False)

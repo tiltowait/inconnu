@@ -24,7 +24,7 @@ from routes.characters.models import (
     WizardSchema,
 )
 from routes.deps import get_bot
-from services import char_mgr, guild_cache, wizard_cache
+from services import char_mgr, guild_cache, premium, wizard_cache
 from services.wizard import CharacterGuild
 
 if TYPE_CHECKING:
@@ -242,15 +242,12 @@ async def create_character(
 
     wizard_cache.delete(token)
 
-    # Figure out if the user has premium. We can't use is_supporter(), because
-    # that function requires an AppCtx, which we don't have. (Good candidate
-    # for a future refactor ...)
-    premium = False
+    # Figure out if the user has premium
+    has_premium = False
     guild = await bot.get_or_fetch_guild(settings.supporter_guild)
     if guild is not None:
         user = await guild.get_or_fetch(discord.Member, wizard.user)
-        if user is not None and user.get_role(settings.supporter_role) is not None:
-            premium = True
+        has_premium = user is not None and premium.is_supporter(user)
     else:
         logger.warning("Supporter guild not found")
 
@@ -258,5 +255,5 @@ async def create_character(
         guild=wizard.guild,
         character_id=character.id_str,
         character_name=character.name,
-        has_premium=premium,
+        has_premium=has_premium,
     )

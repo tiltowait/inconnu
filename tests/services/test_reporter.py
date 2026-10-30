@@ -315,6 +315,23 @@ async def test_database_error(reporter: ErrorReporter, ctx: AppCtx, bot: Inconnu
     assert report_embed(reporter).title == "VR: ServerSelectionTimeoutError"
 
 
+async def test_database_error_report_failure_still_reports(reporter: ErrorReporter, ctx: AppCtx):
+    """A failed database-error notice doesn't stop the error being logged and reported."""
+    error = raised(pymongo.errors.ServerSelectionTimeoutError("timed out"))
+    with (
+        patch(
+            "services.reporter.report_database_error",
+            new_callable=AsyncMock,
+            side_effect=AttributeError("'NoneType' object has no attribute 'send'"),
+        ),
+        patch("services.reporter.logger") as mock_logger,
+    ):
+        await reporter.report_error(ctx, error)
+
+    mock_logger.error.assert_any_call("{}: {}", "VR", ANY)
+    assert report_embed(reporter).title == "VR: ServerSelectionTimeoutError"
+
+
 async def test_invalid_webhook_token(reporter: ErrorReporter, ctx: AppCtx):
     """Error 50027 alerts the channel to a Discord outage."""
     error = discord.HTTPException(
@@ -325,6 +342,22 @@ async def test_invalid_webhook_token(reporter: ErrorReporter, ctx: AppCtx):
     channel_send = cast(AsyncMock, cast(discord.TextChannel, ctx.channel).send)
     assert channel_send.await_args is not None
     assert "discordstatus.com" in channel_send.await_args.args[0]
+    assert report_embed(reporter).description == (
+        "**Unrecoverable Discord error:** Invalid webhook token"
+    )
+
+
+async def test_outage_alert_failure_still_reports(reporter: ErrorReporter, ctx: AppCtx):
+    """A channel the bot can't post in doesn't stop the outage error being reported."""
+    error = discord.HTTPException(
+        MagicMock(status=401), {"code": 50027, "message": "Invalid Webhook Token"}
+    )
+    channel_send = cast(AsyncMock, cast(discord.TextChannel, ctx.channel).send)
+    channel_send.side_effect = discord.Forbidden(MagicMock(status=403), "Missing Access")
+
+    await reporter.report_error(ctx, raised(error))
+
+    cast(AsyncMock, ctx.respond).assert_awaited_once_with(UNKNOWN_MSG, ephemeral=True)
     assert report_embed(reporter).description == (
         "**Unrecoverable Discord error:** Invalid webhook token"
     )

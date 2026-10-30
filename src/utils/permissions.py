@@ -7,6 +7,7 @@ from loguru import logger
 
 from config import settings
 from ctx import AppCtx, AppInvocation
+from services import premium
 
 
 def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None):
@@ -40,13 +41,13 @@ async def get_or_fetch_supporter(ctx: AppCtx, user: discord.Member | discord.Use
     if guild:
         member = guild.get_member(user.id)
         if member:
-            return member.get_role(settings.supporter_role) is not None
+            return premium.is_supporter(member)
 
     # Fallback: Use the API instead of the cache
     guild = await ctx.bot.fetch_guild(settings.supporter_guild)
     member = await guild.fetch_member(user.id)
     if member:
-        return member.get_role(settings.supporter_role) is not None
+        return premium.is_supporter(member)
 
     return False
 
@@ -71,7 +72,7 @@ def is_supporter(ctx: AppInvocation, user: discord.Member | discord.User | None 
     # First, see if the invoker is on the support server
     if (member := support_server.get_member(user.id)) is not None:
         logger.debug("SUPPORTER: {} is on {}", user.name, support_server.name)
-        if member.get_role(settings.supporter_role) is not None:
+        if premium.is_supporter(member):
             logger.debug("SUPPORTER: {} is a supporter", user.name)
             return True
         logger.debug("SUPPORTER: {} is a not a supporter", user.name)

@@ -11,7 +11,7 @@ from discord.ui import Button, View
 
 import inconnu
 from constants import PATREON, SUPPORT_URL
-from ctx import AppCtx
+from ctx import AppCtx, AppInvocation
 from utils import cmd_replace
 from utils.urls import docs_url, web_asset
 
@@ -454,8 +454,8 @@ class Help(commands.Cog):
 
         await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
 
-    async def show_character_help(self, ctx: AppCtx, ephemeral=True):
-        """Run the /macro help command."""
+    async def show_character_help(self, ctx: AppInvocation, ephemeral: bool = True):
+        """Show the character update help."""
         await inconnu.character.update_help(ctx, ephemeral=ephemeral)
 
     async def show_rp_posts_help(self, ctx: AppCtx, ephemeral=True):

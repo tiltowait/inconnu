@@ -117,7 +117,9 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_message(self, message: discord.Message):
         """If the message is a reply to a Rolepost, ping the Rolepost's author."""
-        if message.author.bot or message.reference is None:
+        if message.author.bot or message.type != discord.MessageType.reply:
+            return
+        if message.reference is None:
             return
 
         # The backend doesn't always resolve the reference. We could search the

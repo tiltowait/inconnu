@@ -161,7 +161,9 @@ class ErrorReporter:
 
     async def _outage_alert(self, ctx: AppInvocation):
         """Warn the channel that a Discord issue is affecting the bot."""
-        if isinstance(ctx.channel, discord.abc.Messageable):
+        if not isinstance(ctx.channel, discord.abc.Messageable):
+            return
+        try:
             await ctx.channel.send(
                 (
                     f"**Alert:** A Discord issue is currently impacting "
@@ -170,15 +172,20 @@ class ErrorReporter:
                 ),
                 delete_after=15,
             )
+        except discord.HTTPException as err:
+            logger.error("Couldn't post an outage alert: {}", str(err))
 
     async def _report_unknown(self, ctx: AppInvocation, error: BaseException):
         """Log an unknown error, notify the user, and post it to the report channel."""
-        if isinstance(error, pymongo.errors.PyMongoError):
-            await report_database_error(self.bot, ctx)
-
         # Log first, so the error is recorded even if reporting fails
         formatted = "".join(traceback.format_exception(error))
         logger.error("{}: {}", error_scope(ctx), formatted)
+
+        if isinstance(error, pymongo.errors.PyMongoError):
+            try:
+                await report_database_error(self.bot, ctx)
+            except Exception as err:
+                logger.error("Couldn't report a database error: {}", str(err))
 
         embed = await self.error_embed(ctx, error)
         user_msg = f"{self.bot.me.mention} has encountered an error. Support has been notified!"

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class Gameplay(commands.Cog):
     """Gameplay-based commands."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         self.bot = bot
 
     # This is the primary roll command. It features the fastest entry and
@@ -280,6 +280,6 @@ class Gameplay(commands.Cog):
         await inconnu.misc.stain(ctx, character, delta, player=player)
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(Gameplay(bot))

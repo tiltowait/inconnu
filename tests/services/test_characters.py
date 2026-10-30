@@ -52,7 +52,7 @@ def mock_bot_with_user(user_id: int, admin: bool):
     return mock_bot, user
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def char_id() -> str:
     """The ID of a dummy character inserted into the database."""
     splat = "vampire"

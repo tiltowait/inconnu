@@ -15,7 +15,7 @@ async def delete_header(ctx: AppCtx, message: discord.Message):
         webhook = await ctx.bot.prep_webhook(message.channel)
         is_bot_message = message.author == ctx.bot.user
         is_webhook_message = message.author.id == webhook.id
-    except (errors.WebhookError, ValueError):
+    except errors.WebhookError, ValueError:
         webhook = None
         is_bot_message = message.author == ctx.bot.user
         is_webhook_message = False

@@ -35,7 +35,7 @@ class Characters(commands.Cog, name="Character Management"):
         OptionChoice("Thin-Blood", "thinblood"),
     ]
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         super().__init__()
         self.bot = bot
 
@@ -337,6 +337,6 @@ def _check_number(label, value):
         raise ValueError(f"`{label}` must be a number (with or without `+/-`.") from ValueError
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(Characters(bot))

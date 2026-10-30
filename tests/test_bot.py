@@ -106,7 +106,7 @@ def reply_bot(mock_bot: MagicMock) -> MagicMock:
 
 
 @pytest.fixture
-async def mock_find_post() -> AsyncGenerator[AsyncMock, None]:
+async def mock_find_post() -> AsyncGenerator[AsyncMock]:
     """RPPost.find_one(), patched to return a Rolepost by AUTHOR_ID."""
     rp_post = MagicMock(spec=RPPost)
     rp_post.user = AUTHOR_ID
@@ -186,7 +186,7 @@ def make_char(*, is_pc: bool = True) -> MagicMock:
 
 
 @pytest.fixture
-async def mock_cmd_replace() -> AsyncGenerator[AsyncMock, None]:
+async def mock_cmd_replace() -> AsyncGenerator[AsyncMock]:
     """cmd_replace(), patched, with the pre-send sleep skipped."""
     with (
         patch("bot.cmd_replace", new_callable=AsyncMock) as mock,
@@ -196,7 +196,7 @@ async def mock_cmd_replace() -> AsyncGenerator[AsyncMock, None]:
 
 
 @pytest.fixture
-async def mock_char_mgr() -> AsyncGenerator[MagicMock, None]:
+async def mock_char_mgr() -> AsyncGenerator[MagicMock]:
     """char_mgr's character_count() and fetchone(), patched for one PC."""
     with (
         patch.object(services.char_mgr, "character_count", new_callable=AsyncMock) as count,

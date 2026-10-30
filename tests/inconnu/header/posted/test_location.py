@@ -31,14 +31,14 @@ def webhook_message() -> discord.Message:
 
 
 @pytest.fixture
-async def no_webhook() -> AsyncGenerator[AsyncMock, None]:
+async def no_webhook() -> AsyncGenerator[AsyncMock]:
     """Patch _resolve_webhook to return None (no webhook found)."""
     with patch(_RESOLVE_WEBHOOK, new_callable=AsyncMock, return_value=None) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_webhook(webhook: discord.Webhook) -> AsyncGenerator[AsyncMock, None]:
+async def mock_webhook(webhook: discord.Webhook) -> AsyncGenerator[AsyncMock]:
     """Patch _resolve_webhook to return a webhook."""
     with patch(_RESOLVE_WEBHOOK, new_callable=AsyncMock, return_value=webhook) as mock:
         yield mock

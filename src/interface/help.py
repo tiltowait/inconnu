@@ -60,7 +60,7 @@ class _HelpView(View):
 class Help(commands.Cog):
     """A class for housing the /help command."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         super().__init__()
         self.bot = bot
         self.info_view = None
@@ -525,6 +525,6 @@ class Help(commands.Cog):
         return embed
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(Help(bot))

@@ -29,7 +29,7 @@ class PostModal(discord.ui.Modal):
 
     SECTIONS = 2
 
-    def __init__(self, character: VChar, bot: "InconnuBot", *args, **kwargs):
+    def __init__(self, character: VChar, bot: InconnuBot, *args, **kwargs):
         self.character = character
         self.bot = bot  # Used for webhook management
         self.post_to_edit = kwargs.pop("rp_post", None)

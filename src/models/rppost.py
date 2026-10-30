@@ -60,7 +60,7 @@ class RPPost(Document):
         cls,
         *,
         interaction: discord.Interaction,
-        character: "VChar",
+        character: VChar,
         header: HeaderSubdoc,
         content: str,
         message: discord.Message,

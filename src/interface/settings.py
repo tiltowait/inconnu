@@ -30,6 +30,6 @@ class SettingsCommands(commands.Cog):
         await inconnu.menu.show(ctx, scope)
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(SettingsCommands(bot))

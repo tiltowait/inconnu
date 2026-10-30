@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class TasksCog(commands.Cog):
     """Runs scheduled maintenance tasks."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         self.bot = bot
 
     @commands.Cog.listener()
@@ -42,6 +42,6 @@ class TasksCog(commands.Cog):
         await bot_tasks.premium.remove_expired_images()
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(TasksCog(bot))

@@ -59,7 +59,7 @@ class HeaderSubdoc(BaseModel):
         return full[: HeaderSubdoc.MAX_TITLE_LEN]
 
     @classmethod
-    def create(cls, character: "VChar", **kwargs):
+    def create(cls, character: VChar, **kwargs):
         """Prepare the header with any overrides."""
         header = copy.deepcopy(character.header)
 

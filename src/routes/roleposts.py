@@ -43,7 +43,7 @@ class Changelog(BaseModel):
 
 
 @router.get("/changelog/{oid}", dependencies=[Depends(verify_api_key)])
-async def get_rolepost(oid: PydanticObjectId, bot: Annotated["InconnuBot", Depends(get_bot)]):
+async def get_rolepost(oid: PydanticObjectId, bot: Annotated[InconnuBot, Depends(get_bot)]):
     """Fetch Rolepost data."""
     rolepost = await RPPost.find_one(RPPost.id == oid)
     if rolepost is None:

@@ -27,7 +27,7 @@ async def startup():
     try:
         async with bot:
             await bot.start(settings.inconnu_token)
-    except (KeyboardInterrupt, asyncio.CancelledError):
+    except KeyboardInterrupt, asyncio.CancelledError:
         logger.info("Received shutdown signal")
     finally:
         logger.info("Cleaning up resources...")
@@ -40,8 +40,13 @@ def handle_signal(signum: int, _):
     signame = signal.Signals(signum).name
     logger.info(f"Received {signame}, initiating shutdown...")
 
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # The signal arrived before or after the event loop ran; nothing to clean up
+        raise KeyboardInterrupt
+
     # Cancel all running tasks to trigger cleanup
-    loop = asyncio.get_event_loop()
     for task in asyncio.all_tasks(loop):
         task.cancel()
 
@@ -59,16 +64,14 @@ def configure_logging():
 
 
 def main():
-    uvloop.install()
     configure_logging()
-    logger.info("Installed uvloop")
 
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
 
     try:
-        asyncio.run(startup())
+        uvloop.run(startup())
     except KeyboardInterrupt:
         logger.info("Shutdown complete")
 

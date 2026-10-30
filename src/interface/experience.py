@@ -120,6 +120,6 @@ class ExperienceCommands(commands.Cog):
         await inconnu.experience.bulk_award_xp(ctx)
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(ExperienceCommands(bot))

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class MiscCommands(commands.Cog):
     """Miscellaneous commands."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         self.bot = bot
 
     @slash_command()
@@ -79,6 +79,6 @@ class MiscCommands(commands.Cog):
         await inconnu.misc.transfer_character(ctx, current_owner, character, new_owner)
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(MiscCommands(bot))

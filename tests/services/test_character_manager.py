@@ -184,7 +184,7 @@ async def mgrf(
 
 
 @pytest.fixture
-async def wrapped_initialize(mgre: CharacterManager) -> AsyncGenerator[AsyncMock, None]:
+async def wrapped_initialize(mgre: CharacterManager) -> AsyncGenerator[AsyncMock]:
     """CharacterManager.initialize(), wrapped to test for awaits."""
     with patch(
         "services.CharacterManager.initialize",
@@ -195,7 +195,7 @@ async def wrapped_initialize(mgre: CharacterManager) -> AsyncGenerator[AsyncMock
 
 
 @pytest.fixture
-def wrapped_find_all() -> Generator[AsyncMock, None]:
+def wrapped_find_all() -> Generator[AsyncMock]:
     """Wrapped VChar.find_all()."""
     with patch("models.vchar.VChar.find_all", new_callable=Mock, wraps=VChar.find_all) as mock:
         yield mock

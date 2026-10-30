@@ -57,7 +57,7 @@ def g2() -> MockGuild:
 
 
 @pytest.fixture
-async def gce() -> AsyncGenerator[GuildCache, None]:
+async def gce() -> AsyncGenerator[GuildCache]:
     """An empty GuildCache."""
     gc = GuildCache("file::memory:?cache=shared")
     await gc.initialize()
@@ -66,7 +66,7 @@ async def gce() -> AsyncGenerator[GuildCache, None]:
 
 
 @pytest.fixture
-async def gcf(gce: GuildCache, g1: MockGuild, g2: MockGuild) -> AsyncGenerator[GuildCache, None]:
+async def gcf(gce: GuildCache, g1: MockGuild, g2: MockGuild) -> AsyncGenerator[GuildCache]:
     """A populated GuildCache."""
     await gce.upsert_guilds([g1, g2])
     yield gce

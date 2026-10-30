@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class ReferenceCommands(commands.Cog):
     """A cog for reference commands."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         super().__init__()
         self.bot = bot
 
@@ -205,6 +205,6 @@ class ReferenceCommands(commands.Cog):
         await inconnu.stats.delete_rolls_in_channel(channel)
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(ReferenceCommands(bot))

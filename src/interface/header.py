@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class HeaderCog(commands.Cog):
     """A cog with header-related commands, including context menu commands."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         self.bot = bot
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -133,6 +133,6 @@ class HeaderCog(commands.Cog):
         await db.headers.delete_many({"channel": channel.id})
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(HeaderCog(bot))

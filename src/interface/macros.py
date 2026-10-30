@@ -154,6 +154,6 @@ class Macros(commands.Cog, name="Macro Utilities"):
         await inconnu.macros.delete(ctx, character, macro)
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(Macros(bot))

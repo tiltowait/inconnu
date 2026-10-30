@@ -66,7 +66,7 @@ async def get_character_list(
 @router.get("/characters/{oid}")
 async def get_character(
     oid: PydanticObjectId,
-    bot: Annotated["InconnuBot", Depends(get_bot)],
+    bot: Annotated[InconnuBot, Depends(get_bot)],
     user_id: int = Depends(get_authenticated_user),
 ) -> CharData:
     """Fetch a character.
@@ -210,7 +210,7 @@ async def get_wizard(token: str) -> WizardSchema:
 
 @router.post("/characters/wizard/{token}", status_code=201, dependencies=[Depends(verify_api_key)])
 async def create_character(
-    token: str, data: CreationBody, bot: Annotated["InconnuBot", Depends(get_bot)]
+    token: str, data: CreationBody, bot: Annotated[InconnuBot, Depends(get_bot)]
 ) -> CreationSuccess:
     """Create the character and insert it into the database."""
     wizard = wizard_cache.get(token)

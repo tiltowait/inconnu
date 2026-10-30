@@ -152,7 +152,7 @@ async def roll(
             character.set_blush(1)
             await character.save()
 
-    except (ValueError, SyntaxError):
+    except ValueError, SyntaxError:
         err = f"**Unknown syntax:** `{syntax}`"
         err += "\n**Usage:** `/vm <macro_name> [hunger] [difficulty]`"
         err += "\n\nYou may add simple math after `macro_name`."

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class GuildCacheCog(commands.Cog):
     """Populates the guild cache and mirrors guild and member changes into it."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         self.bot = bot
         self.refreshed = False
 
@@ -66,6 +66,6 @@ class GuildCacheCog(commands.Cog):
             await guild_cache.upsert_members(after)
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(GuildCacheCog(bot))

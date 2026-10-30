@@ -71,7 +71,7 @@ class DeletionModal(discord.ui.Modal):
             for msg_id in self.rp_post.id_chain:
                 try:
                     await self.webhook.delete_message(msg_id)
-                except (discord.HTTPException, discord.Forbidden):
+                except discord.HTTPException, discord.Forbidden:
                     # The only way an error should occur is if one of the message
                     # chain was already deleted. We should have permission to
                     # delete our own messages, so we can just ignore this error.

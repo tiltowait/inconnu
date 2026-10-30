@@ -37,7 +37,7 @@ async def edit_location(ctx: AppCtx, message: discord.Message):
 
 
 async def _resolve_webhook(
-    bot: "InconnuBot",
+    bot: InconnuBot,
     channel: Channel,
     message: discord.Message,
 ) -> discord.Webhook | None:

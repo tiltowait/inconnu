@@ -4,7 +4,7 @@ version = "2026.7.0"
 description = "An advanced Discord dice bot and character manager for V5"
 authors = [{ name = "tiltowait", email = "208040+tiltowait@users.noreply.github.com" }]
 license = "MIT"
-requires-python = ">=3.12,<3.14"
+requires-python = ">=3.14,<3.15"
 dependencies = [
     "flatdict>=4.0.1,<5",
     "pymongo>=4.2.0,<5",
@@ -53,11 +53,9 @@ profile = "black"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
-    "ignore::pydantic.warnings.PydanticDeprecatedSince211",
-    "ignore:'audioop' is deprecated:DeprecationWarning",
-    "ignore:the imp module is deprecated:DeprecationWarning",
-    "ignore:There is no current event loop:DeprecationWarning:discord.client",
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:discord",
     "ignore:alru_cache detected event loop change:async_lru.AlruCacheLoopResetWarning",
 ]
 

@@ -14,6 +14,7 @@ import db as database
 from config import settings
 from models import RPPost
 from models.rpheader import DamageSubdoc, HeaderSubdoc
+from routes.deps import get_bot
 from server import app
 
 # Test constants
@@ -123,7 +124,7 @@ async def test_guild_gone():
     post = await insert_rolepost()
     bot = MagicMock()
     bot.get_or_fetch_guild = AsyncMock(return_value=None)
-    with patch("routes.roleposts.inconnu.bot", bot):
+    with patch.dict(app.dependency_overrides, {get_bot: lambda: bot}):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
     assert resp.status_code == 410
@@ -138,7 +139,7 @@ async def test_channel_gone():
 
     bot = MagicMock()
     bot.get_or_fetch_guild = AsyncMock(return_value=guild)
-    with patch("routes.roleposts.inconnu.bot", bot):
+    with patch.dict(app.dependency_overrides, {get_bot: lambda: bot}):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
     assert resp.status_code == 410
@@ -157,7 +158,7 @@ async def test_success_with_poster():
 
     bot = MagicMock()
     bot.get_or_fetch_guild = AsyncMock(return_value=guild)
-    with patch("routes.roleposts.inconnu.bot", bot):
+    with patch.dict(app.dependency_overrides, {get_bot: lambda: bot}):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
 
@@ -182,7 +183,7 @@ async def test_success_without_poster():
 
     bot = MagicMock()
     bot.get_or_fetch_guild = AsyncMock(return_value=guild)
-    with patch("routes.roleposts.inconnu.bot", bot):
+    with patch.dict(app.dependency_overrides, {get_bot: lambda: bot}):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
 

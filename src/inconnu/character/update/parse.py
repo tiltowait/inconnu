@@ -7,7 +7,6 @@ import discord
 from discord.ui import Button
 
 import constants
-import inconnu
 import services
 import ui
 from ctx import AppCtx
@@ -19,7 +18,7 @@ from services.haven import Haven
 from utils import get_message, parse_parameters
 from utils.urls import docs_url
 
-__MATCHES = {}
+__MATCHES: dict[str, str] = {}
 
 __KEYS = {
     "name": "The character's name",
@@ -71,11 +70,10 @@ async def update(
         )
         character = await haven.fetch()
 
-        parameters = parse_parameters(parameters, True)
-        parameters = __validate_parameters(parameters)
+        validated = __validate_parameters(parse_parameters(parameters, True))
         updates = []
 
-        for parameter, new_value in parameters.items():
+        for parameter, new_value in validated.items():
             update_msg = await __update_character(ctx, character, parameter, new_value)
             if "(Hint:" in update_msg:
                 # Hints only show up in errors, so let's make the embed red
@@ -120,9 +118,9 @@ async def update(
             await update_help(ctx, err)
 
 
-def __validate_parameters(parameters):
+def __validate_parameters(parameters: dict[str, str]) -> OrderedDict[str, str]:
     """Validate the user's parameters."""
-    validated = OrderedDict()
+    validated: OrderedDict[str, str] = OrderedDict()
 
     for key_, value in parameters.items():
         if (key := __MATCHES.get(key_.lower())) is None:
@@ -164,12 +162,12 @@ async def __update_character(ctx: AppCtx, character: VChar, param: str, value: s
     return func(character, value)
 
 
-async def update_help(ctx: AppCtx, err: str | None = None, ephemeral=True):
+async def update_help(ctx: AppCtx, err: Exception | str | None = None, ephemeral: bool = True):
     """Display a help message that details the available keys."""
     color = None if err is None else 0xFF0000
     embed = discord.Embed(title="Character Tracking", color=color)
-    embed.set_author(name=inconnu.bot.me.display_name)
-    embed.set_thumbnail(url=inconnu.bot.me.avatar)
+    embed.set_author(name=ctx.bot.me.display_name)
+    embed.set_thumbnail(url=ctx.bot.me.avatar)
 
     if err is not None:
         embed.add_field(name="Error", value=str(err), inline=False)
@@ -257,7 +255,7 @@ def __setup_matches():
     __register_keys("potency", "bp", "p")
 
 
-def __register_keys(canonical, *alternates):
+def __register_keys(canonical: str, *alternates: str):
     """Register an update key along with some alternates."""
     __MATCHES[canonical] = canonical
     for alternate in alternates:

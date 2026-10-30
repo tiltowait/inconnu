@@ -6,12 +6,13 @@ Invite: https://discord.com/api/oauth2/authorize?client_id=882409882119196704&pe
 import asyncio
 import signal
 
+import discord
 import uvloop
 from loguru import logger
 
 import db
 import services
-from bot import bot
+from bot import InconnuBot
 from config import settings
 
 
@@ -20,6 +21,9 @@ async def startup():
     await db.init()
     await services.char_mgr.initialize()
     await services.guild_cache.initialize()
+
+    intents = discord.Intents(guilds=True, members=True, messages=True, webhooks=True)
+    bot = InconnuBot(intents=intents, debug_guilds=settings.debug_guilds, cache_app_emojis=True)
     try:
         async with bot:
             await bot.start(settings.inconnu_token)

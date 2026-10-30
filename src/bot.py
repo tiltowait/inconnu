@@ -349,9 +349,3 @@ class InconnuBot(discord.AutoShardedBot):
     async def on_webhooks_update(self, channel: discord.TextChannel):
         """Update the webhooks cache."""
         await self.webhook_cache.update_webhooks(channel)
-
-
-# Set up the bot instance
-intents = discord.Intents(guilds=True, members=True, messages=True, webhooks=True)
-bot = InconnuBot(intents=intents, debug_guilds=settings.debug_guilds, cache_app_emojis=True)
-inconnu.bot = bot

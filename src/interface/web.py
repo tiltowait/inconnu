@@ -1,18 +1,20 @@
 """Web interface."""
 
 import asyncio
+from typing import TYPE_CHECKING
 
 import uvicorn
 from discord.ext import commands
 from loguru import logger
 
-import bot
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 class WebCog(commands.Cog):
     """Starts the FastAPI web server."""
 
-    def __init__(self, bot: bot.InconnuBot):
+    def __init__(self, bot: "InconnuBot"):
         self.bot = bot
         self.server_task: asyncio.Task | None = None
 
@@ -22,6 +24,7 @@ class WebCog(commands.Cog):
             # Lazy import to avoid circular dependency with server.py
             from server import app
 
+            app.state.bot = self.bot
             config = uvicorn.Config(app, host="127.0.0.1", port=8000, loop="asyncio")
             server = uvicorn.Server(config)
             self.server_task = asyncio.create_task(server.serve())
@@ -33,5 +36,5 @@ class WebCog(commands.Cog):
             logger.info("API server stopped")
 
 
-def setup(bot: bot.InconnuBot):
+def setup(bot: "InconnuBot"):
     bot.add_cog(WebCog(bot))

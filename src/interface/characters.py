@@ -61,13 +61,6 @@ class Characters(commands.Cog, name="Characters"):  # pyright: ignore[reportCall
         except ValueError:
             await ui.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
-    @character.command(name="create")
-    @not_on_lockdown()
-    async def character_create(self, ctx: AppCtx):
-        """[DEPRECATED] Use /character wizard instead!"""
-        wizard = self.bot.cmd_mention("character wizard")
-        await ctx.respond(f"This command has been removed! Use {wizard} instead.", ephemeral=True)
-
     @character.command(name="import")
     @not_on_lockdown()
     @option(
@@ -86,13 +79,6 @@ class Characters(commands.Cog, name="Characters"):  # pyright: ignore[reportCall
         """Import a character from a supported app."""
         if source == "progeny":
             await inconnu.character.import_progeny(ctx, file)
-
-    @commands.slash_command(name="spc", contexts={discord.InteractionContextType.guild})
-    @commands.has_permissions(administrator=True)
-    async def spc_create(self, ctx: AppCtx):
-        """[DEPRECATED] Use /character wizard instead!"""
-        wizard = self.bot.cmd_mention("character wizard")
-        await ctx.respond(f"This command has been removed! Use {wizard} instead.", ephemeral=True)
 
     @character.command(name="display")
     @char_option("The character to display")

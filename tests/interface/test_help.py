@@ -85,9 +85,9 @@ def test_cog_page_lists_commands(bot: InconnuBot):
 
     assert embed.title == "Characters"
     assert text.startswith("Create, display, and update your characters.")
-    assert "* </spc:1>: " in text
     assert "* </character display:1>: " in text
     assert "* </character image upload:1>: " in text
+    assert "* </vm:1>: " in all_text(help_page(bot, "Macros"))
 
 
 def test_cog_page_lists_context_commands(bot: InconnuBot):

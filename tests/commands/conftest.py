@@ -28,7 +28,7 @@ def user() -> discord.Member:
 
 
 @pytest.fixture
-def bot() -> Generator[InconnuBot, None, None]:
+def bot() -> Generator[InconnuBot]:
     """A real InconnuBot whose user is mocked, since it never logs in."""
     bot_user = MagicMock(spec=discord.ClientUser)
     bot_user.display_name = "Inconnu"
@@ -60,37 +60,37 @@ def ctx(bot: discord.Bot, guild: discord.Guild, user: discord.Member) -> AppCtx:
 
 
 @pytest.fixture
-async def mock_respond() -> AsyncGenerator[AsyncMock, None]:
+async def mock_respond() -> AsyncGenerator[AsyncMock]:
     with patch("ctx.AppCtx.respond", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_edit() -> AsyncGenerator[AsyncMock, None]:
+async def mock_edit() -> AsyncGenerator[AsyncMock]:
     with patch("ctx.AppCtx.edit", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_delete() -> AsyncGenerator[AsyncMock, None]:
+async def mock_delete() -> AsyncGenerator[AsyncMock]:
     with patch("ctx.AppCtx.delete", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_send_modal() -> AsyncGenerator[AsyncMock, None]:
+async def mock_send_modal() -> AsyncGenerator[AsyncMock]:
     with patch("ctx.AppCtx.send_modal", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_is_done() -> AsyncGenerator[Mock, None]:
+async def mock_is_done() -> AsyncGenerator[Mock]:
     with patch("discord.InteractionResponse.is_done") as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_defer() -> AsyncGenerator[AsyncMock, None]:
+async def mock_defer() -> AsyncGenerator[AsyncMock]:
     with patch("discord.InteractionResponse.defer", new_callable=AsyncMock) as mock:
         yield mock
 
@@ -154,21 +154,21 @@ async def mock_emoji_manager():
 
 
 @pytest.fixture(autouse=True)
-async def mock_character_display() -> AsyncGenerator[AsyncMock, None]:
+async def mock_character_display() -> AsyncGenerator[AsyncMock]:
     """Mock character display to avoid rendering."""
     with patch("inconnu.character.display", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture(autouse=True)
-async def mock_common_report() -> AsyncGenerator[AsyncMock, None]:
+async def mock_common_report() -> AsyncGenerator[AsyncMock]:
     """Mock common report_update to avoid Discord API calls."""
     with patch("services.post_update", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture(autouse=True)
-async def mock_get_message() -> AsyncGenerator[AsyncMock, None]:
+async def mock_get_message() -> AsyncGenerator[AsyncMock]:
     """Mock get_message to avoid fetching Discord messages."""
     with patch("utils.get_message", new_callable=AsyncMock) as mock:
         yield mock

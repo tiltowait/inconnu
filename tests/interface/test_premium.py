@@ -35,14 +35,14 @@ def cog() -> PremiumCog:
 
 
 @pytest.fixture
-async def mock_lost() -> AsyncGenerator[AsyncMock, None]:
+async def mock_lost() -> AsyncGenerator[AsyncMock]:
     """premium.mark_lost(), patched."""
     with patch.object(premium, "mark_lost", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_gained() -> AsyncGenerator[AsyncMock, None]:
+async def mock_gained() -> AsyncGenerator[AsyncMock]:
     """premium.mark_gained(), patched."""
     with patch.object(premium, "mark_gained", new_callable=AsyncMock) as mock:
         yield mock

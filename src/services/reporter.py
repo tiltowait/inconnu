@@ -40,7 +40,7 @@ class ErrorReporter:
         self.channel: discord.TextChannel | None = None
 
     @property
-    def bot(self) -> "InconnuBot":
+    def bot(self) -> InconnuBot:
         """The bot instance."""
         if self._bot is None:
             raise RuntimeError("prepare_channel() must be called first")
@@ -67,7 +67,7 @@ class ErrorReporter:
         )
         return embed
 
-    async def prepare_channel(self, bot: "InconnuBot"):
+    async def prepare_channel(self, bot: InconnuBot):
         """Attempt to get the error channel from the bot."""
         self._bot = bot
         if settings.report_channel is None:

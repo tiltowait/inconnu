@@ -26,14 +26,14 @@ def make_member(*, supporter: bool = False) -> MockMember:
 
 
 @pytest.fixture
-async def mock_update() -> AsyncGenerator[AsyncMock, None]:
+async def mock_update() -> AsyncGenerator[AsyncMock]:
     """db.supporters.update_one(), patched."""
     with patch("db.supporters.update_one", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_find() -> AsyncGenerator[AsyncMock, None]:
+async def mock_find() -> AsyncGenerator[AsyncMock]:
     """db.supporters.find_one(), patched to find no record."""
     with patch("db.supporters.find_one", new_callable=AsyncMock, return_value=None) as mock:
         yield mock

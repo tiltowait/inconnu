@@ -130,7 +130,7 @@ class VGuild(Document):
 
     @classmethod
     @alru_cache(maxsize=1024)
-    async def get_or_fetch(cls, guild: Guild | None) -> "VGuild":
+    async def get_or_fetch(cls, guild: Guild | None) -> VGuild:
         """Return a cached VGuild, fetch it from the database, or create a new one."""
         if guild is None:
             return VGuild(guild=0, name="DMs")

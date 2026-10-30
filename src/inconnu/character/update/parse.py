@@ -43,7 +43,7 @@ __HELP_URL = docs_url("command-reference/characters#character-update")
 async def update(
     ctx: AppCtx,
     parameters: str,
-    character: "VChar | str | None" = None,
+    character: VChar | str | None = None,
     fields: list[tuple[str, DisplayField]] | None = None,
     color: discord.Color | None = None,
     update_message: str | None = None,

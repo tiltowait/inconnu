@@ -12,7 +12,7 @@ from interface.tasks import TasksCog
 
 
 @pytest.fixture
-async def cog() -> AsyncGenerator[TasksCog, None]:
+async def cog() -> AsyncGenerator[TasksCog]:
     """A TasksCog whose loops are stopped afterward."""
     cog = TasksCog(MagicMock(spec=InconnuBot))
     yield cog

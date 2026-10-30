@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class PremiumCog(commands.Cog):
     """Watches the supporter guild for supporter role changes."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         self.bot = bot
 
     @commands.Cog.listener()
@@ -52,6 +52,6 @@ class PremiumCog(commands.Cog):
         await premium.mark_gained(member, self.bot.cmd_mention("character image upload"))
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(PremiumCog(bot))

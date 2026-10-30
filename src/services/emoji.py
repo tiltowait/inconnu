@@ -41,7 +41,7 @@ class _EmojiManager:
         """Get 'count' copies of an emoji."""
         return [self[emoji_name]] * count
 
-    async def load(self, bot: "InconnuBot"):
+    async def load(self, bot: InconnuBot):
         """Load the emoji from the specified guild ."""
         if self.loaded:
             return

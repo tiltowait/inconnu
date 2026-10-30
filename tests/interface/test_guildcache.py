@@ -15,7 +15,7 @@ from tests.mocks import MockGuild, MockMember
 
 
 @pytest.fixture(autouse=True)
-async def setup_guild_cache() -> AsyncGenerator[None, None]:
+async def setup_guild_cache() -> AsyncGenerator[None]:
     """Set up guild cache with in-memory database for each test."""
     guild_cache.location = "file::memory:?cache=shared"
     guild_cache._initialized = False

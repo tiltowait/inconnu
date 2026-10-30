@@ -37,7 +37,7 @@ def bob() -> VChar:
 
 
 @pytest.fixture(autouse=True)
-def mock_chars(alice: VChar, bob: VChar) -> Generator[AsyncMock, None, None]:
+def mock_chars(alice: VChar, bob: VChar) -> Generator[AsyncMock]:
     """Give the user both characters without specifying one."""
     with (
         patch.object(
@@ -51,7 +51,7 @@ def mock_chars(alice: VChar, bob: VChar) -> Generator[AsyncMock, None, None]:
 
 
 @pytest.fixture
-def mock_selection() -> Generator[AsyncMock, None, None]:
+def mock_selection() -> Generator[AsyncMock]:
     """Stand in for the character selector, ending the command when it's shown."""
     with patch(
         "services.haven.Haven._get_user_selection",
@@ -61,7 +61,7 @@ def mock_selection() -> Generator[AsyncMock, None, None]:
 
 
 @pytest.fixture
-def mock_error() -> Generator[AsyncMock, None, None]:
+def mock_error() -> Generator[AsyncMock]:
     """Capture error embeds."""
     with patch("ui.embeds.error", new_callable=AsyncMock) as mock:
         yield mock

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class WebCog(commands.Cog):
     """Starts the FastAPI web server."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         self.bot = bot
         self.server_task: asyncio.Task | None = None
 
@@ -36,5 +36,5 @@ class WebCog(commands.Cog):
             logger.info("API server stopped")
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     bot.add_cog(WebCog(bot))

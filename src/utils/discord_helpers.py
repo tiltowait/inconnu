@@ -108,7 +108,7 @@ def _no_author_match(_):
 
 async def raw_message_delete_handler(
     raw_message: discord.RawMessageDeleteEvent,
-    bot: "InconnuBot",
+    bot: InconnuBot,
     handler: Callable[[int], Awaitable],
     author_comparator=_no_author_match,
 ):
@@ -134,7 +134,7 @@ async def raw_message_delete_handler(
 
 def raw_bulk_delete_handler(
     payload: discord.RawBulkMessageDeleteEvent,
-    bot: "InconnuBot",
+    bot: InconnuBot,
     gen_update: Callable[[int], DeleteOne | UpdateOne | int],
     author_comparator=_no_author_match,
 ):

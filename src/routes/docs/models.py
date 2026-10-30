@@ -9,7 +9,7 @@ class NavItem(BaseModel):
     title: str
     path: str | None = None
     url: str | None = None
-    children: list["NavItem"] = Field(default_factory=list)
+    children: list[NavItem] = Field(default_factory=list)
 
 
 class NavSection(BaseModel):

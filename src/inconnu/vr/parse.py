@@ -147,7 +147,7 @@ def validate_roll(character: VChar, syntax: str):
     search with a SyntaxError."""
     try:
         _ = RollParser(character, syntax)
-    except (errors.AmbiguousTraitError, errors.HungerInPool):
+    except errors.AmbiguousTraitError, errors.HungerInPool:
         # It's possible there's no ambiguity on another character. We pass on
         # HungerInPool so we can show the correct error message. Otherwise, we
         # get "None of your characters can roll x + hunger".

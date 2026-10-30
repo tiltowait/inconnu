@@ -1,11 +1,10 @@
 """Pytest configuration."""
 
-import asyncio
 import os
 from typing import cast
 
 import mongomock
-import pytest
+import pytest_asyncio
 from beanie import init_beanie
 from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
@@ -28,7 +27,7 @@ os.environ["INCONNU_TOKEN"] = "test-token"  # Never use the real bot token in te
 os.environ.setdefault("MONGO_URL", "mongodb://localhost/test")
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest_asyncio.fixture(autouse=True, scope="session", loop_scope="session")
 async def beanie_fixture():
     """Configures a mock beanie client for all tests."""
     import db as database
@@ -36,12 +35,3 @@ async def beanie_fixture():
     client = cast(AsyncMongoClient, AsyncMongoMockClient())
     mock_db = client.test
     await init_beanie(mock_db, document_models=database.models())
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an event loop to share between tests."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    yield loop
-    loop.close()

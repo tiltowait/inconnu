@@ -51,6 +51,6 @@ class LoggingCog(commands.Cog):
         )
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(LoggingCog(bot))

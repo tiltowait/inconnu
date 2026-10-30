@@ -41,7 +41,7 @@ async def show_header(ctx: AppCtx, character: VChar, **kwargs):
         message = await webhook.send(
             embed=embed, username=character.name, avatar_url=webhook_avatar, wait=True
         )
-    except (errors.NotPremium, errors.WebhookError):
+    except errors.NotPremium, errors.WebhookError:
         embed = header_embed(header_doc, character, False)
         resp = await ctx.respond(embed=embed)
         if isinstance(resp, discord.WebhookMessage):

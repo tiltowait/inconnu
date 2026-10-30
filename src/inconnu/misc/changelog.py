@@ -34,7 +34,7 @@ async def show_changelog(ctx: AppCtx, hidden: bool):
         )
         await paginator.respond(ctx.interaction, ephemeral=hidden)
 
-    except (aiohttp.ClientError, KeyError):
+    except aiohttp.ClientError, KeyError:
         await ui.embeds.error(ctx, "Unable to fetch changelog.")
 
 

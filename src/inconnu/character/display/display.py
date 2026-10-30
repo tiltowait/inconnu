@@ -33,7 +33,7 @@ class DisplayField(StrEnum):
     EXPERIENCE = "Experience (Unspent / Lifetime)"
 
     @classmethod
-    def all(cls) -> list[tuple[str, "DisplayField"]]:
+    def all(cls) -> list[tuple[str, DisplayField]]:
         """Return a list of all (value, case) pairings."""
         return [(f.value, f) for f in cls]
 

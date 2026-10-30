@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class RoleplayCog(commands.Cog):
     """A cog with roleplay commands."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         self.bot = bot
 
     # Slash commands
@@ -309,6 +309,6 @@ class RoleplayCog(commands.Cog):
         )
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Set up the cog."""
     bot.add_cog(RoleplayCog(bot))

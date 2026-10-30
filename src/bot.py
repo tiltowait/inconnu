@@ -163,7 +163,7 @@ class InconnuBot(discord.AutoShardedBot):
         if guild is None and guild_id not in self._guild_fetch_failures:
             try:
                 guild = await self.fetch_guild(guild_id)
-            except (discord.Forbidden, discord.HTTPException):
+            except discord.Forbidden, discord.HTTPException:
                 self._guild_fetch_failures[guild_id] = True
 
         return guild

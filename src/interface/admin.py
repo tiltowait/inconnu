@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class AdminCog(commands.Cog):
     """A cog with various administrative commands."""
 
-    def __init__(self, bot: "InconnuBot"):
+    def __init__(self, bot: InconnuBot):
         self.bot = bot
 
     @discord.slash_command(guild_ids=[settings.admin_server])
@@ -133,6 +133,6 @@ class AdminCog(commands.Cog):
         logger.info("SHUTDOWN: Bot is ready for shutdown")
 
 
-def setup(bot: "InconnuBot"):
+def setup(bot: InconnuBot):
     """Add the cog to the bot."""
     bot.add_cog(AdminCog(bot))

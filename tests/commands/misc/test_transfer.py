@@ -33,7 +33,7 @@ def new_owner() -> discord.Member:
 
 
 @pytest.fixture
-async def mock_fetchone(char: VChar) -> AsyncGenerator[AsyncMock, None]:
+async def mock_fetchone(char: VChar) -> AsyncGenerator[AsyncMock]:
     """char_mgr.fetchone(), patched to return the char fixture."""
     with patch.object(services.char_mgr, "fetchone", new_callable=AsyncMock) as mock:
         mock.return_value = char
@@ -41,21 +41,21 @@ async def mock_fetchone(char: VChar) -> AsyncGenerator[AsyncMock, None]:
 
 
 @pytest.fixture
-async def mock_transfer() -> AsyncGenerator[AsyncMock, None]:
+async def mock_transfer() -> AsyncGenerator[AsyncMock]:
     """char_mgr.transfer(), patched."""
     with patch.object(services.char_mgr, "transfer", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_transfer_premium() -> AsyncGenerator[AsyncMock, None]:
+async def mock_transfer_premium() -> AsyncGenerator[AsyncMock]:
     """premium.check_transfer(), patched."""
     with patch.object(services.premium, "check_transfer", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_error() -> AsyncGenerator[AsyncMock, None]:
+async def mock_error() -> AsyncGenerator[AsyncMock]:
     """ui.embeds.error(), patched."""
     with patch("ui.embeds.error", new_callable=AsyncMock) as mock:
         yield mock

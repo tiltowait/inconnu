@@ -11,7 +11,7 @@ from server import app
 
 
 @pytest.fixture(autouse=True)
-def _app_bot() -> Generator[MagicMock, None, None]:
+def _app_bot() -> Generator[MagicMock]:
     """Give the routes a bot. Tests can override get_bot again with their own."""
     bot = MagicMock(spec=InconnuBot)
     with patch.dict(app.dependency_overrides, {get_bot: lambda: bot}):

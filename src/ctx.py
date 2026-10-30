@@ -29,11 +29,11 @@ class AppInteraction(discord.Interaction):
     user: discord.Member | discord.User  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @property
-    def client(self) -> "InconnuBot":
+    def client(self) -> InconnuBot:
         return super().client  # type: ignore[return-value]
 
     @property
-    def bot(self) -> "InconnuBot":
+    def bot(self) -> InconnuBot:
         """The bot instance."""
         return super().client  # type: ignore[return-value]
 
@@ -42,11 +42,11 @@ class AppCtx(discord.ApplicationContext):
     """A discord.ApplicationContext with bot typed to InconnuBot and interaction
     typed to AppInteraction."""
 
-    bot: "InconnuBot"
+    bot: InconnuBot
     interaction: AppInteraction
 
     @property
-    def client(self) -> "InconnuBot":
+    def client(self) -> InconnuBot:
         """Alias for .bot."""
         return self.bot
 

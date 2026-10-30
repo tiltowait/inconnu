@@ -22,7 +22,7 @@ class CachedMember(BaseModel):
     id: int
     name: str
     icon: str
-    guild: "CachedGuild"
+    guild: CachedGuild
 
 
 class CachedGuild(BaseModel):
@@ -45,7 +45,7 @@ def validate(func):
     """Decorator for asserting that the GuildCache is ready."""
 
     @functools.wraps(func)
-    async def wrapper(gc: "GuildCache", *args, **kwargs):
+    async def wrapper(gc: GuildCache, *args, **kwargs):
         if not gc.initialized:
             raise RuntimeError("Guild cache has not been initialized.")
         return await func(gc, *args, **kwargs)

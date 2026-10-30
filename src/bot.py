@@ -1,20 +1,18 @@
 """Bot instance and event handlers."""
 
 import asyncio
-from datetime import UTC, datetime, time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
 import discord
 from cachetools import TTLCache
-from discord.ext import tasks
 from loguru import logger
 
 import db
 import errors
 import inconnu
 import services
-import tasks as bot_tasks
 from config import settings
 from ctx import AppCtx, Channel
 from models import RPPost, VChar
@@ -291,10 +289,6 @@ class InconnuBot(discord.AutoShardedBot):
                 server_info["database"],
             )
 
-            # Schedule tasks
-            cull_inactive.start()
-            check_premium_expiries.start()
-
             # Display some vanity stats
             guild_count = len(self.guilds)
             member_count = sum(g.member_count for g in self.guilds)
@@ -343,21 +337,6 @@ class InconnuBot(discord.AutoShardedBot):
     async def on_webhooks_update(self, channel: discord.TextChannel):
         """Update the webhooks cache."""
         await self.webhook_cache.update_webhooks(channel)
-
-
-# Tasks
-
-
-@tasks.loop(time=time(12, 0, tzinfo=UTC))
-async def cull_inactive():
-    """Cull inactive characters and guilds."""
-    await bot_tasks.cull()
-
-
-@tasks.loop(time=time(0, tzinfo=UTC))
-async def check_premium_expiries():
-    """Perform required actions on expired premium users."""
-    await bot_tasks.premium.remove_expired_images()
 
 
 # Set up the bot instance

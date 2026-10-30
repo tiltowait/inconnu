@@ -157,17 +157,20 @@ async def test_section_autocomplete(help_cog: Help):
     assert await help_cog._section_options(ctx) == ["Macros", "Roleposting"]
 
 
-async def test_help_command_opens_section(help_cog: Help):
-    """/help section: opens that section with it selected in the menu."""
+@pytest.mark.parametrize("hidden", [True, False])
+async def test_help_command_opens_section(help_cog: Help, hidden: bool):
+    """/help section: opens that section with it selected in the menu, visible
+    only to the user unless hidden:False."""
     ctx = MagicMock(spec=AppCtx)
     ctx.respond = AsyncMock()
 
-    await help_cog.help_command.callback(help_cog, ctx, "macros")
+    await help_cog.help_command.callback(help_cog, ctx, "macros", hidden)
 
     kwargs = ctx.respond.call_args.kwargs
     menu = cast(HelpMenu, kwargs["view"].children[0])
     assert kwargs["embed"].title == "Macros"
     assert [o.label for o in menu.options if o.default] == ["Macros"]
+    assert kwargs["ephemeral"] is hidden
 
 
 async def test_menu_descriptions(help_cog: Help):

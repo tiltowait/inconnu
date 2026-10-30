@@ -117,10 +117,13 @@ class Help(commands.Cog):
         autocomplete=_section_options,
         default=OVERVIEW,
     )
-    async def help_command(self, ctx: AppCtx, section: str):
+    @option("hidden", description="Make the help only visible to you (default true).", default=True)
+    async def help_command(self, ctx: AppCtx, section: str, hidden: bool):
         """See the bot's commands and how to use them."""
         section = self.resolve_section(section)
-        await ctx.respond(embed=self.help_page(section), view=HelpView(self, section))
+        await ctx.respond(
+            embed=self.help_page(section), view=HelpView(self, section), ephemeral=hidden
+        )
 
     @slash_command()
     async def info(self, ctx: AppCtx):

@@ -186,10 +186,10 @@ def make_char(*, is_pc: bool = True) -> MagicMock:
 
 
 @pytest.fixture
-async def mock_cmd_replace() -> AsyncGenerator[AsyncMock]:
-    """cmd_replace(), patched, with the pre-send sleep skipped."""
+async def mock_cmd_replace_respond() -> AsyncGenerator[AsyncMock]:
+    """cmd_replace_respond(), patched, with the pre-send sleep skipped."""
     with (
-        patch("bot.cmd_replace", new_callable=AsyncMock) as mock,
+        patch("bot.cmd_replace_respond", new_callable=AsyncMock) as mock,
         patch("bot.asyncio.sleep", new_callable=AsyncMock),
     ):
         yield mock
@@ -208,16 +208,16 @@ async def mock_char_mgr() -> AsyncGenerator[MagicMock]:
 
 
 async def test_tip_shown_for_single_pc(
-    mock_bot: MagicMock, mock_cmd_replace: AsyncMock, mock_char_mgr: MagicMock
+    mock_bot: MagicMock, mock_cmd_replace_respond: AsyncMock, mock_char_mgr: MagicMock
 ):
     """Users with one character are told they don't need the character option."""
     ctx = make_ctx(options={"character": "Nadea"})
     await InconnuBot._tip_unneeded_character_option(mock_bot, ctx)
 
     mock_char_mgr.fetchone.assert_awaited_once_with(ctx.guild, ctx.user, "Nadea")
-    mock_cmd_replace.assert_awaited_once()
-    assert mock_cmd_replace.await_args is not None
-    assert "`/vr`" in mock_cmd_replace.await_args.args[1]
+    mock_cmd_replace_respond.assert_awaited_once()
+    assert mock_cmd_replace_respond.await_args is not None
+    assert "`/vr`" in mock_cmd_replace_respond.await_args.args[1]
 
 
 @pytest.mark.parametrize(
@@ -230,7 +230,7 @@ async def test_tip_shown_for_single_pc(
 )
 async def test_tip_not_applicable(
     mock_bot: MagicMock,
-    mock_cmd_replace: AsyncMock,
+    mock_cmd_replace_respond: AsyncMock,
     mock_char_mgr: MagicMock,
     command: str,
     options: dict[str, str],
@@ -239,22 +239,22 @@ async def test_tip_not_applicable(
     await InconnuBot._tip_unneeded_character_option(mock_bot, make_ctx(command, options))
 
     mock_char_mgr.character_count.assert_not_awaited()
-    mock_cmd_replace.assert_not_awaited()
+    mock_cmd_replace_respond.assert_not_awaited()
 
 
 async def test_tip_not_shown_in_dms(
-    mock_bot: MagicMock, mock_cmd_replace: AsyncMock, mock_char_mgr: MagicMock
+    mock_bot: MagicMock, mock_cmd_replace_respond: AsyncMock, mock_char_mgr: MagicMock
 ):
     """No tip outside of guilds."""
     ctx = make_ctx(options={"character": "Nadea"})
     ctx.guild = None
     await InconnuBot._tip_unneeded_character_option(mock_bot, ctx)
 
-    mock_cmd_replace.assert_not_awaited()
+    mock_cmd_replace_respond.assert_not_awaited()
 
 
 async def test_tip_not_shown_for_multiple_characters(
-    mock_bot: MagicMock, mock_cmd_replace: AsyncMock, mock_char_mgr: MagicMock
+    mock_bot: MagicMock, mock_cmd_replace_respond: AsyncMock, mock_char_mgr: MagicMock
 ):
     """Users with several characters need the option."""
     mock_char_mgr.character_count.return_value = 2
@@ -263,11 +263,11 @@ async def test_tip_not_shown_for_multiple_characters(
     )
 
     mock_char_mgr.fetchone.assert_not_awaited()
-    mock_cmd_replace.assert_not_awaited()
+    mock_cmd_replace_respond.assert_not_awaited()
 
 
 async def test_tip_not_shown_for_spc(
-    mock_bot: MagicMock, mock_cmd_replace: AsyncMock, mock_char_mgr: MagicMock
+    mock_bot: MagicMock, mock_cmd_replace_respond: AsyncMock, mock_char_mgr: MagicMock
 ):
     """Users rolling an SPC need the option, even with one character of their own."""
     mock_char_mgr.fetchone.return_value = make_char(is_pc=False)
@@ -275,11 +275,11 @@ async def test_tip_not_shown_for_spc(
         mock_bot, make_ctx(options={"character": "Nadea"})
     )
 
-    mock_cmd_replace.assert_not_awaited()
+    mock_cmd_replace_respond.assert_not_awaited()
 
 
 async def test_tip_not_shown_for_missing_character(
-    mock_bot: MagicMock, mock_cmd_replace: AsyncMock, mock_char_mgr: MagicMock
+    mock_bot: MagicMock, mock_cmd_replace_respond: AsyncMock, mock_char_mgr: MagicMock
 ):
     """No tip when the named character doesn't exist."""
     mock_char_mgr.fetchone.side_effect = errors.CharacterNotFoundError("Not found")
@@ -287,7 +287,7 @@ async def test_tip_not_shown_for_missing_character(
         mock_bot, make_ctx(options={"character": "Nadea"})
     )
 
-    mock_cmd_replace.assert_not_awaited()
+    mock_cmd_replace_respond.assert_not_awaited()
 
 
 @pytest.fixture
@@ -298,34 +298,36 @@ def motd_bot(mock_bot: MagicMock) -> MagicMock:
     return mock_bot
 
 
-async def test_motd_shown_once(motd_bot: MagicMock, mock_cmd_replace: AsyncMock):
+async def test_motd_shown_once(motd_bot: MagicMock, mock_cmd_replace_respond: AsyncMock):
     """Each user sees the MOTD only once."""
     ctx = make_ctx()
     await InconnuBot._show_motd(motd_bot, ctx)
     await InconnuBot._show_motd(motd_bot, ctx)
 
-    mock_cmd_replace.assert_awaited_once_with(ctx, embed=motd_bot.motd, ephemeral=True)
+    mock_cmd_replace_respond.assert_awaited_once_with(ctx, embed=motd_bot.motd, ephemeral=True)
     assert motd_bot.motd_given == {ctx.user.id}
 
 
-async def test_motd_not_shown_for_exempt_command(motd_bot: MagicMock, mock_cmd_replace: AsyncMock):
+async def test_motd_not_shown_for_exempt_command(
+    motd_bot: MagicMock, mock_cmd_replace_respond: AsyncMock
+):
     """The MOTD commands don't show the MOTD."""
     await InconnuBot._show_motd(motd_bot, make_ctx("motd"))
 
-    mock_cmd_replace.assert_not_awaited()
+    mock_cmd_replace_respond.assert_not_awaited()
 
 
-async def test_motd_not_set(motd_bot: MagicMock, mock_cmd_replace: AsyncMock):
+async def test_motd_not_set(motd_bot: MagicMock, mock_cmd_replace_respond: AsyncMock):
     """Nothing is shown without an MOTD."""
     motd_bot.motd = None
     await InconnuBot._show_motd(motd_bot, make_ctx())
 
-    mock_cmd_replace.assert_not_awaited()
+    mock_cmd_replace_respond.assert_not_awaited()
 
 
-async def test_motd_failure_not_recorded(motd_bot: MagicMock, mock_cmd_replace: AsyncMock):
+async def test_motd_failure_not_recorded(motd_bot: MagicMock, mock_cmd_replace_respond: AsyncMock):
     """A user whose MOTD couldn't be sent will get it next time."""
-    mock_cmd_replace.side_effect = discord.HTTPException(MagicMock(status=500), "Failed")
+    mock_cmd_replace_respond.side_effect = discord.HTTPException(MagicMock(status=500), "Failed")
     await InconnuBot._show_motd(motd_bot, make_ctx())
 
     assert motd_bot.motd_given == set()

@@ -16,7 +16,7 @@ from discord.ui import Button, Select, View
 
 from constants import PATREON, SUPPORT_URL
 from ctx import AppCtx
-from utils import cmd_replace
+from utils import cmd_replace_respond
 from utils.cmdreplace import mention_embed_commands
 from utils.urls import docs_url, web_asset
 
@@ -284,7 +284,7 @@ class Help(commands.Cog):
             )
         )
 
-        await cmd_replace(ctx, embed=embed, view=View(*support_buttons(), timeout=None))
+        await cmd_replace_respond(ctx, embed=embed, view=View(*support_buttons(), timeout=None))
 
 
 def setup(bot: InconnuBot):

@@ -30,14 +30,11 @@ def mention_embed_commands(bot: InconnuBot, embed: discord.Embed):
         field.value = mention_commands(bot, field.value) or ""
 
 
-async def cmd_replace(ctx: AppInvocation, content: str | None = None, **kwargs: Any):
+async def cmd_replace_respond(ctx: AppInvocation, content: str | None = None, **kwargs: Any):
     """Substitute command names for command mentions and respond."""
     content = mention_commands(ctx.bot, content)
 
     if (embed := kwargs.get("embed")) is not None:
         mention_embed_commands(ctx.bot, embed)
 
-    try:
-        return await ctx.respond(content, **kwargs)
-    except discord.errors.InteractionResponded:
-        return None
+    return await ctx.respond(content, **kwargs)

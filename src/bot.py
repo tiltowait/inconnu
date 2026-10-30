@@ -45,10 +45,9 @@ class InconnuBot(discord.AutoShardedBot):
         self.welcomed = False
         self.connected = False
         self.lockdown: datetime | None = None
-        self.wizards = 0
-        self.motd = None
-        self.motd_given = set()
-        self.webhook_cache: WebhookCache = None  # type:ignore
+        self.motd: discord.Embed | None = None
+        self.motd_given: set[int] = set()
+        self._webhook_cache: WebhookCache | None = None
         self._guild_fetch_failures = TTLCache[int, bool](maxsize=200, ttl=1200)
 
         self._check_config()
@@ -81,8 +80,16 @@ class InconnuBot(discord.AutoShardedBot):
     @property
     def me(self) -> discord.ClientUser:
         """The bot's own user, non-null after login."""
-        assert self.user is not None
+        if self.user is None:
+            raise RuntimeError("The bot isn't logged in")
         return self.user
+
+    @property
+    def webhook_cache(self) -> WebhookCache:
+        """The webhook cache, available after connecting."""
+        if self._webhook_cache is None:
+            raise RuntimeError("The webhook cache isn't available until the bot connects")
+        return self._webhook_cache
 
     @property
     def invite_url(self) -> str:
@@ -101,7 +108,10 @@ class InconnuBot(discord.AutoShardedBot):
         self.motd = embed
         self.motd_given = set()
 
-    async def get_application_context(self, interaction: discord.Interaction, cls=AppCtx) -> AppCtx:
+    async def get_application_context(
+        self, interaction: discord.Interaction, cls: type[AppCtx] = AppCtx
+    ) -> AppCtx:
+        """Build an AppCtx for the interaction."""
         ctx = await super().get_application_context(interaction, cls)
         return cast(AppCtx, ctx)
 
@@ -181,7 +191,7 @@ class InconnuBot(discord.AutoShardedBot):
         servers = len(self.guilds)
         message = f"/help | {servers} chronicles"
 
-        logger.info("BOT: Setting presence")
+        logger.info("Setting presence")
         await self.change_presence(
             activity=discord.Activity(type=discord.ActivityType.watching, name=message)
         )
@@ -263,7 +273,7 @@ class InconnuBot(discord.AutoShardedBot):
 
         if not self.connected:
             await reporter.prepare_channel(self)
-            self.webhook_cache = WebhookCache(self.user.id)
+            self._webhook_cache = WebhookCache(self.user.id)
 
             logger.info("Logged in as {}!", str(self.user))
             logger.info("{}", discord.version_info)
@@ -278,13 +288,13 @@ class InconnuBot(discord.AutoShardedBot):
         logger.info("Commands synced")
 
     async def on_ready(self):
-        """Schedule a task to perform final setup."""
+        """Log startup info and set the presence."""
         if not self.welcomed:
-            logger.info("BOT: Internal cache built")
+            logger.info("Internal cache built")
 
             server_info = await db.server_info()
             logger.info(
-                "MONGO: Version {}, using {} database",
+                "MongoDB version {}, using {} database",
                 server_info["version"],
                 server_info["database"],
             )
@@ -298,9 +308,11 @@ class InconnuBot(discord.AutoShardedBot):
 
         # We always want to do these regardless of welcoming or not
         await self._set_presence()
-        logger.info("BOT: Ready")
+        logger.info("Ready")
 
-    async def on_application_command_error(self, context, exception):
+    async def on_application_command_error(
+        self, context: discord.ApplicationContext, exception: discord.DiscordException
+    ):
         """Use centralized reporter to handle errors."""
         await reporter.report_error(cast(AppCtx, context), exception)
 
@@ -324,7 +336,7 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_guild_remove(self, guild: discord.Guild):
         """Log guild removals."""
-        logger.info("BOT: Left {} :(", guild.name)
+        logger.info("Left {} :(", guild.name)
         await inconnu.stats.guild_left(guild)
         await self._set_presence()
 

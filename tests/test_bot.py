@@ -37,6 +37,23 @@ async def test_missing_cog_dir_raises(tmp_path: Path, monkeypatch: pytest.Monkey
         InconnuBot(intents=discord.Intents.none())
 
 
+# Properties
+
+
+def test_me_before_login(mock_bot: MagicMock):
+    """The bot's user is unavailable before login."""
+    mock_bot.user = None
+    with pytest.raises(RuntimeError):
+        InconnuBot.me.__get__(mock_bot)
+
+
+def test_webhook_cache_before_connect(mock_bot: MagicMock):
+    """The webhook cache is unavailable before connecting."""
+    mock_bot._webhook_cache = None
+    with pytest.raises(RuntimeError):
+        InconnuBot.webhook_cache.__get__(mock_bot)
+
+
 # Rolepost reply pings
 
 WEBHOOK_ID = 50

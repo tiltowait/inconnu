@@ -83,14 +83,6 @@ class AdminCog(commands.Cog):
         self.bot.set_motd(None)
         await ctx.respond("Message of the Day unset!", ephemeral=True)
 
-    @discord.slash_command()
-    async def motd(self, ctx: AppCtx):
-        """Show the Message of the Day."""
-        if self.bot.motd is not None:
-            await ctx.respond(embed=self.bot.motd, ephemeral=True)
-        else:
-            await ctx.respond("No Message of the Day is set.", ephemeral=True)
-
     @discord.slash_command(guild_ids=[settings.admin_server])
     @discord.default_permissions(administrator=True)
     @commands.is_owner()

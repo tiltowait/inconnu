@@ -1,7 +1,7 @@
 """Commonly used utilities."""
 
 from utils import decorators, urls
-from utils.cmdreplace import cmd_replace
+from utils.cmdreplace import cmd_replace_respond
 from utils.decorators import not_on_lockdown
 from utils.discord_helpers import (
     command_options,
@@ -14,7 +14,7 @@ from utils.discord_helpers import (
 from utils.paramparse import parse_parameters
 
 __all__ = (
-    "cmd_replace",
+    "cmd_replace_respond",
     "command_options",
     "decorators",
     "get_avatar",

@@ -12,13 +12,17 @@ import inconnu
 import ui
 from ctx import AppCtx
 from inconnu.options import char_option
+from interface import CommandCog
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class MiscCommands(commands.Cog):
-    """Miscellaneous commands."""
+class MiscCommands(CommandCog, name="Miscellaneous"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Utilities that don't fit anywhere else."""
+
+    docs = {"Documentation": docs_url("command-reference/miscellaneous")}
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot
@@ -52,6 +56,14 @@ class MiscCommands(commands.Cog):
         support = discord.ui.Button(label="Support", url=constants.SUPPORT_URL)
 
         await ctx.respond(embed=embed, view=ui.views.ReportingView(site, support))
+
+    @slash_command()
+    async def motd(self, ctx: AppCtx):
+        """Show the Message of the Day."""
+        if self.bot.motd is not None:
+            await ctx.respond(embed=self.bot.motd, ephemeral=True)
+        else:
+            await ctx.respond("No Message of the Day is set.", ephemeral=True)
 
     @slash_command()
     @option("ceiling", description="The roll's highest possible value", min_value=2, default=100)

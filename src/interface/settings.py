@@ -4,17 +4,20 @@ from typing import TYPE_CHECKING
 
 from discord import option
 from discord.commands import OptionChoice, slash_command
-from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
+from interface import CommandCog
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class SettingsCommands(commands.Cog):
-    """Settings-related commands."""
+class SettingsCommands(CommandCog, name="Settings"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Change your settings and your server's."""
+
+    docs = {"Documentation": docs_url("advanced/server-settings")}
 
     @slash_command()
     @option(

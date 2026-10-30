@@ -4,7 +4,7 @@ import discord
 
 import constants
 import ui
-from utils import cmd_replace, get_avatar
+from utils import cmd_replace_respond, get_avatar
 from utils.permissions import is_supporter
 from utils.urls import profile_url
 
@@ -84,7 +84,7 @@ async def error(ctx, err, *fields, **kwargs):
     else:
         view = kwargs.get("view", None)
 
-    msg = await cmd_replace(
+    msg = await cmd_replace_respond(
         ctx,
         embed=embed,
         view=view,

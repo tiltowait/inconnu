@@ -9,13 +9,17 @@ from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
+from interface import CommandCog
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class Traits(commands.Cog, name="Trait Management"):
-    """Trait management commands."""
+class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Manage your character's Traits, Disciplines, powers, and specialties."""
+
+    docs = {"Documentation": docs_url("command-reference/traits")}
 
     @commands.user_command(name="Traits", contexts={discord.InteractionContextType.guild})
     async def user_traits(self, ctx, member):
@@ -24,7 +28,7 @@ class Traits(commands.Cog, name="Trait Management"):
 
     traits = SlashCommandGroup(
         "traits",
-        "Character traits commands.",
+        "Character Traits commands.",
         contexts={discord.InteractionContextType.guild},
     )
 
@@ -37,7 +41,7 @@ class Traits(commands.Cog, name="Trait Management"):
         traits: str,
         character: str,
     ):
-        """Add one or more traits to a character. To update, use /traits update."""
+        """Add one or more Traits to a character. To update, use /traits update."""
         await inconnu.traits.add(ctx, character, traits)
 
     @traits.command(name="list")
@@ -49,7 +53,7 @@ class Traits(commands.Cog, name="Trait Management"):
         character: str,
         player: discord.Member,
     ):
-        """Display a character's traits."""
+        """Display a character's Traits."""
         await inconnu.traits.show(ctx, character, player=player)
 
     @traits.command(name="update")
@@ -61,7 +65,7 @@ class Traits(commands.Cog, name="Trait Management"):
         traits: str,
         character: str,
     ):
-        """Update one or more traits. Traits must already exist (use /traits add)."""
+        """Update one or more Traits. Traits must already exist (use /traits add)."""
         await inconnu.traits.update(ctx, character, traits)
 
     @traits.command(name="delete")
@@ -73,7 +77,7 @@ class Traits(commands.Cog, name="Trait Management"):
         traits: str,
         character: str,
     ):
-        """Remove traits from a character."""
+        """Remove Traits from a character."""
         await inconnu.traits.delete(ctx, character, traits)
 
     # The following commands are just convenience commands. A specialty is just
@@ -82,7 +86,7 @@ class Traits(commands.Cog, name="Trait Management"):
 
     disciplines = SlashCommandGroup(
         "disciplines",
-        "Character disciplines.",
+        "Character Disciplines.",
         contexts={discord.InteractionContextType.guild},
     )
 
@@ -95,6 +99,7 @@ class Traits(commands.Cog, name="Trait Management"):
         disciplines: str,
         character: str,
     ):
+        """Add Disciplines to a character. Can add multiple at a time."""
         await inconnu.traits.add(ctx, character, disciplines, True)
 
     @disciplines.command(name="remove")
@@ -106,6 +111,7 @@ class Traits(commands.Cog, name="Trait Management"):
         disciplines: str,
         character: str,
     ):
+        """Remove Disciplines from a character. Can remove multiple at a time."""
         await inconnu.traits.delete(ctx, character, disciplines, True)
 
     @disciplines.command(name="update")
@@ -117,7 +123,7 @@ class Traits(commands.Cog, name="Trait Management"):
         disciplines: str,
         character: str,
     ):
-        """Update one or more traits. Traits must already exist (use /traits add)."""
+        """Update one or more Disciplines. Disciplines must already exist (use /disciplines add)."""
         await inconnu.traits.update(ctx, character, disciplines, True)
 
     # SPECIALTIES
@@ -164,7 +170,7 @@ class Traits(commands.Cog, name="Trait Management"):
     # POWERS
     powers = SlashCommandGroup(
         "powers",
-        "Character specialties.",
+        "Character powers.",
         contexts={discord.InteractionContextType.guild},
     )
 

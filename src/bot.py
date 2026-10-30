@@ -18,7 +18,7 @@ from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
 from services.reporter import reporter
-from utils import cmd_replace, raw_command_options
+from utils import cmd_replace_respond, raw_command_options
 
 # Commands where the character option is needed even when the user has only one character
 CHARACTER_OPTION_REQUIRED = frozenset(
@@ -250,7 +250,7 @@ class InconnuBot(discord.AutoShardedBot):
             "**Tip:** You only have one character, so you don't need "
             f"the `character` option for `/{ctx.command.qualified_name}`."
         )
-        await cmd_replace(ctx, tip, ephemeral=True)
+        await cmd_replace_respond(ctx, tip, ephemeral=True)
 
     async def _show_motd(self, ctx: AppCtx):
         """Show the MOTD once per user."""
@@ -263,7 +263,7 @@ class InconnuBot(discord.AutoShardedBot):
         logger.debug("Showing MOTD to {}", ctx.user.name)
         await asyncio.sleep(1)
         try:
-            await cmd_replace(ctx, embed=self.motd, ephemeral=True)
+            await cmd_replace_respond(ctx, embed=self.motd, ephemeral=True)
             self.motd_given.add(ctx.user.id)
         except discord.HTTPException:
             logger.warning("Could not show MOTD to {}", ctx.user.name)

@@ -8,6 +8,7 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 import discord
 import pytest
 
+from bot import InconnuBot
 from ctx import AppCtx
 from inconnu.macros.roll import _SlakeView, reroll_listener
 from inconnu.macros.roll import roll as roll_macro
@@ -74,6 +75,7 @@ def ctx(owner: discord.Member) -> AppCtx:
     """The /vm invocation."""
     ctx = MagicMock(spec=AppCtx)
     ctx.user = owner
+    ctx.bot = MagicMock(spec=InconnuBot)
     ctx.respond = AsyncMock()  # A property on ApplicationContext, so the spec can't infer it
     return ctx
 

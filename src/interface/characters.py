@@ -11,8 +11,10 @@ import inconnu
 import ui
 from ctx import AppCtx
 from inconnu.options import char_option, player_option
+from interface import CommandCog
 from utils import decorators, not_on_lockdown
 from utils.text import strtobool
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -25,8 +27,10 @@ async def _spc_options(ctx):
     return [OptionChoice("No", "0")]
 
 
-class Characters(commands.Cog, name="Character Management"):
-    """Character management commands."""
+class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Create, display, and update your characters."""
+
+    docs = {"Documentation": docs_url("command-reference/characters")}
 
     _TEMPLATES = [
         OptionChoice("Vampire", "vampire"),
@@ -61,13 +65,6 @@ class Characters(commands.Cog, name="Character Management"):
         except ValueError:
             await ui.embeds.error(ctx, f'Invalid value for `spc`: "{spc}".')
 
-    @character.command(name="create")
-    @not_on_lockdown()
-    async def character_create(self, ctx: AppCtx):
-        """[DEPRECATED] Use /character wizard instead!"""
-        wizard = self.bot.cmd_mention("character wizard")
-        await ctx.respond(f"This command has been removed! Use {wizard} instead.", ephemeral=True)
-
     @character.command(name="import")
     @not_on_lockdown()
     @option(
@@ -86,13 +83,6 @@ class Characters(commands.Cog, name="Character Management"):
         """Import a character from a supported app."""
         if source == "progeny":
             await inconnu.character.import_progeny(ctx, file)
-
-    @commands.slash_command(name="spc", contexts={discord.InteractionContextType.guild})
-    @commands.has_permissions(administrator=True)
-    async def spc_create(self, ctx: AppCtx):
-        """[DEPRECATED] Use /character wizard instead!"""
-        wizard = self.bot.cmd_mention("character wizard")
-        await ctx.respond(f"This command has been removed! Use {wizard} instead.", ephemeral=True)
 
     @character.command(name="display")
     @char_option("The character to display")
@@ -117,7 +107,7 @@ class Characters(commands.Cog, name="Character Management"):
         character: str,
         player: discord.Member,
     ):
-        """Update a character's parameters but not the traits."""
+        """Update a character's parameters but not the Traits."""
         await inconnu.character.update(ctx, parameters, character, player=player)
 
     @character.command(name="adjust")
@@ -172,7 +162,7 @@ class Characters(commands.Cog, name="Character Management"):
         character: str,
         player: discord.Member,
     ):
-        """Adjust a character's trackers. For skills and attributes, see /traits help."""
+        """Adjust a character's trackers. For Attributes and Skills, use /traits update."""
 
         # We will construct an update string and call the old-style parser
         parameters = []

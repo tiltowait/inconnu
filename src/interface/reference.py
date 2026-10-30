@@ -12,15 +12,22 @@ import inconnu
 import ui
 from ctx import AppCtx
 from inconnu.options import char_option, impairment_option, player_option
+from interface import CommandCog
 from models import ImpairmentCategory
 from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class ReferenceCommands(commands.Cog):
-    """A cog for reference commands."""
+class ReferenceCommands(CommandCog, name="Reference"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Look up rules, roll probabilities, and statistics."""
+
+    docs = {
+        "Miscellaneous": docs_url("command-reference/miscellaneous"),
+        "Gameplay Shortcuts": docs_url("guides/gameplay-shortcuts"),
+    }
 
     def __init__(self, bot: InconnuBot):
         super().__init__()

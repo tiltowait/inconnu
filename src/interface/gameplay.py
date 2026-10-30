@@ -5,19 +5,25 @@ from typing import TYPE_CHECKING
 import discord
 from discord import option
 from discord.commands import OptionChoice, slash_command
-from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
 from inconnu.options import char_option, dice_option, impairment_option, player_option
+from interface import CommandCog
 from models import ImpairmentCategory, VChar
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class Gameplay(commands.Cog):
-    """Gameplay-based commands."""
+class Gameplay(CommandCog, name="Gameplay"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Roll dice and handle Hunger, damage, and Humanity."""
+
+    docs = {
+        "Rolls": docs_url("command-reference/rolls"),
+        "Gameplay Shortcuts": docs_url("guides/gameplay-shortcuts"),
+    }
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot
@@ -125,7 +131,7 @@ class Gameplay(commands.Cog):
         ctx: AppCtx,
         character: str,
     ):
-        """Heal a character's Aggravated damage, performing three Rouse checks."""
+        """Heal a character's Aggravated damage, performing three Rouse Checks."""
         await inconnu.misc.aggheal(ctx, character)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -135,7 +141,7 @@ class Gameplay(commands.Cog):
         ctx: AppCtx,
         character: str,
     ):
-        """Perform a Rouse check and heal Superficial Willpower damage."""
+        """Perform a Rouse Check and heal Superficial Willpower damage."""
         await inconnu.misc.awaken(ctx, character)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -195,7 +201,7 @@ class Gameplay(commands.Cog):
         bonus: str,
         character: str,
     ):
-        """Perform a Frenzy check."""
+        """Perform a frenzy check."""
         await inconnu.misc.frenzy(ctx, character, difficulty, penalty, bonus)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -205,7 +211,7 @@ class Gameplay(commands.Cog):
         ctx: AppCtx,
         character: str,
     ):
-        """Mend Superficial damage. For vampires, amount is based on BP and costs a Rouse check."""
+        """Mend Superficial damage. For vampires, amount is based on BP and costs a Rouse Check."""
         await inconnu.misc.mend(ctx, character)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -224,7 +230,7 @@ class Gameplay(commands.Cog):
         lasombra_alt: bool,
         character: str,
     ):
-        """Perform a Remorse check."""
+        """Perform a Remorse Check."""
         await inconnu.misc.remorse(ctx, character, min_override, lasombra_alt)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -250,7 +256,7 @@ class Gameplay(commands.Cog):
         purpose: str,
         character: str,
     ):
-        """Perform a Rouse check."""
+        """Perform a Rouse Check."""
         await inconnu.misc.rouse(ctx, character, count, purpose, bool(reroll))
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -276,7 +282,7 @@ class Gameplay(commands.Cog):
         character: str,
         player: discord.Member,
     ):
-        """Apply or remove stains from a character."""
+        """Apply or remove Stains from a character."""
         await inconnu.misc.stain(ctx, character, delta, player=player)
 
 

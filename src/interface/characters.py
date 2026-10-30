@@ -25,8 +25,8 @@ async def _spc_options(ctx):
     return [OptionChoice("No", "0")]
 
 
-class Characters(commands.Cog, name="Character Management"):
-    """Character management commands."""
+class Characters(commands.Cog, name="Characters"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Create, display, and update your characters."""
 
     _TEMPLATES = [
         OptionChoice("Vampire", "vampire"),

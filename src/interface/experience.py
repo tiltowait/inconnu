@@ -15,8 +15,8 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class ExperienceCommands(commands.Cog):
-    """A command group for tracking character experience. Only available to server admins."""
+class ExperienceCommands(commands.Cog, name="Experience"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Award, deduct, and review character experience."""
 
     experience = SlashCommandGroup(
         "experience",

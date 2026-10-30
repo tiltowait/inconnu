@@ -22,8 +22,8 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class RoleplayCog(commands.Cog):
-    """A cog with roleplay commands."""
+class RoleplayCog(commands.Cog, name="Roleposting"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Post as your character and find old posts. Posting requires premium."""
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot

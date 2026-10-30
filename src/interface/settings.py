@@ -13,8 +13,8 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class SettingsCommands(commands.Cog):
-    """Settings-related commands."""
+class SettingsCommands(commands.Cog, name="Settings"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Change your settings and your server's."""
 
     @slash_command()
     @option(

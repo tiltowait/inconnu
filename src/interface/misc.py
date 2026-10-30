@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class MiscCommands(commands.Cog):
-    """Miscellaneous commands."""
+class MiscCommands(commands.Cog, name="Miscellaneous"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Utilities that don't fit anywhere else."""
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot

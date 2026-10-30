@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class Macros(commands.Cog, name="Macro Utilities"):
-    """Macro manaagement and rolls."""
+class Macros(commands.Cog, name="Macros"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Save and roll frequently used pools."""
 
     @slash_command(contexts={discord.InteractionContextType.guild})
     @option("syntax", description="The macro to roll, plus Hunger and Difficulty")

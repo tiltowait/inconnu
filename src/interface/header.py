@@ -19,8 +19,8 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class HeaderCog(commands.Cog):
-    """A cog with header-related commands, including context menu commands."""
+class HeaderCog(commands.Cog, name="Headers"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Post roleplay headers showing your character's current state."""
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot

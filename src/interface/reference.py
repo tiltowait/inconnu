@@ -19,8 +19,8 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class ReferenceCommands(commands.Cog):
-    """A cog for reference commands."""
+class ReferenceCommands(commands.Cog, name="Reference"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Look up rules, roll probabilities, and statistics."""
 
     def __init__(self, bot: InconnuBot):
         super().__init__()

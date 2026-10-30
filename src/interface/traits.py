@@ -14,8 +14,8 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class Traits(commands.Cog, name="Trait Management"):
-    """Trait management commands."""
+class Traits(commands.Cog, name="Traits"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Manage your character's traits, Disciplines, powers, and specialties."""
 
     @commands.user_command(name="Traits", contexts={discord.InteractionContextType.guild})
     async def user_traits(self, ctx, member):

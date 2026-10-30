@@ -16,8 +16,8 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class Gameplay(commands.Cog):
-    """Gameplay-based commands."""
+class Gameplay(commands.Cog, name="Gameplay"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+    """Roll dice and handle Hunger, damage, and Humanity."""
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot

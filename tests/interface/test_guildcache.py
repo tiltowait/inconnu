@@ -9,6 +9,7 @@ import pytest
 from bot import InconnuBot
 from interface.guildcache import GuildCacheCog
 from services import guild_cache
+from tests.mocks import MockGuild, MockMember
 
 # Fixtures
 
@@ -35,7 +36,7 @@ def cog() -> GuildCacheCog:
     return GuildCacheCog(bot)
 
 
-def make_mock_guild(guild_id: int, name: str, members: list[MagicMock] | None = None) -> MagicMock:
+def make_mock_guild(guild_id: int, name: str, members: list[MockMember] | None = None) -> MockGuild:
     """Create a mock Discord guild."""
     guild = MagicMock(spec=discord.Guild)
     guild.id = guild_id
@@ -49,8 +50,8 @@ def make_mock_guild(guild_id: int, name: str, members: list[MagicMock] | None = 
 
 
 def make_mock_member(
-    member_id: int, guild: discord.Guild | None, name: str = "Test User"
-) -> MagicMock:
+    member_id: int, guild: MockGuild | None, name: str = "Test User"
+) -> MockMember:
     """Create a mock Discord member."""
     member = MagicMock(spec=discord.Member)
     member.id = member_id

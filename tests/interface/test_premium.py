@@ -10,11 +10,12 @@ from bot import InconnuBot
 from config import settings
 from interface.premium import PremiumCog
 from services import premium
+from tests.mocks import MockMember
 
 UPLOAD_MENTION = "</character image upload:1>"
 
 
-def make_member(*, supporter: bool, guild_id: int = settings.supporter_guild) -> MagicMock:
+def make_member(*, supporter: bool, guild_id: int = settings.supporter_guild) -> MockMember:
     """A member of the given guild, with or without the supporter role."""
     member = MagicMock(spec=discord.Member)
     member.configure_mock(id=1, name="Member")

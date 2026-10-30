@@ -8,10 +8,11 @@ import pytest
 from discord import Guild, Member
 
 from services.guildcache import GuildCache
+from tests.mocks import MockGuild, MockMember
 from utils.discord_helpers import get_avatar
 
 
-def make_guild(id: int) -> MagicMock:
+def make_guild(id: int) -> MockGuild:
     """Create a mock Discord guild."""
     guild = MagicMock(spec=Guild)
     guild.id = id
@@ -23,7 +24,7 @@ def make_guild(id: int) -> MagicMock:
     return guild
 
 
-def make_member(guild: Guild, id: int) -> Member:
+def make_member(guild: MockGuild, id: int) -> MockMember:
     """Create a mock Discord member."""
     member = MagicMock(spec=Member)
     member.id = id
@@ -36,13 +37,13 @@ def make_member(guild: Guild, id: int) -> Member:
 
 
 @pytest.fixture
-def g1() -> MagicMock:
+def g1() -> MockGuild:
     """Guild with no members."""
     return make_guild(1)
 
 
 @pytest.fixture
-def g2() -> MagicMock:
+def g2() -> MockGuild:
     """Guild with three members."""
     guild = MagicMock(spec=Guild)
     guild.id = 2
@@ -65,7 +66,7 @@ async def gce() -> AsyncGenerator[GuildCache, None]:
 
 
 @pytest.fixture
-async def gcf(gce: GuildCache, g1: MagicMock, g2: MagicMock) -> AsyncGenerator[GuildCache, None]:
+async def gcf(gce: GuildCache, g1: MockGuild, g2: MockGuild) -> AsyncGenerator[GuildCache, None]:
     """A populated GuildCache."""
     await gce.upsert_guilds([g1, g2])
     yield gce
@@ -78,7 +79,7 @@ async def test_initialized():
     assert gc.initialized
 
 
-async def test_uninitialized_operations_raise_error(g1: MagicMock):
+async def test_uninitialized_operations_raise_error(g1: MockGuild):
     """Operations on uninitialized cache should raise RuntimeError."""
     gc = GuildCache("file::memory:?cache=shared")
 
@@ -99,16 +100,16 @@ async def test_gc_ready(gcf: GuildCache):
     assert await gcf.ready()
 
 
-async def test_empty_guild_upsert(gce: GuildCache, g1: MagicMock):
+async def test_empty_guild_upsert(gce: GuildCache, g1: MockGuild):
     await gce.upsert_guilds(g1)
     guild = await gce.fetchguild(g1.id)
     assert guild is not None
     assert guild.id == g1.id
     assert guild.name == g1.name
-    assert guild.icon == g1.icon.url  # type:ignore
+    assert guild.icon == g1.icon.url
 
 
-async def test_full_guild_upsert(gce: GuildCache, g2: MagicMock):
+async def test_full_guild_upsert(gce: GuildCache, g2: MockGuild):
     await gce.upsert_guilds(g2)
     m2 = g2.members[1]
 
@@ -120,7 +121,7 @@ async def test_full_guild_upsert(gce: GuildCache, g2: MagicMock):
     assert member.guild.id == g2.id
 
 
-async def test_fetchmember_skips_guild_members(gce: GuildCache, g2: MagicMock):
+async def test_fetchmember_skips_guild_members(gce: GuildCache, g2: MockGuild):
     """Fetching one member doesn't load the rest of the guild's members."""
     await gce.upsert_guilds(g2)
     m2 = g2.members[1]
@@ -133,14 +134,14 @@ async def test_fetchmember_skips_guild_members(gce: GuildCache, g2: MagicMock):
     mock_fetchmembers.assert_not_called()
 
 
-async def test_fetchguild_populates_members(gcf: GuildCache, g2: MagicMock):
+async def test_fetchguild_populates_members(gcf: GuildCache, g2: MockGuild):
     guild = await gcf.fetchguild(g2.id)
     assert guild is not None
     assert guild.id == g2.id
     assert len(guild.members) == g2.member_count
 
 
-async def test_delete_guild(gcf: GuildCache, g2: MagicMock):
+async def test_delete_guild(gcf: GuildCache, g2: MockGuild):
     members = await gcf.fetchmembers(g2.id)
     assert members is not None
     assert len(members) > 1
@@ -150,7 +151,7 @@ async def test_delete_guild(gcf: GuildCache, g2: MagicMock):
     assert not members, "Deletion didn't cascade"
 
 
-async def test_delete_member(gcf: GuildCache, g2: MagicMock):
+async def test_delete_member(gcf: GuildCache, g2: MockGuild):
     members = await gcf.fetchmembers(g2.id)
     assert members is not None
     before_count = len(members)
@@ -160,9 +161,9 @@ async def test_delete_member(gcf: GuildCache, g2: MagicMock):
     assert len(members) == before_count - 1
 
 
-async def test_update_guild(gcf: GuildCache, g1: MagicMock):
+async def test_update_guild(gcf: GuildCache, g1: MockGuild):
     g1.name = "Foo"
-    g1.icon.url = "flip"  # type:ignore
+    g1.icon.url = "flip"
     await gcf.upsert_guilds(g1)
 
     guild = await gcf.fetchguild(g1.id)
@@ -171,10 +172,10 @@ async def test_update_guild(gcf: GuildCache, g1: MagicMock):
     assert guild.icon == "flip"
 
 
-async def test_upsert_member(gcf: GuildCache, g2: MagicMock):
+async def test_upsert_member(gcf: GuildCache, g2: MockGuild):
     m1 = g2.members[0]
     m1.display_name = "Billy"
-    m1.guild_avatar.url = "icon"  # type:ignore
+    m1.guild_avatar.url = "icon"
     await gcf.upsert_members(m1)
 
     member = await gcf.fetchmember(m1.guild.id, m1.id)
@@ -184,7 +185,7 @@ async def test_upsert_member(gcf: GuildCache, g2: MagicMock):
     assert member.icon == get_avatar(m1).url
 
 
-async def test_reset(gcf: GuildCache, g1: MagicMock, g2: MagicMock):
+async def test_reset(gcf: GuildCache, g1: MockGuild, g2: MockGuild):
     await gcf.refresh([g1])
     assert not await gcf.fetchmembers(g2)
 
@@ -193,7 +194,7 @@ async def test_reset(gcf: GuildCache, g1: MagicMock, g2: MagicMock):
     assert guild.id == g1.id
 
 
-async def test_refresh_keeps_cache_readable_while_chunking(gcf: GuildCache, g2: MagicMock):
+async def test_refresh_keeps_cache_readable_while_chunking(gcf: GuildCache, g2: MockGuild):
     """The old data stays visible until the refresh's rewrite commits."""
     readable_during_chunk = []
 
@@ -209,7 +210,7 @@ async def test_refresh_keeps_cache_readable_while_chunking(gcf: GuildCache, g2: 
     assert len(await gcf.fetchmembers(g2.id)) == g2.member_count
 
 
-async def test_chunk_timeout_does_not_hang(gcf: GuildCache, g1: MagicMock, g2: MagicMock):
+async def test_chunk_timeout_does_not_hang(gcf: GuildCache, g1: MockGuild, g2: MockGuild):
     """A guild whose chunk never arrives is skipped, and the refresh completes."""
 
     async def never_chunks():
@@ -260,7 +261,7 @@ async def test_guild_with_none_icon(gce: GuildCache):
     assert cached.icon is None
 
 
-async def test_fetchguilds(gcf: GuildCache, g2: MagicMock):
+async def test_fetchguilds(gcf: GuildCache, g2: MockGuild):
     """Fetch guilds for a user who belongs to g2."""
     member_id = g2.members[0].id
     guilds = await gcf.fetchguilds(member_id)
@@ -282,7 +283,7 @@ async def test_fetchguilds_empty(gce: GuildCache):
     assert guilds == []
 
 
-async def test_cached_guild_get_member(gcf: GuildCache, g2: MagicMock):
+async def test_cached_guild_get_member(gcf: GuildCache, g2: MockGuild):
     """CachedGuild.get_member() finds members by ID."""
     guild = await gcf.fetchguild(g2.id)
     assert guild is not None
@@ -295,7 +296,7 @@ async def test_cached_guild_get_member(gcf: GuildCache, g2: MagicMock):
     assert found.name == target_member.name
 
 
-async def test_cached_guild_get_member_not_found(gcf: GuildCache, g2: MagicMock):
+async def test_cached_guild_get_member_not_found(gcf: GuildCache, g2: MockGuild):
     """CachedGuild.get_member() returns None for nonexistent member."""
     guild = await gcf.fetchguild(g2.id)
     assert guild is not None
@@ -305,7 +306,7 @@ async def test_cached_guild_get_member_not_found(gcf: GuildCache, g2: MagicMock)
     assert found is None
 
 
-async def test_reinitialize_existing_database(g1: MagicMock):
+async def test_reinitialize_existing_database(g1: MockGuild):
     """Re-initializing an existing database should be safe."""
     import os
     import tempfile

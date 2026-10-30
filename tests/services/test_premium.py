@@ -11,9 +11,10 @@ from config import settings
 from models import VChar
 from services import premium
 from tests.characters import gen_char
+from tests.mocks import MockMember
 
 
-def make_member(*, supporter: bool = False) -> MagicMock:
+def make_member(*, supporter: bool = False) -> MockMember:
     """A member who can be DMed."""
     member = MagicMock(spec=discord.Member)
     member.configure_mock(id=1, name="Supporter")
@@ -44,12 +45,12 @@ def recorded_discontinued(mock_update: AsyncMock) -> object:
     return mock_update.await_args.args[1]["$set"]["discontinued"]
 
 
-def sent_title(member: MagicMock) -> str | None:
+def sent_title(member: MockMember) -> str | None:
     """The title of the embed DMed to the member."""
     return member.send.await_args.kwargs["embed"].title
 
 
-def sent_description(member: MagicMock) -> str:
+def sent_description(member: MockMember) -> str:
     """The description of the embed DMed to the member."""
     return member.send.await_args.kwargs["embed"].description
 

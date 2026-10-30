@@ -286,7 +286,6 @@ class InconnuBot(discord.AutoShardedBot):
             member_count = sum(g.member_count for g in self.guilds)
             logger.info("Caches built: {} guilds. {} members.", guild_count, member_count)
 
-            await services.guild_cache.refresh(self.guilds)
             self.welcomed = True
 
         # We always want to do these regardless of welcoming or not
@@ -299,22 +298,13 @@ class InconnuBot(discord.AutoShardedBot):
 
     # Member Events
 
-    async def on_member_update(self, before: discord.Member, after: discord.Member):
-        """Update the member in the guild cache."""
-        if await services.guild_cache.ready():
-            await services.guild_cache.upsert_members(after)
-
     async def on_member_remove(self, member: discord.Member):
         """Mark all of a member's characters as inactive."""
         await services.char_mgr.mark_inactive(member)
-        if await services.guild_cache.ready():
-            await services.guild_cache.delete_member(member)
 
     async def on_member_join(self, member: discord.Member):
         """Mark all the player's characters as active when they rejoin a guild."""
         await services.char_mgr.mark_active(member)
-        if await services.guild_cache.ready():
-            await services.guild_cache.upsert_members(member)
 
     # Guild Events
 
@@ -323,26 +313,18 @@ class InconnuBot(discord.AutoShardedBot):
         logger.info("Joined {}!", guild.name)
         await inconnu.stats.guild_joined(guild)
         await self._set_presence()
-        if await services.guild_cache.ready():
-            await services.guild_cache.upsert_guilds(guild)
 
     async def on_guild_remove(self, guild: discord.Guild):
         """Log guild removals."""
         logger.info("BOT: Left {} :(", guild.name)
         await inconnu.stats.guild_left(guild)
         await self._set_presence()
-        if await services.guild_cache.ready():
-            await services.guild_cache.delete_guild(guild)
 
     async def on_guild_update(self, before: discord.Guild, after: discord.Guild):
         """Log guild name changes."""
         if before.name != after.name:
             logger.info("Renamed {} => {}", before.name, after.name)
             await inconnu.stats.guild_renamed(after, after.name)
-
-        if await services.guild_cache.ready():
-            # In its own block, because the icon might also have changed
-            await services.guild_cache.upsert_guilds(after)
 
     async def on_webhooks_update(self, channel: discord.TextChannel):
         """Update the webhooks cache."""

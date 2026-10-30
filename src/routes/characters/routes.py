@@ -1,5 +1,7 @@
 """Character API routes."""
 
+from typing import TYPE_CHECKING, Annotated
+
 import discord
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends
@@ -7,7 +9,6 @@ from fastapi.exceptions import HTTPException
 from loguru import logger
 
 import errors
-import inconnu
 from config import settings
 from constants import Damage
 from models import VChar
@@ -22,8 +23,12 @@ from routes.characters.models import (
     UserCharData,
     WizardSchema,
 )
-from services import char_mgr, guild_cache, wizard_cache
+from routes.deps import get_bot
+from services import char_mgr, guild_cache, premium, wizard_cache
 from services.wizard import CharacterGuild
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 router = APIRouter()
 
@@ -61,6 +66,7 @@ async def get_character_list(
 @router.get("/characters/{oid}")
 async def get_character(
     oid: PydanticObjectId,
+    bot: Annotated["InconnuBot", Depends(get_bot)],
     user_id: int = Depends(get_authenticated_user),
 ) -> CharData:
     """Fetch a character.
@@ -94,7 +100,7 @@ async def get_character(
         raise HTTPException(404, detail="User not in character's guild")
 
     # For admin check, need Discord member (has role data)
-    discord_guild = inconnu.bot.get_guild(char.guild)
+    discord_guild = bot.get_guild(char.guild)
     discord_member = discord_guild.get_member(user_id) if discord_guild else None
 
     # Permission check (requires Discord member for role checking)
@@ -203,7 +209,9 @@ async def get_wizard(token: str) -> WizardSchema:
 
 
 @router.post("/characters/wizard/{token}", status_code=201, dependencies=[Depends(verify_api_key)])
-async def create_character(token: str, data: CreationBody) -> CreationSuccess:
+async def create_character(
+    token: str, data: CreationBody, bot: Annotated["InconnuBot", Depends(get_bot)]
+) -> CreationSuccess:
     """Create the character and insert it into the database."""
     wizard = wizard_cache.get(token)
     if wizard is None:
@@ -234,15 +242,12 @@ async def create_character(token: str, data: CreationBody) -> CreationSuccess:
 
     wizard_cache.delete(token)
 
-    # Figure out if the user has premium. We can't use is_supporter(), because
-    # that function requires an AppCtx, which we don't have. (Good candidate
-    # for a future refactor ...)
-    premium = False
-    guild = await inconnu.bot.get_or_fetch_guild(settings.supporter_guild)
+    # Figure out if the user has premium
+    has_premium = False
+    guild = await bot.get_or_fetch_guild(settings.supporter_guild)
     if guild is not None:
         user = await guild.get_or_fetch(discord.Member, wizard.user)
-        if user is not None and user.get_role(settings.supporter_role) is not None:
-            premium = True
+        has_premium = user is not None and premium.is_supporter(user)
     else:
         logger.warning("Supporter guild not found")
 
@@ -250,5 +255,5 @@ async def create_character(token: str, data: CreationBody) -> CreationSuccess:
         guild=wizard.guild,
         character_id=character.id_str,
         character_name=character.name,
-        has_premium=premium,
+        has_premium=has_premium,
     )

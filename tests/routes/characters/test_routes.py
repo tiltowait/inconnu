@@ -17,6 +17,7 @@ from errors import DuplicateCharacterError
 from models import VChar
 from models.vchardocs import VCharSplat, VCharTrait
 from routes.characters.models import OwnerData
+from routes.deps import get_bot
 from server import app
 from services import guild_cache
 from services.wizard import CharacterGuild, WizardData
@@ -155,7 +156,7 @@ def mock_bot():
     # Mock get_or_fetch_guild for premium checks (returns None by default)
     bot.get_or_fetch_guild = AsyncMock(return_value=None)
 
-    with patch("routes.characters.routes.inconnu.bot", bot):
+    with patch.dict(app.dependency_overrides, {get_bot: lambda: bot}):
         yield bot
 
 

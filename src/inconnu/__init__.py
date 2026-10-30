@@ -1,9 +1,5 @@
 """Primary Inconnu import."""
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from bot import InconnuBot
 from inconnu import (
     character,
     experience,
@@ -25,7 +21,6 @@ from inconnu.settings import menu
 
 __all__ = (
     "Roll",
-    "bot",
     "character",
     "d10",
     "experience",
@@ -43,5 +38,3 @@ __all__ = (
     "traits",
     "vr",
 )
-
-bot: "InconnuBot"  # Assigned in bot.py

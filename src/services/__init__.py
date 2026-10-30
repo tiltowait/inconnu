@@ -1,11 +1,12 @@
 """Service layer for bot infrastructure."""
 
-from services import settings, wizard
+from services import premium, settings, wizard
 from services.characters import CharacterManager, char_mgr
 from services.emoji import emojis
 from services.guildcache import guild_cache
 from services.log import report_database_error
-from services.reporter import ErrorReporter, post_update
+from services.reporter import ErrorReporter
+from services.updates import post_update
 from services.webhooks import WebhookCache
 
 wizard_cache = wizard.WizardCache()
@@ -18,6 +19,7 @@ __all__ = (
     "emojis",
     "guild_cache",
     "post_update",
+    "premium",
     "report_database_error",
     "settings",
     "wizard",

@@ -45,5 +45,10 @@ class AppCtx(discord.ApplicationContext):
     bot: "InconnuBot"
     interaction: AppInteraction
 
+    @property
+    def client(self) -> "InconnuBot":
+        """Alias for .bot."""
+        return self.bot
+
 
 type AppInvocation = AppCtx | AppInteraction

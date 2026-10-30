@@ -8,7 +8,6 @@ import pytest
 
 import errors
 import services
-from bot import InconnuBot
 from ctx import AppCtx
 from inconnu.misc.transfer import transfer_character
 from models.vchar import VChar
@@ -49,9 +48,9 @@ async def mock_transfer() -> AsyncGenerator[AsyncMock, None]:
 
 
 @pytest.fixture
-async def mock_transfer_premium(bot: InconnuBot) -> AsyncGenerator[AsyncMock, None]:
-    """InconnuBot.transfer_premium(), patched on the test bot instance."""
-    with patch.object(bot, "transfer_premium", new_callable=AsyncMock) as mock:
+async def mock_transfer_premium() -> AsyncGenerator[AsyncMock, None]:
+    """premium.check_transfer(), patched."""
+    with patch.object(services.premium, "check_transfer", new_callable=AsyncMock) as mock:
         yield mock
 
 
@@ -72,6 +71,7 @@ async def test_transfer_same_owner_rejected(
     await transfer_character(ctx, current_owner, "Nadea Theron", current_owner)
 
     mock_error.assert_awaited_once()
+    assert mock_error.await_args is not None
     assert "can't be the same" in str(mock_error.await_args.args[1])
     mock_fetchone.assert_not_awaited()
 
@@ -92,6 +92,7 @@ async def test_transfer_success(
     mock_transfer.assert_awaited_once_with(char, current_owner, new_owner)
 
     mock_respond.assert_awaited_once()
+    assert mock_respond.await_args is not None
     message = mock_respond.await_args.args[0]
     assert char.name in message
     assert current_owner.mention in message
@@ -119,6 +120,7 @@ async def test_transfer_duplicate_name_rejected(
     await transfer_character(ctx, current_owner, char.name, new_owner)
 
     mock_error.assert_awaited_once()
+    assert mock_error.await_args is not None
     assert "already has a character named" in str(mock_error.await_args.args[1])
     mock_respond.assert_not_awaited()
     mock_transfer_premium.assert_not_awaited()
@@ -138,6 +140,7 @@ async def test_transfer_character_not_found(
     await transfer_character(ctx, current_owner, "Jimmy Maxwell", new_owner)
 
     mock_error.assert_awaited_once()
+    assert mock_error.await_args is not None
     assert "Character not found." in str(mock_error.await_args.args[1])
     mock_transfer.assert_not_awaited()
 
@@ -160,5 +163,6 @@ async def test_transfer_ownership_mismatch(
     await transfer_character(ctx, current_owner, char.name, new_owner)
 
     mock_error.assert_awaited_once()
+    assert mock_error.await_args is not None
     assert "doesn't own" in str(mock_error.await_args.args[1])
     mock_transfer.assert_not_awaited()

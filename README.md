@@ -31,8 +31,3 @@ An **Inconnu** roll uses the following syntax: `/roll pool:POOL hunger:HUNGER di
 
 * **Send Messages:** For sending update messages in server-configured channels
 * **Manage Webhooks:** Used by the [premium "Roleposting" feature](https://inconnu.app/docs/premium/roleposting)
-
-## Troubleshooting
-
-* **Can't use commands?** Read [Discord's command permission blog post.](https://discord.com/blog/slash-commands-permissions-discord-apps-bots)
-* **Can't see embeds?** Users need Discord's *Show website preview info from links pasted into chat* setting under *Text & Images* enabled in order to see **Inconnu's** embeds. Some AV software, such as McAfee, have also been known to block embeds.

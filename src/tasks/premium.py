@@ -1,7 +1,6 @@
 """Tasks for premium features."""
 
 import asyncio
-from datetime import timedelta
 
 import discord
 from loguru import logger
@@ -9,13 +8,14 @@ from loguru import logger
 import api
 import db
 import services
+from services.premium import GRACE_PERIOD
 
 
 async def remove_expired_images():
     """Removes images from expired premium users."""
     logger.info("TASK: Removing images from expired supporters")
 
-    expiration = discord.utils.utcnow() - timedelta(days=7)
+    expiration = discord.utils.utcnow() - GRACE_PERIOD
     expired_user_ids = []
     api_tasks = []
     async for supporter in db.supporters.find({"discontinued": {"$lt": expiration}}):

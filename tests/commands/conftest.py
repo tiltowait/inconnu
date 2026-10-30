@@ -1,6 +1,6 @@
 """Command test configurations and mocks."""
 
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock, Mock, PropertyMock, patch
 
 import discord
@@ -28,16 +28,14 @@ def user() -> discord.Member:
 
 
 @pytest.fixture
-def bot() -> InconnuBot:
-    bot = InconnuBot()
-
-    # Mock the bot user for tests that access inconnu.bot.user
-    bot_user = MagicMock()
+def bot() -> Generator[InconnuBot, None, None]:
+    """A real InconnuBot whose user is mocked, since it never logs in."""
+    bot_user = MagicMock(spec=discord.ClientUser)
     bot_user.display_name = "Inconnu"
     bot_user.avatar = "https://example.com/avatar.png"
-    type(bot).user = PropertyMock(return_value=bot_user)
 
-    return bot
+    with patch.object(InconnuBot, "user", new_callable=PropertyMock, return_value=bot_user):
+        yield InconnuBot()
 
 
 @pytest.fixture
@@ -174,10 +172,3 @@ async def mock_get_message() -> AsyncGenerator[AsyncMock, None]:
     """Mock get_message to avoid fetching Discord messages."""
     with patch("utils.get_message", new_callable=AsyncMock) as mock:
         yield mock
-
-
-@pytest.fixture(autouse=True)
-def mock_inconnu_bot(bot: InconnuBot):
-    """Patch the global inconnu.bot with our test bot."""
-    with patch("inconnu.bot", bot):
-        yield bot

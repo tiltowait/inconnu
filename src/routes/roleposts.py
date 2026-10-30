@@ -1,6 +1,7 @@
 """Rolepost changelogs routing."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING, Annotated
 
 import discord
 from beanie import PydanticObjectId
@@ -8,13 +9,16 @@ from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 from pydantic import AnyUrl, BaseModel
 
-import inconnu
 from models import RPPost
 from models.rppost import PostHistoryEntry
 from routes.auth import verify_api_key
 from routes.characters.models import OwnerData
+from routes.deps import get_bot
 from services.wizard import CharacterGuild
 from utils.discord_helpers import get_avatar
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 router = APIRouter()
 
@@ -39,13 +43,13 @@ class Changelog(BaseModel):
 
 
 @router.get("/changelog/{oid}", dependencies=[Depends(verify_api_key)])
-async def get_rolepost(oid: PydanticObjectId):
+async def get_rolepost(oid: PydanticObjectId, bot: Annotated["InconnuBot", Depends(get_bot)]):
     """Fetch Rolepost data."""
     rolepost = await RPPost.find_one(RPPost.id == oid)
     if rolepost is None:
         raise HTTPException(404, detail="Rolepost not found")
 
-    guild = await inconnu.bot.get_or_fetch_guild(rolepost.guild)
+    guild = await bot.get_or_fetch_guild(rolepost.guild)
     if guild is None:
         raise HTTPException(410, detail="Inconnu is not in this guild.")
 

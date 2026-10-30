@@ -1,60 +1,270 @@
 """interface/help.py - Help commands"""
 
-from enum import StrEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import option
-from discord.commands import slash_command
+from discord.commands import (
+    ContextMenuCommand,
+    SlashCommand,
+    SlashCommandGroup,
+    UserCommand,
+    slash_command,
+)
 from discord.ext import commands
-from discord.ui import Button, View
+from discord.ui import Button, Select, View
 
-import inconnu
 from constants import PATREON, SUPPORT_URL
-from ctx import AppCtx, AppInvocation
+from ctx import AppCtx
 from utils import cmd_replace
+from utils.cmdreplace import mention_embed_commands
 from utils.urls import docs_url, web_asset
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
+HELP_MENU_ID = "help-menu"
+OVERVIEW = "Overview"
+OVERVIEW_DESCRIPTION = "Rolling basics and common commands."
 
-class Section(StrEnum):
-    """Represents a help section."""
-
-    OVERVIEW = "Overview"
-    CHARACTERS = "Characters"
-    TRAITS = "Traits"
-    DISCIPLINES = "Disciplines"
-    SPECIALTIES = "Specialties"
-    MACROS = "Macros"
-    POSTS = "Roleposting"
-
-    @classmethod
-    def all(cls) -> list[str]:
-        """A list of all values."""
-        return [section.value for section in cls]
+# Cogs left out of the help menu, by qualified name
+HIDDEN_COGS = frozenset({"AdminCog", "Help"})
 
 
-class _HelpView(View):
-    """A view that has support buttons as well as command help buttons."""
+def overview_page(bot: InconnuBot) -> discord.Embed:
+    """The hand-written overview page."""
+    embed = _base_embed(
+        bot,
+        title="Commands Help",
+        description=(
+            "Basic commands listing. Use the menu below to see every command!"
+            " Items such as `pool:` or `hunger:` are Discord command parameters."
+            " They don't need to be typed, as Discord adds them automatically."
+            "\n\nA word in `CAPS` indicates where you enter your input. For,"
+            " instance, `hunger:HUNGER` would look like `hunger:3` in the Discord"
+            " interface after selecting 3 Hunger."
+        ),
+    )
+    embed.add_field(
+        name="Dice Rolls",
+        value=(
+            "`/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`\n\n"
+            "For `HUNGER`, select `Current Hunger` if using a character "
+            "in the bot; otherwise select a number.\n"
+            "**Example:** `/roll pool:5 hunger:2 difficulty:3`"
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="Rolling with traits",
+        value=(
+            "If you have a character, you can roll with trait names.\n"
+            "**Example:** `/roll pool:manipulation+subterfuge "
+            "hunger:Current Hunger difficulty:3`\n\n"
+            "Create a character with `/character create`."
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="Alternate roll syntax",
+        value=(
+            "`/vr` - Combines roll elements into one line, similar to Thirst. Type "
+            "`hunger` to use your character's current Hunger, or give a number.\n"
+            "**Example:** `/vr syntax:manip+sub hunger 3`"
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="Impairment",
+        value=(
+            "Impaired characters automatically lose 2 dice on affected rolls. If "
+            "a power or rule negates it, use `impairment_category:Ignore`. To subtract it "
+            "yourself instead, turn it off in `/settings` `scope:Yourself`."
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="Hidden dice",
+        value=(
+            "Use `dice:Hide` to show others only the outcome and pool. You'll privately "
+            "see the full roll and its buttons. Admins can restrict it in `/settings`."
+        ),
+        inline=False,
+    )
+    embed.add_field(
+        name="Create a character",
+        value="`/character create`\nYou can use character attributes in rolls.",
+        inline=False,
+    )
+    embed.add_field(
+        name="Display character",
+        value="`/character display`",
+        inline=False,
+    )
+    embed.add_field(name="Add traits", value="`/traits add`")
+    embed.add_field(name="Add specialties", value="`/specialties add`")
+    embed.add_field(
+        name="Common commands",
+        value=(
+            "The following commands are commonly used:\n\n"
+            "`/rouse` — Perform a Rouse check. Increases Hunger on failure\n"
+            "`/slake` — Reduce Hunger\n"
+            "`/awaken` — Perform a Rouse check and heal Willpower\n"
+            "`/bol` — Rouse for Blush of Life, taking Humanity into account\n"
+            "`/mend` — Mend Superficial Health damage based on BP, performing a Rouse check\n"
+            "`/aggheal` — Perform three Rouse checks to mend one Aggravated Health damage\n"
+            "`/stain` — Add or remove Stains\n"
+            "`/remorse` — Run a Remorse check based on your current Stains"
+        ),
+        inline=False,
+    )
+    embed.set_footer(
+        text=(
+            "Many commands have a 'character' parameter, which is usually "
+            "optional. When it's required, Discord makes it obvious."
+        )
+    )
+    return embed
 
-    def __init__(self, *buttons, show_support=False):
-        super().__init__(timeout=None)
 
-        for button in buttons:
-            self.add_item(button)
+def help_cogs(bot: InconnuBot) -> dict[str, discord.Cog]:
+    """The cogs with a help page, by name, in menu order."""
+    return {
+        name: cog
+        for name, cog in sorted(bot.cogs.items())
+        if name not in HIDDEN_COGS and (_slash_commands(cog) or _context_commands(cog))
+    }
 
-        if show_support:
-            self.add_item(
-                Button(
-                    label="New? Click here!",
-                    url=docs_url("guides/quickstart"),
-                    row=1,
+
+def help_sections(bot: InconnuBot) -> list[str]:
+    """The help sections, in menu order."""
+    return [OVERVIEW, *help_cogs(bot)]
+
+
+def resolve_section(bot: InconnuBot, name: str) -> str:
+    """The help section matching the name, ignoring case. Unknown names resolve
+    to the overview."""
+    folded = name.casefold()
+    return next((s for s in help_sections(bot) if s.casefold() == folded), OVERVIEW)
+
+
+def section_descriptions(bot: InconnuBot) -> dict[str, str]:
+    """The help sections' menu subtitles, by section, in menu order."""
+    return {
+        OVERVIEW: OVERVIEW_DESCRIPTION,
+        **{name: cog.description for name, cog in help_cogs(bot).items()},
+    }
+
+
+def cog_page(bot: InconnuBot, cog: discord.Cog) -> discord.Embed:
+    """A help page generated from a cog's description and commands."""
+    entries = []
+    for command in _slash_commands(cog):
+        mention = bot.cmd_mention(command.qualified_name) or f"`/{command.qualified_name}`"
+        entries.append(f"* {mention}: {command.description}")
+
+    embed = _base_embed(
+        bot,
+        title=cog.qualified_name,
+        description=f"{cog.description}\n\n" + "\n".join(entries),
+    )
+
+    apps = []
+    context_commands = _context_commands(cog)
+    for is_user, label in ((True, "member"), (False, "message")):
+        if names := sorted(
+            c.name for c in context_commands if isinstance(c, UserCommand) == is_user
+        ):
+            apps.append(f"**Right-click a {label}:** " + ", ".join(names))
+    if apps:
+        embed.add_field(name="Apps", value="\n".join(apps), inline=False)
+
+    embed.set_footer(text="Click a command to paste it in your chat box.")
+    return embed
+
+
+def help_page(bot: InconnuBot, section: str) -> discord.Embed:
+    """The page for a help section. Unknown sections show the overview."""
+    if cog := help_cogs(bot).get(section):
+        embed = cog_page(bot, cog)
+    else:
+        embed = overview_page(bot)
+    mention_embed_commands(bot, embed)
+    return embed
+
+
+def support_buttons(row: int | None = None) -> list[Button]:
+    """Link buttons to the quickstart guide, support server, and Patreon."""
+    return [
+        Button(label="New? Click here!", url=docs_url("guides/quickstart"), row=row),
+        Button(label="Server", url=SUPPORT_URL, row=row),
+        Button(label="Patreon", url=PATREON, row=row),
+    ]
+
+
+def _slash_commands(cog: discord.Cog) -> list[SlashCommand]:
+    """The cog's slash commands, including subcommands, sorted by name."""
+    found: list[SlashCommand] = []
+    for command in cog.get_commands():
+        if isinstance(command, SlashCommandGroup):
+            found.extend(c for c in command.walk_commands() if isinstance(c, SlashCommand))
+        elif isinstance(command, SlashCommand):
+            found.append(command)
+
+    return sorted(found, key=lambda c: c.qualified_name)
+
+
+def _context_commands(cog: discord.Cog) -> list[ContextMenuCommand]:
+    """The cog's user and message commands."""
+    return [c for c in cog.get_commands() if isinstance(c, ContextMenuCommand)]
+
+
+async def _section_options(ctx: discord.AutocompleteContext) -> list[str]:
+    """The help sections containing what the user has typed."""
+    typed = (ctx.value or "").casefold()
+    return [s for s in help_sections(cast("InconnuBot", ctx.bot)) if typed in s.casefold()]
+
+
+def _base_embed(bot: InconnuBot, *, title: str, description: str) -> discord.Embed:
+    """Create an empty help embed."""
+    embed = discord.Embed(title=title, description=description)
+    embed.set_author(name=bot.me.display_name)
+    embed.set_thumbnail(url=bot.me.display_avatar.url)
+    return embed
+
+
+class HelpMenu(Select["HelpView"]):
+    """The help section selector. Stateless, so it keeps working across restarts."""
+
+    def __init__(self, sections: dict[str, str], selected: str):
+        super().__init__(
+            custom_id=HELP_MENU_ID,
+            placeholder="Select help section",
+            options=[
+                discord.SelectOption(
+                    label=section, description=description, default=section == selected
                 )
-            )
-            self.add_item(Button(label="Server", url=SUPPORT_URL, row=1))
-            self.add_item(Button(label="Patreon", url=PATREON, row=1))
+                for section, description in sections.items()
+            ],
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        """Show the selected section."""
+        bot = cast("InconnuBot", interaction.client)
+        section = self.values[0] if self.values else OVERVIEW
+        await interaction.response.edit_message(
+            embed=help_page(bot, section), view=HelpView(bot, section)
+        )
+
+
+class HelpView(View):
+    """The persistent help menu, plus support links."""
+
+    def __init__(self, bot: InconnuBot, selected: str = OVERVIEW):
+        super().__init__(timeout=None)
+        self.add_item(HelpMenu(section_descriptions(bot), selected))
+        for button in support_buttons(row=1):
+            self.add_item(button)
 
 
 class Help(commands.Cog):
@@ -63,93 +273,25 @@ class Help(commands.Cog):
     def __init__(self, bot: InconnuBot):
         super().__init__()
         self.bot = bot
-        self.info_view = None
-        self.overview_view = None
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
-        """Attach the persistent view."""
-
-        # Create the persistent views if we haven't already
-        if self.info_view is None:
-            help_button = Button(
-                label="Help",
-                style=discord.ButtonStyle.primary,
-                custom_id="persistent-info",
-            )
-            help_button.callback = self.show_basic_help
-
-            self.info_view = _HelpView(help_button, show_support=True)
-
-        if self.overview_view is None:
-            character = Button(
-                label="Character Updater",
-                style=discord.ButtonStyle.primary,
-                custom_id="persistent-character",
-            )
-            character.callback = self.show_character_help
-
-            traits = Button(
-                label="Traits Management",
-                style=discord.ButtonStyle.primary,
-                custom_id="persistent-traits",
-            )
-            traits.callback = self.show_traits_help
-
-            disciplines = Button(
-                label="Disciplines",
-                style=discord.ButtonStyle.primary,
-                custom_id="persistent-disciplines",
-            )
-            disciplines.callback = self.show_disciplines_help
-
-            specialties = Button(
-                label="Specialties",
-                style=discord.ButtonStyle.primary,
-                custom_id="persistent-specialties",
-            )
-            specialties.callback = self.show_specialties_help
-
-            macros = Button(
-                label="Macros",
-                style=discord.ButtonStyle.primary,
-                custom_id="persistent-macro",
-            )
-            macros.callback = self.show_macros_help
-
-            self.overview_view = _HelpView(
-                character, traits, disciplines, specialties, macros, show_support=True
-            )
-
-        # Add the persistent views to the bot if we haven't already
+        """Register the persistent help menu."""
         if not self.bot.persistent_views_added:
-            self.bot.add_view(self.info_view)
-            self.bot.add_view(self.overview_view)
+            self.bot.add_view(HelpView(self.bot))
             self.bot.persistent_views_added = True
 
-    # Help Commands
-
     @slash_command(name="help")
-    @option("section", description="The help section to look up", choices=Section.all())
+    @option(
+        "section",
+        description="The help section to show",
+        autocomplete=_section_options,
+        default=OVERVIEW,
+    )
     async def help_command(self, ctx: AppCtx, section: str):
-        """View help on a particular section."""
-        match section:
-            case Section.OVERVIEW:
-                await self.show_basic_help(ctx, False)
-            case Section.CHARACTERS:
-                await inconnu.character.update_help(ctx, ephemeral=False)
-            case Section.TRAITS:
-                await self.show_traits_help(ctx, False)
-            case Section.DISCIPLINES:
-                await self.show_disciplines_help(ctx, False)
-            case Section.SPECIALTIES:
-                await self.show_specialties_help(ctx, False)
-            case Section.MACROS:
-                await self.show_macros_help(ctx, False)
-            case Section.POSTS:
-                await self.show_rp_posts_help(ctx, False)
-            case _:
-                raise NotImplementedError("Oops")
+        """See the bot's commands and how to use them."""
+        section = resolve_section(self.bot, section)
+        await ctx.respond(embed=help_page(self.bot, section), view=HelpView(self.bot, section))
 
     @slash_command()
     async def info(self, ctx: AppCtx):
@@ -176,353 +318,7 @@ class Help(commands.Cog):
             )
         )
 
-        await cmd_replace(ctx, embed=embed, view=self.info_view)
-
-    # Callbacks
-
-    async def show_basic_help(self, ctx: AppCtx, ephemeral=True):
-        """Run the /traits help command."""
-        embed = self._empty_embed(
-            title="Commands Help",
-            description=(
-                "Basic commands listing. Click the links for detailed documentation!"
-                " Items such as `pool:` or `hunger:` are Discord command parameters."
-                " They don't need to be typed, as Discord adds them automatically."
-                "\n\nA word in `CAPS` indicates where you enter your input. For,"
-                " instance, `hunger:HUNGER` would look like `hunger:3` in the Discord"
-                " interface after selecting 3 Hunger."
-            ),
-        )
-        embed.add_field(
-            name="Dice Rolls",
-            value=(
-                "`/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`\n\n"
-                "For `HUNGER`, select `Current Hunger` if using a character "
-                "in the bot; otherwise select a number.\n"
-                "**Example:** `/roll pool:5 hunger:2 difficulty:3`"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Rolling with traits",
-            value=(
-                "If you have a character, you can roll with trait names.\n"
-                "**Example:** `/roll pool:manipulation+subterfuge "
-                "hunger:Current Hunger difficulty:3`\n\n"
-                "Create a character with `/character create`."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Alternate roll syntax",
-            value=(
-                "`/vr` - Combines roll elements into one line, similar to Thirst. Type "
-                "`hunger` to use your character's current Hunger, or give a number.\n"
-                "**Example:** `/vr syntax:manip+sub hunger 3`"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Impairment",
-            value=(
-                "Impaired characters automatically lose 2 dice on affected rolls. If "
-                "a power or rule negates it, use `impairment_category:Ignore`. To subtract it "
-                "yourself instead, turn it off in `/settings` `scope:Yourself`."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Hidden dice",
-            value=(
-                "Use `dice:Hide` to show others only the outcome and pool. You'll privately "
-                "see the full roll and its buttons. Admins can restrict it in `/settings`."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Create a character",
-            value="`/character create`\nYou can use character attributes in rolls.",
-            inline=False,
-        )
-        embed.add_field(
-            name="Display character",
-            value="`/character display`",
-            inline=False,
-        )
-        embed.add_field(name="Add traits", value="`/traits add`")
-        embed.add_field(name="Add specialties", value="`/specialties add`")
-        embed.add_field(
-            name="Common commands",
-            value=(
-                "The following commands are commonly used:\n\n"
-                "`/rouse` — Perform a Rouse check. Increases Hunger on failure\n"
-                "`/slake` — Reduce Hunger\n"
-                "`/awaken` — Perform a Rouse check and heal Willpower\n"
-                "`/bol` — Rouse for Blush of Life, taking Humanity into account\n"
-                "`/mend` — Mend Superficial Health damage based on BP, performing a Rouse check\n"
-                "`/aggheal` — Perform three Rouse checks to mend one Aggravated Health damage\n"
-                "`/stain` — Add or remove Stains\n"
-                "`/remorse` — Run a Remorse check based on your current Stains"
-            ),
-            inline=False,
-        )
-        embed.set_footer(
-            text=(
-                "Many commands have a 'character' parameter, which is usually "
-                "optional. When it's required, Discord makes it obvious."
-            )
-        )
-
-        await cmd_replace(ctx, embed=embed, view=self.overview_view, ephemeral=ephemeral)
-
-    async def show_traits_help(self, ctx: AppCtx, ephemeral=True):
-        """Run the /traits help command."""
-        embed = self._empty_embed(
-            title="Traits Management",
-            description="This command group allows you to add, remove, or update character traits.",
-        )
-        embed.add_field(
-            name="Add custom traits",
-            value="`/traits add`\n**Example:** `/traits add traits:Forgery=1 Stunning=2`",
-            inline=False,
-        )
-        embed.add_field(
-            name="Delete custom traits",
-            value="`/traits delete`\n**Example:** `/traits delete traits:Forgery`",
-            inline=False,
-        )
-        embed.add_field(
-            name="Modify traits",
-            value="`/traits update`\n**Example:** `/traits update traits:Strength=2 Brawl=3`",
-            inline=False,
-        )
-        embed.add_field(
-            name="Disciplines, Specialties, & Powers",
-            value="See the respective sections of this help command.",
-            inline=False,
-        )
-        embed.add_field(name="List traits", value="`/traits list`", inline=False)
-        embed.add_field(
-            name="Roll with a trait",
-            value="**Example:** `/roll pool:Strength + Brawl hunger:Current Hunger difficulty:1`",
-            inline=False,
-        )
-
-        buttons = [
-            Button(label="Documentation", url=docs_url("command-reference/traits")),
-            Button(label="Server", url=SUPPORT_URL),
-        ]
-        view = _HelpView(*buttons)
-
-        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
-
-    async def show_specialties_help(self, ctx: AppCtx, ephemeral=True):
-        """Show help for using/adding/removing specialties."""
-        embed = self._empty_embed(
-            title="Specialties",
-            description="With these commands, you may add or remove skill specialties.",
-        )
-        embed.add_field(
-            name="Add specialties",
-            value=(
-                "`/specialties add` - Add specialties to standard or custom skills.\n"
-                "**Example:** `/specialties add specialties:Performance=Piano,Singing Craft=Ammo`"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Remove specialties",
-            value=(
-                "`/specialties remove` - Remove specialties from standard or custom skills.\n"
-                "**Example:** `/specialties remove specialties:Brawl=Kindred`"
-            ),
-            inline=False,
-        )
-        embed.add_field(name="List specialties", value="`/traits list`")
-        embed.add_field(
-            name="Roll specialty",
-            value=(
-                "**Example:** "
-                "`/roll pool:Strength + Brawl.Kindred hunger:Current Hunger difficulty:1`"
-            ),
-            inline=False,
-        )
-        embed.set_footer(text="You may add and remove multiple specialties at a time.")
-
-        buttons = [
-            Button(
-                label="Documentation",
-                url=docs_url("guides/quickstart/specialties"),
-            ),
-            Button(label="Server", url=SUPPORT_URL),
-        ]
-        view = _HelpView(*buttons)
-
-        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
-
-    async def show_disciplines_help(self, ctx: AppCtx, ephemeral=True):
-        """Show help for using/adding/removing specialties."""
-        embed = self._empty_embed(
-            title="Disciplines & Powers",
-            description="With these commands, you may add or remove Disciplines and powers.",
-        )
-        embed.add_field(
-            name="Add Disciplines",
-            value=(
-                "`/disciplines add` - Add one or more Disciplines and their ratings.\n"
-                "**Example:** `/disciplines add:Auspex=2 Oblivion=3`"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Remove Disciplines",
-            value=(
-                "`/disciplines remove` - Remove one or more Disciplines.\n"
-                "**Example:** `/disciplines remove:Oblivion Auspex`"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Add Powers",
-            value=(
-                "`/powers add` - Add one or more powers to Disciplines.\n"
-                "**Example:** `/powers add powers:Potence=Prowess,SoaringLeap`"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Remove Powers",
-            value=(
-                "`/powers remove` - Remove one or more powers to Disciplines.\n"
-                "**Example:** `/powers remove powers:Potence=Prowess Auspex=Telepathy`"
-            ),
-            inline=False,
-        )
-        embed.add_field(name="List Disciplines & Powers", value="`/traits list`")
-        embed.add_field(
-            name="Roll Discipline with Power",
-            value=(
-                "**Example:** "
-                "`/roll pool:Resolve + Auspex.Telepathy hunger:Current Hunger difficulty:3`"
-            ),
-            inline=False,
-        )
-
-        buttons = [
-            Button(
-                label="Documentation",
-                url=docs_url("guides/quickstart/disciplines-and-powers"),
-            ),
-            Button(label="Server", url=SUPPORT_URL),
-        ]
-        view = _HelpView(*buttons)
-
-        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
-
-    async def show_macros_help(self, ctx: AppCtx, ephemeral=True):
-        """Run the /macro help command."""
-        embed = self._empty_embed(
-            title="Macros",
-            description="This command group lets you define, delete, or update macros.",
-        )
-        embed.add_field(
-            name="Creation", value="`/macro create`\nFill out the parameters offered.", inline=False
-        )
-        embed.add_field(
-            name="Use",
-            value=(
-                "`/vm`\n**Example:** `/vm syntax:hunt`. You may override Hunger and Difficulty, "
-                "change Impairment with `impairment_category`, or hide the dice with `dice:Hide`."
-            ),
-        )
-        embed.add_field(
-            name="Deletion",
-            value="`/macro delete`\nSpecify a macro name. This is non-reversible!",
-            inline=False,
-        )
-        embed.add_field(
-            name="Modification",
-            value="`/macro update`\n**Example:** `/macro update macro:hunt parameters:pool=...`",
-            inline=False,
-        )
-
-        buttons = [
-            Button(label="Documentation", url=docs_url("command-reference/macros")),
-            Button(label="Server", url=SUPPORT_URL),
-        ]
-        view = _HelpView(*buttons)
-
-        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
-
-    async def show_character_help(self, ctx: AppInvocation, ephemeral: bool = True):
-        """Show the character update help."""
-        await inconnu.character.update_help(ctx, ephemeral=ephemeral)
-
-    async def show_rp_posts_help(self, ctx: AppCtx, ephemeral=True):
-        """Show the Roleposting help."""
-        embed = self._empty_embed(
-            title="Roleposting",
-            description=(
-                f"This feature is for [premium users only]({docs_url('premium/roleposting')})."
-            ),
-        )
-        embed.add_field(
-            name="WARNING!",
-            value=(
-                'This feature requires the "manage webhooks" permission. Use '
-                "`/invite` to re-invite **Inconnu** with this permission "
-                "enabled."
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Post",
-            value=(
-                "Use `/post` to post messages from your character. You may set "
-                "tags and bookmarks in the modal window that pops up. Options "
-                "are the same as `/header`."
-            ),
-        )
-        embed.add_field(
-            name="Tags",
-            value="`/tags`\nShow your tags and view related posts.",
-            inline=False,
-        )
-        embed.add_field(
-            name="Bookmarks",
-            value="`/bookmarks`\nView bookmarked posts.",
-            inline=False,
-        )
-        embed.add_field(
-            name="Search",
-            value=(
-                "`/search`\nSearch for posts based on a number of parameters.\n"
-                "**Anyone may use `/search`!**"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="Edit & Delete",
-            value="Right-click a Rolepost -> Apps -> Post: Edit/Delete",
-            inline=False,
-        )
-        embed.set_footer(text="If your membership lapses, you may still access your old posts.")
-
-        buttons = [
-            Button(label="Documentation", url=docs_url("premium/roleposting")),
-            Button(label="Server", url=SUPPORT_URL),
-        ]
-        view = _HelpView(*buttons)
-
-        await cmd_replace(ctx, embed=embed, view=view, ephemeral=ephemeral)
-
-    def _empty_embed(self, *, title: str, description: str):
-        """Create an empty help embed."""
-        embed = discord.Embed(title=title, description=description)
-        embed.set_author(name=self.bot.me.display_name)
-        embed.set_thumbnail(url=self.bot.me.avatar)
-
-        return embed
+        await cmd_replace(ctx, embed=embed, view=View(*support_buttons(), timeout=None))
 
 
 def setup(bot: InconnuBot):

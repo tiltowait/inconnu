@@ -39,10 +39,10 @@ Shows general information and help links.
 ## Help
 
 ```
-/help section:<section>
+/help section:[section]
 ```
 
-Shows quick help for a topic.
+Shows an overview of common commands, with a menu to browse every command by category. `section` opens a category directly.
 
 ## Invite
 

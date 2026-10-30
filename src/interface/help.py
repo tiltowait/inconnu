@@ -16,6 +16,7 @@ from discord.ui import Button, Select, View
 
 from constants import PATREON, SUPPORT_URL
 from ctx import AppCtx
+from interface import CommandCog
 from utils import cmd_replace_respond
 from utils.cmdreplace import mention_embed_commands
 from utils.urls import docs_url, web_asset
@@ -26,9 +27,6 @@ if TYPE_CHECKING:
 HELP_MENU_ID = "help-menu"
 OVERVIEW = "Overview"
 OVERVIEW_DESCRIPTION = "Rolling basics and common commands."
-
-# Cogs left out of the help menu, by qualified name
-HIDDEN_COGS = frozenset({"AdminCog", "Help"})
 
 
 def support_buttons(row: int | None = None) -> list[Button]:
@@ -87,7 +85,9 @@ class HelpView(View):
     def __init__(self, help_cog: Help, selected: str = OVERVIEW):
         super().__init__(timeout=None)
         self.add_item(HelpMenu(help_cog, selected))
-        for button in support_buttons(row=1):
+        for label, url in help_cog.section_docs(selected).items():
+            self.add_item(Button(label=label, url=url, row=1))
+        for button in support_buttons(row=2):
             self.add_item(button)
 
 
@@ -151,12 +151,10 @@ class Help(commands.Cog):
 
     # Pages
 
-    def help_cogs(self) -> dict[str, discord.Cog]:
-        """The cogs with a help page, by name, in menu order."""
+    def help_cogs(self) -> dict[str, CommandCog]:
+        """The command cogs, which get help pages, by name, in menu order."""
         return {
-            name: cog
-            for name, cog in sorted(self.bot.cogs.items())
-            if name not in HIDDEN_COGS and (_slash_commands(cog) or _context_commands(cog))
+            name: cog for name, cog in sorted(self.bot.cogs.items()) if isinstance(cog, CommandCog)
         }
 
     def help_sections(self) -> list[str]:
@@ -175,6 +173,11 @@ class Help(commands.Cog):
             OVERVIEW: OVERVIEW_DESCRIPTION,
             **{name: cog.description for name, cog in self.help_cogs().items()},
         }
+
+    def section_docs(self, section: str) -> dict[str, str]:
+        """The section's docs links, by label. The overview has none."""
+        cog = self.help_cogs().get(section)
+        return cog.docs if cog else {}
 
     def help_page(self, section: str) -> discord.Embed:
         """The page for a help section. Unknown sections show the overview."""

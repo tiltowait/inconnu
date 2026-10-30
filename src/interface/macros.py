@@ -5,19 +5,22 @@ from typing import TYPE_CHECKING
 import discord
 from discord import option
 from discord.commands import OptionChoice, SlashCommandGroup, slash_command
-from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
 from inconnu.options import char_option, dice_option, impairment_option
+from interface import CommandCog
 from models import ImpairmentCategory
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class Macros(commands.Cog, name="Macros"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+class Macros(CommandCog, name="Macros"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Save and roll frequently used pools."""
+
+    docs = {"Documentation": docs_url("command-reference/macros")}
 
     @slash_command(contexts={discord.InteractionContextType.guild})
     @option("syntax", description="The macro to roll, plus Hunger and Difficulty")

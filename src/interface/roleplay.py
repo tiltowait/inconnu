@@ -14,16 +14,19 @@ import db
 import inconnu
 import services
 from ctx import AppCtx
+from interface import CommandCog
 from utils.decorators import premium
 from utils.discord_helpers import raw_bulk_delete_handler
-from utils.urls import post_url
+from utils.urls import docs_url, post_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class RoleplayCog(commands.Cog, name="Roleposting"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Post as your character and find old posts. Posting requires premium."""
+
+    docs = {"Documentation": docs_url("premium/roleposting")}
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot

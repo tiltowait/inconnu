@@ -12,13 +12,17 @@ import inconnu
 import ui
 from ctx import AppCtx
 from inconnu.options import char_option
+from interface import CommandCog
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class MiscCommands(commands.Cog, name="Miscellaneous"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+class MiscCommands(CommandCog, name="Miscellaneous"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Utilities that don't fit anywhere else."""
+
+    docs = {"Documentation": docs_url("command-reference/miscellaneous")}
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot

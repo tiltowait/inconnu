@@ -9,13 +9,17 @@ from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
+from interface import CommandCog
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class Traits(commands.Cog, name="Traits"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Manage your character's Traits, Disciplines, powers, and specialties."""
+
+    docs = {"Documentation": docs_url("command-reference/traits")}
 
     @commands.user_command(name="Traits", contexts={discord.InteractionContextType.guild})
     async def user_traits(self, ctx, member):

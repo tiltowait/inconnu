@@ -10,13 +10,17 @@ from discord.ext import commands
 import inconnu
 from ctx import AppCtx
 from inconnu.options import char_option, player_option
+from interface import CommandCog
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class ExperienceCommands(commands.Cog, name="Experience"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Award, deduct, and review character experience."""
+
+    docs = {"Documentation": docs_url("advanced/administration/experience-management")}
 
     experience = SlashCommandGroup(
         "experience",

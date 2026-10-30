@@ -5,19 +5,25 @@ from typing import TYPE_CHECKING
 import discord
 from discord import option
 from discord.commands import OptionChoice, slash_command
-from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
 from inconnu.options import char_option, dice_option, impairment_option, player_option
+from interface import CommandCog
 from models import ImpairmentCategory, VChar
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class Gameplay(commands.Cog, name="Gameplay"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+class Gameplay(CommandCog, name="Gameplay"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Roll dice and handle Hunger, damage, and Humanity."""
+
+    docs = {
+        "Rolls": docs_url("command-reference/rolls"),
+        "Gameplay Shortcuts": docs_url("guides/gameplay-shortcuts"),
+    }
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot

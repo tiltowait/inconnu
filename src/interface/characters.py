@@ -11,8 +11,10 @@ import inconnu
 import ui
 from ctx import AppCtx
 from inconnu.options import char_option, player_option
+from interface import CommandCog
 from utils import decorators, not_on_lockdown
 from utils.text import strtobool
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -25,8 +27,10 @@ async def _spc_options(ctx):
     return [OptionChoice("No", "0")]
 
 
-class Characters(commands.Cog, name="Characters"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Create, display, and update your characters."""
+
+    docs = {"Documentation": docs_url("command-reference/characters")}
 
     _TEMPLATES = [
         OptionChoice("Vampire", "vampire"),

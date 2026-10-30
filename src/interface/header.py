@@ -13,14 +13,18 @@ import db
 import inconnu
 from ctx import AppCtx
 from inconnu.options import char_option
+from interface import CommandCog
 from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
 
-class HeaderCog(commands.Cog, name="Headers"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
+class HeaderCog(CommandCog, name="Headers"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Post roleplay headers showing your character's current state."""
+
+    docs = {"Documentation": docs_url("command-reference/characters#rp-headers")}
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot

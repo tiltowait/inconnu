@@ -9,6 +9,7 @@ import pytest
 
 from bot import InconnuBot
 from ctx import AppCtx
+from interface import CommandCog
 from interface.help import HELP_MENU_ID, OVERVIEW, Help, HelpMenu, HelpView
 
 SECTIONS = [
@@ -103,14 +104,14 @@ def test_overview_mentions_commands(help_cog: Help):
     """The hand-written overview's `/command` strings become mentions."""
     embed = help_cog.help_page(OVERVIEW)
 
-    assert embed.title == "Commands Help"
+    assert embed.title == "Basic Overview"
     assert "</rouse:1>" in all_text(embed)
 
 
 def test_unknown_section_shows_overview(help_cog: Help):
     """A section that no longer exists, such as from an old message, falls back
     to the overview."""
-    assert help_cog.help_page("Removed Cog").title == "Commands Help"
+    assert help_cog.help_page("Removed Cog").title == "Basic Overview"
 
 
 async def test_view_is_persistent(help_cog: Help):
@@ -175,3 +176,34 @@ async def test_menu_descriptions(help_cog: Help):
 
     assert [o.description for o in menu.options] == list(help_cog.section_descriptions().values())
     assert all(0 < len(o.description or "") <= 100 for o in menu.options)
+
+
+def test_cogs_with_commands_are_command_cogs(help_cog: Help):
+    """Every cog with commands, besides the admin and help cogs, is a CommandCog,
+    so it gets a help page."""
+    uncovered = [
+        name
+        for name, cog in help_cog.bot.cogs.items()
+        if cog.get_commands()
+        and name not in {"AdminCog", "Help"}
+        and not isinstance(cog, CommandCog)
+    ]
+    assert not uncovered
+
+
+def test_command_cogs_link_docs(help_cog: Help):
+    """Every command cog links to its docs."""
+    assert all(cog.docs for cog in help_cog.help_cogs().values())
+
+
+async def test_view_links_section_docs(help_cog: Help):
+    """A cog page's view links to that cog's docs above the support links. The
+    overview has only the support links."""
+
+    def links(view: HelpView) -> list[tuple[str | None, int | None]]:
+        """The view's link buttons' labels and rows."""
+        return [(b.label, b.row) for b in view.children if isinstance(b, discord.ui.Button)]
+
+    assert links(HelpView(help_cog, "Gameplay"))[:2] == [("Rolls", 1), ("Gameplay Shortcuts", 1)]
+    assert [row for _, row in links(HelpView(help_cog, "Gameplay"))[2:]] == [2, 2, 2]
+    assert [row for _, row in links(HelpView(help_cog))] == [2, 2, 2]

@@ -125,7 +125,7 @@ class Gameplay(commands.Cog, name="Gameplay"):  # pyright: ignore[reportCallIssu
         ctx: AppCtx,
         character: str,
     ):
-        """Heal a character's Aggravated damage, performing three Rouse checks."""
+        """Heal a character's Aggravated damage, performing three Rouse Checks."""
         await inconnu.misc.aggheal(ctx, character)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -135,7 +135,7 @@ class Gameplay(commands.Cog, name="Gameplay"):  # pyright: ignore[reportCallIssu
         ctx: AppCtx,
         character: str,
     ):
-        """Perform a Rouse check and heal Superficial Willpower damage."""
+        """Perform a Rouse Check and heal Superficial Willpower damage."""
         await inconnu.misc.awaken(ctx, character)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -195,7 +195,7 @@ class Gameplay(commands.Cog, name="Gameplay"):  # pyright: ignore[reportCallIssu
         bonus: str,
         character: str,
     ):
-        """Perform a Frenzy check."""
+        """Perform a frenzy check."""
         await inconnu.misc.frenzy(ctx, character, difficulty, penalty, bonus)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -205,7 +205,7 @@ class Gameplay(commands.Cog, name="Gameplay"):  # pyright: ignore[reportCallIssu
         ctx: AppCtx,
         character: str,
     ):
-        """Mend Superficial damage. For vampires, amount is based on BP and costs a Rouse check."""
+        """Mend Superficial damage. For vampires, amount is based on BP and costs a Rouse Check."""
         await inconnu.misc.mend(ctx, character)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -224,7 +224,7 @@ class Gameplay(commands.Cog, name="Gameplay"):  # pyright: ignore[reportCallIssu
         lasombra_alt: bool,
         character: str,
     ):
-        """Perform a Remorse check."""
+        """Perform a Remorse Check."""
         await inconnu.misc.remorse(ctx, character, min_override, lasombra_alt)
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -250,7 +250,7 @@ class Gameplay(commands.Cog, name="Gameplay"):  # pyright: ignore[reportCallIssu
         purpose: str,
         character: str,
     ):
-        """Perform a Rouse check."""
+        """Perform a Rouse Check."""
         await inconnu.misc.rouse(ctx, character, count, purpose, bool(reroll))
 
     @slash_command(contexts={discord.InteractionContextType.guild})
@@ -276,7 +276,7 @@ class Gameplay(commands.Cog, name="Gameplay"):  # pyright: ignore[reportCallIssu
         character: str,
         player: discord.Member,
     ):
-        """Apply or remove stains from a character."""
+        """Apply or remove Stains from a character."""
         await inconnu.misc.stain(ctx, character, delta, player=player)
 
 

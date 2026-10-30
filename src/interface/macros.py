@@ -32,7 +32,7 @@ class Macros(commands.Cog, name="Macros"):  # pyright: ignore[reportCallIssue, r
         impairment_category: str | None,
         dice: str,
     ):
-        """Roll a macro. You may modify the pool, hunger, and difficulty on the fly."""
+        """Roll a macro. You may modify the pool, Hunger, and Difficulty on the fly."""
         await inconnu.macros.roll(
             ctx,
             syntax,

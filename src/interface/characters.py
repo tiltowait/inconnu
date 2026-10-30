@@ -117,7 +117,7 @@ class Characters(commands.Cog, name="Characters"):  # pyright: ignore[reportCall
         character: str,
         player: discord.Member,
     ):
-        """Update a character's parameters but not the traits."""
+        """Update a character's parameters but not the Traits."""
         await inconnu.character.update(ctx, parameters, character, player=player)
 
     @character.command(name="adjust")
@@ -172,7 +172,7 @@ class Characters(commands.Cog, name="Characters"):  # pyright: ignore[reportCall
         character: str,
         player: discord.Member,
     ):
-        """Adjust a character's trackers. For skills and attributes, see /traits help."""
+        """Adjust a character's trackers. For Attributes and Skills, use /traits update."""
 
         # We will construct an update string and call the old-style parser
         parameters = []

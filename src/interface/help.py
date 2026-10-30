@@ -38,19 +38,19 @@ def overview_page(bot: InconnuBot) -> discord.Embed:
         name="Dice Rolls",
         value=(
             "`/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`\n\n"
-            "For `HUNGER`, select `Current Hunger` if using a character "
-            "in the bot; otherwise select a number.\n"
+            "For `HUNGER`, select `Use Current (or 0 for Mortals)` if using a "
+            "character in the bot; otherwise select a number.\n"
             "**Example:** `/roll pool:5 hunger:2 difficulty:3`"
         ),
         inline=False,
     )
     embed.add_field(
-        name="Rolling With Traits",
+        name="Rolling with Traits",
         value=(
             "Roll with Trait names (requires character).\n"
             "**Example:** `/roll pool:manipulation+subterfuge "
-            "hunger:Current Hunger difficulty:3`\n\n"
-            "Create a character with `/character create`."
+            "hunger:Use Current (or 0 for Mortals) difficulty:3`\n\n"
+            "Create a character with `/character wizard`."
         ),
         inline=False,
     )
@@ -64,29 +64,29 @@ def overview_page(bot: InconnuBot) -> discord.Embed:
         inline=False,
     )
     embed.add_field(
-        name="Create a character",
-        value="`/character create`\nYou can use character attributes in rolls.",
+        name="Create a Character",
+        value="`/character wizard`\nYou can use your character's Traits in rolls.",
         inline=False,
     )
     embed.add_field(
-        name="Display character",
+        name="Display Character",
         value="`/character display`",
         inline=False,
     )
     embed.add_field(name="Add Traits", value="`/traits add`")
-    embed.add_field(name="Add specialties", value="`/specialties add`")
+    embed.add_field(name="Add Specialties", value="`/specialties add`")
     embed.add_field(
-        name="Common commands",
+        name="Common Commands",
         value=(
             "The following commands are commonly used:\n\n"
-            "`/rouse` — Perform a Rouse check. Increases Hunger on failure\n"
+            "`/rouse` — Perform a Rouse Check. Increases Hunger on failure\n"
             "`/slake` — Reduce Hunger\n"
-            "`/awaken` — Perform a Rouse check and heal Willpower\n"
+            "`/awaken` — Perform a Rouse Check and heal Superficial Willpower damage\n"
             "`/bol` — Rouse for Blush of Life, taking Humanity into account\n"
-            "`/mend` — Mend Superficial Health damage based on BP, performing a Rouse check\n"
-            "`/aggheal` — Perform three Rouse checks to mend one Aggravated Health damage\n"
+            "`/mend` — Mend Superficial Health damage based on BP, performing a Rouse Check\n"
+            "`/aggheal` — Perform three Rouse Checks to mend one Aggravated Health damage\n"
             "`/stain` — Add or remove Stains\n"
-            "`/remorse` — Run a Remorse check based on your current Stains"
+            "`/remorse` — Run a Remorse Check based on your current Stains"
         ),
         inline=False,
     )

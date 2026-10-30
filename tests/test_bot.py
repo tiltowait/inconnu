@@ -170,7 +170,7 @@ async def test_on_guild_update_before_ready(mock_bot):
 
     # Simulate on_guild_update before ready (cache not refreshed yet)
     with patch("inconnu.stats.guild_renamed", new_callable=AsyncMock):
-        await InconnuBot.on_guild_update(guild_before, guild_after)
+        await InconnuBot.on_guild_update(mock_bot, guild_before, guild_after)
 
     # Guild should not be in cache at all
     cached_guild = await guild_cache.fetchguild(guild_after.id)
@@ -190,7 +190,7 @@ async def test_on_guild_update_after_ready(mock_bot):
 
     # Simulate on_guild_update after ready
     with patch("inconnu.stats.guild_renamed", new_callable=AsyncMock):
-        await InconnuBot.on_guild_update(guild_before, guild_after)
+        await InconnuBot.on_guild_update(mock_bot, guild_before, guild_after)
 
     # Cache should have new name
     cached_guild = await guild_cache.fetchguild(guild_after.id)
@@ -208,7 +208,7 @@ async def test_on_member_join_before_ready(mock_bot):
 
     # Simulate on_member_join before ready
     with patch("services.char_mgr.mark_active", new_callable=AsyncMock):
-        await InconnuBot.on_member_join(member)
+        await InconnuBot.on_member_join(mock_bot, member)
 
     # Member should not be in cache
     cached_member = await guild_cache.fetchmember(guild.id, member.id)
@@ -226,7 +226,7 @@ async def test_on_member_join_after_ready(mock_bot):
 
     # Simulate on_member_join after ready
     with patch("services.char_mgr.mark_active", new_callable=AsyncMock):
-        await InconnuBot.on_member_join(member)
+        await InconnuBot.on_member_join(mock_bot, member)
 
     # Member should be in cache
     cached_member = await guild_cache.fetchmember(guild.id, member.id)
@@ -244,7 +244,7 @@ async def test_on_member_remove_before_ready(mock_bot):
 
     # Simulate on_member_remove before ready
     with patch("services.char_mgr.mark_inactive", new_callable=AsyncMock):
-        await InconnuBot.on_member_remove(member)
+        await InconnuBot.on_member_remove(mock_bot, member)
 
     # Member should not be in cache
     cached_member = await guild_cache.fetchmember(guild.id, member.id)
@@ -263,7 +263,7 @@ async def test_on_member_remove_after_ready(mock_bot):
 
     # Simulate on_member_remove after ready
     with patch("services.char_mgr.mark_inactive", new_callable=AsyncMock):
-        await InconnuBot.on_member_remove(member)
+        await InconnuBot.on_member_remove(mock_bot, member)
 
     # Member should be removed from cache
     cached_member = await guild_cache.fetchmember(guild.id, member.id)

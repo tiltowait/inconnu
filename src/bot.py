@@ -283,7 +283,7 @@ class InconnuBot(discord.AutoShardedBot):
     async def on_interaction(self, interaction: discord.Interaction):
         """Check whether the bot is ready before allowing the interaction to go through."""
         if not services.emojis.loaded:
-            await services.emojis.load(bot)
+            await services.emojis.load(self)
 
         if interaction.type == discord.InteractionType.application_command:
             # Insert the raw interaction data in case we get a crash before
@@ -372,8 +372,7 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_ready(self):
         """Schedule a task to perform final setup."""
-        await bot.wait_until_ready()
-        if not bot.welcomed:
+        if not self.welcomed:
             logger.info("BOT: Internal cache built")
 
             server_info = await db.server_info()
@@ -425,8 +424,7 @@ class InconnuBot(discord.AutoShardedBot):
             logger.info("PREMIUM: {} is now a supporter!", after.name)
             await self.mark_premium_gain(after)
 
-    @staticmethod
-    async def on_member_remove(member: discord.Member):
+    async def on_member_remove(self, member: discord.Member):
         """Mark all of a member's characters as inactive."""
         await services.char_mgr.mark_inactive(member)
         if await services.guild_cache.ready():
@@ -434,10 +432,9 @@ class InconnuBot(discord.AutoShardedBot):
 
         if member.guild.id == settings.supporter_guild:
             if member.get_role(settings.supporter_role):
-                await bot.mark_premium_loss(member)
+                await self.mark_premium_loss(member)
 
-    @staticmethod
-    async def on_member_join(member: discord.Member):
+    async def on_member_join(self, member: discord.Member):
         """Mark all the player's characters as active when they rejoin a guild."""
         await services.char_mgr.mark_active(member)
         if await services.guild_cache.ready():
@@ -445,7 +442,7 @@ class InconnuBot(discord.AutoShardedBot):
 
         if member.guild.id == settings.supporter_guild:
             if member.get_role(settings.supporter_role):
-                await bot.mark_premium_gain(member)
+                await self.mark_premium_gain(member)
 
     # Guild Events
 
@@ -465,8 +462,7 @@ class InconnuBot(discord.AutoShardedBot):
         if await services.guild_cache.ready():
             await services.guild_cache.delete_guild(guild)
 
-    @staticmethod
-    async def on_guild_update(before: discord.Guild, after: discord.Guild):
+    async def on_guild_update(self, before: discord.Guild, after: discord.Guild):
         """Log guild name changes."""
         if before.name != after.name:
             logger.info("Renamed {} => {}", before.name, after.name)

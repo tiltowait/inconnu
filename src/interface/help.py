@@ -187,11 +187,18 @@ class Help(commands.Cog):
 
     def overview_page(self) -> discord.Embed:
         """The hand-written overview page."""
-        embed = self._base_embed(title="Commands Help", description="")
+        embed = self._base_embed(
+            title="Basic Overview",
+            description=(
+                f"Thank you for using {self.bot.me.mention}! This page "
+                "gives a quick overview of the most important commands. See "
+                "the menu at the bottom for more."
+            ),
+        )
         embed.add_field(
             name="Dice Rolls",
             value=(
-                "`/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY`\n\n"
+                "```/roll pool:POOL hunger:HUNGER difficulty:DIFFICULTY```"
                 "For `HUNGER`, select `Use Current (or 0 for Mortals)` if using a "
                 "character in the bot; otherwise select a number.\n"
                 "**Example:** `/roll pool:5 hunger:2 difficulty:3`"

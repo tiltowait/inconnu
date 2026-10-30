@@ -33,18 +33,7 @@ HIDDEN_COGS = frozenset({"AdminCog", "Help"})
 
 def overview_page(bot: InconnuBot) -> discord.Embed:
     """The hand-written overview page."""
-    embed = _base_embed(
-        bot,
-        title="Commands Help",
-        description=(
-            "Basic commands listing. Use the menu below to see every command!"
-            " Items such as `pool:` or `hunger:` are Discord command parameters."
-            " They don't need to be typed, as Discord adds them automatically."
-            "\n\nA word in `CAPS` indicates where you enter your input. For,"
-            " instance, `hunger:HUNGER` would look like `hunger:3` in the Discord"
-            " interface after selecting 3 Hunger."
-        ),
-    )
+    embed = _base_embed(bot, title="Commands Help", description="")
     embed.add_field(
         name="Dice Rolls",
         value=(
@@ -56,21 +45,12 @@ def overview_page(bot: InconnuBot) -> discord.Embed:
         inline=False,
     )
     embed.add_field(
-        name="Rolling with traits",
+        name="Rolling With Traits",
         value=(
-            "If you have a character, you can roll with trait names.\n"
+            "Roll with Trait names (requires character).\n"
             "**Example:** `/roll pool:manipulation+subterfuge "
             "hunger:Current Hunger difficulty:3`\n\n"
             "Create a character with `/character create`."
-        ),
-        inline=False,
-    )
-    embed.add_field(
-        name="Alternate roll syntax",
-        value=(
-            "`/vr` - Combines roll elements into one line, similar to Thirst. Type "
-            "`hunger` to use your character's current Hunger, or give a number.\n"
-            "**Example:** `/vr syntax:manip+sub hunger 3`"
         ),
         inline=False,
     )
@@ -84,14 +64,6 @@ def overview_page(bot: InconnuBot) -> discord.Embed:
         inline=False,
     )
     embed.add_field(
-        name="Hidden dice",
-        value=(
-            "Use `dice:Hide` to show others only the outcome and pool. You'll privately "
-            "see the full roll and its buttons. Admins can restrict it in `/settings`."
-        ),
-        inline=False,
-    )
-    embed.add_field(
         name="Create a character",
         value="`/character create`\nYou can use character attributes in rolls.",
         inline=False,
@@ -101,7 +73,7 @@ def overview_page(bot: InconnuBot) -> discord.Embed:
         value="`/character display`",
         inline=False,
     )
-    embed.add_field(name="Add traits", value="`/traits add`")
+    embed.add_field(name="Add Traits", value="`/traits add`")
     embed.add_field(name="Add specialties", value="`/specialties add`")
     embed.add_field(
         name="Common commands",
@@ -117,12 +89,6 @@ def overview_page(bot: InconnuBot) -> discord.Embed:
             "`/remorse` — Run a Remorse check based on your current Stains"
         ),
         inline=False,
-    )
-    embed.set_footer(
-        text=(
-            "Many commands have a 'character' parameter, which is usually "
-            "optional. When it's required, Discord makes it obvious."
-        )
     )
     return embed
 

@@ -213,8 +213,7 @@ class Help(commands.Cog):
             value=(
                 "Roll with Trait names (requires character).\n"
                 "**Example:** `/roll pool:manipulation+subterfuge "
-                "hunger:Use Current (or 0 for Mortals) difficulty:3`\n\n"
-                "Create a character with `/character wizard`."
+                "hunger:Use Current (or 0 for Mortals) difficulty:3`"
             ),
             inline=False,
         )

@@ -1,6 +1,6 @@
 """Service layer for bot infrastructure."""
 
-from services import settings, wizard
+from services import premium, settings, wizard
 from services.characters import CharacterManager, char_mgr
 from services.emoji import emojis
 from services.guildcache import guild_cache
@@ -19,6 +19,7 @@ __all__ = (
     "emojis",
     "guild_cache",
     "post_update",
+    "premium",
     "report_database_error",
     "settings",
     "wizard",

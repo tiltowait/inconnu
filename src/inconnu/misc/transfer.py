@@ -32,7 +32,7 @@ async def transfer_character(
                 await ctx.respond(
                     f"Transferred **{xfer.name}** from {current_mention} to {new_mention}."
                 )
-                await ctx.bot.transfer_premium(new_owner, xfer)
+                await services.premium.check_transfer(new_owner, xfer)
             except errors.DuplicateCharacterError as err:
                 await ui.embeds.error(ctx, str(err))
         else:

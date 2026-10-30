@@ -10,7 +10,6 @@ from cachetools import TTLCache
 from discord.ext import tasks
 from loguru import logger
 
-import constants
 import db
 import errors
 import inconnu
@@ -22,7 +21,6 @@ from models import RPPost, VChar
 from services import WebhookCache
 from services.reporter import reporter
 from utils import cmd_replace, raw_command_options
-from utils.urls import docs_url
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -131,56 +129,6 @@ class InconnuBot(discord.AutoShardedBot):
             else:
                 logger.debug("BOT: Disregarding reply that isn't to one of our webhooks")
 
-    @staticmethod
-    async def inform_premium_loss(member: discord.Member, title="You are no longer a supporter!"):
-        """Inform a member if they lost premium status."""
-        try:
-            server = f"[Inconnu server]({constants.SUPPORT_URL})"
-            patreon = f"[patron]({constants.PATREON})"
-            embed = discord.Embed(
-                title=title,
-                description=(
-                    f"If you aren't a {patreon} by the first of the month, your "
-                    "character profile images will be deleted.\n\n"
-                    f"To maintain supporter status, you must be on the {server} "
-                    f"and a {patreon}.\n\n"
-                    "**Note:** Old-style (URL-based) images are grandfathered "
-                    "in and will not be removed."
-                ),
-                color=discord.Color.red(),
-            )
-            embed.set_footer(text="Thank you for your support!")
-            await member.send(embed=embed)
-            logger.info("PREMIUM: Informed {} about premium loss", member.name)
-
-        except (discord.errors.Forbidden, discord.errors.HTTPException):
-            logger.info("PREMIUM: Could not DM {} about premium loss", member.name)
-
-    async def inform_premium_features(self, member: discord.Member):
-        """Inform the member of premium features."""
-        try:
-            upload_mention = self.cmd_mention("character image upload")
-            embed = discord.Embed(
-                title="Thank you for your support!",
-                description=(
-                    f"You may now upload profile images via {upload_mention}. "
-                    "(Use it in a server, not from this DM!)\n\n"
-                    f"[Read more here!]({docs_url('premium/character-images')})"
-                ),
-                color=discord.Color.green(),
-            )
-            embed.set_footer(
-                text=(
-                    "You are responsible for the images you upload. "
-                    "Violating the terms of service will result in a permanent ban from the bot."
-                )
-            )
-            await member.send(embed=embed)
-            logger.info("PREMIUM: Informed {} about premium features", member.name)
-
-        except discord.errors.Forbidden:
-            logger.info("PREMIUM: Could not DM {} about premium features", member.name)
-
     def cmd_mention(
         self,
         name: str,
@@ -234,49 +182,6 @@ class InconnuBot(discord.AutoShardedBot):
         await self.change_presence(
             activity=discord.Activity(type=discord.ActivityType.watching, name=message)
         )
-
-    async def mark_premium_loss(self, member: discord.Member, transferral=False):
-        """Mark premium loss in the database."""
-        await db.supporters.update_one(
-            {"_id": member.id},
-            {"$set": {"_id": member.id, "discontinued": discord.utils.utcnow()}},
-            upsert=True,
-        )
-        if transferral:
-            await self.inform_premium_loss(
-                member,
-                "A premium character was just transferred to you, but you aren't a supporter",
-            )
-        else:
-            await self.inform_premium_loss(member)
-
-    async def mark_premium_gain(self, member: discord.Member):
-        """Mark premium gain in the database."""
-        await db.supporters.update_one(
-            {"_id": member.id},
-            {"$set": {"_id": member.id, "discontinued": None}},
-            upsert=True,
-        )
-        await self.inform_premium_features(member)
-
-    async def transfer_premium(self, member: discord.Member, character: VChar):
-        """
-        When a character is transferred to a new user, mark that user's premium
-        status if the character has images.
-        """
-        if not character.profile.images:
-            logger.info("TRANSFER: {} has no images", character.name)
-            return
-
-        if not await db.supporters.find_one({"_id": character.user}):
-            logger.info(
-                "TRANSFER: Creating a supporter record for {}, because {} has images",
-                member.name,
-                character.name,
-            )
-            await self.mark_premium_loss(member, True)
-        else:
-            logger.info("TRANSFER: {} has a supporter record; no action needed", member.name)
 
     # Events
 
@@ -405,24 +310,9 @@ class InconnuBot(discord.AutoShardedBot):
     # Member Events
 
     async def on_member_update(self, before: discord.Member, after: discord.Member):
-        """Check for supporter status changes."""
+        """Update the member in the guild cache."""
         if await services.guild_cache.ready():
             await services.guild_cache.upsert_members(after)
-
-        if before.guild.id != settings.supporter_guild:
-            return
-
-        def is_supporter(member: discord.Member) -> bool:
-            """Check if the member is a supporter."""
-            return member.get_role(settings.supporter_role) is not None
-
-        if is_supporter(before) and not is_supporter(after):
-            logger.info("PREMIUM: {} is no longer a supporter", after.name)
-            await self.mark_premium_loss(after)
-
-        elif is_supporter(after) and not is_supporter(before):
-            logger.info("PREMIUM: {} is now a supporter!", after.name)
-            await self.mark_premium_gain(after)
 
     async def on_member_remove(self, member: discord.Member):
         """Mark all of a member's characters as inactive."""
@@ -430,19 +320,11 @@ class InconnuBot(discord.AutoShardedBot):
         if await services.guild_cache.ready():
             await services.guild_cache.delete_member(member)
 
-        if member.guild.id == settings.supporter_guild:
-            if member.get_role(settings.supporter_role):
-                await self.mark_premium_loss(member)
-
     async def on_member_join(self, member: discord.Member):
         """Mark all the player's characters as active when they rejoin a guild."""
         await services.char_mgr.mark_active(member)
         if await services.guild_cache.ready():
             await services.guild_cache.upsert_members(member)
-
-        if member.guild.id == settings.supporter_guild:
-            if member.get_role(settings.supporter_role):
-                await self.mark_premium_gain(member)
 
     # Guild Events
 

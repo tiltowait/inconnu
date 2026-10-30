@@ -94,40 +94,30 @@ class InconnuBot(discord.AutoShardedBot):
 
     async def on_message(self, message: discord.Message):
         """If the message is a reply to a Rolepost, ping the Rolepost's author."""
-        # TODO: Once satisfied with this method, remove most of the debug lines
-        if message.author.bot:
-            logger.debug("BOT: Disregarding bot message")
-            return
-        if message.type != discord.MessageType.reply:
-            logger.debug("BOT: Disregarding non-reply message.")
-            return
-        if message.reference is None:
-            logger.debug("BOT: Disregarding message with no reference.")
+        if message.author.bot or message.reference is None:
             return
 
-        # It's possible for the backend to not fill in this property, which is
-        # why we have to check it. We *could* also search the cached messages,
-        # and maybe we'll add that in the future.
-        if isinstance(message.reference.resolved, discord.Message):
-            # This routine only works if the webhooks have already been fetched
-            if message.reference.resolved.author.id in self.webhook_cache.webhook_ids:
-                logger.debug("BOT: Received a reply to one of our webhooks")
-                rp_post = await RPPost.find_one({"id_chain": message.reference.message_id})
-                if rp_post is not None:
-                    # Users can't turn off reply pings to bots, so we don't
-                    # need to worry about an edge case where they disabled the
-                    # reply ping and can safely ping the author.
-                    if rp_post.user not in (m.id for m in message.mentions):
-                        logger.debug("BOT: Pinging Rolepost's author")
-                        user = await self.get_or_fetch_user(rp_post.user)
-                        if user is not None:
-                            await message.reply(user.mention, mention_author=False, delete_after=60)
-                    else:
-                        logger.debug("BOT: Replier pinged the Rolepost's author; doing nothing")
-                else:
-                    logger.debug("BOT: Rolepost not found")
-            else:
-                logger.debug("BOT: Disregarding reply that isn't to one of our webhooks")
+        # The backend doesn't always resolve the reference. We could search the
+        # message cache when it doesn't, but for now we skip the message.
+        replied_to = message.reference.resolved
+        if not isinstance(replied_to, discord.Message):
+            return
+        # Only works once the webhooks have been fetched
+        if replied_to.author.id not in self.webhook_cache.webhook_ids:
+            return
+
+        rp_post = await RPPost.find_one({"id_chain": message.reference.message_id})
+        if rp_post is None:
+            return
+
+        # Users can't turn off reply pings to bots, so if the replier didn't
+        # already ping the author, we can safely do it for them.
+        if rp_post.user in (m.id for m in message.mentions):
+            return
+
+        if user := await self.get_or_fetch_user(rp_post.user):
+            logger.debug("Pinging {} for a reply to their Rolepost", user.name)
+            await message.reply(user.mention, mention_author=False, delete_after=60)
 
     def cmd_mention(
         self,

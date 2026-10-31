@@ -5,14 +5,16 @@ from datetime import datetime
 from typing import NamedTuple
 
 import aiohttp
-import discord
+from discord.ui import Button, Container, Separator, TextDisplay
 from discord.utils import format_dt
 
 import ui
 from config import settings
 from ctx import AppCtx
+from utils import re_paginate
 
-CHANGELOG_URL = "https://github.com/tiltowait/inconnu/releases/latest"
+RELEASES_URL = "https://github.com/tiltowait/inconnu/releases"
+PAGE_SIZE = 3800  # Smaller than max limit of 4000 to allow for the title
 
 
 class ReleaseInfo(NamedTuple):
@@ -39,51 +41,36 @@ def split_sections(text: str) -> list[str]:
     return parts
 
 
-def build_changelog(release: ReleaseInfo) -> discord.ui.DesignerView:
-    """Build the changelog component."""
-    sections = split_sections(release.text)
-    view = discord.ui.DesignerView(
-        discord.ui.TextDisplay(f"# Inconnu {release.tag}"),
-        discord.ui.TextDisplay(f"-# Released {format_dt(release.published_at, 'D')}"),
-        *(discord.ui.Container(discord.ui.TextDisplay(section)) for section in sections),
-        discord.ui.Section(
-            discord.ui.TextDisplay("​"),
-            accessory=discord.ui.Button(
-                label="All releases", url="https://github.com/tiltowait/inconnu/releases"
+def build_changelog(release: ReleaseInfo) -> ui.views.PagedView:
+    """Build the paginated changelog, one container per page."""
+    pages = []
+    for page in re_paginate([compact_text(release.text)], page_len=PAGE_SIZE):
+        container = Container()
+        container.add_section(
+            TextDisplay(
+                f"# Inconnu {release.tag}\n-# Released {format_dt(release.published_at, 'D')}"
             ),
-        ),
-    )
-    return view
+            accessory=Button(label="All releases", url=RELEASES_URL),
+        )
+
+        for section in split_sections(page):
+            container.add_item(Separator())
+            container.add_item(TextDisplay(section))
+
+        pages.append(container)
+
+    return ui.views.PagedView(pages)
 
 
 async def show_changelog(ctx: AppCtx, hidden: bool):
     """Display Inconnu's changelog."""
     try:
         release = await fetch_changelog()
-        paginator = discord.ext.commands.Paginator(prefix="", suffix="", max_size=4000)
-
-        for line in changelog.split("\n"):
-            paginator.add_line(line)
-
-        embeds = []
-        for page in paginator.pages:
-            embed = discord.Embed(
-                title=f"Inconnu {release.tag}", description=page, url=CHANGELOG_URL
-            )
-            embed.set_thumbnail(url=ctx.bot.me.display_avatar)
-            embeds.append(embed)
-
-        show_buttons = len(embeds) > 1
-        paginator = discord.ext.pages.Paginator(
-            embeds,
-            author_check=False,
-            show_disabled=show_buttons,
-            show_indicator=show_buttons,
-        )
-        await paginator.respond(ctx.interaction, ephemeral=hidden)
-
     except aiohttp.ClientError, KeyError:
         await ui.embeds.error(ctx, "Unable to fetch changelog.")
+        return
+
+    await ctx.respond(view=build_changelog(release), ephemeral=hidden)
 
 
 async def fetch_changelog() -> ReleaseInfo:

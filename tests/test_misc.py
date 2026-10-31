@@ -90,11 +90,9 @@ def generate_random_word(length):
 
 
 async def test_changelog():
-    tag, changelog = await inconnu.misc.fetch_changelog()
-    assert isinstance(tag, str)
-    assert tag[0] == "v"
-    assert isinstance(changelog, str)
-    assert len(changelog) > 0
+    release = await inconnu.misc.fetch_changelog()
+    assert release.tag[0] == "v"
+    assert len(release.text) > 0
 
 
 @pytest.mark.parametrize(

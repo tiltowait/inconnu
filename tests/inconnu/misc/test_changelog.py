@@ -1,8 +1,28 @@
-"""Tests for inconnu/misc/changelog.py's text formatting."""
+"""Tests for inconnu/misc/changelog.py."""
 
+from datetime import UTC, datetime
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import aiohttp
+import discord
 import pytest
 
-from inconnu.misc.changelog import compact_text, split_sections
+from ctx import AppCtx
+from inconnu.misc.changelog import (
+    PAGE_SIZE,
+    RELEASES_URL,
+    ReleaseInfo,
+    build_changelog,
+    compact_text,
+    show_changelog,
+    split_sections,
+)
+from ui.views import PagedView
+
+PUBLISHED = datetime(2026, 10, 31, tzinfo=UTC)
+
+type MockCtx = MagicMock
 
 
 @pytest.mark.parametrize(
@@ -58,3 +78,106 @@ def test_split_sections_other_headings():
 def test_split_sections_no_headings():
     """Text without headings is a single section."""
     assert split_sections("- A fix\n\n- Another") == ["- A fix\n\n- Another"]
+
+
+# build_changelog
+
+
+def make_release(text: str) -> ReleaseInfo:
+    """Make a release with the given notes."""
+    return ReleaseInfo(tag="v2026.10.31", text=text, published_at=PUBLISHED)
+
+
+def page_items(view: PagedView) -> list[dict[str, Any]]:
+    """The shown page's items."""
+    container = view.to_components()[0]
+    assert container["type"] == discord.ComponentType.container.value
+    return container["components"]
+
+
+def page_texts(view: PagedView) -> list[str]:
+    """The shown page's text displays after the header."""
+    return [
+        item["content"]
+        for item in page_items(view)[1:]
+        if item["type"] == discord.ComponentType.text_display.value
+    ]
+
+
+async def test_build_changelog_header():
+    """The header names the release, its date, and links all releases."""
+    view = build_changelog(make_release("## Fixes\n- A fix"))
+    header = page_items(view)[0]
+
+    assert header["type"] == discord.ComponentType.section.value
+    timestamp = int(PUBLISHED.timestamp())
+    assert header["components"][0]["content"] == (
+        f"# Inconnu v2026.10.31\n-# Released <t:{timestamp}:D>"
+    )
+    assert header["accessory"]["url"] == RELEASES_URL
+
+
+async def test_build_changelog_sections():
+    """Each section is compacted and preceded by a separator."""
+    view = build_changelog(make_release("## Fixes\n\n- A fix\n\n## Features\n\n- A feature"))
+    types = [item["type"] for item in page_items(view)[1:]]
+
+    separator = discord.ComponentType.separator.value
+    text = discord.ComponentType.text_display.value
+    assert types == [separator, text, separator, text]
+    assert page_texts(view) == ["## Fixes\n- A fix", "## Features\n- A feature"]
+
+
+async def test_build_changelog_pages():
+    """Long notes are split across pages, each with the header, in order."""
+    lines = [f"- Fix {i:03} " + "x" * 90 for i in range(100)]
+    text = "## Fixes\n" + "\n".join(lines[:50]) + "\n## Features\n" + "\n".join(lines[50:])
+    view = build_changelog(make_release(text))
+
+    assert len(view.pages) > 1
+    shown = []
+    for index in range(len(view.pages)):
+        if index > 0:
+            await view.next_page(AsyncMock(spec=discord.Interaction))
+        assert page_items(view)[0]["type"] == discord.ComponentType.section.value
+        texts = page_texts(view)
+        assert sum(map(len, texts)) <= PAGE_SIZE
+        shown += [line for text in texts for line in text.splitlines()]
+
+    assert shown == text.splitlines()
+
+
+# show_changelog
+
+
+@pytest.fixture
+def ctx() -> MockCtx:
+    """The /changelog invocation."""
+    ctx = MagicMock(spec=AppCtx)
+    ctx.respond = AsyncMock()  # A property on ApplicationContext, so the spec can't infer it
+    return ctx
+
+
+@pytest.mark.parametrize("hidden", [True, False])
+async def test_show_changelog(ctx: MockCtx, hidden: bool):
+    """The latest release is shown as a paged view."""
+    release = make_release("## Fixes\n- A fix")
+    with patch("inconnu.misc.changelog.fetch_changelog", AsyncMock(return_value=release)):
+        await show_changelog(ctx, hidden)
+
+    kwargs = ctx.respond.call_args.kwargs
+    assert kwargs["ephemeral"] == hidden
+    assert page_texts(kwargs["view"]) == ["## Fixes\n- A fix"]
+
+
+@pytest.mark.parametrize("error", [aiohttp.ClientError(), KeyError("body")])
+async def test_show_changelog_fetch_error(ctx: MockCtx, error: Exception):
+    """A failed fetch shows an error instead."""
+    with (
+        patch("inconnu.misc.changelog.fetch_changelog", AsyncMock(side_effect=error)),
+        patch("inconnu.misc.changelog.ui.embeds.error", AsyncMock()) as mock_error,
+    ):
+        await show_changelog(ctx, True)
+
+    mock_error.assert_awaited_once_with(ctx, "Unable to fetch changelog.")
+    ctx.respond.assert_not_awaited()

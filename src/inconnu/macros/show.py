@@ -72,7 +72,7 @@ async def __display_macros(ctx: AppCtx, character: VChar, macros):
             container.add_item(Separator())
             container.add_item(TextDisplay(f"### {field.name}\n{field.value}"))
 
-        _pages.append(container)
+        _pages.append([container])
 
     await ctx.respond(view=ui.views.PagedView(_pages), ephemeral=True)
 

@@ -19,7 +19,7 @@ type MockUser = MagicMock
 
 def make_view(count: int, author: discord.abc.User | None = None) -> PagedView:
     """Make a view of single-text pages."""
-    pages = [Container(TextDisplay(f"Page {i + 1}")) for i in range(count)]
+    pages = [[Container(TextDisplay(f"Page {i + 1}"))] for i in range(count)]
     return PagedView(pages, author=author)
 
 
@@ -45,12 +45,12 @@ def page_text(view: PagedView) -> str:
 
 def buttons(view: PagedView) -> list[tuple[str | None, str | None, bool]] | None:
     """The page controls as (emoji, label, disabled), if shown."""
-    components = view.to_components()
-    if len(components) < 2:
+    controls = view.to_components()[-1]
+    if controls["type"] != discord.ComponentType.action_row.value:
         return None
     return [
         (button.get("emoji", {}).get("name"), button.get("label"), button["disabled"])
-        for button in components[1]["components"]
+        for button in controls["components"]
     ]
 
 
@@ -63,7 +63,7 @@ async def press(view: PagedView, emoji: str, interaction: MockInteraction | None
     assert not shown[index][2], f"{emoji!r} is disabled"
 
     interaction = interaction or make_interaction()
-    button = cast(Any, view.children[1]).children[index]
+    button = cast(Any, view.children[-1]).children[index]
     await cast(Button, button).callback(interaction)
     interaction.edit.assert_awaited_once_with(view=view)
 
@@ -95,6 +95,25 @@ async def test_paging():
     await press(view, PREV)
     assert page_text(view) == "Page 2"
     assert buttons(view) == [(PREV, None, False), (None, "2/3", True), (NEXT, None, False)]
+
+
+async def test_multi_item_pages():
+    """Each page shows all its items, then the controls."""
+    pages = [
+        [TextDisplay("Title 1"), Container(TextDisplay("Body 1"))],
+        [TextDisplay("Title 2"), Container(TextDisplay("Body 2"))],
+    ]
+    view = PagedView(pages)
+    await press(view, NEXT)
+    components = view.to_components()
+
+    assert [c["type"] for c in components] == [
+        discord.ComponentType.text_display.value,
+        discord.ComponentType.container.value,
+        discord.ComponentType.action_row.value,
+    ]
+    assert components[0]["content"] == "Title 2"
+    assert components[1]["components"][0]["content"] == "Body 2"
 
 
 async def test_press_refreshes_parent():

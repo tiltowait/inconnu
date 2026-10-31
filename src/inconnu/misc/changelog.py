@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import NamedTuple
 
 import aiohttp
-from discord.ui import Button, Container, Separator, TextDisplay
+from discord.ui import Button, Container, Section, TextDisplay
 from discord.utils import format_dt
 
 import ui
@@ -42,22 +42,20 @@ def split_sections(text: str) -> list[str]:
 
 
 def build_changelog(release: ReleaseInfo) -> ui.views.PagedView:
-    """Build the paginated changelog, one container per page."""
+    """Build the paginated changelog, one container per section."""
     pages = []
     for page in re_paginate([compact_text(release.text)], page_len=PAGE_SIZE):
-        container = Container()
-        container.add_section(
-            TextDisplay(
-                f"# Inconnu {release.tag}\n-# Released {format_dt(release.published_at, 'D')}"
-            ),
-            accessory=Button(label="All releases", url=RELEASES_URL),
+        pages.append(
+            [
+                TextDisplay(f"# Inconnu {release.tag}"),
+                TextDisplay(f"-# Released {format_dt(release.published_at, 'D')}"),
+                *(Container(TextDisplay(section)) for section in split_sections(page)),
+                Section(
+                    TextDisplay("\u200b"),
+                    accessory=Button(label="All releases", url=RELEASES_URL),
+                ),
+            ]
         )
-
-        for section in split_sections(page):
-            container.add_item(Separator())
-            container.add_item(TextDisplay(section))
-
-        pages.append(container)
 
     return ui.views.PagedView(pages)
 

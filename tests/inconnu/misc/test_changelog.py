@@ -89,47 +89,44 @@ def make_release(text: str) -> ReleaseInfo:
 
 
 def page_items(view: PagedView) -> list[dict[str, Any]]:
-    """The shown page's items."""
-    container = view.to_components()[0]
-    assert container["type"] == discord.ComponentType.container.value
-    return container["components"]
-
-
-def page_texts(view: PagedView) -> list[str]:
-    """The shown page's text displays after the header."""
+    """The shown page's top-level items, without the page controls."""
     return [
-        item["content"]
-        for item in page_items(view)[1:]
-        if item["type"] == discord.ComponentType.text_display.value
+        item
+        for item in view.to_components()
+        if item["type"] != discord.ComponentType.action_row.value
     ]
 
 
-async def test_build_changelog_header():
-    """The header names the release, its date, and links all releases."""
-    view = build_changelog(make_release("## Fixes\n- A fix"))
-    header = page_items(view)[0]
-
-    assert header["type"] == discord.ComponentType.section.value
-    timestamp = int(PUBLISHED.timestamp())
-    assert header["components"][0]["content"] == (
-        f"# Inconnu v2026.10.31\n-# Released <t:{timestamp}:D>"
-    )
-    assert header["accessory"]["url"] == RELEASES_URL
+def section_texts(view: PagedView) -> list[str]:
+    """The text of each section container on the shown page."""
+    return [
+        item["components"][0]["content"]
+        for item in page_items(view)
+        if item["type"] == discord.ComponentType.container.value
+    ]
 
 
-async def test_build_changelog_sections():
-    """Each section is compacted and preceded by a separator."""
+async def test_build_changelog_layout():
+    """The title and date lead, each section is its own container, and the
+    releases link comes last."""
     view = build_changelog(make_release("## Fixes\n\n- A fix\n\n## Features\n\n- A feature"))
-    types = [item["type"] for item in page_items(view)[1:]]
+    items = page_items(view)
 
-    separator = discord.ComponentType.separator.value
-    text = discord.ComponentType.text_display.value
-    assert types == [separator, text, separator, text]
-    assert page_texts(view) == ["## Fixes\n- A fix", "## Features\n- A feature"]
+    assert [item["type"] for item in items] == [
+        discord.ComponentType.text_display.value,
+        discord.ComponentType.text_display.value,
+        discord.ComponentType.container.value,
+        discord.ComponentType.container.value,
+        discord.ComponentType.section.value,
+    ]
+    assert items[0]["content"] == "# Inconnu v2026.10.31"
+    assert items[1]["content"] == f"-# Released <t:{int(PUBLISHED.timestamp())}:D>"
+    assert section_texts(view) == ["## Fixes\n- A fix", "## Features\n- A feature"]
+    assert items[-1]["accessory"]["url"] == RELEASES_URL
 
 
 async def test_build_changelog_pages():
-    """Long notes are split across pages, each with the header, in order."""
+    """Long notes are split across pages, each with the title and link, in order."""
     lines = [f"- Fix {i:03} " + "x" * 90 for i in range(100)]
     text = "## Fixes\n" + "\n".join(lines[:50]) + "\n## Features\n" + "\n".join(lines[50:])
     view = build_changelog(make_release(text))
@@ -139,8 +136,10 @@ async def test_build_changelog_pages():
     for index in range(len(view.pages)):
         if index > 0:
             await view.next_page(AsyncMock(spec=discord.Interaction))
-        assert page_items(view)[0]["type"] == discord.ComponentType.section.value
-        texts = page_texts(view)
+        items = page_items(view)
+        assert items[0]["content"] == "# Inconnu v2026.10.31"
+        assert items[-1]["accessory"]["url"] == RELEASES_URL
+        texts = section_texts(view)
         assert sum(map(len, texts)) <= PAGE_SIZE
         shown += [line for text in texts for line in text.splitlines()]
 
@@ -167,7 +166,7 @@ async def test_show_changelog(ctx: MockCtx, hidden: bool):
 
     kwargs = ctx.respond.call_args.kwargs
     assert kwargs["ephemeral"] == hidden
-    assert page_texts(kwargs["view"]) == ["## Fixes\n- A fix"]
+    assert section_texts(kwargs["view"]) == ["## Fixes\n- A fix"]
 
 
 @pytest.mark.parametrize("error", [aiohttp.ClientError(), KeyError("body")])

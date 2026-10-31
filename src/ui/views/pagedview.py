@@ -1,20 +1,21 @@
-"""views/pagedview.py - A components v2 paginator with one container per page."""
+"""views/pagedview.py - A components v2 paginator."""
 
 from collections.abc import Sequence
 
 import discord
-from discord.ui import ActionRow, Button, Container
+from discord.ui import ActionRow, Button, ViewItem
 
 from ctx import AppInteraction
 
 
 class PagedView(discord.ui.DesignerView):
-    """A paginated display, one container per page. Page controls show only if
-    there are several pages. If given an author, only they may turn pages."""
+    """A paginated display. Each page is a list of top-level items, such as
+    containers or text displays. Page controls show only if there are several
+    pages. If given an author, only they may turn pages."""
 
     def __init__(
         self,
-        pages: Sequence[Container],
+        pages: Sequence[Sequence[ViewItem]],
         *,
         author: discord.abc.User | None = None,
         timeout: float = 300,
@@ -38,7 +39,8 @@ class PagedView(discord.ui.DesignerView):
     def _render(self):
         """Show the current page and, if there are several, the page controls."""
         self.clear_items()
-        self.add_item(self.pages[self.current])
+        for item in self.pages[self.current]:
+            self.add_item(item)
 
         if len(self.pages) > 1:
             self.prev_button.disabled = self.current == 0

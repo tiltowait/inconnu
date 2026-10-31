@@ -7,6 +7,7 @@ from discord.ext import commands
 from loguru import logger
 
 import db
+from ctx import AppCtx
 from utils import command_options
 
 if TYPE_CHECKING:
@@ -17,38 +18,39 @@ class LoggingCog(commands.Cog):
     """A simple cog for logging command events."""
 
     @commands.Cog.listener()
-    async def on_application_command(self, ctx):
+    async def on_application_command(self, ctx: AppCtx):
         """Log command usage."""
         if ctx.guild is not None:
             location = ctx.guild.name
         else:
             location = "DMs"
 
-        logger.info(
-            "COMMAND: `/{}` invoked by {} ({}) in {} ({}). Options: {}",
-            ctx.command.qualified_name,
-            ctx.user.name,
-            ctx.user.id,
-            location,
-            ctx.guild_id,
-            command_options(ctx.interaction),
-        )
+        if ctx.command is not None:
+            logger.info(
+                "COMMAND: `/{}` invoked by {} ({}) in {} ({}). Options: {}",
+                ctx.command.qualified_name,
+                ctx.user.name,
+                ctx.user.id,
+                location,
+                ctx.guild_id,
+                command_options(ctx.interaction),
+            )
 
-        # Log to the database
-        await db.command_log.insert_one(
-            {
-                "guild": ctx.guild_id,
-                "user": ctx.user.id,
-                "locale": ctx.interaction.locale,
-                "command": ctx.command.qualified_name,
-                "type": ctx.command.type,
-                "options": [
-                    {"name": o["name"], "value": o["value"]}
-                    for o in ctx.interaction.data.get("options", [])
-                ],
-                "date": datetime.now(UTC),
-            }
-        )
+            # Log to the database
+            await db.command_log.insert_one(
+                {
+                    "guild": ctx.guild_id,
+                    "user": ctx.user.id,
+                    "locale": ctx.interaction.locale,
+                    "command": ctx.command.qualified_name,
+                    "type": ctx.command.type,
+                    "options": [
+                        {"name": o["name"], "value": o["value"]}
+                        for o in ctx.interaction.data.get("options", [])
+                    ],
+                    "date": ctx.interaction.created_at,
+                }
+            )
 
 
 def setup(bot: InconnuBot):

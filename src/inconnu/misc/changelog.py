@@ -25,8 +25,9 @@ class ReleaseInfo(NamedTuple):
 
 def compact_text(text: str) -> str:
     """Remove extra newlines between headings."""
-    compact = re.sub(r"^(#+ .*)\n\n", r"\1\n", text, flags=re.MULTILINE)
-    tight = re.sub(r"\n\n(#+ )", r"\n\1", compact)
+    text = text.replace("\r\n", "\n")
+    compact = re.sub(r"^(#+ .*)\n{2,}", r"\1\n", text, flags=re.MULTILINE)
+    tight = re.sub(r"\n{2,}(#+ )", r"\n\1", compact)
 
     return tight
 

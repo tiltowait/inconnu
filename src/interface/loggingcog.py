@@ -1,6 +1,5 @@
 """interface/loggingcog.py - Log command events."""
 
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from discord.ext import commands

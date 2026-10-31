@@ -22,6 +22,12 @@ class VUser(Document):
 
     user: int
     settings: VUserSettings = Field(default_factory=VUserSettings)
+    last_version_used: str = ""
+
+    @property
+    def is_inserted(self) -> bool:
+        """Whether the VUser has been inserted in the database."""
+        return self.id is not None
 
     @classmethod
     @alru_cache(maxsize=1024)

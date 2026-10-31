@@ -32,8 +32,6 @@ CHARACTER_OPTION_REQUIRED = frozenset(
         "transfer",
     }
 )
-# Commands that shouldn't show the MOTD
-MOTD_EXEMPT = frozenset({"motd", "announce"})
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -220,9 +218,8 @@ class InconnuBot(discord.AutoShardedBot):
         await self.process_application_commands(interaction)
 
     async def on_application_command(self, ctx: AppCtx):
-        """Show tips and the MOTD after a command."""
+        """Show tips after a command."""
         await self._tip_unneeded_character_option(ctx)
-        await self._show_motd(ctx)
 
     async def _tip_unneeded_character_option(self, ctx: AppCtx):
         """Tell a user with one character they don't need the character option."""
@@ -251,22 +248,6 @@ class InconnuBot(discord.AutoShardedBot):
             f"the `character` option for `/{ctx.command.qualified_name}`."
         )
         await cmd_replace_respond(ctx, tip, ephemeral=True)
-
-    async def _show_motd(self, ctx: AppCtx):
-        """Show the MOTD once per user."""
-        assert ctx.command is not None
-        if self.motd is None or ctx.command.qualified_name in MOTD_EXEMPT:
-            return
-        if ctx.user.id in self.motd_given:
-            return
-
-        logger.debug("Showing MOTD to {}", ctx.user.name)
-        await asyncio.sleep(1)
-        try:
-            await cmd_replace_respond(ctx, embed=self.motd, ephemeral=True)
-            self.motd_given.add(ctx.user.id)
-        except discord.HTTPException:
-            logger.warning("Could not show MOTD to {}", ctx.user.name)
 
     async def on_connect(self):
         """Perform early setup."""

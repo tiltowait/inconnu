@@ -160,7 +160,7 @@ async def test_on_message_pings_author(reply_bot: MagicMock, mock_find_post: Asy
     message.reply.assert_awaited_once_with(f"<@{AUTHOR_ID}>", mention_author=False, delete_after=60)
 
 
-# Post-command tips and MOTD
+# Post-command tips
 
 
 def make_ctx(command: str = "vr", options: dict[str, str] | None = None) -> MagicMock:
@@ -288,46 +288,3 @@ async def test_tip_not_shown_for_missing_character(
     )
 
     mock_cmd_replace_respond.assert_not_awaited()
-
-
-@pytest.fixture
-def motd_bot(mock_bot: MagicMock) -> MagicMock:
-    """A mock bot with an MOTD that nobody has seen."""
-    mock_bot.motd = discord.Embed(title="News")
-    mock_bot.motd_given = set()
-    return mock_bot
-
-
-async def test_motd_shown_once(motd_bot: MagicMock, mock_cmd_replace_respond: AsyncMock):
-    """Each user sees the MOTD only once."""
-    ctx = make_ctx()
-    await InconnuBot._show_motd(motd_bot, ctx)
-    await InconnuBot._show_motd(motd_bot, ctx)
-
-    mock_cmd_replace_respond.assert_awaited_once_with(ctx, embed=motd_bot.motd, ephemeral=True)
-    assert motd_bot.motd_given == {ctx.user.id}
-
-
-async def test_motd_not_shown_for_exempt_command(
-    motd_bot: MagicMock, mock_cmd_replace_respond: AsyncMock
-):
-    """The MOTD commands don't show the MOTD."""
-    await InconnuBot._show_motd(motd_bot, make_ctx("motd"))
-
-    mock_cmd_replace_respond.assert_not_awaited()
-
-
-async def test_motd_not_set(motd_bot: MagicMock, mock_cmd_replace_respond: AsyncMock):
-    """Nothing is shown without an MOTD."""
-    motd_bot.motd = None
-    await InconnuBot._show_motd(motd_bot, make_ctx())
-
-    mock_cmd_replace_respond.assert_not_awaited()
-
-
-async def test_motd_failure_not_recorded(motd_bot: MagicMock, mock_cmd_replace_respond: AsyncMock):
-    """A user whose MOTD couldn't be sent will get it next time."""
-    mock_cmd_replace_respond.side_effect = discord.HTTPException(MagicMock(status=500), "Failed")
-    await InconnuBot._show_motd(motd_bot, make_ctx())
-
-    assert motd_bot.motd_given == set()

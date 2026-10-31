@@ -11,10 +11,11 @@ from discord.ui import Button
 import errors
 from bot import InconnuBot
 from ctx import AppCtx
-from inconnu.macros.show import MacroPages, show
+from inconnu.macros.show import show
 from models import VChar
 from models.vchardocs import VCharMacro
 from tests.characters import gen_char
+from ui.views import PagedView
 
 AVATAR = "https://example.com/avatar.png"
 PROFILE_IMAGE = "https://example.com/profile.png"
@@ -73,7 +74,7 @@ def make_macro(name: str, **kwargs: Any) -> VCharMacro:
 class Screen:
     """What Discord currently shows for the macro list."""
 
-    view: MacroPages
+    view: PagedView
     ephemeral: bool
 
     @property

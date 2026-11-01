@@ -154,8 +154,8 @@ class CommandListener(commands.Cog):
             release_info = await changelog.fetch_changelog()
             if await self._should_see_changelog(ctx, command, vuser, release_info.tag):
                 note = (
-                    "-# Inconnu recently updated. You'll only see this once; "
-                    "use `/changelog` to see it again."
+                    f"-# {self.bot.me.mention} recently updated. You'll only "
+                    "see this once; use `/changelog` to see it again."
                 )
                 view = changelog.build_changelog(self.bot, release_info, note=note)
                 await ctx.respond(view=view, ephemeral=True)

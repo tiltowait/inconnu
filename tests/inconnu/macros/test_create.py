@@ -51,3 +51,21 @@ async def test_invalid_pool_shows_error(
 
     mock_error.assert_awaited_once()
     assert not character.macros
+
+
+async def test_empty_macro_refused(ctx: AppCtx, character: VChar, mock_error: AsyncMock):
+    """A macro with no pool and no Rouse Checks isn't made."""
+    await create(ctx, character, "test", "0", True, 0, 0, False, "no", False, None)
+
+    mock_error.assert_awaited_once()
+    assert "needs a pool or Rouse Checks" in str(mock_error.call_args.args[1])
+    assert not character.macros
+
+
+async def test_rouse_only_macro(ctx: AppCtx, character: VChar, mock_error: AsyncMock):
+    """A macro with Rouse Checks doesn't need a pool."""
+    with patch.object(VChar, "save", new_callable=AsyncMock):
+        await create(ctx, character, "test", "0", True, 0, 1, False, "no", False, None)
+
+    mock_error.assert_not_awaited()
+    assert character.find_macro("test").pool == []

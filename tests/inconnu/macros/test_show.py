@@ -83,38 +83,36 @@ class Screen:
         return self.view.to_components()
 
     @property
-    def container(self) -> list[dict[str, Any]]:
-        """The current page's items."""
-        assert self.components[0]["type"] == discord.ComponentType.container.value
-        return self.components[0]["components"]
+    def containers(self) -> list[dict[str, Any]]:
+        """The current page's macro containers."""
+        container = discord.ComponentType.container.value
+        return [item for item in self.components if item["type"] == container]
 
     @property
     def header(self) -> dict[str, Any]:
         """The page's header section."""
-        return self.container[0]
-
-    @property
-    def texts(self) -> list[str]:
-        """The page's text displays after the header."""
-        return [
-            item["content"]
-            for item in self.container[1:]
-            if item["type"] == discord.ComponentType.text_display.value
-        ]
+        return self.components[0]
 
     @property
     def macros(self) -> list[str]:
-        """The page's macro text displays."""
-        return [text for text in self.texts if text.startswith("### ")]
+        """The text of each macro container on the page."""
+        texts = []
+        for container in self.containers:
+            items = container["components"]
+            assert len(items) == 1
+            assert items[0]["type"] == discord.ComponentType.text_display.value
+            texts.append(items[0]["content"])
+        return texts
 
     @property
     def buttons(self) -> list[tuple[str | None, str | None, bool]] | None:
         """The page controls as (emoji, label, disabled), if shown."""
-        if len(self.components) < 2:
+        controls = self.components[-1]
+        if controls["type"] != discord.ComponentType.action_row.value:
             return None
         return [
             (button.get("emoji", {}).get("name"), button.get("label"), button["disabled"])
-            for button in self.components[1]["components"]
+            for button in controls["components"]
         ]
 
 
@@ -134,7 +132,7 @@ async def press(screen: Screen, emoji: str):
     index = emojis.index(emoji)
     assert not buttons[index][2], f"{emoji!r} is disabled"
 
-    button = cast(Button, screen.view.children[1].children[index])  # type: ignore[attr-defined]
+    button = cast(Button, screen.view.children[-1].children[index])  # type: ignore[attr-defined]
     inter = AsyncMock(spec=discord.Interaction)
     await button.callback(inter)
     inter.edit.assert_awaited_once_with(view=screen.view)
@@ -159,7 +157,6 @@ async def test_single_page(ctx: AppCtx, character: VChar):
     screen = await show_macros(ctx, character)
 
     assert screen.ephemeral
-    assert len(screen.components) == 1
     assert screen.buttons is None
     assert [text.splitlines()[0] for text in screen.macros] == ["### HUNT", "### BRAWL"]
 
@@ -173,10 +170,10 @@ async def test_header(ctx: AppCtx, character: VChar):
     assert header["type"] == discord.ComponentType.section.value
     text = header["components"][0]["content"]
     assert text.startswith("## Macros: Nadea Theron\n")
-    assert "**Roll:** </vm:1>" in text
-    assert "**Create:** </macro create:1>" in text
-    assert "**Update:** </macro update:1>" in text
-    assert "**Delete:** </macro delete:1>" in text
+    assert "Roll: </vm:1>" in text
+    assert "Create: </macro create:1>" in text
+    assert "Update: </macro update:1>" in text
+    assert "Delete: </macro delete:1>" in text
 
 
 async def test_thumbnail_avatar(ctx: AppCtx, character: VChar):
@@ -196,36 +193,33 @@ async def test_thumbnail_profile_image(ctx: AppCtx, character: VChar):
     assert screen.header["accessory"]["media"]["url"] == PROFILE_IMAGE
 
 
-async def test_separators_between_macros(ctx: AppCtx, character: VChar):
-    """Each macro is preceded by a separator."""
+async def test_container_per_macro(ctx: AppCtx, character: VChar):
+    """The header stands alone, and each macro has its own container."""
     character.macros = [make_macro("hunt"), make_macro("brawl")]
     screen = await show_macros(ctx, character)
-    types = [item["type"] for item in screen.container[1:]]
 
-    separator = discord.ComponentType.separator.value
-    text = discord.ComponentType.text_display.value
-    assert types[:4] == [separator, text, separator, text]
+    assert len(screen.components) == 3
+    assert len(screen.containers) == 2
 
 
 # Macro text
 
 
-async def test_macro_text(ctx: AppCtx, character: VChar):
-    """A macro without Rouse checks omits the Rouse details."""
-    character.macros = [make_macro("brawl", difficulty=3, comment="Punch")]
+async def test_macro_text_defaults(ctx: AppCtx, character: VChar):
+    """A macro with default settings shows only its pool."""
+    character.macros = [make_macro("brawl")]
     screen = await show_macros(ctx, character)
 
-    assert screen.macros == [
-        (
-            "### BRAWL\n"
-            "**Pool:** `strength brawl`\n"
-            "**Hunger:** `Yes`\n"
-            "**Difficulty:** `3`\n"
-            "**Rouse checks:** `0`\n"
-            "**Hunt:** `No`\n"
-            "**Comment:** `Punch`"
-        )
-    ]
+    assert screen.macros == ["### BRAWL\n`strength brawl`"]
+
+
+async def test_macro_text(ctx: AppCtx, character: VChar):
+    """Non-default settings go below the pool, and the comment below a blank
+    line."""
+    character.macros = [make_macro("brawl", difficulty=3, hunt=True, comment="Punch")]
+    screen = await show_macros(ctx, character)
+
+    assert screen.macros == ["### BRAWL\n`strength brawl`\nDifficulty 3 · Hunt\n-# \u200b\n-# Punch"]
 
 
 async def test_macro_text_with_rouses(ctx: AppCtx, character: VChar):
@@ -235,27 +229,24 @@ async def test_macro_text_with_rouses(ctx: AppCtx, character: VChar):
             "surge",
             pool=[],
             hunger=False,
-            rouses=1,
+            rouses=2,
             reroll_rouses=True,
             staining="apply",
-            hunt=True,
         )
     ]
     screen = await show_macros(ctx, character)
 
     assert screen.macros == [
-        (
-            "### SURGE\n"
-            "**Pool:** *None*\n"
-            "**Hunger:** `No`\n"
-            "**Difficulty:** `0`\n"
-            "**Rouse checks:** `1`\n"
-            "**Re-rolling Rouses:** `Yes`\n"
-            "**Staining:** `Yes`\n"
-            "**Hunt:** `Yes`\n"
-            "**Comment:** `None`"
-        )
+        "### SURGE\n2 Rouse Checks (rerolled) · Stains · No Hunger"
     ]
+
+
+async def test_macro_text_empty(ctx: AppCtx, character: VChar):
+    """A macro with no pool and default settings shows only its name."""
+    character.macros = [make_macro("nothing", pool=[])]
+    screen = await show_macros(ctx, character)
+
+    assert screen.macros == ["### NOTHING"]
 
 
 # Pagination
@@ -325,3 +316,17 @@ async def test_every_macro_shown_once(ctx: AppCtx, character: VChar):
 
     assert screen.buttons is not None, "20 macros should need several pages"
     assert seen == [f"### {name.upper()}" for name in names]
+
+
+async def test_macro_count_per_page(ctx: AppCtx, character: VChar):
+    """Short macros are capped at 10 per page, to stay within Discord's
+    component limit."""
+    character.macros = [make_macro(f"m{i}", pool=[]) for i in range(25)]
+    screen = await show_macros(ctx, character)
+
+    counts = [len(screen.macros)]
+    while screen.buttons is not None and not screen.buttons[2][2]:
+        await press(screen, NEXT)
+        counts.append(len(screen.macros))
+
+    assert counts == [10, 10, 5]

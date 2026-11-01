@@ -15,7 +15,7 @@ New to macros? Start with the [macros guide](../guides/macros.md).
 | Option | Description | Notes |
 | --- | --- | --- |
 | `name` | The macro's name | Letters and underscores; up to 50 characters |
-| `pool` | The roll's pool | Same syntax as [rolls](../guides/quickstart/rolling-with-traits.md); may be `0` |
+| `pool` | The roll's pool | Same syntax as [rolls](../guides/quickstart/rolling-with-traits.md); may be `0` if the macro makes Rouse Checks |
 | `hunger` | Whether to use the character's current Hunger | |
 | `difficulty` | The default Difficulty | Can be changed when rolling |
 | `rouses` | Rouse Checks to make when rolled | 0–5; default 0 |

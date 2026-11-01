@@ -62,3 +62,40 @@ async def test_invalid_pool_shows_error(
 
     mock_error.assert_awaited_once()
     assert character.find_macro("test").pool == ["Strength"]
+
+
+@pytest.fixture
+def rouse_only(character: VChar) -> VChar:
+    """The character, with a macro that only makes a Rouse Check."""
+    character.add_macro(
+        name="rouse",
+        pool=[],
+        hunger=True,
+        difficulty=0,
+        rouses=1,
+        reroll_rouses=False,
+        staining="no",
+        hunt=False,
+        comment=None,
+    )
+    return character
+
+
+async def test_emptying_macro_refused(ctx: AppCtx, rouse_only: VChar, mock_error: AsyncMock):
+    """Removing the Rouse Checks from a macro without a pool is refused."""
+    await update(ctx, rouse_only, "rouse", "rouses=0")
+
+    mock_error.assert_awaited_once()
+    assert "needs a pool or Rouse Checks" in str(mock_error.call_args.args[1])
+    assert rouse_only.find_macro("rouse").rouses == 1
+
+
+async def test_removing_rouses_with_pool(ctx: AppCtx, rouse_only: VChar, mock_error: AsyncMock):
+    """Removing the Rouse Checks is fine if the same update adds a pool."""
+    with patch.object(VChar, "save", new_callable=AsyncMock):
+        await update(ctx, rouse_only, "rouse", "rouses=0 pool=strength")
+
+    mock_error.assert_not_awaited()
+    macro = rouse_only.find_macro("rouse")
+    assert macro.rouses == 0
+    assert macro.pool == ["Strength"]

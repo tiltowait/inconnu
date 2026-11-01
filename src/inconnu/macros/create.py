@@ -17,14 +17,14 @@ async def create(
     ctx: AppCtx,
     character: VChar,
     name: str,
-    pool: str | list[str],
+    pool: str,
     hunger: bool,
     diff: int,
     rouses: int,
     reroll_rouses: bool,
     staining: str,
     hunt: bool,
-    comment: str,
+    comment: str | None,
 ):
     """Create a macro if the syntax is valid."""
     try:
@@ -44,15 +44,16 @@ async def create(
             return
 
         if pool != "0":
-            pool = inconnu.vr.RollParser(
+            pool_stack = inconnu.vr.RollParser(
                 character, pool, expand_only=True, power_bonus=False
             ).pool_stack
         else:
-            pool = []
+            pool_stack = []
+        macro_common.check_has_action(pool_stack, rouses)
 
         character.add_macro(
             name=name,
-            pool=pool,
+            pool=pool_stack,
             hunger=hunger,
             difficulty=diff,
             rouses=rouses,
@@ -67,7 +68,7 @@ async def create(
     except (
         SyntaxError,
         errors.AmbiguousTraitError,
-        errors.MacroAlreadyExistsError,
+        errors.MacroError,
         errors.RollError,
         errors.TraitNotFound,
     ) as err:

@@ -153,7 +153,8 @@ async def test_build_changelog_pages():
 def ctx() -> MockCtx:
     """The /changelog invocation."""
     ctx = MagicMock(spec=AppCtx)
-    ctx.respond = AsyncMock()  # A property on ApplicationContext, so the spec can't infer it
+    # A property on ApplicationContext, so the spec can't infer it
+    ctx.respond = AsyncMock()
     return ctx
 
 

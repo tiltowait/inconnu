@@ -1,24 +1,31 @@
 """Tests for interface/commandlistener.py's post-command steps."""
 
-from collections.abc import AsyncGenerator
-from datetime import UTC, datetime
+import asyncio
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from datetime import UTC, datetime, timedelta
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import discord
 import pytest
+from mongomock_motor import AsyncMongoMockClient
 
 import errors
 import interface.commandlistener as listener_module
 import services
 from bot import InconnuBot
 from ctx import AppCtx
+from inconnu.misc.changelog import ReleaseInfo
 from interface.commandlistener import CommandListener
-from models import VChar
+from models import VChar, VUser
+from ui.views import PagedView
 
 type MockCtx = MagicMock
 type MockChar = MagicMock
 
 CREATED_AT = datetime(2026, 10, 31, tzinfo=UTC)
+RELEASE = ReleaseInfo(tag="v2026.10.31", text="## Fixes\n- A fix", published_at=CREATED_AT)
 
 
 def make_ctx(command: str = "vr", options: dict[str, str] | None = None) -> MockCtx:
@@ -94,17 +101,24 @@ async def mock_char_mgr() -> AsyncGenerator[MagicMock]:
 
 
 async def test_steps_run_in_order(cog: CommandListener):
-    """Logging comes first, then the tip, then the MOTD."""
+    """Logging comes first, then a wait for the command's response, then the follow-ups."""
     calls = []
-    steps = ("_log_command", "_tip_unneeded_character_option", "_show_motd")
+    steps = ("_log_command", "_tip_unneeded_character_option", "_show_motd", "_show_changelog")
+
+    def record(name: str) -> AsyncMock:
+        """A mock that records its call."""
+        return AsyncMock(side_effect=lambda *_: calls.append(name))
+
     with (
-        patch.object(cog, steps[0], AsyncMock(side_effect=lambda *_: calls.append(steps[0]))),
-        patch.object(cog, steps[1], AsyncMock(side_effect=lambda *_: calls.append(steps[1]))),
-        patch.object(cog, steps[2], AsyncMock(side_effect=lambda *_: calls.append(steps[2]))),
+        patch.object(listener_module.asyncio, "sleep", record("sleep")),
+        patch.object(cog, steps[0], record(steps[0])),
+        patch.object(cog, steps[1], record(steps[1])),
+        patch.object(cog, steps[2], record(steps[2])),
+        patch.object(cog, steps[3], record(steps[3])),
     ):
         await cog.on_application_command(make_ctx())
 
-    assert calls == list(steps)
+    assert calls == [steps[0], "sleep", *steps[1:]]
 
 
 async def test_failed_step_doesnt_stop_the_rest(
@@ -113,7 +127,8 @@ async def test_failed_step_doesnt_stop_the_rest(
     """If logging fails, the MOTD is still shown."""
     mock_command_log.side_effect = RuntimeError("Database down")
     ctx = make_ctx()
-    await cog.on_application_command(ctx)
+    with patch.object(cog, "_show_changelog", AsyncMock()):
+        await cog.on_application_command(ctx)
 
     mock_cmd_replace_respond.assert_awaited_once_with(ctx, embed=cog.bot.motd, ephemeral=True)
 
@@ -264,3 +279,243 @@ async def test_motd_failure_not_recorded(cog: CommandListener, mock_cmd_replace_
     await cog._show_motd(make_ctx(), "vr")
 
     assert cog.bot.motd_given == set()
+
+
+# Changelog
+
+
+@pytest.fixture
+async def command_log() -> AsyncGenerator[Any]:
+    """An empty command log."""
+    collection = AsyncMongoMockClient().test.command_log
+    with patch.object(listener_module.db, "command_log", collection):
+        yield collection
+
+
+@pytest.fixture
+async def mock_fetch_changelog() -> AsyncGenerator[AsyncMock]:
+    """fetch_changelog(), patched to return RELEASE."""
+    with patch.object(
+        listener_module.changelog, "fetch_changelog", AsyncMock(return_value=RELEASE)
+    ) as mock:
+        yield mock
+
+
+@pytest.fixture
+async def changelog_ctx(command_log: Any) -> AsyncGenerator[MockCtx]:
+    """A returning user's command, with no VUser saved or cached."""
+    ctx = make_ctx()
+    # A property on ApplicationContext, so the spec can't infer it
+    ctx.respond = AsyncMock()
+    await command_log.insert_one({"user": ctx.user.id, "date": CREATED_AT - timedelta(days=1)})
+
+    VUser.get_or_fetch.cache_clear()
+    await VUser.find({"user": ctx.user.id}).delete()
+    yield ctx
+    VUser.get_or_fetch.cache_clear()
+    await VUser.find({"user": ctx.user.id}).delete()
+
+
+async def saved_version(ctx: MockCtx) -> str | None:
+    """The user's saved last_version_used, if they have a VUser."""
+    vuser = await VUser.find_one({"user": ctx.user.id})
+    return vuser.last_version_used if vuser is not None else None
+
+
+def changelog_shown(ctx: MockCtx) -> bool:
+    """Whether the changelog was sent to the user."""
+    if not ctx.respond.await_count:
+        return False
+    ctx.respond.assert_awaited_once()
+    kwargs = ctx.respond.await_args.kwargs
+    assert kwargs["ephemeral"]
+    assert isinstance(kwargs["view"], PagedView)
+    return True
+
+
+async def test_changelog_shown_to_returning_user(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+):
+    """A returning user without a VUser sees the changelog, and their version is saved."""
+    await cog._show_changelog(changelog_ctx, "vr")
+
+    assert changelog_shown(changelog_ctx)
+    assert await saved_version(changelog_ctx) == RELEASE.tag
+
+
+async def test_changelog_shown_after_update(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+):
+    """A user who saw an older release sees the new one, and their settings are kept."""
+    vuser = VUser(user=changelog_ctx.user.id, last_version_used="v2026.01.01")
+    vuser.settings.accessibility = True
+    await vuser.save()
+
+    await cog._show_changelog(changelog_ctx, "vr")
+
+    assert changelog_shown(changelog_ctx)
+    saved = await VUser.find_one({"user": changelog_ctx.user.id})
+    assert saved is not None
+    assert saved.last_version_used == RELEASE.tag
+    assert saved.settings.accessibility
+
+
+async def test_changelog_shown_once(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+):
+    """A user sees each release's changelog only once, even after leaving the cache."""
+    await cog._show_changelog(changelog_ctx, "vr")
+    VUser.get_or_fetch.cache_clear()
+    await cog._show_changelog(changelog_ctx, "vr")
+
+    changelog_ctx.respond.assert_awaited_once()
+
+
+@pytest.mark.parametrize(
+    "user_id,offset",
+    [
+        (1, timedelta(0)),  # The triggering command, already logged
+        (2, -timedelta(days=1)),  # Someone else's command
+    ],
+)
+async def test_changelog_not_shown_to_new_user(
+    cog: CommandListener,
+    changelog_ctx: MockCtx,
+    command_log: Any,
+    mock_fetch_changelog: AsyncMock,
+    user_id: int,
+    offset: timedelta,
+):
+    """A user whose first command this is doesn't see it, but their version is saved."""
+    await command_log.delete_many({})
+    await command_log.insert_one({"user": user_id, "date": CREATED_AT + offset})
+
+    await cog._show_changelog(changelog_ctx, "vr")
+
+    assert not changelog_shown(changelog_ctx)
+    assert await saved_version(changelog_ctx) == RELEASE.tag
+
+
+async def test_changelog_not_shown_after_changelog_command(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+):
+    """Running /changelog doesn't show it twice, but counts as seeing it."""
+    await cog._show_changelog(changelog_ctx, "changelog")
+
+    assert not changelog_shown(changelog_ctx)
+    assert await saved_version(changelog_ctx) == RELEASE.tag
+
+
+async def test_changelog_fetch_failure(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+):
+    """Nothing is shown or saved if the changelog can't be fetched."""
+    mock_fetch_changelog.side_effect = aiohttp.ClientError()
+    await cog._show_changelog(changelog_ctx, "vr")
+
+    assert not changelog_shown(changelog_ctx)
+    assert await saved_version(changelog_ctx) is None
+
+
+async def test_changelog_retried_after_fetch_failure(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+):
+    """A failed fetch doesn't stop the user seeing the changelog later."""
+    mock_fetch_changelog.side_effect = [aiohttp.ClientError(), RELEASE]
+    await cog._show_changelog(changelog_ctx, "vr")
+    await cog._show_changelog(changelog_ctx, "vr")
+
+    assert changelog_shown(changelog_ctx)
+
+
+async def test_changelog_retried_after_error(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+):
+    """An unexpected error doesn't stop the user seeing the changelog later."""
+    changelog_ctx.respond.side_effect = [
+        discord.HTTPException(MagicMock(status=500), "Failed"),
+        None,
+    ]
+    with pytest.raises(discord.HTTPException):
+        await cog._show_changelog(changelog_ctx, "vr")
+    await cog._show_changelog(changelog_ctx, "vr")
+
+    assert changelog_ctx.respond.await_count == 2
+
+
+async def test_changelog_retried_after_vuser_lookup_error(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+):
+    """A failed VUser lookup doesn't stop the user seeing the changelog later."""
+    with (
+        patch.object(VUser, "get_or_fetch", AsyncMock(side_effect=RuntimeError("DB down"))),
+        pytest.raises(RuntimeError),
+    ):
+        await cog._show_changelog(changelog_ctx, "vr")
+    await cog._show_changelog(changelog_ctx, "vr")
+
+    assert changelog_shown(changelog_ctx)
+
+
+def blocking_fetch(release: asyncio.Event) -> Callable[[], Awaitable[ReleaseInfo]]:
+    """A fetch_changelog() that waits for the event."""
+
+    async def fetch() -> ReleaseInfo:
+        await release.wait()
+        return RELEASE
+
+    return fetch
+
+
+async def test_changelog_shown_once_for_simultaneous_commands(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+):
+    """A second command while the first is showing it doesn't show it again."""
+    responding = asyncio.Event()
+    release = asyncio.Event()
+
+    async def respond(**_: Any):
+        """Hold the first command mid-response, before it saves the version."""
+        responding.set()
+        await release.wait()
+
+    changelog_ctx.respond.side_effect = respond
+    first = asyncio.create_task(cog._show_changelog(changelog_ctx, "vr"))
+    await responding.wait()
+
+    # Without the guard, the second would also block in respond()
+    second = asyncio.create_task(cog._show_changelog(changelog_ctx, "vr"))
+    await asyncio.wait({second}, timeout=1)
+    release.set()
+    await asyncio.gather(first, second)
+
+    changelog_ctx.respond.assert_awaited_once()
+
+
+async def test_simultaneous_commands_from_other_users(
+    cog: CommandListener,
+    changelog_ctx: MockCtx,
+    command_log: Any,
+    mock_fetch_changelog: AsyncMock,
+):
+    """One user's pending changelog doesn't hold up another's."""
+    other = make_ctx()
+    other.user.id = 2
+    # A property on ApplicationContext, so the spec can't infer it
+    other.respond = AsyncMock()
+    await command_log.insert_one({"user": 2, "date": CREATED_AT - timedelta(days=1)})
+    await VUser.find({"user": 2}).delete()
+
+    release = asyncio.Event()
+    mock_fetch_changelog.side_effect = blocking_fetch(release)
+
+    first = asyncio.create_task(cog._show_changelog(changelog_ctx, "vr"))
+    await asyncio.sleep(0)  # Let the first reach the fetch
+    second = asyncio.create_task(cog._show_changelog(other, "vr"))
+    await asyncio.sleep(0)
+    release.set()
+    await asyncio.gather(first, second)
+
+    assert changelog_shown(changelog_ctx)
+    assert changelog_shown(other)
+    await VUser.find({"user": 2}).delete()

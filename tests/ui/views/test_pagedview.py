@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
-from discord.ui import Button, Container, TextDisplay
+from discord.ui import Button, Container, Section, TextDisplay
 
 import services  # noqa: F401 - must load before ui (circular import via utils)
 from ui.views import PagedView
@@ -114,6 +114,23 @@ async def test_multi_item_pages():
     ]
     assert components[0]["content"] == "Title 2"
     assert components[1]["components"][0]["content"] == "Body 2"
+
+
+async def test_timeout_disables_only_controls():
+    """Timing out disables the page controls but leaves page content usable."""
+    link = Button(label="Link", url="https://example.com")
+    pages = [[Section(TextDisplay(f"Page {i}"), accessory=link)] for i in range(2)]
+    view = PagedView(pages)
+    await view.on_timeout()
+
+    assert not link.disabled
+    assert buttons(view) == [(PREV, None, True), (None, "1/2", True), (NEXT, None, True)]
+
+
+async def test_single_page_not_edited_on_timeout():
+    """A single page has no controls, so timing out leaves it alone."""
+    assert not make_view(1).disable_on_timeout
+    assert make_view(2).disable_on_timeout
 
 
 async def test_press_refreshes_parent():

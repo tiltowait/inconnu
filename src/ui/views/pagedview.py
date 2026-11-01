@@ -1,6 +1,7 @@
 """views/pagedview.py - A components v2 paginator."""
 
 from collections.abc import Sequence
+from typing import Self
 
 import discord
 from discord.ui import ActionRow, Button, ViewItem
@@ -23,7 +24,8 @@ class PagedView(discord.ui.DesignerView):
         if not pages:
             raise ValueError("PagedView needs at least one page")
 
-        super().__init__(timeout=timeout, disable_on_timeout=True)
+        # A single page has no controls to disable
+        super().__init__(timeout=timeout, disable_on_timeout=len(pages) > 1)
         self.pages = pages
         self.author = author
         self.current = 0
@@ -47,6 +49,13 @@ class PagedView(discord.ui.DesignerView):
             self.next_button.disabled = self.current == len(self.pages) - 1
             self.page_button.label = f"{self.current + 1}/{len(self.pages)}"
             self.add_item(ActionRow(self.prev_button, self.page_button, self.next_button))
+
+    def disable_all_items(self, *, exclusions: list[ViewItem] | None = None) -> Self:
+        """Disable the page controls. The page content, such as link buttons,
+        stays usable."""
+        controls = (self.prev_button, self.page_button, self.next_button)
+        content = [item for item in self.walk_children() if item not in controls]
+        return super().disable_all_items(exclusions=content + (exclusions or []))
 
     async def _turn(self, interaction: discord.Interaction, offset: int):
         """Move by the offset and redraw."""

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 RELEASES_URL = "https://github.com/tiltowait/inconnu/releases"
-PAGE_SIZE = 3800  # Smaller than max limit of 4000 to allow for the title
+PAGE_SIZE = 3700  # Leaves room for the title, date, and note within 4000
 
 
 class ReleaseInfo(NamedTuple):

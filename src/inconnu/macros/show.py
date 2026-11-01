@@ -2,8 +2,7 @@
 
 from typing import NamedTuple
 
-import discord
-from discord.ui import Button, Container, Separator, TextDisplay, Thumbnail
+from discord.ui import Container, Separator, TextDisplay, Thumbnail
 
 import errors
 import ui
@@ -22,48 +21,6 @@ class MacroField(NamedTuple):
 
     name: str
     value: str
-
-
-class MacroPages(discord.ui.DesignerView):
-    """A paginated display of macros, one container per page."""
-
-    def __init__(self, pages: list[Container]):
-        super().__init__(timeout=300, disable_on_timeout=True)
-        self.pages = pages
-        self.current = 0
-
-        self.prev_button = Button(emoji="◀️", style=discord.ButtonStyle.secondary)
-        self.prev_button.callback = self.prev_page
-        self.page_button = Button(style=discord.ButtonStyle.secondary, disabled=True)
-        self.next_button = Button(emoji="▶️", style=discord.ButtonStyle.secondary)
-        self.next_button.callback = self.next_page
-
-        self._render()
-
-    def _render(self):
-        """Show the current page and, if there are several, the page controls."""
-        self.clear_items()
-        self.add_item(self.pages[self.current])
-
-        if len(self.pages) > 1:
-            self.prev_button.disabled = self.current == 0
-            self.next_button.disabled = self.current == len(self.pages) - 1
-            self.page_button.label = f"{self.current + 1}/{len(self.pages)}"
-            self.add_item(
-                discord.ui.ActionRow(self.prev_button, self.page_button, self.next_button)
-            )
-
-    async def prev_page(self, interaction: discord.Interaction):
-        """Go to the previous page."""
-        self.current -= 1
-        self._render()
-        await interaction.edit(view=self)
-
-    async def next_page(self, interaction: discord.Interaction):
-        """Go to the next page."""
-        self.current += 1
-        self._render()
-        await interaction.edit(view=self)
 
 
 def _has_macros(character: VChar):
@@ -115,9 +72,9 @@ async def __display_macros(ctx: AppCtx, character: VChar, macros):
             container.add_item(Separator())
             container.add_item(TextDisplay(f"### {field.name}\n{field.value}"))
 
-        _pages.append(container)
+        _pages.append([container])
 
-    await ctx.respond(view=MacroPages(_pages), ephemeral=True)
+    await ctx.respond(view=ui.views.PagedView(_pages), ephemeral=True)
 
 
 def __generate_fields(macros):

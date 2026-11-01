@@ -22,6 +22,7 @@ class VUser(Document):
 
     user: int
     settings: VUserSettings = Field(default_factory=VUserSettings)
+    last_version_used: str = ""
 
     @classmethod
     @alru_cache(maxsize=1024)

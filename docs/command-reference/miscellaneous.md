@@ -20,6 +20,8 @@ Looks up the effects of a Blood Potency rating (1–10).
 
 Shows **Inconnu's** most recent changes. Only you see it unless you set `hidden:False`.
 
+After an update, **Inconnu** also shows you the new changelog once, privately, after your next command. It skips this if you've never used **Inconnu** before.
+
 ## Coin Flip
 
 ```

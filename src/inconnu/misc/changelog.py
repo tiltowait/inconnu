@@ -1,44 +1,94 @@
 """Fetch and display changelog from GitHub."""
 
+import re
+from datetime import datetime
+from typing import TYPE_CHECKING, NamedTuple
+
 import aiohttp
-import discord
+from async_lru import alru_cache
+from discord.ui import Button, Container, Section, TextDisplay
+from discord.utils import format_dt
 
 import ui
 from config import settings
 from ctx import AppCtx
+from utils import re_paginate
+from utils.cmdreplace import mention_commands
 
-CHANGELOG = "https://github.com/tiltowait/inconnu/releases/latest"
+if TYPE_CHECKING:
+    from bot import InconnuBot
+
+RELEASES_URL = "https://github.com/tiltowait/inconnu/releases"
+PAGE_SIZE = 3700  # Leaves room for the title, date, and note within 4000
+
+
+class ReleaseInfo(NamedTuple):
+    """Inconnu release data."""
+
+    tag: str
+    text: str
+    published_at: datetime
+
+
+def compact_text(text: str) -> str:
+    """Remove extra newlines between headings."""
+    text = text.replace("\r\n", "\n")
+    compact = re.sub(r"^(#+ .*)\n{2,}", r"\1\n", text, flags=re.MULTILINE)
+    tight = re.sub(r"\n{2,}(#+ )", r"\n\1", compact)
+
+    return tight
+
+
+def split_sections(text: str) -> list[str]:
+    """Split changelog sections (delimited by "##") into separate parts."""
+    compacted = compact_text(text)
+    parts = re.split(r"\n(?=## )", compacted)
+    return parts
+
+
+def build_changelog(
+    bot: InconnuBot, release: ReleaseInfo, note: str | None = None
+) -> ui.views.PagedView:
+    """Build the paginated changelog, one container per section. The optional
+    note goes beside each page's releases link. `/command` text in either
+    becomes a command mention."""
+    # Mentions are longer than the text they replace, so substitute them
+    # before paginating
+    text = mention_commands(bot, compact_text(release.text)) or ""
+    if not text.strip():
+        text = "*No release notes.*"  # Discord rejects empty text displays
+    note = mention_commands(bot, note)
+
+    pages = []
+    for page in re_paginate([text], page_len=PAGE_SIZE):
+        pages.append(
+            [
+                TextDisplay(f"# Inconnu {release.tag}"),
+                TextDisplay(f"-# Released {format_dt(release.published_at, 'D')}"),
+                *(Container(TextDisplay(section)) for section in split_sections(page)),
+                Section(
+                    TextDisplay(note or "\u200b"),  # Sections need text
+                    accessory=Button(label="All releases", url=RELEASES_URL),
+                ),
+            ]
+        )
+
+    return ui.views.PagedView(pages)
 
 
 async def show_changelog(ctx: AppCtx, hidden: bool):
     """Display Inconnu's changelog."""
     try:
-        tag, changelog = await fetch_changelog()
-        paginator = discord.ext.commands.Paginator(prefix="", suffix="", max_size=4000)
-
-        for line in changelog.split("\n"):
-            paginator.add_line(line)
-
-        embeds = []
-        for page in paginator.pages:
-            embed = discord.Embed(title=f"Inconnu {tag}", description=page, url=CHANGELOG)
-            embed.set_thumbnail(url=ctx.bot.me.display_avatar)
-            embeds.append(embed)
-
-        show_buttons = len(embeds) > 1
-        paginator = discord.ext.pages.Paginator(
-            embeds,
-            author_check=False,
-            show_disabled=show_buttons,
-            show_indicator=show_buttons,
-        )
-        await paginator.respond(ctx.interaction, ephemeral=hidden)
-
+        release = await fetch_changelog()
     except aiohttp.ClientError, KeyError:
         await ui.embeds.error(ctx, "Unable to fetch changelog.")
+        return
+
+    await ctx.respond(view=build_changelog(ctx.bot, release), ephemeral=hidden)
 
 
-async def fetch_changelog() -> tuple[str, str]:
+@alru_cache(ttl=3600)
+async def fetch_changelog() -> ReleaseInfo:
     """Fetch the changelog from GitHub."""
     token = settings.github_token
     header = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
@@ -48,4 +98,8 @@ async def fetch_changelog() -> tuple[str, str]:
             "https://api.github.com/repos/tiltowait/inconnu/releases/latest"
         ) as res:
             json = await res.json()
-            return json["tag_name"], json["body"]
+            return ReleaseInfo(
+                tag=json["tag_name"],
+                text=json["body"] or "",  # null if the release has no notes
+                published_at=datetime.fromisoformat(json["published_at"]),
+            )

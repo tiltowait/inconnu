@@ -7,7 +7,6 @@ from loguru import logger
 
 from config import settings
 from ctx import AppCtx, AppInvocation
-from services import premium
 
 
 def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None):
@@ -32,6 +31,11 @@ def is_admin(ctx: AppInvocation | discord.Interaction):
     return ctx.channel.permissions_for(user).administrator
 
 
+def has_supporter_role(member: discord.Member) -> bool:
+    """Whether the member has the supporter role."""
+    return member.get_role(settings.supporter_role) is not None
+
+
 async def get_or_fetch_supporter(ctx: AppCtx, user: discord.Member | discord.User | None) -> bool:
     """Returns True if the user or invoking user is a supporter."""
     user = user or ctx.user
@@ -41,13 +45,13 @@ async def get_or_fetch_supporter(ctx: AppCtx, user: discord.Member | discord.Use
     if guild:
         member = guild.get_member(user.id)
         if member:
-            return premium.is_supporter(member)
+            return has_supporter_role(member)
 
     # Fallback: Use the API instead of the cache
     guild = await ctx.bot.fetch_guild(settings.supporter_guild)
     member = await guild.fetch_member(user.id)
     if member:
-        return premium.is_supporter(member)
+        return has_supporter_role(member)
 
     return False
 
@@ -72,7 +76,7 @@ def is_supporter(ctx: AppInvocation, user: discord.Member | discord.User | None 
     # First, see if the invoker is on the support server
     if (member := support_server.get_member(user.id)) is not None:
         logger.debug("SUPPORTER: {} is on {}", user.name, support_server.name)
-        if premium.is_supporter(member):
+        if has_supporter_role(member):
             logger.debug("SUPPORTER: {} is a supporter", user.name)
             return True
         logger.debug("SUPPORTER: {} is a not a supporter", user.name)

@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import NamedTuple
 
 import aiohttp
+from async_lru import alru_cache
 from discord.ui import Button, Container, Section, TextDisplay
 from discord.utils import format_dt
 
@@ -71,6 +72,7 @@ async def show_changelog(ctx: AppCtx, hidden: bool):
     await ctx.respond(view=build_changelog(release), ephemeral=hidden)
 
 
+@alru_cache(ttl=3600)
 async def fetch_changelog() -> ReleaseInfo:
     """Fetch the changelog from GitHub."""
     token = settings.github_token

@@ -1,5 +1,5 @@
-"""interface/commandlistener.py - Log commands and follow them with tips, the MOTD, and the
-changelog."""
+"""interface/commandlistener.py - Log commands and follow them with tips, any
+lockdown warning, the MOTD, and the changelog."""
 
 import asyncio
 from collections.abc import Awaitable, Callable
@@ -17,6 +17,7 @@ from ctx import AppCtx
 from inconnu.misc import changelog
 from models import VUser
 from utils import cmd_replace_respond, command_options, raw_command_options
+from utils.decorators import blocked_on_lockdown
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -36,10 +37,13 @@ CHARACTER_OPTION_REQUIRED = frozenset(
 )
 # Commands that shouldn't show the MOTD
 MOTD_EXEMPT = frozenset({"motd", "announce"})
+# Commands that shouldn't show the lockdown warning
+LOCKDOWN_EXEMPT = frozenset({"lockdown start"})
 
 
 class CommandListener(commands.Cog):
-    """Runs after every command: logs it, then shows any tips, the MOTD, and the changelog."""
+    """Runs after every command: logs it, then shows any tips, lockdown warning, MOTD, and
+    changelog."""
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot
@@ -58,6 +62,7 @@ class CommandListener(commands.Cog):
 
         for step in (
             self._tip_unneeded_character_option,
+            self._warn_lockdown,
             self._show_motd,
             self._show_changelog,
         ):
@@ -124,6 +129,24 @@ class CommandListener(commands.Cog):
             f"the `character` option for `/{command}`."
         )
         await cmd_replace_respond(ctx, tip, ephemeral=True)
+
+    async def _warn_lockdown(self, ctx: AppCtx, command: str):
+        """Warn the user of an upcoming shutdown. Commands the lockdown blocks
+        already explain it."""
+        lockdown = self.bot.lockdown
+        if lockdown is None or ctx.command is None or command in LOCKDOWN_EXEMPT:
+            return
+        if blocked_on_lockdown(ctx.command):
+            # These are warned with a custom message in the error reporter.
+            return
+
+        notice = lockdown.notice(self.bot.me.display_name)
+        embed = discord.Embed(
+            title="Heads up",
+            description=f"{notice} Some commands will be unavailable.",
+            color=discord.Color.yellow(),
+        )
+        await ctx.respond(embed=embed, ephemeral=True)
 
     async def _show_motd(self, ctx: AppCtx, command: str):
         """Show the MOTD once per user."""

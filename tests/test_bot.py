@@ -1,6 +1,7 @@
 """Tests for bot setup and event handlers."""
 
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -11,6 +12,7 @@ import bot as bot_module
 from bot import InconnuBot
 from models import RPPost
 from services import WebhookCache
+from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
 
 # Fixtures
 
@@ -49,6 +51,26 @@ def test_webhook_cache_before_connect(mock_bot: MagicMock):
     mock_bot._webhook_cache = None
     with pytest.raises(RuntimeError):
         InconnuBot.webhook_cache.__get__(mock_bot)
+
+
+# Lockdown
+
+
+def test_start_lockdown(mock_bot: MagicMock):
+    """A lockdown records its reason and schedules the shutdown LOCKDOWN_DELAY out."""
+    now = datetime(2026, 11, 1, 12, tzinfo=UTC)
+    with patch.object(bot_module.discord.utils, "utcnow", return_value=now):
+        lockdown = InconnuBot.start_lockdown(mock_bot, LockdownReason.UPDATE)
+
+    assert lockdown == Lockdown(LockdownReason.UPDATE, now + LOCKDOWN_DELAY)
+    assert mock_bot.lockdown is lockdown
+
+
+def test_end_lockdown(mock_bot: MagicMock):
+    """Ending a lockdown clears it."""
+    InconnuBot.start_lockdown(mock_bot, LockdownReason.MAINTENANCE)
+    InconnuBot.end_lockdown(mock_bot)
+    assert mock_bot.lockdown is None
 
 
 # Rolepost reply pings

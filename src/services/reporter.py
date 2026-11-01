@@ -1,7 +1,6 @@
 """An error reporter."""
 
 import traceback
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
@@ -14,6 +13,7 @@ import errors
 import ui
 from config import settings
 from ctx import AppInvocation
+from services.lockdown import Lockdown
 from services.log import report_database_error
 from utils.urls import docs_url
 
@@ -111,7 +111,7 @@ class ErrorReporter:
                     f"Sorry, only {ctx.bot.me.mention}'s owner may issue this command!",
                     ephemeral=True,
                 )
-            case errors.LockdownError() if ctx.bot.lockdown:
+            case errors.LockdownError() if ctx.bot.lockdown is not None:
                 await self._report_lockdown(ctx, ctx.bot.lockdown)
             case errors.InvalidAttachment():
                 await ui.embeds.error(ctx, str(error), title="Invalid file")
@@ -147,13 +147,11 @@ class ErrorReporter:
             help=docs_url("premium/character-images"),
         )
 
-    async def _report_lockdown(self, ctx: AppInvocation, lockdown: datetime):
-        """Tell the user when maintenance is scheduled."""
-        timestamp = discord.utils.format_dt(lockdown, "R")
-        err = f"{ctx.bot.me.mention} is undergoing maintenance {timestamp}."
+    async def _report_lockdown(self, ctx: AppInvocation, lockdown: Lockdown):
+        """Tell the user why and when the bot is going down."""
         embed = ui.embeds.ErrorEmbed(
             ctx.user,
-            err,
+            lockdown.notice(ctx.bot.me.display_name),
             title="Command temporarily unavailable",
             footer="Sorry for any inconvenience.",
         )

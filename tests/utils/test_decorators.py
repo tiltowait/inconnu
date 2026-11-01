@@ -7,8 +7,10 @@ import discord
 import pytest
 
 import errors
+from bot import InconnuBot
 from ctx import AppCtx
-from utils.decorators import _format_size, attachment
+from services.lockdown import Lockdown
+from utils.decorators import _format_size, attachment, blocked_on_lockdown, not_on_lockdown
 
 
 def make_ctx(*files: tuple[str, int]) -> AppCtx:
@@ -81,3 +83,38 @@ async def test_no_attachments():
 )
 def test_format_size(size: int, expected: str):
     assert _format_size(size) == expected
+
+
+# Lockdown
+
+
+def make_command(locked: bool) -> discord.SlashCommand:
+    """A slash command, with or without the lockdown check."""
+
+    async def callback(ctx: AppCtx):
+        """A command body."""
+
+    if locked:
+        callback = not_on_lockdown()(callback)
+    return discord.SlashCommand(callback, name="test", description="A test command")
+
+
+@pytest.mark.parametrize("locked", [True, False])
+def test_blocked_on_lockdown(locked: bool):
+    """Only commands with the lockdown check are blocked."""
+    assert blocked_on_lockdown(make_command(locked)) is locked
+
+
+def test_lockdown_check():
+    """The lockdown check raises during a lockdown and passes otherwise."""
+    (check,) = make_command(locked=True).checks
+    ctx = MagicMock(spec=AppCtx)
+    ctx.bot = MagicMock(spec=InconnuBot)
+    ctx.user = MagicMock(spec=discord.Member)
+    ctx.guild = None
+    ctx.bot.lockdown = None
+    assert check(ctx)
+
+    ctx.bot.lockdown = MagicMock(spec=Lockdown)
+    with pytest.raises(errors.LockdownError):
+        check(ctx)

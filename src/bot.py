@@ -1,6 +1,5 @@
 """Bot instance and event handlers."""
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -16,6 +15,7 @@ from config import settings
 from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
+from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
 from services.reporter import reporter
 
 
@@ -27,7 +27,7 @@ class InconnuBot(discord.AutoShardedBot):
         self.persistent_views_added = False
         self.welcomed = False
         self.connected = False
-        self.lockdown: datetime | None = None
+        self.lockdown: Lockdown | None = None
         self.motd: discord.Embed | None = None
         self.motd_given: set[int] = set()
         self._webhook_cache: WebhookCache | None = None
@@ -85,6 +85,15 @@ class InconnuBot(discord.AutoShardedBot):
             ),
             scopes=("applications.commands", "bot"),
         )
+
+    def start_lockdown(self, reason: LockdownReason) -> Lockdown:
+        """Lock the bot down ahead of a shutdown in LOCKDOWN_DELAY."""
+        self.lockdown = Lockdown(reason, discord.utils.utcnow() + LOCKDOWN_DELAY)
+        return self.lockdown
+
+    def end_lockdown(self):
+        """Remove the lockdown."""
+        self.lockdown = None
 
     def set_motd(self, embed: discord.Embed | None):
         """Set the MOTD embed."""

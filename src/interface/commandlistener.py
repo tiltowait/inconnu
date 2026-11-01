@@ -153,12 +153,11 @@ class CommandListener(commands.Cog):
             vuser = await VUser.get_or_fetch(ctx.user.id)
             release_info = await changelog.fetch_changelog()
             if await self._should_see_changelog(ctx, command, vuser, release_info.tag):
-                mention = self.bot.cmd_mention("changelog") or "`/changelog`"
                 note = (
                     "-# Inconnu recently updated. You'll only see this once; "
-                    f"use {mention} to see it again."
+                    "use `/changelog` to see it again."
                 )
-                view = changelog.build_changelog(release_info, note=note)
+                view = changelog.build_changelog(self.bot, release_info, note=note)
                 await ctx.respond(view=view, ephemeral=True)
 
             # Regardless of whether they're shown the changelog, we save the

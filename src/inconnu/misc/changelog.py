@@ -2,7 +2,7 @@
 
 import re
 from datetime import datetime
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import aiohttp
 from async_lru import alru_cache
@@ -13,6 +13,10 @@ import ui
 from config import settings
 from ctx import AppCtx
 from utils import re_paginate
+from utils.cmdreplace import mention_commands
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 RELEASES_URL = "https://github.com/tiltowait/inconnu/releases"
 PAGE_SIZE = 3800  # Smaller than max limit of 4000 to allow for the title
@@ -42,11 +46,19 @@ def split_sections(text: str) -> list[str]:
     return parts
 
 
-def build_changelog(release: ReleaseInfo, note: str | None = None) -> ui.views.PagedView:
+def build_changelog(
+    bot: InconnuBot, release: ReleaseInfo, note: str | None = None
+) -> ui.views.PagedView:
     """Build the paginated changelog, one container per section. The optional
-    note goes beside each page's releases link."""
+    note goes beside each page's releases link. `/command` text in either
+    becomes a command mention."""
+    # Mentions are longer than the text they replace, so substitute them
+    # before paginating
+    text = mention_commands(bot, compact_text(release.text)) or ""
+    note = mention_commands(bot, note)
+
     pages = []
-    for page in re_paginate([compact_text(release.text)], page_len=PAGE_SIZE):
+    for page in re_paginate([text], page_len=PAGE_SIZE):
         pages.append(
             [
                 TextDisplay(f"# Inconnu {release.tag}"),
@@ -70,7 +82,7 @@ async def show_changelog(ctx: AppCtx, hidden: bool):
         await ui.embeds.error(ctx, "Unable to fetch changelog.")
         return
 
-    await ctx.respond(view=build_changelog(release), ephemeral=hidden)
+    await ctx.respond(view=build_changelog(ctx.bot, release), ephemeral=hidden)
 
 
 @alru_cache(ttl=3600)

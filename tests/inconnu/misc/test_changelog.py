@@ -8,6 +8,7 @@ import aiohttp
 import discord
 import pytest
 
+from bot import InconnuBot
 from ctx import AppCtx
 from inconnu.misc.changelog import (
     PAGE_SIZE,
@@ -21,7 +22,9 @@ from inconnu.misc.changelog import (
 from ui.views import PagedView
 
 PUBLISHED = datetime(2026, 10, 31, tzinfo=UTC)
+COMMANDS = {"vr", "changelog"}
 
+type MockBot = MagicMock
 type MockCtx = MagicMock
 
 
@@ -83,6 +86,18 @@ def test_split_sections_no_headings():
 # build_changelog
 
 
+def mention(name: str) -> str:
+    """A realistic command mention, much longer than `/name`."""
+    return f"</{name}:1234567890123456789>"
+
+
+def make_bot() -> MockBot:
+    """A bot that knows the COMMANDS."""
+    bot = MagicMock(spec=InconnuBot)
+    bot.cmd_mention.side_effect = lambda name: mention(name) if name in COMMANDS else None
+    return bot
+
+
 def make_release(text: str) -> ReleaseInfo:
     """Make a release with the given notes."""
     return ReleaseInfo(tag="v2026.10.31", text=text, published_at=PUBLISHED)
@@ -109,7 +124,7 @@ def section_texts(view: PagedView) -> list[str]:
 async def test_build_changelog_layout():
     """The title and date lead, each section is its own container, and the
     releases link comes last."""
-    view = build_changelog(make_release("## Fixes\n\n- A fix\n\n## Features\n\n- A feature"))
+    view = build_changelog(make_bot(), make_release("## Fixes\n\n- A fix\n\n## Features\n\n- A feature"))
     items = page_items(view)
 
     assert [item["type"] for item in items] == [
@@ -130,7 +145,7 @@ async def test_build_changelog_pages():
     """Long notes are split across pages, each with the title and link, in order."""
     lines = [f"- Fix {i:03} " + "x" * 90 for i in range(100)]
     text = "## Fixes\n" + "\n".join(lines[:50]) + "\n## Features\n" + "\n".join(lines[50:])
-    view = build_changelog(make_release(text))
+    view = build_changelog(make_bot(), make_release(text))
 
     assert len(view.pages) > 1
     shown = []
@@ -151,7 +166,7 @@ async def test_build_changelog_pages():
 async def test_build_changelog_note():
     """A note goes beside the releases link on every page."""
     text = "## Fixes\n" + "\n".join(f"- Fix {i:03} " + "x" * 90 for i in range(100))
-    view = build_changelog(make_release(text), note="-# A note")
+    view = build_changelog(make_bot(), make_release(text), note="-# A note")
 
     assert len(view.pages) > 1
     for index in range(len(view.pages)):
@@ -162,6 +177,32 @@ async def test_build_changelog_note():
         assert link["accessory"]["url"] == RELEASES_URL
 
 
+
+async def test_build_changelog_mentions():
+    """`/command` text in the notes and the note becomes a mention."""
+    text = "## Fixes\n- `/vr` rolls correctly\n- `/unknown` is left alone"
+    view = build_changelog(make_bot(), make_release(text), note="Use `/changelog`")
+    items = page_items(view)
+
+    assert section_texts(view) == [
+        f"## Fixes\n- {mention('vr')} rolls correctly\n- `/unknown` is left alone"
+    ]
+    assert items[-1]["components"][0]["content"] == f"Use {mention('changelog')}"
+
+
+async def test_build_changelog_pages_fit_mentions():
+    """Pages are sized after mentions are substituted, so they stay in bounds."""
+    text = "## Fixes\n" + "\n".join(f"- Use `/vr` {i:03} " + "x" * 20 for i in range(200))
+    view = build_changelog(make_bot(), make_release(text))
+
+    for index in range(len(view.pages)):
+        if index > 0:
+            await view.next_page(AsyncMock(spec=discord.Interaction))
+        texts = section_texts(view)
+        assert sum(map(len, texts)) <= PAGE_SIZE
+        assert all("`/vr`" not in text for text in texts)
+
+
 # show_changelog
 
 
@@ -169,6 +210,7 @@ async def test_build_changelog_note():
 def ctx() -> MockCtx:
     """The /changelog invocation."""
     ctx = MagicMock(spec=AppCtx)
+    ctx.bot = make_bot()
     # A property on ApplicationContext, so the spec can't infer it
     ctx.respond = AsyncMock()
     return ctx

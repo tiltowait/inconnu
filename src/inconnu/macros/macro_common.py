@@ -2,6 +2,8 @@
 
 import re
 
+import errors
+
 NAME_LEN = 50
 COMMENT_LEN = 300
 
@@ -14,3 +16,9 @@ def is_macro_name_valid(name: str) -> bool:
         return False
 
     return any(c.isalpha() for c in name)
+
+
+def check_has_action(pool: list[str], rouses: int):
+    """Raise MacroError if the macro would neither roll nor make Rouse Checks."""
+    if not pool and rouses == 0:
+        raise errors.MacroError("A macro needs a pool or Rouse Checks.")

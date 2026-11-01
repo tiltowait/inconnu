@@ -34,12 +34,18 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         parameters = parse_parameters(syntax, False)
         macro_update = __validate_parameters(character, parameters)
 
+        current = character.find_macro(macro)
+        macro_common.check_has_action(
+            macro_update.get("pool", current.pool), macro_update.get("rouses", current.rouses)
+        )
+
         macro_name = character.update_macro(macro, macro_update)
         await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
         await character.save()
 
     except (
         errors.AmbiguousTraitError,
+        errors.MacroError,
         errors.MacroNotFoundError,
         errors.RollError,
         errors.TraitNotFound,

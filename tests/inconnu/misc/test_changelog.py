@@ -124,7 +124,9 @@ def section_texts(view: PagedView) -> list[str]:
 async def test_build_changelog_layout():
     """The title and date lead, each section is its own container, and the
     releases link comes last."""
-    view = build_changelog(make_bot(), make_release("## Fixes\n\n- A fix\n\n## Features\n\n- A feature"))
+    view = build_changelog(
+        make_bot(), make_release("## Fixes\n\n- A fix\n\n## Features\n\n- A feature")
+    )
     items = page_items(view)
 
     assert [item["type"] for item in items] == [
@@ -162,7 +164,6 @@ async def test_build_changelog_pages():
     assert shown == text.splitlines()
 
 
-
 async def test_build_changelog_note():
     """A note goes beside the releases link on every page."""
     text = "## Fixes\n" + "\n".join(f"- Fix {i:03} " + "x" * 90 for i in range(100))
@@ -175,7 +176,6 @@ async def test_build_changelog_note():
         link = page_items(view)[-1]
         assert link["components"][0]["content"] == "-# A note"
         assert link["accessory"]["url"] == RELEASES_URL
-
 
 
 async def test_build_changelog_mentions():

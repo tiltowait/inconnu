@@ -24,8 +24,9 @@ from routes.characters.models import (
     WizardSchema,
 )
 from routes.deps import get_bot
-from services import char_mgr, guild_cache, premium, wizard_cache
+from services import char_mgr, guild_cache, wizard_cache
 from services.wizard import CharacterGuild
+from utils.permissions import has_supporter_role
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -247,7 +248,7 @@ async def create_character(
     guild = await bot.get_or_fetch_guild(settings.supporter_guild)
     if guild is not None:
         user = await guild.get_or_fetch(discord.Member, wizard.user)
-        has_premium = user is not None and premium.is_supporter(user)
+        has_premium = user is not None and has_supporter_role(user)
     else:
         logger.warning("Supporter guild not found")
 

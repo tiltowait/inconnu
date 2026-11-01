@@ -8,6 +8,7 @@ from loguru import logger
 
 from config import settings
 from services import premium
+from utils.permissions import has_supporter_role
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -25,8 +26,8 @@ class PremiumCog(commands.Cog):
         if after.guild.id != settings.supporter_guild:
             return
 
-        was_supporter = premium.is_supporter(before)
-        is_supporter = premium.is_supporter(after)
+        was_supporter = has_supporter_role(before)
+        is_supporter = has_supporter_role(after)
 
         if was_supporter and not is_supporter:
             logger.info("{} is no longer a supporter", after.name)
@@ -38,13 +39,13 @@ class PremiumCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         """Restore a returning supporter's status."""
-        if member.guild.id == settings.supporter_guild and premium.is_supporter(member):
+        if member.guild.id == settings.supporter_guild and has_supporter_role(member):
             await self._mark_gained(member)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         """A supporter who leaves the supporter guild loses their status."""
-        if member.guild.id == settings.supporter_guild and premium.is_supporter(member):
+        if member.guild.id == settings.supporter_guild and has_supporter_role(member):
             await premium.mark_lost(member)
 
     async def _mark_gained(self, member: discord.Member):

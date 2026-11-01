@@ -64,12 +64,6 @@ def char_with_images() -> VChar:
     return char
 
 
-def test_is_supporter():
-    """Supporters are identified by the supporter role."""
-    assert premium.is_supporter(make_member(supporter=True))
-    assert not premium.is_supporter(make_member())
-
-
 async def test_mark_lost(mock_update: AsyncMock):
     """Losing premium records the discontinuation date and DMs the member."""
     member = make_member()

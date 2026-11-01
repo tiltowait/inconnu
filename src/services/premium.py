@@ -7,18 +7,12 @@ from loguru import logger
 
 import constants
 import db
-from config import settings
 from models import VChar
 from utils.text import pluralize
 from utils.urls import docs_url
 
 # How long lapsed supporters keep their images
 GRACE_PERIOD = timedelta(days=7)
-
-
-def is_supporter(member: discord.Member) -> bool:
-    """Whether the member has the supporter role."""
-    return member.get_role(settings.supporter_role) is not None
 
 
 async def mark_lost(member: discord.Member):

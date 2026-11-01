@@ -1,6 +1,5 @@
 """Bot instance and event handlers."""
 
-import asyncio
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
@@ -18,20 +17,6 @@ from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
 from services.reporter import reporter
-from utils import cmd_replace_respond, raw_command_options
-
-# Commands where the character option is needed even when the user has only one character
-CHARACTER_OPTION_REQUIRED = frozenset(
-    {
-        "character bio edit",
-        "character delete",
-        "experience remove entry",
-        "experience award",
-        "experience deduct",
-        "update header",
-        "transfer",
-    }
-)
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -216,38 +201,6 @@ class InconnuBot(discord.AutoShardedBot):
             await db.interactions.insert_one(inter_data)
 
         await self.process_application_commands(interaction)
-
-    async def on_application_command(self, ctx: AppCtx):
-        """Show tips after a command."""
-        await self._tip_unneeded_character_option(ctx)
-
-    async def _tip_unneeded_character_option(self, ctx: AppCtx):
-        """Tell a user with one character they don't need the character option."""
-        assert ctx.command is not None
-        options = raw_command_options(ctx.interaction)
-        if "character" not in options or "player" in options:
-            return
-        if ctx.guild is None or ctx.command.qualified_name in CHARACTER_OPTION_REQUIRED:
-            return
-
-        member = cast(discord.Member, ctx.user)
-        if await services.char_mgr.character_count(ctx.guild, member) != 1:
-            return
-
-        # They may have used an SPC, which doesn't count toward their characters
-        try:
-            character = await services.char_mgr.fetchone(ctx.guild, member, options["character"])
-        except errors.CharacterNotFoundError:
-            return
-        if not character.is_pc:
-            return
-
-        await asyncio.sleep(1)  # Make sure it shows after the command
-        tip = (
-            "**Tip:** You only have one character, so you don't need "
-            f"the `character` option for `/{ctx.command.qualified_name}`."
-        )
-        await cmd_replace_respond(ctx, tip, ephemeral=True)
 
     async def on_connect(self):
         """Perform early setup."""

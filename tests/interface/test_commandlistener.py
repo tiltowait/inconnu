@@ -1,7 +1,7 @@
 """Tests for interface/commandlistener.py's post-command steps."""
 
 import asyncio
-from collections.abc import AsyncGenerator, Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -19,6 +19,7 @@ from ctx import AppCtx
 from inconnu.misc.changelog import ReleaseInfo
 from interface.commandlistener import CommandListener
 from models import VChar, VUser
+from services.lockdown import Lockdown, LockdownReason
 from ui.views import PagedView
 
 type MockCtx = MagicMock
@@ -61,9 +62,11 @@ def cog() -> CommandListener:
     bot = MagicMock(spec=InconnuBot)
     bot.motd = discord.Embed(title="News")
     bot.motd_given = set()
+    bot.lockdown = None
     bot.cmd_mention.side_effect = lambda name: f"</{name}:1>"
     bot.me = MagicMock(spec=discord.ClientUser)
     bot.me.mention = "<@100>"
+    bot.me.display_name = "Inconnu"
     return CommandListener(bot)
 
 
@@ -106,7 +109,13 @@ async def mock_char_mgr() -> AsyncGenerator[MagicMock]:
 async def test_steps_run_in_order(cog: CommandListener):
     """Logging comes first, then a wait for the command's response, then the follow-ups."""
     calls = []
-    steps = ("_log_command", "_tip_unneeded_character_option", "_show_motd", "_show_changelog")
+    steps = (
+        "_log_command",
+        "_tip_unneeded_character_option",
+        "_warn_lockdown",
+        "_show_motd",
+        "_show_changelog",
+    )
 
     def record(name: str) -> AsyncMock:
         """A mock that records its call."""
@@ -118,6 +127,7 @@ async def test_steps_run_in_order(cog: CommandListener):
         patch.object(cog, steps[1], record(steps[1])),
         patch.object(cog, steps[2], record(steps[2])),
         patch.object(cog, steps[3], record(steps[3])),
+        patch.object(cog, steps[4], record(steps[4])),
     ):
         await cog.on_application_command(make_ctx())
 
@@ -243,6 +253,95 @@ async def test_tip_not_shown_for_missing_character(
     await cog._tip_unneeded_character_option(make_ctx(options={"character": "Nadea"}), "vr")
 
     mock_cmd_replace_respond.assert_not_awaited()
+
+
+# Lockdown warning
+
+
+def lock_down(
+    cog: CommandListener, shutdown_in: timedelta, reason: LockdownReason = LockdownReason.UPDATE
+) -> datetime:
+    """Put the cog's bot on lockdown. Returns the shutdown time."""
+    shutdown_time = discord.utils.utcnow() + shutdown_in
+    cog.bot.lockdown = Lockdown(reason, shutdown_time)
+    return shutdown_time
+
+
+def lockdown_warning(ctx: MockCtx) -> discord.Embed:
+    """The lockdown warning embed sent in response to the command."""
+    ctx.respond.assert_awaited_once()
+    assert ctx.respond.await_args.kwargs["ephemeral"] is True
+    return ctx.respond.await_args.kwargs["embed"]
+
+
+@pytest.fixture
+def mock_blocked() -> Generator[MagicMock]:
+    """blocked_on_lockdown(), patched to report an unblocked command."""
+    with patch.object(listener_module, "blocked_on_lockdown", return_value=False) as mock:
+        yield mock
+
+
+@pytest.mark.parametrize(
+    "reason,phrase",
+    [(LockdownReason.MAINTENANCE, "maintenance"), (LockdownReason.UPDATE, "an update")],
+)
+async def test_lockdown_warning(
+    cog: CommandListener, mock_blocked: MagicMock, reason: LockdownReason, phrase: str
+):
+    """During lockdown, users are warned why and when the bot is going down."""
+    shutdown_time = lock_down(cog, timedelta(minutes=5), reason)
+    ctx = make_ctx()
+    await cog._warn_lockdown(ctx, "vr")
+
+    when = discord.utils.format_dt(shutdown_time, "R")
+    embed = lockdown_warning(ctx)
+    unavailable = "Some commands will be unavailable."
+    assert embed.description == f"Inconnu is going down for {phrase} {when}. {unavailable}"
+    assert embed.color == discord.Color.yellow()
+    mock_blocked.assert_called_once_with(ctx.command)
+
+
+async def test_lockdown_warning_after_shutdown_time(cog: CommandListener, mock_blocked: MagicMock):
+    """Once the shutdown time passes, the warning says it's coming shortly."""
+    lock_down(cog, timedelta(minutes=-1))
+    ctx = make_ctx()
+    await cog._warn_lockdown(ctx, "vr")
+
+    embed = lockdown_warning(ctx)
+    assert embed.description == (
+        "Inconnu is going down for an update shortly. Some commands will be unavailable."
+    )
+
+
+async def test_no_lockdown_warning_without_lockdown(cog: CommandListener, mock_blocked: MagicMock):
+    """Nothing is shown outside a lockdown."""
+    ctx = make_ctx()
+    await cog._warn_lockdown(ctx, "vr")
+
+    ctx.respond.assert_not_awaited()
+
+
+async def test_no_lockdown_warning_for_blocked_command(
+    cog: CommandListener, mock_blocked: MagicMock
+):
+    """Commands the lockdown blocks already explain it, so they get no warning."""
+    mock_blocked.return_value = True
+    lock_down(cog, timedelta(minutes=5))
+    ctx = make_ctx()
+    await cog._warn_lockdown(ctx, "character create")
+
+    ctx.respond.assert_not_awaited()
+
+
+async def test_no_lockdown_warning_for_lockdown_start(
+    cog: CommandListener, mock_blocked: MagicMock
+):
+    """Starting a lockdown doesn't warn the owner who started it."""
+    lock_down(cog, timedelta(minutes=5))
+    ctx = make_ctx("lockdown start")
+    await cog._warn_lockdown(ctx, "lockdown start")
+
+    ctx.respond.assert_not_awaited()
 
 
 # MOTD

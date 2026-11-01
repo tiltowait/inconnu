@@ -205,7 +205,6 @@ async def test_build_changelog_pages_fit_mentions():
         assert all("`/vr`" not in text for text in texts)
 
 
-
 @pytest.mark.parametrize("text", ["", " \n\n "])
 async def test_build_changelog_without_notes(text: str):
     """A release without notes says so, rather than sending empty text."""

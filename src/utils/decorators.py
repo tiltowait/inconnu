@@ -19,17 +19,23 @@ def _app_check(predicate: Callable[[AppCtx], bool | Awaitable[bool]]):
     return commands.check(cast(Any, predicate))
 
 
+def _lockdown_check(ctx: AppCtx) -> bool:
+    """Refuse the command if the bot is on lockdown."""
+    if ctx.bot.lockdown is not None:
+        location = ctx.guild.name if ctx.guild is not None else "DMs"
+        logger.info("{} ({}) attempted locked-down command", ctx.user.name, location)
+        raise errors.LockdownError()
+    return True
+
+
 def not_on_lockdown():
     """A decorator that checks if the bot is on lockdown."""
+    return _app_check(_lockdown_check)
 
-    def predicate(ctx):
-        if ctx.bot.lockdown is not None:
-            logger.info("BOT: {} ({}) attempted locked-down command", ctx.user.name, ctx.guild.name)
-            raise errors.LockdownError()
-        logger.debug("BOT: Not on lockdown")
-        return True
 
-    return commands.check(predicate)
+def blocked_on_lockdown(command: discord.ApplicationCommand) -> bool:
+    """Whether the command refuses to run during a lockdown."""
+    return _lockdown_check in command.checks
 
 
 async def _check_supporter(ctx: AppCtx, user: discord.Member | None = None):

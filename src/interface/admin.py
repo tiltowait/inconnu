@@ -6,19 +6,32 @@ from typing import TYPE_CHECKING
 
 import discord
 from discord import option
+from discord.commands import SlashCommandGroup
 from discord.ext import commands
 from loguru import logger
 
 import services
 from config import settings
 from ctx import AppCtx
+from services.lockdown import LockdownReason
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
+WIZARD_POLL = timedelta(seconds=15)
+# Edits go through the interaction token, which expires after 15 minutes
+TOKEN_LIFETIME = timedelta(minutes=15)
+
 
 class AdminCog(commands.Cog):
     """A cog with various administrative commands."""
+
+    lockdown = SlashCommandGroup(
+        "lockdown",
+        "Warn users of an upcoming shutdown.",
+        guild_ids=[settings.admin_server],
+        default_member_permissions=discord.Permissions(administrator=True),
+    )
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot
@@ -90,39 +103,41 @@ class AdminCog(commands.Cog):
         """Show the number of character wizards running."""
         await ctx.respond(f"**Wizards running:** {services.wizard_cache.count}", ephemeral=True)
 
-    @discord.slash_command(guild_ids=[settings.admin_server])
-    @discord.default_permissions(administrator=True)
+    @lockdown.command(name="start")
     @commands.is_owner()
-    async def shutdown(self, ctx: AppCtx):
-        """Shuts down the bot after 15 minutes."""
-        await ctx.respond("Preparing to shut down.", ephemeral=True)
-        self.bot.lockdown = discord.utils.utcnow() + timedelta(minutes=15)
+    @option("reason", description="Why the bot is going down", choices=list(LockdownReason))
+    async def lockdown_start(self, ctx: AppCtx, reason: str):
+        """Put the bot in lockdown, then report running chargen wizards until none remain."""
+        lockdown = self.bot.start_lockdown(LockdownReason(reason))
+        header = f"Lockdown set for {discord.utils.format_dt(lockdown.shutdown_time, 't')}."
+        await ctx.respond(header, ephemeral=True)
 
-        message = None
-        while services.wizard_cache.count > 0:
-            if services.wizard_cache.count > 1:
-                # Properly pluralize the message
-                is_are = "are"
-                wizards = "chargen wizards"
-            else:
-                is_are = "is"
-                wizards = "chargen wizard"
-            msg = f"There {is_are} **{services.wizard_cache.count}** {wizards} running."
+        # Two polls of margin guarantee the last edit lands before expiry
+        deadline = ctx.interaction.created_at + TOKEN_LIFETIME - 2 * WIZARD_POLL
+        while (count := services.wizard_cache.count) > 0:
+            running = f"{header}\n**Wizards running:** {count}"
+            if discord.utils.utcnow() >= deadline:
+                wizards = self.bot.cmd_mention("wizards") or "`/wizards`"
+                await ctx.edit(
+                    content=f"{running}\n-# Hit the time limit. Run {wizards} to check manually."
+                )
+                return
 
-            if message is None:
-                message = await ctx.respond(msg, ephemeral=True)
-            else:
-                await message.edit(content=msg)
-            await asyncio.sleep(15)
+            await ctx.edit(content=running)
+            await asyncio.sleep(WIZARD_POLL.total_seconds())
+            if self.bot.lockdown is not lockdown:
+                # Ended, or replaced by a newer lockdown that reports on its own
+                return
 
-        if self.bot.user is not None:
-            msg = f"{self.bot.user.mention} can restart now. No chargen wizards are running."
-            if message is not None:
-                await message.edit(msg)
-            else:
-                await ctx.respond(msg, ephemeral=True)
+        await ctx.edit(content=f"{header}\n{self.bot.me.display_name} can restart now.")
+        logger.info("Bot is ready for shutdown")
 
-        logger.info("SHUTDOWN: Bot is ready for shutdown")
+    @lockdown.command(name="end")
+    @commands.is_owner()
+    async def lockdown_end(self, ctx: AppCtx):
+        """Remove the lockdown."""
+        self.bot.end_lockdown()
+        await ctx.respond("Removed lockdown.", ephemeral=True)
 
 
 def setup(bot: InconnuBot):

@@ -1,7 +1,7 @@
 """Tests for services/reporter.py's error handling."""
 
-from collections.abc import Iterator
-from datetime import UTC, datetime
+from collections.abc import Callable, Iterator
+from datetime import datetime, timedelta
 from typing import cast
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
@@ -14,6 +14,7 @@ import errors
 from bot import InconnuBot
 from config import settings
 from ctx import AppCtx, AppInteraction
+from services.lockdown import Lockdown, LockdownReason
 from services.reporter import MAX_DESCRIPTION, ErrorReporter
 
 UNKNOWN_MSG = "<@1> has encountered an error. Support has been notified!"
@@ -186,15 +187,31 @@ async def test_not_premium(reporter: ErrorReporter, ctx: AppCtx, mock_error: Asy
     assert_not_reported(reporter)
 
 
-async def test_lockdown(reporter: ErrorReporter, ctx: AppCtx):
-    """During lockdown, the user is told when maintenance happens."""
-    cast(MagicMock, ctx.bot).lockdown = datetime(2026, 1, 1, tzinfo=UTC)
+@pytest.mark.parametrize(
+    "shutdown_in,when",
+    [
+        (timedelta(minutes=5), lambda t: discord.utils.format_dt(t, "R")),
+        (timedelta(minutes=-1), lambda _: "shortly"),
+    ],
+    ids=["upcoming", "overdue"],
+)
+async def test_lockdown(
+    reporter: ErrorReporter,
+    ctx: AppCtx,
+    shutdown_in: timedelta,
+    when: Callable[[datetime], str],
+):
+    """During lockdown, the user is told why and when the bot is going down."""
+    shutdown_time = discord.utils.utcnow() + shutdown_in
+    cast(MagicMock, ctx.bot).lockdown = Lockdown(LockdownReason.UPDATE, shutdown_time)
     await reporter.report_error(ctx, errors.LockdownError())
 
     respond = cast(AsyncMock, ctx.respond)
     assert respond.await_args is not None
     embed: discord.Embed = respond.await_args.kwargs["embed"]
     assert embed.title == "Command temporarily unavailable"
+    assert embed.description is not None
+    assert f"going down for an update {when(shutdown_time)}." in embed.description
     assert respond.await_args.kwargs["ephemeral"] is True
     assert_not_reported(reporter)
 

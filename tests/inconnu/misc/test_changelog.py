@@ -123,6 +123,7 @@ async def test_build_changelog_layout():
     assert items[1]["content"] == f"-# Released <t:{int(PUBLISHED.timestamp())}:D>"
     assert section_texts(view) == ["## Fixes\n- A fix", "## Features\n- A feature"]
     assert items[-1]["accessory"]["url"] == RELEASES_URL
+    assert items[-1]["components"][0]["content"] == "\u200b"
 
 
 async def test_build_changelog_pages():
@@ -144,6 +145,21 @@ async def test_build_changelog_pages():
         shown += [line for text in texts for line in text.splitlines()]
 
     assert shown == text.splitlines()
+
+
+
+async def test_build_changelog_note():
+    """A note goes beside the releases link on every page."""
+    text = "## Fixes\n" + "\n".join(f"- Fix {i:03} " + "x" * 90 for i in range(100))
+    view = build_changelog(make_release(text), note="-# A note")
+
+    assert len(view.pages) > 1
+    for index in range(len(view.pages)):
+        if index > 0:
+            await view.next_page(AsyncMock(spec=discord.Interaction))
+        link = page_items(view)[-1]
+        assert link["components"][0]["content"] == "-# A note"
+        assert link["accessory"]["url"] == RELEASES_URL
 
 
 # show_changelog

@@ -61,6 +61,7 @@ def cog() -> CommandListener:
     bot = MagicMock(spec=InconnuBot)
     bot.motd = discord.Embed(title="News")
     bot.motd_given = set()
+    bot.cmd_mention.side_effect = lambda name: f"</{name}:1>"
     return CommandListener(bot)
 
 
@@ -330,6 +331,13 @@ def changelog_shown(ctx: MockCtx) -> bool:
     kwargs = ctx.respond.await_args.kwargs
     assert kwargs["ephemeral"]
     assert isinstance(kwargs["view"], PagedView)
+
+    # Unrequested, so it says why it's there
+    link = kwargs["view"].to_components()[-1]
+    assert link["components"][0]["content"] == (
+        "-# Inconnu recently updated. You'll only see this once; "
+        "use </changelog:1> to see it again."
+    )
     return True
 
 

@@ -42,8 +42,9 @@ def split_sections(text: str) -> list[str]:
     return parts
 
 
-def build_changelog(release: ReleaseInfo) -> ui.views.PagedView:
-    """Build the paginated changelog, one container per section."""
+def build_changelog(release: ReleaseInfo, note: str | None = None) -> ui.views.PagedView:
+    """Build the paginated changelog, one container per section. The optional
+    note goes beside each page's releases link."""
     pages = []
     for page in re_paginate([compact_text(release.text)], page_len=PAGE_SIZE):
         pages.append(
@@ -52,7 +53,7 @@ def build_changelog(release: ReleaseInfo) -> ui.views.PagedView:
                 TextDisplay(f"-# Released {format_dt(release.published_at, 'D')}"),
                 *(Container(TextDisplay(section)) for section in split_sections(page)),
                 Section(
-                    TextDisplay("\u200b"),
+                    TextDisplay(note or "\u200b"),  # Sections need text
                     accessory=Button(label="All releases", url=RELEASES_URL),
                 ),
             ]

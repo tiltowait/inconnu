@@ -405,6 +405,18 @@ async def test_changelog_not_shown_to_new_user(
     assert await saved_version(changelog_ctx) == RELEASE.tag
 
 
+@pytest.mark.parametrize("text", ["", " \n "])
+async def test_changelog_without_notes_not_shown(
+    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock, text: str
+):
+    """A release without notes isn't shown, but counts as seen."""
+    mock_fetch_changelog.return_value = RELEASE._replace(text=text)
+    await cog._show_changelog(changelog_ctx, "vr")
+
+    assert not changelog_shown(changelog_ctx)
+    assert await saved_version(changelog_ctx) == RELEASE.tag
+
+
 async def test_changelog_not_shown_after_changelog_command(
     cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
 ):

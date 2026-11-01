@@ -1,5 +1,6 @@
 """Tests for inconnu/misc/changelog.py."""
 
+from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -16,6 +17,7 @@ from inconnu.misc.changelog import (
     ReleaseInfo,
     build_changelog,
     compact_text,
+    fetch_changelog,
     show_changelog,
     split_sections,
 )
@@ -201,6 +203,46 @@ async def test_build_changelog_pages_fit_mentions():
         texts = section_texts(view)
         assert sum(map(len, texts)) <= PAGE_SIZE
         assert all("`/vr`" not in text for text in texts)
+
+
+
+@pytest.mark.parametrize("text", ["", " \n\n "])
+async def test_build_changelog_without_notes(text: str):
+    """A release without notes says so, rather than sending empty text."""
+    view = build_changelog(make_bot(), make_release(text))
+    assert section_texts(view) == ["*No release notes.*"]
+
+
+# fetch_changelog
+
+
+@pytest.fixture
+async def mock_github() -> AsyncGenerator[MagicMock]:
+    """GitHub's latest-release response, patched. Set .json.return_value."""
+    response = MagicMock(spec=aiohttp.ClientResponse)
+    response.json = AsyncMock()
+    session = MagicMock(spec=aiohttp.ClientSession)
+    session.get.return_value.__aenter__.return_value = response
+
+    fetch_changelog.cache_clear()
+    with patch.object(aiohttp, "ClientSession") as client_session:
+        client_session.return_value.__aenter__.return_value = session
+        yield response
+    fetch_changelog.cache_clear()
+
+
+@pytest.mark.parametrize("body,expected", [("## Fixes\n- A fix", "## Fixes\n- A fix"), (None, "")])
+async def test_fetch_changelog(mock_github: MagicMock, body: str | None, expected: str):
+    """The latest release is parsed; a release without notes has empty text."""
+    mock_github.json.return_value = {
+        "tag_name": "v2026.11.01",
+        "body": body,
+        "published_at": "2026-11-01T00:00:00Z",
+    }
+
+    assert await fetch_changelog() == ReleaseInfo(
+        tag="v2026.11.01", text=expected, published_at=datetime(2026, 11, 1, tzinfo=UTC)
+    )
 
 
 # show_changelog

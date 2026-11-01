@@ -152,7 +152,11 @@ class CommandListener(commands.Cog):
         try:
             vuser = await VUser.get_or_fetch(ctx.user.id)
             release_info = await changelog.fetch_changelog()
-            if await self._should_see_changelog(ctx, command, vuser, release_info.tag):
+            # A release without notes still counts as seen
+            has_notes = bool(release_info.text.strip())
+            if has_notes and await self._should_see_changelog(
+                ctx, command, vuser, release_info.tag
+            ):
                 note = (
                     f"-# {self.bot.me.mention} recently updated. You'll only "
                     "see this once; use `/changelog` to see it again."

@@ -55,6 +55,8 @@ def build_changelog(
     # Mentions are longer than the text they replace, so substitute them
     # before paginating
     text = mention_commands(bot, compact_text(release.text)) or ""
+    if not text.strip():
+        text = "*No release notes.*"  # Discord rejects empty text displays
     note = mention_commands(bot, note)
 
     pages = []
@@ -98,6 +100,6 @@ async def fetch_changelog() -> ReleaseInfo:
             json = await res.json()
             return ReleaseInfo(
                 tag=json["tag_name"],
-                text=json["body"],
+                text=json["body"] or "",  # null if the release has no notes
                 published_at=datetime.fromisoformat(json["published_at"]),
             )

@@ -1,7 +1,5 @@
 """experience/award_deduct.py - Award or deduct XP from a character."""
 
-import asyncio
-
 import discord
 
 import services
@@ -38,25 +36,25 @@ async def award_or_deduct(
         return
 
     # Check that we aren't deducting more XP than they have
-    if scope == "unspent" and character.experience.unspent + amount < 0:
-        if character.experience.unspent == 0:
-            errmsg = f"**{character.name}** has no XP!"
+    experience = character.experience
+    current = experience.unspent if scope == "unspent" else experience.lifetime
+    if current + amount < 0:
+        if current == 0:
+            errmsg = f"**{character.name}** has no {scope} XP!"
         else:
-            errmsg = f"**{character.name}** only has `{character.experience.unspent}` xp to spend!"
+            errmsg = f"**{character.name}** only has `{current}` {scope} XP!"
 
         await ui.embeds.error(ctx, errmsg)
         return
 
     character.apply_experience(amount, scope, reason, ctx.author.id)
+    await character.save()  # Before responding, so a failed response can't hide the change
 
-    if reason[-1] != ".":
+    if reason[-1] not in ".!?":
         reason += "."
 
     embed = __get_embed(ctx, player, character, amount, scope, reason)
-    await asyncio.gather(
-        ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none()),
-        character.save(),
-    )
+    await ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none())
 
 
 def __get_embed(ctx, player, character, amount, scope, reason):

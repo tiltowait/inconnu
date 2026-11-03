@@ -36,7 +36,7 @@ class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[repo
     @experience.command()
     @option("amount", description="The amount of XP to give", min_value=1)
     @option("scope", description="Unspent or lifetime XP", choices=["Lifetime", "Unspent"])
-    @option("reason", description="The reason for the grant")
+    @option("reason", description="The reason for the grant", max_length=200)
     @player_option()
     @char_option("The character receiving the XP")
     async def award(
@@ -56,7 +56,7 @@ class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[repo
     @experience.command()
     @option("amount", description="The amount of XP to deduct", min_value=1)
     @option("scope", description="Unspent or lifetime XP", choices=["Unspent", "Lifetime"])
-    @option("reason", description="The reason for the deduction")
+    @option("reason", description="The reason for the deduction", max_length=200)
     @player_option()
     @char_option("The character from whom to deduct XP")
     async def deduct(

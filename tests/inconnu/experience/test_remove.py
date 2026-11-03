@@ -59,7 +59,8 @@ def mock_display() -> Iterator[AsyncMock]:
 def _press_view(character: VChar, event: str, amount: int) -> _ExperienceView:
     """Create the view for deleting a log entry."""
     entry = VCharExperienceEntry(event=event, amount=amount, reason="Test", admin=123)
-    return _ExperienceView(character, MagicMock(spec=discord.Member), entry)
+    player: MockMember = MagicMock(spec=discord.Member)
+    return _ExperienceView(character, player, entry)
 
 
 async def test_apply_xp_unspent(
@@ -243,3 +244,48 @@ def test_entry_scope_numbers_only():
     entry = VCharExperienceEntry(event="prefix_123", amount=5, reason="Test", admin=123)
     result = _entry_scope(entry)
     assert result == "123"
+
+
+@pytest.mark.parametrize(
+    "event,amount,label",
+    [
+        ("award_unspent", 3, "Remove 3 Unspent XP"),
+        ("deduct_lifetime", -4, "Add 4 Lifetime XP"),
+    ],
+)
+async def test_button_label(character: VChar, event: str, amount: int, label: str):
+    """The button offers to reverse the deleted entry."""
+    view = _press_view(character, event, amount)
+    button = view.children[0]
+
+    assert isinstance(button, discord.ui.Button)
+    assert button.label == label
+
+
+@pytest.mark.parametrize("admin", [True, False])
+async def test_only_admins_press(character: VChar, interaction: MockInteraction, admin: bool):
+    """Only admins can apply the reversal."""
+    interaction.response.send_message = AsyncMock()
+    view = _press_view(character, "award_unspent", 3)
+
+    with patch.object(remove_module, "is_admin", return_value=admin):
+        assert await view.interaction_check(interaction) is admin
+
+    assert interaction.response.send_message.await_count == (0 if admin else 1)
+
+
+async def test_apply_xp_finishes(
+    character: VChar, interaction: MockInteraction, mock_display: AsyncMock
+):
+    """Pressing removes the button, saves, reports the change, and ends the view."""
+    view = _press_view(character, "award_unspent", 3)
+    with (
+        patch.object(VChar, "save", new_callable=AsyncMock) as save,
+        patch.object(remove_module.services, "post_update", new_callable=AsyncMock) as post,
+    ):
+        await view.apply_xp(interaction)
+
+    interaction.response.edit_message.assert_awaited_once_with(view=None)
+    save.assert_awaited_once()
+    post.assert_awaited_once()
+    assert view.is_finished()

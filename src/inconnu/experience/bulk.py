@@ -2,6 +2,7 @@
 
 import asyncio
 import re
+from typing import cast
 
 import discord
 from discord.ext.commands import Paginator
@@ -10,6 +11,7 @@ from discord.ui import InputText, Modal
 import errors
 import services
 import ui
+from ctx import AppInteraction
 
 
 async def bulk_award_xp(ctx):
@@ -21,7 +23,7 @@ async def bulk_award_xp(ctx):
 class _BulkModal(Modal):
     """A modal for entering XP awards."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.pattern = re.compile(r"^(?P<xp>\d+)\s*xp\s*<@!?(?P<user>\d+)> (?P<character>.*)$")
         self.xp_tasks = []
@@ -36,7 +38,10 @@ class _BulkModal(Modal):
 
         self.add_item(
             InputText(
-                label="Reason", placeholder="Enter the reason for the XP award.", required=True
+                label="Reason",
+                placeholder="Enter the reason for the XP award.",
+                required=True,
+                max_length=200,
             )
         )
         self.add_item(
@@ -50,9 +55,15 @@ class _BulkModal(Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Find the characters and apply their XP."""
-        await interaction.response.defer()
-        reason = self.children[0].value.strip()
-        entries = self.children[1].value.split("\n")
+        inter = cast(AppInteraction, interaction)
+        guild = cast(discord.Guild, inter.guild)  # The command is guild-only
+        await inter.response.defer()
+        reason = (self.children[0].value or "").strip()
+        if not reason:
+            await ui.embeds.error(inter, "The reason can't be blank.")
+            return
+
+        entries = (self.children[1].value or "").split("\n")
         seen = set()  # For making sure duplicates aren't made
 
         # Set up the containers
@@ -71,7 +82,7 @@ class _BulkModal(Modal):
             owner = int(match.group("user"))
             char_name = match.group("character")
 
-            member = interaction.guild.get_member(owner)
+            member = guild.get_member(owner)
             member = member.mention if member is not None else owner
 
             if experience == 0:
@@ -79,7 +90,12 @@ class _BulkModal(Modal):
                 continue
 
             try:
-                character = await services.char_mgr.fetchone(interaction.guild, owner, char_name)
+                # fetchone() takes user IDs too, though it isn't annotated for them
+                character = await services.char_mgr.fetchone(
+                    guild,
+                    owner,  # pyright: ignore[reportArgumentType]
+                    char_name,
+                )
 
                 # Make sure this isn't a duplicate award
                 match = f"{member} {character.name}"
@@ -91,7 +107,7 @@ class _BulkModal(Modal):
                     # experience arguments in a list of tuples. If we receive
                     # no errors, then we will commit them all at once.
                     self.xp_tasks.append(
-                        (character, [experience, "lifetime", reason, interaction.user.id])
+                        (character, [experience, "lifetime", reason, inter.user.id])
                     )
                     self.would_award.append(f"`{experience}xp`: `{character.name}` {member}")
 

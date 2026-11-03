@@ -27,17 +27,16 @@ async def remove_entry(
     *,
     player: discord.Member,
 ):
-    """Award or deduct XP from a character."""
+    """Remove an entry from a character's experience log."""
     try:
         # Log entries are presented to the user in reverse, so we need the
         # negative index
         entry_to_delete = character.experience.log.pop(-index)
+        await character.save()  # Before responding, so a failed response can't hide the change
 
         embed = _get_embed(player, character, entry_to_delete)
         view = _ExperienceView(character, player, entry_to_delete)
-
         view.message = await ctx.respond(embed=embed, view=view)
-        await character.save()
 
     except IndexError:
         err = f"{character.name} has no experience log entry at index `{index}`."

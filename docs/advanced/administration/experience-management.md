@@ -10,11 +10,11 @@ description: >-
 
 | Parameter   | Description                                              |
 | ----------- | -------------------------------------------------------- |
-| `character` | The character to award or deduct XP  |
 | `amount`    | The amount of XP to award/deduct                         |
 | `scope`     | Whether to apply the operation to lifetime or unspent XP |
 | `reason`    | A note about the reason for the change                   |
 | `player`    | The player who owns the character (admin only)           |
+| `character` | The character to award or deduct XP (optional if the player has only one) |
 
 Players may award and deduct XP for their own characters in the scopes the server's [Experience setting](../server-settings.md#experience) allows. Admins can always adjust XP.
 

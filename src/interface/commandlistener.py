@@ -29,8 +29,6 @@ CHARACTER_OPTION_REQUIRED = frozenset(
         "character bio edit",
         "character delete",
         "experience remove entry",
-        "experience award",
-        "experience deduct",
         "update header",
         "transfer",
     }

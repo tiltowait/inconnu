@@ -118,16 +118,6 @@ def update_aw(character: VChar, delta: str) -> str:
     return __update_damage(character, Tracker.WILLPOWER, Damage.AGGRAVATED, delta)
 
 
-def update_current_xp(character: VChar, delta: str) -> str:
-    """Set or modify current XP."""
-    return __update_xp(character, "unspent", delta)
-
-
-def update_total_xp(character: VChar, delta: str) -> str:
-    """Set or modify total XP."""
-    return __update_xp(character, "lifetime", delta)
-
-
 def __update_track(character: VChar, tracker: str, new_len_str: str) -> str:
     """
     Update the size of a character's tracker.
@@ -240,65 +230,6 @@ def __damage_adjust_message(tracker, dtype, delta_str, overflow) -> str:
         msg += f" (Attempted `{attempted_damage}`, but available track exceeded by `{overflow}`.)"
 
     return msg
-
-
-def __update_xp(character: VChar, xp_type: str, delta: str | int) -> str:
-    """
-    Update a character's XP.
-    Args:
-        character (VChar): The character to update
-        xp_type (str): "lifetime" or "unspent"
-        delta (str): The amount to add or remove
-
-    Does not catch exceptions.
-    """
-    setting = False
-
-    # If the user doesn't supply a sign, they are setting the XP total rather
-    # than modifying it
-    if isinstance(delta, str):
-        if delta[0] not in "+-":
-            setting = True
-
-    if xp_type not in {"lifetime", "unspent"}:
-        raise SyntaxError(f"Unknown XP type: {xp_type}.")  # Should never be seen
-
-    delta = int(delta)
-    new_xp = None
-
-    if setting:
-        new_xp = delta
-    else:
-        current = getattr(character.experience, xp_type)
-        new_xp = current + delta
-
-    # Make sure we can fit the XP. The only way this will happen is if someone
-    # is explicitly trying to break the bot, but ...
-
-    if new_xp > 9223372036854775807:
-        raise ValueError("`lifetime_xp` may not exceed 9,223,372,036,854,775,807!")
-
-    # When displaying the update, we want to say whether they are doing a delta vs
-    # set and, if doing a delta, the *final* amound added/subtracted, after doing
-    # bounds-checking.
-    current = character.experience.unspent
-    if xp_type == "unspent":
-        character.experience.unspent = new_xp
-        cur_delta = character.experience.unspent - current
-        if setting:
-            return f"Set current/unspent XP to `{new_xp}`."
-        return f"`{cur_delta:+}` current/unspent XP."
-
-    total = character.experience.lifetime
-    character.set_lifetime_xp(new_xp)
-    tot_delta = character.experience.lifetime - total
-    cur_delta = character.experience.unspent - current
-
-    if setting:
-        return (
-            f"Set unspent XP to `{character.experience.unspent}`.\nSet lifetime XP to `{new_xp}`."
-        )
-    return f"`{cur_delta:+}` unspent XP.\n`{tot_delta:+}` lifetime XP."
 
 
 def __update_humanity(character: VChar, hu_type: str, delta: str | int) -> str:

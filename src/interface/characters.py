@@ -136,8 +136,6 @@ class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIs
     @option("sup_wp", description="Superficial Willpower (Tip: Use +X/-X)", required=False)
     @option("agg_wp", description="Aggravated Willpower (Tip: Use +X/-X)", required=False)
     @option("stains", description="Stains (Tip: Use +X/-X)", required=False)
-    @option("unspent_xp", description="Unspent XP (Tip: Use +X/-X)", required=False)
-    @option("lifetime_xp", description="Lifetime XP (Tip: Use +X/-X)", required=False)
     @option("hunger", description="Adjust Hunger", required=False)
     @option("potency", description="Adjust Blood Potency", required=False)
     @char_option("The character to adjust")
@@ -155,8 +153,6 @@ class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIs
         sup_wp: str,
         agg_wp: str,
         stains: str,
-        unspent_xp: str,
-        lifetime_xp: str,
         hunger: str,
         potency: str,
         character: str,
@@ -199,12 +195,6 @@ class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIs
 
             if _check_number("stains", stains):
                 parameters.append(f"stains={stains}")
-
-            if _check_number("lifetime_xp", lifetime_xp):
-                parameters.append(f"lxp={lifetime_xp}")
-
-            if _check_number("unspent_xp", unspent_xp):
-                parameters.append(f"uxp={unspent_xp}")
 
             if _check_number("hunger", hunger):
                 parameters.append(f"hunger={hunger}")

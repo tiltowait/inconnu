@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-import services
 from ctx import AppCtx
+from inconnu.character.display import DisplayField
 from inconnu.character.update.parse import update
 from models.vchar import VChar
 
@@ -493,9 +493,7 @@ async def test_update_with_custom_fields(
     mock_update_display: AsyncMock,
 ):
     """Test update with custom display fields."""
-    from inconnu.character.display import DisplayField
-
-    fields = [DisplayField.HEALTH, DisplayField.HUNGER]
+    fields = [(field.value, field) for field in (DisplayField.HEALTH, DisplayField.HUNGER)]
 
     await update(ctx, "hunger+1", character=vamp, fields=fields)
 
@@ -528,23 +526,15 @@ async def test_update_damage_aliases(
     mock_char_save.assert_awaited()
 
 
-async def test_update_xp_without_permission_error(
-    vamp: VChar,
-    ctx: AppCtx,
-):
-    """Test that XP updates without permission are blocked."""
-    # Save character first so rollback can work
+@pytest.mark.parametrize("parameters", ["unspent_xp+2", "uxp=10", "lifetime_xp+2", "lxp=10"])
+async def test_update_rejects_xp(vamp: VChar, ctx: AppCtx, parameters: str):
+    """XP is managed by the experience commands, not character updates."""
     vamp.experience.unspent = 5
+    vamp.experience.lifetime = 5
     await vamp.save()
 
-    original_xp = vamp.experience.unspent
+    await update(ctx, parameters, character=vamp)
 
-    # Mock permission check to return False
-    with patch.object(
-        services.settings, "can_adjust_current_xp", new_callable=AsyncMock, return_value=False
-    ):
-        # Should fail permission check
-        await update(ctx, "unspent_xp+2", character=vamp)
-
-        assert vamp.experience.unspent == original_xp, "XP should be unchanged due to rollback"
-        assert not vamp.is_changed, "Character should have no pending changes"
+    assert vamp.experience.unspent == 5
+    assert vamp.experience.lifetime == 5
+    assert not vamp.is_changed

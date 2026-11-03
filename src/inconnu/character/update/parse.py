@@ -31,8 +31,6 @@ __KEYS = {
     "sw": "+/- Superficial Willpower damage",
     "aw": "+/- Aggravated Willpower damage",
     "stains": "+/- Stains",
-    "unspent_xp": "+/- Unspent XP",
-    "lifetime_xp": "+/- Total Lifetime XP",
     "hunger": "+/- The character's Hunger",
     "potency": "+/- The character's Blood Potency",
 }
@@ -74,7 +72,7 @@ async def update(
         updates = []
 
         for parameter, new_value in validated.items():
-            update_msg = await __update_character(ctx, character, parameter, new_value)
+            update_msg = await __update_character(character, parameter, new_value)
             if "(Hint:" in update_msg:
                 # Hints only show up in errors, so let's make the embed red
                 color = discord.Color.red() if not color else color
@@ -139,7 +137,7 @@ def __validate_parameters(parameters: dict[str, str]) -> OrderedDict[str, str]:
     return validated
 
 
-async def __update_character(ctx: AppCtx, character: VChar, param: str, value: str) -> str:
+async def __update_character(character: VChar, param: str, value: str) -> str:
     """
     Update one of a character's parameters.
     Args:
@@ -148,13 +146,7 @@ async def __update_character(ctx: AppCtx, character: VChar, param: str, value: s
         value (str): The parameter's new value
     Raises ValueError if the parameter's value is invalid.
     """
-    if param == "current_xp":
-        if not await services.settings.can_adjust_current_xp(ctx):
-            raise ValueError("You must have administrator privileges to adjust unspent XP.")
-    elif param == "total_xp":
-        if not await services.settings.can_adjust_lifetime_xp(ctx):
-            raise ValueError("You must have administrator privileges to adjust lifetime XP.")
-    elif param == "name":
+    if param == "name":
         # This is the only async method
         return await paramupdate.update_name(character, value)
 
@@ -216,43 +208,6 @@ def __setup_matches():
     __register_keys("sw", "swp", "supwp", "supw", "superficialwillpower")
     __register_keys("aw", "awp", "aggwp", "aggw", "aggwillpower")
     __register_keys("stains", "stain", "s")
-    __register_keys(
-        "current_xp",
-        "xp_current",
-        "current_exp",
-        "exp_current",
-        "currentxp",
-        "currentexp",
-        "xpcurrent",
-        "expcurrent",
-        "cxp",
-        "unspent_xp",
-        "xp_unspent",
-        "unspent_exp",
-        "exp_unspent",
-        "unspentxp",
-        "unspentexp",
-        "xpunspent",
-        "expunspent",
-        "uxp",
-    )
-    __register_keys(
-        "total_xp",
-        "xp_total",
-        "total_exp",
-        "exp_total",
-        "totalxp",
-        "totalexp",
-        "xptotal",
-        "exptotal",
-        "txp",
-        "lifetimexp",
-        "xplifetime",
-        "explifetime",
-        "lxp",
-        "lifetime_xp",
-        "life_time_xp",
-    )
     __register_keys("hunger", "h")
     __register_keys("potency", "bp", "p")
 

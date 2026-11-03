@@ -34,20 +34,19 @@ class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[repo
         await inconnu.experience.list_events(ctx, None, True, player=member)
 
     @experience.command()
-    @commands.has_permissions(administrator=True)
-    @player_option(description="The character's owner", required=True)
     @char_option("The character receiving the XP", required=True)
     @option("amount", description="The amount of XP to give", min_value=1)
     @option("scope", description="Unspent or lifetime XP", choices=["Lifetime", "Unspent"])
     @option("reason", description="The reason for the grant")
+    @player_option()
     async def award(
         self,
         ctx: AppCtx,
-        player: discord.Member,
         character: str,
         amount: int,
         scope: str,
         reason: str,
+        player: discord.Member,
     ):
         """Give experience points to a character."""
         await inconnu.experience.award_or_deduct(
@@ -55,20 +54,19 @@ class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[repo
         )
 
     @experience.command()
-    @commands.has_permissions(administrator=True)
-    @player_option(required=True)
     @char_option("The character from whom to deduct XP", required=True)
     @option("amount", description="The amount of XP to deduct", min_value=1)
     @option("scope", description="Unspent or lifetime XP", choices=["Unspent", "Lifetime"])
     @option("reason", description="The reason for the deduction")
+    @player_option()
     async def deduct(
         self,
         ctx: AppCtx,
-        player: discord.Member,
         character: str,
         amount: int,
         scope: str,
         reason: str,
+        player: discord.Member,
     ):
         """Deduct experience points from a character."""
         await inconnu.experience.award_or_deduct(

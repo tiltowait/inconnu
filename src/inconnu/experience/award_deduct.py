@@ -4,6 +4,7 @@ import asyncio
 
 import discord
 
+import services
 import ui
 from ctx import AppCtx
 from models import VChar
@@ -24,8 +25,17 @@ async def award_or_deduct(
     *,
     player: discord.Member,
 ):
-    """Award or deduct XP from a character."""
+    """Award or deduct XP from a character, if the server lets the user."""
     scope = scope.lower()
+
+    if scope == "unspent":
+        allowed = await services.settings.can_adjust_current_xp(ctx)
+    else:
+        allowed = await services.settings.can_adjust_lifetime_xp(ctx)
+    if not allowed:
+        err = f"This server doesn't let players adjust {scope} XP."
+        await ui.embeds.error(ctx, err, help=__HELP_URL)
+        return
 
     # Check that we aren't deducting more XP than they have
     if scope == "unspent" and character.experience.unspent + amount < 0:

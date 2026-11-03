@@ -527,7 +527,9 @@ async def test_update_damage_aliases(
 
 
 @pytest.mark.parametrize("parameters", ["unspent_xp+2", "uxp=10", "lifetime_xp+2", "lxp=10"])
-async def test_update_rejects_xp(vamp: VChar, ctx: AppCtx, parameters: str):
+async def test_update_rejects_xp(
+    vamp: VChar, ctx: AppCtx, mock_respond: AsyncMock, parameters: str
+):
     """XP is managed by the experience commands, not character updates."""
     vamp.experience.unspent = 5
     vamp.experience.lifetime = 5
@@ -538,3 +540,8 @@ async def test_update_rejects_xp(vamp: VChar, ctx: AppCtx, parameters: str):
     assert vamp.experience.unspent == 5
     assert vamp.experience.lifetime == 5
     assert not vamp.is_changed
+
+    assert mock_respond.await_args is not None
+    embed = mock_respond.await_args.kwargs["embed"]
+    error = next(field.value for field in embed.fields if field.name == "Error")
+    assert "experience award" in error

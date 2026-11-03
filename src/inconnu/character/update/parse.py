@@ -16,6 +16,7 @@ from inconnu.character.update import paramupdate
 from models import VChar
 from services.haven import Haven
 from utils import get_message, parse_parameters
+from utils.cmdreplace import mention_embed_commands
 from utils.urls import docs_url
 
 __MATCHES: dict[str, str] = {}
@@ -122,6 +123,8 @@ def __validate_parameters(parameters: dict[str, str]) -> OrderedDict[str, str]:
 
     for key_, value in parameters.items():
         if (key := __MATCHES.get(key_.lower())) is None:
+            if "xp" in key_.lower():
+                raise ValueError("Use `/experience award` or `/experience deduct` to adjust XP.")
             raise ValueError(f"Unknown parameter: `{key_}`.")
 
         if key in validated:
@@ -186,6 +189,7 @@ async def update_help(
     support = Button(label="Support", url=constants.SUPPORT_URL)
     view = ui.views.ReportingView(documentation, support)
 
+    mention_embed_commands(ctx.client, embed)
     await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
 

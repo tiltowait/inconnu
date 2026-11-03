@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
+from pymongo.asynchronous.client_session import AsyncClientSession
+from pymongo.errors import OperationFailure
 
 import errors
 import inconnu.experience.bulk as bulk_module
@@ -13,6 +15,7 @@ from models import VChar
 from tests.characters import gen_char
 
 type MockInteraction = MagicMock
+type MockSession = MagicMock
 
 ADMIN_ID = 7
 
@@ -61,6 +64,25 @@ def mock_fetchone(characters: dict[tuple[int, str], VChar]) -> Iterator[AsyncMoc
 
     with patch.object(
         bulk_module.services.char_mgr, "fetchone", new_callable=AsyncMock, side_effect=fetchone
+    ) as mock:
+        yield mock
+
+
+@pytest.fixture
+def session() -> MockSession:
+    """The transaction's session."""
+    return MagicMock(spec=AsyncClientSession)
+
+
+@pytest.fixture(autouse=True)
+def mock_transaction(session: MockSession) -> Iterator[AsyncMock]:
+    """Run transactions without a database."""
+
+    async def transaction(callback):
+        return await callback(session)
+
+    with patch.object(
+        bulk_module.db, "transaction", new_callable=AsyncMock, side_effect=transaction
     ) as mock:
         yield mock
 
@@ -174,3 +196,77 @@ async def test_bulk_award_blank_reason(
     mock_save.assert_not_awaited()
     assert mock_error.await_args is not None
     assert mock_error.await_args.args[1] == "The reason can't be blank."
+
+
+async def test_bulk_award_saves_in_transaction(
+    interaction: MockInteraction,
+    session: MockSession,
+    mock_transaction: AsyncMock,
+    mock_save: AsyncMock,
+):
+    """Every save is in the transaction, and the confirmation follows the commit."""
+    order = MagicMock()
+    order.attach_mock(mock_transaction, "transaction")
+    order.attach_mock(interaction.followup.send, "send")
+
+    await _submit(interaction, "5 xp <@1> Nadea\n3 xp <@2> Billy")
+
+    assert mock_save.await_count == 2
+    assert all(call.kwargs["session"] is session for call in mock_save.await_args_list)
+    assert [call[0] for call in order.mock_calls] == ["transaction", "send"]
+
+
+async def test_bulk_award_retry_awards_once(
+    interaction: MockInteraction,
+    characters: dict[tuple[int, str], VChar],
+    session: MockSession,
+    mock_transaction: AsyncMock,
+    mock_save: AsyncMock,
+):
+    """A retried transaction saves again without awarding again."""
+
+    async def retried(callback):
+        await callback(session)
+        return await callback(session)
+
+    mock_transaction.side_effect = retried
+    await _submit(interaction, "5 xp <@1> Nadea")
+
+    nadea = characters[(1, "nadea")]
+    assert nadea.experience.lifetime == 5
+    assert len(nadea.experience.log) == 1
+    assert mock_save.await_count == 2
+
+
+@pytest.mark.usefixtures("mock_save")
+async def test_bulk_award_transaction_fails(
+    interaction: MockInteraction,
+    characters: dict[tuple[int, str], VChar],
+    mock_transaction: AsyncMock,
+    mock_error: AsyncMock,
+):
+    """If the transaction fails, the cached characters lose the XP too."""
+    mock_transaction.side_effect = OperationFailure("Write conflict")
+    await _submit(interaction, "5 xp <@1> Nadea\n3 xp <@2> Billy")
+
+    for char in characters.values():
+        assert (char.experience.lifetime, char.experience.unspent) == (0, 0)
+        assert not char.experience.log
+    interaction.followup.send.assert_not_awaited()
+    assert mock_error.await_args is not None
+    assert "no XP was awarded" in mock_error.await_args.args[1]
+
+
+@pytest.mark.usefixtures("mock_save")
+async def test_bulk_award_unexpected_error(
+    interaction: MockInteraction,
+    characters: dict[tuple[int, str], VChar],
+    mock_transaction: AsyncMock,
+):
+    """Other errors propagate, but the cached characters are still restored."""
+    mock_transaction.side_effect = RuntimeError("Bug")
+
+    with pytest.raises(RuntimeError):
+        await _submit(interaction, "5 xp <@1> Nadea")
+
+    assert not characters[(1, "nadea")].experience.log

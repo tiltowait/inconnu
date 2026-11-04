@@ -6,8 +6,6 @@ from typing import Self
 import discord
 from discord.ui import ActionRow, Button, ViewItem
 
-from ctx import AppInteraction
-
 
 class PagedView(discord.ui.DesignerView):
     """A paginated display. Each page is a list of top-level items, such as
@@ -84,10 +82,3 @@ class PagedView(discord.ui.DesignerView):
     async def on_check_failure(self, interaction: discord.Interaction):
         """Tell others they can't turn the pages."""
         await interaction.respond("These pages aren't yours to turn.", ephemeral=True)
-
-    async def on_error(self, error, _, interaction: AppInteraction):  # type:ignore
-        """Report an error using Reporter functionality."""
-        # Inline to avoid a circular import (services.reporter imports ui)
-        from services.reporter import reporter
-
-        await reporter.report_error(interaction, error)

@@ -3,7 +3,6 @@
 import discord
 
 import constants
-import ui
 from utils import cmd_replace_respond, get_avatar
 from utils.permissions import is_supporter
 from utils.urls import profile_url
@@ -76,7 +75,7 @@ async def error(ctx, err, *fields, **kwargs):
 
     if (help_url := kwargs.get("help")) is not None:
         # If we have a help URL, we will add some links to the view
-        view = kwargs.get("view") or ui.views.ReportingView()
+        view = kwargs.get("view") or discord.ui.View()
 
         view.add_item(discord.ui.Button(label="Documentation", url=help_url, row=4))
         view.add_item(discord.ui.Button(label="Support", url=constants.SUPPORT_URL, row=4))

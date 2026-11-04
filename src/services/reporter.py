@@ -1,4 +1,5 @@
-"""An error reporter."""
+"""services/reporter.py - Respond to command, view, and modal errors, and post
+unexpected ones to the report channel."""
 
 import traceback
 from typing import TYPE_CHECKING
@@ -25,30 +26,32 @@ INVALID_WEBHOOK_TOKEN = 50027  # Discord error code
 
 
 def error_scope(ctx: AppInvocation) -> str:
-    """The command the error happened in, or INTERACTION for components and the like. The
-    stack trace usually makes this clear, but not always!"""
+    """Where the error happened, for logs and reports: the command's full name,
+    uppercased, or INTERACTION for view and modal errors. The traceback doesn't
+    always make this clear."""
     if isinstance(ctx, discord.ApplicationContext) and ctx.command is not None:
         return ctx.command.qualified_name.upper()
     return "INTERACTION"
 
 
 class ErrorReporter:
-    """A utility that posts error messages in a specified channel."""
+    """Responds to errors. Expected errors get a message for the user. Unexpected
+    ones are logged and posted to the report channel, if one is set."""
 
-    def __init__(self):
-        self._bot: InconnuBot | None = None
-        self.channel: discord.TextChannel | None = None
-
-    @property
-    def bot(self) -> InconnuBot:
-        """The bot instance."""
-        if self._bot is None:
-            raise RuntimeError("prepare_channel() must be called first")
-        return self._bot
+    def __init__(self, bot: InconnuBot):
+        self.bot = bot
+        self.channel: discord.PartialMessageable | None = None
+        if settings.report_channel is None:
+            logger.warning("Unhandled exceptions report channel not set")
+        else:
+            logger.info("Report channel ID: {}", settings.report_channel)
+            self.channel = bot.get_partial_messageable(settings.report_channel)
 
     @property
     def reinvite_message(self) -> discord.Embed:
-        """Instructions for re-inviting the bot and submitting a bug report."""
+        """An embed asking the user to re-invite the bot, for errors that suggest
+        it can't access the channel. Links the support server if that doesn't
+        help."""
         invite = self.bot.invite_url
         embed = discord.Embed(
             title="Please re-invite Inconnu",
@@ -67,28 +70,10 @@ class ErrorReporter:
         )
         return embed
 
-    async def prepare_channel(self, bot: InconnuBot):
-        """Attempt to get the error channel from the bot."""
-        self._bot = bot
-        if settings.report_channel is None:
-            logger.warning("Unhandled exceptions report channel not set")
-            return
-
-        logger.info("Report channel ID: {}", settings.report_channel)
-        try:
-            channel = await bot.fetch_channel(settings.report_channel)
-        except (discord.HTTPException, discord.InvalidData) as err:
-            logger.warning("Couldn't fetch the report channel: {}", str(err))
-            return
-
-        if isinstance(channel, discord.TextChannel):
-            logger.info("Recording errors in #{}", channel.name)
-            self.channel = channel
-        else:
-            logger.warning("Unhandled exceptions channel invalid")
-
     async def report_error(self, ctx: AppInvocation, error: Exception):
-        """Report an error, switching between known and unknown."""
+        """Unwrap the error and respond based on its type. Some expected errors
+        are only logged or ignored. Anything unrecognized is reported as
+        unexpected."""
         error = getattr(error, "original", error)
 
         match error:
@@ -99,8 +84,8 @@ class ErrorReporter:
             case commands.MissingPermissions():
                 await ctx.respond("Sorry, you don't have permission to do this!", ephemeral=True)
             case discord.NotFound() | errors.HandledError():
-                # NotFound just means a button tried to disable when its message no longer
-                # exists. We don't care, and there's nothing we can do about it anyway.
+                # NotFound: the message or resource is gone, usually a deleted message.
+                # HandledError: the user was already told.
                 pass
             case errors.NotReady():
                 await ui.embeds.error(ctx, str(error), title="One moment, please")
@@ -129,7 +114,8 @@ class ErrorReporter:
                 await self._report_unknown(ctx, error)
 
     async def _report_not_premium(self, ctx: AppInvocation):
-        """Tell the user the feature requires premium."""
+        """Tell the user only patrons can use this command, with a
+        troubleshooting link for existing patrons."""
         troubleshoot_url = docs_url("advanced/troubleshooting#you-arent-able-to-upload-images")
 
         if ctx.command is not None:
@@ -158,7 +144,8 @@ class ErrorReporter:
         await ctx.respond(embed=embed, ephemeral=True)
 
     async def _outage_alert(self, ctx: AppInvocation):
-        """Warn the channel that a Discord issue is affecting the bot."""
+        """Post a notice in the command's channel, deleted after 15 seconds, that
+        a Discord issue is affecting the bot."""
         if not isinstance(ctx.channel, discord.abc.Messageable):
             return
         try:
@@ -174,7 +161,8 @@ class ErrorReporter:
             logger.error("Couldn't post an outage alert: {}", str(err))
 
     async def _report_unknown(self, ctx: AppInvocation, error: BaseException):
-        """Log an unknown error, notify the user, and post it to the report channel."""
+        """Log an unexpected error, tell the user, and post it to the report
+        channel. Database errors also go to the database error channel."""
         # Log first, so the error is recorded even if reporting fails
         formatted = "".join(traceback.format_exception(error))
         logger.error("{}: {}", error_scope(ctx), formatted)
@@ -200,7 +188,9 @@ class ErrorReporter:
                     logger.error("Couldn't post an error report: {}", str(err))
 
     async def error_embed(self, ctx: AppInvocation, error: BaseException) -> discord.Embed:
-        """Create an error embed."""
+        """The report-channel embed: where the error happened and its type, its
+        traceback (keeping the end if it's too long), and who hit it on which
+        server."""
         if isinstance(error, discord.HTTPException) and error.code == INVALID_WEBHOOK_TOKEN:
             description = "**Unrecoverable Discord error:** Invalid webhook token"
         else:
@@ -231,5 +221,3 @@ class ErrorReporter:
 
         return embed
 
-
-reporter = ErrorReporter()

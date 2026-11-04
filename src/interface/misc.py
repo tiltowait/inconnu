@@ -9,7 +9,6 @@ from discord.ext import commands
 
 import constants
 import inconnu
-import ui
 from ctx import AppCtx
 from inconnu.options import char_option
 from interface import CommandCog
@@ -55,7 +54,7 @@ class MiscCommands(CommandCog, name="Miscellaneous"):  # pyright: ignore[reportC
         site = discord.ui.Button(label="Website", url="https://www.inconnu.app")
         support = discord.ui.Button(label="Support", url=constants.SUPPORT_URL)
 
-        await ctx.respond(embed=embed, view=ui.views.ReportingView(site, support))
+        await ctx.respond(embed=embed, view=discord.ui.View(site, support))
 
     @slash_command()
     async def motd(self, ctx: AppCtx):

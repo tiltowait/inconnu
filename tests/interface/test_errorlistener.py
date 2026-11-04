@@ -11,7 +11,6 @@ import pytest
 from bot import InconnuBot
 from ctx import AppCtx
 from interface.errorlistener import ErrorListener
-from services.reporter import ErrorReporter
 from ui.views import ReportingView
 
 type MockInteraction = MagicMock
@@ -84,11 +83,3 @@ async def test_modal_error_reported(bot: discord.Bot, mock_report: AsyncMock):
 
     mock_report.assert_awaited_once_with(inter, error)
 
-
-async def test_report_channel_prepared_once(bot: discord.Bot, cog: ErrorListener):
-    """Reconnecting doesn't fetch the report channel again."""
-    with patch.object(ErrorReporter, "prepare_channel", new_callable=AsyncMock) as mock_prep:
-        await cog.on_connect()
-        await cog.on_connect()
-
-    mock_prep.assert_awaited_once_with(bot)

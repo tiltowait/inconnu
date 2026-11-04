@@ -15,15 +15,7 @@ class ErrorListener(commands.Cog):
 
     def __init__(self, bot: InconnuBot):
         self.bot = bot
-        self.reporter = ErrorReporter()
-        self._prepared = False
-
-    @commands.Cog.listener()
-    async def on_connect(self):
-        """Find the report channel on the first connection."""
-        if not self._prepared:
-            await self.reporter.prepare_channel(self.bot)
-            self._prepared = True
+        self.reporter = ErrorReporter(bot)
 
     @commands.Cog.listener()
     async def on_application_command_error(

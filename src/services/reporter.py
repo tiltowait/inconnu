@@ -35,16 +35,14 @@ def error_scope(ctx: AppInvocation) -> str:
 class ErrorReporter:
     """A utility that posts error messages in a specified channel."""
 
-    def __init__(self):
-        self._bot: InconnuBot | None = None
-        self.channel: discord.TextChannel | None = None
-
-    @property
-    def bot(self) -> InconnuBot:
-        """The bot instance."""
-        if self._bot is None:
-            raise RuntimeError("prepare_channel() must be called first")
-        return self._bot
+    def __init__(self, bot: InconnuBot):
+        self.bot = bot
+        self.channel: discord.PartialMessageable | None = None
+        if settings.report_channel is None:
+            logger.warning("Unhandled exceptions report channel not set")
+        else:
+            logger.info("Report channel ID: {}", settings.report_channel)
+            self.channel = bot.get_partial_messageable(settings.report_channel)
 
     @property
     def reinvite_message(self) -> discord.Embed:
@@ -66,26 +64,6 @@ class ErrorReporter:
             ),
         )
         return embed
-
-    async def prepare_channel(self, bot: InconnuBot):
-        """Attempt to get the error channel from the bot."""
-        self._bot = bot
-        if settings.report_channel is None:
-            logger.warning("Unhandled exceptions report channel not set")
-            return
-
-        logger.info("Report channel ID: {}", settings.report_channel)
-        try:
-            channel = await bot.fetch_channel(settings.report_channel)
-        except (discord.HTTPException, discord.InvalidData) as err:
-            logger.warning("Couldn't fetch the report channel: {}", str(err))
-            return
-
-        if isinstance(channel, discord.TextChannel):
-            logger.info("Recording errors in #{}", channel.name)
-            self.channel = channel
-        else:
-            logger.warning("Unhandled exceptions channel invalid")
 
     async def report_error(self, ctx: AppInvocation, error: Exception):
         """Report an error, switching between known and unknown."""

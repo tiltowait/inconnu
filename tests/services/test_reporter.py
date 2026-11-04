@@ -86,12 +86,11 @@ def ctx(bot: InconnuBot) -> AppCtx:
 
 
 @pytest.fixture
-async def reporter(bot: InconnuBot) -> ErrorReporter:
+def reporter(bot: InconnuBot) -> ErrorReporter:
     """A reporter with a report channel."""
-    reporter = ErrorReporter()
     with patch.object(settings, "report_channel", None):
-        await reporter.prepare_channel(bot)
-    reporter.channel = AsyncMock(spec=discord.TextChannel)
+        reporter = ErrorReporter(bot)
+    reporter.channel = AsyncMock(spec=discord.PartialMessageable)
     return reporter
 
 
@@ -397,53 +396,22 @@ async def test_interaction_error(reporter: ErrorReporter, bot: InconnuBot):
     assert report_embed(reporter).title == "INTERACTION: ValueError"
 
 
-# Channel preparation
+# Report channel
 
 
-async def test_prepare_channel(bot: InconnuBot):
-    """The configured text channel becomes the report channel."""
-    channel = MagicMock(spec=discord.TextChannel)
-    channel.name = "errors"
-    cast(MagicMock, bot).fetch_channel = AsyncMock(return_value=channel)
-    reporter = ErrorReporter()
+def test_report_channel(bot: InconnuBot):
+    """The configured channel ID becomes the report channel."""
     with patch.object(settings, "report_channel", 123):
-        await reporter.prepare_channel(bot)
+        reporter = ErrorReporter(bot)
 
-    assert reporter.channel is channel
-    assert reporter.bot is bot
+    get_partial = cast(MagicMock, bot).get_partial_messageable
+    get_partial.assert_called_once_with(123)
+    assert reporter.channel is get_partial.return_value
 
 
-async def test_prepare_channel_not_text(bot: InconnuBot):
-    """Non-text channels are rejected."""
-    cast(MagicMock, bot).fetch_channel = AsyncMock(
-        return_value=MagicMock(spec=discord.VoiceChannel)
-    )
-    reporter = ErrorReporter()
-    with patch.object(settings, "report_channel", 123):
-        await reporter.prepare_channel(bot)
+def test_no_report_channel(bot: InconnuBot):
+    """Without a configured channel, nothing is posted."""
+    with patch.object(settings, "report_channel", None):
+        reporter = ErrorReporter(bot)
 
     assert reporter.channel is None
-
-
-@pytest.mark.parametrize(
-    "error",
-    [
-        discord.NotFound(MagicMock(status=404), "Unknown Channel"),
-        discord.Forbidden(MagicMock(status=403), "Missing Access"),
-    ],
-)
-async def test_prepare_channel_inaccessible(bot: InconnuBot, error: discord.HTTPException):
-    """A deleted or inaccessible channel doesn't stop the bot from connecting."""
-    cast(MagicMock, bot).fetch_channel = AsyncMock(side_effect=error)
-    reporter = ErrorReporter()
-    with patch.object(settings, "report_channel", 123):
-        await reporter.prepare_channel(bot)
-
-    assert reporter.channel is None
-    assert reporter.bot is bot
-
-
-def test_bot_before_prepare():
-    """Using the bot before preparing the channel is a programming error."""
-    with pytest.raises(RuntimeError):
-        _ = ErrorReporter().bot

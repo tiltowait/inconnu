@@ -11,7 +11,6 @@ import pytest
 from bot import InconnuBot
 from ctx import AppCtx
 from interface.errorlistener import ErrorListener
-from ui.views import ReportingView
 
 type MockInteraction = MagicMock
 
@@ -62,7 +61,7 @@ async def test_command_error_reported(bot: discord.Bot, mock_report: AsyncMock):
 
 async def test_view_error_reported(bot: discord.Bot, mock_report: AsyncMock):
     """A view's default on_error dispatches to the reporter."""
-    view = ReportingView()
+    view = discord.ui.View()
     inter = make_interaction(bot)
     error = ValueError("boom")
 

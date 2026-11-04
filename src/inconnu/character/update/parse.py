@@ -8,7 +8,6 @@ from discord.ui import Button
 
 import constants
 import services
-import ui
 from ctx import AppCtx, AppInvocation
 from inconnu.character.display import DisplayField, display
 from inconnu.character.impairment import impairment_reminder
@@ -187,7 +186,7 @@ async def update_help(
         url=docs_url("command-reference/characters#character-update"),
     )
     support = Button(label="Support", url=constants.SUPPORT_URL)
-    view = ui.views.ReportingView(documentation, support)
+    view = discord.ui.View(documentation, support)
 
     mention_embed_commands(ctx.client, embed)
     await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)

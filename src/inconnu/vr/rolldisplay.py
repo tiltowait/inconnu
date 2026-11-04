@@ -17,7 +17,6 @@ from inconnu.character.impairment import impairment_reminder, incapacitation_rem
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
 from models import IMPAIRMENT_DICE, ImpairmentCategory, RollCategory, VChar
-from ui.views.reportingview import ReportingView
 from utils import get_avatar, get_message
 from utils.text import de_camel
 from utils.urls import web_asset
@@ -54,7 +53,7 @@ class _ButtonState:
         return self.strategy is not None
 
 
-class RollDisplay(ReportingView):
+class RollDisplay(discord.ui.View):
     """Display and manipulate roll outcomes. Provides buttons for rerolls, WP, and Rouse."""
 
     def __init__(

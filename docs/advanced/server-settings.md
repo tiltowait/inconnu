@@ -81,7 +81,7 @@ Raises the maximum Hunger in rolls from 5 to 10. It doesn't change characters' m
 > [!NOTE]
 > **Default:** `Players can adjust unspent and lifetime XP`
 
-Whether players can edit their own XP. The options are:
+Whether players can use `/experience award` and `/experience deduct` on their own characters. The options are:
 
 * Players can adjust unspent and lifetime XP
 * Players can adjust unspent XP only

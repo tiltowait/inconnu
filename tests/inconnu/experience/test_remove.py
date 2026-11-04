@@ -1,7 +1,108 @@
-"""Tests for inconnu/experience/remove.py helper functions."""
+"""Tests for inconnu/experience/remove.py."""
 
-from inconnu.experience.remove import _entry_scope
+from collections.abc import Iterator
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import discord
+import pytest
+
+import inconnu.experience.remove as remove_module
+from inconnu.experience.remove import _entry_scope, _ExperienceView
+from models import VChar
 from models.vchardocs import VCharExperienceEntry
+
+type MockInteraction = MagicMock
+type MockMember = MagicMock
+
+
+@pytest.fixture
+def character() -> VChar:
+    """A character with some XP."""
+    char = VChar(
+        guild=1,
+        user=2,
+        name="Nadea",
+        splat="vampire",
+        health="......",
+        willpower="......",
+        humanity=7,
+        stains=0,
+        potency=1,
+    )
+    char.experience.unspent = 10
+    char.experience.lifetime = 20
+    return char
+
+
+@pytest.fixture
+def interaction() -> MockInteraction:
+    """An admin's button press."""
+    inter = MagicMock(spec=discord.Interaction)
+    inter.response = MagicMock(spec=discord.InteractionResponse)
+    inter.response.edit_message = AsyncMock()
+    inter.user = MagicMock(spec=discord.Member)
+    return inter
+
+
+@pytest.fixture
+def mock_display() -> Iterator[AsyncMock]:
+    """Patch the character display and its side effects."""
+    with (
+        patch.object(remove_module, "display", new_callable=AsyncMock) as display,
+        patch.object(remove_module, "get_message", new_callable=AsyncMock),
+        patch.object(remove_module.services, "post_update", new_callable=AsyncMock),
+        patch.object(VChar, "save", new_callable=AsyncMock),
+    ):
+        yield display
+
+
+def _press_view(character: VChar, event: str, amount: int) -> _ExperienceView:
+    """Create the view for deleting a log entry."""
+    entry = VCharExperienceEntry(event=event, amount=amount, reason="Test", admin=123)
+    player: MockMember = MagicMock(spec=discord.Member)
+    return _ExperienceView(character, player, entry)
+
+
+async def test_apply_xp_unspent(
+    character: VChar, interaction: MockInteraction, mock_display: AsyncMock
+):
+    """Deleting an unspent award removes it from unspent XP only."""
+    view = _press_view(character, "award_unspent", 3)
+    await view.apply_xp(interaction)
+
+    assert character.experience.unspent == 7
+    assert character.experience.lifetime == 20
+    assert mock_display.await_args is not None
+    assert mock_display.await_args.kwargs["message"] == "* `-3` unspent XP."
+
+
+async def test_apply_xp_lifetime(
+    character: VChar, interaction: MockInteraction, mock_display: AsyncMock
+):
+    """Reverting a lifetime deduction raises both lifetime and unspent XP."""
+    view = _press_view(character, "deduct_lifetime", -4)
+    await view.apply_xp(interaction)
+
+    assert character.experience.unspent == 14
+    assert character.experience.lifetime == 24
+    assert mock_display.await_args is not None
+    assert mock_display.await_args.kwargs["message"] == ("* `+4` unspent XP.\n* `+4` lifetime XP.")
+
+
+async def test_apply_xp_lifetime_floor(
+    character: VChar, interaction: MockInteraction, mock_display: AsyncMock
+):
+    """Lifetime XP can't go below zero, and the message shows what changed."""
+    view = _press_view(character, "award_lifetime", 25)
+    await view.apply_xp(interaction)
+
+    assert character.experience.lifetime == 0
+    assert character.experience.unspent == -10
+    assert mock_display.await_args is not None
+    assert mock_display.await_args.kwargs["message"] == (
+        "* `-20` unspent XP.\n* `-20` lifetime XP."
+    )
+
 
 # Test basic functionality
 
@@ -143,3 +244,48 @@ def test_entry_scope_numbers_only():
     entry = VCharExperienceEntry(event="prefix_123", amount=5, reason="Test", admin=123)
     result = _entry_scope(entry)
     assert result == "123"
+
+
+@pytest.mark.parametrize(
+    "event,amount,label",
+    [
+        ("award_unspent", 3, "Remove 3 Unspent XP"),
+        ("deduct_lifetime", -4, "Add 4 Lifetime XP"),
+    ],
+)
+async def test_button_label(character: VChar, event: str, amount: int, label: str):
+    """The button offers to reverse the deleted entry."""
+    view = _press_view(character, event, amount)
+    button = view.children[0]
+
+    assert isinstance(button, discord.ui.Button)
+    assert button.label == label
+
+
+@pytest.mark.parametrize("admin", [True, False])
+async def test_only_admins_press(character: VChar, interaction: MockInteraction, admin: bool):
+    """Only admins can apply the reversal."""
+    interaction.response.send_message = AsyncMock()
+    view = _press_view(character, "award_unspent", 3)
+
+    with patch.object(remove_module, "is_admin", return_value=admin):
+        assert await view.interaction_check(interaction) is admin
+
+    assert interaction.response.send_message.await_count == (0 if admin else 1)
+
+
+async def test_apply_xp_finishes(
+    character: VChar, interaction: MockInteraction, mock_display: AsyncMock
+):
+    """Pressing removes the button, saves, reports the change, and ends the view."""
+    view = _press_view(character, "award_unspent", 3)
+    with (
+        patch.object(VChar, "save", new_callable=AsyncMock) as save,
+        patch.object(remove_module.services, "post_update", new_callable=AsyncMock) as post,
+    ):
+        await view.apply_xp(interaction)
+
+    interaction.response.edit_message.assert_awaited_once_with(view=None)
+    save.assert_awaited_once()
+    post.assert_awaited_once()
+    assert view.is_finished()

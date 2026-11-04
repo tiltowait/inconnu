@@ -16,6 +16,7 @@ def make_bot() -> MagicMock:
     bot = MagicMock(spec=InconnuBot)
     bot.me = MagicMock(spec=discord.ClientUser)
     bot.me.configure_mock(display_name="Inconnu", avatar="https://example.com/avatar.png")
+    bot.cmd_mention.return_value = "</character update:1>"
     return bot
 
 

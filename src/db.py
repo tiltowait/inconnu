@@ -1,10 +1,12 @@
 """Shared database instance and collections."""
 
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from beanie import Document, init_beanie
 from loguru import logger
 from pymongo import AsyncMongoClient
+from pymongo.asynchronous.client_session import AsyncClientSession
 
 from config import settings
 from models import RPPost, VChar, VGuild, VUser
@@ -36,6 +38,14 @@ async def server_info() -> dict[str, Any]:
     info = await _client.server_info()
     info["database"] = _db.name  # For logging purposes
     return info
+
+
+async def transaction[T](callback: Callable[[AsyncClientSession], Awaitable[T]]) -> T:
+    """Run the callback in a transaction, committing if it succeeds. Transient
+    errors retry the whole callback, so it must be safe to run more than once.
+    Pass the session to every database call in it."""
+    async with _client.start_session() as session:
+        return await session.with_transaction(callback)
 
 
 async def init():

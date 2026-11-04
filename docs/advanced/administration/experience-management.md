@@ -10,22 +10,24 @@ description: >-
 
 | Parameter   | Description                                              |
 | ----------- | -------------------------------------------------------- |
-| `player`    | The player who owns the character                        |
-| `character` | The character to award or deduct XP  |
 | `amount`    | The amount of XP to award/deduct                         |
 | `scope`     | Whether to apply the operation to lifetime or unspent XP |
-| `reason`    | An admin-given note about the reason for the change      |
+| `reason`    | A note about the reason for the change                   |
+| `player`    | The player who owns the character (admin only)           |
+| `character` | The character to award or deduct XP (optional if the player has only one) |
+
+Players may award and deduct XP for their own characters in the scopes the server's [Experience setting](../server-settings.md#experience) allows. Admins can always adjust XP.
 
 > [!NOTE]
 > Players and admins may view their characters' experience logs with the `/experience log` command. Admins can also right-click a user and choose **Apps → Experience Log**.
 
-**To remove a log entry**, use `/experience remove entry` with `player`, `character`, and `log_index` (the entry's number in `/experience log`).
+**To remove a log entry** (admin only), use `/experience remove entry` with `player`, `character`, and `log_index` (the entry's number in `/experience log`).
 
 The confirmation offers a button to reverse the entry's XP change, such as subtracting 10 lifetime XP for a 10-XP award.
 
 ## Bulk experience
 
-`/bulk award xp` awards XP to many characters at once. It opens a dialogue with two fields:
+`/bulk award xp` (admin only) awards XP to many characters at once. It opens a dialogue with two fields:
 
 | Parameter       | Description                                                  |
 | --------------- | ------------------------------------------------------------ |

@@ -56,10 +56,8 @@ Updates any number of trackers at once:
 | `stains` | Stains |
 | `hunger` | Hunger |
 | `potency` | Blood Potency |
-| `unspent_xp` | Unspent XP |
-| `lifetime_xp` | Total XP earned, spent and unspent |
 
-Numeric keys take `+X` or `-X` to adjust the current value, or `X` to set it.
+Numeric keys take `+X` or `-X` to adjust the current value, or `X` to set it. To change XP, see [Experience Management](../advanced/administration/experience-management.md).
 
 > [!TIP]
 > **Example:** _Add_ 2 Superficial Health damage, _set_ Aggravated Health damage to 1, and _add_ a Stain:
@@ -69,11 +67,11 @@ Numeric keys take `+X` or `-X` to adjust the current value, or `X` to set it.
 > ```
 
 > [!WARNING]
-> Lowering maximum Health or Willpower too far loses damage. Lowering `lifetime_xp` below `unspent_xp` also lowers `unspent_xp`.
+> Lowering maximum Health or Willpower too far loses damage.
 
 ## /character adjust
 
-The same changes as `/character update`, chosen from individual options instead of typed as `KEY=VALUE` pairs: `new_name`, `health`, `willpower`, `humanity`, `template`, `sup_hp`, `agg_hp`, `sup_wp`, `agg_wp`, `stains`, `unspent_xp`, `lifetime_xp`, `hunger`, and `potency`.
+The same changes as `/character update`, chosen from individual options instead of typed as `KEY=VALUE` pairs: `new_name`, `health`, `willpower`, `humanity`, `template`, `sup_hp`, `agg_hp`, `sup_wp`, `agg_wp`, `stains`, `hunger`, and `potency`.
 
 ## /character delete
 

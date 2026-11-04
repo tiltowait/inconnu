@@ -219,7 +219,9 @@ async def test_macro_text(ctx: AppCtx, character: VChar):
     character.macros = [make_macro("brawl", difficulty=3, hunt=True, comment="Punch")]
     screen = await show_macros(ctx, character)
 
-    assert screen.macros == ["### BRAWL\n`strength brawl`\nDifficulty 3 · Hunt\n-# \u200b\n-# Punch"]
+    assert screen.macros == [
+        "### BRAWL\n`strength brawl`\nDifficulty 3 · Hunt\n-# \u200b\n-# Punch"
+    ]
 
 
 async def test_macro_text_with_rouses(ctx: AppCtx, character: VChar):
@@ -236,9 +238,7 @@ async def test_macro_text_with_rouses(ctx: AppCtx, character: VChar):
     ]
     screen = await show_macros(ctx, character)
 
-    assert screen.macros == [
-        "### SURGE\n2 Rouse Checks (rerolled) · Stains · No Hunger"
-    ]
+    assert screen.macros == ["### SURGE\n2 Rouse Checks (rerolled) · Stains · No Hunger"]
 
 
 async def test_macro_text_empty(ctx: AppCtx, character: VChar):

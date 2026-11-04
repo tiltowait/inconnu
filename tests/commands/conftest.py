@@ -27,15 +27,25 @@ def user() -> discord.Member:
     return mock
 
 
+@pytest.fixture(scope="session")
+def shared_bot() -> InconnuBot:
+    """A real InconnuBot with every cog loaded, built once since loading cogs is slow."""
+    return InconnuBot()
+
+
 @pytest.fixture
-def bot() -> Generator[InconnuBot]:
-    """A real InconnuBot whose user is mocked, since it never logs in."""
+def bot(shared_bot: InconnuBot) -> Generator[InconnuBot]:
+    """The shared InconnuBot, logged in as a mock user for this test only.
+
+    The bot is shared across the session, so tests must not leave state on it
+    (lockdown, MOTD, attributes); use patch.object() for anything a test changes.
+    """
     bot_user = MagicMock(spec=discord.ClientUser)
     bot_user.display_name = "Inconnu"
     bot_user.avatar = "https://example.com/avatar.png"
 
     with patch.object(InconnuBot, "user", new_callable=PropertyMock, return_value=bot_user):
-        yield InconnuBot()
+        yield shared_bot
 
 
 @pytest.fixture

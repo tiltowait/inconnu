@@ -231,5 +231,3 @@ class ErrorReporter:
 
         return embed
 
-
-reporter = ErrorReporter()

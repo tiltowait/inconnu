@@ -16,7 +16,6 @@ from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
 from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
-from services.reporter import reporter
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -217,7 +216,6 @@ class InconnuBot(discord.AutoShardedBot):
             raise RuntimeError("Did not receive a user ID. Crashing.")
 
         if not self.connected:
-            await reporter.prepare_channel(self)
             self._webhook_cache = WebhookCache(self.user.id)
 
             logger.info("Logged in as {}!", str(self.user))
@@ -255,11 +253,16 @@ class InconnuBot(discord.AutoShardedBot):
         await self._set_presence()
         logger.info("Ready")
 
-    async def on_application_command_error(
-        self, context: discord.ApplicationContext, exception: discord.DiscordException
+    # ErrorListener reports view and modal errors. Unlike command errors, the
+    # client's defaults would also print them to stderr, so silence those.
+
+    async def on_view_error(
+        self, error: Exception, item: discord.ui.ViewItem, interaction: discord.Interaction
     ):
-        """Use centralized reporter to handle errors."""
-        await reporter.report_error(cast(AppCtx, context), exception)
+        """Leave view errors to ErrorListener."""
+
+    async def on_modal_error(self, error: Exception, interaction: discord.Interaction):
+        """Leave modal errors to ErrorListener."""
 
     # Member Events
 

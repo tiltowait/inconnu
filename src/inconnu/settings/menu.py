@@ -29,7 +29,7 @@ async def show(ctx: AppCtx, scope: str):
         obj = await VUser.get_or_fetch(ctx.user.id)
 
     view = SettingsMenu(ctx, obj, is_admin(ctx))
-    await ctx.respond(view=view)
+    await ctx.respond(view=view, ephemeral=True)
 
 
 class SettingsIDs(IntEnum):

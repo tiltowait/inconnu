@@ -4,42 +4,15 @@ import discord
 from discord.ui import Button, Select
 from loguru import logger
 
-type Editable = discord.Message | discord.Interaction
-
-# Handles that edit through the interaction webhook, which works on ephemeral
-# messages
-INTERACTION_BACKED = (discord.Interaction, discord.InteractionMessage, discord.WebhookMessage)
+from ui.views.ephemeralsafeview import EphemeralSafeView
 
 
-class DisablingView(discord.ui.View):
+class DisablingView(EphemeralSafeView):
     """A view that can disable all its buttons, save for its link buttons."""
 
     def __init__(self, timeout: float = 60, remove_on_timeout: bool = False):
         super().__init__(timeout=timeout)
         self.remove_on_timeout = remove_on_timeout
-        # BaseView types its _message too narrowly for an Interaction
-        self._handle: Editable | None = None
-
-    # py-cord's property is untyped, so pyright infers a narrower type than
-    # py-cord itself assigns (and than display() does, with an Interaction)
-    @property
-    def message(self) -> Editable | None:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """The handle used to edit the view's message on timeout."""
-        return self._handle
-
-    @message.setter
-    def message(self, value: Editable | None):
-        """Set the handle, unless it would make an ephemeral message uneditable.
-        Each press sets the interaction's plain Message, which edits through the
-        channel and so fails on ephemeral messages."""
-        if (
-            isinstance(value, discord.Message)
-            and not isinstance(value, INTERACTION_BACKED)
-            and value.flags.ephemeral
-            and isinstance(self._handle, INTERACTION_BACKED)
-        ):
-            return
-        self._handle = value
 
     def link_filter(self) -> list[Button | Select]:
         """The view's buttons and selects, minus link buttons. Includes items

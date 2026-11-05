@@ -224,6 +224,13 @@ async def test_get_location_author_location_and_blush():
     assert modal._get_location() == "The Elysium"
 
 
+async def test_get_location_without_heading(webhook: discord.Webhook):
+    """A header missing its author has no location to show."""
+    msg = _make_header_message()
+    modal = LocationChangeModal(msg, webhook=webhook, title="Edit")
+    assert modal._get_location() == ""
+
+
 # --- callback tests (title mode, no webhook) ---
 
 

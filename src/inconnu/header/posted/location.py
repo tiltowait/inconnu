@@ -1,6 +1,6 @@
 """Edit location and temporary effects on a posted RP header."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import discord
 from loguru import logger
@@ -54,7 +54,9 @@ async def _resolve_webhook(
 class LocationChangeModal(discord.ui.Modal):
     """A modal for changing RP header location."""
 
-    def __init__(self, header: discord.Message, webhook: discord.Webhook | None, *args, **kwargs):
+    def __init__(
+        self, header: discord.Message, webhook: discord.Webhook | None, *args: Any, **kwargs: Any
+    ):
         super().__init__(*args, **kwargs)
         self.header = header
         self.webhook = webhook
@@ -78,12 +80,15 @@ class LocationChangeModal(discord.ui.Modal):
             )
         )
 
-    def _get_location(self):
+    def _heading_elements(self) -> list[str]:
+        """Split the heading. Some headers have a title; others use the author."""
+        embed = self.header.embeds[0]
+        heading = embed.title if self.updating_title else getattr(embed.author, "name", "")
+        return (heading or "").split(" • ")
+
+    def _get_location(self) -> str:
         """Get the header's current location."""
-        if self.updating_title:
-            elements = self.header.embeds[0].title.split(" • ")
-        else:
-            elements = self.header.embeds[0].author.name.split(" • ")
+        elements = self._heading_elements()
 
         if len(elements) == 1:
             # Character name isn't given when the header is in the author
@@ -103,17 +108,11 @@ class LocationChangeModal(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Update the RP header."""
-        location = " ".join(self.children[0].value.replace("•", "").split())
-        temp_effects = " ".join(self.children[1].value.split())
+        location = " ".join((self.children[0].value or "").replace("•", "").split())
+        temp_effects = " ".join((self.children[1].value or "").split())
         embed = self.header.embeds[0]
 
-        # Some headers have a title; others use the author string
-        if self.updating_title:
-            logger.debug("EDIT HEADER: Embed has a title")
-            elements = embed.title.split(" • ")
-        else:
-            logger.debug("EDIT HEADER: Embed does not have a title")
-            elements = embed.author.name.split(" • ")
+        elements = self._heading_elements()
 
         if self._get_location():
             # We need to remove the old location
@@ -130,8 +129,8 @@ class LocationChangeModal(discord.ui.Modal):
         if self.updating_title:
             embed.title = new_heading
         else:
-            url = embed.author.url
-            icon_url = embed.author.icon_url
+            url = getattr(embed.author, "url", None)
+            icon_url = getattr(embed.author, "icon_url", None)
             embed.set_author(name=new_heading, url=url, icon_url=icon_url)
 
         embed.set_footer(text=temp_effects)

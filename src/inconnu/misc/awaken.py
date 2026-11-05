@@ -54,7 +54,7 @@ async def awaken(ctx: AppCtx, character: VChar):
 
     # If a vampire awakens, we want to turn off its blush. N/A (-1, set at
     # Humanity 9+) is left alone.
-    if character.is_vampire and not character.is_thin_blood and character.header.blush == 1:
+    if character.can_blush and character.header.blush == 1:
         logger.debug("AWAKEN: {} is no longer Blushed", character.name)
         character.set_blush(0)
     else:

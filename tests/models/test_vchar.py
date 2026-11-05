@@ -26,6 +26,36 @@ def test_non_vampire_cannot_blush(splat: str):
 
 
 @pytest.mark.parametrize(
+    "splat,can_blush,starting_blush",
+    [
+        ("vampire", True, 0),
+        ("thin-blood", False, -1),
+        ("ghoul", False, -1),
+        ("mortal", False, -1),
+    ],
+)
+def test_can_blush_sets_starting_blush(splat: str, can_blush: bool, starting_blush: int):
+    """Only full vampires use the Blush of Life, so others start at N/A."""
+    char = gen_char(splat)
+
+    assert char.can_blush is can_blush
+    assert char.header.blush == starting_blush
+
+
+def test_not_equal_to_other_types():
+    """Comparing to something that isn't a character doesn't raise."""
+    assert gen_char("vampire") != "Nadea"
+
+
+def test_can_blush_ignores_humanity():
+    """A vampire at high Humanity can still Blush if it falls later."""
+    vamp = gen_char("vampire")
+    vamp.humanity = 10
+
+    assert vamp.can_blush
+
+
+@pytest.mark.parametrize(
     "new_lifetime,expected_lifetime,expected_unspent",
     [
         (30, 30, 15),  # Raising lifetime raises unspent by as much

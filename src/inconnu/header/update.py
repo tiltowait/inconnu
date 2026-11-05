@@ -64,8 +64,7 @@ class _RPHeader(discord.ui.DesignerModal):
             discord.SelectOption(label="Off", value="0", default=self.character.header.blush < 1),
             discord.SelectOption(label="N/A", value="-1", default=True),
         ]
-        character_blushes = character.is_vampire and not character.is_thin_blood
-        if character_blushes and character.humanity < 9:
+        if character.can_blush and character.humanity < 9:
             blush_options = blush_options[:-1]
         else:
             blush_options = blush_options[-1:]

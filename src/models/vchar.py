@@ -9,7 +9,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from enum import StrEnum
 from functools import total_ordering
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
 from beanie import Document, Insert, Replace, Save, SaveChanges, before_event
 from loguru import logger
@@ -85,12 +85,7 @@ class VChar(Document):
         if self.splat == "thinblood":
             self.splat = "thin-blood"
 
-        if self.is_thin_blood:
-            self.header.blush = -1
-        elif self.is_vampire:
-            self.header.blush = 0
-        else:
-            self.header.blush = -1
+        self.header.blush = 0 if self.can_blush else -1
 
         logger.info("VCHAR: Created {}", self.name)
 
@@ -112,12 +107,12 @@ class VChar(Document):
 
     # Comparators
 
-    def __lt__(self, other):
+    def __lt__(self, other: Self) -> bool:
         return self.name.casefold() < other.name.casefold()
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """Just check the IDs."""
-        return self.id == other.id
+        return isinstance(other, VChar) and self.id == other.id
 
     # Synthetic properties
 
@@ -192,7 +187,7 @@ class VChar(Document):
         """The amount of Aggravated Health damage sustained."""
         return self.health.count(Damage.AGGRAVATED)
 
-    def set_aggravated_hp(self, new_value):
+    def set_aggravated_hp(self, new_value: int):
         """Set the Aggravated Health damage."""
         self.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, new_value, wrap=False)
 
@@ -221,7 +216,7 @@ class VChar(Document):
         """The amount of Superficial Willpower damage sustained."""
         return self.willpower.count(Damage.SUPERFICIAL)
 
-    def set_superficial_wp(self, new_value):
+    def set_superficial_wp(self, new_value: int):
         """Set the Superficial Willpower damage."""
         self.set_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, new_value, wrap=True)
 
@@ -230,7 +225,7 @@ class VChar(Document):
         """The amount of Superficial Health damage sustained."""
         return self.health.count(Damage.SUPERFICIAL)
 
-    def set_lifetime_xp(self, new_lifetime_xp):
+    def set_lifetime_xp(self, new_lifetime_xp: int):
         """Set the lifetime XP and adjust unspent by the delta."""
         new_lifetime_xp = max(0, new_lifetime_xp)
         delta = new_lifetime_xp - self.experience.lifetime
@@ -243,9 +238,9 @@ class VChar(Document):
         if self.header.blush == new_blush:
             logger.debug("VCHAR: {}'s Blush of Life ({}) is unchanged", self.name, new_blush)
             return
-        if self.is_vampire and not self.is_thin_blood:
-            # We only want to update blush of full vampires. Checked by splat,
-            # because a vampire whose header was set at Humanity 9+ has blush -1
+        if self.can_blush:
+            # Checked by splat, because a vampire whose header was set at
+            # Humanity 9+ has blush -1
             self.header.blush = new_blush
             logger.debug("VCHAR: Setting {}'s Blush of Life to {}", self.name, new_blush)
         else:
@@ -286,7 +281,7 @@ class VChar(Document):
         return state
 
     @property
-    def is_pc(self):
+    def is_pc(self) -> bool:
         """Whether the character is a PC."""
         return self.user != VChar.SPC_OWNER
 
@@ -296,9 +291,15 @@ class VChar(Document):
         return not self.is_pc
 
     @property
-    def is_vampire(self):
+    def is_vampire(self) -> bool:
         """Whether the character is a vampire."""
         return self.splat in {"vampire", "thin-blood"}
+
+    @property
+    def can_blush(self) -> bool:
+        """Whether the character's splat uses the Blush of Life. Humanity isn't
+        considered, since it can change."""
+        return self.is_vampire and not self.is_thin_blood
 
     @property
     def is_ghoul(self) -> bool:
@@ -306,12 +307,12 @@ class VChar(Document):
         return self.splat == "ghoul"
 
     @property
-    def is_thin_blood(self):
+    def is_thin_blood(self) -> bool:
         """Whether the character is thin-blooded."""
         return self.splat == "thin-blood"
 
     @property
-    def surge(self):
+    def surge(self) -> int:
         """The number of dice added to a Blood Surge."""
         return math.ceil(self.potency / 2) + 1
 
@@ -326,7 +327,7 @@ class VChar(Document):
         return self.find_trait("Stamina", exact=True).rating
 
     @property
-    def frenzy_resist(self):
+    def frenzy_resist(self) -> int:
         """The dice pool for resisting frenzy. Equal to current WP + 1/3 Humanity."""
         cur_wp = self.willpower.count(Damage.NONE)
         third_hu = int(self.humanity / 3)
@@ -539,7 +540,7 @@ class VChar(Document):
         index = self._macro_index(search)
         return self.macros[index]
 
-    def add_macro(self, **kwargs):
+    def add_macro(self, **kwargs: Any):
         """
         Create and store a macro.
         Raises MacroAlreadyExistsError if the macro already exists.
@@ -557,7 +558,7 @@ class VChar(Document):
 
         logger.debug("VCHAR: {}: Added new macro {}", self.name, macro.name)
 
-    def update_macro(self, search: str, update: dict[str, str | int | bool]):
+    def update_macro(self, search: str, update: dict[str, str | int | bool]) -> str:
         """Update a macro."""
         macro = self.find_macro(search)
         for field, value in update.items():
@@ -713,7 +714,7 @@ class VChar(Document):
 
     # Misc
 
-    def log(self, key, increment=1):
+    def log(self, key: str, increment=1):
         """Updates the log for a given field."""
         if increment < 1:
             # We only want to see increments, not decrements
@@ -741,7 +742,7 @@ class VChar(Document):
         else:
             self.stat_log[key] = increment
 
-    def __update_log(self, key, old_value, new_value):
+    def __update_log(self, key: str, old_value: int, new_value: int):
         """
         Updates the character log.
         Args:

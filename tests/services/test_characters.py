@@ -104,3 +104,15 @@ async def test_management(
     else:
         char = await services.char_mgr.fetchone(guild, user, identifier)
         assert char is not None
+
+
+async def test_fetchone_with_owner_id(char_id: str):
+    """Plain guild and user IDs find the owner's character."""
+    char = await services.char_mgr.fetchone(GUILD, USER, char_id)
+    assert char.id_str == char_id
+
+
+async def test_fetchone_with_non_owner_id(char_id: str):
+    """A plain user ID can't be a Storyteller, so it can't reach another's character."""
+    with pytest.raises(LookupError):
+        await services.char_mgr.fetchone(GUILD, WRONG_USER, char_id)

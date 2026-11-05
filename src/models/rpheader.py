@@ -1,7 +1,7 @@
 """Header subdoc."""
 
 import copy
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel
@@ -59,13 +59,16 @@ class HeaderSubdoc(BaseModel):
         return full[: HeaderSubdoc.MAX_TITLE_LEN]
 
     @classmethod
-    def create(cls, character: VChar, **kwargs):
+    def create(cls, character: VChar, **kwargs: Any) -> Self:
         """Prepare the header with any overrides."""
         header = copy.deepcopy(character.header)
 
         if kwargs["blush"] is not None:
             header.blush = kwargs["blush"]
-        header.location = kwargs["location"] or header.location
+        # Bullets separate the heading's elements. utils.text.clean_text() would
+        # do, but importing utils here is circular
+        location = kwargs["location"] or header.location
+        header.location = " ".join(location.replace("•", "").split())
         header.merits = kwargs["merits"] or header.merits
         header.flaws = kwargs["flaws"] or header.flaws
         header.temp = kwargs["temp"] or header.temp

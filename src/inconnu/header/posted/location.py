@@ -89,29 +89,19 @@ class LocationChangeModal(discord.ui.Modal):
         heading = embed.title if self.updating_title else getattr(embed.author, "name", "")
         return [element for element in (heading or "").split(" • ") if element]
 
+    def _location_span(self, elements: list[str]) -> slice:
+        """Find the location: everything between the character's name, which
+        only titles have, and the Blush, if any."""
+        start = 1 if self.updating_title else 0
+        stop = len(elements)
+        if elements and elements[-1] in BLUSH_TEXT:
+            stop -= 1
+        return slice(start, max(start, stop))
+
     def _get_location(self) -> str:
         """Get the header's current location."""
         elements = self._heading_elements()
-
-        if not elements:
-            return ""
-        if len(elements) == 1:
-            # Character name isn't given when the header is in the author
-            # field. If we're looking at the embed title, then, no location
-            # exists; otherwise, it's the only element, unless that's the Blush.
-            if self.updating_title or elements[0] in BLUSH_TEXT:
-                return ""
-            return elements[0]
-        if len(elements) == 2:
-            if self.updating_title:
-                if elements[-1] in BLUSH_TEXT:
-                    return ""
-                return elements[-1]
-
-            return elements[0]
-
-        # 3 elements; this could also be elements[1]
-        return elements[-2]
+        return " • ".join(elements[self._location_span(elements)])
 
     async def callback(self, interaction: discord.Interaction):
         """Update the RP header."""
@@ -124,18 +114,9 @@ class LocationChangeModal(discord.ui.Modal):
 
         embed = self.header.embeds[0]
 
-        elements = self._heading_elements()
-
-        if self._get_location():
-            # We need to remove the old location
-            if self.updating_title:
-                del elements[1]
-            else:
-                del elements[0]
-
         # Generate the new heading
-        insertion_index = 1 if self.updating_title else 0
-        elements.insert(insertion_index, location)
+        elements = self._heading_elements()
+        elements[self._location_span(elements)] = [location]
         new_heading = " • ".join(elements)
 
         if self.updating_title:

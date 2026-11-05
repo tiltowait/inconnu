@@ -269,6 +269,46 @@ async def test_callback_rejects_blank_location(location: str, interaction: disco
     assert msg.embeds[0].title == "Nadea • Blushed"
 
 
+async def test_get_location_extra_bullets():
+    """Title mode: a location with bullets in it is shown whole."""
+    msg = _make_header_message(title="Nadea • Elysium • Roof • Blushed")
+    modal = LocationChangeModal(msg, webhook=None, title="Edit")
+    assert modal._get_location() == "Elysium • Roof"
+
+
+async def test_get_location_author_extra_bullets():
+    """Author mode: a location with bullets in it is shown whole."""
+    wh = AsyncMock(spec=discord.Webhook)
+    msg = _make_header_message(author_name="Elysium • Roof • Blushed")
+    modal = LocationChangeModal(msg, webhook=wh, title="Edit")
+    assert modal._get_location() == "Elysium • Roof"
+
+
+async def test_callback_replaces_location_with_bullets(interaction: discord.Interaction):
+    """Title mode: the whole old location is replaced, and nothing else."""
+    msg = _make_header_message(title="Nadea • Elysium • Roof • Blushed")
+    modal = LocationChangeModal(msg, webhook=None, title="Edit")
+    modal.children[0].value = "The Rack"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    assert msg.embeds[0].title == "Nadea • The Rack • Blushed"
+
+
+async def test_callback_author_replaces_location_with_bullets(interaction: discord.Interaction):
+    """Author mode: the whole old location is replaced, and nothing else."""
+    wh = AsyncMock(spec=discord.Webhook)
+    msg = _make_header_message(author_name="Elysium • Roof • Blushed")
+    modal = LocationChangeModal(msg, webhook=wh, title="Edit")
+    modal.children[0].value = "The Rack"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    assert msg.embeds[0].author.name == "The Rack • Blushed"
+
+
 async def test_callback_author_without_heading(interaction: discord.Interaction):
     """Author mode: a missing heading becomes just the location."""
     wh = AsyncMock(spec=discord.Webhook)

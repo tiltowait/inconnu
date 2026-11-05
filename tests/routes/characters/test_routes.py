@@ -1,6 +1,7 @@
 """Tests for character API routes."""
 
-from typing import cast
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
@@ -20,6 +21,7 @@ from routes.characters.models import OwnerData
 from routes.deps import get_bot
 from server import app
 from services import guild_cache
+from services.guildcache import GuildCache
 from services.wizard import CharacterGuild, WizardData
 
 # Test constants
@@ -30,12 +32,14 @@ TEST_TOKEN = "valid-wizard-token"
 TEST_SUPPORTER_GUILD_ID = 54321
 TEST_SUPPORTER_ROLE_ID = 99999
 
+type MockAsyncFn = AsyncMock
 type MockBot = MagicMock
-type MockFetchid = AsyncMock
+type MockFn = MagicMock
+type MockGuild = MagicMock
 
 
 @pytest.fixture(autouse=True, scope="function")
-async def mock_beanie():
+async def mock_beanie() -> AsyncIterator[None]:
     """Initialize mock database for each test."""
     client = cast(AsyncMongoClient, AsyncMongoMockClient())
     mock_db = client.get_database("test")
@@ -47,7 +51,7 @@ async def mock_beanie():
 
 
 @pytest.fixture(autouse=True, scope="function")
-async def setup_guild_cache():
+async def setup_guild_cache() -> AsyncIterator[GuildCache]:
     """Set up guild cache with in-memory database for each test."""
     guild_cache.location = "file::memory:?cache=shared"
     guild_cache._initialized = False
@@ -66,7 +70,7 @@ async def setup_guild_cache():
 
 
 @pytest.fixture(autouse=True)
-def mock_api_key():
+def mock_api_key() -> Iterator[None]:
     """Mock API_KEY for all tests."""
     with patch.object(settings, "inconnu_api_token", TEST_API_KEY):
         yield
@@ -83,7 +87,7 @@ def mock_guild() -> discord.Guild:
 
 
 @pytest.fixture
-def mock_wizard_data(mock_guild) -> WizardData:
+def mock_wizard_data(mock_guild: discord.Guild) -> WizardData:
     """Create mock wizard data."""
     return WizardData(
         spc=False,
@@ -93,7 +97,7 @@ def mock_wizard_data(mock_guild) -> WizardData:
 
 
 @pytest.fixture
-def mock_spc_wizard_data(mock_guild):
+def mock_spc_wizard_data(mock_guild: discord.Guild) -> WizardData:
     """Create mock SPC wizard data."""
     return WizardData(
         spc=True,
@@ -103,7 +107,7 @@ def mock_spc_wizard_data(mock_guild):
 
 
 @pytest.fixture
-def valid_character_data():
+def valid_character_data() -> dict[str, Any]:
     """Valid character creation data."""
     return {
         "name": "Test Character",
@@ -133,7 +137,7 @@ def valid_character_data():
 
 
 @pytest.fixture
-def auth_headers():
+def auth_headers() -> dict[str, str]:
     """Authentication headers for API requests."""
     return {
         "Authorization": f"Bearer {TEST_API_KEY}",
@@ -142,13 +146,14 @@ def auth_headers():
 
 
 @pytest.fixture
-def mock_bot():
+def mock_bot() -> Iterator[MockBot]:
     """Mock bot with guilds list that can be configured per test."""
     bot = MagicMock(spec=discord.Bot)
     bot.guilds = []
 
     # Mock get_guild for guild lookup by ID
-    def get_guild(guild_id: int):
+    def get_guild(guild_id: int) -> discord.Guild | None:
+        """Find a guild in bot.guilds."""
         for guild in bot.guilds:
             if guild.id == guild_id:
                 return guild
@@ -164,7 +169,7 @@ def mock_bot():
 
 
 @pytest.fixture
-def mock_wizard_cache_pop():
+def mock_wizard_cache_pop() -> Iterator[tuple[MockFn, MockFn]]:
     """Mock wizard_cache.get and delete for character creation tests."""
     with (
         patch("routes.characters.routes.wizard_cache.get") as mock_get,
@@ -174,56 +179,56 @@ def mock_wizard_cache_pop():
 
 
 @pytest.fixture
-def mock_wizard_cache_get():
+def mock_wizard_cache_get() -> Iterator[MockFn]:
     """Mock wizard_cache.get for wizard endpoint tests."""
     with patch("routes.characters.routes.wizard_cache.get") as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_char_mgr_register():
+def mock_char_mgr_register() -> Iterator[MockAsyncFn]:
     """Mock char_mgr.register for character creation tests."""
     with patch("routes.characters.routes.char_mgr.register", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_char_mgr_fetchuser():
+def mock_char_mgr_fetchuser() -> Iterator[MockAsyncFn]:
     """Mock char_mgr.fetchuser for character list tests."""
     with patch("routes.characters.routes.char_mgr.fetchuser", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_char_mgr_fetchid():
+def mock_char_mgr_fetchid() -> Iterator[MockAsyncFn]:
     """Mock char_mgr.fetchid for character fetch tests."""
     with patch("routes.characters.routes.char_mgr.fetchid", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_guild_fetch():
+def mock_guild_fetch() -> Iterator[MockAsyncFn]:
     """Mock CharacterGuild.fetch for profile tests."""
     with patch("services.wizard.CharacterGuild.fetch", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_char_mgr_fetchguild():
+def mock_char_mgr_fetchguild() -> Iterator[MockAsyncFn]:
     """Mock char_mgr.fetchguild for guild character tests."""
     with patch("routes.characters.routes.char_mgr.fetchguild", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_owner_data_create():
+def mock_owner_data_create() -> Iterator[MockAsyncFn]:
     """Mock OwnerData.fetch for guild character tests."""
     with patch("routes.characters.models.OwnerData.fetch", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_char_mgr_countguild():
+def mock_char_mgr_countguild() -> Iterator[MockAsyncFn]:
     """Mock char_mgr.countguild for character list tests."""
     with patch("routes.characters.routes.char_mgr.countguild", new_callable=AsyncMock) as mock:
         mock.return_value = 0
@@ -231,13 +236,13 @@ def mock_char_mgr_countguild():
 
 
 @pytest.fixture
-def character_guild():
+def character_guild() -> CharacterGuild:
     """Standard CharacterGuild object for tests."""
     return CharacterGuild(id=str(TEST_GUILD_ID), name="Test Guild", icon=None, count=None)
 
 
 @pytest.fixture
-def owner_data():
+def owner_data() -> OwnerData:
     """Standard OwnerData object for tests."""
     return OwnerData(id=str(TEST_USER_ID), name="Test User", icon="http://avatar.png")
 
@@ -253,8 +258,11 @@ async def populate_guild_cache(guilds: list[discord.Guild]) -> None:
 
 
 def make_mock_guild(
-    guild_id: int, name: str, user_is_member: bool = True, members: list | None = None
-) -> MagicMock:
+    guild_id: int,
+    name: str,
+    user_is_member: bool = True,
+    members: list[discord.Member] | None = None,
+) -> MockGuild:
     """Create a mock Discord guild compatible with guild cache."""
     guild = MagicMock(spec=discord.Guild)
     guild.id = guild_id
@@ -285,7 +293,8 @@ def make_mock_guild(
             guild.members = [member]
 
     # Mock get_member to find in members list
-    def get_member(user_id: int):
+    def get_member(user_id: int) -> discord.Member | None:
+        """Find a member in the guild."""
         for m in guild.members:
             if m.id == user_id:
                 return m
@@ -329,7 +338,7 @@ def make_mock_char(
 # Authentication tests
 
 
-async def test_create_character_missing_api_key(valid_character_data):
+async def test_create_character_missing_api_key(valid_character_data: dict[str, Any]):
     """Request without API key rejected with 401."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -339,7 +348,7 @@ async def test_create_character_missing_api_key(valid_character_data):
         assert response.status_code == 401
 
 
-async def test_create_character_invalid_api_key(valid_character_data):
+async def test_create_character_invalid_api_key(valid_character_data: dict[str, Any]):
     """Request with invalid API key rejected with 401."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
@@ -351,12 +360,12 @@ async def test_create_character_invalid_api_key(valid_character_data):
 
 
 async def test_create_character_valid_api_key(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """Request with valid API key proceeds."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -376,7 +385,9 @@ async def test_create_character_valid_api_key(
 
 
 async def test_create_character_invalid_token(
-    valid_character_data, auth_headers, mock_wizard_cache_pop
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
 ):
     """Invalid wizard token returns 404."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -393,7 +404,9 @@ async def test_create_character_invalid_token(
 
 
 async def test_create_character_expired_token(
-    valid_character_data, auth_headers, mock_wizard_cache_pop
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
 ):
     """Expired wizard token returns 404."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -413,7 +426,10 @@ async def test_create_character_expired_token(
 
 
 async def test_create_character_invalid_name(
-    valid_character_data, auth_headers, mock_wizard_data, mock_wizard_cache_pop
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
 ):
     """Invalid character name returns 422."""
     valid_character_data["name"] = "A" * 31  # Too long
@@ -430,7 +446,10 @@ async def test_create_character_invalid_name(
 
 
 async def test_create_character_health_out_of_range(
-    valid_character_data, auth_headers, mock_wizard_data, mock_wizard_cache_pop
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
 ):
     """Health out of range (4-20) returns 422."""
     valid_character_data["health"] = 3  # Too low
@@ -447,7 +466,10 @@ async def test_create_character_health_out_of_range(
 
 
 async def test_create_character_mortal_with_blood_potency(
-    valid_character_data, auth_headers, mock_wizard_data, mock_wizard_cache_pop
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
 ):
     """Mortal with blood potency > 0 returns 422."""
     valid_character_data["splat"] = VCharSplat.MORTAL
@@ -466,7 +488,10 @@ async def test_create_character_mortal_with_blood_potency(
 
 
 async def test_create_character_too_many_convictions(
-    valid_character_data, auth_headers, mock_wizard_data, mock_wizard_cache_pop
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
 ):
     """More than 3 convictions returns 422."""
     valid_character_data["convictions"] = ["One", "Two", "Three", "Four"]
@@ -483,7 +508,10 @@ async def test_create_character_too_many_convictions(
 
 
 async def test_create_character_specialty_on_wrong_type(
-    valid_character_data, auth_headers, mock_wizard_data, mock_wizard_cache_pop
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
 ):
     """Specialty on attribute returns 422."""
     valid_character_data["traits"][0]["subtraits"] = ["Lifting"]  # Strength is an attribute
@@ -501,11 +529,11 @@ async def test_create_character_specialty_on_wrong_type(
 
 
 async def test_create_duplicate_character(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
 ):
     """Creating duplicate character (same name, guild, user) returns 422."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -525,11 +553,11 @@ async def test_create_duplicate_character(
 
 
 async def test_create_duplicate_character_case_insensitive(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
 ):
     """Duplicate check is case-insensitive."""
     valid_character_data["name"] = "TEST CHARACTER"
@@ -553,12 +581,12 @@ async def test_create_duplicate_character_case_insensitive(
 
 
 async def test_create_vampire_success(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """Valid vampire character created successfully."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -584,12 +612,12 @@ async def test_create_vampire_success(
 
 
 async def test_create_mortal_success(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """Valid mortal character created successfully."""
     valid_character_data["splat"] = VCharSplat.MORTAL
@@ -608,12 +636,12 @@ async def test_create_mortal_success(
 
 
 async def test_create_ghoul_success(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """Valid ghoul character created successfully."""
     valid_character_data["splat"] = VCharSplat.GHOUL
@@ -632,12 +660,12 @@ async def test_create_ghoul_success(
 
 
 async def test_create_thin_blood_success(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """Valid thin-blood character created successfully."""
     valid_character_data["splat"] = VCharSplat.THIN_BLOOD
@@ -656,12 +684,12 @@ async def test_create_thin_blood_success(
 
 
 async def test_create_character_with_specialties(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """Character with valid specialties created successfully."""
     valid_character_data["traits"].append(
@@ -691,12 +719,12 @@ async def test_create_character_with_specialties(
 
 
 async def test_token_consumed_after_creation(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """Wizard token is consumed (popped) after character creation."""
     mock_get, mock_delete = mock_wizard_cache_pop
@@ -714,12 +742,12 @@ async def test_token_consumed_after_creation(
 
 
 async def test_character_field_mapping(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """VChar fields correctly mapped from CreationBody."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -759,12 +787,12 @@ async def test_character_field_mapping(
 
 
 async def test_create_spc_character(
-    valid_character_data,
-    auth_headers,
-    mock_spc_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_spc_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """SPC character created with VChar.SPC_OWNER as user ID."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -789,12 +817,12 @@ async def test_create_spc_character(
 
 
 async def test_create_regular_character_user_id(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """Regular (non-SPC) character created with actual user ID."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -819,12 +847,12 @@ async def test_create_regular_character_user_id(
 
 
 async def test_create_character_premium_user(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """User with supporter role gets has_premium=True."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -841,7 +869,10 @@ async def test_create_character_premium_user(
     mock_member.get_role = MagicMock(return_value=mock_supporter_role)
 
     # Mock get_or_fetch to return member
-    async def mock_get_or_fetch(member_type, user_id):
+    async def mock_get_or_fetch(
+        member_type: type[discord.Member], user_id: int
+    ) -> discord.Member | None:
+        """Return the test member, if it's the one sought."""
         if user_id == TEST_USER_ID:
             return mock_member
         return None
@@ -867,12 +898,12 @@ async def test_create_character_premium_user(
 
 
 async def test_create_character_non_premium_user(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """User in supporter guild without role gets has_premium=False."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -886,7 +917,10 @@ async def test_create_character_non_premium_user(
     mock_member.id = TEST_USER_ID
     mock_member.get_role = MagicMock(return_value=None)  # No role
 
-    async def mock_get_or_fetch(member_type, user_id):
+    async def mock_get_or_fetch(
+        member_type: type[discord.Member], user_id: int
+    ) -> discord.Member | None:
+        """Return the test member, if it's the one sought."""
         if user_id == TEST_USER_ID:
             return mock_member
         return None
@@ -910,12 +944,12 @@ async def test_create_character_non_premium_user(
 
 
 async def test_create_character_user_not_in_supporter_guild(
-    valid_character_data,
-    auth_headers,
-    mock_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """User not in supporter guild gets has_premium=False."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -944,12 +978,12 @@ async def test_create_character_user_not_in_supporter_guild(
 
 
 async def test_create_spc_premium_check_uses_wizard_creator(
-    valid_character_data,
-    auth_headers,
-    mock_spc_wizard_data,
-    mock_wizard_cache_pop,
-    mock_char_mgr_register,
-    mock_bot,
+    valid_character_data: dict[str, Any],
+    auth_headers: dict[str, str],
+    mock_spc_wizard_data: WizardData,
+    mock_wizard_cache_pop: tuple[MockFn, MockFn],
+    mock_char_mgr_register: MockAsyncFn,
+    mock_bot: MockBot,
 ):
     """SPC character premium check uses wizard creator (wizard.user), not SPC_OWNER."""
     mock_get, _mock_delete = mock_wizard_cache_pop
@@ -966,7 +1000,10 @@ async def test_create_spc_premium_check_uses_wizard_creator(
     mock_supporter_role.id = TEST_SUPPORTER_ROLE_ID
     mock_member.get_role = MagicMock(return_value=mock_supporter_role)
 
-    async def mock_get_or_fetch(member_type, user_id):
+    async def mock_get_or_fetch(
+        member_type: type[discord.Member], user_id: int
+    ) -> discord.Member | None:
+        """Return the test member, if it's the one sought."""
         if user_id == TEST_USER_ID:  # wizard.user
             return mock_member
         return None
@@ -995,11 +1032,11 @@ async def test_create_spc_premium_check_uses_wizard_creator(
 
 
 async def test_get_full_character_success(
-    auth_headers,
-    mock_bot,
-    mock_char_mgr_fetchid,
-    character_guild,
-    owner_data,
+    auth_headers: dict[str, str],
+    mock_bot: MockBot,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    character_guild: CharacterGuild,
+    owner_data: OwnerData,
 ):
     """Successfully fetch full character owned by user."""
     mock_char = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Test Character")
@@ -1049,7 +1086,9 @@ async def test_get_full_character_success(
             assert "traits" in result["character"]  # VChar has traits
 
 
-async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid):
+async def test_get_full_character_not_found(
+    auth_headers: dict[str, str], mock_char_mgr_fetchid: MockAsyncFn
+):
     """Character not found returns 404."""
     mock_char_mgr_fetchid.return_value = None
 
@@ -1060,7 +1099,9 @@ async def test_get_full_character_not_found(auth_headers, mock_char_mgr_fetchid)
         assert "not found" in response.json()["detail"].lower()
 
 
-async def test_get_full_character_not_owned(auth_headers, mock_bot, mock_char_mgr_fetchid):
+async def test_get_full_character_not_owned(
+    auth_headers: dict[str, str], mock_bot: MockBot, mock_char_mgr_fetchid: MockAsyncFn
+):
     """Non-owner accessing character receives PublicCharacter."""
     # Character owned by different user
     mock_char = make_mock_char(TEST_GUILD_ID, 999999, "Someone Else's Character")
@@ -1123,7 +1164,7 @@ async def test_get_full_character_not_owned(auth_headers, mock_bot, mock_char_mg
 async def test_get_full_character_storyteller(
     auth_headers: dict[str, str],
     mock_bot: MockBot,
-    mock_char_mgr_fetchid: MockFetchid,
+    mock_char_mgr_fetchid: MockAsyncFn,
     storyteller: bool,
     expected_type: str,
 ):
@@ -1169,7 +1210,7 @@ async def test_get_full_character_missing_user_header():
 # Get wizard tests
 
 
-async def test_get_wizard_success(mock_wizard_data, mock_wizard_cache_get):
+async def test_get_wizard_success(mock_wizard_data: WizardData, mock_wizard_cache_get: MockFn):
     """Successfully fetch wizard with valid token."""
     mock_wizard_cache_get.return_value = mock_wizard_data
 
@@ -1189,7 +1230,7 @@ async def test_get_wizard_success(mock_wizard_data, mock_wizard_cache_get):
         assert result["guild"]["id"] == mock_wizard_data.guild.id
 
 
-async def test_get_wizard_invalid_token(mock_wizard_cache_get):
+async def test_get_wizard_invalid_token(mock_wizard_cache_get: MockFn):
     """Invalid wizard token returns 404."""
     mock_wizard_cache_get.return_value = None
 
@@ -1214,7 +1255,9 @@ async def test_get_wizard_missing_api_key():
 
 
 async def test_get_character_list_success(
-    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchuser: MockAsyncFn,
+    mock_char_mgr_countguild: MockAsyncFn,
 ):
     """User in multiple guilds with characters and SPCs."""
     guild1 = make_mock_guild(1, "Guild 1")
@@ -1253,7 +1296,9 @@ async def test_get_character_list_success(
 
 
 async def test_get_character_list_user_in_guilds_without_characters(
-    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchuser: MockAsyncFn,
+    mock_char_mgr_countguild: MockAsyncFn,
 ):
     """User in multiple guilds but only has characters in one."""
     guild1 = make_mock_guild(1, "Guild 1")
@@ -1282,7 +1327,9 @@ async def test_get_character_list_user_in_guilds_without_characters(
 
 
 async def test_get_character_list_filters_left_guilds(
-    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchuser: MockAsyncFn,
+    mock_char_mgr_countguild: MockAsyncFn,
 ):
     """Characters in guilds user has left are not returned."""
     guild1 = make_mock_guild(1, "Current Guild", user_is_member=True)
@@ -1307,7 +1354,9 @@ async def test_get_character_list_filters_left_guilds(
 
 
 async def test_get_character_list_no_guilds(
-    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchuser: MockAsyncFn,
+    mock_char_mgr_countguild: MockAsyncFn,
 ):
     """User not in any guilds returns empty lists."""
     # Bot is in guilds, but user is not a member of any
@@ -1325,7 +1374,9 @@ async def test_get_character_list_no_guilds(
 
 
 async def test_get_character_list_no_characters(
-    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchuser: MockAsyncFn,
+    mock_char_mgr_countguild: MockAsyncFn,
 ):
     """User in guilds but has no characters, SPC exists."""
     guild1 = make_mock_guild(1, "Guild 1")
@@ -1347,7 +1398,9 @@ async def test_get_character_list_no_characters(
 
 
 async def test_get_character_list_multiple_characters_same_guild(
-    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchuser: MockAsyncFn,
+    mock_char_mgr_countguild: MockAsyncFn,
 ):
     """Multiple characters in same guild, guild not duplicated."""
     guild1 = make_mock_guild(1, "Guild 1")
@@ -1373,7 +1426,9 @@ async def test_get_character_list_multiple_characters_same_guild(
 
 
 async def test_get_character_list_filters_left_characters(
-    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchuser: MockAsyncFn,
+    mock_char_mgr_countguild: MockAsyncFn,
 ):
     """Characters marked as left are filtered out."""
     guild1 = make_mock_guild(1, "Guild 1")
@@ -1395,7 +1450,9 @@ async def test_get_character_list_filters_left_characters(
 
 
 async def test_get_character_list_guild_counts(
-    auth_headers, mock_char_mgr_fetchuser, mock_char_mgr_countguild
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchuser: MockAsyncFn,
+    mock_char_mgr_countguild: MockAsyncFn,
 ):
     """Guild character counts are included in the response."""
     guild1 = make_mock_guild(1, "Guild 1")
@@ -1403,7 +1460,8 @@ async def test_get_character_list_guild_counts(
     await populate_guild_cache([guild1, guild2])
 
     # Return different counts per guild
-    async def countguild(guild_id):
+    async def countguild(guild_id: int) -> int:
+        """Return each guild's character count."""
         return {1: 5, 2: 12}.get(guild_id, 0)
 
     mock_char_mgr_countguild.side_effect = countguild
@@ -1460,7 +1518,9 @@ async def test_get_character_list_missing_user_header():
 # Character profile tests
 
 
-async def test_get_character_profile_success_non_spc(mock_char_mgr_fetchid, character_guild):
+async def test_get_character_profile_success_non_spc(
+    mock_char_mgr_fetchid: MockAsyncFn, character_guild: CharacterGuild
+):
     """Successfully fetch character profile for non-SPC character."""
     mock_char = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Test Character")
     mock_char_mgr_fetchid.return_value = mock_char
@@ -1520,7 +1580,9 @@ async def test_get_character_profile_success_non_spc(mock_char_mgr_fetchid, char
             assert "guild" not in char_data
 
 
-async def test_get_character_profile_success_spc(mock_char_mgr_fetchid, character_guild):
+async def test_get_character_profile_success_spc(
+    mock_char_mgr_fetchid: MockAsyncFn, character_guild: CharacterGuild
+):
     """Successfully fetch character profile for SPC character."""
     mock_char = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC Character", is_spc=True)
     mock_char_mgr_fetchid.return_value = mock_char
@@ -1568,7 +1630,7 @@ async def test_get_character_profile_success_spc(mock_char_mgr_fetchid, characte
             assert "guild" not in char_data
 
 
-async def test_get_character_profile_not_found(mock_char_mgr_fetchid):
+async def test_get_character_profile_not_found(mock_char_mgr_fetchid: MockAsyncFn):
     """Character profile returns 404 when character doesn't exist."""
     mock_char_mgr_fetchid.return_value = None
 
@@ -1630,7 +1692,7 @@ async def test_get_guild_characters_missing_user_header():
         assert "user id" in response.json()["detail"].lower()
 
 
-async def test_get_guild_characters_guild_not_found(auth_headers):
+async def test_get_guild_characters_guild_not_found(auth_headers: dict[str, str]):
     """Non-existent guild returns 404."""
     # Populate with a different guild so cache is ready
     other_guild = make_mock_guild(12345, "Other Guild", user_is_member=False)
@@ -1642,7 +1704,7 @@ async def test_get_guild_characters_guild_not_found(auth_headers):
         assert "guild not found" in response.json()["detail"].lower()
 
 
-async def test_get_guild_characters_user_not_member(auth_headers):
+async def test_get_guild_characters_user_not_member(auth_headers: dict[str, str]):
     """User not a member of guild returns 403."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=False)
     await populate_guild_cache([guild])
@@ -1654,7 +1716,9 @@ async def test_get_guild_characters_user_not_member(auth_headers):
 
 
 async def test_get_guild_characters_success(
-    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchguild: MockAsyncFn,
+    mock_owner_data_create: MockAsyncFn,
 ):
     """Returns all active characters with owner data."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1705,7 +1769,9 @@ async def test_get_guild_characters_success(
         assert chars[2]["owner"] is None
 
 
-async def test_get_guild_characters_empty_guild(auth_headers, mock_char_mgr_fetchguild):
+async def test_get_guild_characters_empty_guild(
+    auth_headers: dict[str, str], mock_char_mgr_fetchguild: MockAsyncFn
+):
     """Empty guild returns empty list."""
     guild = make_mock_guild(TEST_GUILD_ID, "Empty Guild")
     await populate_guild_cache([guild])
@@ -1724,7 +1790,9 @@ async def test_get_guild_characters_empty_guild(auth_headers, mock_char_mgr_fetc
 
 
 async def test_get_guild_characters_multiple_owners(
-    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchguild: MockAsyncFn,
+    mock_owner_data_create: MockAsyncFn,
 ):
     """Guild with characters from different users."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1758,7 +1826,9 @@ async def test_get_guild_characters_multiple_owners(
 
 
 async def test_get_guild_characters_filters_left(
-    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchguild: MockAsyncFn,
+    mock_owner_data_create: MockAsyncFn,
 ):
     """Characters marked as left are excluded."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1785,7 +1855,9 @@ async def test_get_guild_characters_filters_left(
 
 
 async def test_get_guild_characters_filters_missing_owners(
-    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchguild: MockAsyncFn,
+    mock_owner_data_create: MockAsyncFn,
 ):
     """Characters whose owners can't be found are excluded."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1814,7 +1886,9 @@ async def test_get_guild_characters_filters_missing_owners(
 
 
 async def test_get_guild_characters_mixed_filtering(
-    auth_headers, mock_char_mgr_fetchguild, mock_owner_data_create
+    auth_headers: dict[str, str],
+    mock_char_mgr_fetchguild: MockAsyncFn,
+    mock_owner_data_create: MockAsyncFn,
 ):
     """Guild with active chars, left chars, and chars with missing owners."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1855,7 +1929,9 @@ async def test_get_guild_characters_mixed_filtering(
         assert chars[2]["spc"] is True  # spc at top level, not in character
 
 
-async def test_get_guild_characters_spc_owner_data_null(auth_headers, mock_char_mgr_fetchguild):
+async def test_get_guild_characters_spc_owner_data_null(
+    auth_headers: dict[str, str], mock_char_mgr_fetchguild: MockAsyncFn
+):
     """SPCs have owner as null."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
     await populate_guild_cache([guild])
@@ -1875,7 +1951,9 @@ async def test_get_guild_characters_spc_owner_data_null(auth_headers, mock_char_
         assert chars[0]["owner"] is None
 
 
-async def test_get_guild_characters_only_spcs(auth_headers, mock_char_mgr_fetchguild):
+async def test_get_guild_characters_only_spcs(
+    auth_headers: dict[str, str], mock_char_mgr_fetchguild: MockAsyncFn
+):
     """Guild with only SPCs returns all SPCs with null owner."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
     await populate_guild_cache([guild])

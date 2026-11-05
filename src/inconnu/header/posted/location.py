@@ -84,12 +84,14 @@ class LocationChangeModal(discord.ui.Modal):
         """Split the heading. Some headers have a title; others use the author."""
         embed = self.header.embeds[0]
         heading = embed.title if self.updating_title else getattr(embed.author, "name", "")
-        return (heading or "").split(" • ")
+        return [element for element in (heading or "").split(" • ") if element]
 
     def _get_location(self) -> str:
         """Get the header's current location."""
         elements = self._heading_elements()
 
+        if not elements:
+            return ""
         if len(elements) == 1:
             # Character name isn't given when the header is in the author
             # field. If we're looking at the embed title, then, no location

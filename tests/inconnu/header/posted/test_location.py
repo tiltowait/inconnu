@@ -231,6 +231,31 @@ async def test_get_location_without_heading(webhook: discord.Webhook):
     assert modal._get_location() == ""
 
 
+async def test_callback_author_without_heading(interaction: discord.Interaction):
+    """Author mode: a missing heading becomes just the location."""
+    wh = AsyncMock(spec=discord.Webhook)
+    msg = _make_header_message()
+    modal = LocationChangeModal(msg, webhook=wh, title="Edit")
+    modal.children[0].value = "The Rack"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    assert msg.embeds[0].author.name == "The Rack"
+
+
+async def test_callback_title_with_empty_element(interaction: discord.Interaction):
+    """Title mode: an empty trailing element doesn't survive the edit."""
+    msg = _make_header_message(title="Nadea • ")
+    modal = LocationChangeModal(msg, webhook=None, title="Edit")
+    modal.children[0].value = "The Rack"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    assert msg.embeds[0].title == "Nadea • The Rack"
+
+
 # --- callback tests (title mode, no webhook) ---
 
 

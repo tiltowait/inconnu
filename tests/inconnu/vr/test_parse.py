@@ -368,7 +368,7 @@ async def test_hidden_dice_allowed(
             new_callable=AsyncMock,
             return_value=perms,
         ),
-        patch("inconnu.vr.parse.is_admin", return_value=admin),
+        patch("inconnu.vr.parse.is_storyteller", new_callable=AsyncMock, return_value=admin),
         patch("ui.embeds.error", new_callable=AsyncMock) as mock_error,
     ):
         result = await hidden_dice_allowed(ctx, hide_dice)

@@ -83,3 +83,12 @@ async def test_is_storyteller_admin():
     with patch.object(VGuild, "get_or_fetch", fetch):
         assert await is_storyteller(make_storyteller(admin=True))
     fetch.assert_not_awaited()
+
+
+async def test_is_storyteller_outside_server():
+    """Users outside a server are never Storytellers."""
+    fetch = mock_vguild(ST_ROLE)
+    with patch.object(VGuild, "get_or_fetch", fetch):
+        assert not await is_storyteller(MagicMock(spec=discord.User))
+        assert not await is_storyteller(None)
+    fetch.assert_not_awaited()

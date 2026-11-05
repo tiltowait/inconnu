@@ -4,7 +4,7 @@ import discord
 
 from ctx import AppCtx, AppInvocation
 from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
-from utils.permissions import is_admin
+from utils.permissions import is_storyteller
 
 # Accessibility
 
@@ -39,7 +39,7 @@ async def can_emoji(ctx: AppInvocation) -> bool:
 
 async def can_adjust_current_xp(ctx: AppCtx) -> bool:
     """Whether the user can adjust their current XP."""
-    if is_admin(ctx.user):
+    if await is_storyteller(ctx.user):
         return True
 
     guild = await VGuild.get_or_fetch(ctx.guild)
@@ -51,7 +51,7 @@ async def can_adjust_current_xp(ctx: AppCtx) -> bool:
 
 async def can_adjust_lifetime_xp(ctx: AppCtx) -> bool:
     """Whether the user has permission to adjust lifetime XP."""
-    if is_admin(ctx.user):
+    if await is_storyteller(ctx.user):
         return True
 
     guild = await VGuild.get_or_fetch(ctx.guild)

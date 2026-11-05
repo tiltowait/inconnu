@@ -262,16 +262,20 @@ async def test_button_label(character: VChar, event: str, amount: int, label: st
     assert button.label == label
 
 
-@pytest.mark.parametrize("admin", [True, False])
-async def test_only_admins_press(character: VChar, interaction: MockInteraction, admin: bool):
-    """Only admins can apply the reversal."""
+@pytest.mark.parametrize("storyteller", [True, False])
+async def test_only_storytellers_press(
+    character: VChar, interaction: MockInteraction, storyteller: bool
+):
+    """Only Storytellers can apply the reversal."""
     interaction.response.send_message = AsyncMock()
     view = _press_view(character, "award_unspent", 3)
 
-    with patch.object(remove_module, "is_admin", return_value=admin):
-        assert await view.interaction_check(interaction) is admin
+    with patch.object(
+        remove_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
+    ):
+        assert await view.interaction_check(interaction) is storyteller
 
-    assert interaction.response.send_message.await_count == (0 if admin else 1)
+    assert interaction.response.send_message.await_count == (0 if storyteller else 1)
 
 
 async def test_apply_xp_finishes(

@@ -32,9 +32,9 @@ def mock_vguild_fetch():
 
 
 @pytest.fixture
-def mock_is_admin():
-    """Fixture that patches is_admin."""
-    with patch("services.settings.is_admin") as mock:
+def mock_is_storyteller():
+    """Fixture that patches is_storyteller."""
+    with patch("services.settings.is_storyteller", new_callable=AsyncMock) as mock:
         yield mock
 
 
@@ -149,10 +149,10 @@ async def test_can_emoji_inverts_accessible(mock_vuser_fetch, mock_vguild_fetch)
 # Tests for can_adjust_current_xp()
 
 
-async def test_can_adjust_current_xp_admin_always_true(mock_is_admin):
+async def test_can_adjust_current_xp_storyteller_always_true(mock_is_storyteller):
     """Test that admins can always adjust current XP."""
     ctx = mock_ctx()
-    mock_is_admin.return_value = True
+    mock_is_storyteller.return_value = True
 
     result = await services.settings.can_adjust_current_xp(ctx)
     assert result is True
@@ -167,12 +167,12 @@ async def test_can_adjust_current_xp_admin_always_true(mock_is_admin):
         (ExpPerms.ADMIN_ONLY, False),
     ],
 )
-async def test_can_adjust_current_xp_non_admin(
-    mock_is_admin, mock_vguild_fetch, permission, expected
+async def test_can_adjust_current_xp_non_storyteller(
+    mock_is_storyteller, mock_vguild_fetch, permission, expected
 ):
     """Test current XP permissions for non-admins with different guild settings."""
     ctx = mock_ctx()
-    mock_is_admin.return_value = False
+    mock_is_storyteller.return_value = False
     mock_vguild_fetch.return_value = mock_vguild(experience_permissions=permission)
 
     result = await services.settings.can_adjust_current_xp(ctx)
@@ -182,10 +182,10 @@ async def test_can_adjust_current_xp_non_admin(
 # Tests for can_adjust_lifetime_xp()
 
 
-async def test_can_adjust_lifetime_xp_admin_always_true(mock_is_admin):
+async def test_can_adjust_lifetime_xp_storyteller_always_true(mock_is_storyteller):
     """Test that admins can always adjust lifetime XP."""
     ctx = mock_ctx()
-    mock_is_admin.return_value = True
+    mock_is_storyteller.return_value = True
 
     result = await services.settings.can_adjust_lifetime_xp(ctx)
     assert result is True
@@ -200,12 +200,12 @@ async def test_can_adjust_lifetime_xp_admin_always_true(mock_is_admin):
         (ExpPerms.ADMIN_ONLY, False),
     ],
 )
-async def test_can_adjust_lifetime_xp_non_admin(
-    mock_is_admin, mock_vguild_fetch, permission, expected
+async def test_can_adjust_lifetime_xp_non_storyteller(
+    mock_is_storyteller, mock_vguild_fetch, permission, expected
 ):
     """Test lifetime XP permissions for non-admins with different guild settings."""
     ctx = mock_ctx()
-    mock_is_admin.return_value = False
+    mock_is_storyteller.return_value = False
     mock_vguild_fetch.return_value = mock_vguild(experience_permissions=permission)
 
     result = await services.settings.can_adjust_lifetime_xp(ctx)

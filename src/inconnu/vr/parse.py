@@ -33,7 +33,7 @@ from models import (
 )
 from models.vchardocs import VCharTrait
 from services.haven import Haven
-from utils.permissions import is_admin
+from utils.permissions import is_storyteller
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("guides/quickstart/rolling-with-traits")
@@ -200,7 +200,7 @@ async def hidden_dice_allowed(ctx: AppCtx, hide_dice: bool) -> bool:
     match await services.settings.hidden_dice_permissions(ctx.guild):
         case HiddenDicePerms.ENABLED:
             return True
-        case HiddenDicePerms.ADMIN_ONLY if is_admin(ctx.user):
+        case HiddenDicePerms.ADMIN_ONLY if await is_storyteller(ctx.user):
             return True
         case HiddenDicePerms.ADMIN_ONLY:
             err = "Only admins can hide their dice on this server."

@@ -507,7 +507,7 @@ async def test_remove(g1: Guild, u11: Member, mgrf: CharacterManager, c111: VCha
         with pytest.raises(CharacterNotFoundError):
             _ = await mgrf.fetchone(g1, u11, c111.name)
 
-        count = await mgrf.character_count(g1.id, u11.id)
+        count = await mgrf.character_count(g1, u11)
         assert count == 1
 
 
@@ -722,9 +722,12 @@ async def test_sort_characters(mgrf: CharacterManager):
     assert mgrf._characters[-1].name == "zzzzzzz"
 
 
-def test_validate_rejects_wrong_guild(mgrf: CharacterManager, g1: Guild, u21: Member, c211: VChar):
+async def test_validate_rejects_wrong_guild(
+    mgrf: CharacterManager, g1: Guild, u21: Member, c211: VChar
+):
+    """Characters from another guild are refused."""
     with pytest.raises(LookupError):
-        mgrf._validate(g1, u21, c211)
+        await mgrf._validate(g1, u21, c211)
 
 
 async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Guild, u11: Member):

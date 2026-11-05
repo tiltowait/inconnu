@@ -158,4 +158,3 @@ def raw_bulk_delete_handler(
         write_ops.append(gen_update(message_id))
 
     return write_ops
-

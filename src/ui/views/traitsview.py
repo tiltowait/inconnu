@@ -3,7 +3,7 @@
 import discord
 
 from ui.views.disablingview import DisablingView
-from utils.permissions import is_admin
+from utils.permissions import is_storyteller
 
 
 class TraitsView(DisablingView):
@@ -19,7 +19,7 @@ class TraitsView(DisablingView):
         """Show the traits so long as the user is valid."""
         import inconnu
 
-        if interaction.user == self.owner or is_admin(interaction.user):
+        if interaction.user == self.owner or await is_storyteller(interaction.user):
             await inconnu.traits.show(interaction, self.character, player=self.owner)
         else:
             await interaction.response.send_message("You can't click this button.", ephemeral=True)

@@ -26,7 +26,7 @@ from routes.characters.models import (
 from routes.deps import get_bot
 from services import char_mgr, guild_cache, wizard_cache
 from services.wizard import CharacterGuild
-from utils.permissions import has_supporter_role, is_admin
+from utils.permissions import has_supporter_role, is_storyteller
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -100,12 +100,12 @@ async def get_character(
     if cached_user is None:
         raise HTTPException(404, detail="User not in character's guild")
 
-    # For admin check, need Discord member (has role data)
+    # For the Storyteller check, need Discord member (has role data)
     discord_guild = bot.get_guild(char.guild)
     discord_member = discord_guild.get_member(user_id) if discord_guild else None
 
     # Permission check (requires Discord member for role checking)
-    if user_id == char.user or (discord_member and is_admin(discord_member)):
+    if user_id == char.user or await is_storyteller(discord_member):
         character = char
     else:
         character = PublicCharacter.create(char)

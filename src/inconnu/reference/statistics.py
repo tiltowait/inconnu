@@ -40,7 +40,7 @@ async def statistics(
     """
     try:
         date = datetime.strptime(date_rep, "%Y%m%d")
-        owner = player_lookup(ctx, player, False)
+        owner = await player_lookup(ctx, player, False)
 
         # As Inconnu was originally made for Cape Town by Night, we will use
         # that server's weekly reset time as the cutoff--but only if we aren't

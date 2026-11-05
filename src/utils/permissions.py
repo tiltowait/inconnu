@@ -8,14 +8,14 @@ from ctx import AppCtx, AppInvocation
 from models import VGuild
 
 
-def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None):
-    """Check if the user owns the object or is an admin."""
+async def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None) -> bool:
+    """Check if the user owns the object or is a Storyteller."""
     if ctx.user is None:
         raise ValueError("Unexpectedly got null user")
 
     if owner == ctx.user.id:
         return True
-    return is_admin(ctx.user)
+    return await is_storyteller(ctx.user)
 
 
 def is_admin(user: discord.Member | discord.User | None) -> bool:
@@ -26,8 +26,11 @@ def is_admin(user: discord.Member | discord.User | None) -> bool:
     return isinstance(user, discord.Member) and user.guild_permissions.administrator
 
 
-async def is_storyteller(member: discord.Member) -> bool:
-    """Check if the guild member is an admin or has that server's Storyteller role."""
+async def is_storyteller(member: discord.Member | discord.User | None) -> bool:
+    """Check if the guild member is an admin or has that server's Storyteller role.
+    Users outside a server never are."""
+    if not isinstance(member, discord.Member):
+        return False
     if is_admin(member):
         return True
 

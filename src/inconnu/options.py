@@ -5,7 +5,7 @@ from discord.commands import Option, OptionChoice
 
 import services
 from models import ImpairmentCategory
-from utils.permissions import is_admin
+from utils.permissions import is_storyteller
 
 
 def ratings(low, high) -> list:
@@ -99,12 +99,12 @@ async def _available_characters(ctx):
     spcs = []
 
     if (owner := (ctx.options.get("player") or ctx.options.get("current_owner"))) is not None:
-        if owner != user.id and not is_admin(user):
+        if owner != user.id and not await is_storyteller(user):
             return [OptionChoice("You do not have admin permissions", "")]
     else:
         owner = user.id
 
-        if is_admin(user):
+        if await is_storyteller(user):
             # Add SPCs
             spcs = await services.char_mgr.fetchall(guild.id, ctx.bot.user.id)
             spcs = [(spc.name, spc.id_str) for spc in spcs]

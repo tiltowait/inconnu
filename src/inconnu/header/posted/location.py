@@ -7,12 +7,13 @@ from loguru import logger
 
 import db
 from ctx import AppCtx, Channel
+from models.rpheader import BLUSHED, NOT_BLUSHED
 from utils.text import clean_text
 
 if TYPE_CHECKING:
     from bot import InconnuBot
 
-BLUSH_TEXT = ("Blushed", "Not Blushed")
+BLUSH_TEXT = (BLUSHED, NOT_BLUSHED)
 
 
 async def edit_location(ctx: AppCtx, message: discord.Message):

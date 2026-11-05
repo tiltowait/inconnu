@@ -56,7 +56,7 @@ async def awaken(ctx: AppCtx, character: VChar):
     # alone. A character who no longer needs to Blush becomes N/A.
     if character.header.blush == 1:
         logger.debug("AWAKEN: {} is no longer Blushed", character.name)
-        character.header.blush = 0 if character.can_blush else -1
+        character.reset_blush()
     else:
         logger.debug("AWAKEN: {} isn't Blushed; header unchanged", character.name)
 

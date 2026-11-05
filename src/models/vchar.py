@@ -85,7 +85,7 @@ class VChar(Document):
         if self.splat == "thinblood":
             self.splat = "thin-blood"
 
-        self.header.blush = 0 if self.can_blush else -1
+        self.reset_blush()
 
         logger.info("VCHAR: Created {}", self.name)
 
@@ -238,6 +238,10 @@ class VChar(Document):
 
         self.experience.lifetime = new_lifetime_xp
         self.experience.unspent += delta
+
+    def reset_blush(self):
+        """Turn off the Blush of Life, or mark it N/A if the character can't Blush."""
+        self.header.blush = 0 if self.can_blush else -1
 
     def set_blush(self, new_blush: int):
         """Toggle the character's Blush of Life."""

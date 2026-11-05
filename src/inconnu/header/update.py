@@ -9,6 +9,7 @@ from loguru import logger
 import inconnu
 from ctx import AppCtx
 from models import VChar
+from models.rpheader import NOT_BLUSHED
 from services.haven import haven
 from utils.text import clean_text
 from utils.urls import docs_url
@@ -38,7 +39,7 @@ class _RPHeader(discord.ui.DesignerModal):
         # next night pre-blush. By using the non-blush text, we ensure we don't
         # get any nasty surprises (though name changes mid-scene could still be
         # a problem, which is why we limit the title on show).
-        mock_title = inconnu.header.header_title(character.name, "Not Blushed", "")
+        mock_title = inconnu.header.header_title(character.name, NOT_BLUSHED, "")
         max_location_len = 256 - len(mock_title)
 
         logger.debug("HEADER: Header length, minus location, is {}", len(mock_title))

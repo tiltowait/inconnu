@@ -69,11 +69,7 @@ def is_supporter(ctx: AppInvocation, user: discord.Member | discord.User | None 
     """Returns True if the user invoking the command is a supporter.
 
     Requires settings.supporter_guild and settings.supporter_role to be set."""
-    if isinstance(ctx, discord.Interaction):
-        bot = ctx.client
-    else:
-        bot = ctx.bot
-    support_server = bot.get_guild(settings.supporter_guild)
+    support_server = ctx.client.get_guild(settings.supporter_guild)
     if support_server is None:
         logger.warning("Support server not set!")
         return False

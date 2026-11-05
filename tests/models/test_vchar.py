@@ -43,6 +43,21 @@ def test_can_blush_sets_starting_blush(splat: str, can_blush: bool, starting_blu
     assert char.header.blush == starting_blush
 
 
+@pytest.mark.parametrize(
+    "splat,humanity,expected",
+    [("vampire", 7, 0), ("vampire", 9, -1), ("thin-blood", 7, -1), ("mortal", 7, -1)],
+)
+def test_reset_blush(splat: str, humanity: int, expected: int):
+    """Those who can Blush turn it off; others become N/A."""
+    char = gen_char(splat)
+    char.humanity = humanity
+    char.header.blush = 1
+
+    char.reset_blush()
+
+    assert char.header.blush == expected
+
+
 def test_not_equal_to_other_types():
     """Comparing to something that isn't a character doesn't raise."""
     assert gen_char("vampire") != "Nadea"

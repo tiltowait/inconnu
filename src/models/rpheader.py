@@ -11,6 +11,9 @@ from errors import CharacterError
 if TYPE_CHECKING:
     from models import VChar
 
+BLUSHED = "Blushed"
+NOT_BLUSHED = "Not Blushed"
+
 
 class DamageSubdoc(BaseModel):
     """Tracks aggravated and superficial damage."""
@@ -42,7 +45,7 @@ class HeaderSubdoc(BaseModel):
         """The Blush string, if applicable."""
         if self.blush == -1:
             return None
-        return "Blushed" if self.blush else "Not Blushed"
+        return BLUSHED if self.blush else NOT_BLUSHED
 
     @property
     def base_title(self) -> str:

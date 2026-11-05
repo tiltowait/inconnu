@@ -6,7 +6,7 @@ from typing import cast
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
-from discord import Guild, Member
+from discord import Guild, Member, Role
 from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
 
@@ -18,11 +18,12 @@ from errors import (
     WrongGuild,
     WrongOwner,
 )
-from models import VChar
+from models import VChar, VGuild
 from services import CharacterManager
 from tests.characters import gen_char
 
 VCHAR_SAVE = "models.vchar.VChar.save"
+STORYTELLER_ROLE = 1234
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -714,6 +715,26 @@ async def test_fetchone_admin_fail(
 
     with pytest.raises(LookupError):
         _ = await mgrf.fetchone(g1, u12, c111.id_str)
+
+
+@pytest.mark.parametrize("has_role", [True, False])
+async def test_validate_storyteller_role(
+    mgrf: CharacterManager, g1: Guild, u12: Member, c111: VChar, has_role: bool
+):
+    """Non-admins with the server's Storyteller role may use other players'
+    characters. Without it, they're refused."""
+    vguild = await VGuild.get_or_fetch(g1)
+    vguild.settings.storyteller_role = STORYTELLER_ROLE
+    await vguild.save()
+    role = MagicMock(spec=Role) if has_role else None
+    u12.get_role = MagicMock(return_value=role)
+
+    if has_role:
+        await mgrf._validate(g1, u12, c111)
+    else:
+        with pytest.raises(LookupError):
+            await mgrf._validate(g1, u12, c111)
+    u12.get_role.assert_called_once_with(STORYTELLER_ROLE)
 
 
 async def test_sort_characters(mgrf: CharacterManager):

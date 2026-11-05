@@ -250,7 +250,7 @@ class VChar(Document):
             self.header.blush = new_blush
             logger.debug("VCHAR: Setting {}'s Blush of Life to {}", self.name, new_blush)
         else:
-            logger.warning("VCHAR: Can't set Blush of Life; {} can't Blush", self.name)
+            logger.debug("Can't set Blush of Life; {} can't Blush", self.name)
 
     # Derived attributes
 

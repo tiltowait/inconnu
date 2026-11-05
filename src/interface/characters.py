@@ -225,7 +225,7 @@ class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIs
 
     @character.command(name="profile")
     @player_option(description="The character's owner (does not work with EDIT)")
-    @char_option("The character to show")
+    @char_option("The character to show", allow_lookups=True)
     @char_option("The character whose profile to edit", param="edit")
     async def character_profile(
         self,
@@ -272,7 +272,7 @@ class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIs
     # Premium
 
     @character.command(name="images")
-    @inconnu.options.char_option("The character to display")
+    @inconnu.options.char_option("The character to display", allow_lookups=True)
     @inconnu.options.player_option(description="The character's owner")
     @option(
         "controls",

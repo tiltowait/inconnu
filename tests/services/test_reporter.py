@@ -126,6 +126,7 @@ def assert_not_reported(reporter: ErrorReporter):
             "Sorry, you don't have permission to do this!",
         ),
         (commands.NotOwner(), "Sorry, only <@1>'s owner may issue this command!"),
+        (errors.NotStoryteller(), "Sorry, only Storytellers can do this!"),
     ],
 )
 async def test_known_error_responds(

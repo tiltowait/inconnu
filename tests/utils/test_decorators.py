@@ -1,16 +1,23 @@
 """Tests for command decorators."""
 
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
 
 import errors
+import utils.decorators as decorators_module
 from bot import InconnuBot
 from ctx import AppCtx
 from services.lockdown import Lockdown
-from utils.decorators import _format_size, attachment, blocked_on_lockdown, not_on_lockdown
+from utils.decorators import (
+    _format_size,
+    attachment,
+    blocked_on_lockdown,
+    not_on_lockdown,
+    storyteller,
+)
 
 
 def make_ctx(*files: tuple[str, int]) -> AppCtx:
@@ -118,3 +125,23 @@ def test_lockdown_check():
     ctx.bot.lockdown = MagicMock(spec=Lockdown)
     with pytest.raises(errors.LockdownError):
         check(ctx)
+
+
+async def test_storyteller_allows_storytellers():
+    """Storytellers pass the check."""
+    ctx = MagicMock(spec=AppCtx)
+    with patch.object(
+        decorators_module, "is_storyteller", new_callable=AsyncMock, return_value=True
+    ) as mock:
+        assert await storyteller().predicate(ctx)  # type: ignore[attr-defined]
+    mock.assert_awaited_once_with(ctx.user)
+
+
+async def test_storyteller_refuses_others():
+    """Everyone else is refused with NotStoryteller, which the reporter answers."""
+    ctx = MagicMock(spec=AppCtx)
+    with patch.object(
+        decorators_module, "is_storyteller", new_callable=AsyncMock, return_value=False
+    ):
+        with pytest.raises(errors.NotStoryteller):
+            await storyteller().predicate(ctx)  # type: ignore[attr-defined]

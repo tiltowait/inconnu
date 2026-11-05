@@ -10,7 +10,7 @@ from loguru import logger
 
 import errors
 from ctx import AppCtx
-from utils.permissions import get_or_fetch_supporter
+from utils.permissions import get_or_fetch_supporter, is_storyteller
 
 
 def _app_check(predicate: Callable[[AppCtx], bool | Awaitable[bool]]):
@@ -49,6 +49,18 @@ async def _check_supporter(ctx: AppCtx, user: discord.Member | None = None):
 def premium():
     """A decorator for commands that only work for supporters."""
     return _app_check(_check_supporter)
+
+
+async def _storyteller_check(ctx: AppCtx) -> bool:
+    """Refuse the command unless the user is a Storyteller."""
+    if not await is_storyteller(ctx.user):
+        raise errors.NotStoryteller()
+    return True
+
+
+def storyteller():
+    """A decorator for commands that only Storytellers (and admins) can use."""
+    return _app_check(_storyteller_check)
 
 
 def attachment(*, extensions: list[str] | None = None, filesize: int | None = None):

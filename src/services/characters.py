@@ -11,6 +11,7 @@ from loguru import logger
 
 import errors
 from models.vchar import VChar
+from utils.permissions import is_admin
 from utils.text import clean_text, pluralize
 
 
@@ -275,13 +276,8 @@ class CharacterManager:
         if guild_id != char.guild:
             raise LookupError(f"**{char.name}** doesn't belong to this server!")
         if char.user != user_id:
-            if not self.is_admin(user):
+            if not is_admin(user):
                 raise LookupError(f"**{char.name}** doesn't belong to this user!")
-
-    @staticmethod
-    def is_admin(user: discord.Member) -> bool:
-        """Determine whether the user is an administrator."""
-        return user.top_role.permissions.administrator or user.guild_permissions.administrator
 
 
 char_mgr = CharacterManager()

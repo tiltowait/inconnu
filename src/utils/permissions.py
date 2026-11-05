@@ -1,7 +1,5 @@
 """Permission and supporter status checks."""
 
-from typing import cast
-
 import discord
 from loguru import logger
 
@@ -16,19 +14,15 @@ def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None):
 
     if owner == ctx.user.id:
         return True
-    return is_admin(ctx)
+    return is_admin(ctx.user)
 
 
-def is_admin(ctx: AppInvocation | discord.Interaction):
-    """Check if the ctx user is a server admin."""
-    if ctx.channel is None:
-        raise ValueError("Unexpectedly got null channel")
+def is_admin(user: discord.Member | discord.User | None) -> bool:
+    """Whether the user is an administrator of the server they're acting in.
 
-    user = cast(discord.Member, ctx.user)
-    if isinstance(ctx.channel, discord.PartialMessageable):
-        # We can't use permissions_for
-        return user.top_role.permissions.administrator or user.guild_permissions.administrator
-    return ctx.channel.permissions_for(user).administrator
+    Administrator is server-wide (channel overwrites can't remove it), so the
+    member's server permissions decide it. Users outside a server never are."""
+    return isinstance(user, discord.Member) and user.guild_permissions.administrator
 
 
 def has_supporter_role(member: discord.Member) -> bool:

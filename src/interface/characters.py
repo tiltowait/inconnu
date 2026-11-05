@@ -13,6 +13,7 @@ from ctx import AppCtx
 from inconnu.options import char_option, player_option
 from interface import CommandCog
 from utils import decorators, not_on_lockdown
+from utils.permissions import is_admin
 from utils.text import strtobool
 from utils.urls import docs_url
 
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 
 async def _spc_options(ctx):
     """Determine whether the user can make an SPC."""
-    if ctx.interaction.user.guild_permissions.administrator:
+    if is_admin(ctx.interaction.user):
         return [OptionChoice("No", "0"), OptionChoice("Yes", "1")]
     return [OptionChoice("No", "0")]
 

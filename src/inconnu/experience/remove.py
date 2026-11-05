@@ -127,7 +127,7 @@ class _ExperienceView(DisablingView):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check whether the user is an admin."""
-        if not is_admin(interaction):
+        if not is_admin(interaction.user):
             await interaction.response.send_message("Only an admin can do this.", ephemeral=True)
             return False
 

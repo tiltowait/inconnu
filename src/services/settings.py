@@ -39,7 +39,7 @@ async def can_emoji(ctx: AppInvocation) -> bool:
 
 async def can_adjust_current_xp(ctx: AppCtx) -> bool:
     """Whether the user can adjust their current XP."""
-    if is_admin(ctx):
+    if is_admin(ctx.user):
         return True
 
     guild = await VGuild.get_or_fetch(ctx.guild)
@@ -51,7 +51,7 @@ async def can_adjust_current_xp(ctx: AppCtx) -> bool:
 
 async def can_adjust_lifetime_xp(ctx: AppCtx) -> bool:
     """Whether the user has permission to adjust lifetime XP."""
-    if is_admin(ctx):
+    if is_admin(ctx.user):
         return True
 
     guild = await VGuild.get_or_fetch(ctx.guild)

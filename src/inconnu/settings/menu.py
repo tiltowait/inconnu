@@ -28,7 +28,7 @@ async def show(ctx: AppCtx, scope: str):
     else:
         obj = await VUser.get_or_fetch(ctx.user.id)
 
-    view = SettingsMenu(ctx, obj, is_admin(ctx))
+    view = SettingsMenu(ctx, obj, is_admin(ctx.user))
     await ctx.respond(view=view, ephemeral=True)
 
 
@@ -456,7 +456,7 @@ class SettingsMenu(discord.ui.DesignerView):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check that the user is authorized for settings changes."""
         if isinstance(self.scope, VGuild):
-            return is_admin(interaction)
+            return is_admin(interaction.user)
 
         # Users can always change their settings
         return True

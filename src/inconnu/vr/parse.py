@@ -200,7 +200,7 @@ async def hidden_dice_allowed(ctx: AppCtx, hide_dice: bool) -> bool:
     match await services.settings.hidden_dice_permissions(ctx.guild):
         case HiddenDicePerms.ENABLED:
             return True
-        case HiddenDicePerms.ADMIN_ONLY if is_admin(ctx):
+        case HiddenDicePerms.ADMIN_ONLY if is_admin(ctx.user):
             return True
         case HiddenDicePerms.ADMIN_ONLY:
             err = "Only admins can hide their dice on this server."

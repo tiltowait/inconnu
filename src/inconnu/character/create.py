@@ -17,7 +17,7 @@ async def launch_wizard(ctx: AppCtx, spc: bool):
     """Launch a character creation wizard."""
     if ctx.guild is None:
         raise InconnuError("Unexpectedly got a null guild.")
-    if spc and not is_admin(ctx):
+    if spc and not is_admin(ctx.user):
         await ui.embeds.error(ctx, "You need Administrator permissions to make an SPC.")
         return
 

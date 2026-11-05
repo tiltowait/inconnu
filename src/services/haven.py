@@ -295,7 +295,7 @@ def player_lookup(
     if ctx.user != player:
         guild = cast(discord.Guild, ctx.guild)
         logger.info("HAVEN: {} looked up {} ({})", ctx.user.name, player.name, guild.name)
-        if not (is_admin(ctx) or allow_lookups):
+        if not (is_admin(ctx.user) or allow_lookups):
             logger.info("HAVEN: Invalid player lookup by {} ({})", ctx.user.name, guild.name)
             raise LookupError("You don't have lookup permissions.")
 

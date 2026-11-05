@@ -26,7 +26,7 @@ from routes.characters.models import (
 from routes.deps import get_bot
 from services import char_mgr, guild_cache, wizard_cache
 from services.wizard import CharacterGuild
-from utils.permissions import has_supporter_role
+from utils.permissions import has_supporter_role, is_admin
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -105,7 +105,7 @@ async def get_character(
     discord_member = discord_guild.get_member(user_id) if discord_guild else None
 
     # Permission check (requires Discord member for role checking)
-    if user_id == char.user or (discord_member and char_mgr.is_admin(discord_member)):
+    if user_id == char.user or (discord_member and is_admin(discord_member)):
         character = char
     else:
         character = PublicCharacter.create(char)

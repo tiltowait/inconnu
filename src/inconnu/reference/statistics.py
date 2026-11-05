@@ -11,8 +11,8 @@ import services
 import ui
 from ctx import AppCtx
 from models import VChar
-from services.haven import haven
-from utils import get_avatar, player_lookup
+from services.haven import haven, player_lookup
+from utils import get_avatar
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("command-reference/miscellaneous#statistics")
@@ -40,7 +40,7 @@ async def statistics(
     """
     try:
         date = datetime.strptime(date_rep, "%Y%m%d")
-        owner = await player_lookup(ctx, player)
+        owner = player_lookup(ctx, player, False)
 
         # As Inconnu was originally made for Cape Town by Night, we will use
         # that server's weekly reset time as the cutoff--but only if we aren't

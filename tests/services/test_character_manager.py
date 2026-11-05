@@ -1,8 +1,8 @@
 """Tests for services.characters.CharacterManager."""
 
 import asyncio
-from collections.abc import AsyncGenerator, Generator
-from typing import cast
+from collections.abc import AsyncGenerator, Callable, Generator, Iterator
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -10,6 +10,7 @@ from discord import Guild, Member, Role
 from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
 
+import db as database
 from db import init_beanie
 from errors import (
     CharacterNotFoundError,
@@ -25,9 +26,14 @@ from tests.characters import gen_char
 VCHAR_SAVE = "models.vchar.VChar.save"
 STORYTELLER_ROLE = 1234
 
+type MockAsyncFn = AsyncMock
+type MockFn = Mock
+type MockGuild = MagicMock
+
 
 @pytest.fixture(autouse=True, scope="module")
-def patch_spc_owner():
+def patch_spc_owner() -> Iterator[None]:
+    """Give SPCs a known owner ID."""
     with patch.object(VChar, "SPC_OWNER", 999):
         yield
 
@@ -35,8 +41,6 @@ def patch_spc_owner():
 @pytest.fixture(autouse=True, scope="function")
 async def beanie_fixture():
     """Configures a mock beanie client for all tests."""
-    import db as database
-
     client = cast(AsyncMongoClient, AsyncMongoMockClient())
     mock_db = client.test
     await init_beanie(mock_db, document_models=database.models())
@@ -45,7 +49,7 @@ async def beanie_fixture():
 # Factories
 
 
-def make_guild(id: int, name: str) -> MagicMock:
+def make_guild(id: int, name: str) -> MockGuild:
     """Create a Guild mock."""
     guild = MagicMock(spec=Guild)
     guild.id = id
@@ -59,7 +63,6 @@ def make_member(id: int, guild: Guild, is_admin: bool) -> Member:
     member = MagicMock(spec=Member)
     member.guild = guild
     member.id = id
-    member.top_role.permissions.administrator = is_admin
     member.guild_permissions.administrator = is_admin
 
     return member
@@ -149,6 +152,7 @@ def c211(g2: Guild, u21: Member) -> VChar:
 
 @pytest.fixture
 def spc11(g1: Guild) -> VChar:
+    """An SPC on g1. Unsaved."""
     char = gen_char("vampire")
     char.name = "Quentin"
     char.guild = g1.id
@@ -185,7 +189,7 @@ async def mgrf(
 
 
 @pytest.fixture
-async def wrapped_initialize(mgre: CharacterManager) -> AsyncGenerator[AsyncMock]:
+async def wrapped_initialize(mgre: CharacterManager) -> AsyncGenerator[MockAsyncFn]:
     """CharacterManager.initialize(), wrapped to test for awaits."""
     with patch(
         "services.CharacterManager.initialize",
@@ -196,7 +200,7 @@ async def wrapped_initialize(mgre: CharacterManager) -> AsyncGenerator[AsyncMock
 
 
 @pytest.fixture
-def wrapped_find_all() -> Generator[AsyncMock]:
+def wrapped_find_all() -> Generator[MockFn]:
     """Wrapped VChar.find_all()."""
     with patch("models.vchar.VChar.find_all", new_callable=Mock, wraps=VChar.find_all) as mock:
         yield mock
@@ -206,6 +210,7 @@ def wrapped_find_all() -> Generator[AsyncMock]:
 
 
 async def test_initializes(mgrf: CharacterManager):
+    """Initializing loads every character into the cache."""
     await mgrf.initialize()
     assert mgrf.initialized is True
     assert len(mgrf._characters) > 1
@@ -213,12 +218,13 @@ async def test_initializes(mgrf: CharacterManager):
 
 
 async def test_empty_fetchall(
-    wrapped_initialize: AsyncMock,
-    wrapped_find_all: AsyncMock,
+    wrapped_initialize: MockAsyncFn,
+    wrapped_find_all: MockFn,
     mgre: CharacterManager,
     g1: Guild,
     u11: Member,
 ):
+    """An empty database yields no characters, after initializing once."""
     chars = await mgre.fetchall(g1.id, u11.id)
     assert not chars
     wrapped_initialize.assert_awaited_once()
@@ -297,6 +303,7 @@ async def test_empty_fetchone_raises(
     u11: Member,
     name: str | None,
 ):
+    """Fetching from an empty database raises CharacterNotFoundError."""
     with pytest.raises(CharacterNotFoundError):
         _ = await mgre.fetchone(g1, u11, name)
 
@@ -308,6 +315,7 @@ async def test_register_populates(
     c111: VChar,
     c112: VChar,
 ):
+    """Registered characters can be fetched."""
     await mgre.register(c111)
     chars = await mgre.fetchall(g1, u11)
     assert len(chars) == 1
@@ -321,6 +329,7 @@ async def test_register_populates(
 
 
 async def test_register_duplicate(mgre: CharacterManager, c111: VChar):
+    """Registering the same character twice raises DuplicateCharacterError."""
     await mgre.register(c111)
     with pytest.raises(DuplicateCharacterError):
         await mgre.register(c111)
@@ -339,8 +348,6 @@ async def test_register_inserts_in_middle(
     await mgre.register(c111)  # Nadea Theron
 
     # Create Kim (alphabetically between Jimmy and Nadea)
-    from tests.characters import gen_char
-
     kim = gen_char("vampire")
     kim.name = "Kim Lee"
     kim.guild = g1.id
@@ -361,6 +368,7 @@ async def test_cold_start_populates(
     c111: VChar,
     c112: VChar,
 ):
+    """A fresh manager loads characters already in the database."""
     await c111.save()
     await c112.save()
 
@@ -378,6 +386,7 @@ async def test_fetchone_single_char_return(
     c111: VChar,
     name: str | None,
 ):
+    """A player's only character is returned with or without its name."""
     await mgre.register(c111)
     char = await mgre.fetchone(g1, u11, name)
     assert char.id == c111.id
@@ -389,6 +398,7 @@ async def test_fetchone_multichar_none_raises(
     u11: Member,
     mgrf: CharacterManager,
 ):
+    """Without a name, several characters raise UnspecifiedCharacterError."""
     with pytest.raises(UnspecifiedCharacterError):
         _ = await mgrf.fetchone(g1, u11, None)
 
@@ -398,6 +408,7 @@ async def test_fetchone_multichar_unknown(
     u11: Member,
     mgrf: CharacterManager,
 ):
+    """An unknown name raises CharacterNotFoundError."""
     with pytest.raises(CharacterNotFoundError):
         _ = await mgrf.fetchone(g1, u11, "Miss Frizzle")
 
@@ -409,6 +420,7 @@ async def test_fetchone_multichar_name(
     c111: VChar,
     c112: VChar,
 ):
+    """Names match case-insensitively."""
     for c in [c111, c112]:
         char = await mgrf.fetchone(g1, u11, c.name.lower())
         assert char.id == c.id
@@ -421,6 +433,7 @@ async def test_fetchone_vchar_early_return(
     mgrf: CharacterManager,
     c111: VChar,
 ):
+    """A VChar is returned as-is, without a lookup."""
     with patch.object(mgrf, "fetchall", new_callable=AsyncMock) as mock_fetchall:
         char = await mgrf.fetchone(g1, u11, c111)
         assert char.id == c111.id
@@ -429,6 +442,7 @@ async def test_fetchone_vchar_early_return(
 
 
 async def test_id_fetch(mgrf: CharacterManager, c211: VChar):
+    """Characters can be fetched by ID."""
     char = await mgrf.fetchid(c211.id_str)
     assert char is not None
     assert char.id == c211.id
@@ -436,6 +450,7 @@ async def test_id_fetch(mgrf: CharacterManager, c211: VChar):
 
 
 async def test_id_fetch_fail(mgrf: CharacterManager):
+    """An unknown ID returns None."""
     char = await mgrf.fetchid("fake")
     assert char is None
 
@@ -471,11 +486,13 @@ async def test_fetchguild_no_characters(mgrf: CharacterManager):
 
 
 async def test_character_count(g1: Guild, u11: Member, mgrf: CharacterManager):
+    """Counts the player's characters."""
     count = await mgrf.character_count(g1, u11)
     assert count == 2
 
 
 async def test_character_count_zero(g1: Guild, u11: Member, mgre: CharacterManager):
+    """A player with no characters has a count of 0."""
     count = await mgre.character_count(g1, u11)
     assert count == 0
 
@@ -495,6 +512,7 @@ async def test_character_count_guild_isolation(g2: Guild, u21: Member, mgrf: Cha
 
 
 async def test_remove(g1: Guild, u11: Member, mgrf: CharacterManager, c111: VChar):
+    """Removing deletes the character and drops it from the cache."""
     with patch(
         "models.vchar.VChar.delete", new_callable=AsyncMock, wraps=c111.delete
     ) as mock_delete:
@@ -513,6 +531,7 @@ async def test_remove(g1: Guild, u11: Member, mgrf: CharacterManager, c111: VCha
 
 
 async def test_remove_fail(mgre: CharacterManager, c111: VChar):
+    """Removing an unregistered character returns False."""
     deleted = await mgre.remove(c111)
     assert not deleted
 
@@ -522,6 +541,7 @@ async def test_mark_inactive(
     g1: Guild,
     u11: Member,
 ):
+    """Marking a player inactive saves each character and keeps them cached."""
     with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock_save:
         await mgrf.mark_inactive(u11)
         assert mock_save.await_count == 2
@@ -573,6 +593,7 @@ async def test_mark_active(
 
 
 async def test_transfer(mgrf: CharacterManager, u11: Member, u12: Member, c111: VChar):
+    """Transferring changes the character's owner."""
     char = await mgrf.fetchid(c111.id_str)
     assert char is not None
     await mgrf.transfer(char, u11, u12)
@@ -582,6 +603,7 @@ async def test_transfer(mgrf: CharacterManager, u11: Member, u12: Member, c111: 
 
 
 async def test_transfer_wrong_owner(mgrf: CharacterManager, u11: Member, u12: Member, c111: VChar):
+    """Transferring from someone who isn't the owner raises WrongOwner."""
     char = await mgrf.fetchid(c111.id_str)
     assert char is not None
 
@@ -592,6 +614,7 @@ async def test_transfer_wrong_owner(mgrf: CharacterManager, u11: Member, u12: Me
 
 
 async def test_transfer_wrong_guild(mgrf: CharacterManager, u11: Member, u21: Member, c111: VChar):
+    """Transferring to a member of another guild raises WrongGuild."""
     char = await mgrf.fetchid(c111.id_str)
     assert char is not None
 
@@ -603,7 +626,7 @@ async def test_transfer_wrong_guild(mgrf: CharacterManager, u11: Member, u21: Me
 
 @pytest.mark.parametrize("transform", [str, str.upper, str.lower])
 async def test_transfer_duplicate_name(
-    transform,
+    transform: Callable[[str], str],
     mgrf: CharacterManager,
     g1: Guild,
     u11: Member,
@@ -695,7 +718,7 @@ async def test_fetchone_admin(
     u12: Member,
     c121: VChar,
 ):
-    assert u11.top_role.permissions.administrator is True
+    """Admins may fetch other players' characters by ID."""
     assert u11.guild_permissions.administrator is True
 
     char = await mgrf.fetchone(g1, u11, c121.id_str)
@@ -710,7 +733,7 @@ async def test_fetchone_admin_fail(
     u12: Member,
     c111: VChar,
 ):
-    assert u12.top_role.permissions.administrator is False
+    """Non-Storytellers can't fetch other players' characters by ID."""
     assert u12.guild_permissions.administrator is False
 
     with pytest.raises(LookupError):
@@ -738,6 +761,7 @@ async def test_validate_storyteller_role(
 
 
 async def test_sort_characters(mgrf: CharacterManager):
+    """Sorting orders the cache by name."""
     mgrf._characters[0].name = "zzzzzzz"
     await mgrf.sort_chars()
     assert mgrf._characters[-1].name == "zzzzzzz"
@@ -756,8 +780,6 @@ async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Gui
 
     Uses a delay to ensure actual lock contention occurs.
     """
-    from tests.characters import gen_char
-
     # Create two identical characters
     char1 = gen_char("vampire")
     char1.name = "Race Test"
@@ -772,14 +794,16 @@ async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Gui
     # Patch save() to add delay, forcing lock contention
     original_save = char1.save
 
-    async def slow_save(*args, **kwargs):
+    async def slow_save(*args: Any, **kwargs: Any) -> VChar:
+        """Save after a delay, so the registrations overlap."""
         await asyncio.sleep(0.1)  # 100ms delay to ensure overlap
         return await original_save(*args, **kwargs)
 
     # Track when each operation starts to verify they overlap
     start_times = []
 
-    async def register_with_timing(char):
+    async def register_with_timing(char: VChar):
+        """Record when the registration starts, then register."""
         start_times.append(asyncio.get_event_loop().time())
         return await mgre.register(char)
 
@@ -809,6 +833,7 @@ async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Gui
 
 
 async def test_countguild(mgrf: CharacterManager, g1: Guild, g2: Guild):
+    """Counts every character in the guild."""
     count = await mgrf.countguild(g1.id)
     assert count == 4
 

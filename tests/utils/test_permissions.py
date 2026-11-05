@@ -11,6 +11,10 @@ from models.vguild import VGuildSettings
 from tests.mocks import MockMember
 from utils.permissions import has_supporter_role, is_admin, is_storyteller
 
+ST_ROLE = 1234
+
+type MockGetOrFetch = AsyncMock
+
 
 def make_member(*, supporter: bool = False) -> MockMember:
     """A member who may have the supporter role."""
@@ -41,9 +45,6 @@ def test_is_admin_outside_server():
     assert not is_admin(None)
 
 
-ST_ROLE = 1234
-
-
 def make_storyteller(*, admin: bool = False, roles: list[int] | None = None) -> MockMember:
     """A member with the given admin status and roles."""
     roles = roles or []
@@ -55,8 +56,9 @@ def make_storyteller(*, admin: bool = False, roles: list[int] | None = None) -> 
     return member
 
 
-def mock_vguild(storyteller_role: int | None) -> AsyncMock:
-    """Patch VGuild.get_or_fetch to return a guild with the given Storyteller role."""
+def mock_vguild(storyteller_role: int | None) -> MockGetOrFetch:
+    """A replacement for VGuild.get_or_fetch, returning a guild with the given
+    Storyteller role."""
     vguild = MagicMock(spec=VGuild)
     vguild.settings = VGuildSettings(storyteller_role=storyteller_role)
     return AsyncMock(return_value=vguild)

@@ -84,7 +84,7 @@ def test_re_paginate_preserves_newlines():
     assert pages[0] == text
 
 
-def generate_random_word(length):
+def generate_random_word(length: int) -> str:
     letters = string.ascii_lowercase
     return "".join(random.choice(letters) for i in range(length))
 
@@ -106,7 +106,9 @@ async def test_changelog():
         ("Bad date", "20231010", None, None, SyntaxError),
     ],
 )
-def test_convert_dates(after: str, before: str, exp_b: dt, exp_a: dt, error: Exception | None):
+def test_convert_dates(
+    after: str, before: str, exp_b: dt, exp_a: dt, error: type[Exception] | None
+):
     if error:
         with pytest.raises(error):
             b, a = convert_dates(after, before)

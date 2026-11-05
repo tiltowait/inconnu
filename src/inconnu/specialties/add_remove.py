@@ -60,14 +60,14 @@ async def _add_or_remove(
 ):
     """Perform the actual work of adding or removing a spec."""
     if action == Action.ADD:
-        action = add_specialties
+        perform = add_specialties
         title = category.plural + " added"
     else:
-        action = remove_specialties
+        perform = remove_specialties
         title = category.plural + " removed"
 
     try:
-        additions = action(character, syntax, category)
+        additions = perform(character, syntax, category)
         embed = _make_embed(ctx, character, additions, title)
         view = ui.views.TraitsView(character, ctx.user)
 
@@ -79,7 +79,7 @@ async def _add_or_remove(
             if delta:
                 cat = category.plural.lower()
                 msg = f"__{ctx.user.mention} updated {character.name}'s {cat}__\n"
-                msg += embed.description
+                msg += embed.description or ""
                 tasks.append(
                     services.post_update(
                         ctx=ctx,
@@ -112,7 +112,7 @@ def _make_embed(
     character: VChar,
     additions: list,
     title: str,
-):
+) -> ui.embeds.VCharEmbed:
     """Create the embed."""
     entries = []
     for trait, delta in additions:
@@ -137,12 +137,14 @@ def add_specialties(character: VChar, syntax: str, category: Category) -> list:
     return _mod_specialties(character, syntax, True, category)
 
 
-def remove_specialties(character: VChar, syntax: str, _=None) -> list:
+def remove_specialties(character: VChar, syntax: str, _: Category | None = None) -> list:
     """Remove specialties from a character."""
     return _mod_specialties(character, syntax, False, None)
 
 
-def _mod_specialties(character: VChar, syntax: str, adding: bool, category: Category | None):
+def _mod_specialties(
+    character: VChar, syntax: str, adding: bool, category: Category | None
+) -> list:
     """Do the actual work of adding or removing specialties."""
     tokens = tokenize(syntax)
     validate_tokens(character, tokens)

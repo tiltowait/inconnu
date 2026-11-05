@@ -34,7 +34,14 @@ def discipline() -> VCharTrait:
         ("BRAWL", True, 1, "Brawl", 4),
     ],
 )
-def test_basic_skill_matching(needle, exact, count, name, rating, skill):
+def test_basic_skill_matching(
+    needle: str,
+    exact: bool,
+    count: int,
+    name: str | None,
+    rating: int | None,
+    skill: VCharTrait,
+):
     matches = skill.matching(needle, exact)
     assert len(matches) == count
 
@@ -132,7 +139,7 @@ def test_specialty_matching(
     needle: str,
     exact: bool,
     count: int,
-    expectations: list[tuple[str, int, bool]],
+    expectations: list[tuple[str, int, bool, str]],
     skill: VCharTrait,
     specialties: list[str],
 ):

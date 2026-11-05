@@ -50,7 +50,7 @@ class Haven:
         character: VChar | str | None = None,
         tip: str | None = None,
         help: str | None = None,
-        char_filter: Callable[[VChar], None] | None = None,
+        char_filter: Callable[[VChar], object] | None = None,
         errmsg: str = "None of your characters can perform this action.",
     ):
         self.uuid = uuid.uuid4().hex  # For ensuring button uniqueness
@@ -79,7 +79,7 @@ class Haven:
             raise RuntimeError("Haven.owner accessed before fetch()")
         return self._owner
 
-    async def fetch(self):
+    async def fetch(self) -> VChar:
         """Fetch the sole-matching character or raise a CharacterError."""
         guild = cast(discord.Guild, self.ctx.guild)
         try:
@@ -314,7 +314,7 @@ def _personalize_error(
 
 def haven[**P, T](
     url: str,
-    char_filter: Callable[[VChar], None] | None = None,
+    char_filter: Callable[[VChar], object] | None = None,
     errmsg="",
     allow_lookups=False,
 ) -> Callable[

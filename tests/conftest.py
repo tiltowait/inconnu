@@ -1,7 +1,7 @@
 """Pytest configuration."""
 
 import os
-from typing import cast
+from typing import Any, cast
 
 import mongomock
 import pytest_asyncio
@@ -15,11 +15,18 @@ os.environ["PYTEST"] = "1"
 _orig_list_collection_names = mongomock.Database.list_collection_names
 
 
-def _patched_list_collection_names(self, filter=None, session=None, **kwargs):
+def _patched_list_collection_names(
+    self: mongomock.Database,
+    filter: dict[str, Any] | None = None,
+    session: Any = None,
+    **kwargs: Any,
+) -> list[str]:
     return _orig_list_collection_names(self, filter=filter, session=session)
 
 
-mongomock.Database.list_collection_names = _patched_list_collection_names
+mongomock.Database.list_collection_names = (  # pyright: ignore[reportAttributeAccessIssue]
+    _patched_list_collection_names
+)
 os.environ["ADMIN_SERVER"] = "09876"
 os.environ["SUPPORTER_ROLE"] = "12345"
 os.environ["SUPPORTER_GUILD"] = "54321"

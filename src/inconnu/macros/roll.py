@@ -292,14 +292,16 @@ class _SlakeView(View):
         cancel.callback = self.callback
         self.add_item(cancel)
 
-    async def callback(self, inter: discord.Interaction):
+    async def callback(self, interaction: discord.Interaction):
         """Slake Hunger or cancel."""
-        if inter.user != self.owner:
-            await inter.response.send_message("This button doesn't belong to you!", ephemeral=True)
+        if interaction.user != self.owner:
+            await interaction.response.send_message(
+                "This button doesn't belong to you!", ephemeral=True
+            )
             return
 
         self.stop()
-        custom_id = cast(str, inter.custom_id)  # Button presses always have one
+        custom_id = cast(str, interaction.custom_id)  # Button presses always have one
         slake_amount = self.buttons[custom_id]
 
         # Once they've chosen, a reroll into failure shouldn't delete the result
@@ -307,12 +309,12 @@ class _SlakeView(View):
 
         if slake_amount == _SlakeView.CANCEL_SLAKE:
             # Through the interaction, because the menu might be ephemeral
-            await inter.response.defer()
-            await inter.delete_original_response()
+            await interaction.response.defer()
+            await interaction.delete_original_response()
         else:
-            # await inter.message.delete()
-            await inconnu.misc.slake(inter, self.character, slake_amount, edit_message=True)
-            await inconnu.reference.resonance(inter, character=self.character.name)
+            # await interaction.message.delete()
+            await inconnu.misc.slake(interaction, self.character, slake_amount, edit_message=True)
+            await inconnu.reference.resonance(interaction, character=self.character.name)
 
     async def close(self):
         """Stop listening and delete the menu, which might be ephemeral."""

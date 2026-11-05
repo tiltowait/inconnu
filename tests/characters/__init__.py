@@ -9,9 +9,9 @@ def gen_char(splat: str) -> VChar:
     char = VChar(
         guild=0,
         user=0,
-        raw_name="Dummy",
+        name="Dummy",
         splat=splat,
-        raw_humanity=7,
+        humanity=7,
         health=6 * constants.Damage.NONE,
         willpower=5 * constants.Damage.NONE,
         potency=splat == "vampire" and 1 or 0,

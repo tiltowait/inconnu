@@ -297,7 +297,7 @@ async def player_lookup(
         logger.info("HAVEN: {} looked up {} ({})", ctx.user.name, player.name, guild.name)
         if not (allow_lookups or await is_storyteller(ctx.user)):
             logger.info("HAVEN: Invalid player lookup by {} ({})", ctx.user.name, guild.name)
-            raise LookupError("You don't have lookup permissions.")
+            raise LookupError("Only Storytellers can look up other players.")
 
     return player
 

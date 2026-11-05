@@ -34,6 +34,8 @@ Imports a character exported from [Progeny](https://progeny.odin-matthias.de/) a
 
 Shows the character's Health, Willpower, Humanity, experience, and other trackers. The **Traits** button shows their Attributes, Skills, and other Traits. If you have several characters and don't name one, you can pick from a list.
 
+You can also right-click a user and choose **Apps → Stats**. Only Storytellers can see other players' characters this way.
+
 ## /character update
 
 ```
@@ -98,7 +100,7 @@ Opens a dialogue to edit the profile.
 /character profile character:[character] player:[player]
 ```
 
-Shows a profile. Anyone can view anyone's profile. Some of **Inconnu's** responses link to your profile on the web.
+Shows a profile. Anyone can view anyone's profile, including by right-clicking a user and choosing **Apps → Profile**. Some of **Inconnu's** responses link to your profile on the web.
 
 ## /character convictions
 
@@ -112,7 +114,7 @@ Opens a dialogue with three fields for your Convictions.
 /character convictions character:[character] player:[player]
 ```
 
-Shows a character's Convictions. You can also right-click a user and choose **Apps → Convictions**.
+Shows a character's Convictions. You can also right-click a user and choose **Apps → Convictions**. Only Storytellers can see other players' Convictions.
 
 ## RP headers
 

@@ -215,19 +215,6 @@ async def test_timeout_after_menu_deleted(owner: discord.Member, character: VCha
     assert outcome.id not in HUNT_LISTENERS
 
 
-async def test_timeout_deletes_interaction_menu(
-    owner: discord.Member, character: VChar, outcome: Roll
-):
-    """A menu sent as the interaction's response is deleted through the interaction."""
-    view = _SlakeView(owner, character, outcome)
-    menu = AsyncMock(spec=discord.Interaction)
-    view.message = menu
-
-    await view.on_timeout()
-
-    menu.delete_original_response.assert_awaited_once()
-
-
 # Rolling the macro
 
 

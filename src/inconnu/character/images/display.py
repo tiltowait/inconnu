@@ -59,7 +59,6 @@ class ImagePager(discord.ui.View):
         invoker_controls: bool,
     ):
         self.ctx = ctx
-        self.message = None
         self.character = character
         self.owner = owner
         self.invoker_controls = invoker_controls
@@ -167,7 +166,7 @@ class ImagePager(discord.ui.View):
         embed.set_footer(text="Upload images with /character image upload.")
         embed.set_image(url=self.current_image)
 
-        self.message = await self.ctx.respond(embed=embed, view=self)
+        await self.ctx.respond(embed=embed, view=self)
 
     async def previous_page(self, interaction: discord.Interaction):
         """Go to the next page."""

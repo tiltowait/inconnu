@@ -1086,6 +1086,14 @@ def fake_interaction(screen: Screen, user: discord.Member | discord.User) -> Asy
     # The original interaction's response is the public message
     inter.edit_original_response.side_effect = screen.public.record
     inter.edit.side_effect = screen.public.record
+    # py-cord gives a press the button's message. It edits through the channel
+    # API, which can't find an ephemeral message.
+    pressed = AsyncMock(spec=discord.Message)
+    if screen.private is not None and screen.controls is screen.private:
+        pressed.edit.side_effect = discord.NotFound(MagicMock(status=404), "Unknown Message")
+    else:
+        pressed.edit.side_effect = screen.public.record
+    inter.message = pressed
     return inter
 
 
@@ -1149,6 +1157,7 @@ async def press(screen: Screen, label: str, by: discord.Member | None = None):
     inter.data = {"custom_id": button.custom_id}
 
     # Mirrors py-cord's View dispatch, minus its error swallowing
+    screen.view.message = inter.message
     if await screen.view.interaction_check(inter):
         await button.callback(inter)
     else:
@@ -1335,6 +1344,35 @@ async def test_hidden_timeout(ctx: AppCtx, owner: discord.Member):
 
     assert all(disabled for _, _, disabled, _ in screen.private.buttons)
     assert screen.public.view is None
+
+
+async def test_hidden_timeout_after_press(ctx: AppCtx, owner: discord.Member):
+    """A press doesn't stop the private copy's buttons from disabling on timeout."""
+    roll = make_roll([6, 2], [], 2)
+    display = make_display(ctx, owner, roll, character=make_char("vampire"), hide_dice=True)
+    screen = await show(display)
+    with patch("inconnu.d10", return_value=10):
+        await press_reroll_failures(screen)
+
+    await time_out(screen)
+
+    assert screen.private is not None and screen.private.buttons is not None
+    assert all(disabled for _, _, disabled, _ in screen.private.buttons)
+
+
+async def test_hidden_timeout_after_token_expires(ctx: AppCtx, owner: discord.Member):
+    """The timeout handler runs even if the private copy can no longer be edited."""
+    roll = make_roll([6, 2], [], 2)
+    handler = AsyncMock()
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True, timeout=handler))
+    assert screen.private is not None
+    screen.private.handle.edit.side_effect = discord.HTTPException(
+        MagicMock(status=401), "Invalid Webhook Token"
+    )
+
+    await time_out(screen)
+
+    handler.assert_awaited_once_with(roll)
 
 
 # Update channel reports

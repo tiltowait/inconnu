@@ -225,7 +225,7 @@ async def __slake(ctx: AppInvocation, character: VChar, outcome: Roll | None, ep
         )
 
         view = _SlakeView(ctx.user, character, outcome)
-        view.message = await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
+        await ctx.respond(embed=embed, view=view, ephemeral=ephemeral)
 
         if outcome is not None:
             __HUNT_LISTENERS[outcome.id] = view
@@ -256,7 +256,6 @@ class _SlakeView(View):
         self.owner = owner
         self.character = character
         self.buttons: dict[str, int] = {}
-        self.message: discord.Interaction | discord.WebhookMessage | None = None
         self.outcome = outcome
 
         for hunger in range(1, character.hunger + 1):
@@ -322,10 +321,7 @@ class _SlakeView(View):
             return
         # Someone else, such as a mod, may have deleted it already
         with contextlib.suppress(discord.NotFound):
-            if isinstance(self.message, discord.Interaction):
-                await self.message.delete_original_response()
-            else:
-                await self.message.delete()
+            await self.message.delete()
 
     async def on_timeout(self):
         """Delete the menu."""

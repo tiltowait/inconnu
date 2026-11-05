@@ -81,4 +81,3 @@ async def test_modal_error_reported(bot: discord.Bot, mock_report: AsyncMock):
     await drain(bot)
 
     mock_report.assert_awaited_once_with(inter, error)
-

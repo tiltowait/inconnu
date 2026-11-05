@@ -9,6 +9,7 @@ from typing import cast
 
 import discord
 from discord.ui import Button
+from loguru import logger
 
 import inconnu
 import services
@@ -17,6 +18,7 @@ from inconnu.character.impairment import impairment_reminder, incapacitation_rem
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
 from models import IMPAIRMENT_DICE, ImpairmentCategory, RollCategory, VChar
+from ui.views.ephemeralsafeview import EphemeralSafeView
 from utils import get_avatar, get_message
 from utils.text import de_camel
 from utils.urls import web_asset
@@ -53,7 +55,7 @@ class _ButtonState:
         return self.strategy is not None
 
 
-class RollDisplay(discord.ui.View):
+class RollDisplay(EphemeralSafeView):
     """Display and manipulate roll outcomes. Provides buttons for rerolls, WP, and Rouse."""
 
     def __init__(
@@ -262,8 +264,12 @@ class RollDisplay(discord.ui.View):
         self._render_buttons()
 
         if self.message is not None:
-            with contextlib.suppress(discord.NotFound):
+            try:
                 await self.message.edit(view=self)
+            except discord.HTTPException as err:
+                # Deleted, or a hidden roll's interaction token expired. Either
+                # way, the timeout handler must still run.
+                logger.debug("Couldn't disable the roll buttons: {}", err)
 
         if self.timeout_handler is not None:
             await self.timeout_handler(self.outcome)

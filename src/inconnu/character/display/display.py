@@ -105,12 +105,7 @@ async def display(
 
     if not kwargs.get("edit_message", False):
         msg_contents["ephemeral"] = ephemeral
-        msg = await ctx.respond(**msg_contents)
-
-        if isinstance(view, ui.views.DisablingView):
-            view.message = msg
-
-        return msg
+        return await ctx.respond(**msg_contents)
 
     # We are editing the message with the pressed button. We edit through the
     # interaction, because the message might be ephemeral.
@@ -118,7 +113,7 @@ async def display(
         # We need to remove the view
         msg_contents["view"] = None
     elif isinstance(view, ui.views.DisablingView):
-        view.message = ctx
+        view.message = ctx.interaction if isinstance(ctx, discord.ApplicationContext) else ctx
     await ctx.response.edit_message(**msg_contents)
     return ctx
 

@@ -91,7 +91,4 @@ async def error(ctx, err, *fields, **kwargs):
         allowed_mentions=discord.AllowedMentions.none(),
     )
 
-    if view is not None:
-        view.message = msg
-
     return msg

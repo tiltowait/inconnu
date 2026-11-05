@@ -13,6 +13,7 @@ from ctx import AppCtx
 from inconnu.options import char_option, player_option
 from interface import CommandCog
 from utils import decorators, not_on_lockdown
+from utils.permissions import is_storyteller
 from utils.text import strtobool
 from utils.urls import docs_url
 
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 
 async def _spc_options(ctx):
     """Determine whether the user can make an SPC."""
-    if ctx.interaction.user.guild_permissions.administrator:
+    if await is_storyteller(ctx.interaction.user):
         return [OptionChoice("No", "0"), OptionChoice("Yes", "1")]
     return [OptionChoice("No", "0")]
 
@@ -56,7 +57,9 @@ class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIs
 
     @character.command(name="wizard", contexts={discord.InteractionContextType.guild})
     @not_on_lockdown()
-    @option("spc", description="(Admin only) Make an SPC", autocomplete=_spc_options, default="0")
+    @option(
+        "spc", description="(Storyteller only) Make an SPC", autocomplete=_spc_options, default="0"
+    )
     async def character_wizard(self, ctx: AppCtx, spc: str):
         """Start a character creation wizard."""
         try:
@@ -222,7 +225,7 @@ class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIs
 
     @character.command(name="profile")
     @player_option(description="The character's owner (does not work with EDIT)")
-    @char_option("The character to show")
+    @char_option("The character to show", allow_lookups=True)
     @char_option("The character whose profile to edit", param="edit")
     async def character_profile(
         self,
@@ -269,7 +272,7 @@ class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIs
     # Premium
 
     @character.command(name="images")
-    @inconnu.options.char_option("The character to display")
+    @inconnu.options.char_option("The character to display", allow_lookups=True)
     @inconnu.options.player_option(description="The character's owner")
     @option(
         "controls",

@@ -83,6 +83,8 @@ class ErrorReporter:
                 )
             case commands.MissingPermissions():
                 await ctx.respond("Sorry, you don't have permission to do this!", ephemeral=True)
+            case errors.NotStoryteller():
+                await ctx.respond("Sorry, only Storytellers can do this!", ephemeral=True)
             case discord.NotFound() | errors.HandledError():
                 # NotFound: the message or resource is gone, usually a deleted message.
                 # HandledError: the user was already told.

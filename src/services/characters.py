@@ -11,6 +11,7 @@ from loguru import logger
 
 import errors
 from models.vchar import VChar
+from utils.permissions import is_storyteller
 from utils.text import clean_text, pluralize
 
 
@@ -78,7 +79,7 @@ class CharacterManager:
 
         if name and ObjectId.is_valid(name):
             if char := self._id_cache.get(name):
-                self._validate(guild, user, char)
+                await self._validate(guild, user, char)
                 return char
 
         user_chars = await self.fetchall(guild, user)
@@ -99,7 +100,7 @@ class CharacterManager:
 
         try:
             char = next(char for char in user_chars if char.name.casefold() == name.casefold())
-            self._validate(guild, user, char)
+            await self._validate(guild, user, char)
             return char
         except StopIteration:
             raise errors.CharacterNotFoundError(f"You have no character named `{name}`.")
@@ -267,7 +268,7 @@ class CharacterManager:
         async with self._lock:
             self._characters.sort()
 
-    def _validate(self, guild: discord.Guild, user: discord.Member, char: VChar):
+    async def _validate(self, guild: discord.Guild, user: discord.Member, char: VChar):
         """Validate character ownership."""
         guild_id = guild.id if isinstance(guild, discord.Guild) else guild
         user_id = user.id if isinstance(user, discord.Member) else user
@@ -275,13 +276,8 @@ class CharacterManager:
         if guild_id != char.guild:
             raise LookupError(f"**{char.name}** doesn't belong to this server!")
         if char.user != user_id:
-            if not self.is_admin(user):
+            if not await is_storyteller(user):
                 raise LookupError(f"**{char.name}** doesn't belong to this user!")
-
-    @staticmethod
-    def is_admin(user: discord.Member) -> bool:
-        """Determine whether the user is an administrator."""
-        return user.top_role.permissions.administrator or user.guild_permissions.administrator
 
 
 char_mgr = CharacterManager()

@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING
 import discord
 from discord import option
 from discord.commands import SlashCommandGroup, user_command
-from discord.ext import commands
 
 import inconnu
 from ctx import AppCtx
 from inconnu.options import char_option, player_option
 from interface import CommandCog
+from utils import decorators
 from utils.urls import docs_url
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Award, deduct, and review character experience."""
 
-    docs = {"Documentation": docs_url("advanced/administration/experience-management")}
+    docs = {"Documentation": docs_url("advanced/storytellers/experience-management")}
 
     experience = SlashCommandGroup(
         "experience",
@@ -29,7 +29,7 @@ class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[repo
     )
 
     @user_command(name="Experience Log", contexts={discord.InteractionContextType.guild})
-    async def context_experience_list(self, ctx, member: discord.Member):
+    async def context_experience_list(self, ctx: AppCtx, member: discord.Member):
         """Display the given member's character XP logs."""
         await inconnu.experience.list_events(ctx, None, True, player=member)
 
@@ -76,7 +76,7 @@ class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[repo
     experience_remove = experience.create_subgroup("remove", "Remove log entry")
 
     @experience_remove.command(name="entry")
-    @commands.has_permissions(administrator=True)
+    @decorators.storyteller()
     @player_option(required=True)
     @char_option("The character whose log to modify", required=True)
     @option(
@@ -116,8 +116,8 @@ class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[repo
     )
 
     @bulk_award.command(name="xp")
-    @commands.has_permissions(administrator=True)
-    async def bulk_award_xp(self, ctx):
+    @decorators.storyteller()
+    async def bulk_award_xp(self, ctx: AppCtx):
         """Award experience en masse."""
         await inconnu.experience.bulk_award_xp(ctx)
 

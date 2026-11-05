@@ -16,7 +16,7 @@ import ui
 from ctx import AppCtx
 from models import VChar
 from ui.views.basicselector import BasicSelector
-from utils.permissions import is_admin
+from utils.permissions import is_storyteller
 
 
 class Haven:
@@ -84,11 +84,11 @@ class Haven:
         guild = cast(discord.Guild, self.ctx.guild)
         try:
             # Owner is either the invoking user or the supplied owner. Only
-            # admins are allowed to select on players' behalf, so player_lookup
-            # raises LookupError for non-admins. Handling that exception
+            # Storytellers are allowed to select on players' behalf, so player_lookup
+            # raises LookupError for others. Handling that exception
             # requires an async context, which is why we don't assign _owner in
             # init.
-            self._owner = player_lookup(self.ctx, self._given_owner, self.allow_lookups)
+            self._owner = await player_lookup(self.ctx, self._given_owner, self.allow_lookups)
 
             # If the owner only has one character, or selected one, then we
             # can skip the rest of the fetch and filter routine
@@ -278,14 +278,14 @@ class Haven:
         return view
 
 
-def player_lookup(
+async def player_lookup(
     ctx: AppCtx, player: discord.Member | None, allow_lookups: bool
 ) -> discord.Member:
     """
     Look up a player.
     Returns the sought-after player OR the ctx author if player is None.
 
-    Raises LookupError if the user doesn't have admin permissions.
+    Raises LookupError if the user isn't a Storyteller.
     """
     if player is None:
         logger.debug("HAVEN: No lookup issued")
@@ -295,9 +295,9 @@ def player_lookup(
     if ctx.user != player:
         guild = cast(discord.Guild, ctx.guild)
         logger.info("HAVEN: {} looked up {} ({})", ctx.user.name, player.name, guild.name)
-        if not (is_admin(ctx) or allow_lookups):
+        if not (allow_lookups or await is_storyteller(ctx.user)):
             logger.info("HAVEN: Invalid player lookup by {} ({})", ctx.user.name, guild.name)
-            raise LookupError("You don't have lookup permissions.")
+            raise LookupError("Only Storytellers can look up other players.")
 
     return player
 

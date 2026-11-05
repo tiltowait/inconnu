@@ -1,34 +1,43 @@
 """Permission and supporter status checks."""
 
-from typing import cast
-
 import discord
 from loguru import logger
 
 from config import settings
 from ctx import AppCtx, AppInvocation
+from models import VGuild
 
 
-def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None):
-    """Check if the user owns the object or is an admin."""
+async def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None) -> bool:
+    """Check if the user owns the object or is a Storyteller."""
     if ctx.user is None:
         raise ValueError("Unexpectedly got null user")
 
     if owner == ctx.user.id:
         return True
-    return is_admin(ctx)
+    return await is_storyteller(ctx.user)
 
 
-def is_admin(ctx: AppInvocation | discord.Interaction):
-    """Check if the ctx user is a server admin."""
-    if ctx.channel is None:
-        raise ValueError("Unexpectedly got null channel")
+def is_admin(user: discord.Member | discord.User | None) -> bool:
+    """Whether the user is an administrator of the server they're acting in.
 
-    user = cast(discord.Member, ctx.user)
-    if isinstance(ctx.channel, discord.PartialMessageable):
-        # We can't use permissions_for
-        return user.top_role.permissions.administrator or user.guild_permissions.administrator
-    return ctx.channel.permissions_for(user).administrator
+    Administrator is server-wide (channel overwrites can't remove it), so the
+    member's server permissions decide it. Users outside a server never are."""
+    return isinstance(user, discord.Member) and user.guild_permissions.administrator
+
+
+async def is_storyteller(member: discord.Member | discord.User | None) -> bool:
+    """Check if the guild member is an admin or has that server's Storyteller role.
+    Users outside a server never are."""
+    if not isinstance(member, discord.Member):
+        return False
+    if is_admin(member):
+        return True
+
+    vguild = await VGuild.get_or_fetch(member.guild)
+    if vguild.settings.storyteller_role is not None:
+        return member.get_role(vguild.settings.storyteller_role) is not None
+    return False
 
 
 def has_supporter_role(member: discord.Member) -> bool:

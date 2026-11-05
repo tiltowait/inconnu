@@ -38,4 +38,4 @@ Attributes, Skills, Disciplines, specialties, powers, and any [custom Traits](gu
 
 ## For Storytellers
 
-[Admins](advanced/administration/README.md) can [change server settings](advanced/server-settings.md#server-settings), see character updates in one channel, [manage experience](advanced/administration/experience-management.md), and work with any player's character.
+[Storytellers](advanced/storytellers/README.md) can [manage experience](advanced/storytellers/experience-management.md) and work with any player's character. Admins can also [change server settings](advanced/server-settings.md#server-settings), such as seeing character updates in one channel.

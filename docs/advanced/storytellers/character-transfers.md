@@ -7,4 +7,4 @@
 Transfers a character to a new owner and pings both players.
 
 > [!NOTE]
-> If you transfer a character to **Inconnu**, it becomes an SPC, usable by any admin.
+> If you transfer a character to **Inconnu**, it becomes an SPC, usable by any Storyteller.

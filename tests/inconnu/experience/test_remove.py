@@ -13,6 +13,7 @@ from models.vchardocs import VCharExperienceEntry
 
 type MockInteraction = MagicMock
 type MockMember = MagicMock
+type MockDisplay = AsyncMock
 
 
 @pytest.fixture
@@ -36,7 +37,7 @@ def character() -> VChar:
 
 @pytest.fixture
 def interaction() -> MockInteraction:
-    """An admin's button press."""
+    """A server member's button press."""
     inter = MagicMock(spec=discord.Interaction)
     inter.response = MagicMock(spec=discord.InteractionResponse)
     inter.response.edit_message = AsyncMock()
@@ -45,7 +46,7 @@ def interaction() -> MockInteraction:
 
 
 @pytest.fixture
-def mock_display() -> Iterator[AsyncMock]:
+def mock_display() -> Iterator[MockDisplay]:
     """Patch the character display and its side effects."""
     with (
         patch.object(remove_module, "display", new_callable=AsyncMock) as display,
@@ -64,7 +65,7 @@ def _press_view(character: VChar, event: str, amount: int) -> _ExperienceView:
 
 
 async def test_apply_xp_unspent(
-    character: VChar, interaction: MockInteraction, mock_display: AsyncMock
+    character: VChar, interaction: MockInteraction, mock_display: MockDisplay
 ):
     """Deleting an unspent award removes it from unspent XP only."""
     view = _press_view(character, "award_unspent", 3)
@@ -77,7 +78,7 @@ async def test_apply_xp_unspent(
 
 
 async def test_apply_xp_lifetime(
-    character: VChar, interaction: MockInteraction, mock_display: AsyncMock
+    character: VChar, interaction: MockInteraction, mock_display: MockDisplay
 ):
     """Reverting a lifetime deduction raises both lifetime and unspent XP."""
     view = _press_view(character, "deduct_lifetime", -4)
@@ -90,7 +91,7 @@ async def test_apply_xp_lifetime(
 
 
 async def test_apply_xp_lifetime_floor(
-    character: VChar, interaction: MockInteraction, mock_display: AsyncMock
+    character: VChar, interaction: MockInteraction, mock_display: MockDisplay
 ):
     """Lifetime XP can't go below zero, and the message shows what changed."""
     view = _press_view(character, "award_lifetime", 25)
@@ -262,20 +263,24 @@ async def test_button_label(character: VChar, event: str, amount: int, label: st
     assert button.label == label
 
 
-@pytest.mark.parametrize("admin", [True, False])
-async def test_only_admins_press(character: VChar, interaction: MockInteraction, admin: bool):
-    """Only admins can apply the reversal."""
+@pytest.mark.parametrize("storyteller", [True, False])
+async def test_only_storytellers_press(
+    character: VChar, interaction: MockInteraction, storyteller: bool
+):
+    """Only Storytellers can apply the reversal."""
     interaction.response.send_message = AsyncMock()
     view = _press_view(character, "award_unspent", 3)
 
-    with patch.object(remove_module, "is_admin", return_value=admin):
-        assert await view.interaction_check(interaction) is admin
+    with patch.object(
+        remove_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
+    ):
+        assert await view.interaction_check(interaction) is storyteller
 
-    assert interaction.response.send_message.await_count == (0 if admin else 1)
+    assert interaction.response.send_message.await_count == (0 if storyteller else 1)
 
 
 async def test_apply_xp_finishes(
-    character: VChar, interaction: MockInteraction, mock_display: AsyncMock
+    character: VChar, interaction: MockInteraction, mock_display: MockDisplay
 ):
     """Pressing removes the button, saves, reports the change, and ends the view."""
     view = _press_view(character, "award_unspent", 3)

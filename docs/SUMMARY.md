@@ -35,9 +35,9 @@
 
 ## Advanced
 
-* [Administration](advanced/administration/README.md)
-  * [Experience Management](advanced/administration/experience-management.md)
-  * [Character Transfers](advanced/administration/character-transfers.md)
+* [Storytellers](advanced/storytellers/README.md)
+  * [Experience Management](advanced/storytellers/experience-management.md)
+  * [Character Transfers](advanced/storytellers/character-transfers.md)
 * [Character and Player Parameters](advanced/character-and-player-parameters.md)
 * [Settings](advanced/server-settings.md)
 * [Troubleshooting](advanced/troubleshooting.md)

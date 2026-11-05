@@ -13,21 +13,21 @@ description: >-
 | `amount`    | The amount of XP to award/deduct                         |
 | `scope`     | Whether to apply the operation to lifetime or unspent XP |
 | `reason`    | A note about the reason for the change                   |
-| `player`    | The player who owns the character (admin only)           |
+| `player`    | The player who owns the character (Storyteller only)     |
 | `character` | The character to award or deduct XP (optional if the player has only one) |
 
-Players may award and deduct XP for their own characters in the scopes the server's [Experience setting](../server-settings.md#experience) allows. Admins can always adjust XP.
+Players may award and deduct XP for their own characters in the scopes the server's [Experience setting](../server-settings.md#experience) allows. [Storytellers](README.md) can always adjust XP.
 
 > [!NOTE]
-> Players and admins may view their characters' experience logs with the `/experience log` command. Admins can also right-click a user and choose **Apps → Experience Log**.
+> Players and Storytellers may view their characters' experience logs with the `/experience log` command. Storytellers can also right-click a user and choose **Apps → Experience Log**.
 
-**To remove a log entry** (admin only), use `/experience remove entry` with `player`, `character`, and `log_index` (the entry's number in `/experience log`).
+**To remove a log entry** (Storyteller only), use `/experience remove entry` with `player`, `character`, and `log_index` (the entry's number in `/experience log`).
 
 The confirmation offers a button to reverse the entry's XP change, such as subtracting 10 lifetime XP for a 10-XP award.
 
 ## Bulk experience
 
-`/bulk award xp` (admin only) awards XP to many characters at once. It opens a dialogue with two fields:
+`/bulk award xp` (Storyteller only) awards XP to many characters at once. It opens a dialogue with two fields:
 
 | Parameter       | Description                                                  |
 | --------------- | ------------------------------------------------------------ |

@@ -7,7 +7,6 @@ from utils.discord_helpers import (
     command_options,
     get_avatar,
     get_message,
-    player_lookup,
     raw_command_options,
     re_paginate,
 )
@@ -21,7 +20,6 @@ __all__ = (
     "get_message",
     "not_on_lockdown",
     "parse_parameters",
-    "player_lookup",
     "raw_command_options",
     "re_paginate",
     "urls",

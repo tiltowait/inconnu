@@ -16,6 +16,10 @@ class InvalidAttachment(CheckFailure):
     """An exception raised if an attachment's type or size isn't allowed."""
 
 
+class NotStoryteller(CheckFailure):
+    """An exception raised if a Storyteller-only command is used by someone else."""
+
+
 class InconnuError(Exception):
     """Base error all others inherit from."""
 

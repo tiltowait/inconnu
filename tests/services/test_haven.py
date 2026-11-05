@@ -152,7 +152,7 @@ async def test_selection_valid(mock_ctx: AppCtx):
         patch.object(Haven, "_create_view", return_value=view),
         patch(UI_ERROR, new_callable=AsyncMock) as mock_error,
     ):
-        await haven._get_user_selection("Which character?")
+        await haven._get_user_selection(errors.UnspecifiedCharacterError("Which character?"))
 
     assert haven.match is char
     assert haven.new_interaction is view.interaction
@@ -175,7 +175,7 @@ async def test_selection_of_filtered_character_is_rejected(mock_ctx: AppCtx):
         patch(UI_ERROR, new_callable=AsyncMock) as mock_error,
         pytest.raises(errors.HandledError),
     ):
-        await haven._get_user_selection("Which character?")
+        await haven._get_user_selection(errors.UnspecifiedCharacterError("Which character?"))
 
     assert haven.match is None
 
@@ -198,7 +198,7 @@ async def test_selection_timeout(mock_ctx: AppCtx):
         patch(UI_ERROR, new_callable=AsyncMock),
         pytest.raises(errors.HandledError),
     ):
-        await haven._get_user_selection("Which character?")
+        await haven._get_user_selection(errors.UnspecifiedCharacterError("Which character?"))
 
     assert haven.match is None
 
@@ -213,7 +213,7 @@ async def test_selection_unpresentable(mock_ctx: AppCtx):
         patch(UI_ERROR, new_callable=AsyncMock) as mock_error,
         pytest.raises(errors.HandledError),
     ):
-        await haven._get_user_selection("Which character?")
+        await haven._get_user_selection(errors.UnspecifiedCharacterError("Which character?"))
 
     assert "too many characters" in str(mock_error.await_args_list[-1].args[1]).lower()
 
@@ -338,22 +338,22 @@ async def test_fetch_no_filter_survivors(mock_ctx: AppCtx):
 # Helper functions
 
 
-def test_player_lookup_defaults_to_author(mock_ctx: AppCtx):
+async def test_player_lookup_defaults_to_author(mock_ctx: AppCtx):
     """With no player given, the command author is returned."""
-    assert player_lookup(mock_ctx, None, False) is mock_ctx.user
+    assert await player_lookup(mock_ctx, None, False) is mock_ctx.user
 
 
-def test_player_lookup_permissions(mock_ctx: AppCtx):
-    """Looking up another player requires admin status or allow_lookups."""
+async def test_player_lookup_permissions(mock_ctx: AppCtx):
+    """Looking up another player requires Storyteller status or allow_lookups."""
     player = MagicMock(spec=discord.Member)
 
-    with patch("services.haven.is_admin", return_value=False):
+    with patch("services.haven.is_storyteller", new_callable=AsyncMock, return_value=False):
         with pytest.raises(LookupError):
-            player_lookup(mock_ctx, player, False)
-        assert player_lookup(mock_ctx, player, True) is player
+            await player_lookup(mock_ctx, player, False)
+        assert await player_lookup(mock_ctx, player, True) is player
 
-    with patch("services.haven.is_admin", return_value=True):
-        assert player_lookup(mock_ctx, player, False) is player
+    with patch("services.haven.is_storyteller", new_callable=AsyncMock, return_value=True):
+        assert await player_lookup(mock_ctx, player, False) is player
 
 
 def test_personalize_error(mock_ctx: AppCtx):

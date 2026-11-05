@@ -28,7 +28,7 @@ async def show(ctx: AppCtx, scope: str):
     else:
         obj = await VUser.get_or_fetch(ctx.user.id)
 
-    view = SettingsMenu(ctx, obj, is_admin(ctx))
+    view = SettingsMenu(ctx, obj, is_admin(ctx.user))
     await ctx.respond(view=view, ephemeral=True)
 
 
@@ -48,6 +48,7 @@ class SettingsIDs(IntEnum):
     DELETION = auto()
     MAX_HUNGER = auto()
     HIDDEN_DICE = auto()
+    STORYTELLER_ROLE = auto()
 
 
 class OblivionOptions(StrEnum):
@@ -140,9 +141,28 @@ class SettingsMenu(discord.ui.DesignerView):
             )
 
         if isinstance(self.scope, VGuild):
+            # STORYTELLER SETTINGS
+            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
+
+            select = Select(
+                select_type=ComponentType.role_select,
+                id=SettingsIDs.STORYTELLER_ROLE,
+                min_values=0,
+                disabled=not admin,
+            )
+            if (role_id := self.scope.settings.storyteller_role) is not None:
+                select.add_default_value(id=role_id, type=SelectDefaultValueType.role)
+            select.callback = self.set_storyteller_role
+            container.add_text(
+                "## Storytellers\n"
+                "### Storyteller role\n"
+                "Members with this role are Storytellers without being admins. "
+                "Clear it to remove their Storyteller powers."
+            )
+            container.add_row(select)
+
             # GAMEPLAY SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
-            container.add_text("## Gameplay")
 
             # Hidden dice
             options = [
@@ -156,12 +176,11 @@ class SettingsMenu(discord.ui.DesignerView):
             select = Select(options=options, id=SettingsIDs.HIDDEN_DICE, disabled=not admin)
             select.callback = self.set_hidden_dice_permissions
             container.add_text(
+                "## Gameplay\n"
                 "### Hidden dice\n"
                 "Who can use `dice:Hide` to show others only a roll's outcome and pool."
             )
             container.add_row(select)
-
-            container.add_item(discord.ui.Separator())
 
             # Resonance mode
             current_resonance = self.scope.settings.resonance
@@ -183,8 +202,6 @@ class SettingsMenu(discord.ui.DesignerView):
             )
             container.add_row(select)
 
-            container.add_item(discord.ui.Separator())
-
             # Oblivion stains settings
             current_oblivion = OblivionOptions.from_list(self.scope.settings.oblivion_stains)
             options = [
@@ -202,8 +219,6 @@ class SettingsMenu(discord.ui.DesignerView):
                 "### Oblivion stains\nWhen to apply Stains for Oblivion Rouse checks."
             )
             container.add_row(select)
-
-            container.add_item(discord.ui.Separator())
 
             # Max hunger select
             current_max_hunger = str(self.scope.settings.max_hunger)
@@ -232,19 +247,17 @@ class SettingsMenu(discord.ui.DesignerView):
 
             # MONITORING SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
-            container.add_text("## Monitoring")
 
             # Character updates channel
             self._add_channel_select(
                 container,
+                "## Monitoring\n"
                 "### Character updates channel\nDisplay character updates across the server.",
                 SettingsIDs.UPDATES,
                 self.scope.settings.update_channel,
                 self.set_update_channel,
                 admin,
             )
-
-            container.add_item(discord.ui.Separator())
 
             # Rolepost changelog channel
             self._add_channel_select(
@@ -255,8 +268,6 @@ class SettingsMenu(discord.ui.DesignerView):
                 self.set_changelog_channel,
                 admin,
             )
-
-            container.add_item(discord.ui.Separator())
 
             # Rolepost deletion channel
             self._add_channel_select(
@@ -371,6 +382,23 @@ class SettingsMenu(discord.ui.DesignerView):
         """Set the rolepost deletion channel by calling the shared setter."""
         await self._set_channel(interaction, SettingsIDs.DELETION, "deletion_channel")
 
+    async def set_storyteller_role(self, interaction: discord.Interaction):
+        """Set or clear the server's Storyteller role."""
+        select = cast(Select, self.get_item(SettingsIDs.STORYTELLER_ROLE))
+        roles = cast(list[discord.Role], select.values)
+        role = roles[0] if roles else None
+
+        vguild = cast(VGuild, self.scope)
+        vguild.settings.storyteller_role = role.id if role is not None else None
+        select.default_values = (
+            [SelectDefaultValue(id=role.id, type=SelectDefaultValueType.role)] if role else []
+        )
+
+        await interaction.edit(view=self)
+        await vguild.save()
+
+        self._log_update(interaction, "Storyteller role", role.name if role else None)
+
     async def set_max_hunger(self, interaction: discord.Interaction):
         """Set the server's max Hunger rating."""
         select = cast(Select, self.get_item(SettingsIDs.MAX_HUNGER))
@@ -456,7 +484,7 @@ class SettingsMenu(discord.ui.DesignerView):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check that the user is authorized for settings changes."""
         if isinstance(self.scope, VGuild):
-            return is_admin(interaction)
+            return is_admin(interaction.user)
 
         # Users can always change their settings
         return True

@@ -6,7 +6,7 @@ description: Commands for creating, displaying, and updating characters.
 
 New to **Inconnu**? Start with the [Quickstart](../guides/quickstart/README.md).
 
-Commands that take `player` let admins work with other players' characters.
+Most commands that take `player` let [Storytellers](../advanced/storytellers/README.md) work with other players' characters.
 
 ## /character wizard
 
@@ -14,7 +14,7 @@ Commands that take `player` let admins work with other players' characters.
 /character wizard
 ```
 
-Gives you a link to the web-based character creator. Follow the prompts on the website. Admins can set `spc:Yes` to make a Storyteller character.
+Gives you a link to the web-based character creator. Follow the prompts on the website. Storytellers can set `spc:Yes` to make a Storyteller character.
 
 Once your character exists, add [Traits](traits.md) for anything the wizard didn't cover.
 
@@ -33,6 +33,8 @@ Imports a character exported from [Progeny](https://progeny.odin-matthias.de/) a
 ```
 
 Shows the character's Health, Willpower, Humanity, experience, and other trackers. The **Traits** button shows their Attributes, Skills, and other Traits. If you have several characters and don't name one, you can pick from a list.
+
+You can also right-click a user and choose **Apps → Stats**. Only Storytellers can see other players' characters this way.
 
 ## /character update
 
@@ -57,7 +59,7 @@ Updates any number of trackers at once:
 | `hunger` | Hunger |
 | `potency` | Blood Potency |
 
-Numeric keys take `+X` or `-X` to adjust the current value, or `X` to set it. To change XP, see [Experience Management](../advanced/administration/experience-management.md).
+Numeric keys take `+X` or `-X` to adjust the current value, or `X` to set it. To change XP, see [Experience Management](../advanced/storytellers/experience-management.md).
 
 > [!TIP]
 > **Example:** _Add_ 2 Superficial Health damage, _set_ Aggravated Health damage to 1, and _add_ a Stain:
@@ -98,7 +100,7 @@ Opens a dialogue to edit the profile.
 /character profile character:[character] player:[player]
 ```
 
-Shows a profile. Anyone can view anyone's profile. Some of **Inconnu's** responses link to your profile on the web.
+Shows a profile. Anyone can view anyone's profile, including by right-clicking a user and choosing **Apps → Profile**. Some of **Inconnu's** responses link to your profile on the web.
 
 ## /character convictions
 
@@ -112,7 +114,7 @@ Opens a dialogue with three fields for your Convictions.
 /character convictions character:[character] player:[player]
 ```
 
-Shows a character's Convictions. You can also right-click a user and choose **Apps → Convictions**.
+Shows a character's Convictions. You can also right-click a user and choose **Apps → Convictions**. Only Storytellers can see other players' Convictions.
 
 ## RP headers
 

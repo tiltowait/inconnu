@@ -14,6 +14,7 @@ from ctx import AppCtx
 from inconnu.options import char_option, impairment_option, player_option
 from interface import CommandCog
 from models import ImpairmentCategory
+from utils import decorators
 from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
 from utils.urls import docs_url
 
@@ -146,8 +147,8 @@ class ReferenceCommands(CommandCog, name="Reference"):  # pyright: ignore[report
         name="Toggle Roll Statistics",
         contexts={discord.InteractionContextType.guild},
     )
-    @commands.has_permissions(administrator=True)
-    async def toggle_roll_statistics(self, ctx, message: discord.Message):
+    @decorators.storyteller()
+    async def toggle_roll_statistics(self, ctx: AppCtx, message: discord.Message):
         """Toggle whether a roll should be counted for statistical purposes."""
         if ctx.bot.user != message.author:
             await ctx.respond("This isn't an Inconnu roll message.", ephemeral=True)
@@ -172,7 +173,7 @@ class ReferenceCommands(CommandCog, name="Reference"):  # pyright: ignore[report
             except discord.Forbidden:
                 await ui.embeds.error(
                     ctx,
-                    f"{ctx.bot.user.mention} needs the `View Messages` "
+                    f"{ctx.bot.me.mention} needs the `View Messages` "
                     "permission to edit the message. If this is a thread, then "
                     "make sure it's unlocked.",
                     (" ", f"[Jump to message.]({message.jump_url})"),
@@ -202,7 +203,7 @@ class ReferenceCommands(CommandCog, name="Reference"):  # pyright: ignore[report
         await raw_message_delete_handler(raw_message, self.bot, deletion_handler)
 
     @commands.Cog.listener()
-    async def on_guild_channel_delete(self, channel):
+    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         """Mark all rolls in the deleted channel as deleted."""
         logger.info(
             "REFERENCE: Deleting all roll records in deleted channel {} ({})",

@@ -54,7 +54,7 @@ Changes the ratings of one or more existing Traits. Use each Trait's full name.
 /traits list character:[character] player:[player]
 ```
 
-Shows the character's Traits, grouped by category, plus their specialties and powers.
+Shows the character's Traits, grouped by category, plus their specialties and powers. You can also right-click a user and choose **Apps → Traits**. Only Storytellers can see other players' Traits.
 
 ## /traits delete
 

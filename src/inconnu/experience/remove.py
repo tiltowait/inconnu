@@ -13,10 +13,10 @@ from models.vchardocs import VCharExperienceEntry
 from services.haven import haven
 from ui.views import DisablingView
 from utils import get_avatar, get_message
-from utils.permissions import is_admin
+from utils.permissions import is_storyteller
 from utils.urls import docs_url
 
-__HELP_URL = docs_url("advanced/administration/experience-management")
+__HELP_URL = docs_url("advanced/storytellers/experience-management")
 
 
 @haven(__HELP_URL)
@@ -126,9 +126,11 @@ class _ExperienceView(DisablingView):
         self.stop()
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        """Check whether the user is an admin."""
-        if not is_admin(interaction):
-            await interaction.response.send_message("Only an admin can do this.", ephemeral=True)
+        """Check whether the user is a Storyteller."""
+        if not await is_storyteller(interaction.user):
+            await interaction.response.send_message(
+                "Only a Storyteller can do this.", ephemeral=True
+            )
             return False
 
         return True

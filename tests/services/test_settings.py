@@ -1,5 +1,6 @@
 """Test services/settings.py functions."""
 
+from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
@@ -13,35 +14,41 @@ from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
 USER_ID = 123
 GUILD_ID = 456
 
+type MockAsyncFn = AsyncMock
+type MockCtx = MagicMock
+type MockGuild = MagicMock
+type MockVGuild = MagicMock
+type MockVUser = MagicMock
+
 
 # Fixtures
 
 
 @pytest.fixture
-def mock_vuser_fetch():
+def mock_vuser_fetch() -> Iterator[MockAsyncFn]:
     """Fixture that patches VUser.get_or_fetch."""
     with patch("services.settings.VUser.get_or_fetch", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_vguild_fetch():
+def mock_vguild_fetch() -> Iterator[MockAsyncFn]:
     """Fixture that patches VGuild.get_or_fetch."""
     with patch("services.settings.VGuild.get_or_fetch", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture
-def mock_is_admin():
-    """Fixture that patches is_admin."""
-    with patch("services.settings.is_admin") as mock:
+def mock_is_storyteller() -> Iterator[MockAsyncFn]:
+    """Fixture that patches is_storyteller."""
+    with patch("services.settings.is_storyteller", new_callable=AsyncMock) as mock:
         yield mock
 
 
 # Mock factories
 
 
-def mock_ctx(user_id: int = USER_ID, guild_id: int = GUILD_ID):
+def mock_ctx(user_id: int = USER_ID, guild_id: int = GUILD_ID) -> MockCtx:
     """Create a mock AppCtx."""
     ctx = MagicMock(spec=AppCtx)
     ctx.user.id = user_id
@@ -49,14 +56,14 @@ def mock_ctx(user_id: int = USER_ID, guild_id: int = GUILD_ID):
     return ctx
 
 
-def mock_guild(guild_id: int = GUILD_ID):
+def mock_guild(guild_id: int = GUILD_ID) -> MockGuild:
     """Create a mock Discord Guild."""
     guild = MagicMock(spec=discord.Guild)
     guild.id = guild_id
     return guild
 
 
-def mock_vuser(accessibility=False, auto_impairment=True):
+def mock_vuser(accessibility=False, auto_impairment=True) -> MockVUser:
     """Create a mock VUser with settings."""
     vuser = MagicMock(spec=VUser)
     vuser.settings.accessibility = accessibility
@@ -75,7 +82,7 @@ def mock_vguild(
     changelog_channel: int | None = None,
     deletion_channel: int | None = None,
     hidden_dice_permissions=HiddenDicePerms.ENABLED,
-):
+) -> MockVGuild:
     """Create a mock VGuild with settings."""
     vguild = MagicMock(spec=VGuild)
     vguild.settings.accessibility = accessibility
@@ -94,7 +101,9 @@ def mock_vguild(
 # Tests for accessible()
 
 
-async def test_accessible_user_override_true(mock_vuser_fetch, mock_vguild_fetch):
+async def test_accessible_user_override_true(
+    mock_vuser_fetch: MockAsyncFn, mock_vguild_fetch: MockAsyncFn
+):
     """Test that user accessibility=True overrides guild settings."""
     ctx = mock_ctx()
     mock_vuser_fetch.return_value = mock_vuser(accessibility=True)
@@ -104,7 +113,9 @@ async def test_accessible_user_override_true(mock_vuser_fetch, mock_vguild_fetch
     assert result is True
 
 
-async def test_accessible_user_false_guild_true(mock_vuser_fetch, mock_vguild_fetch):
+async def test_accessible_user_false_guild_true(
+    mock_vuser_fetch: MockAsyncFn, mock_vguild_fetch: MockAsyncFn
+):
     """Test that guild accessibility is used when user accessibility is False."""
     ctx = mock_ctx()
     mock_vuser_fetch.return_value = mock_vuser(accessibility=False)
@@ -114,7 +125,7 @@ async def test_accessible_user_false_guild_true(mock_vuser_fetch, mock_vguild_fe
     assert result is True
 
 
-async def test_accessible_both_false(mock_vuser_fetch, mock_vguild_fetch):
+async def test_accessible_both_false(mock_vuser_fetch: MockAsyncFn, mock_vguild_fetch: MockAsyncFn):
     """Test that accessible returns False when both user and guild are False."""
     ctx = mock_ctx()
     mock_vuser_fetch.return_value = mock_vuser(accessibility=False)
@@ -127,7 +138,9 @@ async def test_accessible_both_false(mock_vuser_fetch, mock_vguild_fetch):
 # Tests for can_emoji()
 
 
-async def test_can_emoji_inverts_accessible(mock_vuser_fetch, mock_vguild_fetch):
+async def test_can_emoji_inverts_accessible(
+    mock_vuser_fetch: MockAsyncFn, mock_vguild_fetch: MockAsyncFn
+):
     """Test that can_emoji returns the inverse of accessible."""
     ctx = mock_ctx()
 
@@ -149,10 +162,10 @@ async def test_can_emoji_inverts_accessible(mock_vuser_fetch, mock_vguild_fetch)
 # Tests for can_adjust_current_xp()
 
 
-async def test_can_adjust_current_xp_admin_always_true(mock_is_admin):
-    """Test that admins can always adjust current XP."""
+async def test_can_adjust_current_xp_storyteller_always_true(mock_is_storyteller: MockAsyncFn):
+    """Test that Storytellers can always adjust current XP."""
     ctx = mock_ctx()
-    mock_is_admin.return_value = True
+    mock_is_storyteller.return_value = True
 
     result = await services.settings.can_adjust_current_xp(ctx)
     assert result is True
@@ -164,15 +177,18 @@ async def test_can_adjust_current_xp_admin_always_true(mock_is_admin):
         (ExpPerms.UNRESTRICTED, True),
         (ExpPerms.UNSPENT_ONLY, True),
         (ExpPerms.LIFETIME_ONLY, False),
-        (ExpPerms.ADMIN_ONLY, False),
+        (ExpPerms.STORYTELLER_ONLY, False),
     ],
 )
-async def test_can_adjust_current_xp_non_admin(
-    mock_is_admin, mock_vguild_fetch, permission, expected
+async def test_can_adjust_current_xp_non_storyteller(
+    mock_is_storyteller: MockAsyncFn,
+    mock_vguild_fetch: MockAsyncFn,
+    permission: ExpPerms,
+    expected: bool,
 ):
-    """Test current XP permissions for non-admins with different guild settings."""
+    """Test current XP permissions for non-Storytellers with different guild settings."""
     ctx = mock_ctx()
-    mock_is_admin.return_value = False
+    mock_is_storyteller.return_value = False
     mock_vguild_fetch.return_value = mock_vguild(experience_permissions=permission)
 
     result = await services.settings.can_adjust_current_xp(ctx)
@@ -182,10 +198,10 @@ async def test_can_adjust_current_xp_non_admin(
 # Tests for can_adjust_lifetime_xp()
 
 
-async def test_can_adjust_lifetime_xp_admin_always_true(mock_is_admin):
-    """Test that admins can always adjust lifetime XP."""
+async def test_can_adjust_lifetime_xp_storyteller_always_true(mock_is_storyteller: MockAsyncFn):
+    """Test that Storytellers can always adjust lifetime XP."""
     ctx = mock_ctx()
-    mock_is_admin.return_value = True
+    mock_is_storyteller.return_value = True
 
     result = await services.settings.can_adjust_lifetime_xp(ctx)
     assert result is True
@@ -197,15 +213,18 @@ async def test_can_adjust_lifetime_xp_admin_always_true(mock_is_admin):
         (ExpPerms.UNRESTRICTED, True),
         (ExpPerms.UNSPENT_ONLY, False),
         (ExpPerms.LIFETIME_ONLY, True),
-        (ExpPerms.ADMIN_ONLY, False),
+        (ExpPerms.STORYTELLER_ONLY, False),
     ],
 )
-async def test_can_adjust_lifetime_xp_non_admin(
-    mock_is_admin, mock_vguild_fetch, permission, expected
+async def test_can_adjust_lifetime_xp_non_storyteller(
+    mock_is_storyteller: MockAsyncFn,
+    mock_vguild_fetch: MockAsyncFn,
+    permission: ExpPerms,
+    expected: bool,
 ):
-    """Test lifetime XP permissions for non-admins with different guild settings."""
+    """Test lifetime XP permissions for non-Storytellers with different guild settings."""
     ctx = mock_ctx()
-    mock_is_admin.return_value = False
+    mock_is_storyteller.return_value = False
     mock_vguild_fetch.return_value = mock_vguild(experience_permissions=permission)
 
     result = await services.settings.can_adjust_lifetime_xp(ctx)
@@ -215,7 +234,7 @@ async def test_can_adjust_lifetime_xp_non_admin(
 # Tests for oblivion_stains()
 
 
-async def test_oblivion_stains_returns_guild_setting(mock_vguild_fetch):
+async def test_oblivion_stains_returns_guild_setting(mock_vguild_fetch: MockAsyncFn):
     """Test that oblivion_stains returns the guild's stain list."""
     guild = mock_guild()
     expected_stains = [1, 2, 3]
@@ -229,7 +248,7 @@ async def test_oblivion_stains_returns_guild_setting(mock_vguild_fetch):
 
 
 @pytest.mark.parametrize("add_empty", [True, False])
-async def test_add_empty_resonance(mock_vguild_fetch, add_empty):
+async def test_add_empty_resonance(mock_vguild_fetch: MockAsyncFn, add_empty: bool):
     """Test that add_empty_resonance returns the guild setting."""
     guild = mock_guild()
     mock_vguild_fetch.return_value = mock_vguild(add_empty_resonance=add_empty)
@@ -251,7 +270,9 @@ async def test_resonance_mode_returns_standard_when_guild_none():
     "mode",
     [ResonanceMode.STANDARD, ResonanceMode.TATTERED_FACADE, ResonanceMode.ADD_EMPTY],
 )
-async def test_resonance_mode_returns_guild_setting(mock_vguild_fetch, mode):
+async def test_resonance_mode_returns_guild_setting(
+    mock_vguild_fetch: MockAsyncFn, mode: ResonanceMode
+):
     """Test that resonance_mode returns the guild's resonance mode."""
     guild = mock_guild()
     mock_vguild_fetch.return_value = mock_vguild(resonance=mode)
@@ -264,7 +285,7 @@ async def test_resonance_mode_returns_guild_setting(mock_vguild_fetch, mode):
 
 
 @pytest.mark.parametrize("hunger", [5, 10, 3])
-async def test_max_hunger_returns_guild_setting(mock_vguild_fetch, hunger):
+async def test_max_hunger_returns_guild_setting(mock_vguild_fetch: MockAsyncFn, hunger: int):
     """Test that max_hunger returns the guild's max hunger setting."""
     guild = mock_guild()
     mock_vguild_fetch.return_value = mock_vguild(max_hunger=hunger)
@@ -278,7 +299,7 @@ async def test_max_hunger_returns_guild_setting(mock_vguild_fetch, hunger):
 
 @pytest.mark.parametrize("perms", list(HiddenDicePerms))
 async def test_hidden_dice_permissions_returns_guild_setting(
-    mock_vguild_fetch, perms: HiddenDicePerms
+    mock_vguild_fetch: MockAsyncFn, perms: HiddenDicePerms
 ):
     """Test that hidden_dice_permissions returns the guild setting."""
     mock_vguild_fetch.return_value = mock_vguild(hidden_dice_permissions=perms)
@@ -290,7 +311,7 @@ async def test_hidden_dice_permissions_returns_guild_setting(
 
 
 @pytest.mark.parametrize("enabled", [True, False])
-async def test_auto_impairment_returns_user_setting(mock_vuser_fetch: AsyncMock, enabled: bool):
+async def test_auto_impairment_returns_user_setting(mock_vuser_fetch: MockAsyncFn, enabled: bool):
     """Test that auto_impairment returns the invoking user's setting."""
     ctx = mock_ctx()
     mock_vuser_fetch.return_value = mock_vuser(auto_impairment=enabled)
@@ -303,7 +324,7 @@ async def test_auto_impairment_returns_user_setting(mock_vuser_fetch: AsyncMock,
 # Tests for update_channel()
 
 
-async def test_update_channel_returns_none_when_not_set(mock_vguild_fetch):
+async def test_update_channel_returns_none_when_not_set(mock_vguild_fetch: MockAsyncFn):
     """Test that update_channel returns None when no channel is set."""
     guild = mock_guild()
     mock_vguild_fetch.return_value = mock_vguild(update_channel=None)
@@ -312,7 +333,7 @@ async def test_update_channel_returns_none_when_not_set(mock_vguild_fetch):
     assert result is None
 
 
-async def test_update_channel_returns_channel_when_set(mock_vguild_fetch):
+async def test_update_channel_returns_channel_when_set(mock_vguild_fetch: MockAsyncFn):
     """Test that update_channel returns the channel object when set."""
     guild = mock_guild()
     channel_id = 789
@@ -328,7 +349,7 @@ async def test_update_channel_returns_channel_when_set(mock_vguild_fetch):
 # Tests for changelog_channel()
 
 
-async def test_changelog_channel_returns_none_when_not_set(mock_vguild_fetch):
+async def test_changelog_channel_returns_none_when_not_set(mock_vguild_fetch: MockAsyncFn):
     """Test that changelog_channel returns None when no channel is set."""
     guild = mock_guild()
     mock_vguild_fetch.return_value = mock_vguild(changelog_channel=None)
@@ -337,7 +358,7 @@ async def test_changelog_channel_returns_none_when_not_set(mock_vguild_fetch):
     assert result is None
 
 
-async def test_changelog_channel_returns_id_when_set(mock_vguild_fetch):
+async def test_changelog_channel_returns_id_when_set(mock_vguild_fetch: MockAsyncFn):
     """Test that changelog_channel returns the channel ID when set."""
     guild = mock_guild()
     channel_id = 890
@@ -350,7 +371,7 @@ async def test_changelog_channel_returns_id_when_set(mock_vguild_fetch):
 # Tests for deletion_channel()
 
 
-async def test_deletion_channel_returns_none_when_not_set(mock_vguild_fetch):
+async def test_deletion_channel_returns_none_when_not_set(mock_vguild_fetch: MockAsyncFn):
     """Test that deletion_channel returns None when no channel is set."""
     guild = mock_guild()
     mock_vguild_fetch.return_value = mock_vguild(deletion_channel=None)
@@ -359,7 +380,7 @@ async def test_deletion_channel_returns_none_when_not_set(mock_vguild_fetch):
     assert result is None
 
 
-async def test_deletion_channel_returns_id_when_set(mock_vguild_fetch):
+async def test_deletion_channel_returns_id_when_set(mock_vguild_fetch: MockAsyncFn):
     """Test that deletion_channel returns the channel ID when set."""
     guild = mock_guild()
     channel_id = 901

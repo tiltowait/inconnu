@@ -7,6 +7,7 @@ from loguru import logger
 
 import db
 from ctx import AppCtx, Channel
+from utils.text import clean_text
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -114,8 +115,8 @@ class LocationChangeModal(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Update the RP header."""
-        location = " ".join((self.children[0].value or "").replace("•", "").split())
-        temp_effects = " ".join((self.children[1].value or "").split())
+        location = clean_text((self.children[0].value or "").replace("•", ""))
+        temp_effects = clean_text(self.children[1].value or "")
 
         if not location:
             # Not responding keeps the modal open, with the player's input intact

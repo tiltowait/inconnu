@@ -95,11 +95,11 @@ class ErrorReporter:
                 await self._report_not_premium(ctx)
             case commands.NotOwner():
                 await ctx.respond(
-                    f"Sorry, only {ctx.bot.me.mention}'s owner may issue this command!",
+                    f"Sorry, only {ctx.client.me.mention}'s owner may issue this command!",
                     ephemeral=True,
                 )
-            case errors.LockdownError() if ctx.bot.lockdown is not None:
-                await self._report_lockdown(ctx, ctx.bot.lockdown)
+            case errors.LockdownError() if ctx.client.lockdown is not None:
+                await self._report_lockdown(ctx, ctx.client.lockdown)
             case errors.InvalidAttachment():
                 await ui.embeds.error(ctx, str(error), title="Invalid file")
             case discord.DiscordServerError():
@@ -121,7 +121,7 @@ class ErrorReporter:
         troubleshoot_url = docs_url("advanced/troubleshooting#you-arent-able-to-upload-images")
 
         if ctx.command is not None:
-            cmd_mention = ctx.bot.cmd_mention(ctx.command.qualified_name)
+            cmd_mention = ctx.client.cmd_mention(ctx.command.qualified_name)
         else:
             cmd_mention = "this feature"
         await ui.embeds.error(
@@ -139,7 +139,7 @@ class ErrorReporter:
         """Tell the user why and when the bot is going down."""
         embed = ui.embeds.ErrorEmbed(
             ctx.user,
-            lockdown.notice(ctx.bot.me.display_name),
+            lockdown.notice(ctx.client.me.display_name),
             title="Command temporarily unavailable",
             footer="Sorry for any inconvenience.",
         )

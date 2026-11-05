@@ -30,19 +30,19 @@ Subtract [Impairment](../command-reference/rolls/impairment.md) penalties from y
 
 ## Server settings
 
-### Storyteller role
-
-> [!NOTE]
-> **Default:** None
-
-Members with this role get admins' [Storyteller powers](administration/README.md), such as working with other players' characters and managing XP, without being admins.
-
 ### Use emojis (server)
 
 > [!NOTE]
 > **Default:** `Yes`
 
 Turns custom emojis off for the whole server. Players can't turn them back on for themselves.
+
+### Storyteller role
+
+> [!NOTE]
+> **Default:** None
+
+Members with this role get admins' [Storyteller powers](administration/README.md), such as working with other players' characters and managing XP, without being admins. Clear the setting to remove their powers.
 
 ### Hidden dice
 

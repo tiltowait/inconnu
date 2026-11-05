@@ -1,4 +1,4 @@
-# Administration
+# Storytellers
 
 Storytellers are server admins and members with the server's [Storyteller role](../server-settings.md#storyteller-role). They can use the `player` option to work with other players' characters in these commands:
 
@@ -9,7 +9,8 @@ Storytellers are server admins and members with the server's [Storyteller role](
 * `/stain`
 * `/statistics`
 * `/experience log`
-* `/experience award`, `/experience deduct`, and `/experience remove entry`, where `player` is required
+* `/experience award` and `/experience deduct`
+* `/experience remove entry`, where `player` is required
 
 In addition, Storytellers can:
 

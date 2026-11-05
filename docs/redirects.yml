@@ -53,3 +53,8 @@ copyright: ''
 # Links the bot once sent to pages that never existed
 guides/premium: premium/character-images
 guides/premium/character-images: premium/character-images
+
+# Administration renamed to Storytellers
+advanced/administration: advanced/storytellers
+advanced/administration/experience-management: advanced/storytellers/experience-management
+advanced/administration/character-transfers: advanced/storytellers/character-transfers

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class ExperienceCommands(CommandCog, name="Experience"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
     """Award, deduct, and review character experience."""
 
-    docs = {"Documentation": docs_url("advanced/administration/experience-management")}
+    docs = {"Documentation": docs_url("advanced/storytellers/experience-management")}
 
     experience = SlashCommandGroup(
         "experience",

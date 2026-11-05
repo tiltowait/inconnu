@@ -16,7 +16,7 @@ from utils import get_avatar, get_message
 from utils.permissions import is_storyteller
 from utils.urls import docs_url
 
-__HELP_URL = docs_url("advanced/administration/experience-management")
+__HELP_URL = docs_url("advanced/storytellers/experience-management")
 
 
 @haven(__HELP_URL)

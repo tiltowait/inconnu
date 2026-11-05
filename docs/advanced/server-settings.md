@@ -42,7 +42,7 @@ Turns custom emojis off for the whole server. Players can't turn them back on fo
 > [!NOTE]
 > **Default:** None
 
-Members with this role get admins' [Storyteller powers](administration/README.md), such as working with other players' characters and managing XP, without being admins. Clear the setting to remove their powers.
+Members with this role get admins' [Storyteller powers](storytellers/README.md), such as working with other players' characters and managing XP, without being admins. Clear the setting to remove their powers.
 
 ### Hidden dice
 
@@ -95,7 +95,7 @@ Whether players can use `/experience award` and `/experience deduct` on their ow
 * Players can adjust lifetime XP only
 * Only Storytellers can adjust XP
 
-**Recommended reading:** [Experience Management](administration/experience-management.md).
+**Recommended reading:** [Experience Management](storytellers/experience-management.md).
 
 ### Character updates channel
 

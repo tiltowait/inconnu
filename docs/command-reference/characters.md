@@ -6,7 +6,7 @@ description: Commands for creating, displaying, and updating characters.
 
 New to **Inconnu**? Start with the [Quickstart](../guides/quickstart/README.md).
 
-Most commands that take `player` let [Storytellers](../advanced/administration/README.md) work with other players' characters.
+Most commands that take `player` let [Storytellers](../advanced/storytellers/README.md) work with other players' characters.
 
 ## /character wizard
 
@@ -57,7 +57,7 @@ Updates any number of trackers at once:
 | `hunger` | Hunger |
 | `potency` | Blood Potency |
 
-Numeric keys take `+X` or `-X` to adjust the current value, or `X` to set it. To change XP, see [Experience Management](../advanced/administration/experience-management.md).
+Numeric keys take `+X` or `-X` to adjust the current value, or `X` to set it. To change XP, see [Experience Management](../advanced/storytellers/experience-management.md).
 
 > [!TIP]
 > **Example:** _Add_ 2 Superficial Health damage, _set_ Aggravated Health damage to 1, and _add_ a Stain:

@@ -30,6 +30,9 @@ TEST_TOKEN = "valid-wizard-token"
 TEST_SUPPORTER_GUILD_ID = 54321
 TEST_SUPPORTER_ROLE_ID = 99999
 
+type MockBot = MagicMock
+type MockFetchid = AsyncMock
+
 
 @pytest.fixture(autouse=True, scope="function")
 async def mock_beanie():
@@ -1114,6 +1117,41 @@ async def test_get_full_character_not_owned(auth_headers, mock_bot, mock_char_mg
             assert "profile" in char_data
             # Verify PublicCharacter doesn't have sensitive fields
             assert "spc" not in char_data  # spc moved to top level
+
+
+@pytest.mark.parametrize("storyteller,expected_type", [(True, "full"), (False, "public")])
+async def test_get_full_character_storyteller(
+    auth_headers: dict[str, str],
+    mock_bot: MockBot,
+    mock_char_mgr_fetchid: MockFetchid,
+    storyteller: bool,
+    expected_type: str,
+):
+    """Storytellers get other players' full characters, and others get the
+    public view. The check runs on the requester's cached Discord member."""
+    mock_char = make_mock_char(TEST_GUILD_ID, 999999, "Someone Else's Character")
+    mock_guild = make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=True)
+    await populate_guild_cache([mock_guild])
+    mock_bot.guilds = [mock_guild]
+    mock_char_mgr_fetchid.return_value = mock_char
+    owner = OwnerData(id="999999", name="Character Owner", icon="http://owner-avatar.png")
+
+    with (
+        patch(
+            "routes.characters.models.OwnerData.fetch", new_callable=AsyncMock, return_value=owner
+        ),
+        patch(
+            "routes.characters.routes.is_storyteller",
+            new_callable=AsyncMock,
+            return_value=storyteller,
+        ) as mock_is_storyteller,
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(f"/characters/{mock_char.id}", headers=auth_headers)
+
+    assert response.status_code == 200
+    assert response.json()["type"] == expected_type
+    mock_is_storyteller.assert_awaited_once_with(mock_guild.get_member(TEST_USER_ID))
 
 
 async def test_get_full_character_missing_user_header():

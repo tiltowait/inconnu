@@ -239,12 +239,12 @@ class VChar(Document):
             logger.debug("VCHAR: {}'s Blush of Life ({}) is unchanged", self.name, new_blush)
             return
         if self.can_blush:
-            # Checked by splat, because a vampire whose header was set at
+            # Not checked by header, because a vampire whose header was set at
             # Humanity 9+ has blush -1
             self.header.blush = new_blush
             logger.debug("VCHAR: Setting {}'s Blush of Life to {}", self.name, new_blush)
         else:
-            logger.warning("VCHAR: Can't set Blush of Life; {} is not a vampire", self.name)
+            logger.warning("VCHAR: Can't set Blush of Life; {} can't Blush", self.name)
 
     # Derived attributes
 
@@ -297,9 +297,9 @@ class VChar(Document):
 
     @property
     def can_blush(self) -> bool:
-        """Whether the character's splat uses the Blush of Life. Humanity isn't
-        considered, since it can change."""
-        return self.is_vampire and not self.is_thin_blood
+        """Whether the character can use the Blush of Life, which only full
+        vampires below Humanity 9 need."""
+        return self.is_vampire and not self.is_thin_blood and self.humanity < 9
 
     @property
     def is_ghoul(self) -> bool:

@@ -64,7 +64,7 @@ class _RPHeader(discord.ui.DesignerModal):
             discord.SelectOption(label="Off", value="0", default=self.character.header.blush < 1),
             discord.SelectOption(label="N/A", value="-1", default=True),
         ]
-        if character.can_blush and character.humanity < 9:
+        if character.can_blush:
             blush_options = blush_options[:-1]
         else:
             blush_options = blush_options[-1:]

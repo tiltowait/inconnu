@@ -47,12 +47,39 @@ def test_not_equal_to_other_types():
     assert gen_char("vampire") != "Nadea"
 
 
-def test_can_blush_ignores_humanity():
-    """A vampire at high Humanity can still Blush if it falls later."""
+@pytest.mark.parametrize(
+    "humanity,can_blush",
+    [(7, True), (8, True), (9, False), (10, False)],
+)
+def test_can_blush_depends_on_humanity(humanity: int, can_blush: bool):
+    """Vampires at Humanity 9+ don't Blush."""
     vamp = gen_char("vampire")
-    vamp.humanity = 10
+    vamp.humanity = humanity
 
-    assert vamp.can_blush
+    assert vamp.can_blush is can_blush
+
+
+def test_can_blush_after_humanity_falls():
+    """A vampire who falls below Humanity 9 can Blush despite an N/A header."""
+    vamp = gen_char("vampire")
+    vamp.humanity = 9
+    vamp.header.blush = -1
+    vamp.humanity = 8
+
+    vamp.set_blush(1)
+
+    assert vamp.header.blush == 1
+
+
+def test_high_humanity_cannot_set_blush():
+    """Setting the Blush at Humanity 9+ is refused."""
+    vamp = gen_char("vampire")
+    vamp.humanity = 9
+    vamp.header.blush = -1
+
+    vamp.set_blush(1)
+
+    assert vamp.header.blush == -1
 
 
 @pytest.mark.parametrize(

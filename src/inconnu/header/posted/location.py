@@ -11,6 +11,8 @@ from ctx import AppCtx, Channel
 if TYPE_CHECKING:
     from bot import InconnuBot
 
+BLUSH_TEXT = ("Blushed", "Not Blushed")
+
 
 async def edit_location(ctx: AppCtx, message: discord.Message):
     """Validate ownership and open the location edit modal for a posted header."""
@@ -95,11 +97,13 @@ class LocationChangeModal(discord.ui.Modal):
         if len(elements) == 1:
             # Character name isn't given when the header is in the author
             # field. If we're looking at the embed title, then, no location
-            # exists; otherwise, it's the first and only element.
-            return "" if self.updating_title else elements[0]
+            # exists; otherwise, it's the only element, unless that's the Blush.
+            if self.updating_title or elements[0] in BLUSH_TEXT:
+                return ""
+            return elements[0]
         if len(elements) == 2:
             if self.updating_title:
-                if elements[-1] in ("Blushed", "Not Blushed"):
+                if elements[-1] in BLUSH_TEXT:
                     return ""
                 return elements[-1]
 
@@ -112,6 +116,11 @@ class LocationChangeModal(discord.ui.Modal):
         """Update the RP header."""
         location = " ".join((self.children[0].value or "").replace("•", "").split())
         temp_effects = " ".join((self.children[1].value or "").split())
+
+        if not location:
+            # Not responding keeps the modal open, with the player's input intact
+            return
+
         embed = self.header.embeds[0]
 
         elements = self._heading_elements()

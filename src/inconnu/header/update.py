@@ -101,8 +101,13 @@ class _RPHeader(discord.ui.DesignerModal):
 
     async def callback(self, interaction: discord.Interaction):
         """Set the header and tell the user."""
+        location = clean_text((self.location_input.value or "").replace("•", ""))
+        if not location:
+            # Not responding keeps the modal open, with the player's input intact
+            return
+
         header = self.character.header
-        header.location = clean_text((self.location_input.value or "").replace("•", ""))
+        header.location = location
         header.blush = int(cast(list[str], self.blush_select.values)[0])
         header.merits = clean_text(self.merits_input.value or "")
         header.flaws = clean_text(self.flaws_input.value or "")

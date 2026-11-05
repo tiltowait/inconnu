@@ -202,6 +202,21 @@ async def test_callback_clears_optional_fields(
     assert vampire.header.merits == ""
 
 
+@pytest.mark.parametrize("location", ["•", " • • "])
+async def test_callback_rejects_blank_location(
+    location: str, vampire: VChar, interaction: MockInteraction, mock_save: AsyncMock
+):
+    """A location of only bullets gets no response, which keeps the modal open."""
+    vampire.header.location = "The Rack"
+
+    await submit(vampire, interaction, location=location, merits="Beautiful")
+
+    interaction.response.send_message.assert_not_awaited()
+    mock_save.assert_not_awaited()
+    assert vampire.header.location == "The Rack"
+    assert vampire.header.merits != "Beautiful"
+
+
 async def test_callback_saves_and_responds(
     vampire: VChar, interaction: MockInteraction, mock_save: AsyncMock
 ):

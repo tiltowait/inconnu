@@ -19,7 +19,7 @@ New to rolling? Start with [Just the basics](../../guides/quickstart/just-the-ba
 | `difficulty` | 0–10 |
 | `comment` | A description shown with the roll |
 | `character` | The character to roll for |
-| `player` | The character's owner (admins only) |
+| `player` | The character's owner (Storytellers only) |
 | `impairment_category` | Change the roll's [Impairment](impairment.md) category, or ignore Impairment |
 | `dice` | `Hide` to [hide your dice](hidden-dice.md) from other players |
 

@@ -33,7 +33,7 @@ class ExpPerms(StrEnum):
             case ExpPerms.LIFETIME_ONLY:
                 return "Players can adjust lifetime XP only"
             case ExpPerms.ADMIN_ONLY:
-                return "Only admins can adjust XP"
+                return "Only Storytellers can adjust XP"
 
 
 class HiddenDicePerms(StrEnum):
@@ -50,7 +50,7 @@ class HiddenDicePerms(StrEnum):
             case HiddenDicePerms.ENABLED:
                 return "Anyone can hide their dice"
             case HiddenDicePerms.ADMIN_ONLY:
-                return "Only admins can hide their dice"
+                return "Only Storytellers can hide their dice"
             case HiddenDicePerms.DISABLED:
                 return "No one can hide their dice"
 

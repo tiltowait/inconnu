@@ -76,7 +76,7 @@ class MiscCommands(CommandCog, name="Miscellaneous"):  # pyright: ignore[reportC
 
     @slash_command(contexts={discord.InteractionContextType.guild})
     @decorators.storyteller()
-    @option("current_owner", description="The character's owner (admin only)")
+    @option("current_owner", description="The character's owner (Storyteller only)")
     @char_option("The character to transfer", required=True)
     @option("new_owner", description="The character's new owner")
     async def transfer(

@@ -88,4 +88,4 @@ With `style:Traits`, it shows rolls and successes for each Attribute and Skill i
 > [!NOTE]
 > Without `date`, it covers every roll on record.
 
-Admins can leave a roll out of statistics, or put it back, by right-clicking it and choosing **Apps → Toggle Roll Statistics**.
+Storytellers can leave a roll out of statistics, or put it back, by right-clicking it and choosing **Apps → Toggle Roll Statistics**.

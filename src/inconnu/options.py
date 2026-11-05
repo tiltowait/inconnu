@@ -68,7 +68,9 @@ def dice_option(param="dice"):
     return decorator
 
 
-def player_option(param="player", description="The character's owner (admin only)", required=False):
+def player_option(
+    param="player", description="The character's owner (Storyteller only)", required=False
+):
     """A command decorator letting users choose a user."""
 
     def decorator(func):
@@ -83,7 +85,7 @@ def player_option(param="player", description="The character's owner (admin only
     return decorator
 
 
-player = Option(discord.Member, "The character's owner (admin only)", required=False)
+player = Option(discord.Member, "The character's owner (Storyteller only)", required=False)
 
 
 # Helper functions
@@ -100,7 +102,7 @@ async def _available_characters(ctx):
 
     if (owner := (ctx.options.get("player") or ctx.options.get("current_owner"))) is not None:
         if owner != user.id and not await is_storyteller(user):
-            return [OptionChoice("You do not have admin permissions", "")]
+            return [OptionChoice("Only Storytellers can look up other players", "")]
     else:
         owner = user.id
 

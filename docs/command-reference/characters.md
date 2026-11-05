@@ -6,7 +6,7 @@ description: Commands for creating, displaying, and updating characters.
 
 New to **Inconnu**? Start with the [Quickstart](../guides/quickstart/README.md).
 
-Commands that take `player` let admins work with other players' characters.
+Most commands that take `player` let [Storytellers](../advanced/administration/README.md) work with other players' characters.
 
 ## /character wizard
 
@@ -14,7 +14,7 @@ Commands that take `player` let admins work with other players' characters.
 /character wizard
 ```
 
-Gives you a link to the web-based character creator. Follow the prompts on the website. Admins can set `spc:Yes` to make a Storyteller character.
+Gives you a link to the web-based character creator. Follow the prompts on the website. Storytellers can set `spc:Yes` to make a Storyteller character.
 
 Once your character exists, add [Traits](traits.md) for anything the wizard didn't cover.
 

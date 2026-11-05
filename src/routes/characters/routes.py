@@ -75,9 +75,9 @@ async def get_character(
     Args:
       oid (PydanticObjectId): The ObjectId identifying the character
 
-    What is returned depends on the user_id. If that user is identified as an
-    admin on the guild to which the character belongs, OR if the user is the
-    character's owner, return the full character.
+    What is returned depends on the user_id. If that user is a Storyteller on
+    the guild to which the character belongs, OR if the user is the character's
+    owner, return the full character.
 
     Otherwise, return a PublicCharacter.
 

@@ -128,7 +128,9 @@ class _ExperienceView(DisablingView):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Check whether the user is a Storyteller."""
         if not await is_storyteller(interaction.user):
-            await interaction.response.send_message("Only an admin can do this.", ephemeral=True)
+            await interaction.response.send_message(
+                "Only a Storyteller can do this.", ephemeral=True
+            )
             return False
 
         return True

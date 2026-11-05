@@ -57,7 +57,9 @@ class Characters(CommandCog, name="Characters"):  # pyright: ignore[reportCallIs
 
     @character.command(name="wizard", contexts={discord.InteractionContextType.guild})
     @not_on_lockdown()
-    @option("spc", description="(Admin only) Make an SPC", autocomplete=_spc_options, default="0")
+    @option(
+        "spc", description="(Storyteller only) Make an SPC", autocomplete=_spc_options, default="0"
+    )
     async def character_wizard(self, ctx: AppCtx, spc: str):
         """Start a character creation wizard."""
         try:

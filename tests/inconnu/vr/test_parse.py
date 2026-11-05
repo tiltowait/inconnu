@@ -341,26 +341,26 @@ async def test_category_override_removes_penalty(
 # Hidden dice permission
 
 
-ADMINS_ONLY = "Only admins can hide their dice on this server."
+STORYTELLERS_ONLY = "Only Storytellers can hide their dice on this server."
 DISALLOWED = "This server doesn't allow hidden dice."
 
 
 @pytest.mark.parametrize(
-    "hide_dice,perms,admin,error",
+    "hide_dice,perms,storyteller,error",
     [
         (False, HiddenDicePerms.DISABLED, False, None),
         (True, HiddenDicePerms.ENABLED, False, None),
         (True, HiddenDicePerms.ADMIN_ONLY, True, None),
-        (True, HiddenDicePerms.ADMIN_ONLY, False, ADMINS_ONLY),
+        (True, HiddenDicePerms.ADMIN_ONLY, False, STORYTELLERS_ONLY),
         (True, HiddenDicePerms.DISABLED, True, DISALLOWED),
         (True, HiddenDicePerms.DISABLED, False, DISALLOWED),
     ],
 )
 async def test_hidden_dice_allowed(
-    hide_dice: bool, perms: HiddenDicePerms, admin: bool, error: str | None
+    hide_dice: bool, perms: HiddenDicePerms, storyteller: bool, error: str | None
 ):
     """Hiding dice is refused, with the reason, unless the server's permissions
-    allow it for this user. Disabled applies to admins, too."""
+    allow it for this user. Disabled applies to Storytellers, too."""
     ctx = MagicMock(spec=AppCtx)
     with (
         patch(
@@ -368,7 +368,7 @@ async def test_hidden_dice_allowed(
             new_callable=AsyncMock,
             return_value=perms,
         ),
-        patch("inconnu.vr.parse.is_storyteller", new_callable=AsyncMock, return_value=admin),
+        patch("inconnu.vr.parse.is_storyteller", new_callable=AsyncMock, return_value=storyteller),
         patch("ui.embeds.error", new_callable=AsyncMock) as mock_error,
     ):
         result = await hidden_dice_allowed(ctx, hide_dice)

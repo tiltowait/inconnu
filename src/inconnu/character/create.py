@@ -18,7 +18,7 @@ async def launch_wizard(ctx: AppCtx, spc: bool):
     if ctx.guild is None:
         raise InconnuError("Unexpectedly got a null guild.")
     if spc and not await is_storyteller(ctx.user):
-        await ui.embeds.error(ctx, "You need Administrator permissions to make an SPC.")
+        await ui.embeds.error(ctx, "Only Storytellers can make SPCs.")
         return
 
     token = services.wizard_cache.register(ctx.guild, ctx.user.id, spc)

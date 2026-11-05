@@ -3,7 +3,7 @@
 Many commands take optional `character` and `player` options.
 
 * `character`: Which of your characters to use. Without it, **Inconnu** picks the one that fits, or shows a menu to choose from.
-* `player`: Usually admin-only. Lets admins view, roll as, or change another player's character.
+* `player`: Usually Storyteller-only. Lets [Storytellers](administration/README.md) view, roll as, or change another player's character.
 
 > [!NOTE]
 > **Automatic Character Filtering**

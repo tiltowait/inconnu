@@ -30,6 +30,13 @@ Subtract [Impairment](../command-reference/rolls/impairment.md) penalties from y
 
 ## Server settings
 
+### Storyteller role
+
+> [!NOTE]
+> **Default:** None
+
+Members with this role get admins' [Storyteller powers](administration/README.md), such as working with other players' characters and managing XP, without being admins.
+
 ### Use emojis (server)
 
 > [!NOTE]
@@ -45,8 +52,8 @@ Turns custom emojis off for the whole server. Players can't turn them back on fo
 Who may use `dice:Hide` to [hide their dice](../command-reference/rolls/hidden-dice.md) from other players. The options are:
 
 * Anyone can hide their dice
-* Only admins can hide their dice
-* No one can hide their dice (this includes admins)
+* Only Storytellers can hide their dice
+* No one can hide their dice (this includes Storytellers)
 
 ### Resonance mode
 
@@ -86,7 +93,7 @@ Whether players can use `/experience award` and `/experience deduct` on their ow
 * Players can adjust unspent and lifetime XP
 * Players can adjust unspent XP only
 * Players can adjust lifetime XP only
-* Only admins can adjust XP
+* Only Storytellers can adjust XP
 
 **Recommended reading:** [Experience Management](administration/experience-management.md).
 
@@ -95,7 +102,7 @@ Whether players can use `/experience award` and `/experience deduct` on their ow
 > [!NOTE]
 > **Default:** None
 
-**Inconnu** tells players about their character updates privately. That saves clutter, but it means admins can't see what's happening. Set a channel, and **Inconnu** also posts there:
+**Inconnu** tells players about their character updates privately. That saves clutter, but it means Storytellers can't see what's happening. Set a channel, and **Inconnu** also posts there:
 
 * Character updates, such as Trait and tracker changes
 * Willpower spent on re-rolls

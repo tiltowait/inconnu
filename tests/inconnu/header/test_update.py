@@ -74,7 +74,7 @@ async def submit(
 async def test_update_header_sends_modal(vampire: VChar):
     """The command opens a modal titled for the character."""
     ctx = AsyncMock(spec=AppCtx)
-    ctx.send_modal = AsyncMock()
+    ctx.send_modal = AsyncMock(spec=discord.InteractionResponse.send_modal)
 
     await update_header(ctx, vampire)
 
@@ -88,7 +88,7 @@ async def test_update_header_truncates_title(vampire: VChar):
     """Discord limits modal titles to 45 characters."""
     vampire.name = "N" * 40
     ctx = AsyncMock(spec=AppCtx)
-    ctx.send_modal = AsyncMock()
+    ctx.send_modal = AsyncMock(spec=discord.InteractionResponse.send_modal)
 
     await update_header(ctx, vampire)
 

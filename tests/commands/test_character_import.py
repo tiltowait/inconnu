@@ -9,6 +9,8 @@ import discord
 from ctx import AppCtx
 from inconnu.character.import_json import import_progeny
 
+type MockAttachment = MagicMock
+
 
 def progeny_export(**overrides: Any) -> dict[str, Any]:
     """Build a valid Progeny export payload."""
@@ -31,7 +33,7 @@ def progeny_export(**overrides: Any) -> dict[str, Any]:
     return data
 
 
-def json_attachment(data: dict[str, Any]) -> MagicMock:
+def json_attachment(data: dict[str, Any]) -> MockAttachment:
     """Build a Discord attachment containing JSON."""
     attachment = MagicMock(spec=discord.Attachment)
     attachment.size = 1_000

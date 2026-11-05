@@ -313,8 +313,9 @@ class _SlakeView(View):
             await interaction.delete_original_response()
         else:
             # await interaction.message.delete()
-            await inconnu.misc.slake(interaction, self.character, slake_amount, edit_message=True)
-            await inconnu.reference.resonance(interaction, character=self.character.name)
+            inter = cast(AppInteraction, interaction)
+            await inconnu.misc.perform_slake(inter, self.character, slake_amount, edit_message=True)
+            await inconnu.reference.resonance(inter, character=self.character.name)
 
     async def close(self):
         """Stop listening and delete the menu, which might be ephemeral."""

@@ -184,7 +184,7 @@ async def test_dont_slake_deletes_menu(owner: discord.Member, character: VChar, 
 
 
 @patch("inconnu.reference.resonance", new_callable=AsyncMock)
-@patch("inconnu.misc.slake", new_callable=AsyncMock)
+@patch("inconnu.misc.perform_slake", new_callable=AsyncMock)
 async def test_slaking_keeps_result_after_failed_reroll(
     mock_slake: AsyncMock,
     _: AsyncMock,

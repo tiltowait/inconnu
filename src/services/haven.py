@@ -113,7 +113,7 @@ class Haven:
             else:
                 self.match = character
 
-        except LookupError as err:
+        except (LookupError, errors.WrongGuild, errors.WrongOwner) as err:
             await ui.embeds.error(self.ctx, err)
             raise errors.HandledError() from err
 

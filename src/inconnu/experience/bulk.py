@@ -112,7 +112,7 @@ class _BulkModal(Modal):
                     # Prevent the character from being awarded again
                     seen.add(match)
 
-            except errors.CharacterNotFoundError, LookupError:
+            except errors.CharacterNotFoundError, errors.WrongGuild, errors.WrongOwner:
                 self.errors.append(f"**Not found:** {member}: `{char_name}`")
 
         # Finished parsing input

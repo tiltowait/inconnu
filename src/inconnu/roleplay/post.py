@@ -1,7 +1,7 @@
 """Tupperbox-style character posting."""
 
 import re
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import discord
 from loguru import logger
@@ -29,7 +29,7 @@ class PostModal(discord.ui.Modal):
 
     SECTIONS = 2
 
-    def __init__(self, character: VChar, bot: InconnuBot, *args, **kwargs):
+    def __init__(self, character: VChar, bot: InconnuBot, *args: Any, **kwargs: Any):
         self.character = character
         self.bot = bot  # Used for webhook management
         self.post_to_edit = kwargs.pop("rp_post", None)
@@ -308,7 +308,7 @@ class PostModal(discord.ui.Modal):
 
 
 @haven(__HELP_URL)
-async def create_post(ctx: AppCtx, character: VChar, **kwargs):
+async def create_post(ctx: AppCtx, character: VChar, **kwargs: Any):
     """Create a modal that sends a Rolepost."""
     if ctx.bot.can_webhook(ctx.channel):
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
@@ -357,3 +357,5 @@ async def edit_post(ctx: AppCtx, message: discord.Message):
                 "You can't edit the post of a deleted character!",
                 help=__HELP_URL,
             )
+        except (errors.WrongGuild, errors.WrongOwner) as err:
+            await ui.embeds.error(ctx, err, help=__HELP_URL)

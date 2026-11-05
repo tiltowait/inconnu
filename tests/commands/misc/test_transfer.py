@@ -145,6 +145,27 @@ async def test_transfer_character_not_found(
     mock_transfer.assert_not_awaited()
 
 
+@pytest.mark.parametrize("error", [errors.WrongGuild, errors.WrongOwner])
+async def test_transfer_someone_elses_character(
+    error: type[errors.CharacterError],
+    ctx: AppCtx,
+    current_owner: discord.Member,
+    new_owner: discord.Member,
+    mock_fetchone: AsyncMock,
+    mock_transfer: AsyncMock,
+    mock_error: AsyncMock,
+):
+    """A character ID belonging to someone else shows the reason."""
+    mock_fetchone.side_effect = error("Not theirs")
+
+    await transfer_character(ctx, current_owner, "507f1f77bcf86cd799439011", new_owner)
+
+    mock_error.assert_awaited_once()
+    assert mock_error.await_args is not None
+    assert "Not theirs" in str(mock_error.await_args.args[1])
+    mock_transfer.assert_not_awaited()
+
+
 @pytest.mark.parametrize("attr,value", [("user", 42), ("guild", 42)])
 async def test_transfer_ownership_mismatch(
     attr: str,

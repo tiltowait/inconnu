@@ -40,5 +40,5 @@ async def transfer_character(
 
     except errors.CharacterNotFoundError:
         await ui.embeds.error(ctx, "Character not found.")
-    except (LookupError, ValueError) as err:
+    except (errors.WrongGuild, errors.WrongOwner, ValueError) as err:
         await ui.embeds.error(ctx, err)

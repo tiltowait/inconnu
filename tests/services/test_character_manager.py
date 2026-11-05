@@ -736,7 +736,7 @@ async def test_fetchone_admin_fail(
     """Non-Storytellers can't fetch other players' characters by ID."""
     assert u12.guild_permissions.administrator is False
 
-    with pytest.raises(LookupError):
+    with pytest.raises(WrongOwner):
         _ = await mgrf.fetchone(g1, u12, c111.id_str)
 
 
@@ -755,7 +755,7 @@ async def test_validate_storyteller_role(
     if has_role:
         await mgrf._validate(g1, u12, c111)
     else:
-        with pytest.raises(LookupError):
+        with pytest.raises(WrongOwner):
             await mgrf._validate(g1, u12, c111)
     u12.get_role.assert_called_once_with(STORYTELLER_ROLE)
 
@@ -771,7 +771,7 @@ async def test_validate_rejects_wrong_guild(
     mgrf: CharacterManager, g1: Guild, u21: Member, c211: VChar
 ):
     """Characters from another guild are refused."""
-    with pytest.raises(LookupError):
+    with pytest.raises(WrongGuild):
         await mgrf._validate(g1, u21, c211)
 
 

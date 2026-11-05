@@ -172,17 +172,31 @@ async def test_bulk_award_mentions_missing_members(
     assert fields["Errors"].strip() == "**Not found:** 2: `Nobody`"
 
 
+@pytest.mark.parametrize("error", [errors.WrongGuild, errors.WrongOwner])
 async def test_bulk_award_other_players_character_id(
-    interaction: MockInteraction, mock_error: AsyncMock, mock_fetchone: AsyncMock
+    error: type[errors.CharacterError],
+    interaction: MockInteraction,
+    mock_error: AsyncMock,
+    mock_fetchone: AsyncMock,
 ):
     """A character ID belonging to someone else is reported, not raised."""
-    mock_fetchone.side_effect = LookupError("Doesn't belong to this user")
+    mock_fetchone.side_effect = error("Doesn't belong to this user")
 
     await _submit(interaction, "3 xp <@2> 507f1f77bcf86cd799439011")
 
     assert mock_error.await_args is not None
     fields = dict(mock_error.await_args.args[2:])
     assert fields["Errors"].strip() == "**Not found:** 2: `507f1f77bcf86cd799439011`"
+
+
+async def test_bulk_award_surfaces_unexpected_errors(
+    interaction: MockInteraction, mock_fetchone: AsyncMock
+):
+    """A bug in the lookup isn't disguised as a missing character."""
+    mock_fetchone.side_effect = KeyError("bug")
+
+    with pytest.raises(KeyError):
+        await _submit(interaction, "3 xp <@2> Nobody")
 
 
 async def test_bulk_award_no_input(

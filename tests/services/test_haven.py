@@ -276,6 +276,22 @@ async def test_fetch_sole_filter_survivor(mock_ctx: AppCtx):
     mock_selection.assert_not_awaited()
 
 
+@pytest.mark.parametrize("error", [errors.WrongGuild, errors.WrongOwner])
+async def test_fetch_someone_elses_character(error: type[errors.CharacterError], mock_ctx: AppCtx):
+    """Asking for another player's character by ID shows the reason."""
+    haven = Haven(mock_ctx, character="507f1f77bcf86cd799439011")
+
+    with (
+        patch.object(services.char_mgr, "fetchone", AsyncMock(side_effect=error("Not yours"))),
+        patch("ui.embeds.error", new_callable=AsyncMock) as show_error,
+        pytest.raises(errors.HandledError),
+    ):
+        await haven.fetch()
+
+    show_error.assert_awaited_once()
+    assert str(show_error.call_args.args[1]) == "Not yours"
+
+
 async def test_fetch_multiple_survivors_presents_selection(mock_ctx: AppCtx):
     """Multiple filter survivors trigger the selection view.
 

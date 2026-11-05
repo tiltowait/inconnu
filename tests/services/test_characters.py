@@ -9,7 +9,7 @@ import pytest_asyncio
 
 import constants
 import services
-from errors import CharacterNotFoundError
+from errors import CharacterNotFoundError, WrongGuild, WrongOwner
 from models import VChar
 from tests.mocks import MockMember
 
@@ -83,8 +83,8 @@ async def char_id() -> AsyncGenerator[str]:
         (USER, False, WRONG_GUILD, CharacterNotFoundError),
         (WRONG_USER, False, WRONG_GUILD, CharacterNotFoundError),
         (WRONG_USER, True, GUILD, None),
-        (WRONG_USER, True, WRONG_GUILD, LookupError),
-        (USER, True, WRONG_GUILD, LookupError),
+        (WRONG_USER, True, WRONG_GUILD, WrongGuild),
+        (USER, True, WRONG_GUILD, WrongGuild),
     ],
 )
 async def test_management(
@@ -114,5 +114,5 @@ async def test_fetchone_with_owner_id(char_id: str):
 
 async def test_fetchone_with_non_owner_id(char_id: str):
     """A plain user ID can't be a Storyteller, so it can't reach another's character."""
-    with pytest.raises(LookupError):
+    with pytest.raises(WrongOwner):
         await services.char_mgr.fetchone(GUILD, WRONG_USER, char_id)

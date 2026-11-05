@@ -274,10 +274,10 @@ class CharacterManager:
         user_id = user.id if isinstance(user, discord.Member) else user
 
         if guild_id != char.guild:
-            raise LookupError(f"**{char.name}** doesn't belong to this server!")
+            raise errors.WrongGuild(f"**{char.name}** doesn't belong to this server!")
         if char.user != user_id:
             if not isinstance(user, discord.Member) or not await is_storyteller(user):
-                raise LookupError(f"**{char.name}** doesn't belong to this user!")
+                raise errors.WrongOwner(f"**{char.name}** doesn't belong to this user!")
 
 
 char_mgr = CharacterManager()

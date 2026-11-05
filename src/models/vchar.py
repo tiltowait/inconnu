@@ -91,7 +91,8 @@ class VChar(Document):
 
     @before_event(Save, Replace, SaveChanges)
     def pre_update(self):
-        """Clamp values within required bounds."""
+        """Clamp values within required bounds, and keep the Blush consistent
+        with changes to Humanity and splat."""
         if self.is_vampire:
             self.hunger = max(0, min(5, self.hunger))
         else:
@@ -102,6 +103,11 @@ class VChar(Document):
 
         if self.splat == "thinblood":
             self.splat = "thin-blood"
+
+        if not self.can_blush:
+            self.header.blush = -1
+        elif self.header.blush == -1:
+            self.header.blush = 0
 
         logger.info("VCHAR: {} will update", self.name)
 

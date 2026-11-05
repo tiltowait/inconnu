@@ -2,6 +2,7 @@
 
 import pytest
 
+from models import VChar
 from tests.characters import gen_char
 
 
@@ -80,6 +81,74 @@ def test_high_humanity_cannot_set_blush():
     vamp.set_blush(1)
 
     assert vamp.header.blush == -1
+
+
+async def saved_blush(char: VChar) -> int:
+    """Save the character and read its Blush back from the database."""
+    await char.save()
+    fresh = await VChar.get(char.id)
+    assert fresh is not None
+    await fresh.delete()
+    return fresh.header.blush
+
+
+@pytest.mark.parametrize("blush", [0, 1])
+async def test_save_rising_to_high_humanity_clears_blush(blush: int):
+    """A vampire who no longer needs to Blush becomes N/A."""
+    vamp = gen_char("vampire")
+    await vamp.insert()
+    vamp.header.blush = blush
+    vamp.humanity = 9
+
+    assert await saved_blush(vamp) == -1
+
+
+async def test_save_falling_from_high_humanity_enables_blush():
+    """A vampire who falls below Humanity 9 goes from N/A to Not Blushed."""
+    vamp = gen_char("vampire")
+    vamp.humanity = 9
+    await vamp.insert()
+    vamp.header.blush = -1
+    vamp.humanity = 8
+
+    assert await saved_blush(vamp) == 0
+
+
+async def test_save_keeps_active_blush():
+    """A vampire who can Blush keeps their current status."""
+    vamp = gen_char("vampire")
+    await vamp.insert()
+    vamp.header.blush = 1
+
+    assert await saved_blush(vamp) == 1
+
+
+@pytest.mark.parametrize("splat", ["mortal", "ghoul", "thin-blood"])
+async def test_save_after_splat_change_clears_blush(splat: str):
+    """A character who stops being a full vampire becomes N/A."""
+    vamp = gen_char("vampire")
+    await vamp.insert()
+    vamp.splat = splat
+
+    assert await saved_blush(vamp) == -1
+
+
+async def test_save_after_embrace_enables_blush():
+    """A mortal who becomes a vampire goes from N/A to Not Blushed."""
+    mortal = gen_char("mortal")
+    await mortal.insert()
+    mortal.splat = "vampire"
+
+    assert await saved_blush(mortal) == 0
+
+
+async def test_save_clears_stale_thin_blood_blush():
+    """A Thin-Blood saved as Not Blushed by the old modal is corrected."""
+    thin_blood = gen_char("thin-blood")
+    await thin_blood.insert()
+    thin_blood.header.blush = 0
+
+    assert await saved_blush(thin_blood) == -1
 
 
 @pytest.mark.parametrize(

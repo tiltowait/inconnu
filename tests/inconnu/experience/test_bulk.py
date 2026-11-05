@@ -172,6 +172,19 @@ async def test_bulk_award_mentions_missing_members(
     assert fields["Errors"].strip() == "**Not found:** 2: `Nobody`"
 
 
+async def test_bulk_award_other_players_character_id(
+    interaction: MockInteraction, mock_error: AsyncMock, mock_fetchone: AsyncMock
+):
+    """A character ID belonging to someone else is reported, not raised."""
+    mock_fetchone.side_effect = LookupError("Doesn't belong to this user")
+
+    await _submit(interaction, "3 xp <@2> 507f1f77bcf86cd799439011")
+
+    assert mock_error.await_args is not None
+    fields = dict(mock_error.await_args.args[2:])
+    assert fields["Errors"].strip() == "**Not found:** 2: `507f1f77bcf86cd799439011`"
+
+
 async def test_bulk_award_no_input(
     interaction: MockInteraction, mock_save: AsyncMock, mock_error: AsyncMock
 ):

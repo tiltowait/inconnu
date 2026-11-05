@@ -54,6 +54,6 @@ class DisablingView(EphemeralSafeView):
                 await message.edit_original_response(view=self)
             else:
                 await message.edit(view=self)
-        except discord.NotFound:
-            # The message has been deleted
-            pass
+        except discord.HTTPException as err:
+            # Deleted, or the interaction token expired
+            logger.debug("Couldn't edit the view on timeout: {}", err)

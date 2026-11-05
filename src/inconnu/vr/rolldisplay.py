@@ -9,6 +9,7 @@ from typing import cast
 
 import discord
 from discord.ui import Button
+from loguru import logger
 
 import inconnu
 import services
@@ -263,8 +264,12 @@ class RollDisplay(EphemeralSafeView):
         self._render_buttons()
 
         if self.message is not None:
-            with contextlib.suppress(discord.NotFound):
+            try:
                 await self.message.edit(view=self)
+            except discord.HTTPException as err:
+                # Deleted, or a hidden roll's interaction token expired. Either
+                # way, the timeout handler must still run.
+                logger.debug("Couldn't disable the roll buttons: {}", err)
 
         if self.timeout_handler is not None:
             await self.timeout_handler(self.outcome)

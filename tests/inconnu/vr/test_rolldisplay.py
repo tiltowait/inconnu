@@ -1360,6 +1360,21 @@ async def test_hidden_timeout_after_press(ctx: AppCtx, owner: discord.Member):
     assert all(disabled for _, _, disabled, _ in screen.private.buttons)
 
 
+async def test_hidden_timeout_after_token_expires(ctx: AppCtx, owner: discord.Member):
+    """The timeout handler runs even if the private copy can no longer be edited."""
+    roll = make_roll([6, 2], [], 2)
+    handler = AsyncMock()
+    screen = await show(make_display(ctx, owner, roll, hide_dice=True, timeout=handler))
+    assert screen.private is not None
+    screen.private.handle.edit.side_effect = discord.HTTPException(
+        MagicMock(status=401), "Invalid Webhook Token"
+    )
+
+    await time_out(screen)
+
+    handler.assert_awaited_once_with(roll)
+
+
 # Update channel reports
 
 

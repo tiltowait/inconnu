@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
+import pytest
 from discord.ui import Button, Select
 
 from ui.views import DisablingView
@@ -89,11 +90,18 @@ async def test_timeout_without_message():
     assert not button.disabled
 
 
-async def test_timeout_deleted_message():
-    """A deleted message is ignored."""
+@pytest.mark.parametrize(
+    "error",
+    [
+        discord.NotFound(MagicMock(status=404), "Unknown Message"),
+        discord.HTTPException(MagicMock(status=401), "Invalid Webhook Token"),
+    ],
+)
+async def test_timeout_edit_failure(error: discord.HTTPException):
+    """A deleted message or an expired interaction token is ignored."""
     view, _, _, _ = make_view()
     message: MockMessage = AsyncMock(spec=discord.Message)
-    message.edit.side_effect = discord.NotFound(MagicMock(status=404), "Unknown Message")
+    message.edit.side_effect = error
     view.message = message
 
     await view.on_timeout()

@@ -350,8 +350,8 @@ DISALLOWED = "This server doesn't allow hidden dice."
     [
         (False, HiddenDicePerms.DISABLED, False, None),
         (True, HiddenDicePerms.ENABLED, False, None),
-        (True, HiddenDicePerms.ADMIN_ONLY, True, None),
-        (True, HiddenDicePerms.ADMIN_ONLY, False, STORYTELLERS_ONLY),
+        (True, HiddenDicePerms.STORYTELLER_ONLY, True, None),
+        (True, HiddenDicePerms.STORYTELLER_ONLY, False, STORYTELLERS_ONLY),
         (True, HiddenDicePerms.DISABLED, True, DISALLOWED),
         (True, HiddenDicePerms.DISABLED, False, DISALLOWED),
     ],

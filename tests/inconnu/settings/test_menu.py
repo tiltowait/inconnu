@@ -117,8 +117,10 @@ async def test_set_hidden_dice_permissions(ctx: AppCtx):
     ):
         await menu.set_hidden_dice_permissions(interaction)
 
-    assert vguild.settings.hidden_dice_permissions == HiddenDicePerms.ADMIN_ONLY
-    assert [opt.value for opt in select.options if opt.default] == [HiddenDicePerms.ADMIN_ONLY]
+    assert vguild.settings.hidden_dice_permissions == HiddenDicePerms.STORYTELLER_ONLY
+    assert [opt.value for opt in select.options if opt.default] == [
+        HiddenDicePerms.STORYTELLER_ONLY
+    ]
     interaction.edit.assert_awaited_once_with(view=menu)
     mock_save.assert_awaited_once()
 

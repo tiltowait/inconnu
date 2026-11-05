@@ -164,7 +164,7 @@ async def test_can_adjust_current_xp_storyteller_always_true(mock_is_storyteller
         (ExpPerms.UNRESTRICTED, True),
         (ExpPerms.UNSPENT_ONLY, True),
         (ExpPerms.LIFETIME_ONLY, False),
-        (ExpPerms.ADMIN_ONLY, False),
+        (ExpPerms.STORYTELLER_ONLY, False),
     ],
 )
 async def test_can_adjust_current_xp_non_storyteller(
@@ -197,7 +197,7 @@ async def test_can_adjust_lifetime_xp_storyteller_always_true(mock_is_storytelle
         (ExpPerms.UNRESTRICTED, True),
         (ExpPerms.UNSPENT_ONLY, False),
         (ExpPerms.LIFETIME_ONLY, True),
-        (ExpPerms.ADMIN_ONLY, False),
+        (ExpPerms.STORYTELLER_ONLY, False),
     ],
 )
 async def test_can_adjust_lifetime_xp_non_storyteller(

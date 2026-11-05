@@ -200,9 +200,9 @@ async def hidden_dice_allowed(ctx: AppCtx, hide_dice: bool) -> bool:
     match await services.settings.hidden_dice_permissions(ctx.guild):
         case HiddenDicePerms.ENABLED:
             return True
-        case HiddenDicePerms.ADMIN_ONLY if await is_storyteller(ctx.user):
+        case HiddenDicePerms.STORYTELLER_ONLY if await is_storyteller(ctx.user):
             return True
-        case HiddenDicePerms.ADMIN_ONLY:
+        case HiddenDicePerms.STORYTELLER_ONLY:
             err = "Only Storytellers can hide their dice on this server."
         case HiddenDicePerms.DISABLED:
             err = "This server doesn't allow hidden dice."

@@ -20,7 +20,7 @@ class ExpPerms(StrEnum):
     UNRESTRICTED = "unrestricted"
     UNSPENT_ONLY = "unspent_only"
     LIFETIME_ONLY = "lifetime_only"
-    ADMIN_ONLY = "admin_only"
+    STORYTELLER_ONLY = "admin_only"  # Predates Storytellers; stored in the database
 
     @property
     def description(self) -> str:
@@ -32,7 +32,7 @@ class ExpPerms(StrEnum):
                 return "Players can adjust unspent XP only"
             case ExpPerms.LIFETIME_ONLY:
                 return "Players can adjust lifetime XP only"
-            case ExpPerms.ADMIN_ONLY:
+            case ExpPerms.STORYTELLER_ONLY:
                 return "Only Storytellers can adjust XP"
 
 
@@ -40,7 +40,7 @@ class HiddenDicePerms(StrEnum):
     """An enum for who may hide their dice."""
 
     ENABLED = "enabled"
-    ADMIN_ONLY = "admin_only"
+    STORYTELLER_ONLY = "admin_only"  # Predates Storytellers; stored in the database
     DISABLED = "disabled"
 
     @property
@@ -49,7 +49,7 @@ class HiddenDicePerms(StrEnum):
         match self:
             case HiddenDicePerms.ENABLED:
                 return "Anyone can hide their dice"
-            case HiddenDicePerms.ADMIN_ONLY:
+            case HiddenDicePerms.STORYTELLER_ONLY:
                 return "Only Storytellers can hide their dice"
             case HiddenDicePerms.DISABLED:
                 return "No one can hide their dice"

@@ -1,6 +1,7 @@
 """inconnu/headers/update.py - Update RP headers."""
 
 import asyncio
+from typing import Any, cast
 
 import discord
 from loguru import logger
@@ -26,7 +27,7 @@ async def update_header(ctx: AppCtx, character: VChar):
 class _RPHeader(discord.ui.DesignerModal):
     """A modal for setting character RP header details."""
 
-    def __init__(self, character: VChar, *args, **kwargs):
+    def __init__(self, character: VChar, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.character = character
 
@@ -43,17 +44,13 @@ class _RPHeader(discord.ui.DesignerModal):
         logger.debug("HEADER: Header length, minus location, is {}", len(mock_title))
         logger.debug("HEADER: Max location length: {}", max_location_len)
 
-        self.add_item(
-            discord.ui.Label(
-                "Scene Location",
-                discord.ui.InputText(
-                    placeholder="The location of the current scene",
-                    value=character.header.location,
-                    min_length=1,
-                    max_length=max_location_len,
-                ),
-            ),
+        self.location_input = discord.ui.InputText(
+            placeholder="The location of the current scene",
+            value=character.header.location,
+            min_length=1,
+            max_length=max_location_len,
         )
+        self.add_item(discord.ui.Label("Scene Location", self.location_input))
 
         # Always presenting the select, even if the character isn't a vampire,
         # is more consistent and simplifies callback(). Since we can't disable
@@ -67,57 +64,49 @@ class _RPHeader(discord.ui.DesignerModal):
             discord.SelectOption(label="Off", value="0", default=self.character.header.blush < 1),
             discord.SelectOption(label="N/A", value="-1", default=True),
         ]
-        if self.character.is_vampire and self.character.humanity < 9:
+        character_blushes = character.is_vampire and not character.is_thin_blood
+        if character_blushes and character.humanity < 9:
             blush_options = blush_options[:-1]
         else:
             blush_options = blush_options[-1:]
 
-        self.add_item(discord.ui.Label("Blush of Life", discord.ui.Select(options=blush_options)))
+        self.blush_select = discord.ui.Select(options=blush_options)
+        self.add_item(discord.ui.Label("Blush of Life", self.blush_select))
 
-        self.add_item(
-            discord.ui.Label(
-                "Apparent Merits",
-                discord.ui.InputText(
-                    placeholder="Merits visible/known to other characters.",
-                    value=character.header.merits,
-                    min_length=0,
-                    max_length=300,
-                    required=False,
-                ),
-            )
+        self.merits_input = discord.ui.InputText(
+            placeholder="Merits visible/known to other characters.",
+            value=character.header.merits,
+            min_length=0,
+            max_length=300,
+            required=False,
         )
-        self.add_item(
-            discord.ui.Label(
-                "Apparent Flaws",
-                discord.ui.InputText(
-                    placeholder="Flaws visible/known to other characters.",
-                    value=character.header.flaws,
-                    min_length=0,
-                    max_length=300,
-                    required=False,
-                ),
-            )
+        self.add_item(discord.ui.Label("Apparent Merits", self.merits_input))
+
+        self.flaws_input = discord.ui.InputText(
+            placeholder="Flaws visible/known to other characters.",
+            value=character.header.flaws,
+            min_length=0,
+            max_length=300,
+            required=False,
         )
-        self.add_item(
-            discord.ui.Label(
-                "Temporary Effects",
-                discord.ui.InputText(
-                    placeholder="Temporary effects currently affecting your character.",
-                    value=character.header.temp,
-                    max_length=512,
-                    required=False,
-                ),
-            )
+        self.add_item(discord.ui.Label("Apparent Flaws", self.flaws_input))
+
+        self.temp_input = discord.ui.InputText(
+            placeholder="Temporary effects currently affecting your character.",
+            value=character.header.temp,
+            max_length=512,
+            required=False,
         )
+        self.add_item(discord.ui.Label("Temporary Effects", self.temp_input))
 
     async def callback(self, interaction: discord.Interaction):
         """Set the header and tell the user."""
-        # TODO: Find out if ModalItem.item is the intended attribute (checker complains)
-        self.character.header.location = clean_text(self.children[0].item.value.replace("•", ""))
-        self.character.header.blush = int(self.children[1].item.values[0])
-        self.character.header.merits = clean_text(self.children[2].item.value)
-        self.character.header.flaws = clean_text(self.children[3].item.value)
-        self.character.header.temp = clean_text(self.children[4].item.value)
+        header = self.character.header
+        header.location = clean_text((self.location_input.value or "").replace("•", ""))
+        header.blush = int(cast(list[str], self.blush_select.values)[0])
+        header.merits = clean_text(self.merits_input.value or "")
+        header.flaws = clean_text(self.flaws_input.value or "")
+        header.temp = clean_text(self.temp_input.value or "")
 
         await asyncio.gather(
             interaction.response.send_message(

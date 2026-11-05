@@ -124,7 +124,7 @@ async def test_vampire_blush_options(vampire: VChar):
     assert blush_options(vampire) == ["1", "0"]
 
 
-@pytest.mark.parametrize("splat", ["mortal", "ghoul"])
+@pytest.mark.parametrize("splat", ["mortal", "ghoul", "thin-blood"])
 async def test_non_vampire_blush_options(splat: str):
     """Characters who don't Blush only get N/A."""
     assert blush_options(gen_char(splat)) == ["-1"]

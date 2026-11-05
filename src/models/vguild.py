@@ -94,6 +94,7 @@ class VGuildSettings(BaseModel):
     update_channel: int | None = None
     changelog_channel: int | None = None
     deletion_channel: int | None = None
+    storyteller_role: int | None = None
     add_empty_resonance: bool = False
     resonance: ResonanceMode = ResonanceMode.STANDARD
     max_hunger: int = Field(ge=5, le=10, default=5)

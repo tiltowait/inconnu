@@ -5,6 +5,7 @@ from loguru import logger
 
 from config import settings
 from ctx import AppCtx, AppInvocation
+from models import VGuild
 
 
 def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None):
@@ -23,6 +24,17 @@ def is_admin(user: discord.Member | discord.User | None) -> bool:
     Administrator is server-wide (channel overwrites can't remove it), so the
     member's server permissions decide it. Users outside a server never are."""
     return isinstance(user, discord.Member) and user.guild_permissions.administrator
+
+
+async def is_storyteller(member: discord.Member) -> bool:
+    """Check if the guild member is an admin or has that server's Storyteller role."""
+    if is_admin(member):
+        return True
+
+    vguild = await VGuild.get_or_fetch(member.guild)
+    if vguild.settings.storyteller_role is not None:
+        return member.get_role(vguild.settings.storyteller_role) is not None
+    return False
 
 
 def has_supporter_role(member: discord.Member) -> bool:

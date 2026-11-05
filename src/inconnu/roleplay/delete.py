@@ -1,5 +1,7 @@
 """Rolepost deletion handlers."""
 
+from typing import Any
+
 import discord
 
 import db
@@ -26,7 +28,7 @@ async def _fetch_rp_post(ctx: AppCtx, webhook: discord.Webhook, message: discord
     if not message.author.bot:
         raise ValueError("You can't delete a user's post.")
 
-    if message.author.id == ctx.bot.user.id:
+    if message.author == ctx.bot.user:
         raise ValueError("This isn't a Rolepost!")
 
     if webhook.id != message.author.id:
@@ -48,7 +50,7 @@ async def _fetch_rp_post(ctx: AppCtx, webhook: discord.Webhook, message: discord
 class DeletionModal(discord.ui.Modal):
     """A modal that asks for confirmation before deleting the post chain."""
 
-    def __init__(self, webhook: discord.Webhook, rp_post: RPPost, *args, **kwargs):
+    def __init__(self, webhook: discord.Webhook, rp_post: RPPost, *args: Any, **kwargs: Any):
         self.webhook = webhook
         self.rp_post = rp_post
 
@@ -66,7 +68,7 @@ class DeletionModal(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Check the input."""
-        if self.children[0].value.lower() == "delete":
+        if (self.children[0].value or "").lower() == "delete":
             await interaction.response.defer(ephemeral=True, invisible=False)
             for msg_id in self.rp_post.id_chain:
                 try:

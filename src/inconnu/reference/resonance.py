@@ -4,14 +4,14 @@ import json
 import random
 from functools import cache
 from pathlib import Path
-from typing import Self
+from typing import Any, Self
 
 import discord
 from pydantic import BaseModel, field_validator
 
 import inconnu
 import services
-from ctx import AppCtx
+from ctx import AppCtx, AppInvocation
 from models import ResonanceMode
 from utils import get_avatar
 
@@ -84,7 +84,7 @@ async def random_temperament(ctx: AppCtx, res: str):
     await _display_embed(ctx, temperament, res, mode)
 
 
-async def resonance(ctx: AppCtx, minimum=1, **kwargs):
+async def resonance(ctx: AppInvocation, minimum=1, **kwargs: Any):
     """Generate and display a resonance."""
     temperament = _get_temperament(minimum)
     mode = await services.settings.resonance_mode(ctx.guild)
@@ -98,11 +98,11 @@ async def resonance(ctx: AppCtx, minimum=1, **kwargs):
 
 
 async def _display_embed(
-    ctx: AppCtx,
+    ctx: AppInvocation,
     temperament: str,
     res: str,
     mode: ResonanceMode,
-    **kwargs,
+    **kwargs: Any,
 ):
     """Display the resonance in an embed."""
     if res:

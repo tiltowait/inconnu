@@ -10,7 +10,7 @@ from inconnu.misc.mend import mend
 from inconnu.misc.percentile import percentile
 from inconnu.misc.remorse import remorse
 from inconnu.misc.rouse import perform_rouse, rouse
-from inconnu.misc.slake import slake
+from inconnu.misc.slake import perform_slake, slake
 from inconnu.misc.stain import stain
 from inconnu.misc.transfer import transfer_character
 
@@ -24,6 +24,7 @@ __all__ = (
     "mend",
     "percentile",
     "perform_rouse",
+    "perform_slake",
     "remorse",
     "rouse",
     "show_changelog",

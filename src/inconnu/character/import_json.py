@@ -1,5 +1,7 @@
 """Import characters exported by other tools."""
 
+from typing import cast
+
 import discord
 from pydantic import ValidationError
 
@@ -26,7 +28,7 @@ async def import_progeny(ctx: AppCtx, attachment: discord.Attachment):
         return
 
     character = VChar(
-        guild=ctx.guild.id,
+        guild=cast(discord.Guild, ctx.guild).id,  # The command is guild-only
         user=ctx.user.id,
         name=data.name,
         splat=data.splat,

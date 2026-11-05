@@ -93,6 +93,37 @@ async def test_vamp_awaken_blush_turns_off(
     mock_char_save.assert_awaited()
 
 
+async def test_high_humanity_awaken_blush_becomes_na(
+    vamp: VChar,
+    ctx: AppCtx,
+    mock_char_save: AsyncMock,
+):
+    """A Blushed vampire who rose to Humanity 9+ doesn't stay Blushed."""
+    vamp.humanity = 9
+    vamp.header.blush = 1
+
+    with patch("inconnu.d10", return_value=7):
+        await awaken(ctx, vamp)
+
+    assert vamp.header.blush == -1
+    mock_char_save.assert_awaited()
+
+
+async def test_thin_blood_awaken_clears_stale_blush(
+    thin_blood: VChar,
+    ctx: AppCtx,
+    mock_char_save: AsyncMock,
+):
+    """A Thin-Blood saved as Blushed by the old header modal becomes N/A."""
+    thin_blood.header.blush = 1
+
+    with patch("inconnu.d10", return_value=7):
+        await awaken(ctx, thin_blood)
+
+    assert thin_blood.header.blush == -1
+    mock_char_save.assert_awaited()
+
+
 async def test_vamp_awaken_blush_na_unchanged(
     vamp: VChar,
     ctx: AppCtx,

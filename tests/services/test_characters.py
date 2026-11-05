@@ -1,5 +1,6 @@
 """Test character manager fetching."""
 
+from collections.abc import AsyncGenerator
 from unittest.mock import MagicMock
 
 import discord
@@ -8,8 +9,9 @@ import pytest_asyncio
 
 import constants
 import services
-from errors import CharacterNotFoundError
+from errors import CharacterNotFoundError, WrongGuild, WrongOwner
 from models import VChar
+from tests.mocks import MockMember
 
 GUILD = 1
 USER = 1
@@ -17,11 +19,13 @@ CHAR_NAME = "Test"
 WRONG_GUILD = 2
 WRONG_USER = 2
 
+type MockBot = MagicMock
+
 
 # Fixtures and factories
 
 
-def mock_player(guild_id: int, user_id: int):
+def mock_player(guild_id: int, user_id: int) -> MockMember:
     """Create a mock Discord member."""
     player = MagicMock(spec=discord.Member)
     player.guild.id = guild_id
@@ -29,7 +33,7 @@ def mock_player(guild_id: int, user_id: int):
     return player
 
 
-def mock_bot_with_user(user_id: int, admin: bool):
+def mock_bot_with_user(user_id: int, admin: bool) -> tuple[MockBot, MockMember]:
     """Create a mock bot with user permissions."""
     # Create mock permissions
     mock_permissions = MagicMock(spec=discord.Permissions)
@@ -53,15 +57,15 @@ def mock_bot_with_user(user_id: int, admin: bool):
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def char_id() -> str:
+async def char_id() -> AsyncGenerator[str]:
     """The ID of a dummy character inserted into the database."""
     splat = "vampire"
     char = VChar(
         guild=1,
         user=1,
-        raw_name="Test",
+        name="Test",
         splat=splat,
-        raw_humanity=7,
+        humanity=7,
         health=6 * constants.Damage.NONE,
         willpower=5 * constants.Damage.NONE,
         potency=splat == "vampire" and 1 or 0,
@@ -79,15 +83,15 @@ async def char_id() -> str:
         (USER, False, WRONG_GUILD, CharacterNotFoundError),
         (WRONG_USER, False, WRONG_GUILD, CharacterNotFoundError),
         (WRONG_USER, True, GUILD, None),
-        (WRONG_USER, True, WRONG_GUILD, LookupError),
-        (USER, True, WRONG_GUILD, LookupError),
+        (WRONG_USER, True, WRONG_GUILD, WrongGuild),
+        (USER, True, WRONG_GUILD, WrongGuild),
     ],
 )
 async def test_management(
     user_id: int,
     admin: bool,
     guild: int,
-    exception: Exception,
+    exception: type[Exception] | None,
     char_id: str,
 ):
     """Run a battery of CharManager tests."""
@@ -100,3 +104,15 @@ async def test_management(
     else:
         char = await services.char_mgr.fetchone(guild, user, identifier)
         assert char is not None
+
+
+async def test_fetchone_with_owner_id(char_id: str):
+    """Plain guild and user IDs find the owner's character."""
+    char = await services.char_mgr.fetchone(GUILD, USER, char_id)
+    assert char.id_str == char_id
+
+
+async def test_fetchone_with_non_owner_id(char_id: str):
+    """A plain user ID can't be a Storyteller, so it can't reach another's character."""
+    with pytest.raises(WrongOwner):
+        await services.char_mgr.fetchone(GUILD, WRONG_USER, char_id)

@@ -1,5 +1,7 @@
 """Tests for character API models (Pydantic validation)."""
 
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
@@ -7,7 +9,7 @@ from models.vchardocs import VCharSplat, VCharTrait
 from routes.characters.models import CreationBody
 
 
-def valid_creation_data(**overrides):
+def valid_creation_data(**overrides: Any) -> dict[str, Any]:
     """Generate valid CreationBody data with optional overrides."""
     base_data = {
         "name": "Test Character",
@@ -22,7 +24,7 @@ def valid_creation_data(**overrides):
         "traits": [
             VCharTrait(name="Strength", rating=3, type=VCharTrait.Type.ATTRIBUTE),
             VCharTrait(
-                name="Athletics", rating=2, type=VCharTrait.Type.SKILL, raw_subtraits=["Running"]
+                name="Athletics", rating=2, type=VCharTrait.Type.SKILL, subtraits=["Running"]
             ),
         ],
     }
@@ -381,7 +383,7 @@ def test_valid_specialty_on_skill():
         name="Athletics",
         rating=2,
         type=VCharTrait.Type.SKILL,
-        raw_subtraits=["Running", "Climbing"],
+        subtraits=["Running", "Climbing"],
     )
     data = valid_creation_data(traits=[trait])
     body = CreationBody(**data)
@@ -394,7 +396,7 @@ def test_valid_specialty_on_custom_trait():
         name="CustomTrait",
         rating=3,
         type=VCharTrait.Type.CUSTOM,
-        raw_subtraits=["SpecialtyOne"],
+        subtraits=["SpecialtyOne"],
     )
     data = valid_creation_data(traits=[trait])
     body = CreationBody(**data)
@@ -407,7 +409,7 @@ def test_specialty_on_attribute_rejected():
         name="Strength",
         rating=3,
         type=VCharTrait.Type.ATTRIBUTE,
-        raw_subtraits=["Lifting"],
+        subtraits=["Lifting"],
     )
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:
@@ -421,7 +423,7 @@ def test_powers_on_discipline_allowed():
         name="Auspex",
         rating=2,
         type=VCharTrait.Type.DISCIPLINE,
-        raw_subtraits=["Heightened_Senses"],
+        subtraits=["Heightened_Senses"],
     )
     data = valid_creation_data(traits=[trait])
     body = CreationBody(**data)
@@ -434,7 +436,7 @@ def test_specialty_name_too_long():
         name="Athletics",
         rating=2,
         type=VCharTrait.Type.SKILL,
-        raw_subtraits=["A" * 21],
+        subtraits=["A" * 21],
     )
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:
@@ -449,7 +451,7 @@ def test_specialty_name_invalid_characters():
         name="Athletics",
         rating=2,
         type=VCharTrait.Type.SKILL,
-        raw_subtraits=["Running-Fast"],
+        subtraits=["Running-Fast"],
     )
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
@@ -462,7 +464,7 @@ def test_duplicate_specialty_names_rejected():
         name="Athletics",
         rating=2,
         type=VCharTrait.Type.SKILL,
-        raw_subtraits=["Running", "Running"],
+        subtraits=["Running", "Running"],
     )
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:
@@ -476,7 +478,7 @@ def test_duplicate_specialty_names_case_insensitive():
         name="Athletics",
         rating=2,
         type=VCharTrait.Type.SKILL,
-        raw_subtraits=["Running", "RUNNING"],
+        subtraits=["Running", "RUNNING"],
     )
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:

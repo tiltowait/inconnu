@@ -1,7 +1,7 @@
 """experience/bulk.py - Bulk award XP."""
 
 import re
-from typing import cast
+from typing import Any, cast
 
 import discord
 from discord.ext.commands import Paginator
@@ -14,10 +14,10 @@ import db
 import errors
 import services
 import ui
-from ctx import AppInteraction
+from ctx import AppCtx, AppInteraction
 
 
-async def bulk_award_xp(ctx):
+async def bulk_award_xp(ctx: AppCtx):
     """Present a modal for bulk-awarding XP."""
     modal = _BulkModal(title="Bulk Award XP")
     await ctx.send_modal(modal)
@@ -26,7 +26,7 @@ async def bulk_award_xp(ctx):
 class _BulkModal(Modal):
     """A modal for entering XP awards."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.pattern = re.compile(r"^(?P<xp>\d+)\s*xp\s*<@!?(?P<user>\d+)> (?P<character>.*)$")
         self.xp_tasks = []
@@ -93,12 +93,7 @@ class _BulkModal(Modal):
                 continue
 
             try:
-                # fetchone() takes user IDs too, though it isn't annotated for them
-                character = await services.char_mgr.fetchone(
-                    guild,
-                    owner,  # pyright: ignore[reportArgumentType]
-                    char_name,
-                )
+                character = await services.char_mgr.fetchone(guild, owner, char_name)
 
                 # Make sure this isn't a duplicate award
                 match = f"{member} {character.name}"
@@ -117,7 +112,7 @@ class _BulkModal(Modal):
                     # Prevent the character from being awarded again
                     seen.add(match)
 
-            except errors.CharacterNotFoundError:
+            except errors.CharacterNotFoundError, errors.WrongGuild, errors.WrongOwner:
                 self.errors.append(f"**Not found:** {member}: `{char_name}`")
 
         # Finished parsing input
@@ -128,7 +123,7 @@ class _BulkModal(Modal):
         else:
             await ui.embeds.error(interaction, "You didn't supply any input!")
 
-    async def _present_errors(self, interaction):
+    async def _present_errors(self, interaction: discord.Interaction):
         """Show the error message. No XP awarded."""
         contents = "**NO XP HAS BEEN AWARDED!** Correct the errors below and try again."
         self._chunk_fields()

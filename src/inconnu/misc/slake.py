@@ -1,11 +1,14 @@
 """misc/slake.py - Slake 1 or more Hunger."""
 
 import asyncio
+from typing import Any
 
 import errors
 import inconnu
 import services
 import ui
+from ctx import AppCtx, AppInvocation
+from models import VChar
 from services.haven import haven
 from utils import get_message
 from utils.urls import docs_url
@@ -13,7 +16,7 @@ from utils.urls import docs_url
 __HELP_URL = docs_url("guides/gameplay-shortcuts#slaking-hunger")
 
 
-def _can_slake(character):
+def _can_slake(character: VChar):
     """Raises an exception if the character isn't a vampire or is at Hunger 0."""
     if not character.is_vampire:
         raise errors.CharacterError(f"{character.name} isn't a vampire!")
@@ -22,7 +25,12 @@ def _can_slake(character):
 
 
 @haven(__HELP_URL, _can_slake, "None of your characters have Hunger to slake.")
-async def slake(ctx, character, amount: int, **kwargs):
+async def slake(ctx: AppCtx, character: VChar, amount: int, **kwargs: Any):
+    """Slake a character's Hunger, after finding the character."""
+    await perform_slake(ctx, character, amount, **kwargs)
+
+
+async def perform_slake(ctx: AppInvocation, character: VChar, amount: int, **kwargs: Any):
     """Slake a character's Hunger."""
     if not character.is_vampire:
         await ctx.respond("Only vampires need to slake Hunger!", ephemeral=True)

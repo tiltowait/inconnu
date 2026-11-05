@@ -10,6 +10,9 @@ from inconnu.header.posted.delete import delete_header
 
 _IS_APPROVED = "inconnu.header.posted.delete.is_approved_user"
 
+type MockMessage = AsyncMock
+type MockWebhook = AsyncMock
+
 
 @pytest.fixture
 def bot_message(bot_user: discord.User) -> discord.Message:
@@ -21,7 +24,7 @@ def bot_message(bot_user: discord.User) -> discord.Message:
 
 
 @pytest.fixture
-def webhook_message(webhook: discord.Webhook) -> discord.Message:
+def webhook_message(webhook: MockWebhook) -> discord.Message:
     """A Discord message authored by a webhook."""
     msg = AsyncMock(spec=discord.Message)
     msg.id = 67890
@@ -87,7 +90,7 @@ async def test_random_message_rejected_when_value_error(
 # --- Authorization: no db record ---
 
 
-async def test_bot_message_no_record(ctx: AsyncMock, bot_message: discord.Message):
+async def test_bot_message_no_record(ctx: AsyncMock, bot_message: MockMessage):
     """Bot message with no header record is rejected."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
         await delete_header(ctx, bot_message)
@@ -97,7 +100,7 @@ async def test_bot_message_no_record(ctx: AsyncMock, bot_message: discord.Messag
     assert "not an RP header" in args[0]
 
 
-async def test_webhook_message_no_record(ctx: AsyncMock, webhook_message: discord.Message):
+async def test_webhook_message_no_record(ctx: AsyncMock, webhook_message: MockMessage):
     """Webhook message with no header record is rejected."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
         await delete_header(ctx, webhook_message)
@@ -112,7 +115,7 @@ async def test_webhook_message_no_record(ctx: AsyncMock, webhook_message: discor
 
 async def test_non_owner_non_admin_rejected(
     ctx: AsyncMock,
-    bot_message: discord.Message,
+    bot_message: MockMessage,
     other_user: discord.Member,
     header_record: dict,
 ):
@@ -135,7 +138,7 @@ async def test_non_owner_non_admin_rejected(
 
 
 async def test_owner_deletes_bot_message(
-    ctx: AsyncMock, bot_message: discord.Message, header_record: dict
+    ctx: AsyncMock, bot_message: MockMessage, header_record: dict
 ):
     """Owner deletes their own bot-authored header via message.delete()."""
     with (
@@ -153,7 +156,7 @@ async def test_owner_deletes_bot_message(
 
 async def test_admin_deletes_header(
     ctx: AsyncMock,
-    bot_message: discord.Message,
+    bot_message: MockMessage,
     other_user: discord.Member,
     header_record: dict,
 ):
@@ -176,7 +179,7 @@ async def test_admin_deletes_header(
 
 
 async def test_bot_message_uses_message_delete(
-    ctx: AsyncMock, bot_message: discord.Message, webhook: discord.Webhook, header_record: dict
+    ctx: AsyncMock, bot_message: MockMessage, webhook: MockWebhook, header_record: dict
 ):
     """Bot-authored header is deleted via message.delete(), not webhook."""
     with (
@@ -190,7 +193,7 @@ async def test_bot_message_uses_message_delete(
 
 
 async def test_webhook_message_uses_webhook_delete(
-    ctx: AsyncMock, webhook_message: discord.Message, webhook: discord.Webhook, header_record: dict
+    ctx: AsyncMock, webhook_message: MockMessage, webhook: MockWebhook, header_record: dict
 ):
     """Webhook-authored header is deleted via webhook.delete_message()."""
     with (
@@ -206,9 +209,7 @@ async def test_webhook_message_uses_webhook_delete(
 # --- Failure handling ---
 
 
-async def test_forbidden_on_delete(
-    ctx: AsyncMock, bot_message: discord.Message, header_record: dict
-):
+async def test_forbidden_on_delete(ctx: AsyncMock, bot_message: MockMessage, header_record: dict):
     """discord.Forbidden during deletion shows error message."""
     bot_message.delete = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "forbidden"))
 

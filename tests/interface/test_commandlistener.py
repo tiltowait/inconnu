@@ -192,6 +192,23 @@ async def test_tip_shown_for_single_pc(
 
 
 @pytest.mark.parametrize(
+    "error", [errors.CharacterNotFoundError, errors.WrongGuild, errors.WrongOwner]
+)
+async def test_tip_skipped_when_character_unavailable(
+    error: type[errors.CharacterError],
+    cog: CommandListener,
+    mock_cmd_replace_respond: AsyncMock,
+    mock_char_mgr: MagicMock,
+):
+    """No tip for a character they can't use, such as someone else's ID."""
+    mock_char_mgr.fetchone.side_effect = error("Nope")
+
+    await cog._tip_unneeded_character_option(make_ctx(options={"character": "Nadea"}), "vr")
+
+    mock_cmd_replace_respond.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
     "command,options",
     [
         ("vr", {}),

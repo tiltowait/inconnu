@@ -21,8 +21,8 @@ else:
 
 
 class AppInteraction(discord.Interaction):
-    """A discord.Interaction with client and bot typed to InconnuBot, and user typed
-    as non-None."""
+    """A discord.Interaction with client typed to InconnuBot, and user typed as
+    non-None."""
 
     # py-cord types Interaction.user as optional, but every interaction we handle
     # (commands, components, autocomplete, modals) has a user
@@ -30,11 +30,6 @@ class AppInteraction(discord.Interaction):
 
     @property
     def client(self) -> InconnuBot:
-        return super().client  # type: ignore[return-value]
-
-    @property
-    def bot(self) -> InconnuBot:
-        """The bot instance."""
         return super().client  # type: ignore[return-value]
 
 

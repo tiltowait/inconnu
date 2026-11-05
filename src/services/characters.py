@@ -52,15 +52,15 @@ class CharacterManager:
 
     async def fetchone(
         self,
-        guild: discord.Guild,
-        user: discord.Member,
+        guild: discord.Guild | int,
+        user: discord.Member | int,
         name: str | VChar | None,
     ) -> VChar:
         """Attempt to return a single character.
 
         Args:
-            guild: The guild to which the character belongs.
-            user: The character's owner.
+            guild: The guild to which the character belongs, or its ID.
+            user: The character's owner, or their ID.
             name (optional): The character's name, or a VChar object.
 
         Returns a single character, if a single match is found.
@@ -268,16 +268,16 @@ class CharacterManager:
         async with self._lock:
             self._characters.sort()
 
-    async def _validate(self, guild: discord.Guild, user: discord.Member, char: VChar):
+    async def _validate(self, guild: discord.Guild | int, user: discord.Member | int, char: VChar):
         """Validate character ownership."""
         guild_id = guild.id if isinstance(guild, discord.Guild) else guild
         user_id = user.id if isinstance(user, discord.Member) else user
 
         if guild_id != char.guild:
-            raise LookupError(f"**{char.name}** doesn't belong to this server!")
+            raise errors.WrongGuild(f"**{char.name}** doesn't belong to this server!")
         if char.user != user_id:
-            if not await is_storyteller(user):
-                raise LookupError(f"**{char.name}** doesn't belong to this user!")
+            if not isinstance(user, discord.Member) or not await is_storyteller(user):
+                raise errors.WrongOwner(f"**{char.name}** doesn't belong to this user!")
 
 
 char_mgr = CharacterManager()

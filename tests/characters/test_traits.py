@@ -21,7 +21,7 @@ def custom_traits() -> dict[str, int]:
 
 
 @pytest.fixture
-def vampire(custom_traits) -> VChar:
+def vampire(custom_traits: dict[str, int]) -> VChar:
     """A dummy vampire with some custom traits."""
     vamp = tests.characters.gen_char("vampire")
     vamp.assign_traits(custom_traits)
@@ -29,7 +29,7 @@ def vampire(custom_traits) -> VChar:
 
 
 @pytest.mark.parametrize("category", list(VCharTrait.Type))
-def test_add_traits(category: str, empty_vampire: VChar, custom_traits: dict[str, int]):
+def test_add_traits(category: VCharTrait.Type, empty_vampire: VChar, custom_traits: dict[str, int]):
     """Add traits of different categories and test their values."""
     empty_vampire.assign_traits(custom_traits, category)
     sorted_traits = sorted(custom_traits.items(), key=lambda t: t[0].casefold())

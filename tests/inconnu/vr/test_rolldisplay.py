@@ -11,6 +11,7 @@ from beanie import PydanticObjectId
 from discord.ui import Button
 
 import inconnu
+import inconnu.vr.rolldisplay
 import services
 from ctx import AppCtx
 from inconnu.character.impairment import impairment_reminder
@@ -1116,7 +1117,7 @@ async def show(display: RollDisplay, update_channel=False) -> Screen:
     if update_channel:
         cast(AsyncMock, services.post_update).side_effect = post
 
-    def respond(ephemeral=False, **kwargs: Any):
+    def respond(ephemeral=False, **kwargs: Any) -> AsyncMock:
         if not ephemeral:
             screen.public.handle = original
             screen.public.record(**kwargs)

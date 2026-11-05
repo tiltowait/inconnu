@@ -184,7 +184,7 @@ async def test_dont_slake_deletes_menu(owner: discord.Member, character: VChar, 
 
 
 @patch("inconnu.reference.resonance", new_callable=AsyncMock)
-@patch("inconnu.misc.slake", new_callable=AsyncMock)
+@patch("inconnu.misc.perform_slake", new_callable=AsyncMock)
 async def test_slaking_keeps_result_after_failed_reroll(
     mock_slake: AsyncMock,
     _: AsyncMock,
@@ -202,6 +202,44 @@ async def test_slaking_keeps_result_after_failed_reroll(
 
     mock_slake.assert_awaited_once_with(inter, character, 1, edit_message=True)
     menu.delete.assert_not_awaited()
+
+
+@patch("inconnu.reference.resonance", new_callable=AsyncMock)
+@patch("inconnu.misc.perform_slake", new_callable=AsyncMock)
+async def test_slaking_shows_resonance(
+    _: AsyncMock,
+    mock_resonance: AsyncMock,
+    owner: discord.Member,
+    character: VChar,
+    outcome: Roll,
+):
+    """A successful slake generates the feed's Resonance."""
+    view, _menu = show_menu(owner, character, outcome)
+
+    await press(view, make_interaction(owner), 1)
+
+    mock_resonance.assert_awaited_once()
+
+
+@patch("inconnu.reference.resonance", new_callable=AsyncMock)
+@patch("inconnu.misc.perform_slake", new_callable=AsyncMock)
+async def test_menu_removed_when_hunger_already_gone(
+    mock_slake: AsyncMock,
+    mock_resonance: AsyncMock,
+    owner: discord.Member,
+    character: VChar,
+    outcome: Roll,
+):
+    """If Hunger hit 0 after the menu appeared, it goes away with no feeding."""
+    view, _menu = show_menu(owner, character, outcome)
+    character.hunger = 0
+    inter = make_interaction(owner)
+
+    await press(view, inter, 1)
+
+    inter.delete_original_response.assert_awaited_once()
+    mock_slake.assert_not_awaited()
+    mock_resonance.assert_not_awaited()
 
 
 async def test_timeout_after_menu_deleted(owner: discord.Member, character: VChar, outcome: Roll):

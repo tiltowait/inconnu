@@ -34,9 +34,9 @@ async def cmd_replace_respond(
     ctx: AppInvocation, content: str | None = None, **kwargs: Any
 ) -> discord.Interaction | discord.WebhookMessage:
     """Substitute command names for command mentions and respond."""
-    content = mention_commands(ctx.bot, content)
+    content = mention_commands(ctx.client, content)
 
     if (embed := kwargs.get("embed")) is not None:
-        mention_embed_commands(ctx.bot, embed)
+        mention_embed_commands(ctx.client, embed)
 
     return await ctx.respond(content, **kwargs)

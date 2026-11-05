@@ -7,7 +7,7 @@ import pytest
 import errors
 import ui
 from ctx import AppCtx
-from inconnu.misc.slake import slake
+from inconnu.misc.slake import perform_slake, slake
 from models.vchar import VChar
 
 
@@ -29,6 +29,19 @@ async def test_vamp_hunger_zero_fails(vamp: VChar, ctx: AppCtx):
 
     with pytest.raises(errors.CharacterError, match="has no Hunger"):
         await slake(ctx, vamp, 1)
+
+
+async def test_perform_slake_hunger_zero_responds(
+    vamp: VChar, ctx: AppCtx, mock_respond: AsyncMock
+):
+    """Without the command's filter, Hunger 0 is a message rather than an error."""
+    vamp.hunger = 0
+
+    await perform_slake(ctx, vamp, 1)
+
+    mock_respond.assert_awaited_once()
+    assert "has no Hunger" in mock_respond.call_args.args[0]
+    assert vamp.hunger == 0
 
 
 @pytest.mark.parametrize(

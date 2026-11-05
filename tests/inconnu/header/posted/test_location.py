@@ -1,6 +1,7 @@
 """Tests for inconnu.header.posted.location."""
 
 from collections.abc import AsyncGenerator
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
@@ -222,6 +223,115 @@ async def test_get_location_author_location_and_blush():
     msg = _make_header_message(author_name="The Elysium • Blushed")
     modal = LocationChangeModal(msg, webhook=wh, title="Edit")
     assert modal._get_location() == "The Elysium"
+
+
+async def test_get_location_without_heading(webhook: discord.Webhook):
+    """A header missing its author has no location to show."""
+    msg = _make_header_message()
+    modal = LocationChangeModal(msg, webhook=webhook, title="Edit")
+    assert modal._get_location() == ""
+
+
+@pytest.mark.parametrize("heading", ["Blushed", "Not Blushed"])
+async def test_get_location_author_blush_only(heading: str):
+    """Author mode: a lone Blush isn't a location."""
+    wh = AsyncMock(spec=discord.Webhook)
+    msg = _make_header_message(author_name=heading)
+    modal = LocationChangeModal(msg, webhook=wh, title="Edit")
+    assert modal._get_location() == ""
+
+
+async def test_callback_author_keeps_lone_blush(interaction: discord.Interaction):
+    """Author mode: adding a location keeps a lone Blush."""
+    wh = AsyncMock(spec=discord.Webhook)
+    msg = _make_header_message(author_name="Not Blushed")
+    modal = LocationChangeModal(msg, webhook=wh, title="Edit")
+    modal.children[0].value = "The Rack"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    assert msg.embeds[0].author.name == "The Rack • Not Blushed"
+
+
+@pytest.mark.parametrize("location", ["•", " • • "])
+async def test_callback_rejects_blank_location(location: str, interaction: discord.Interaction):
+    """A location of only bullets gets no response, which keeps the modal open."""
+    msg = _make_header_message(title="Nadea • Blushed")
+    modal = LocationChangeModal(msg, webhook=None, title="Edit")
+    modal.children[0].value = location
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    cast(AsyncMock, interaction.response.send_message).assert_not_awaited()
+    msg.edit.assert_not_awaited()
+    assert msg.embeds[0].title == "Nadea • Blushed"
+
+
+async def test_get_location_extra_bullets():
+    """Title mode: a location with bullets in it is shown whole."""
+    msg = _make_header_message(title="Nadea • Elysium • Roof • Blushed")
+    modal = LocationChangeModal(msg, webhook=None, title="Edit")
+    assert modal._get_location() == "Elysium • Roof"
+
+
+async def test_get_location_author_extra_bullets():
+    """Author mode: a location with bullets in it is shown whole."""
+    wh = AsyncMock(spec=discord.Webhook)
+    msg = _make_header_message(author_name="Elysium • Roof • Blushed")
+    modal = LocationChangeModal(msg, webhook=wh, title="Edit")
+    assert modal._get_location() == "Elysium • Roof"
+
+
+async def test_callback_replaces_location_with_bullets(interaction: discord.Interaction):
+    """Title mode: the whole old location is replaced, and nothing else."""
+    msg = _make_header_message(title="Nadea • Elysium • Roof • Blushed")
+    modal = LocationChangeModal(msg, webhook=None, title="Edit")
+    modal.children[0].value = "The Rack"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    assert msg.embeds[0].title == "Nadea • The Rack • Blushed"
+
+
+async def test_callback_author_replaces_location_with_bullets(interaction: discord.Interaction):
+    """Author mode: the whole old location is replaced, and nothing else."""
+    wh = AsyncMock(spec=discord.Webhook)
+    msg = _make_header_message(author_name="Elysium • Roof • Blushed")
+    modal = LocationChangeModal(msg, webhook=wh, title="Edit")
+    modal.children[0].value = "The Rack"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    assert msg.embeds[0].author.name == "The Rack • Blushed"
+
+
+async def test_callback_author_without_heading(interaction: discord.Interaction):
+    """Author mode: a missing heading becomes just the location."""
+    wh = AsyncMock(spec=discord.Webhook)
+    msg = _make_header_message()
+    modal = LocationChangeModal(msg, webhook=wh, title="Edit")
+    modal.children[0].value = "The Rack"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    assert msg.embeds[0].author.name == "The Rack"
+
+
+async def test_callback_title_with_empty_element(interaction: discord.Interaction):
+    """Title mode: an empty trailing element doesn't survive the edit."""
+    msg = _make_header_message(title="Nadea • ")
+    modal = LocationChangeModal(msg, webhook=None, title="Edit")
+    modal.children[0].value = "The Rack"
+    modal.children[1].value = ""
+
+    await modal.callback(interaction)
+
+    assert msg.embeds[0].title == "Nadea • The Rack"
 
 
 # --- callback tests (title mode, no webhook) ---

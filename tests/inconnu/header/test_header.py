@@ -1,8 +1,6 @@
-"""Tests for inconnu.header (header_title, blush_text)."""
+"""Tests for inconnu.header (header_title)."""
 
-from unittest.mock import MagicMock
-
-from inconnu.header import blush_text, header_title
+from inconnu.header import header_title
 
 # --- header_title ---
 
@@ -33,28 +31,3 @@ def test_no_fields():
 
 def test_none_at_edges():
     assert header_title(None, "Nadea", None) == "Nadea"
-
-
-# --- blush_text ---
-
-
-def _make_character(*, is_vampire: bool) -> MagicMock:
-    char = MagicMock()
-    char.is_vampire = is_vampire
-    return char
-
-
-def test_blush_active():
-    assert blush_text(_make_character(is_vampire=True), blush=1) == "Blushed"
-
-
-def test_blush_inactive():
-    assert blush_text(_make_character(is_vampire=True), blush=0) == "Not Blushed"
-
-
-def test_blush_na():
-    assert blush_text(_make_character(is_vampire=True), blush=-1) is None
-
-
-def test_blush_mortal():
-    assert blush_text(_make_character(is_vampire=False), blush=1) is None

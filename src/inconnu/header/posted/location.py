@@ -1,15 +1,19 @@
 """Edit location and temporary effects on a posted RP header."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import discord
 from loguru import logger
 
 import db
 from ctx import AppCtx, Channel
+from models.rpheader import BLUSHED, NOT_BLUSHED
+from utils.text import clean_text
 
 if TYPE_CHECKING:
     from bot import InconnuBot
+
+BLUSH_TEXT = (BLUSHED, NOT_BLUSHED)
 
 
 async def edit_location(ctx: AppCtx, message: discord.Message):
@@ -54,7 +58,9 @@ async def _resolve_webhook(
 class LocationChangeModal(discord.ui.Modal):
     """A modal for changing RP header location."""
 
-    def __init__(self, header: discord.Message, webhook: discord.Webhook | None, *args, **kwargs):
+    def __init__(
+        self, header: discord.Message, webhook: discord.Webhook | None, *args: Any, **kwargs: Any
+    ):
         super().__init__(*args, **kwargs)
         self.header = header
         self.webhook = webhook
@@ -78,60 +84,47 @@ class LocationChangeModal(discord.ui.Modal):
             )
         )
 
-    def _get_location(self):
+    def _heading_elements(self) -> list[str]:
+        """Split the heading. Some headers have a title; others use the author."""
+        embed = self.header.embeds[0]
+        heading = embed.title if self.updating_title else getattr(embed.author, "name", "")
+        return [element for element in (heading or "").split(" • ") if element]
+
+    def _location_span(self, elements: list[str]) -> slice:
+        """Find the location: everything between the character's name, which
+        only titles have, and the Blush, if any."""
+        start = 1 if self.updating_title else 0
+        stop = len(elements)
+        if elements and elements[-1] in BLUSH_TEXT:
+            stop -= 1
+        return slice(start, max(start, stop))
+
+    def _get_location(self) -> str:
         """Get the header's current location."""
-        if self.updating_title:
-            elements = self.header.embeds[0].title.split(" • ")
-        else:
-            elements = self.header.embeds[0].author.name.split(" • ")
-
-        if len(elements) == 1:
-            # Character name isn't given when the header is in the author
-            # field. If we're looking at the embed title, then, no location
-            # exists; otherwise, it's the first and only element.
-            return "" if self.updating_title else elements[0]
-        if len(elements) == 2:
-            if self.updating_title:
-                if elements[-1] in ("Blushed", "Not Blushed"):
-                    return ""
-                return elements[-1]
-
-            return elements[0]
-
-        # 3 elements; this could also be elements[1]
-        return elements[-2]
+        elements = self._heading_elements()
+        return " • ".join(elements[self._location_span(elements)])
 
     async def callback(self, interaction: discord.Interaction):
         """Update the RP header."""
-        location = " ".join(self.children[0].value.replace("•", "").split())
-        temp_effects = " ".join(self.children[1].value.split())
+        location = clean_text((self.children[0].value or "").replace("•", ""))
+        temp_effects = clean_text(self.children[1].value or "")
+
+        if not location:
+            # Not responding keeps the modal open, with the player's input intact
+            return
+
         embed = self.header.embeds[0]
 
-        # Some headers have a title; others use the author string
-        if self.updating_title:
-            logger.debug("EDIT HEADER: Embed has a title")
-            elements = embed.title.split(" • ")
-        else:
-            logger.debug("EDIT HEADER: Embed does not have a title")
-            elements = embed.author.name.split(" • ")
-
-        if self._get_location():
-            # We need to remove the old location
-            if self.updating_title:
-                del elements[1]
-            else:
-                del elements[0]
-
         # Generate the new heading
-        insertion_index = 1 if self.updating_title else 0
-        elements.insert(insertion_index, location)
+        elements = self._heading_elements()
+        elements[self._location_span(elements)] = [location]
         new_heading = " • ".join(elements)
 
         if self.updating_title:
             embed.title = new_heading
         else:
-            url = embed.author.url
-            icon_url = embed.author.icon_url
+            url = getattr(embed.author, "url", None)
+            icon_url = getattr(embed.author, "icon_url", None)
             embed.set_author(name=new_heading, url=url, icon_url=icon_url)
 
         embed.set_footer(text=temp_effects)

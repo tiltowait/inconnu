@@ -176,9 +176,11 @@ async def test_error_embed_with_reason(
     assert_not_reported(reporter)
 
 
-async def test_not_premium(reporter: ErrorReporter, ctx: AppCtx, mock_error: AsyncMock):
+async def test_not_premium(
+    reporter: ErrorReporter, bot: InconnuBot, ctx: AppCtx, mock_error: AsyncMock
+):
     """Non-patrons are told which command needs premium."""
-    cast(MagicMock, ctx.bot).cmd_mention.return_value = "</vr:1>"
+    cast(MagicMock, bot).cmd_mention.return_value = "</vr:1>"
     await reporter.report_error(ctx, errors.NotPremium())
 
     assert mock_error.await_args is not None
@@ -197,13 +199,14 @@ async def test_not_premium(reporter: ErrorReporter, ctx: AppCtx, mock_error: Asy
 )
 async def test_lockdown(
     reporter: ErrorReporter,
+    bot: InconnuBot,
     ctx: AppCtx,
     shutdown_in: timedelta,
     when: Callable[[datetime], str],
 ):
     """During lockdown, the user is told why and when the bot is going down."""
     shutdown_time = discord.utils.utcnow() + shutdown_in
-    cast(MagicMock, ctx.bot).lockdown = Lockdown(LockdownReason.UPDATE, shutdown_time)
+    cast(MagicMock, bot).lockdown = Lockdown(LockdownReason.UPDATE, shutdown_time)
     await reporter.report_error(ctx, errors.LockdownError())
 
     respond = cast(AsyncMock, ctx.respond)
@@ -213,6 +216,28 @@ async def test_lockdown(
     assert embed.description is not None
     assert f"going down for an update {when(shutdown_time)}." in embed.description
     assert respond.await_args.kwargs["ephemeral"] is True
+    assert_not_reported(reporter)
+
+
+async def test_lockdown_from_interaction(reporter: ErrorReporter, bot: InconnuBot):
+    """Views and modals can report lockdowns."""
+    inter = make_interaction(bot)
+    shutdown_time = discord.utils.utcnow() + timedelta(minutes=5)
+    cast(MagicMock, bot).lockdown = Lockdown(LockdownReason.UPDATE, shutdown_time)
+
+    await reporter.report_error(inter, errors.LockdownError())
+
+    cast(AsyncMock, inter.respond).assert_awaited_once()
+    assert_not_reported(reporter)
+
+
+async def test_not_owner_from_interaction(reporter: ErrorReporter, bot: InconnuBot):
+    """Views and modals can report owner checks."""
+    inter = make_interaction(bot)
+
+    await reporter.report_error(inter, commands.NotOwner())
+
+    cast(AsyncMock, inter.respond).assert_awaited_once()
     assert_not_reported(reporter)
 
 

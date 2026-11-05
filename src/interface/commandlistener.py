@@ -117,7 +117,7 @@ class CommandListener(commands.Cog):
         # They may have used an SPC, which doesn't count toward their characters
         try:
             character = await services.char_mgr.fetchone(ctx.guild, member, options["character"])
-        except errors.CharacterNotFoundError:
+        except errors.CharacterError:
             return
         if not character.is_pc:
             return

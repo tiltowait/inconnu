@@ -37,24 +37,11 @@ async def test_perform_slake_hunger_zero_responds(
     """Without the command's filter, Hunger 0 is a message rather than an error."""
     vamp.hunger = 0
 
-    assert await perform_slake(ctx, vamp, 1) is False
+    await perform_slake(ctx, vamp, 1)
 
     mock_respond.assert_awaited_once()
     assert "has no Hunger" in mock_respond.call_args.args[0]
     assert vamp.hunger == 0
-
-
-async def test_perform_slake_reports_success(
-    vamp: VChar,
-    ctx: AppCtx,
-    mock_char_save: AsyncMock,
-    mock_character_display: AsyncMock,
-    mock_common_report: AsyncMock,
-):
-    """Slaking any Hunger counts as success."""
-    vamp.hunger = 2
-
-    assert await perform_slake(ctx, vamp, 1) is True
 
 
 @pytest.mark.parametrize(

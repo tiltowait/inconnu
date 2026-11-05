@@ -30,17 +30,16 @@ async def slake(ctx: AppCtx, character: VChar, amount: int, **kwargs: Any):
     await perform_slake(ctx, character, amount, **kwargs)
 
 
-async def perform_slake(ctx: AppInvocation, character: VChar, amount: int, **kwargs: Any) -> bool:
-    """Slake a character's Hunger. Returns whether any was slaked."""
+async def perform_slake(ctx: AppInvocation, character: VChar, amount: int, **kwargs: Any):
+    """Slake a character's Hunger."""
     if not character.is_vampire:
         await ctx.respond("Only vampires need to slake Hunger!", ephemeral=True)
-        return False
+        return
 
     slaked = min(amount, character.hunger)
 
     if slaked == 0:
         await ctx.respond(f"**{character.name}** has no Hunger!", ephemeral=True)
-        return False
     else:
         old_hunger = character.hunger
         character.hunger -= slaked
@@ -72,4 +71,3 @@ async def perform_slake(ctx: AppInvocation, character: VChar, amount: int, **kwa
                 message=update,
             ),
         )
-        return True

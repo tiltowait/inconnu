@@ -313,11 +313,12 @@ class PostModal(discord.ui.Modal):
                     interaction.guild.name,
                     changelog_id,
                 )
-            except discord.HTTPException:
+            except discord.HTTPException as err:
                 logger.info(
-                    "POST: Changelog channel doesn't exist: {}: {}",
+                    "Unable to post changelog in {}: {} ({})",
                     interaction.guild.name,
                     changelog_id,
+                    err,
                 )
         else:
             logger.debug("POST: Changelog channel not set: {}", interaction.guild.name)

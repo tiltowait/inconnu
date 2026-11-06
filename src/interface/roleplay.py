@@ -287,7 +287,7 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
         """Mark Roleposts in the deleted channel."""
         logger.info("POST: Marking all Roleposts in {} as deleted", channel.name)
         await db.rp_posts.update_many(
-            {"channel": channel.id},
+            {"channel": channel.id, "deleted": False},
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
         )
 

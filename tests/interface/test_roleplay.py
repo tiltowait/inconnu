@@ -431,12 +431,13 @@ async def test_bulk_notice_failure_is_ignored(
 
 
 async def test_channel_delete_marks_its_roleposts(cog: RoleplayCog, mock_rp_posts: AsyncMock):
-    """Deleting a channel marks every Rolepost in it as deleted."""
+    """Deleting a channel marks its Roleposts as deleted, leaving any that already
+    were, so that their deletion dates stay accurate."""
     channel = MagicMock(spec=discord.TextChannel, id=4321)
     channel.name = "scene"
 
     await cog.on_guild_channel_delete(channel)
 
     query, update = mock_rp_posts.update_many.await_args.args
-    assert query == {"channel": 4321}
+    assert query == {"channel": 4321, "deleted": False}
     assert update["$set"]["deleted"] is True

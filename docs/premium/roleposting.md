@@ -71,7 +71,7 @@ Lists your tags, most-used first, with how many times you've used each. Select t
 
 ## /search
 
-Discord's search has trouble with Roleposts. In particular, `from:` doesn't work with them. `/search` finds your posts, or another player's.
+Discord's search has trouble with Roleposts. In particular, `from:` doesn't work with them. `/search` finds your posts, or another player's posts in channels you can see.
 
 > [!TIP]
 > `/search` **doesn't** require premium. Anyone can search a premium user's posts.

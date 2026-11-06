@@ -27,6 +27,7 @@ type SetResults = Callable[[list[dict[str, Any]]], None]
 
 GUILD_ID = 1000
 USER_ID = 2000
+VISIBLE_CHANNEL_ID = 3000
 
 
 @pytest.fixture(autouse=True)
@@ -43,7 +44,9 @@ def mock_avatars() -> Generator[None]:
 def rp_ctx() -> MockCtx:
     """A command context for the test user."""
     ctx = MagicMock(spec=AppCtx)
-    ctx.guild = MagicMock(spec=discord.Guild, id=GUILD_ID)
+    channel = MagicMock(spec=discord.TextChannel, id=VISIBLE_CHANNEL_ID)
+    channel.permissions_for.return_value = discord.Permissions(view_channel=True)
+    ctx.guild = MagicMock(spec=discord.Guild, id=GUILD_ID, channels=[channel])
     ctx.guild_id = GUILD_ID
     ctx.user = MagicMock(spec=discord.Member, id=USER_ID, display_name="Author")
     ctx.user.mention = f"<@{USER_ID}>"
@@ -83,7 +86,7 @@ def make_post() -> PostFactory:
         )
         defaults: dict[str, Any] = {
             "guild": GUILD_ID,
-            "channel": 3000,
+            "channel": VISIBLE_CHANNEL_ID,
             "user": USER_ID,
             "message_id": 4000,
             "url": AnyUrl("https://discord.com/channels/1000/3000/4000"),

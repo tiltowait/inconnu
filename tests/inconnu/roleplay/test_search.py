@@ -14,6 +14,7 @@ from pymongo import ASCENDING, DESCENDING
 from inconnu.roleplay.search import SortOrder, search
 from tests.inconnu.roleplay.conftest import (
     GUILD_ID,
+    VISIBLE_CHANNEL_ID,
     MockCtx,
     MockFind,
     PostFactory,
@@ -75,8 +76,47 @@ async def test_only_finds_authors_posts(
     """The search covers the author's undeleted posts on this server, up to 25."""
     await run_search(rp_ctx, author)
 
-    assert find.call_args.args[0] == {"deleted": False, "guild": GUILD_ID, "user": AUTHOR_ID}
+    assert find.call_args.args[0] == {
+        "deleted": False,
+        "guild": GUILD_ID,
+        "user": AUTHOR_ID,
+        "channel": {"$in": [VISIBLE_CHANNEL_ID]},
+    }
     find.return_value.limit.assert_called_once_with(25)
+
+
+async def test_hidden_channels_are_excluded(
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+):
+    """The search skips channels the invoker can't see, whoever wrote the post."""
+    hidden = MagicMock(spec=discord.TextChannel, id=VISIBLE_CHANNEL_ID + 1)
+    hidden.permissions_for.return_value = discord.Permissions(view_channel=False)
+    rp_ctx.guild.channels.append(hidden)
+
+    await run_search(rp_ctx, author)
+
+    assert find.call_args.args[0]["channel"] == {"$in": [VISIBLE_CHANNEL_ID]}
+    hidden.permissions_for.assert_called_once_with(rp_ctx.user)
+
+
+async def test_own_posts_ignore_channel_visibility(
+    rp_ctx: MockCtx, find: MockFind, show_error: AsyncMock
+):
+    """Users can find their own posts in channels they can no longer see."""
+    await run_search(rp_ctx, rp_ctx.user)
+
+    assert "channel" not in find.call_args.args[0]
+
+
+async def test_no_visible_channels_finds_nothing(
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+):
+    """An invoker who can't see any channels gets no results, rather than all of them."""
+    rp_ctx.guild.channels.clear()
+
+    await run_search(rp_ctx, author)
+
+    assert find.call_args.args[0]["channel"] == {"$in": []}
 
 
 async def test_needle_is_normalized(

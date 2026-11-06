@@ -3,7 +3,7 @@
 import re
 from datetime import date, datetime, time
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 import discord
 from discord.ext.pages import Paginator
@@ -39,7 +39,10 @@ async def search(
     sort_order: int,
 ):
     """Search Roleposts for a given string."""
-    query = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
+    query: dict[str, Any] = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
+    if user.id != ctx.user.id:
+        query["channel"] = {"$in": _visible_channels(ctx)}
+
     footer = []
     reverse_results = False
     sort_key: Any
@@ -144,6 +147,13 @@ async def search(
         err += "."
 
         await ui.embeds.error(ctx, err, title="Not found")
+
+
+def _visible_channels(ctx: AppCtx) -> list[int]:
+    """The IDs of the guild's channels the invoking user can see."""
+    guild = cast(discord.Guild, ctx.guild)
+    member = cast(discord.Member, ctx.user)
+    return [c.id for c in guild.channels if c.permissions_for(member).view_channel]
 
 
 def convert_dates(after: str | None, before: str | None) -> tuple[datetime | None, datetime | None]:

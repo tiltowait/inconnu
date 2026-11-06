@@ -182,7 +182,7 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
         summary: bool,
         sort_order: int,
     ):
-        """Search for a Rolepost. Displays up to 5 results."""
+        """Search for a Rolepost. Displays up to 25 results."""
         await inconnu.roleplay.search(
             ctx,
             user,

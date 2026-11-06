@@ -154,6 +154,22 @@ async def test_selection_shows_matching_posts(
     assert paginator.return_value.respond.await_args.kwargs["ephemeral"] is True
 
 
+async def test_selection_shows_newest_first(
+    interaction: MockInteraction,
+    find: MockFind,
+    make_post: PostFactory,
+    paginator: MockPaginator,
+):
+    """Tagged posts are sorted by date, with the newest first."""
+    find.return_value.__aiter__.return_value = [make_post()]
+    view = TagView([("tag", 1)])
+
+    with select_values("tag"):
+        await view.callback(interaction)
+
+    find.return_value.sort.assert_called_once_with("-date")
+
+
 async def test_multiple_tags_must_all_match(
     interaction: MockInteraction,
     find: MockFind,

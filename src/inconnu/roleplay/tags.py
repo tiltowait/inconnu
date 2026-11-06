@@ -122,7 +122,7 @@ class TagView(DisablingView):
         }
         pages = []
         footer = ("Search tag: " if len(selected) == 1 else "Search tags: ") + "; ".join(selected)
-        async for post in RPPost.find(query):
+        async for post in RPPost.find(query).sort("-date"):
             pages.append(inconnu.roleplay.post_embed(post, footer=footer))
 
         if pages:

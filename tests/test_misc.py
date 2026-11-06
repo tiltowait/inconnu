@@ -117,7 +117,12 @@ async def test_changelog():
         ("20231010", None, dt(2023, 10, 10), None, False),
         ("20231010", "20231110", dt(2023, 10, 10), dt(2023, 11, 10), False),
         ("20231010", "20230910", None, None, ValueError),  # Date mismatch
+        ("2023-10-10", "2023-11-10", dt(2023, 10, 10), dt(2023, 11, 10), False),
+        ("2023-10-10", "20231110", dt(2023, 10, 10), dt(2023, 11, 10), False),
+        ("2023-10-10", "2023-09-10", None, None, ValueError),  # Date mismatch
         ("Bad date", "20231010", None, None, SyntaxError),
+        ("2023-13-10", None, None, None, SyntaxError),  # No such month
+        ("2023-10-10T12:00", None, None, None, SyntaxError),
     ],
 )
 def test_convert_dates(

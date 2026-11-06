@@ -1,7 +1,7 @@
 """Post search functionality."""
 
 import re
-from datetime import datetime
+from datetime import date, datetime, time
 from enum import Enum
 from typing import Any
 
@@ -31,9 +31,9 @@ async def search(
     user: discord.Member,
     needle: str | None,
     character: str | None,
-    mentioning: discord.Member,
-    after: str,
-    before: str,
+    mentioning: discord.Member | None,
+    after: str | None,
+    before: str | None,
     ephemeral: bool,
     summary: bool,
     sort_order: int,
@@ -146,21 +146,21 @@ async def search(
         await ui.embeds.error(ctx, err, title="Not found")
 
 
-def convert_dates(after: str, before: str) -> tuple[datetime | None, datetime | None]:
+def convert_dates(after: str | None, before: str | None) -> tuple[datetime | None, datetime | None]:
     """Convert the before and after strings to proper (naive) datetimes.
 
     Raises:
         ValueError if before is after after.
-        ParserError if a datetime can't be inferred."""
+        SyntaxError if a date can't be parsed."""
 
     def convert_tzs(dt: str | None) -> datetime | None:
-        """Parse a YYYYMMDD string into a naive datetime."""
+        """Parse a YYYY-MM-DD or YYYYMMDD string into a naive datetime."""
         if dt is None:
             return None
         try:
-            return datetime.strptime(dt, "%Y%m%d")
+            return datetime.combine(date.fromisoformat(dt), time.min)
         except ValueError as err:
-            raise SyntaxError(f"Invalid date: `{dt}`.\nAccepted format: YYYYMMDD.") from err
+            raise SyntaxError(f"Invalid date: `{dt}`.\nAccepted format: YYYY-MM-DD.") from err
 
     after_dt = convert_tzs(after)
     before_dt = convert_tzs(before)

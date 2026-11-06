@@ -1,7 +1,7 @@
 """Rolepost models."""
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import discord
 from beanie import Document
@@ -22,6 +22,8 @@ class PostHistoryEntry(BaseModel):
 
 class RPPost(Document):
     """Represents a Rolepost with the ability to maintain deltas."""
+
+    MAX_TAG_LEN: ClassVar[int] = 100  # Tags must fit a Discord select option
 
     # Metadata
     date: datetime = Field(default_factory=lambda: datetime.now(UTC))

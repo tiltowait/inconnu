@@ -4,7 +4,7 @@ import discord
 
 import models
 from inconnu.roleplay.bookmarks import show_bookmarks
-from inconnu.roleplay.delete import delete_message_chain
+from inconnu.roleplay.delete import delete_message_chain, deletion_embed
 from inconnu.roleplay.post import create_post as post
 from inconnu.roleplay.post import edit_post
 from inconnu.roleplay.search import search
@@ -12,6 +12,7 @@ from inconnu.roleplay.tags import show_tags
 
 __all__ = (
     "delete_message_chain",
+    "deletion_embed",
     "edit_post",
     "post",
     "post_embed",

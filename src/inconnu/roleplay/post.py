@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 __HELP_URL = docs_url("premium/roleposting")
+POST_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=True)
 
 
 class PostModal(discord.ui.Modal):
@@ -105,7 +106,8 @@ class PostModal(discord.ui.Modal):
                 child.value for child in self.children[0 : PostModal.SECTIONS] if child.value
             ]
             return re_paginate(contents)
-        return re_paginate([self.children[0].value or ""])[0]
+        # The modal limits edits to one message, so there's nothing to paginate
+        return (self.children[0].value or "").strip()
 
     def _clean_title(self) -> str:
         """Clean the title."""
@@ -120,7 +122,7 @@ class PostModal(discord.ui.Modal):
         cleaned_tags = []
         for tag in tags:
             if cleaned := clean_text(tag):
-                cleaned_tags.append(cleaned)
+                cleaned_tags.append(cleaned[: RPPost.MAX_TAG_LEN].strip())
 
         return sorted(set(cleaned_tags))  # Make sure the tags are unique
 
@@ -135,6 +137,14 @@ class PostModal(discord.ui.Modal):
         """Edit an existing post."""
         new_content = self._clean_post_content()
         assert isinstance(new_content, str)  # Always str when editing
+        if not new_content:
+            await ui.embeds.error(
+                interaction,
+                "To remove your post, use `Post: Delete`.",
+                title="Your post can't be empty",
+            )
+            return
+
         post_to_changelog = False
 
         if new_content != self.post_to_edit.content:
@@ -173,6 +183,11 @@ class PostModal(discord.ui.Modal):
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new Rolepost."""
         assert interaction.user is not None
+        contents = self._clean_post_content()
+        if not contents:
+            await ui.embeds.error(interaction, "Your post can't be empty.", title="Nothing to post")
+            return
+
         # We need an interaction response, so make and delete this one
         await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
 
@@ -195,7 +210,6 @@ class PostModal(discord.ui.Modal):
         else:
             header_message = None
 
-        contents = self._clean_post_content()
         post_messages = []
         id_chain = []
         for page in contents:
@@ -203,6 +217,7 @@ class PostModal(discord.ui.Modal):
                 content=page,
                 username=self.character.name,
                 avatar_url=webhook_avatar,
+                allowed_mentions=POST_MENTIONS,
                 wait=True,
             )
             post_messages.append(msg)
@@ -219,6 +234,7 @@ class PostModal(discord.ui.Modal):
                 content=self.mentions,
                 username=self.character.name,
                 avatar_url=webhook_avatar,
+                allowed_mentions=POST_MENTIONS,
                 wait=True,
             )
             id_chain.append(mention_message.id)
@@ -297,11 +313,12 @@ class PostModal(discord.ui.Modal):
                     interaction.guild.name,
                     changelog_id,
                 )
-            except discord.HTTPException:
+            except discord.HTTPException as err:
                 logger.info(
-                    "POST: Changelog channel doesn't exist: {}: {}",
+                    "Unable to post changelog in {}: {} ({})",
                     interaction.guild.name,
                     changelog_id,
+                    err,
                 )
         else:
             logger.debug("POST: Changelog channel not set: {}", interaction.guild.name)

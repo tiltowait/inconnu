@@ -1,6 +1,6 @@
 """Discord command and interaction helpers."""
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from itertools import chain
 from typing import TYPE_CHECKING, Any
 
@@ -43,8 +43,14 @@ def command_options(interaction) -> str:
     return ", ".join(options) if options else "None"
 
 
+def _strip_pages(pages: Iterable[str]) -> list[str]:
+    """Strip the pages' surrounding whitespace, dropping any left empty."""
+    return [stripped for page in pages if (stripped := page.strip())]
+
+
 def re_paginate(strings: list[str], *, page_len=2000) -> list[str]:
-    """Adjusts the pages into the fewest number of <=2k pages possible.
+    """Adjusts the pages into the fewest number of <=2k pages possible. Text with
+    nothing but whitespace has no pages.
     It does so via three possible methods:
       1. Newlines
       2. Spaces
@@ -64,7 +70,7 @@ def re_paginate(strings: list[str], *, page_len=2000) -> list[str]:
     try:
         for line in lines:
             paginator.add_line(line)
-        return [page.strip() for page in paginator.pages]
+        return _strip_pages(paginator.pages)
     except RuntimeError:
         pass
 
@@ -75,13 +81,13 @@ def re_paginate(strings: list[str], *, page_len=2000) -> list[str]:
     try:
         for word in words:
             paginator.add_line(word)
-        return [page.strip() for page in paginator.pages]
+        return _strip_pages(paginator.pages)
     except RuntimeError:
         pass
 
     # Spaces failed; split by characters
     combined = "".join(strings)
-    return [combined[i : i + page_len].strip() for i in range(0, len(combined), page_len)]
+    return _strip_pages(combined[i : i + page_len] for i in range(0, len(combined), page_len))
 
 
 async def get_message(inter):
@@ -139,7 +145,8 @@ def raw_bulk_delete_handler(
     author_comparator=_no_author_match,
 ):
     """Handle bulk message deletion."""
-    raw_ids = payload.message_ids
+    # Every listener gets the same payload, so we can't change its IDs
+    raw_ids = set(payload.message_ids)
     write_ops = []
 
     for message in payload.cached_messages:

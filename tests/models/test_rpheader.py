@@ -50,3 +50,26 @@ def test_create_keeps_stored_location():
     vamp.header.location = "The Rack"
 
     assert create(vamp, None).location == "The Rack"
+
+
+def create_with_hunger(character: VChar, hunger: int | None) -> HeaderSubdoc:
+    """Create a header with only a Hunger override."""
+    options: dict[str, Any] = dict.fromkeys(("blush", "location", "merits", "flaws", "temp"))
+    return HeaderSubdoc.create(character, hunger=hunger, **options)
+
+
+@pytest.mark.parametrize("override,expected", [(None, 3), (0, 0), (5, 5)])
+def test_create_hunger_override(override: int | None, expected: int):
+    """A Hunger override replaces the character's Hunger, even if it's 0."""
+    vamp = make_vampire()
+    vamp.hunger = 3
+
+    assert create_with_hunger(vamp, override).hunger == expected
+
+
+def test_create_ignores_hunger_for_mortals():
+    """Mortals have no Hunger to override."""
+    mortal = gen_char("mortal")
+    mortal.id = PydanticObjectId()
+
+    assert create_with_hunger(mortal, 2).hunger is None

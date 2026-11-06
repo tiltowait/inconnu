@@ -249,6 +249,14 @@ async def test_lockdown_error_without_lockdown(reporter: ErrorReporter, ctx: App
     assert report_embed(reporter).title == "VR: LockdownError"
 
 
+async def test_webhook_error(reporter: ErrorReporter, ctx: AppCtx, mock_error: AsyncMock):
+    """A webhook problem tells the user what's wrong, and isn't reported as a bug."""
+    await reporter.report_error(ctx, errors.WebhookError("Inconnu needs a permission."))
+
+    mock_error.assert_awaited_once_with(ctx, "Inconnu needs a permission.", title="Webhook error")
+    assert_not_reported(reporter)
+
+
 async def test_partial_messageable(reporter: ErrorReporter, ctx: AppCtx):
     """Missing channel access asks the user to re-invite the bot."""
     error = AttributeError("'PartialMessageable' object has no attribute 'name'")

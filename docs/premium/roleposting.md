@@ -26,7 +26,7 @@ Opens a dialogue where you write your post: up to **8000 characters** across two
 | Option | Description | Notes |
 | --- | --- | --- |
 | `character` | The character to post as | |
-| `mentions` | Users, roles, and channels to mention | Start with `@` or `#` |
+| `mentions` | Users, roles, and channels to mention | Start with `@` or `#`. Roles show but don't ping |
 | `blush` | Is Blush of Life active? | This post only |
 | `hunger` | The vampire's Hunger | This post only |
 | `location` | Where the scene is taking place | This post only |
@@ -71,7 +71,7 @@ Lists your tags, most-used first, with how many times you've used each. Select t
 
 ## /search
 
-Discord's search has trouble with Roleposts. In particular, `from:` doesn't work with them. `/search` finds your posts, or another player's.
+Discord's search has trouble with Roleposts. In particular, `from:` doesn't work with them. `/search` finds your posts, or another player's posts in channels whose history you can read.
 
 > [!TIP]
 > `/search` **doesn't** require premium. Anyone can search a premium user's posts.

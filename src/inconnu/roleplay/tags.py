@@ -1,6 +1,6 @@
 """Tag display and selection."""
 
-from typing import cast
+from typing import Any, cast
 
 import discord
 from discord.ext.pages import Page, Paginator
@@ -96,7 +96,7 @@ def _create_page(ctx: AppCtx, tags: list[tuple[str, int]]) -> Page:
 class TagView(DisablingView):
     """A View for selecting and displaying tags."""
 
-    def __init__(self, tags: list[tuple[str, int]], *args, **kwargs):
+    def __init__(self, tags: list[tuple[str, int]], *args: Any, **kwargs: Any):
         super().__init__(timeout=600, *args, **kwargs)
 
         select = discord.ui.Select(
@@ -122,7 +122,7 @@ class TagView(DisablingView):
         }
         pages = []
         footer = ("Search tag: " if len(selected) == 1 else "Search tags: ") + "; ".join(selected)
-        async for post in RPPost.find(query):
+        async for post in RPPost.find(query).sort("-date"):
             pages.append(inconnu.roleplay.post_embed(post, footer=footer))
 
         if pages:

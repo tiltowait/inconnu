@@ -3,17 +3,18 @@
 from typing import Any
 
 import discord
+from loguru import logger
 
 import db
 import errors
 import ui
 from ctx import AppCtx
 from models import RPPost
+from utils.urls import post_url
 
 
 async def delete_message_chain(ctx: AppCtx, message: discord.Message):
     """Delete a Rolepost, its header, and its mentions."""
-    # Uses the general WebhookError handler
     try:
         webhook = await ctx.bot.prep_webhook(ctx.channel)
         rp_post = await _fetch_rp_post(ctx, webhook, message)
@@ -47,6 +48,24 @@ async def _fetch_rp_post(ctx: AppCtx, webhook: discord.Webhook, message: discord
     return rp_post
 
 
+def deletion_embed(post: RPPost) -> discord.Embed:
+    """The deletion channel's notice for a Rolepost."""
+    if post.id is None:
+        raise ValueError("Rolepost has not been saved")
+
+    return discord.Embed(
+        title="Post Deleted",
+        description=(
+            f"**Poster:** <@{post.user}>\n"
+            f"**Channel:** <#{post.channel}>\n"
+            f"**Content:**\n\n{post.content}"
+        ),
+        url=post_url(post.id),
+        color=discord.Color.red(),
+        timestamp=post.utc_date,
+    )
+
+
 class DeletionModal(discord.ui.Modal):
     """A modal that asks for confirmation before deleting the post chain."""
 
@@ -70,15 +89,25 @@ class DeletionModal(discord.ui.Modal):
         """Check the input."""
         if (self.children[0].value or "").lower() == "delete":
             await interaction.response.defer(ephemeral=True, invisible=False)
+            failed = False
             for msg_id in self.rp_post.id_chain:
                 try:
                     await self.webhook.delete_message(msg_id)
-                except discord.HTTPException, discord.Forbidden:
-                    # The only way an error should occur is if one of the message
-                    # chain was already deleted. We should have permission to
-                    # delete our own messages, so we can just ignore this error.
+                except discord.NotFound:
+                    # Someone else already deleted it
                     pass
-            await interaction.respond("Rolepost deleted!", delete_after=3)
+                except discord.HTTPException as err:
+                    logger.warning("Unable to delete Rolepost message {}: {}", msg_id, err)
+                    failed = True
+
+            if failed:
+                await ui.embeds.error(
+                    interaction,
+                    "Some of your post couldn't be deleted. Please try again.",
+                    title="Unable to delete post",
+                )
+            else:
+                await interaction.respond("Rolepost deleted!", delete_after=3)
 
         else:
             await ui.embeds.error(

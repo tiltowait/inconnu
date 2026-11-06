@@ -1,9 +1,9 @@
 """Post search functionality."""
 
 import re
-from datetime import datetime
+from datetime import date, datetime, time
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 import discord
 from discord.ext.pages import Paginator
@@ -31,15 +31,18 @@ async def search(
     user: discord.Member,
     needle: str | None,
     character: str | None,
-    mentioning: discord.Member,
-    after: str,
-    before: str,
+    mentioning: discord.Member | None,
+    after: str | None,
+    before: str | None,
     ephemeral: bool,
     summary: bool,
     sort_order: int,
 ):
     """Search Roleposts for a given string."""
-    query = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
+    query: dict[str, Any] = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
+    if user.id != ctx.user.id:
+        query["channel"] = {"$in": _visible_channels(ctx)}
+
     footer = []
     reverse_results = False
     sort_key: Any
@@ -76,7 +79,7 @@ async def search(
             logger.debug("RP SEARCH: Ignoring invalid character name")
     if mentioning is not None:
         query["mentions"] = mentioning.id
-        footer.append(f"Mentioning {user.display_name}")
+        footer.append(f"Mentioning {mentioning.display_name}")
 
     try:
         after_dt, before_dt = convert_dates(after, before)
@@ -128,10 +131,12 @@ async def search(
             await paginator.respond(ctx.interaction, ephemeral=ephemeral)
     else:
         # Construct the error message
-        err = f"No posts by {user.mention} found with the given search parameters:"
+        err = f"No posts by {user.mention} found"
         conditions = []
         if needle:
             conditions.append(f"* Matching `{needle}`")
+        if "header.char_name" in query:  # Invalid names aren't searched for
+            conditions.append(f"* As `{character}`")
         if mentioning is not None:
             conditions.append(f"* Mentioning {mentioning.mention}")
         if after:
@@ -140,27 +145,41 @@ async def search(
             conditions.append(f"* Before `{before}`")
 
         if conditions:
-            err += "\n" + "\n".join(conditions)
+            err += " with the given search parameters:\n" + "\n".join(conditions)
         err += "."
 
         await ui.embeds.error(ctx, err, title="Not found")
 
 
-def convert_dates(after: str, before: str) -> tuple[datetime | None, datetime | None]:
+def _visible_channels(ctx: AppCtx) -> list[int]:
+    """The IDs of the guild's channels whose past messages the invoking user can
+    read."""
+    guild = cast(discord.Guild, ctx.guild)
+    member = cast(discord.Member, ctx.user)
+
+    def can_read(channel: discord.abc.GuildChannel) -> bool:
+        """Whether the member can see the channel and its history."""
+        permissions = channel.permissions_for(member)
+        return permissions.view_channel and permissions.read_message_history
+
+    return [channel.id for channel in guild.channels if can_read(channel)]
+
+
+def convert_dates(after: str | None, before: str | None) -> tuple[datetime | None, datetime | None]:
     """Convert the before and after strings to proper (naive) datetimes.
 
     Raises:
         ValueError if before is after after.
-        ParserError if a datetime can't be inferred."""
+        SyntaxError if a date can't be parsed."""
 
     def convert_tzs(dt: str | None) -> datetime | None:
-        """Parse a YYYYMMDD string into a naive datetime."""
+        """Parse a YYYY-MM-DD or YYYYMMDD string into a naive datetime."""
         if dt is None:
             return None
         try:
-            return datetime.strptime(dt, "%Y%m%d")
+            return datetime.combine(date.fromisoformat(dt), time.min)
         except ValueError as err:
-            raise SyntaxError(f"Invalid date: `{dt}`.\nAccepted format: YYYYMMDD.") from err
+            raise SyntaxError(f"Invalid date: `{dt}`.\nAccepted format: YYYY-MM-DD.") from err
 
     after_dt = convert_tzs(after)
     before_dt = convert_tzs(before)

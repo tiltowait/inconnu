@@ -19,7 +19,7 @@ from inconnu.macros import macro_common
 from inconnu.misc import rouse
 from inconnu.roll import Roll
 from inconnu.vr import display_outcome, hidden_dice_allowed, perform_roll
-from models import ImpairmentCategory, VChar
+from models import BlushState, ImpairmentCategory, VChar
 from models.vchardocs import VCharMacro
 from services.haven import Haven
 from utils import get_avatar
@@ -149,7 +149,7 @@ async def roll(
             )
         elif macro.name.lower() == "bol":
             logger.info("VM: {}'s macro mimics Blush of Life", character.name)
-            character.set_blush(1)
+            character.set_blush(BlushState.ON)
             await character.save()
 
     except ValueError, SyntaxError:

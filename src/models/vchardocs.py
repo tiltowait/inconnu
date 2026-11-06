@@ -2,12 +2,20 @@
 
 import itertools
 from datetime import UTC, datetime
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 from typing import ClassVar, Literal, NamedTuple, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
 import errors
+
+
+class BlushState(IntEnum):
+    """A character's Blush of Life status."""
+
+    NA = -1
+    OFF = 0
+    ON = 1
 
 
 class VCharSplat(StrEnum):
@@ -30,7 +38,7 @@ class VCharProfile(BaseModel):
 class VCharHeader(BaseModel):
     """Information for the /header command."""
 
-    blush: int = Field(default=0)
+    blush: BlushState = BlushState.OFF
     location: str = ""
     merits: str = ""
     flaws: str = ""

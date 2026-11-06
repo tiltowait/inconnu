@@ -7,6 +7,7 @@ from beanie import PydanticObjectId
 from pydantic import BaseModel
 
 from errors import CharacterError
+from models.vchardocs import BlushState
 
 if TYPE_CHECKING:
     from models import VChar
@@ -30,7 +31,7 @@ class HeaderSubdoc(BaseModel):
     charid: PydanticObjectId
     char_name: str
 
-    blush: int
+    blush: BlushState
     hunger: int | None
     location: str
     merits: str
@@ -43,9 +44,13 @@ class HeaderSubdoc(BaseModel):
     @property
     def blush_str(self) -> str | None:
         """The Blush string, if applicable."""
-        if self.blush == -1:
-            return None
-        return BLUSHED if self.blush else NOT_BLUSHED
+        match self.blush:
+            case BlushState.ON:
+                return BLUSHED
+            case BlushState.OFF:
+                return NOT_BLUSHED
+            case BlushState.NA:
+                return None
 
     @property
     def base_title(self) -> str:

@@ -2,7 +2,7 @@
 
 import errors
 import inconnu
-from models import VChar
+from models import BlushState, VChar
 from services.haven import haven
 from utils.urls import docs_url
 
@@ -40,7 +40,7 @@ async def bol(ctx, character: VChar, ministry_alt):
         else:
             count = 1
 
-        character.set_blush(1)
+        character.set_blush(BlushState.ON)
         character.log("blush")
         await inconnu.misc.rouse(
             ctx, character, count, msg, character.humanity == 8, oblivion=False

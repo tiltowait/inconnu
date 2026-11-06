@@ -4,11 +4,13 @@ from models.impairment import IMPAIRMENT_DICE, Impairment, ImpairmentCategory, R
 from models.rpheader import HeaderSubdoc
 from models.rppost import RPPost
 from models.vchar import VChar
+from models.vchardocs import BlushState
 from models.vguild import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild
 from models.vuser import VUser
 
 __all__ = (
     "IMPAIRMENT_DICE",
+    "BlushState",
     "ExpPerms",
     "HeaderSubdoc",
     "HiddenDicePerms",

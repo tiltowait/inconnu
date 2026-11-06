@@ -1,6 +1,6 @@
 """Tag display and selection."""
 
-from typing import cast
+from typing import Any, cast
 
 import discord
 from discord.ext.pages import Page, Paginator
@@ -96,7 +96,7 @@ def _create_page(ctx: AppCtx, tags: list[tuple[str, int]]) -> Page:
 class TagView(DisablingView):
     """A View for selecting and displaying tags."""
 
-    def __init__(self, tags: list[tuple[str, int]], *args, **kwargs):
+    def __init__(self, tags: list[tuple[str, int]], *args: Any, **kwargs: Any):
         super().__init__(timeout=600, *args, **kwargs)
 
         select = discord.ui.Select(

@@ -210,6 +210,20 @@ def test_clean_tags_multiple_spaces_collapsed(mock_post_modal: MockPostModal):
     assert result == ["tag with spaces"]
 
 
+def test_clean_tags_truncates_long_tags(mock_post_modal: MockPostModal):
+    """Tags are cut to the length a select option can hold."""
+    mock_post_modal.children[-1].value = "a" * 128
+
+    assert PostModal._clean_tags(mock_post_modal) == ["a" * RPPost.MAX_TAG_LEN]
+
+
+def test_clean_tags_strips_truncated_tags(mock_post_modal: MockPostModal):
+    """Truncating a tag doesn't leave a trailing space."""
+    mock_post_modal.children[-1].value = "a" * 99 + " bc"
+
+    assert PostModal._clean_tags(mock_post_modal) == ["a" * 99]
+
+
 # Test _clean_post_content
 
 

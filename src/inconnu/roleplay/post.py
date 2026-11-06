@@ -121,7 +121,7 @@ class PostModal(discord.ui.Modal):
         cleaned_tags = []
         for tag in tags:
             if cleaned := clean_text(tag):
-                cleaned_tags.append(cleaned)
+                cleaned_tags.append(cleaned[: RPPost.MAX_TAG_LEN].strip())
 
         return sorted(set(cleaned_tags))  # Make sure the tags are unique
 

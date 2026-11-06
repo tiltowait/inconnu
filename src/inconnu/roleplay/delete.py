@@ -14,7 +14,6 @@ from utils.urls import post_url
 
 async def delete_message_chain(ctx: AppCtx, message: discord.Message):
     """Delete a Rolepost, its header, and its mentions."""
-    # Uses the general WebhookError handler
     try:
         webhook = await ctx.bot.prep_webhook(ctx.channel)
         rp_post = await _fetch_rp_post(ctx, webhook, message)

@@ -102,6 +102,8 @@ class ErrorReporter:
                 await self._report_lockdown(ctx, self.bot.lockdown)
             case errors.InvalidAttachment():
                 await ui.embeds.error(ctx, str(error), title="Invalid file")
+            case errors.WebhookError():
+                await ui.embeds.error(ctx, str(error), title="Webhook error")
             case discord.DiscordServerError():
                 # There's nothing we can do about these
                 logger.error("Discord server error detected")

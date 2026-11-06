@@ -221,7 +221,7 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
     # Listeners
 
     @commands.Cog.listener()
-    async def on_raw_bulk_message_delete(self, payload):
+    async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
         """Bulk mark Roleposts as deleted."""
         updates = raw_bulk_delete_handler(
             payload,
@@ -237,7 +237,7 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
             await db.rp_posts.bulk_write(updates)
 
     @commands.Cog.listener()
-    async def on_raw_message_delete(self, raw_message):
+    async def on_raw_message_delete(self, raw_message: discord.RawMessageDeleteEvent):
         """Mark a Rolepost as deleted and post a notice in the guild's deletion
         channel."""
         if (message := raw_message.cached_message) is not None:
@@ -262,7 +262,8 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
         )
         if post is not None:
             logger.debug("POST: Marked Rolepost as deleted")
-            deletion_id = await services.settings.deletion_channel(post["guild"])
+            guild = await self.bot.get_or_fetch_guild(post["guild"])
+            deletion_id = await services.settings.deletion_channel(guild) if guild else None
             if deletion_id:
                 channel = self.bot.get_partial_messageable(deletion_id)
 
@@ -303,7 +304,7 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
             logger.debug("POST: Deleted message is not a Rolepost")
 
     @commands.Cog.listener()
-    async def on_guild_channel_delete(self, channel):
+    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         """Mark Roleposts in the deleted channel."""
         logger.info("POST: Marking all Roleposts in {} as deleted", channel.name)
         await db.rp_posts.update_many(

@@ -1,16 +1,19 @@
 """Tests for inconnu/roleplay/delete.py."""
 
 from collections.abc import Generator
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
+from beanie import PydanticObjectId
 from pymongo.asynchronous.collection import AsyncCollection
 
 import db
-from inconnu.roleplay.delete import DeletionModal, delete_message_chain
+from inconnu.roleplay.delete import DeletionModal, delete_message_chain, deletion_embed
 from models import RPPost
 from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, PostFactory
+from utils.urls import post_url
 
 type MockFindOne = AsyncMock
 type MockHeaders = AsyncMock
@@ -183,6 +186,24 @@ async def test_other_users_post_rejected(
 
     assert "isn't your Rolepost" in str(show_error.call_args.args[1])
     rp_ctx.send_modal.assert_not_awaited()
+
+
+# Test deletion_embed
+
+
+def test_deletion_embed_shows_post(make_post: PostFactory):
+    """A notice has the post's author, channel, contents, date, and history link."""
+    post = make_post("The post content", user=1, channel=2)
+    post.id = PydanticObjectId()
+
+    embed = deletion_embed(post)
+
+    description = cast(str, embed.description)
+    assert "**Poster:** <@1>" in description
+    assert "**Channel:** <#2>" in description
+    assert description.endswith("The post content")
+    assert embed.url == post_url(post.id)
+    assert embed.timestamp == post.utc_date
 
 
 # Test DeletionModal

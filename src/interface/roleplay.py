@@ -1,9 +1,10 @@
 """Roleplay commands."""
 
-from datetime import UTC
-from typing import TYPE_CHECKING
+import asyncio
+from typing import TYPE_CHECKING, cast
 
 import discord
+from beanie import UpdateResponse
 from discord import option
 from discord.commands import OptionChoice, slash_command
 from discord.ext import commands
@@ -15,12 +16,15 @@ import inconnu
 import services
 from ctx import AppCtx
 from interface import CommandCog
+from models import RPPost
 from utils.decorators import premium
 from utils.discord_helpers import raw_bulk_delete_handler
-from utils.urls import docs_url, post_url
+from utils.urls import docs_url
 
 if TYPE_CHECKING:
     from bot import InconnuBot
+
+NOTICE_DELAY = 1  # Seconds
 
 
 class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCallIssue, reportGeneralTypeIssues]
@@ -222,7 +226,9 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
-        """Bulk mark Roleposts as deleted."""
+        """Bulk mark Roleposts as deleted and post notices in the guild's deletion
+        channel."""
+        message_ids = list(payload.message_ids)  # The handler discards from the set
         updates = raw_bulk_delete_handler(
             payload,
             self.bot,
@@ -235,6 +241,7 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
         if updates:
             logger.debug("POST: Marking {} potential Roleposts as deleted", len(updates))
             await db.rp_posts.bulk_write(updates)
+            await self._send_bulk_deletion_notice(payload, message_ids)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message: discord.RawMessageDeleteEvent):
@@ -256,50 +263,22 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
         # We can't rely on ensuring there's a webhook, so we fetch if it's a
         # bot message or a message not in the cache. Hopefully it isn't too
         # expensive ...
-        post = await db.rp_posts.find_one_and_update(
-            {"message_id": raw_message.message_id},
-            {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
+        post = cast(
+            RPPost | None,
+            await RPPost.find_one({"message_id": raw_message.message_id}).update(
+                {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
+                response_type=UpdateResponse.OLD_DOCUMENT,
+            ),
         )
         if post is not None:
             logger.debug("POST: Marked Rolepost as deleted")
-            guild = await self.bot.get_or_fetch_guild(post["guild"])
+            guild = await self.bot.get_or_fetch_guild(post.guild)
             deletion_id = await services.settings.deletion_channel(guild) if guild else None
             if deletion_id:
-                channel = self.bot.get_partial_messageable(deletion_id)
-
-                embed = discord.Embed(
-                    title="Post Deleted",
-                    description=(
-                        f"**Poster:** <@{post['user']}>\n"
-                        f"**Channel:** <#{post['channel']}>\n"
-                        "**Content:**\n\n" + post["content"]
-                    ),
-                    url=post_url(post["_id"]),
-                    color=discord.Color.red(),
-                )
-                embed.timestamp = post["date"].replace(tzinfo=UTC)
-
-                try:
-                    await channel.send(embed=embed)
-                    logger.info(
-                        "POST: Sent deletion notice to deletion at {}: {}",
-                        post["guild"],
-                        deletion_id,
-                    )
-                except discord.Forbidden:
-                    logger.info(
-                        "POST: Unable to send deletion notice to {}: {} (Missing permissions)",
-                        post["guild"],
-                        deletion_id,
-                    )
-                except discord.HTTPException:
-                    logger.info(
-                        "POST: Unable to send deletion notice to {}: {} (Channel not found)",
-                        post["guild"],
-                        deletion_id,
-                    )
+                embed = inconnu.roleplay.deletion_embed(post)
+                await self._send_deletion_notice(post.guild, deletion_id, embed)
             else:
-                logger.debug("POST: No deletion channel set on {}", post["guild"])
+                logger.debug("POST: No deletion channel set on {}", post.guild)
         else:
             logger.debug("POST: Deleted message is not a Rolepost")
 
@@ -311,6 +290,42 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
             {"channel": channel.id},
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
         )
+
+    # Helpers
+
+    async def _send_bulk_deletion_notice(
+        self, payload: discord.RawBulkMessageDeleteEvent, message_ids: list[int]
+    ):
+        """Post a notice for each deleted Rolepost to the guild's deletion channel,
+        spaced out so a big purge doesn't hit rate limits."""
+        if payload.guild_id is None:
+            return
+
+        guild = await self.bot.get_or_fetch_guild(payload.guild_id)
+        deletion_id = await services.settings.deletion_channel(guild) if guild else None
+        if deletion_id:
+            query = {"message_id": {"$in": message_ids}}
+            posts = await RPPost.find(query).sort("date").to_list()
+            for index, post in enumerate(posts):
+                if index > 0:
+                    await asyncio.sleep(NOTICE_DELAY)
+                embed = inconnu.roleplay.deletion_embed(post)
+                await self._send_deletion_notice(payload.guild_id, deletion_id, embed)
+
+    async def _send_deletion_notice(self, guild_id: int, channel_id: int, embed: discord.Embed):
+        """Send a notice to the deletion channel. A broken channel isn't an error
+        worth reporting, so failures are only logged."""
+        try:
+            await self.bot.get_partial_messageable(channel_id).send(embed=embed)
+            logger.info("Sent deletion notice to {}: {}", guild_id, channel_id)
+        except discord.Forbidden:
+            logger.info(
+                "Unable to send deletion notice to {}: {} (Missing permissions)",
+                guild_id,
+                channel_id,
+            )
+        except discord.HTTPException as err:
+            logger.info("Unable to send deletion notice to {}: {} ({})", guild_id, channel_id, err)
 
 
 def setup(bot: InconnuBot):

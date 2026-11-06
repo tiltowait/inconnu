@@ -9,6 +9,7 @@ import errors
 import ui
 from ctx import AppCtx
 from models import RPPost
+from utils.urls import post_url
 
 
 async def delete_message_chain(ctx: AppCtx, message: discord.Message):
@@ -45,6 +46,24 @@ async def _fetch_rp_post(ctx: AppCtx, webhook: discord.Webhook, message: discord
         raise ValueError("This isn't your Rolepost!")
 
     return rp_post
+
+
+def deletion_embed(post: RPPost) -> discord.Embed:
+    """The deletion channel's notice for a Rolepost."""
+    if post.id is None:
+        raise ValueError("Rolepost has not been saved")
+
+    return discord.Embed(
+        title="Post Deleted",
+        description=(
+            f"**Poster:** <@{post.user}>\n"
+            f"**Channel:** <#{post.channel}>\n"
+            f"**Content:**\n\n{post.content}"
+        ),
+        url=post_url(post.id),
+        color=discord.Color.red(),
+        timestamp=post.utc_date,
+    )
 
 
 class DeletionModal(discord.ui.Modal):

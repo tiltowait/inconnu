@@ -152,10 +152,17 @@ async def search(
 
 
 def _visible_channels(ctx: AppCtx) -> list[int]:
-    """The IDs of the guild's channels the invoking user can see."""
+    """The IDs of the guild's channels whose past messages the invoking user can
+    read."""
     guild = cast(discord.Guild, ctx.guild)
     member = cast(discord.Member, ctx.user)
-    return [c.id for c in guild.channels if c.permissions_for(member).view_channel]
+
+    def can_read(channel: discord.abc.GuildChannel) -> bool:
+        """Whether the member can see the channel and its history."""
+        permissions = channel.permissions_for(member)
+        return permissions.view_channel and permissions.read_message_history
+
+    return [channel.id for channel in guild.channels if can_read(channel)]
 
 
 def convert_dates(after: str | None, before: str | None) -> tuple[datetime | None, datetime | None]:

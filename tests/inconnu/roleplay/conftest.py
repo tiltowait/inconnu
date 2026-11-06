@@ -45,7 +45,9 @@ def rp_ctx() -> MockCtx:
     """A command context for the test user."""
     ctx = MagicMock(spec=AppCtx)
     channel = MagicMock(spec=discord.TextChannel, id=VISIBLE_CHANNEL_ID)
-    channel.permissions_for.return_value = discord.Permissions(view_channel=True)
+    channel.permissions_for.return_value = discord.Permissions(
+        view_channel=True, read_message_history=True
+    )
     ctx.guild = MagicMock(spec=discord.Guild, id=GUILD_ID, channels=[channel])
     ctx.guild_id = GUILD_ID
     ctx.user = MagicMock(spec=discord.Member, id=USER_ID, display_name="Author")

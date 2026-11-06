@@ -85,12 +85,22 @@ async def test_only_finds_authors_posts(
     find.return_value.limit.assert_called_once_with(25)
 
 
-async def test_hidden_channels_are_excluded(
-    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+@pytest.mark.parametrize(
+    "view_channel,read_message_history", [(False, True), (True, False), (False, False)]
+)
+async def test_unreadable_channels_are_excluded(
+    rp_ctx: MockCtx,
+    author: MockMember,
+    find: MockFind,
+    show_error: AsyncMock,
+    view_channel: bool,
+    read_message_history: bool,
 ):
-    """The search skips channels the invoker can't see, whoever wrote the post."""
+    """The search skips channels whose history the invoker can't read."""
     hidden = MagicMock(spec=discord.TextChannel, id=VISIBLE_CHANNEL_ID + 1)
-    hidden.permissions_for.return_value = discord.Permissions(view_channel=False)
+    hidden.permissions_for.return_value = discord.Permissions(
+        view_channel=view_channel, read_message_history=read_message_history
+    )
     rp_ctx.guild.channels.append(hidden)
 
     await run_search(rp_ctx, author)

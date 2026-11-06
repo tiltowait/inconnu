@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from bot import InconnuBot
 
 __HELP_URL = docs_url("premium/roleposting")
+POST_MENTIONS = discord.AllowedMentions(everyone=False, roles=False, users=True)
 
 
 class PostModal(discord.ui.Modal):
@@ -216,6 +217,7 @@ class PostModal(discord.ui.Modal):
                 content=page,
                 username=self.character.name,
                 avatar_url=webhook_avatar,
+                allowed_mentions=POST_MENTIONS,
                 wait=True,
             )
             post_messages.append(msg)
@@ -232,6 +234,7 @@ class PostModal(discord.ui.Modal):
                 content=self.mentions,
                 username=self.character.name,
                 avatar_url=webhook_avatar,
+                allowed_mentions=POST_MENTIONS,
                 wait=True,
             )
             id_chain.append(mention_message.id)

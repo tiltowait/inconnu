@@ -10,7 +10,7 @@ import services
 from bot import InconnuBot
 from ctx import AppCtx
 from inconnu.roleplay.post import PostModal, edit_post
-from models import RPPost
+from models import HeaderSubdoc, RPPost, VChar
 
 type MockPostModal = MagicMock
 
@@ -262,6 +262,36 @@ async def test_empty_post_rejected(mock_post_modal: MockPostModal):
     show_error.assert_awaited_once()
     interaction.response.send_message.assert_not_awaited()
     mock_post_modal.bot.prep_webhook.assert_not_called()
+
+
+async def test_new_post_only_pings_users(mock_post_modal: MockPostModal):
+    """Every message in a post may ping users, but not roles or @everyone."""
+    webhook = AsyncMock(spec=discord.Webhook)
+    mock_post_modal.bot = MagicMock(spec=InconnuBot)
+    mock_post_modal.bot.prep_webhook = AsyncMock(return_value=webhook)
+    mock_post_modal.character = MagicMock(spec=VChar)
+    mock_post_modal.header = MagicMock(spec=HeaderSubdoc)
+    mock_post_modal.show_header = False
+    mock_post_modal.mentions = "<@1> <@&2>"
+    mock_post_modal._clean_post_content.return_value = ["The post", "Its second page"]
+    mock_post_modal._clean_tags.return_value = []
+    mock_post_modal._clean_title.return_value = ""
+    interaction = AsyncMock(spec=discord.Interaction)
+    interaction.response = AsyncMock(spec=discord.InteractionResponse)
+    interaction.user = MagicMock(spec=discord.Member)
+
+    with (
+        patch.object(RPPost, "new", return_value=AsyncMock(spec=RPPost)),
+        patch("inconnu.roleplay.post.get_avatar", return_value="https://example.com/a.png"),
+    ):
+        await PostModal._new_rp_post(mock_post_modal, interaction)
+
+    assert webhook.send.await_count == 3
+    for call in webhook.send.await_args_list:
+        allowed = call.kwargs["allowed_mentions"]
+        assert allowed.users is True
+        assert allowed.roles is False
+        assert allowed.everyone is False
 
 
 # Test _edit_rp_post

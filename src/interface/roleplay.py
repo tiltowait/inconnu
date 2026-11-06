@@ -228,7 +228,6 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
     async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
         """Bulk mark Roleposts as deleted and post notices in the guild's deletion
         channel."""
-        message_ids = list(payload.message_ids)  # The handler discards from the set
         updates = raw_bulk_delete_handler(
             payload,
             self.bot,
@@ -241,7 +240,7 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
         if updates:
             logger.debug("POST: Marking {} potential Roleposts as deleted", len(updates))
             await db.rp_posts.bulk_write(updates)
-            await self._send_bulk_deletion_notice(payload, message_ids)
+            await self._send_bulk_deletion_notice(payload)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message: discord.RawMessageDeleteEvent):
@@ -293,9 +292,7 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
 
     # Helpers
 
-    async def _send_bulk_deletion_notice(
-        self, payload: discord.RawBulkMessageDeleteEvent, message_ids: list[int]
-    ):
+    async def _send_bulk_deletion_notice(self, payload: discord.RawBulkMessageDeleteEvent):
         """Post a notice for each deleted Rolepost to the guild's deletion channel,
         spaced out so a big purge doesn't hit rate limits."""
         if payload.guild_id is None:
@@ -304,7 +301,7 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
         guild = await self.bot.get_or_fetch_guild(payload.guild_id)
         deletion_id = await services.settings.deletion_channel(guild) if guild else None
         if deletion_id:
-            query = {"message_id": {"$in": message_ids}}
+            query = {"message_id": {"$in": list(payload.message_ids)}}
             posts = await RPPost.find(query).sort("date").to_list()
             for index, post in enumerate(posts):
                 if index > 0:

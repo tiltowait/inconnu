@@ -16,6 +16,7 @@ from interface.roleplay import RoleplayCog
 from models import RPPost, VGuild
 from models.rpheader import DamageSubdoc, HeaderSubdoc
 from services.webhooks import WebhookCache
+from utils.discord_helpers import raw_bulk_delete_handler
 
 type MockBot = MagicMock
 type MockChannel = AsyncMock
@@ -348,6 +349,26 @@ async def test_bulk_delete_sends_spaced_notices(
         "Newest",
     ]
     assert sleep.await_args_list == [call(roleplay_module.NOTICE_DELAY)] * 2
+
+
+async def test_bulk_delete_after_another_listener(
+    cog: RoleplayCog,
+    mock_bot: MockBot,
+    deletion_channel: MockChannel,
+    mock_rp_posts: AsyncMock,
+    save_post: PostSaver,
+    deletion_guild: VGuild,
+):
+    """Cogs share the payload, so one that handles it first can't cost a cached post
+    its notice."""
+    await save_post(1)
+    payload = bulk_event(cached_message(1, WEBHOOK_ID, webhook_id=WEBHOOK_ID), ids={1})
+
+    raw_bulk_delete_handler(payload, mock_bot, lambda id: id)
+    await cog.on_raw_bulk_message_delete(payload)
+
+    assert payload.message_ids == {1}
+    deletion_channel.send.assert_awaited_once()
 
 
 async def test_bulk_delete_of_one_post_has_no_delay(

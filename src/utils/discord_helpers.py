@@ -145,7 +145,8 @@ def raw_bulk_delete_handler(
     author_comparator=_no_author_match,
 ):
     """Handle bulk message deletion."""
-    raw_ids = payload.message_ids
+    # Every listener gets the same payload, so we can't change its IDs
+    raw_ids = set(payload.message_ids)
     write_ops = []
 
     for message in payload.cached_messages:

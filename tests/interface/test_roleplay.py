@@ -448,6 +448,31 @@ async def test_bulk_notice_failure_is_ignored(
     deletion_channel.send.assert_awaited_once()
 
 
+@pytest.mark.parametrize(
+    "error,attempts",
+    [(discord.Forbidden, 1), (discord.NotFound, 1), (discord.HTTPException, 3)],
+)
+async def test_bulk_notices_stop_on_broken_channel(
+    cog: RoleplayCog,
+    deletion_channel: MockChannel,
+    mock_rp_posts: AsyncMock,
+    save_post: PostSaver,
+    deletion_guild: VGuild,
+    error: type[discord.HTTPException],
+    attempts: int,
+):
+    """A channel that's gone or off limits ends the notices, but a failure that may
+    pass doesn't."""
+    for message_id in (1, 2, 3):
+        await save_post(message_id)
+    deletion_channel.send.side_effect = http_error(error)
+
+    with patch.object(roleplay_module.asyncio, "sleep", new_callable=AsyncMock):
+        await cog.on_raw_bulk_message_delete(bulk_event(ids={1, 2, 3}))
+
+    assert deletion_channel.send.await_count == attempts
+
+
 # Test on_guild_channel_delete
 
 

@@ -307,22 +307,25 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
                 if index > 0:
                     await asyncio.sleep(NOTICE_DELAY)
                 embed = inconnu.roleplay.deletion_embed(post)
-                await self._send_deletion_notice(payload.guild_id, deletion_id, embed)
+                if not await self._send_deletion_notice(payload.guild_id, deletion_id, embed):
+                    break
 
-    async def _send_deletion_notice(self, guild_id: int, channel_id: int, embed: discord.Embed):
+    async def _send_deletion_notice(
+        self, guild_id: int, channel_id: int, embed: discord.Embed
+    ) -> bool:
         """Send a notice to the deletion channel. A broken channel isn't an error
-        worth reporting, so failures are only logged."""
+        worth reporting, so failures are only logged. Returns False if the channel
+        can't take any more notices."""
         try:
             await self.bot.get_partial_messageable(channel_id).send(embed=embed)
             logger.info("Sent deletion notice to {}: {}", guild_id, channel_id)
-        except discord.Forbidden:
-            logger.info(
-                "Unable to send deletion notice to {}: {} (Missing permissions)",
-                guild_id,
-                channel_id,
-            )
+        except (discord.Forbidden, discord.NotFound) as err:
+            logger.info("Unable to use deletion channel {}: {} ({})", guild_id, channel_id, err)
+            return False
         except discord.HTTPException as err:
             logger.info("Unable to send deletion notice to {}: {} ({})", guild_id, channel_id, err)
+
+        return True
 
 
 def setup(bot: InconnuBot):

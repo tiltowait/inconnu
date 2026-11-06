@@ -76,7 +76,7 @@ async def search(
             logger.debug("RP SEARCH: Ignoring invalid character name")
     if mentioning is not None:
         query["mentions"] = mentioning.id
-        footer.append(f"Mentioning {user.display_name}")
+        footer.append(f"Mentioning {mentioning.display_name}")
 
     try:
         after_dt, before_dt = convert_dates(after, before)

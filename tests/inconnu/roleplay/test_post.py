@@ -7,6 +7,7 @@ import pytest
 
 import errors
 import services
+from bot import InconnuBot
 from ctx import AppCtx
 from inconnu.roleplay.post import PostModal, edit_post
 from models import RPPost
@@ -207,6 +208,52 @@ def test_clean_tags_multiple_spaces_collapsed(mock_post_modal: MockPostModal):
     result = PostModal._clean_tags(mock_post_modal)
 
     assert result == ["tag with spaces"]
+
+
+# Test _clean_post_content
+
+
+@pytest.mark.parametrize("length", [1997, 1998, 1999, 2000])
+def test_clean_post_content_keeps_full_edit(mock_post_modal: MockPostModal, length: int):
+    """An edit that fits the modal keeps all its text, however it's split into lines."""
+    text = "\n".join(["x" * 99] * 19)
+    text += "\n" + "y" * (length - len(text) - 1)
+    mock_post_modal.post_to_edit = MagicMock(spec=RPPost)
+    mock_post_modal.children[0].value = text
+
+    assert PostModal._clean_post_content(mock_post_modal) == text
+
+
+def test_clean_post_content_strips_edit(mock_post_modal: MockPostModal):
+    """An edit loses its surrounding whitespace, but not its paragraphs."""
+    mock_post_modal.post_to_edit = MagicMock(spec=RPPost)
+    mock_post_modal.children[0].value = "  First\n\nSecond\n"
+
+    assert PostModal._clean_post_content(mock_post_modal) == "First\n\nSecond"
+
+
+# Test _edit_rp_post
+
+
+async def test_empty_edit_rejected(mock_post_modal: MockPostModal):
+    """An edit with no content points to Post: Delete and changes nothing."""
+    post = AsyncMock(spec=RPPost)
+    mock_post_modal.post_to_edit = post
+    mock_post_modal.bot = MagicMock(spec=InconnuBot)
+    mock_post_modal.children[0].value = " \n "
+    mock_post_modal._clean_post_content.side_effect = lambda: PostModal._clean_post_content(
+        mock_post_modal
+    )
+    interaction = AsyncMock(spec=discord.Interaction)
+
+    with patch("ui.embeds.error", new_callable=AsyncMock) as show_error:
+        await PostModal._edit_rp_post(mock_post_modal, interaction)
+
+    show_error.assert_awaited_once()
+    assert "`Post: Delete`" in show_error.call_args.args[1]
+    mock_post_modal.bot.prep_webhook.assert_not_called()
+    post.edit_post.assert_not_called()
+    post.save.assert_not_awaited()
 
 
 # Test edit_post

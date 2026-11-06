@@ -105,7 +105,8 @@ class PostModal(discord.ui.Modal):
                 child.value for child in self.children[0 : PostModal.SECTIONS] if child.value
             ]
             return re_paginate(contents)
-        return re_paginate([self.children[0].value or ""])[0]
+        # The modal limits edits to one message, so there's nothing to paginate
+        return (self.children[0].value or "").strip()
 
     def _clean_title(self) -> str:
         """Clean the title."""
@@ -135,6 +136,14 @@ class PostModal(discord.ui.Modal):
         """Edit an existing post."""
         new_content = self._clean_post_content()
         assert isinstance(new_content, str)  # Always str when editing
+        if not new_content:
+            await ui.embeds.error(
+                interaction,
+                "To remove your post, use `Post: Delete`.",
+                title="Your post can't be empty",
+            )
+            return
+
         post_to_changelog = False
 
         if new_content != self.post_to_edit.content:

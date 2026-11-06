@@ -77,7 +77,7 @@ class HeaderSubdoc(BaseModel):
         header.temp = kwargs["temp"] or header.temp
 
         if character.is_vampire:
-            hunger = kwargs.pop("hunger") or character.hunger
+            hunger = character.hunger if kwargs["hunger"] is None else kwargs["hunger"]
         else:
             hunger = None
 

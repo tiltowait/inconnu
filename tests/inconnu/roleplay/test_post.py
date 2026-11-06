@@ -232,6 +232,24 @@ def test_clean_post_content_strips_edit(mock_post_modal: MockPostModal):
     assert PostModal._clean_post_content(mock_post_modal) == "First\n\nSecond"
 
 
+# Test _new_rp_post
+
+
+async def test_empty_post_rejected(mock_post_modal: MockPostModal):
+    """A post with no content shows an error and posts nothing."""
+    mock_post_modal.bot = MagicMock(spec=InconnuBot)
+    mock_post_modal._clean_post_content.return_value = []
+    interaction = AsyncMock(spec=discord.Interaction)
+    interaction.response = AsyncMock(spec=discord.InteractionResponse)
+
+    with patch("ui.embeds.error", new_callable=AsyncMock) as show_error:
+        await PostModal._new_rp_post(mock_post_modal, interaction)
+
+    show_error.assert_awaited_once()
+    interaction.response.send_message.assert_not_awaited()
+    mock_post_modal.bot.prep_webhook.assert_not_called()
+
+
 # Test _edit_rp_post
 
 

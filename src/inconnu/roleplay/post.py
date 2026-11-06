@@ -182,6 +182,11 @@ class PostModal(discord.ui.Modal):
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new Rolepost."""
         assert interaction.user is not None
+        contents = self._clean_post_content()
+        if not contents:
+            await ui.embeds.error(interaction, "Your post can't be empty.", title="Nothing to post")
+            return
+
         # We need an interaction response, so make and delete this one
         await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
 
@@ -204,7 +209,6 @@ class PostModal(discord.ui.Modal):
         else:
             header_message = None
 
-        contents = self._clean_post_content()
         post_messages = []
         id_chain = []
         for page in contents:

@@ -76,6 +76,20 @@ def test_re_paginate_fallback():
     assert "".join(pages) == full_str
 
 
+def test_re_paginate_drops_empty_pages():
+    """A trailing page with nothing on it is dropped."""
+    text = "\n".join(["x" * 99] * 19) + "\n" + "y" * 98
+
+    assert len(text) == 1998
+    assert re_paginate([text]) == [text]
+
+
+@pytest.mark.parametrize("text", ["   ", "\n\n", " \n "])
+def test_re_paginate_whitespace_has_no_pages(text: str):
+    """Text with nothing but whitespace has no pages."""
+    assert re_paginate([text]) == []
+
+
 def test_re_paginate_preserves_newlines():
     """Ensure re_paginate() preserves newline counts."""
     text = "one\ntwo\n\nthree\nfour"

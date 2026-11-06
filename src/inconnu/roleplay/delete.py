@@ -3,6 +3,7 @@
 from typing import Any
 
 import discord
+from loguru import logger
 
 import db
 import errors
@@ -88,15 +89,25 @@ class DeletionModal(discord.ui.Modal):
         """Check the input."""
         if (self.children[0].value or "").lower() == "delete":
             await interaction.response.defer(ephemeral=True, invisible=False)
+            failed = False
             for msg_id in self.rp_post.id_chain:
                 try:
                     await self.webhook.delete_message(msg_id)
-                except discord.HTTPException, discord.Forbidden:
-                    # The only way an error should occur is if one of the message
-                    # chain was already deleted. We should have permission to
-                    # delete our own messages, so we can just ignore this error.
+                except discord.NotFound:
+                    # Someone else already deleted it
                     pass
-            await interaction.respond("Rolepost deleted!", delete_after=3)
+                except discord.HTTPException as err:
+                    logger.warning("Unable to delete Rolepost message {}: {}", msg_id, err)
+                    failed = True
+
+            if failed:
+                await ui.embeds.error(
+                    interaction,
+                    "Some of your post couldn't be deleted. Please try again.",
+                    title="Unable to delete post",
+                )
+            else:
+                await interaction.respond("Rolepost deleted!", delete_after=3)
 
         else:
             await ui.embeds.error(

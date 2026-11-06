@@ -66,9 +66,9 @@ def interaction() -> MockInteraction:
     return mock
 
 
-def http_error() -> discord.HTTPException:
-    """A generic Discord failure."""
-    return discord.HTTPException(MagicMock(status=404, reason="Not found"), "Failed")
+def http_error[E: discord.HTTPException](cls: type[E]) -> E:
+    """A Discord failure of the given type."""
+    return cls(MagicMock(status=500, reason="Error"), "Failed")
 
 
 # Test delete_message_chain
@@ -227,17 +227,38 @@ async def test_confirmation_deletes_chain(
     assert interaction.respond.await_args.args[0] == "Rolepost deleted!"
 
 
-async def test_missing_message_doesnt_stop_deletion(
+async def test_missing_message_counts_as_deleted(
     webhook: MockWebhook, interaction: MockInteraction, make_post: PostFactory
 ):
-    """A message that's already gone doesn't stop the rest being deleted."""
-    webhook.delete_message.side_effect = [http_error(), None]
+    """A message that's already gone isn't a failure."""
+    webhook.delete_message.side_effect = [http_error(discord.NotFound), None]
     modal = DeletionModal(webhook, make_post(id_chain=[1, 2]))
     modal.children[0].value = "DELETE"
 
     await modal.callback(interaction)
 
     assert webhook.delete_message.await_count == 2
+    assert interaction.respond.await_args.args[0] == "Rolepost deleted!"
+
+
+@pytest.mark.parametrize("error", [discord.Forbidden, discord.HTTPException])
+async def test_failed_deletion_is_reported(
+    webhook: MockWebhook,
+    interaction: MockInteraction,
+    make_post: PostFactory,
+    show_error: AsyncMock,
+    error: type[discord.HTTPException],
+):
+    """A message that can't be deleted doesn't stop the rest, and the user is told."""
+    webhook.delete_message.side_effect = [http_error(error), None]
+    modal = DeletionModal(webhook, make_post(id_chain=[1, 2]))
+    modal.children[0].value = "DELETE"
+
+    await modal.callback(interaction)
+
+    assert webhook.delete_message.await_count == 2
+    assert show_error.call_args.kwargs["title"] == "Unable to delete post"
+    interaction.respond.assert_not_awaited()
 
 
 async def test_wrong_confirmation_deletes_nothing(

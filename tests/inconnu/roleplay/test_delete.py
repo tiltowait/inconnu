@@ -4,6 +4,7 @@ from collections.abc import Generator
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import discord
 import pytest
 from beanie import PydanticObjectId
@@ -68,7 +69,7 @@ def interaction() -> MockInteraction:
 
 def http_error[E: discord.HTTPException](cls: type[E]) -> E:
     """A Discord failure of the given type."""
-    return cls(MagicMock(status=500, reason="Error"), "Failed")
+    return cls(MagicMock(spec=aiohttp.ClientResponse, status=500, reason="Error"), "Failed")
 
 
 # Test delete_message_chain

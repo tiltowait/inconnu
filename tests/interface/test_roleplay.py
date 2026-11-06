@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
+import aiohttp
 import discord
 import pytest
 from beanie import PydanticObjectId
@@ -127,7 +128,7 @@ def cached_message(message_id: int, author_id: int, webhook_id: int | None) -> M
 
 def http_error[E: discord.HTTPException](cls: type[E]) -> E:
     """A Discord failure of the given type."""
-    return cls(MagicMock(status=500, reason="Error"), "Failed")
+    return cls(MagicMock(spec=aiohttp.ClientResponse, status=500, reason="Error"), "Failed")
 
 
 def bulk_event(*cached: MockMessage, ids: set[int]) -> discord.RawBulkMessageDeleteEvent:

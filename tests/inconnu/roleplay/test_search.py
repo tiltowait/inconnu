@@ -63,7 +63,6 @@ def mentioned() -> MockMember:
 def paginator() -> Generator[MockPaginator]:
     """The search results paginator class."""
     with patch("inconnu.roleplay.search.Paginator", autospec=Paginator) as mock:
-        mock.return_value.respond = AsyncMock()
         yield mock
 
 

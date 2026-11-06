@@ -5,6 +5,7 @@ from collections.abc import Generator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import discord
 import pytest
 from beanie import PydanticObjectId
@@ -33,7 +34,7 @@ def mock_post_modal() -> MockPostModal:
     modal = MagicMock(spec=PostModal)
     # PostModal has children: [message_field, ..., title_field, tags_field]
     # We care about the last one (index -1) for tags
-    modal.children = [MagicMock(), MagicMock(), MagicMock()]
+    modal.children = [MagicMock(spec=discord.ui.InputText) for _ in range(3)]
     return modal
 
 
@@ -112,7 +113,7 @@ def changelog(interaction: MockInteraction) -> Generator[MockChangelog]:
 
 def http_error[E: discord.HTTPException](cls: type[E]) -> E:
     """A Discord failure of the given type."""
-    return cls(MagicMock(status=500, reason="Error"), "Failed")
+    return cls(MagicMock(spec=aiohttp.ClientResponse, status=500, reason="Error"), "Failed")
 
 
 # Test _clean_tags

@@ -44,7 +44,6 @@ def select_values(*values: str):
 def paginator() -> Generator[MockPaginator]:
     """The tags paginator class."""
     with patch("inconnu.roleplay.tags.Paginator", autospec=Paginator) as mock:
-        mock.return_value.respond = AsyncMock()
         yield mock
 
 

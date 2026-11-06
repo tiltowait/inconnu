@@ -32,7 +32,6 @@ def bookmark(title="A bookmark") -> dict[str, Any]:
 def paginator() -> Generator[MockPaginator]:
     """The bookmarks paginator class."""
     with patch("inconnu.roleplay.bookmarks.Paginator", autospec=Paginator) as mock:
-        mock.return_value.respond = AsyncMock()
         yield mock
 
 

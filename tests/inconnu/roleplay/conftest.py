@@ -55,8 +55,7 @@ def rp_ctx() -> MockCtx:
     ctx.bot = MagicMock(spec=InconnuBot)
     ctx.bot.cmd_mention.return_value = "</post:1>"
     ctx.interaction = AsyncMock(spec=discord.Interaction)
-    ctx.respond = AsyncMock()
-    ctx.send_modal = AsyncMock()
+    ctx.send_modal = AsyncMock(spec=discord.InteractionResponse.send_modal)
     return ctx
 
 

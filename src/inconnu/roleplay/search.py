@@ -131,10 +131,12 @@ async def search(
             await paginator.respond(ctx.interaction, ephemeral=ephemeral)
     else:
         # Construct the error message
-        err = f"No posts by {user.mention} found with the given search parameters:"
+        err = f"No posts by {user.mention} found"
         conditions = []
         if needle:
             conditions.append(f"* Matching `{needle}`")
+        if "header.char_name" in query:  # Invalid names aren't searched for
+            conditions.append(f"* As `{character}`")
         if mentioning is not None:
             conditions.append(f"* Mentioning {mentioning.mention}")
         if after:
@@ -143,7 +145,7 @@ async def search(
             conditions.append(f"* Before `{before}`")
 
         if conditions:
-            err += "\n" + "\n".join(conditions)
+            err += " with the given search parameters:\n" + "\n".join(conditions)
         err += "."
 
         await ui.embeds.error(ctx, err, title="Not found")

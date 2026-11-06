@@ -322,3 +322,32 @@ async def test_no_results_lists_filters(
     ):
         assert condition in message
     rp_ctx.respond.assert_not_awaited()
+
+
+async def test_no_results_lists_character(
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+):
+    """The not found error includes the character searched for."""
+    await run_search(rp_ctx, author, character="Nadea")
+
+    assert show_error.call_args.args[1] == (
+        f"No posts by {author.mention} found with the given search parameters:\n* As `Nadea`."
+    )
+
+
+async def test_no_results_skips_ignored_character(
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+):
+    """An invalid character name wasn't searched for, so it isn't listed."""
+    await run_search(rp_ctx, author, character="Bad.*Name")
+
+    assert "Bad.*Name" not in show_error.call_args.args[1]
+
+
+async def test_no_results_without_filters(
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+):
+    """With nothing to list, the not found error is a plain sentence."""
+    await run_search(rp_ctx, author)
+
+    assert show_error.call_args.args[1] == f"No posts by {author.mention} found."

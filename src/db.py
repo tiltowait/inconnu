@@ -19,7 +19,6 @@ characters = _db.characters
 command_log = _db.command_log
 guilds = _db.guilds
 headers = _db.headers
-interactions = _db.interactions
 log = _db.log
 rolls = _db.rolls
 rp_posts = _db.rp_posts

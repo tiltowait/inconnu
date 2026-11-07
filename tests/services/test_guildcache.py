@@ -268,7 +268,18 @@ async def test_fetchguilds(gcf: GuildCache, g2: MockGuild):
 
     assert len(guilds) == 1
     assert guilds[0].id == g2.id
-    assert len(guilds[0].members) == g2.member_count
+    assert guilds[0].name == g2.name
+    assert guilds[0].members == []
+
+
+async def test_fetchguilds_multiple_guilds(gcf: GuildCache, g1: MockGuild, g2: MockGuild):
+    """A user in several guilds gets each guild once."""
+    member_id = g2.members[0].id
+    await gcf.upsert_members(make_member(g1, member_id))
+
+    guilds = await gcf.fetchguilds(member_id)
+
+    assert sorted(guild.id for guild in guilds) == [g1.id, g2.id]
 
 
 async def test_fetchguilds_no_memberships(gcf: GuildCache):

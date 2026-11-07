@@ -115,6 +115,7 @@ class GuildCache:
         await self.db.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_member_id ON members (guild, id)"
         )
+        await self.db.execute("CREATE INDEX IF NOT EXISTS idx_member_user ON members (id)")
 
         await self.db.commit()
         self._initialized = True
@@ -189,34 +190,15 @@ class GuildCache:
 
     @validate
     async def fetchguilds(self, user_id: int) -> list[CachedGuild]:
-        """Fetch the guilds a specific user belongs to, with members populated."""
-        guilds: dict[int, CachedGuild] = {}
-
+        """Fetch the guilds a specific user belongs to."""
         query = (
-            "SELECT "
-            "g.id AS guild_id, g.name AS guild_name, g.icon AS guild_icon, "
-            "m.id AS member_id, m.name AS member_name, m.icon AS member_icon "
+            "SELECT g.id, g.name, g.icon "
             "FROM guilds g "
             "JOIN members m ON g.id = m.guild "
-            "WHERE g.id IN (SELECT guild FROM members WHERE id = ?)"
+            "WHERE m.id = ?"
         )
         async with self.db.execute(query, (user_id,)) as cur:
-            async for row in cur:
-                gid = row["guild_id"]
-                if gid not in guilds:
-                    guilds[gid] = CachedGuild(
-                        id=gid, name=row["guild_name"], icon=row["guild_icon"]
-                    )
-                guild = guilds[gid]
-                member = CachedMember(
-                    id=row["member_id"],
-                    name=row["member_name"],
-                    icon=row["member_icon"],
-                    guild=guild,
-                )
-                guild.members.append(member)
-
-        return list(guilds.values())
+            return [CachedGuild.model_validate(dict(row)) async for row in cur]
 
     @validate
     async def upsert_members(self, members: discord.Member | list[discord.Member]):

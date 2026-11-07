@@ -1,5 +1,6 @@
 """rolldisplay.py - A View for displaying roll outcomes and handling rerolls."""
 
+import asyncio
 import contextlib
 import re
 from collections.abc import Awaitable, Callable
@@ -147,15 +148,16 @@ class RollDisplay(EphemeralSafeView):
 
         if self.character is not None:
             self.character.set_superficial_wp(self.character.superficial_wp + 1)
-            await self.character.save()
-
-            await inconnu.character.display(
-                interaction,
-                self.character,
-                title="Willpower Spent",
-                owner=cast(discord.Member, self.owner),  # Characters only exist in guilds
-                fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
-                ephemeral=self.hide_dice,
+            await asyncio.gather(
+                inconnu.character.display(
+                    interaction,
+                    self.character,
+                    title="Willpower Spent",
+                    owner=cast(discord.Member, self.owner),  # Characters only exist in guilds
+                    fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
+                    ephemeral=self.hide_dice,
+                ),
+                self.character.save(),
             )
             await services.post_update(
                 ctx=interaction,

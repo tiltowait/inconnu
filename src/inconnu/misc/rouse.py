@@ -1,5 +1,6 @@
 """misc/rouse.py - Perform rouse checks."""
 
+import asyncio
 from typing import NamedTuple, cast
 
 import discord
@@ -82,6 +83,10 @@ async def perform_rouse(
         # Vampire. Characters only exist in guilds.
         guild = cast(discord.Guild, ctx.guild)
         outcome = await __rouse_roll(guild, character, count, reroll)
+        if oblivion == "apply" and outcome.stains > 0:
+            character.stains += outcome.stains
+            character.log("stains", outcome.stains)
+
         update_msg = f"**{character.name}** "
         if outcome.failures and outcome.frenzy:
             update_msg += (
@@ -95,9 +100,9 @@ async def perform_rouse(
         else:
             update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
-        await character.save()
-        inter = await __display_outcome(
-            ctx, character, outcome, purpose, oblivion, message, ephemeral
+        inter, _ = await asyncio.gather(
+            __display_outcome(ctx, character, outcome, purpose, oblivion, message, ephemeral),
+            character.save(),
         )
         msg = await get_message(inter)
 
@@ -114,11 +119,6 @@ async def perform_rouse(
             message=update_msg,
             color=color,
         )
-
-        # Saved again, because __display_outcome() may apply Oblivion stains
-        # and log them.
-        # TODO: Move stain application and logging outside of __display_outcome()
-        await character.save()
 
 
 def __make_title(outcome: _RouseOutcome) -> str:
@@ -177,8 +177,6 @@ async def __display_outcome(
         if oblivion == "show":
             footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
         elif oblivion == "apply":
-            character.stains += outcome.stains
-            character.log("stains", outcome.stains)
             fields.append((f"Gain {stains_txt}", inconnu.character.DisplayField.HUMANITY))
 
     footer = "\n".join(footer)

@@ -12,14 +12,21 @@ class WebhookCache:
         self._webhooks: dict[int, discord.Webhook] = {}
         self.webhook_ids: set[int] = set()
         self._guilds_polled: set[int] = set()
+        # Guilds whose webhooks must be found channel by channel, because
+        # Manage Webhooks is only granted in some channels
+        self._unpollable_guilds: set[int] = set()
         self.just_created: set[int] = set()
 
         logger.info("WEBHOOK: Created cache for bot ID {}", bot_id)
 
+    def _is_ours(self, webhook: discord.Webhook) -> bool:
+        """Whether the bot created the webhook."""
+        return webhook.user is not None and webhook.user.id == self.bot_id
+
     async def _check_webhook(self, channel: discord.TextChannel) -> bool:
         """Check that we have a webhook in the channel."""
         for _webhook in await channel.webhooks():
-            if _webhook.user is not None and _webhook.user.id == self.bot_id:
+            if self._is_ours(_webhook):
                 logger.info(
                     "WEBHOOK: {} found in #{} on {}",
                     _webhook.name,
@@ -34,12 +41,17 @@ class WebhookCache:
     async def _poll_guild(self, guild: discord.Guild):
         """Get all of the guild's webhooks."""
         logger.info("WEBHOOK: Pulling {}'s webhooks", guild.name)
-        for webhook in await guild.webhooks():
-            if (
-                webhook.user is not None
-                and webhook.user.id == self.bot_id
-                and webhook.channel_id is not None
-            ):
+        try:
+            webhooks = await guild.webhooks()
+        except discord.Forbidden:
+            # Listing a guild's webhooks needs Manage Webhooks server-wide.
+            # Without it, channels are checked as they're used.
+            logger.info("WEBHOOK: Can't list {}'s webhooks; checking by channel", guild.name)
+            self._unpollable_guilds.add(guild.id)
+            webhooks = []
+
+        for webhook in webhooks:
+            if self._is_ours(webhook) and webhook.channel_id is not None:
                 logger.debug(
                     "WEBHOOK: Webhook {} found in #{} ({})",
                     webhook.name,
@@ -51,10 +63,26 @@ class WebhookCache:
 
         self._guilds_polled.add(guild.id)
 
-    async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
-        """Prepare a webhook, either from the cache or creating one. Raises Forbidden."""
+    async def _load_channel(self, channel: discord.TextChannel):
+        """Load the channel's webhook into the cache, if we have one there.
+        Raises Forbidden."""
         if channel.guild.id not in self._guilds_polled:
             await self._poll_guild(channel.guild)
+
+        if channel.id in self._webhooks or channel.guild.id not in self._unpollable_guilds:
+            # The guild poll already found every webhook we have
+            return
+
+        for webhook in await channel.webhooks():
+            if self._is_ours(webhook):
+                logger.debug("WEBHOOK: Found {} in #{}", webhook.name, channel.name)
+                self._webhooks[channel.id] = webhook
+                self.webhook_ids.add(webhook.id)
+                return
+
+    async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
+        """Prepare a webhook, either from the cache or creating one. Raises Forbidden."""
+        await self._load_channel(channel)
 
         if channel.id not in self._webhooks:
             # Create the webhook
@@ -81,9 +109,8 @@ class WebhookCache:
         channel: discord.TextChannel,
         webhook_id: int,
     ) -> discord.Webhook | None:
-        """Fetch a webhook for a particular guild."""
-        if channel.guild.id not in self._guilds_polled:
-            await self._poll_guild(channel.guild)
+        """Fetch a webhook for a particular guild. Raises Forbidden."""
+        await self._load_channel(channel)
 
         if webhook := self._webhooks.get(channel.id):
             logger.debug("WEBHOOK: Found Webhook ID# {}", webhook.id)

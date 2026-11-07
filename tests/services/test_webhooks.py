@@ -7,6 +7,11 @@ import pytest
 
 from services import WebhookCache
 
+type MockChannel = MagicMock
+type MockGuild = MagicMock
+type MockUser = MagicMock
+type MockWebhook = MagicMock
+
 # Fixtures
 
 
@@ -259,6 +264,120 @@ async def test_poll_guild_handles_multiple_webhooks(
     assert 5002 in cache._webhooks
     assert 1001 in cache.webhook_ids
     assert 1002 in cache.webhook_ids
+
+
+# Guilds without server-wide Manage Webhooks
+
+
+def forbidden() -> discord.Forbidden:
+    """A Forbidden error, as Discord raises without permission."""
+    response = MagicMock(status=403, reason="Forbidden")
+    return discord.Forbidden(response, "Missing Permissions")
+
+
+@pytest.fixture
+def unpollable_channel(mock_channel: MockChannel) -> MockChannel:
+    """A channel whose guild won't list its webhooks."""
+    mock_channel.guild.webhooks.side_effect = forbidden()
+    return mock_channel
+
+
+async def test_poll_guild_without_permission(cache: WebhookCache, mock_guild: MockGuild):
+    """A guild that won't list its webhooks is checked channel by channel."""
+    mock_guild.webhooks.side_effect = forbidden()
+
+    await cache._poll_guild(mock_guild)
+
+    assert mock_guild.id in cache._guilds_polled
+    assert mock_guild.id in cache._unpollable_guilds
+
+
+async def test_prep_webhook_finds_channel_webhook(
+    cache: WebhookCache, unpollable_channel: MockChannel, mock_webhook: MockWebhook
+):
+    """Without a guild poll, an existing webhook is found in the channel."""
+    unpollable_channel.webhooks.return_value = [mock_webhook]
+
+    result = await cache.prep_webhook(unpollable_channel)
+
+    assert result == mock_webhook
+    assert mock_webhook.id in cache.webhook_ids
+    unpollable_channel.create_webhook.assert_not_called()
+
+
+async def test_prep_webhook_ignores_other_bots_channel_webhooks(
+    cache: WebhookCache,
+    unpollable_channel: MockChannel,
+    mock_webhook: MockWebhook,
+    other_user: MockUser,
+):
+    """Another bot's webhook in the channel isn't used."""
+    foreign = MagicMock(spec=discord.Webhook)
+    foreign.user = other_user
+    unpollable_channel.webhooks.return_value = [foreign]
+    unpollable_channel.create_webhook.return_value = mock_webhook
+
+    result = await cache.prep_webhook(unpollable_channel)
+
+    assert result == mock_webhook
+    unpollable_channel.create_webhook.assert_called_once()
+
+
+async def test_prep_webhook_creates_in_unpollable_guild(
+    cache: WebhookCache, unpollable_channel: MockChannel, mock_webhook: MockWebhook
+):
+    """Without a guild poll, a webhook is created if the channel has none."""
+    unpollable_channel.create_webhook.return_value = mock_webhook
+
+    result = await cache.prep_webhook(unpollable_channel)
+
+    assert result == mock_webhook
+    unpollable_channel.webhooks.assert_awaited_once()
+
+
+async def test_prep_webhook_caches_channel_lookup(
+    cache: WebhookCache, unpollable_channel: MockChannel, mock_webhook: MockWebhook
+):
+    """A channel's webhook is only looked up once."""
+    unpollable_channel.webhooks.return_value = [mock_webhook]
+
+    await cache.prep_webhook(unpollable_channel)
+    await cache.prep_webhook(unpollable_channel)
+
+    unpollable_channel.webhooks.assert_awaited_once()
+    unpollable_channel.guild.webhooks.assert_awaited_once()
+
+
+async def test_prep_webhook_trusts_guild_poll(
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook
+):
+    """After a successful guild poll, channels aren't checked again."""
+    mock_channel.create_webhook.return_value = mock_webhook
+
+    await cache.prep_webhook(mock_channel)
+
+    mock_channel.webhooks.assert_not_called()
+
+
+async def test_prep_webhook_without_channel_permission(
+    cache: WebhookCache, unpollable_channel: MockChannel
+):
+    """Without Manage Webhooks in the channel either, Forbidden is raised."""
+    unpollable_channel.webhooks.side_effect = forbidden()
+
+    with pytest.raises(discord.Forbidden):
+        await cache.prep_webhook(unpollable_channel)
+
+
+async def test_fetch_webhook_finds_channel_webhook(
+    cache: WebhookCache, unpollable_channel: MockChannel, mock_webhook: MockWebhook
+):
+    """Without a guild poll, fetch_webhook finds the channel's webhook."""
+    unpollable_channel.webhooks.return_value = [mock_webhook]
+
+    result = await cache.fetch_webhook(unpollable_channel, mock_webhook.id)
+
+    assert result == mock_webhook
 
 
 # prep_webhook Tests

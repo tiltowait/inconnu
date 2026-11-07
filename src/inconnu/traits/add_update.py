@@ -93,14 +93,14 @@ async def __assign(
 ):
     """Assign the parsed traits to the character and display the results."""
     try:
-        outcome = await __handle_traits(character, traits, allow_overwrite, disciplines)
+        outcome = __handle_traits(character, traits, allow_overwrite, disciplines)
         await __display_results(ctx, outcome, character, disciplines)
 
     except (ValueError, SyntaxError) as err:
         await ui.embeds.error(ctx, err, character=character, help=__HELP_URL[allow_overwrite])
 
 
-async def __handle_traits(
+def __handle_traits(
     character: VChar, traits: dict, overwriting: bool, disciplines: bool
 ) -> AssignmentResult:
     """
@@ -130,7 +130,6 @@ async def __handle_traits(
 
     track_adjustment, assigned = character.assign_traits(to_assign, category)
     assigned = [f"{trait}: `{rating}`" for trait, rating in assigned.items()]
-    await character.save()
 
     return AssignmentResult(
         assigned=assigned,
@@ -159,8 +158,11 @@ async def __display_results(ctx, outcome, character: VChar, disciplines: bool):
     """Display the results of the operation."""
     tasks: list[Awaitable[object]] = [__results_embed(ctx, outcome, character, disciplines)]
 
-    # Message for the update channel
+    # Nothing changed if nothing was assigned, so the rest isn't needed
     if outcome.assigned:
+        tasks.append(character.save())
+
+        # Message for the update channel
         term = "Traits" if not disciplines else "Disciplines"
         msg = f"__{ctx.user.mention} updated {character.name}'s traits:__\n"
         msg += ", ".join(outcome.assigned)

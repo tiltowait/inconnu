@@ -1,5 +1,6 @@
 """Tests for services/webhooks.py WebhookCache class."""
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -102,45 +103,35 @@ def test_init_creates_empty_collections(cache: WebhookCache):
 
 
 async def test_check_webhook_returns_true_when_found(
-    cache: WebhookCache, mock_channel, mock_webhook
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook
 ):
-    """Test that _check_webhook returns True when bot's webhook is found."""
+    """_check_webhook finds the webhook by its ID."""
     mock_channel.webhooks.return_value = [mock_webhook]
 
-    result = await cache._check_webhook(mock_channel)
+    result = await cache._check_webhook(mock_channel, mock_webhook.id)
 
     assert result is True
 
 
-async def test_check_webhook_returns_false_when_empty(cache: WebhookCache, mock_channel):
-    """Test that _check_webhook returns False when no webhooks exist."""
+async def test_check_webhook_returns_false_when_empty(
+    cache: WebhookCache, mock_channel: MockChannel
+):
+    """_check_webhook is False when the channel has no webhooks."""
     mock_channel.webhooks.return_value = []
 
-    result = await cache._check_webhook(mock_channel)
+    result = await cache._check_webhook(mock_channel, 1001)
 
     assert result is False
 
 
-async def test_check_webhook_returns_false_for_other_bots(
-    cache: WebhookCache, mock_channel, other_user
+async def test_check_webhook_ignores_our_other_webhooks(
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook
 ):
-    """Test that _check_webhook returns False when only other bots' webhooks exist."""
-    other_webhook = MagicMock(spec=discord.Webhook)
-    other_webhook.user = other_user
-    mock_channel.webhooks.return_value = [other_webhook]
+    """Another of our webhooks in the channel doesn't stand in for the
+    missing one."""
+    mock_channel.webhooks.return_value = [mock_webhook]
 
-    result = await cache._check_webhook(mock_channel)
-
-    assert result is False
-
-
-async def test_check_webhook_returns_false_when_user_none(cache: WebhookCache, mock_channel):
-    """Test that _check_webhook returns False when webhook.user is None."""
-    webhook = MagicMock(spec=discord.Webhook)
-    webhook.user = None
-    mock_channel.webhooks.return_value = [webhook]
-
-    result = await cache._check_webhook(mock_channel)
+    result = await cache._check_webhook(mock_channel, mock_webhook.id + 1)
 
     assert result is False
 
@@ -459,6 +450,24 @@ async def test_prep_webhook_adds_to_cache_when_creating(
     assert mock_channel.id in cache.just_created
 
 
+async def test_concurrent_prep_webhook_creates_one(
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook
+):
+    """Simultaneous posts in a new channel share one new webhook."""
+
+    async def create_webhook(**_: str) -> MockWebhook:
+        """Yield mid-creation, as the real API call would."""
+        await asyncio.sleep(0)
+        return mock_webhook
+
+    mock_channel.create_webhook.side_effect = create_webhook
+
+    results = await asyncio.gather(*(cache.prep_webhook(mock_channel) for _ in range(3)))
+
+    assert results == [mock_webhook] * 3
+    mock_channel.create_webhook.assert_awaited_once()
+
+
 # fetch_webhook Tests
 
 
@@ -582,6 +591,26 @@ async def test_update_webhooks_keeps_existing_webhook(
     assert mock_channel.id in cache._webhooks
 
 
+async def test_update_webhooks_removes_deleted_despite_other_webhook(
+    cache: WebhookCache,
+    mock_channel: MockChannel,
+    mock_webhook: MockWebhook,
+    mock_user: MockUser,
+):
+    """The cached webhook is dropped when deleted, even if another of ours
+    remains in the channel."""
+    other = MagicMock(spec=discord.Webhook)
+    other.id = mock_webhook.id + 1
+    other.user = mock_user
+    cache._guilds_polled.add(mock_channel.guild.id)
+    cache._webhooks[mock_channel.id] = mock_webhook
+    mock_channel.webhooks.return_value = [other]
+
+    await cache.update_webhooks(mock_channel)
+
+    assert mock_channel.id not in cache._webhooks
+
+
 # Special test for webhook_ids.add() in _check_webhook
 
 
@@ -620,13 +649,13 @@ async def test_check_webhook_never_adds_new_ids_after_poll(
 
     # Now check webhook - should not add new IDs
     mock_channel.webhooks.return_value = [webhook1]
-    await cache._check_webhook(mock_channel)
+    await cache._check_webhook(mock_channel, webhook1.id)
     assert cache.webhook_ids == ids_after_prep, "prep_webhook → _check_webhook added IDs"
 
     # Scenario 2: Webhook deleted, then check
     ids_before_delete_check = cache.webhook_ids.copy()
     mock_channel.webhooks.return_value = []
-    await cache._check_webhook(mock_channel)
+    await cache._check_webhook(mock_channel, webhook1.id)
     assert cache.webhook_ids == ids_before_delete_check, "Deleted webhook check added IDs"
 
     # Scenario 3: New webhook created, then check
@@ -642,5 +671,5 @@ async def test_check_webhook_never_adds_new_ids_after_poll(
 
     # Check webhook - should not add new IDs
     mock_channel.webhooks.return_value = [webhook2]
-    await cache._check_webhook(mock_channel)
+    await cache._check_webhook(mock_channel, webhook2.id)
     assert cache.webhook_ids == ids_before_new_check, "New webhook check added IDs"

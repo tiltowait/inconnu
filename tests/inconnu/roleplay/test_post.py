@@ -4,7 +4,7 @@ import asyncio
 import inspect
 from collections.abc import Generator
 from functools import partial
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
@@ -22,6 +22,7 @@ from tests.characters import gen_char
 from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, PostFactory
 
 type MockChangelog = AsyncMock
+type MockGet = AsyncMock
 type MockInteraction = AsyncMock
 type MockPostModal = MagicMock
 type MockWebhook = AsyncMock
@@ -86,17 +87,28 @@ def new_post() -> Generator[MagicMock]:
 
 
 @pytest.fixture
+def get_post() -> Generator[MockGet]:
+    """RPPost.get(), which reloads the post being edited."""
+    with patch.object(RPPost, "get", new_callable=AsyncMock) as mock:
+        yield mock
+
+
+@pytest.fixture
 def editing_modal(
-    mock_post_modal: MockPostModal, webhook: MockWebhook, make_post: PostFactory
+    mock_post_modal: MockPostModal,
+    webhook: MockWebhook,
+    make_post: PostFactory,
+    get_post: MockGet,
 ) -> Generator[MockPostModal]:
     """A modal ready to edit a real post, with unchanged content, whose saves do
-    nothing."""
+    nothing. Reloading the post finds it unchanged."""
     mock_post_modal.bot = MagicMock(spec=InconnuBot)
     mock_post_modal.bot.prep_webhook = AsyncMock(return_value=webhook)
     mock_post_modal.character = MagicMock(spec=VChar)
     mock_post_modal.character.profile_image_url = None
     mock_post_modal.message = MagicMock(spec=discord.Message, id=MESSAGE_ID)
-    mock_post_modal.post_to_edit = make_post("Original")
+    mock_post_modal.post_to_edit = make_post("Original", id=PydanticObjectId())
+    get_post.return_value = mock_post_modal.post_to_edit
     mock_post_modal._clean_post_content.return_value = "Original"
     mock_post_modal._clean_tags.return_value = []
     mock_post_modal._clean_title.return_value = ""
@@ -603,6 +615,56 @@ async def test_edit_of_missing_message(
     assert post.content == "Original"
     post.save.assert_not_awaited()
     editing_modal._post_to_changelog.assert_not_awaited()
+
+
+@pytest.mark.parametrize("content", ["Original", "Changed"])
+@pytest.mark.parametrize("found", [True, False])
+async def test_edit_of_post_deleted_while_editing(
+    editing_modal: MockPostModal,
+    webhook: MockWebhook,
+    interaction: MockInteraction,
+    get_post: MockGet,
+    show_error: AsyncMock,
+    content: str,
+    found: bool,
+):
+    """A post deleted while the modal was open stays deleted, whether or not
+    the content changed."""
+    post = editing_modal.post_to_edit
+    if found:
+        post.deleted = True
+    else:
+        get_post.return_value = None
+    editing_modal._clean_post_content.return_value = content
+    editing_modal._clean_title.return_value = "A title"
+
+    await PostModal._edit_rp_post(editing_modal, interaction)
+
+    get_post.assert_awaited_once_with(post.id)
+    assert show_error.call_args.kwargs["title"] == "Unable to edit post"
+    webhook.edit_message.assert_not_awaited()
+    post.save.assert_not_awaited()
+    interaction.response.send_message.assert_not_awaited()
+
+
+async def test_edit_keeps_edits_made_elsewhere(
+    editing_modal: MockPostModal,
+    interaction: MockInteraction,
+    get_post: MockGet,
+    make_post: PostFactory,
+):
+    """An edit made in another modal stays in the history."""
+    current = make_post("Original", id=editing_modal.post_to_edit.id)
+    current.edit_post("Edited elsewhere")
+    get_post.return_value = current
+    editing_modal._clean_post_content.return_value = "Changed"
+
+    await PostModal._edit_rp_post(editing_modal, interaction)
+
+    assert editing_modal.post_to_edit is current
+    assert current.content == "Changed"
+    assert [entry.content for entry in current.history] == ["Edited elsewhere", "Original"]
+    cast(AsyncMock, current.save).assert_awaited_once()  # Patched by editing_modal
 
 
 # Test _post_to_changelog

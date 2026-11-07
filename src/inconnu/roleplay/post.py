@@ -146,6 +146,18 @@ class PostModal(discord.ui.Modal):
             )
             return
 
+        # The post may have been deleted or edited elsewhere since the modal
+        # opened. Saving the modal's stale copy would undo that.
+        current = await RPPost.get(self.post_to_edit.id)
+        if current is None or current.deleted:
+            await ui.embeds.error(
+                interaction,
+                "The post was deleted while you were editing it.",
+                title="Unable to edit post",
+            )
+            return
+        self.post_to_edit = current
+
         post_to_changelog = False
 
         if new_content != self.post_to_edit.content:
@@ -294,6 +306,8 @@ class PostModal(discord.ui.Modal):
         if changelog_id := await services.settings.changelog_channel(interaction.guild):
             # Prep the diff
             post = self.post_to_edit
+            if post.id is None:
+                raise ValueError("Rolepost has not been saved")
             diff = text_diff(post.history[0].content, post.content)
 
             # Prep the embed
@@ -309,7 +323,7 @@ class PostModal(discord.ui.Modal):
             )
             embed.set_author(name=post.header.char_name, icon_url=get_avatar(interaction.user))
             embed.set_thumbnail(url=self.character.profile_image_url)
-            embed.add_field(name=" ", value=post.url)
+            embed.add_field(name=" ", value=str(post.url))
             embed.timestamp = self.post_to_edit.utc_date
 
             # Prep the channel and send

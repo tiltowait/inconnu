@@ -6,7 +6,7 @@ from loguru import logger
 import constants
 import inconnu
 from ctx import AppCtx
-from models import VChar
+from models import BlushState, VChar
 from services.haven import haven
 from utils.urls import docs_url
 
@@ -52,9 +52,9 @@ async def awaken(ctx: AppCtx, character: VChar):
 
     character.log("awaken")
 
-    # If a vampire awakens, we want to turn off its blush. N/A (-1) is left
+    # If a vampire awakens, we want to turn off its blush. N/A is left
     # alone. A character who no longer needs to Blush becomes N/A.
-    if character.header.blush == 1:
+    if character.header.blush == BlushState.ON:
         logger.debug("AWAKEN: {} is no longer Blushed", character.name)
         character.reset_blush()
     else:

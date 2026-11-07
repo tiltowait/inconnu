@@ -19,6 +19,7 @@ import errors
 from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
 from models.impairment import Impairment
 from models.vchardocs import (
+    BlushState,
     TraitMatch,
     VCharExperience,
     VCharExperienceEntry,
@@ -105,9 +106,9 @@ class VChar(Document):
             self.splat = "thin-blood"
 
         if not self.can_blush:
-            self.header.blush = -1
-        elif self.header.blush == -1:
-            self.header.blush = 0
+            self.header.blush = BlushState.NA
+        elif self.header.blush == BlushState.NA:
+            self.header.blush = BlushState.OFF
 
         logger.info("VCHAR: {} will update", self.name)
 
@@ -241,16 +242,16 @@ class VChar(Document):
 
     def reset_blush(self):
         """Turn off the Blush of Life, or mark it N/A if the character can't Blush."""
-        self.header.blush = 0 if self.can_blush else -1
+        self.header.blush = BlushState.OFF if self.can_blush else BlushState.NA
 
-    def set_blush(self, new_blush: int):
+    def set_blush(self, new_blush: BlushState):
         """Toggle the character's Blush of Life."""
         if self.header.blush == new_blush:
             logger.debug("VCHAR: {}'s Blush of Life ({}) is unchanged", self.name, new_blush)
             return
         if self.can_blush:
             # Not checked by header, because a vampire whose header was set at
-            # Humanity 9+ has blush -1
+            # Humanity 9+ has Blush N/A
             self.header.blush = new_blush
             logger.debug("VCHAR: Setting {}'s Blush of Life to {}", self.name, new_blush)
         else:

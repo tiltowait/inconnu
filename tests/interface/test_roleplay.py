@@ -14,7 +14,7 @@ from pydantic import AnyUrl
 import interface.roleplay as roleplay_module
 from bot import InconnuBot
 from interface.roleplay import RoleplayCog
-from models import RPPost, VGuild
+from models import BlushState, RPPost, VGuild
 from models.rpheader import DamageSubdoc, HeaderSubdoc
 from services.webhooks import WebhookCache
 from utils.discord_helpers import raw_bulk_delete_handler
@@ -85,7 +85,7 @@ async def save_post() -> AsyncGenerator[PostSaver]:
             header=HeaderSubdoc(
                 charid=PydanticObjectId(),
                 char_name="Nadea",
-                blush=-1,
+                blush=BlushState.NA,
                 hunger=1,
                 location="",
                 merits="",

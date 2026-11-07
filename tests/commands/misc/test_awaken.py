@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 from ctx import AppCtx
 from inconnu.misc.awaken import awaken
+from models import BlushState
 from models.vchar import VChar
 
 
@@ -83,7 +84,7 @@ async def test_vamp_awaken_blush_turns_off(
     mock_char_save: AsyncMock,
 ):
     """Test that vampire awakening turns off Blush of Life."""
-    vamp.header.blush = 1  # Blushed
+    vamp.header.blush = BlushState.ON  # Blushed
 
     with patch("inconnu.d10", return_value=7):
         await awaken(ctx, vamp)
@@ -100,7 +101,7 @@ async def test_high_humanity_awaken_blush_becomes_na(
 ):
     """A Blushed vampire who rose to Humanity 9+ doesn't stay Blushed."""
     vamp.humanity = 9
-    vamp.header.blush = 1
+    vamp.header.blush = BlushState.ON
 
     with patch("inconnu.d10", return_value=7):
         await awaken(ctx, vamp)
@@ -115,7 +116,7 @@ async def test_thin_blood_awaken_clears_stale_blush(
     mock_char_save: AsyncMock,
 ):
     """A Thin-Blood saved as Blushed by the old header modal becomes N/A."""
-    thin_blood.header.blush = 1
+    thin_blood.header.blush = BlushState.ON
 
     with patch("inconnu.d10", return_value=7):
         await awaken(ctx, thin_blood)
@@ -130,7 +131,7 @@ async def test_vamp_awaken_blush_na_unchanged(
     mock_char_save: AsyncMock,
 ):
     """A vampire whose Blush is N/A (set at Humanity 9+) keeps it on awakening."""
-    vamp.header.blush = -1
+    vamp.header.blush = BlushState.NA
 
     with patch("inconnu.d10", return_value=7):
         await awaken(ctx, vamp)
@@ -181,7 +182,7 @@ async def test_thin_blood_blush_unchanged(
     mock_char_save: AsyncMock,
 ):
     """Test that thin-blood blush is not changed on awakening."""
-    thin_blood.header.blush = -1  # Thin-bloods have -1
+    thin_blood.header.blush = BlushState.NA  # Thin-bloods have -1
 
     with patch("inconnu.d10", return_value=7):
         await awaken(ctx, thin_blood)

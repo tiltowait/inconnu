@@ -2,16 +2,17 @@
 
 import pytest
 
-from models import VChar
+from models import BlushState, VChar
+from models.vchardocs import VCharHeader
 from tests.characters import gen_char
 
 
-@pytest.mark.parametrize("old_blush", [-1, 0])
-def test_vampire_can_blush(old_blush: int):
+@pytest.mark.parametrize("old_blush", [BlushState.NA, BlushState.OFF])
+def test_vampire_can_blush(old_blush: BlushState):
     """A vampire can Blush even if their header was set to N/A at Humanity 9+."""
     vamp = gen_char("vampire")
     vamp.header.blush = old_blush
-    vamp.set_blush(1)
+    vamp.set_blush(BlushState.ON)
 
     assert vamp.header.blush == 1
 
@@ -20,8 +21,8 @@ def test_vampire_can_blush(old_blush: int):
 def test_non_vampire_cannot_blush(splat: str):
     """Only full vampires Blush."""
     char = gen_char(splat)
-    char.header.blush = -1
-    char.set_blush(1)
+    char.header.blush = BlushState.NA
+    char.set_blush(BlushState.ON)
 
     assert char.header.blush == -1
 
@@ -51,7 +52,7 @@ def test_reset_blush(splat: str, humanity: int, expected: int):
     """Those who can Blush turn it off; others become N/A."""
     char = gen_char(splat)
     char.humanity = humanity
-    char.header.blush = 1
+    char.header.blush = BlushState.ON
 
     char.reset_blush()
 
@@ -79,10 +80,10 @@ def test_can_blush_after_humanity_falls():
     """A vampire who falls below Humanity 9 can Blush despite an N/A header."""
     vamp = gen_char("vampire")
     vamp.humanity = 9
-    vamp.header.blush = -1
+    vamp.header.blush = BlushState.NA
     vamp.humanity = 8
 
-    vamp.set_blush(1)
+    vamp.set_blush(BlushState.ON)
 
     assert vamp.header.blush == 1
 
@@ -91,9 +92,9 @@ def test_high_humanity_cannot_set_blush():
     """Setting the Blush at Humanity 9+ is refused."""
     vamp = gen_char("vampire")
     vamp.humanity = 9
-    vamp.header.blush = -1
+    vamp.header.blush = BlushState.NA
 
-    vamp.set_blush(1)
+    vamp.set_blush(BlushState.ON)
 
     assert vamp.header.blush == -1
 
@@ -107,8 +108,8 @@ async def saved_blush(char: VChar) -> int:
     return fresh.header.blush
 
 
-@pytest.mark.parametrize("blush", [0, 1])
-async def test_save_rising_to_high_humanity_clears_blush(blush: int):
+@pytest.mark.parametrize("blush", [BlushState.OFF, BlushState.ON])
+async def test_save_rising_to_high_humanity_clears_blush(blush: BlushState):
     """A vampire who no longer needs to Blush becomes N/A."""
     vamp = gen_char("vampire")
     await vamp.insert()
@@ -123,7 +124,7 @@ async def test_save_falling_from_high_humanity_enables_blush():
     vamp = gen_char("vampire")
     vamp.humanity = 9
     await vamp.insert()
-    vamp.header.blush = -1
+    vamp.header.blush = BlushState.NA
     vamp.humanity = 8
 
     assert await saved_blush(vamp) == 0
@@ -133,7 +134,7 @@ async def test_save_keeps_active_blush():
     """A vampire who can Blush keeps their current status."""
     vamp = gen_char("vampire")
     await vamp.insert()
-    vamp.header.blush = 1
+    vamp.header.blush = BlushState.ON
 
     assert await saved_blush(vamp) == 1
 
@@ -161,7 +162,7 @@ async def test_save_clears_stale_thin_blood_blush():
     """A Thin-Blood saved as Not Blushed by the old modal is corrected."""
     thin_blood = gen_char("thin-blood")
     await thin_blood.insert()
-    thin_blood.header.blush = 0
+    thin_blood.header.blush = BlushState.OFF
 
     assert await saved_blush(thin_blood) == -1
 
@@ -220,3 +221,14 @@ def test_apply_experience_ignores_zero():
 
     assert char.experience.lifetime == 0
     assert not char.experience.log
+
+
+def test_header_without_blush_loads_as_off():
+    """Characters predating the Blush field have no stored value."""
+    assert VCharHeader.model_validate({"location": "Elysium"}).blush is BlushState.OFF
+
+
+@pytest.mark.parametrize("stored", [-1, 0, 1])
+def test_stored_blush_loads_as_enum(stored: int):
+    """Integers in the database become BlushStates."""
+    assert VCharHeader.model_validate({"blush": stored}).blush is BlushState(stored)

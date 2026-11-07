@@ -5,8 +5,8 @@ from typing import Any
 import pytest
 from beanie import PydanticObjectId
 
-from models import VChar
-from models.rpheader import HeaderSubdoc
+from models import BlushState, VChar
+from models.rpheader import BLUSHED, NOT_BLUSHED, HeaderSubdoc
 from tests.characters import gen_char
 
 
@@ -73,3 +73,14 @@ def test_create_ignores_hunger_for_mortals():
     mortal.id = PydanticObjectId()
 
     assert create_with_hunger(mortal, 2).hunger is None
+
+
+@pytest.mark.parametrize(
+    "blush,expected",
+    [(BlushState.ON, BLUSHED), (BlushState.OFF, NOT_BLUSHED), (BlushState.NA, None)],
+)
+def test_blush_str(blush: BlushState, expected: str | None):
+    """Each BlushState has its own header text, and N/A has none."""
+    vamp = make_vampire()
+    vamp.header.blush = blush
+    assert create(vamp, "The Rack").blush_str == expected

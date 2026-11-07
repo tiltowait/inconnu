@@ -8,7 +8,7 @@ from loguru import logger
 
 import inconnu
 from ctx import AppCtx
-from models import VChar
+from models import BlushState, VChar
 from models.rpheader import NOT_BLUSHED
 from services.haven import haven
 from utils.text import clean_text
@@ -58,12 +58,13 @@ class _RPHeader(discord.ui.DesignerModal):
         # a ModalItem, we have to get a little tricky with our blush options:
         # we will filter the available options based on the splat. "N/A" must
         # always be default (it's the only option when present), and "Off" is
-        # default if not blushed (0 or -1) in case the character was PREVIOUSLY
+        # default if not blushed (Off/N/A) in case the character was PREVIOUSLY
         # a Mortal, Thin-Blood, or Humanity > 8.
+        blushed = character.header.blush == BlushState.ON
         blush_options = [
-            discord.SelectOption(label="On", value="1", default=self.character.header.blush == 1),
-            discord.SelectOption(label="Off", value="0", default=self.character.header.blush < 1),
-            discord.SelectOption(label="N/A", value="-1", default=True),
+            discord.SelectOption(label="On", value=str(BlushState.ON), default=blushed),
+            discord.SelectOption(label="Off", value=str(BlushState.OFF), default=not blushed),
+            discord.SelectOption(label="N/A", value=str(BlushState.NA), default=True),
         ]
         if character.can_blush:
             blush_options = blush_options[:-1]
@@ -108,7 +109,7 @@ class _RPHeader(discord.ui.DesignerModal):
 
         header = self.character.header
         header.location = location
-        header.blush = int(cast(list[str], self.blush_select.values)[0])
+        header.blush = BlushState(int(cast(list[str], self.blush_select.values)[0]))
         header.merits = clean_text(self.merits_input.value or "")
         header.flaws = clean_text(self.flaws_input.value or "")
         header.temp = clean_text(self.temp_input.value or "")

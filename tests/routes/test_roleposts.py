@@ -12,7 +12,7 @@ from pymongo import AsyncMongoClient
 
 import db as database
 from config import settings
-from models import RPPost
+from models import BlushState, RPPost
 from models.rpheader import DamageSubdoc, HeaderSubdoc
 from routes.deps import get_bot
 from server import app
@@ -53,7 +53,7 @@ def make_header_subdoc() -> HeaderSubdoc:
     return HeaderSubdoc(
         charid=TEST_CHAR_ID,
         char_name="Nadea",
-        blush=0,
+        blush=BlushState.OFF,
         hunger=2,
         location="Elysium",
         merits="",

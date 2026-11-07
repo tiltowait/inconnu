@@ -16,7 +16,7 @@ from pymongo.asynchronous.command_cursor import AsyncCommandCursor
 import db
 from bot import InconnuBot
 from ctx import AppCtx
-from models import RPPost
+from models import BlushState, RPPost
 from models.rpheader import DamageSubdoc, HeaderSubdoc
 
 type MockCollection = AsyncMock
@@ -76,7 +76,7 @@ def make_post() -> PostFactory:
         header = HeaderSubdoc(
             charid=PydanticObjectId(),
             char_name="Nadea",
-            blush=-1,
+            blush=BlushState.NA,
             hunger=1,
             location="",
             merits="",

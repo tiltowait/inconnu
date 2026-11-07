@@ -191,7 +191,7 @@ class CommandListener(commands.Cog):
             vuser.last_version_used = release_info.tag
             if vuser.id is None or vuser.is_changed:
                 await vuser.save()
-        except (aiohttp.ClientError, KeyError) as err:
+        except (aiohttp.ClientError, KeyError, TimeoutError) as err:
             logger.warning("Unable to fetch changelog: {!r}", err)
         finally:
             # If they were shown a changelog, it doesn't really matter if we

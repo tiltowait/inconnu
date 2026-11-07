@@ -543,11 +543,15 @@ async def test_changelog_not_shown_after_changelog_command(
     assert await saved_version(changelog_ctx) == RELEASE.tag
 
 
+@pytest.mark.parametrize("error", [aiohttp.ClientError(), TimeoutError()])
 async def test_changelog_fetch_failure(
-    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+    cog: CommandListener,
+    changelog_ctx: MockCtx,
+    mock_fetch_changelog: AsyncMock,
+    error: Exception,
 ):
     """Nothing is shown or saved if the changelog can't be fetched."""
-    mock_fetch_changelog.side_effect = aiohttp.ClientError()
+    mock_fetch_changelog.side_effect = error
     await cog._show_changelog(changelog_ctx, "vr")
 
     assert not changelog_shown(changelog_ctx)

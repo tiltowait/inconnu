@@ -269,7 +269,7 @@ async def test_show_changelog(ctx: MockCtx, hidden: bool):
     assert section_texts(kwargs["view"]) == ["## Fixes\n- A fix"]
 
 
-@pytest.mark.parametrize("error", [aiohttp.ClientError(), KeyError("body")])
+@pytest.mark.parametrize("error", [aiohttp.ClientError(), KeyError("body"), TimeoutError()])
 async def test_show_changelog_fetch_error(ctx: MockCtx, error: Exception):
     """A failed fetch shows an error instead."""
     with (
@@ -280,3 +280,15 @@ async def test_show_changelog_fetch_error(ctx: MockCtx, error: Exception):
 
     mock_error.assert_awaited_once_with(ctx, "Unable to fetch changelog.")
     ctx.respond.assert_not_awaited()
+
+
+async def test_fetch_changelog_has_timeout():
+    """A slow GitHub can't outlast Discord's response deadline."""
+    fetch_changelog.cache_clear()
+    with patch.object(aiohttp, "ClientSession", side_effect=aiohttp.ClientError) as session:
+        with pytest.raises(aiohttp.ClientError):
+            await fetch_changelog()
+    fetch_changelog.cache_clear()
+
+    timeout = session.call_args.kwargs["timeout"]
+    assert timeout.total is not None and timeout.total < 3

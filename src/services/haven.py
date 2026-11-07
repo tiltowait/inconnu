@@ -1,5 +1,6 @@
 """Character selection tool."""
 
+import asyncio
 import functools
 import uuid
 from collections.abc import Awaitable, Callable
@@ -17,6 +18,9 @@ from ctx import AppCtx
 from models import VChar
 from ui.views.basicselector import BasicSelector
 from utils.permissions import is_storyteller
+
+# The event loop only weakly references tasks, so these keep them alive
+_selector_deletions: set[asyncio.Task[None]] = set()
 
 
 class Haven:
@@ -199,7 +203,12 @@ class Haven:
 
         await view.wait()
         self.new_interaction = view.interaction
-        await self.ctx.delete()
+
+        # The command doesn't need to wait for this. The interaction is bound
+        # here, because callers replace ctx.interaction after fetch().
+        deletion = asyncio.create_task(_delete_selector(self.ctx.interaction))
+        _selector_deletions.add(deletion)
+        deletion.add_done_callback(_selector_deletions.discard)
 
         if (key := view.selected_value) is not None:
             character, filter_err = self.possibilities[key]
@@ -276,6 +285,14 @@ class Haven:
         logger.debug("HAVEN: Created {} component(s)", len(components))
         view = BasicSelector(*components)
         return view
+
+
+async def _delete_selector(interaction: discord.Interaction):
+    """Delete the character selector, logging any failure."""
+    try:
+        await interaction.delete_original_response()
+    except discord.HTTPException as err:
+        logger.warning("HAVEN: Unable to delete the character selector: {!r}", err)
 
 
 async def player_lookup(

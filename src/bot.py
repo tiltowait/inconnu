@@ -1,7 +1,7 @@
 """Bot instance and event handlers."""
 
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 import discord
 from cachetools import TTLCache
@@ -195,19 +195,6 @@ class InconnuBot(discord.AutoShardedBot):
         """Check whether the bot is ready before allowing the interaction to go through."""
         if not services.emojis.loaded:
             await services.emojis.load(self)
-
-        if interaction.type == discord.InteractionType.application_command:
-            # Insert the raw interaction data in case we get a crash before
-            # on_application_command() can perform its own insert. This creates
-            # duplicate data; in the future, these routines will be merged.
-            inter_data = {
-                "guild": interaction.guild_id,
-                "user": interaction.user.id if interaction.user else None,
-            }
-            if interaction.data is not None:
-                inter_data.update(cast(dict[str, Any], interaction.data))
-            await db.interactions.insert_one(inter_data)
-
         await self.process_application_commands(interaction)
 
     async def on_connect(self):

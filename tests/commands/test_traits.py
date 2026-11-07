@@ -10,7 +10,7 @@ import errors
 import services
 import tests.characters
 from ctx import AppCtx
-from inconnu.traits import delete, update
+from inconnu.traits import add, delete, update
 from models import VChar
 
 
@@ -76,6 +76,29 @@ async def test_update_selects_sole_owner(
     assert alice.find_trait("Foo").rating == 3
     assert not bob.has_trait("Foo")
     mock_respond.assert_awaited_once()
+    mock_char_save.assert_awaited_once()
+
+
+async def test_add_saves_new_trait(
+    ctx: AppCtx, alice: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
+):
+    """Adding a trait saves the character."""
+    await add(ctx, alice, "Baz=2")
+
+    assert alice.find_trait("Baz").rating == 2
+    mock_respond.assert_awaited_once()
+    mock_char_save.assert_awaited_once()
+
+
+async def test_add_existing_trait_skips_save(
+    ctx: AppCtx, alice: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
+):
+    """Nothing changes if every trait already exists, so there's nothing to save."""
+    await add(ctx, alice, "Foo=3")
+
+    assert alice.find_trait("Foo").rating == 1
+    mock_respond.assert_awaited_once()
+    mock_char_save.assert_not_awaited()
 
 
 async def test_update_matches_any_trait(

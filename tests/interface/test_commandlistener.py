@@ -543,15 +543,28 @@ async def test_changelog_not_shown_after_changelog_command(
     assert await saved_version(changelog_ctx) == RELEASE.tag
 
 
+@pytest.mark.parametrize("error", [aiohttp.ClientError(), TimeoutError()])
 async def test_changelog_fetch_failure(
-    cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
+    cog: CommandListener,
+    changelog_ctx: MockCtx,
+    mock_fetch_changelog: AsyncMock,
+    error: Exception,
 ):
     """Nothing is shown or saved if the changelog can't be fetched."""
-    mock_fetch_changelog.side_effect = aiohttp.ClientError()
+    mock_fetch_changelog.side_effect = error
     await cog._show_changelog(changelog_ctx, "vr")
 
     assert not changelog_shown(changelog_ctx)
     assert await saved_version(changelog_ctx) is None
+
+
+async def test_changelog_other_timeouts_raise(cog: CommandListener, changelog_ctx: MockCtx):
+    """Only the changelog fetch's timeout is treated as a fetch failure."""
+    with patch.object(VUser, "get_or_fetch", AsyncMock(side_effect=TimeoutError)):
+        with pytest.raises(TimeoutError):
+            await cog._show_changelog(changelog_ctx, "vr")
+
+    assert changelog_ctx.user.id not in cog._changelog_pending
 
 
 async def test_changelog_retried_after_fetch_failure(

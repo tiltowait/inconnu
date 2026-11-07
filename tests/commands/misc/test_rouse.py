@@ -437,3 +437,25 @@ async def test_rouse_ephemeral(
     call_args = mock_display.await_args
     assert call_args is not None
     assert call_args.kwargs["ephemeral"] is ephemeral
+
+
+async def test_vamp_rouse_applied_stains_saved_once(
+    vamp: VChar, ctx: AppCtx, mock_char_save: AsyncMock
+):
+    """Applied Oblivion stains go out in the Rouse's only save."""
+    expected = vamp.stains + 1
+    saved_stains = []
+    mock_char_save.side_effect = lambda *_, **__: saved_stains.append(vamp.stains)
+
+    with (
+        patch("inconnu.d10", return_value=1),
+        patch("inconnu.character.display", new_callable=AsyncMock),
+        patch("services.post_update", new_callable=AsyncMock),
+        patch.object(
+            services.settings, "oblivion_stains", new_callable=AsyncMock, return_value=[1]
+        ),
+        patch("utils.get_message", new_callable=AsyncMock),
+    ):
+        await rouse(ctx, vamp, 1, "Test", False, oblivion="apply")
+
+    assert saved_stains == [expected]

@@ -22,18 +22,12 @@ class CharacterGuild(BaseModel):
 
     @classmethod
     async def fetch(cls, id: int) -> Self:
-        """Fetch guild data from Discord."""
-        try:
-            # This method raises, despite the docs' indication otherwise, so we
-            # have to wrap it in a try, irkshome though that is.
-            guild = await services.guild_cache.fetchguild(id)
-            if guild is None:
-                # This can probably never happen, but the return type hints
-                # are wrong
-                return cls.unknown(id)
-            return cls.create(guild)
-        except Exception:
+        """Fetch guild data from the guild cache."""
+        guild = await services.guild_cache.fetchguild(id)
+        if guild is None:
+            # Unlikely in most circumstances
             return cls.unknown(id)
+        return cls.create(guild)
 
     @classmethod
     def create(cls, guild: CachedGuild | discord.Guild, count: int | None = None) -> Self:

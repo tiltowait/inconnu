@@ -1,8 +1,10 @@
 """Tests for the Haven character selector."""
 
+import asyncio
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import discord
 import pytest
 from beanie import PydanticObjectId
@@ -47,6 +49,7 @@ def mock_ctx() -> AppCtx:
     ctx.user = MagicMock(spec=discord.Member)
     ctx.guild = MagicMock(spec=discord.Guild)
     ctx.guild.id = 1
+    ctx.interaction = AsyncMock(spec=discord.Interaction)
 
     return ctx
 
@@ -157,7 +160,63 @@ async def test_selection_valid(mock_ctx: AppCtx):
     assert haven.match is char
     assert haven.new_interaction is view.interaction
     mock_error.assert_awaited_once()
-    cast(AsyncMock, mock_ctx.delete).assert_awaited_once()
+
+
+async def select_character(haven: Haven) -> VChar:
+    """Run the selection with a one-character view, returning that character."""
+    haven._owner = cast(discord.Member, haven.ctx.user)
+    char = make_char("Alice")
+    populate(haven, (char, None))
+    view = make_view(haven.uuid + char.id_str)
+
+    with (
+        patch.object(Haven, "_create_view", return_value=view),
+        patch(UI_ERROR, new_callable=AsyncMock),
+    ):
+        await haven._get_user_selection(errors.UnspecifiedCharacterError("Which character?"))
+
+    return char
+
+
+async def test_selector_deleted_from_original_interaction(mock_ctx: AppCtx):
+    """Replacing ctx.interaction after fetch() doesn't redirect the deletion."""
+    original = cast(AsyncMock, mock_ctx.interaction)
+    await select_character(Haven(mock_ctx))
+    mock_ctx.interaction = AsyncMock(spec=discord.Interaction)
+
+    await asyncio.sleep(0)
+
+    original.delete_original_response.assert_awaited_once()
+    cast(AsyncMock, mock_ctx.interaction).delete_original_response.assert_not_awaited()
+
+
+async def test_selection_doesnt_wait_for_deletion(mock_ctx: AppCtx):
+    """The command continues while the selector is still being deleted."""
+    release = asyncio.Event()
+    delete = cast(AsyncMock, mock_ctx.interaction).delete_original_response
+    delete.side_effect = release.wait
+
+    haven = Haven(mock_ctx)
+    char = await asyncio.wait_for(select_character(haven), timeout=1)
+
+    assert haven.match is char
+    release.set()
+    await asyncio.sleep(0)
+
+
+async def test_failed_deletion_is_logged(mock_ctx: AppCtx):
+    """A selector that can't be deleted doesn't stop the command."""
+    response = MagicMock(spec=aiohttp.ClientResponse, status=404, reason="Not Found")
+    delete = cast(AsyncMock, mock_ctx.interaction).delete_original_response
+    delete.side_effect = discord.NotFound(response, "Unknown Message")
+
+    with patch("services.haven.logger") as mock_logger:
+        haven = Haven(mock_ctx)
+        char = await select_character(haven)
+        await asyncio.sleep(0)
+
+    assert haven.match is char
+    mock_logger.warning.assert_called_once()
 
 
 async def test_selection_of_filtered_character_is_rejected(mock_ctx: AppCtx):

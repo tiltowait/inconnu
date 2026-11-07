@@ -1,5 +1,6 @@
 """misc/aggheal.py - Heal aggravated damage."""
 
+import asyncio
 from typing import NamedTuple
 
 import errors
@@ -46,7 +47,7 @@ async def aggheal(ctx, character):
         else:
             update_msg += "."
 
-    inter = await __display_outcome(ctx, character, outcome)
+    inter, _ = await asyncio.gather(__display_outcome(ctx, character, outcome), character.save())
     msg = await get_message(inter)
     await services.post_update(
         ctx=ctx,
@@ -79,7 +80,6 @@ async def __heal(character: VChar) -> AggHealOutcome:
     if character.is_vampire:
         character.log("rouse", 3)
 
-    await character.save()
     return AggHealOutcome(gain=hunger_gain, torpor=torpor)
 
 

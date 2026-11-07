@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 RELEASES_URL = "https://github.com/tiltowait/inconnu/releases"
 PAGE_SIZE = 3700  # Leaves room for the title, date, and note within 4000
+TIMEOUT = aiohttp.ClientTimeout(total=2)  # Under Discord's 3s limit
 
 
 class ReleaseInfo(NamedTuple):
@@ -80,7 +81,7 @@ async def show_changelog(ctx: AppCtx, hidden: bool):
     """Display Inconnu's changelog."""
     try:
         release = await fetch_changelog()
-    except aiohttp.ClientError, KeyError:
+    except aiohttp.ClientError, KeyError, TimeoutError:
         await ui.embeds.error(ctx, "Unable to fetch changelog.")
         return
 
@@ -93,7 +94,9 @@ async def fetch_changelog() -> ReleaseInfo:
     token = settings.github_token
     header = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
 
-    async with aiohttp.ClientSession(headers=header, raise_for_status=True) as session:
+    async with aiohttp.ClientSession(
+        headers=header, raise_for_status=True, timeout=TIMEOUT
+    ) as session:
         async with session.get(
             "https://api.github.com/repos/tiltowait/inconnu/releases/latest"
         ) as res:

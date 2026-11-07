@@ -57,12 +57,13 @@ async def get_or_fetch_supporter(ctx: AppCtx, user: discord.Member | discord.Use
             return has_supporter_role(member)
 
     # Fallback: Use the API instead of the cache
-    guild = await ctx.bot.fetch_guild(settings.supporter_guild)
-    member = await guild.fetch_member(user.id)
-    if member:
-        return has_supporter_role(member)
+    try:
+        guild = await ctx.bot.fetch_guild(settings.supporter_guild)
+        member = await guild.fetch_member(user.id)
+    except discord.NotFound:
+        return False
 
-    return False
+    return has_supporter_role(member)
 
 
 def is_supporter(ctx: AppInvocation, user: discord.Member | discord.User | None = None) -> bool:

@@ -36,6 +36,7 @@ type MockAsyncFn = AsyncMock
 type MockBot = MagicMock
 type MockFn = MagicMock
 type MockGuild = MagicMock
+type MockMember = MagicMock
 
 
 @pytest.fixture(autouse=True, scope="function")
@@ -221,13 +222,6 @@ def mock_char_mgr_fetchguild() -> Iterator[MockAsyncFn]:
 
 
 @pytest.fixture
-def mock_owner_data_create() -> Iterator[MockAsyncFn]:
-    """Mock OwnerData.fetch for guild character tests."""
-    with patch("routes.characters.models.OwnerData.fetch", new_callable=AsyncMock) as mock:
-        yield mock
-
-
-@pytest.fixture
 def mock_char_mgr_countguild() -> Iterator[MockAsyncFn]:
     """Mock char_mgr.countguild for character list tests."""
     with patch("routes.characters.routes.char_mgr.countguild", new_callable=AsyncMock) as mock:
@@ -303,6 +297,18 @@ def make_mock_guild(
     guild.get_member = MagicMock(side_effect=get_member)
 
     return guild
+
+
+def make_mock_member(guild: MockGuild, user_id: int, name: str) -> MockMember:
+    """Create a mock Discord member and add it to the guild."""
+    member = MagicMock(spec=discord.Member)
+    member.id = user_id
+    member.guild = guild
+    member.display_name = name
+    member.display_avatar.url = f"http://icon{user_id}.png"
+    member.guild_avatar = None
+    guild.members.append(member)
+    return member
 
 
 def make_mock_char(
@@ -1718,21 +1724,16 @@ async def test_get_guild_characters_user_not_member(auth_headers: dict[str, str]
 async def test_get_guild_characters_success(
     auth_headers: dict[str, str],
     mock_char_mgr_fetchguild: MockAsyncFn,
-    mock_owner_data_create: MockAsyncFn,
 ):
     """Returns all active characters with owner data."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    make_mock_member(guild, 111111, "User2")
     await populate_guild_cache([guild])
 
     char1 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Character 1")
     char2 = make_mock_char(TEST_GUILD_ID, 111111, "Character 2")
     spc = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "SPC Char", is_spc=True)
     mock_char_mgr_fetchguild.return_value = [char1, char2, spc]
-
-    # Mock owner data creation
-    owner1 = OwnerData(id=str(TEST_USER_ID), name="User1", icon="http://icon1.png")
-    owner2 = OwnerData(id="111111", name="User2", icon="http://icon2.png")
-    mock_owner_data_create.side_effect = [owner1, owner2]
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
@@ -1757,10 +1758,14 @@ async def test_get_guild_characters_success(
         # Verify regular characters have owner data
         chars = result["characters"]
         assert chars[0]["character"]["name"] == "Character 1"
-        assert chars[0]["owner"]["name"] == "User1"
+        assert chars[0]["owner"]["name"] == "Test User"
         assert chars[0]["spc"] is False
         assert chars[1]["character"]["name"] == "Character 2"
-        assert chars[1]["owner"]["name"] == "User2"
+        assert chars[1]["owner"] == {
+            "id": "111111",
+            "name": "User2",
+            "icon": "http://icon111111.png",
+        }
         assert chars[1]["spc"] is False
 
         # Verify SPC has null owner
@@ -1792,21 +1797,17 @@ async def test_get_guild_characters_empty_guild(
 async def test_get_guild_characters_multiple_owners(
     auth_headers: dict[str, str],
     mock_char_mgr_fetchguild: MockAsyncFn,
-    mock_owner_data_create: MockAsyncFn,
 ):
     """Guild with characters from different users."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    for user_id in (100, 200, 300):
+        make_mock_member(guild, user_id, f"User{user_id // 100}")
     await populate_guild_cache([guild])
 
     char1 = make_mock_char(TEST_GUILD_ID, 100, "User1 Char")
     char2 = make_mock_char(TEST_GUILD_ID, 200, "User2 Char")
     char3 = make_mock_char(TEST_GUILD_ID, 300, "User3 Char")
     mock_char_mgr_fetchguild.return_value = [char1, char2, char3]
-
-    owner1 = OwnerData(id="100", name="User1", icon="http://icon1.png")
-    owner2 = OwnerData(id="200", name="User2", icon="http://icon2.png")
-    owner3 = OwnerData(id="300", name="User3", icon="http://icon3.png")
-    mock_owner_data_create.side_effect = [owner1, owner2, owner3]
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
@@ -1828,7 +1829,6 @@ async def test_get_guild_characters_multiple_owners(
 async def test_get_guild_characters_filters_left(
     auth_headers: dict[str, str],
     mock_char_mgr_fetchguild: MockAsyncFn,
-    mock_owner_data_create: MockAsyncFn,
 ):
     """Characters marked as left are excluded."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
@@ -1838,9 +1838,6 @@ async def test_get_guild_characters_filters_left(
     char_left = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Left Char", has_left=True)
     char_active2 = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Another Active")
     mock_char_mgr_fetchguild.return_value = [char_active, char_left, char_active2]
-
-    owner = OwnerData(id=str(TEST_USER_ID), name="User", icon="http://icon.png")
-    mock_owner_data_create.side_effect = [owner, owner]
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
@@ -1857,21 +1854,17 @@ async def test_get_guild_characters_filters_left(
 async def test_get_guild_characters_filters_missing_owners(
     auth_headers: dict[str, str],
     mock_char_mgr_fetchguild: MockAsyncFn,
-    mock_owner_data_create: MockAsyncFn,
 ):
     """Characters whose owners can't be found are excluded."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    make_mock_member(guild, 100, "User1")
+    make_mock_member(guild, 300, "User3")  # 200 isn't cached
     await populate_guild_cache([guild])
 
     char1 = make_mock_char(TEST_GUILD_ID, 100, "Valid Owner")
     char2 = make_mock_char(TEST_GUILD_ID, 200, "Missing Owner")
     char3 = make_mock_char(TEST_GUILD_ID, 300, "Another Valid")
     mock_char_mgr_fetchguild.return_value = [char1, char2, char3]
-
-    owner1 = OwnerData(id="100", name="User1", icon="http://icon1.png")
-    owner3 = OwnerData(id="300", name="User3", icon="http://icon3.png")
-    # char2's owner returns None (can't be found)
-    mock_owner_data_create.side_effect = [owner1, None, owner3]
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)
@@ -1888,10 +1881,11 @@ async def test_get_guild_characters_filters_missing_owners(
 async def test_get_guild_characters_mixed_filtering(
     auth_headers: dict[str, str],
     mock_char_mgr_fetchguild: MockAsyncFn,
-    mock_owner_data_create: MockAsyncFn,
 ):
     """Guild with active chars, left chars, and chars with missing owners."""
     guild = make_mock_guild(TEST_GUILD_ID, "Test Guild")
+    for user_id in (100, 200, 400):  # 300 isn't cached
+        make_mock_member(guild, user_id, f"User{user_id // 100}")
     await populate_guild_cache([guild])
 
     char_active = make_mock_char(TEST_GUILD_ID, 100, "Active Char")
@@ -1906,12 +1900,6 @@ async def test_get_guild_characters_mixed_filtering(
         char_active2,
         spc,
     ]
-
-    owner1 = OwnerData(id="100", name="User1", icon="http://icon1.png")
-    owner4 = OwnerData(id="400", name="User4", icon="http://icon4.png")
-    # char_left is filtered before owner creation
-    # char_missing_owner's owner returns None
-    mock_owner_data_create.side_effect = [owner1, None, owner4]
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(f"/characters/guild/{TEST_GUILD_ID}", headers=auth_headers)

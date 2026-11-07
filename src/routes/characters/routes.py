@@ -141,20 +141,22 @@ async def get_guild_characters(
     if member is None:
         raise HTTPException(403, detail="User does not belong to guild")
 
+    chars = [c for c in await char_mgr.fetchguild(guild_id) if c.stat_log.get("left") is None]
+    owner_ids = {c.user for c in chars if not c.is_spc}
+    owners = {m.id: m for m in await guild_cache.fetchmembers(guild, ids=owner_ids)}
+
     char_guild = CharacterGuild.create(guild)
     profiles: list[CharData] = []
-    for char in await char_mgr.fetchguild(guild_id):
-        if char.stat_log.get("left") is not None:
-            continue
-
+    for char in chars:
         if char.is_spc:
             owner_data = None
         else:
-            owner_data = await OwnerData.fetch(char.guild, char.user)
-            if owner_data is None:
+            owner = owners.get(char.user)
+            if owner is None:
                 # We couldn't find them; maybe Discord is throwing a fit.
                 # Without owner data, however, we won't return this character.
                 continue
+            owner_data = OwnerData.from_user(owner)
 
         base_profile = PublicCharacter.create(char)
         guild_profile = CharData(

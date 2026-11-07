@@ -558,6 +558,15 @@ async def test_changelog_fetch_failure(
     assert await saved_version(changelog_ctx) is None
 
 
+async def test_changelog_other_timeouts_raise(cog: CommandListener, changelog_ctx: MockCtx):
+    """Only the changelog fetch's timeout is treated as a fetch failure."""
+    with patch.object(VUser, "get_or_fetch", AsyncMock(side_effect=TimeoutError)):
+        with pytest.raises(TimeoutError):
+            await cog._show_changelog(changelog_ctx, "vr")
+
+    assert changelog_ctx.user.id not in cog._changelog_pending
+
+
 async def test_changelog_retried_after_fetch_failure(
     cog: CommandListener, changelog_ctx: MockCtx, mock_fetch_changelog: AsyncMock
 ):

@@ -172,7 +172,12 @@ class CommandListener(commands.Cog):
 
         try:
             vuser = await VUser.get_or_fetch(ctx.user.id)
-            release_info = await changelog.fetch_changelog()
+            try:
+                release_info = await changelog.fetch_changelog()
+            except TimeoutError:
+                # Caught here, so other timeouts are still reported
+                logger.warning("Timed out fetching changelog")
+                return
             # A release without notes still counts as seen
             has_notes = bool(release_info.text.strip())
             if has_notes and await self._should_see_changelog(
@@ -191,7 +196,7 @@ class CommandListener(commands.Cog):
             vuser.last_version_used = release_info.tag
             if vuser.id is None or vuser.is_changed:
                 await vuser.save()
-        except (aiohttp.ClientError, KeyError, TimeoutError) as err:
+        except (aiohttp.ClientError, KeyError) as err:
             logger.warning("Unable to fetch changelog: {!r}", err)
         finally:
             # If they were shown a changelog, it doesn't really matter if we

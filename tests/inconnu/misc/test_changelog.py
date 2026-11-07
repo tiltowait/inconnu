@@ -285,10 +285,14 @@ async def test_show_changelog_fetch_error(ctx: MockCtx, error: Exception):
 async def test_fetch_changelog_has_timeout():
     """A slow GitHub can't outlast Discord's response deadline."""
     fetch_changelog.cache_clear()
-    with patch.object(aiohttp, "ClientSession", side_effect=aiohttp.ClientError) as session:
-        with pytest.raises(aiohttp.ClientError):
-            await fetch_changelog()
-    fetch_changelog.cache_clear()
+    try:
+        with patch.object(
+            aiohttp, "ClientSession", autospec=True, side_effect=aiohttp.ClientError
+        ) as session:
+            with pytest.raises(aiohttp.ClientError):
+                await fetch_changelog()
+    finally:
+        fetch_changelog.cache_clear()
 
     timeout = session.call_args.kwargs["timeout"]
     assert timeout.total is not None and timeout.total < 3

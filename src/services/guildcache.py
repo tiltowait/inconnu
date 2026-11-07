@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+from collections.abc import Collection
 
 import aiosqlite
 import discord
@@ -252,8 +253,16 @@ class GuildCache:
             return CachedMember.model_validate(data)
 
     @validate
-    async def fetchmembers(self, guild: int | CachedGuild | discord.Guild) -> list[CachedMember]:
-        """Fetch a cached member."""
+    async def fetchmembers(
+        self,
+        guild: int | CachedGuild | discord.Guild,
+        ids: Collection[int] | None = None,
+    ) -> list[CachedMember]:
+        """Fetch a guild's cached members, or only those in ids if given.
+        Members not in the cache are skipped."""
+        if ids is not None and not ids:
+            return []
+
         guild_id = guild if isinstance(guild, int) else guild.id
         if isinstance(guild, CachedGuild):
             cguild = guild
@@ -262,7 +271,13 @@ class GuildCache:
             if cguild is None:
                 return []
 
-        async with self.db.execute("SELECT * FROM members WHERE guild=?", (guild_id,)) as cur:
+        query = "SELECT * FROM members WHERE guild=?"
+        params: tuple[int, ...] = (guild_id,)
+        if ids is not None:
+            query += f" AND id IN ({','.join('?' * len(ids))})"
+            params += tuple(ids)
+
+        async with self.db.execute(query, params) as cur:
             members = []
             async for row in cur:
                 data = dict(row)

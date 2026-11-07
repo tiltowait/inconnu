@@ -252,6 +252,25 @@ async def test_fetchmembers_nonexistent_guild(gce: GuildCache):
     assert members == []
 
 
+async def test_fetchmembers_by_ids(gcf: GuildCache, g2: MockGuild):
+    """Only the requested members are fetched; uncached IDs are skipped."""
+    members = await gcf.fetchmembers(g2.id, ids={0, 2, 999})
+    assert sorted(m.id for m in members) == [0, 2]
+    assert all(m.guild.id == g2.id for m in members)
+
+
+async def test_fetchmembers_empty_ids(gcf: GuildCache, g2: MockGuild):
+    """An empty ID collection fetches nothing."""
+    with patch.object(gcf, "fetchguild", wraps=gcf.fetchguild) as mock_fetchguild:
+        assert await gcf.fetchmembers(g2.id, ids=set()) == []
+    mock_fetchguild.assert_not_called()
+
+
+async def test_fetchmembers_ids_other_guild(gcf: GuildCache, g1: MockGuild):
+    """Members of other guilds aren't returned, even if their IDs match."""
+    assert await gcf.fetchmembers(g1.id, ids={0, 1, 2}) == []
+
+
 async def test_guild_with_none_icon(gce: GuildCache):
     """Guilds with no icon should store None."""
     guild = MagicMock(spec=Guild)

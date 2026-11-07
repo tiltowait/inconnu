@@ -1,7 +1,9 @@
 """Tests for inconnu/roleplay/post.py PostModal helper methods."""
 
+import asyncio
 import inspect
 from collections.abc import Generator
+from functools import partial
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -72,6 +74,7 @@ def posting_modal(mock_post_modal: MockPostModal, webhook: MockWebhook) -> MockP
     mock_post_modal._clean_post_content.return_value = ["First page", "Second page"]
     mock_post_modal._clean_tags.return_value = ["tag"]
     mock_post_modal._clean_title.return_value = "A title"
+    mock_post_modal._send_rp_post = partial(PostModal._send_rp_post, mock_post_modal)
     return mock_post_modal
 
 
@@ -353,6 +356,57 @@ async def test_empty_post_rejected(mock_post_modal: MockPostModal):
     show_error.assert_awaited_once()
     interaction.response.send_message.assert_not_awaited()
     mock_post_modal.bot.prep_webhook.assert_not_called()
+
+
+async def test_new_post_overlaps_ack_with_sending(
+    posting_modal: MockPostModal,
+    webhook: MockWebhook,
+    interaction: MockInteraction,
+    new_post: MagicMock,
+):
+    """The post starts sending without waiting for the acknowledgment."""
+    sending = asyncio.Event()
+
+    async def prep_webhook(_: Any) -> MockWebhook:
+        """Signal that sending has started."""
+        sending.set()
+        return webhook
+
+    async def defer():
+        """Finish only once sending has started."""
+        await asyncio.wait_for(sending.wait(), timeout=1)
+
+    posting_modal.bot.prep_webhook.side_effect = prep_webhook
+    interaction.response.defer.side_effect = defer
+
+    await PostModal._new_rp_post(posting_modal, interaction)
+
+    interaction.response.defer.assert_awaited_once()
+    assert webhook.send.await_count == 2
+
+
+async def test_new_post_error_waits_for_ack(
+    posting_modal: MockPostModal, interaction: MockInteraction
+):
+    """A failed post doesn't reach the reporter until the interaction is answered."""
+    acknowledged = asyncio.Event()
+
+    async def defer():
+        """Hold the acknowledgment until the test releases it."""
+        await acknowledged.wait()
+
+    posting_modal.bot.prep_webhook.side_effect = errors.WebhookError("No permission")
+    interaction.response.defer.side_effect = defer
+
+    post = asyncio.create_task(PostModal._new_rp_post(posting_modal, interaction))
+    await asyncio.sleep(0.01)
+
+    posting_modal.bot.prep_webhook.assert_awaited_once()
+    assert not post.done()
+
+    acknowledged.set()
+    with pytest.raises(errors.WebhookError):
+        await post
 
 
 async def test_new_post_only_pings_users(

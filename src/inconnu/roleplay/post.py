@@ -1,5 +1,6 @@
 """Tupperbox-style character posting."""
 
+import asyncio
 import re
 from typing import TYPE_CHECKING, Any, cast
 
@@ -182,15 +183,24 @@ class PostModal(discord.ui.Modal):
 
     async def _new_rp_post(self, interaction: discord.Interaction):
         """Make a new Rolepost."""
-        assert interaction.user is not None
-        contents = self._clean_post_content()
+        # Only edits return a single string
+        contents = cast(list[str], self._clean_post_content())
         if not contents:
             await ui.embeds.error(interaction, "Your post can't be empty.", title="Nothing to post")
             return
 
-        # We need an interaction response, so make and delete this one
-        await interaction.response.send_message("Posting!", ephemeral=True, delete_after=1)
+        # We need an interaction response, but the user doesn't need to see one.
+        # It overlaps with sending the post. Errors must wait for it, so the
+        # reporter knows the interaction was already answered.
+        ack = asyncio.create_task(interaction.response.defer())
+        try:
+            await self._send_rp_post(interaction, contents)
+        finally:
+            await ack
 
+    async def _send_rp_post(self, interaction: discord.Interaction, contents: list[str]):
+        """Send the Rolepost's messages and register them."""
+        assert interaction.user is not None
         webhook = await self.bot.prep_webhook(interaction.channel)
         webhook_avatar = self.character.profile_image_url or get_avatar(interaction.user)
 

@@ -176,8 +176,8 @@ class GuildCache:
         await self.db.commit()
 
     @validate
-    async def fetchguild(self, guild_id: int, members=True) -> CachedGuild | None:
-        """Fetch a guild."""
+    async def fetchguild(self, guild_id: int, members=False) -> CachedGuild | None:
+        """Fetch a guild, with its members only if requested."""
         async with self.db.execute("SELECT * FROM guilds WHERE id=?", (guild_id,)) as cur:
             row = await cur.fetchone()
             if row is None:
@@ -236,7 +236,7 @@ class GuildCache:
     async def fetchmember(self, guild_id: int, member_id: int) -> CachedMember | None:
         """Fetch a cached member. The member's guild doesn't include its
         members, since loading them would make this scale with guild size."""
-        cguild = await self.fetchguild(guild_id, members=False)
+        cguild = await self.fetchguild(guild_id)
         if cguild is None:
             return None
 
@@ -258,7 +258,7 @@ class GuildCache:
         if isinstance(guild, CachedGuild):
             cguild = guild
         else:
-            cguild = await self.fetchguild(guild_id, members=False)
+            cguild = await self.fetchguild(guild_id)
             if cguild is None:
                 return []
 

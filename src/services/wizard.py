@@ -23,7 +23,7 @@ class CharacterGuild(BaseModel):
     @classmethod
     async def fetch(cls, id: int) -> Self:
         """Fetch guild data from the guild cache."""
-        guild = await services.guild_cache.fetchguild(id, members=False)
+        guild = await services.guild_cache.fetchguild(id)
         if guild is None:
             # Unlikely in most circumstances
             return cls.unknown(id)

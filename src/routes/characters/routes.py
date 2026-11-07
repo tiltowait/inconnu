@@ -91,7 +91,7 @@ async def get_character(
         raise HTTPException(404, detail="Character not found")
 
     # Get cached guild (primary data source for web routes)
-    guild = await guild_cache.fetchguild(char.guild, members=False)
+    guild = await guild_cache.fetchguild(char.guild)
     if guild is None:
         raise HTTPException(404, detail="Guild not found")
 
@@ -133,7 +133,7 @@ async def get_guild_characters(
     if not await guild_cache.ready():
         raise HTTPException(503, detail="Bot is still starting up")
 
-    guild = await guild_cache.fetchguild(guild_id, members=False)
+    guild = await guild_cache.fetchguild(guild_id)
     if guild is None:
         raise HTTPException(404, detail="Guild not found")
 

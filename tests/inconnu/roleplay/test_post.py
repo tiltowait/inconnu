@@ -20,14 +20,13 @@ from inconnu.roleplay.post import PostModal, create_post, edit_post
 from models import HeaderSubdoc, RPPost, VChar
 from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
 from tests.characters import gen_char
-from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, PostFactory
+from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, MockShowError, PostFactory
 
 type MockChangelog = AsyncMock
 type MockGet = AsyncMock
 type MockInteraction = AsyncMock
 type MockNew = MagicMock
 type MockPostModal = MagicMock
-type MockShowError = AsyncMock
 type MockTextChannel = MagicMock
 type MockThread = MagicMock
 type MockWebhook = AsyncMock

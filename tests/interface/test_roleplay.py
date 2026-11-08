@@ -21,6 +21,7 @@ from utils.discord_helpers import raw_bulk_delete_handler
 
 type MockBot = MagicMock
 type MockChannel = AsyncMock
+type MockCollection = AsyncMock
 type MockMessage = MagicMock
 type PostSaver = Callable[..., Awaitable[RPPost]]
 
@@ -104,7 +105,7 @@ async def save_post() -> AsyncGenerator[PostSaver]:
 
 
 @pytest.fixture
-def mock_rp_posts() -> Generator[AsyncMock]:
+def mock_rp_posts() -> Generator[MockCollection]:
     """The raw Rolepost collection, for the writes mongomock's client can't reach."""
     collection = AsyncMock(spec=type(roleplay_module.db.rp_posts))
     with patch.object(roleplay_module.db, "rp_posts", collection):
@@ -298,7 +299,7 @@ async def test_cached_webhook_message_is_marked(
 
 
 async def test_bulk_delete_marks_possible_roleposts(
-    cog: RoleplayCog, mock_rp_posts: AsyncMock, vguild: VGuild
+    cog: RoleplayCog, mock_rp_posts: MockCollection, vguild: VGuild
 ):
     """Bulk deletions mark cached webhook messages and uncached messages, but not
     cached messages from users."""
@@ -314,7 +315,7 @@ async def test_bulk_delete_marks_possible_roleposts(
 
 
 async def test_bulk_delete_of_only_user_messages(
-    cog: RoleplayCog, deletion_channel: MockChannel, mock_rp_posts: AsyncMock
+    cog: RoleplayCog, deletion_channel: MockChannel, mock_rp_posts: MockCollection
 ):
     """With nothing that could be a Rolepost, nothing is marked or reported."""
     message = cached_message(1, 100, webhook_id=None)
@@ -328,7 +329,7 @@ async def test_bulk_delete_of_only_user_messages(
 async def test_bulk_delete_sends_spaced_notices(
     cog: RoleplayCog,
     deletion_channel: MockChannel,
-    mock_rp_posts: AsyncMock,
+    mock_rp_posts: MockCollection,
     save_post: PostSaver,
     deletion_guild: VGuild,
 ):
@@ -356,7 +357,7 @@ async def test_bulk_delete_after_another_listener(
     cog: RoleplayCog,
     mock_bot: MockBot,
     deletion_channel: MockChannel,
-    mock_rp_posts: AsyncMock,
+    mock_rp_posts: MockCollection,
     save_post: PostSaver,
     deletion_guild: VGuild,
 ):
@@ -375,7 +376,7 @@ async def test_bulk_delete_after_another_listener(
 async def test_bulk_delete_of_one_post_has_no_delay(
     cog: RoleplayCog,
     deletion_channel: MockChannel,
-    mock_rp_posts: AsyncMock,
+    mock_rp_posts: MockCollection,
     save_post: PostSaver,
     deletion_guild: VGuild,
 ):
@@ -392,7 +393,7 @@ async def test_bulk_delete_of_one_post_has_no_delay(
 async def test_bulk_delete_without_roleposts_sends_nothing(
     cog: RoleplayCog,
     deletion_channel: MockChannel,
-    mock_rp_posts: AsyncMock,
+    mock_rp_posts: MockCollection,
     save_post: PostSaver,
     deletion_guild: VGuild,
 ):
@@ -406,7 +407,7 @@ async def test_bulk_delete_without_roleposts_sends_nothing(
 async def test_bulk_delete_without_deletion_channel(
     cog: RoleplayCog,
     deletion_channel: MockChannel,
-    mock_rp_posts: AsyncMock,
+    mock_rp_posts: MockCollection,
     vguild: VGuild,
 ):
     """Without a deletion channel, posts are marked and there's nothing to look up."""
@@ -419,7 +420,7 @@ async def test_bulk_delete_without_deletion_channel(
 
 
 async def test_bulk_delete_outside_a_guild(
-    cog: RoleplayCog, mock_bot: MockBot, mock_rp_posts: AsyncMock
+    cog: RoleplayCog, mock_bot: MockBot, mock_rp_posts: MockCollection
 ):
     """A bulk deletion with no guild has no deletion channel to look up."""
     payload = bulk_event(ids={1})
@@ -435,7 +436,7 @@ async def test_bulk_delete_outside_a_guild(
 async def test_bulk_notice_failure_is_ignored(
     cog: RoleplayCog,
     deletion_channel: MockChannel,
-    mock_rp_posts: AsyncMock,
+    mock_rp_posts: MockCollection,
     save_post: PostSaver,
     deletion_guild: VGuild,
     error: type[discord.HTTPException],
@@ -456,7 +457,7 @@ async def test_bulk_notice_failure_is_ignored(
 async def test_bulk_notices_stop_on_broken_channel(
     cog: RoleplayCog,
     deletion_channel: MockChannel,
-    mock_rp_posts: AsyncMock,
+    mock_rp_posts: MockCollection,
     save_post: PostSaver,
     deletion_guild: VGuild,
     error: type[discord.HTTPException],
@@ -477,7 +478,7 @@ async def test_bulk_notices_stop_on_broken_channel(
 # Test on_guild_channel_delete
 
 
-async def test_channel_delete_marks_its_roleposts(cog: RoleplayCog, mock_rp_posts: AsyncMock):
+async def test_channel_delete_marks_its_roleposts(cog: RoleplayCog, mock_rp_posts: MockCollection):
     """Deleting a channel marks its Roleposts as deleted, leaving any that already
     were, so that their deletion dates stay accurate."""
     channel = MagicMock(spec=discord.TextChannel, id=4321)
@@ -490,7 +491,7 @@ async def test_channel_delete_marks_its_roleposts(cog: RoleplayCog, mock_rp_post
     assert update["$set"]["deleted"] is True
 
 
-async def test_thread_delete_marks_its_roleposts(cog: RoleplayCog, mock_rp_posts: AsyncMock):
+async def test_thread_delete_marks_its_roleposts(cog: RoleplayCog, mock_rp_posts: MockCollection):
     """Deleting a thread marks its Roleposts as deleted, leaving any that already
     were."""
     payload = MagicMock(spec=discord.RawThreadDeleteEvent, thread_id=8765)

@@ -22,6 +22,7 @@ from models.rpheader import DamageSubdoc, HeaderSubdoc
 type MockCollection = AsyncMock
 type MockCtx = MagicMock
 type MockFind = MagicMock
+type MockShowError = AsyncMock
 type PostFactory = Callable[..., RPPost]
 type SetResults = Callable[[list[dict[str, Any]]], None]
 
@@ -60,7 +61,7 @@ def rp_ctx() -> MockCtx:
 
 
 @pytest.fixture
-def show_error() -> Generator[AsyncMock]:
+def show_error() -> Generator[MockShowError]:
     """The error shown to the user."""
     with patch("ui.embeds.error", new_callable=AsyncMock) as mock:
         yield mock

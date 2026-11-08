@@ -4,7 +4,7 @@ import re
 from collections.abc import Generator
 from datetime import datetime
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import discord
 import pytest
@@ -17,6 +17,7 @@ from tests.inconnu.roleplay.conftest import (
     VISIBLE_CHANNEL_ID,
     MockCtx,
     MockFind,
+    MockShowError,
     PostFactory,
 )
 
@@ -70,7 +71,7 @@ def paginator() -> Generator[MockPaginator]:
 
 
 async def test_only_finds_authors_posts(
-    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
 ):
     """The search covers the author's undeleted posts on this server, up to 25."""
     await run_search(rp_ctx, author)
@@ -92,7 +93,7 @@ async def test_unreadable_channels_are_excluded(
     rp_ctx: MockCtx,
     author: MockMember,
     find: MockFind,
-    show_error: AsyncMock,
+    show_error: MockShowError,
     view_channel: bool,
     read_message_history: bool,
 ):
@@ -110,7 +111,7 @@ async def test_unreadable_channels_are_excluded(
 
 
 async def test_own_posts_ignore_channel_visibility(
-    rp_ctx: MockCtx, find: MockFind, show_error: AsyncMock
+    rp_ctx: MockCtx, find: MockFind, show_error: MockShowError
 ):
     """Users can find their own posts in channels they can no longer see."""
     await run_search(rp_ctx, rp_ctx.user)
@@ -120,7 +121,7 @@ async def test_own_posts_ignore_channel_visibility(
 
 
 async def test_private_threads_need_manage_threads(
-    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
 ):
     """Others' posts in private threads only show in readable channels where the
     invoker can manage threads."""
@@ -140,7 +141,7 @@ async def test_private_threads_need_manage_threads(
 
 
 async def test_no_visible_channels_finds_nothing(
-    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
 ):
     """An invoker who can't see any channels gets no results, rather than all of them."""
     rp_ctx.guild.channels.clear()
@@ -167,7 +168,7 @@ async def test_needle_is_normalized(
 
 
 async def test_character_filter(
-    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
 ):
     """A character name matches regardless of case."""
     await run_search(rp_ctx, author, character="Nadea")
@@ -176,7 +177,7 @@ async def test_character_filter(
 
 
 async def test_invalid_character_ignored(
-    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
 ):
     """An invalid character name is dropped from the search."""
     await run_search(rp_ctx, author, character="Bad.*Name")
@@ -216,7 +217,7 @@ async def test_date_filters(
     rp_ctx: MockCtx,
     author: MockMember,
     find: MockFind,
-    show_error: AsyncMock,
+    show_error: MockShowError,
     dates: dict[str, str],
     expected: dict[str, datetime],
 ):
@@ -234,7 +235,7 @@ async def test_bad_dates_stop_search(
     rp_ctx: MockCtx,
     author: MockMember,
     find: MockFind,
-    show_error: AsyncMock,
+    show_error: MockShowError,
     dates: dict[str, str],
 ):
     """Bad dates show an error instead of searching."""
@@ -259,7 +260,7 @@ async def test_sort_order(
     rp_ctx: MockCtx,
     author: MockMember,
     find: MockFind,
-    show_error: AsyncMock,
+    show_error: MockShowError,
     order: SortOrder,
     needle: str | None,
     expected: tuple[str, Any],
@@ -330,7 +331,7 @@ async def test_no_results_lists_filters(
     author: MockMember,
     mentioned: MockMember,
     find: MockFind,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """The not found error repeats what was searched for."""
     await run_search(
@@ -356,7 +357,7 @@ async def test_no_results_lists_filters(
 
 
 async def test_no_results_lists_character(
-    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
 ):
     """The not found error includes the character searched for."""
     await run_search(rp_ctx, author, character="Nadea")
@@ -367,7 +368,7 @@ async def test_no_results_lists_character(
 
 
 async def test_no_results_skips_ignored_character(
-    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
 ):
     """An invalid character name wasn't searched for, so it isn't listed."""
     await run_search(rp_ctx, author, character="Bad.*Name")
@@ -376,7 +377,7 @@ async def test_no_results_skips_ignored_character(
 
 
 async def test_no_results_without_filters(
-    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
 ):
     """With nothing to list, the not found error is a plain sentence."""
     await run_search(rp_ctx, author)

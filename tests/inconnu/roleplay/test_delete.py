@@ -14,7 +14,7 @@ import db
 from inconnu.roleplay.delete import DeletionModal, delete_message_chain, deletion_embed
 from models import RPPost
 from services.webhooks import ChannelWebhook
-from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, PostFactory
+from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, MockShowError, PostFactory
 from utils.urls import post_url
 
 type MockFindOne = AsyncMock
@@ -103,7 +103,7 @@ async def test_user_message_rejected(
     rp_ctx: MockCtx,
     webhook: MockWebhook,
     message: MockMessage,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """A regular user's message can't be deleted."""
     message.author.bot = False
@@ -118,7 +118,7 @@ async def test_bot_message_rejected(
     rp_ctx: MockCtx,
     webhook: MockWebhook,
     message: MockMessage,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """Inconnu's own messages aren't Roleposts."""
     rp_ctx.bot.user = message.author
@@ -133,7 +133,7 @@ async def test_other_webhook_rejected(
     rp_ctx: MockCtx,
     webhook: MockWebhook,
     message: MockMessage,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """A message from a different webhook can't be deleted."""
     message.author.id = WEBHOOK_ID + 1
@@ -150,7 +150,7 @@ async def test_header_points_to_header_delete(
     message: MockMessage,
     find_one: MockFindOne,
     headers: MockHeaders,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """A standalone header is deleted with a different command."""
     headers.find_one.return_value = {"message": MESSAGE_ID}
@@ -167,7 +167,7 @@ async def test_unknown_message_rejected(
     message: MockMessage,
     find_one: MockFindOne,
     headers: MockHeaders,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """An unrecorded webhook message needs a moderator."""
     await delete_message_chain(rp_ctx, message)
@@ -182,7 +182,7 @@ async def test_other_users_post_rejected(
     message: MockMessage,
     find_one: MockFindOne,
     make_post: PostFactory,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """Users can only delete their own Roleposts."""
     find_one.return_value = make_post(user=USER_ID + 1)
@@ -277,7 +277,7 @@ async def test_failed_deletion_is_reported(
     webhook: MockWebhook,
     interaction: MockInteraction,
     make_post: PostFactory,
-    show_error: AsyncMock,
+    show_error: MockShowError,
     error: type[discord.HTTPException],
 ):
     """A message that can't be deleted doesn't stop the rest, and the user is told."""
@@ -296,7 +296,7 @@ async def test_wrong_confirmation_deletes_nothing(
     webhook: MockWebhook,
     interaction: MockInteraction,
     make_post: PostFactory,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """Anything but DELETE leaves the post alone."""
     modal = DeletionModal(webhook, make_post(id_chain=[1]))

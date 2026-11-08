@@ -7,6 +7,8 @@ import pytest
 
 from services.webhooks import ChannelWebhook
 
+type MockCtx = AsyncMock
+
 
 @pytest.fixture
 def bot_user() -> discord.User:
@@ -49,7 +51,7 @@ def header_record(owner_user: discord.Member) -> dict:
 
 
 @pytest.fixture
-def ctx(owner_user: discord.Member, bot_user: discord.User, webhook: discord.Webhook) -> AsyncMock:
+def ctx(owner_user: discord.Member, bot_user: discord.User, webhook: discord.Webhook) -> MockCtx:
     """A minimal AppCtx mock whose bot finds the webhook for its messages."""
     ctx = AsyncMock()
     ctx.user = owner_user

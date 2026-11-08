@@ -38,7 +38,7 @@ class ChannelWebhook:
         """The webhook's ID, which is also its messages' author ID."""
         return self.webhook.id
 
-    def _target(self) -> dict[str, Any]:
+    def _target(self) -> dict[str, discord.Thread]:
         """The thread argument, if posting in a thread."""
         return {"thread": self.thread} if self.thread is not None else {}
 
@@ -151,8 +151,8 @@ class WebhookCache:
                     channel.guild.name,
                 )
             else:
-                logger.info(
-                    "Using CACHED webhook in #{} ({})",
+                logger.debug(
+                    "Using cached webhook in #{} ({})",
                     channel.name,
                     channel.guild.name,
                 )

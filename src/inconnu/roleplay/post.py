@@ -221,7 +221,7 @@ class PostModal(discord.ui.Modal):
         identity = {"username": self.character.name, "avatar_url": webhook_avatar}
 
         # The Rolepost's messages, in order: header, pages, mentions
-        messages: list[dict[str, Any]] = []
+        messages: list[dict[str, discord.Embed | str | discord.AllowedMentions]] = []
         if self.show_header:
             # We take a regular header embed as a base, then modify it ... a lot
             header_embed = inconnu.header.embed(self.header, self.character, True)

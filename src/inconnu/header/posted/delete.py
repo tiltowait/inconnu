@@ -8,6 +8,8 @@ import errors
 from ctx import AppCtx
 from utils.permissions import is_approved_user
 
+UNKNOWN_MESSAGE = 10008  # Discord's error code for a deleted message
+
 
 async def delete_header(ctx: AppCtx, message: discord.Message):
     """Validate ownership and delete a posted RP header."""
@@ -51,3 +53,8 @@ async def delete_header(ctx: AppCtx, message: discord.Message):
             ephemeral=True,
         )
         logger.warning("Unable to delete header {}", message.jump_url)
+    except discord.NotFound as err:
+        # A missing webhook is a real failure; a missing message isn't
+        if err.code != UNKNOWN_MESSAGE:
+            raise
+        await ctx.respond("This header was already deleted.", ephemeral=True)

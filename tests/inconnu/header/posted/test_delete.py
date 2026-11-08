@@ -6,10 +6,12 @@ import discord
 import pytest
 
 import errors
-from inconnu.header.posted.delete import delete_header
+from inconnu.header.posted.delete import UNKNOWN_MESSAGE, delete_header
+from services.webhooks import UNKNOWN_WEBHOOK
 
 _IS_APPROVED = "inconnu.header.posted.delete.is_approved_user"
 
+type MockCtx = AsyncMock
 type MockMessage = AsyncMock
 type MockWebhook = AsyncMock
 
@@ -223,3 +225,48 @@ async def test_forbidden_on_delete(ctx: AsyncMock, bot_message: MockMessage, hea
     args, kwargs = ctx.respond.await_args
     assert "Something went wrong" in args[0]
     assert kwargs["ephemeral"] is True
+
+
+def not_found(code: int) -> discord.NotFound:
+    """A NotFound error with the given Discord error code."""
+    response = MagicMock(status=404, reason="Not Found")
+    return discord.NotFound(response, {"code": code, "message": "Unknown"})
+
+
+@pytest.mark.parametrize("fixture", ["bot_message", "webhook_message"])
+async def test_already_deleted(
+    ctx: MockCtx,
+    webhook: MockWebhook,
+    header_record: dict,
+    fixture: str,
+    request: pytest.FixtureRequest,
+):
+    """A header deleted before we got to it is reported as such, not as an
+    error."""
+    message: MockMessage = request.getfixturevalue(fixture)
+    message.delete.side_effect = not_found(UNKNOWN_MESSAGE)
+    webhook.delete_message.side_effect = not_found(UNKNOWN_MESSAGE)
+
+    with (
+        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch(_IS_APPROVED, return_value=True),
+    ):
+        await delete_header(ctx, message)
+
+    ctx.respond.assert_awaited_once_with("This header was already deleted.", ephemeral=True)
+
+
+async def test_missing_webhook_is_an_error(
+    ctx: MockCtx, webhook: MockWebhook, webhook_message: MockMessage, header_record: dict
+):
+    """If the webhook itself is gone, the failure is raised for reporting."""
+    webhook.delete_message.side_effect = not_found(UNKNOWN_WEBHOOK)
+
+    with (
+        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch(_IS_APPROVED, return_value=True),
+        pytest.raises(discord.NotFound),
+    ):
+        await delete_header(ctx, webhook_message)
+
+    ctx.respond.assert_not_awaited()

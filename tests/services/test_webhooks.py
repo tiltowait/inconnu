@@ -11,6 +11,7 @@ from services.webhooks import ChannelWebhook, webhook_home
 
 type MockChannel = MagicMock
 type MockGuild = MagicMock
+type MockThread = MagicMock
 type MockUser = MagicMock
 type MockWebhook = MagicMock
 
@@ -717,7 +718,7 @@ async def test_check_webhook_never_adds_new_ids_after_poll(
 # webhook_home Tests
 
 
-def make_thread(parent: object) -> MagicMock:
+def make_thread(parent: object) -> MockThread:
     """A thread in the given parent channel."""
     thread = MagicMock(spec=discord.Thread, id=6001)
     thread.parent = parent  # Mock() treats parent= as its own argument

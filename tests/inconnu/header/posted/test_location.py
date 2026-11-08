@@ -13,6 +13,12 @@ from services.webhooks import ChannelWebhook, WebhookCache
 
 _RESOLVE_WEBHOOK = "inconnu.header.posted.location._resolve_webhook"
 
+type MockBot = MagicMock
+type MockChannel = MagicMock
+type MockCtx = AsyncMock
+type MockMessage = AsyncMock
+type MockResolve = AsyncMock
+
 
 @pytest.fixture
 def message(bot_user: discord.User) -> discord.Message:
@@ -34,21 +40,21 @@ def webhook_message() -> discord.Message:
 
 
 @pytest.fixture
-async def no_webhook() -> AsyncGenerator[AsyncMock]:
+async def no_webhook() -> AsyncGenerator[MockResolve]:
     """Patch _resolve_webhook to return None (no webhook found)."""
     with patch(_RESOLVE_WEBHOOK, new_callable=AsyncMock, return_value=None) as mock:
         yield mock
 
 
 @pytest.fixture
-async def mock_webhook(webhook: discord.Webhook) -> AsyncGenerator[AsyncMock]:
+async def mock_webhook(webhook: discord.Webhook) -> AsyncGenerator[MockResolve]:
     """Patch _resolve_webhook to return a webhook."""
     with patch(_RESOLVE_WEBHOOK, new_callable=AsyncMock, return_value=webhook) as mock:
         yield mock
 
 
 async def test_not_bot_message_and_no_webhook(
-    ctx: AsyncMock, no_webhook: AsyncMock, other_user: discord.Member
+    ctx: MockCtx, no_webhook: MockResolve, other_user: discord.Member
 ):
     """Non-bot, non-webhook message is rejected."""
     message = MagicMock(spec=discord.Message)
@@ -63,7 +69,7 @@ async def test_not_bot_message_and_no_webhook(
     assert kwargs["ephemeral"] is True
 
 
-async def test_no_db_record(ctx: AsyncMock, no_webhook: AsyncMock, message: discord.Message):
+async def test_no_db_record(ctx: MockCtx, no_webhook: MockResolve, message: discord.Message):
     """Bot message with no header record in the database is rejected."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
         await edit_location(ctx, message)
@@ -75,8 +81,8 @@ async def test_no_db_record(ctx: AsyncMock, no_webhook: AsyncMock, message: disc
 
 
 async def test_non_owner_rejected(
-    ctx: AsyncMock,
-    no_webhook: AsyncMock,
+    ctx: MockCtx,
+    no_webhook: MockResolve,
     message: discord.Message,
     other_user: discord.Member,
     header_record: dict,
@@ -94,7 +100,7 @@ async def test_non_owner_rejected(
 
 
 async def test_owner_gets_modal(
-    ctx: AsyncMock, no_webhook: AsyncMock, message: discord.Message, header_record: dict
+    ctx: MockCtx, no_webhook: MockResolve, message: discord.Message, header_record: dict
 ):
     """The header owner receives the edit modal."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record):
@@ -105,8 +111,8 @@ async def test_owner_gets_modal(
 
 
 async def test_webhook_message_with_record(
-    ctx: AsyncMock,
-    mock_webhook: AsyncMock,
+    ctx: MockCtx,
+    mock_webhook: MockResolve,
     webhook_message: discord.Message,
     header_record: dict,
 ):
@@ -119,7 +125,7 @@ async def test_webhook_message_with_record(
 
 
 async def test_webhook_message_no_record(
-    ctx: AsyncMock, mock_webhook: AsyncMock, webhook_message: discord.Message
+    ctx: MockCtx, mock_webhook: MockResolve, webhook_message: discord.Message
 ):
     """A webhook-authored message with no db record is rejected."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
@@ -141,7 +147,7 @@ def _make_header_message(
     author_url: str = "https://example.com/profile",
     author_icon_url: str = "https://example.com/icon.png",
     footer_text: str = "",
-) -> AsyncMock:
+) -> MockMessage:
     """Build a mock message with a real embed for modal testing."""
     embed = discord.Embed(title=title)
     if author_name is not None:
@@ -473,7 +479,7 @@ async def test_callback_uses_webhook_edit_with_webhook(interaction: discord.Inte
 # _resolve_webhook
 
 
-def thread_in(parent: MagicMock | None) -> MagicMock:
+def thread_in(parent: MockChannel | None) -> MockChannel:
     """A thread in the given channel."""
     thread = MagicMock(spec=discord.Thread)
     thread.parent = parent  # Mock() treats parent= as its own argument
@@ -481,7 +487,7 @@ def thread_in(parent: MagicMock | None) -> MagicMock:
 
 
 @pytest.fixture
-def resolving_bot() -> MagicMock:
+def resolving_bot() -> MockBot:
     """A bot whose cache finds a matching webhook."""
     bot = MagicMock(spec=InconnuBot)
     bot.webhook_cache = AsyncMock(spec=WebhookCache)
@@ -489,9 +495,7 @@ def resolving_bot() -> MagicMock:
     return bot
 
 
-async def test_resolve_webhook_in_thread(
-    resolving_bot: MagicMock, webhook_message: discord.Message
-):
+async def test_resolve_webhook_in_thread(resolving_bot: MockBot, webhook_message: discord.Message):
     """A thread's header is matched against its parent's webhook, bound to the
     thread."""
     parent = MagicMock(spec=discord.ForumChannel)
@@ -505,7 +509,7 @@ async def test_resolve_webhook_in_thread(
 
 
 async def test_resolve_webhook_without_match(
-    resolving_bot: MagicMock, webhook_message: discord.Message
+    resolving_bot: MockBot, webhook_message: discord.Message
 ):
     """No matching webhook means no webhook."""
     resolving_bot.webhook_cache.matching_webhook.return_value = None
@@ -515,7 +519,7 @@ async def test_resolve_webhook_without_match(
 
 
 async def test_resolve_webhook_without_parent(
-    resolving_bot: MagicMock, webhook_message: discord.Message
+    resolving_bot: MockBot, webhook_message: discord.Message
 ):
     """A thread whose parent is unknown has no webhook."""
     assert await _resolve_webhook(resolving_bot, thread_in(None), webhook_message) is None

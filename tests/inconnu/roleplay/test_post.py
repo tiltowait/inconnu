@@ -25,7 +25,11 @@ from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, PostFactory
 type MockChangelog = AsyncMock
 type MockGet = AsyncMock
 type MockInteraction = AsyncMock
+type MockNew = MagicMock
 type MockPostModal = MagicMock
+type MockShowError = AsyncMock
+type MockTextChannel = MagicMock
+type MockThread = MagicMock
 type MockWebhook = AsyncMock
 
 CHANGELOG_ID = 7000
@@ -82,7 +86,7 @@ def posting_modal(mock_post_modal: MockPostModal, webhook: MockWebhook) -> MockP
 
 
 @pytest.fixture
-def new_post() -> Generator[MagicMock]:
+def new_post() -> Generator[MockNew]:
     """RPPost.new(), which makes a post whose save does nothing."""
     with patch.object(RPPost, "new", side_effect=lambda **_: AsyncMock(spec=RPPost)) as mock:
         yield mock
@@ -376,7 +380,7 @@ async def test_new_post_overlaps_ack_with_sending(
     posting_modal: MockPostModal,
     webhook: MockWebhook,
     interaction: MockInteraction,
-    new_post: MagicMock,
+    new_post: MockNew,
 ):
     """The post starts sending without waiting for the acknowledgment."""
     sending = asyncio.Event()
@@ -427,7 +431,7 @@ async def test_new_post_only_pings_users(
     posting_modal: MockPostModal,
     webhook: MockWebhook,
     interaction: MockInteraction,
-    new_post: MagicMock,
+    new_post: MockNew,
 ):
     """Every message in a post may ping users, but not roles or @everyone."""
     posting_modal.mentions = "<@1> <@&2>"
@@ -446,7 +450,7 @@ async def test_new_post_sends_as_character(
     posting_modal: MockPostModal,
     webhook: MockWebhook,
     interaction: MockInteraction,
-    new_post: MagicMock,
+    new_post: MockNew,
 ):
     """Each page is sent under the character's name and image, in order."""
     posting_modal.character.profile_image_url = "https://example.com/char.png"
@@ -464,7 +468,7 @@ async def test_new_post_falls_back_to_user_avatar(
     posting_modal: MockPostModal,
     webhook: MockWebhook,
     interaction: MockInteraction,
-    new_post: MagicMock,
+    new_post: MockNew,
 ):
     """A character with no image posts with the user's avatar."""
     await PostModal._new_rp_post(posting_modal, interaction)
@@ -475,7 +479,7 @@ async def test_new_post_falls_back_to_user_avatar(
 async def test_new_post_records_each_page(
     posting_modal: MockPostModal,
     interaction: MockInteraction,
-    new_post: MagicMock,
+    new_post: MockNew,
 ):
     """Each page gets a saved record, but only the first has the title and tags."""
     await PostModal._new_rp_post(posting_modal, interaction)
@@ -491,7 +495,7 @@ async def test_new_post_replaces_deleted_webhook(
     posting_modal: MockPostModal,
     webhook: MockWebhook,
     interaction: MockInteraction,
-    new_post: MagicMock,
+    new_post: MockNew,
 ):
     """If the channel's webhook was deleted, the whole post goes through its
     replacement."""
@@ -514,7 +518,7 @@ async def test_new_post_in_thread(
     posting_modal: MockPostModal,
     webhook: MockWebhook,
     interaction: MockInteraction,
-    new_post: MagicMock,
+    new_post: MockNew,
 ):
     """Every message of a thread post goes to the thread."""
     thread = MagicMock(spec=discord.Thread)
@@ -649,7 +653,7 @@ async def test_edit_of_missing_message(
     editing_modal: MockPostModal,
     webhook: MockWebhook,
     interaction: MockInteraction,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """If the message is gone, the user is told and the record isn't changed."""
     editing_modal._clean_post_content.return_value = "Changed"
@@ -671,7 +675,7 @@ async def test_edit_of_post_deleted_while_editing(
     webhook: MockWebhook,
     interaction: MockInteraction,
     get_post: MockGet,
-    show_error: AsyncMock,
+    show_error: MockShowError,
     content: str,
     found: bool,
 ):
@@ -871,8 +875,8 @@ async def test_create_post_opens_modal(rp_ctx: MockCtx):
 )
 async def test_create_post_without_webhooks(
     rp_ctx: MockCtx,
-    show_error: AsyncMock,
-    channel: MagicMock,
+    show_error: MockShowError,
+    channel: MockThread | MockTextChannel,
     message: str,
 ):
     """A channel that can't use webhooks gets an error saying why."""
@@ -908,7 +912,7 @@ async def test_edit_post_opens_modal(rp_ctx: MockCtx, make_post: PostFactory):
     assert modal.message is message
 
 
-async def test_edit_post_not_a_rolepost(rp_ctx: MockCtx, show_error: AsyncMock):
+async def test_edit_post_not_a_rolepost(rp_ctx: MockCtx, show_error: MockShowError):
     """Only Roleposts can be edited."""
     with patch.object(RPPost, "find_one", AsyncMock(return_value=None)):
         await edit_post(rp_ctx, MagicMock(spec=discord.Message))
@@ -918,7 +922,7 @@ async def test_edit_post_not_a_rolepost(rp_ctx: MockCtx, show_error: AsyncMock):
 
 
 async def test_edit_post_of_another_user(
-    rp_ctx: MockCtx, make_post: PostFactory, show_error: AsyncMock
+    rp_ctx: MockCtx, make_post: PostFactory, show_error: MockShowError
 ):
     """Users can only edit their own posts."""
     post = make_post(user=USER_ID + 1)
@@ -931,7 +935,7 @@ async def test_edit_post_of_another_user(
 
 
 async def test_edit_post_of_deleted_character(
-    rp_ctx: MockCtx, make_post: PostFactory, show_error: AsyncMock
+    rp_ctx: MockCtx, make_post: PostFactory, show_error: MockShowError
 ):
     """A deleted character's posts can't be edited."""
     with (

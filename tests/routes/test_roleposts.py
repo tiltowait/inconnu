@@ -24,6 +24,11 @@ TEST_CHANNEL_ID = 111111111
 TEST_USER_ID = 987654321
 TEST_CHAR_ID = PydanticObjectId()
 
+type MockChannel = MagicMock
+type MockGuild = MagicMock
+type MockMember = MagicMock
+type MockThread = MagicMock
+
 
 @pytest.fixture(autouse=True, scope="function")
 async def mock_beanie():
@@ -81,7 +86,7 @@ async def insert_rolepost(**overrides) -> RPPost:
     return post
 
 
-def make_mock_guild() -> MagicMock:
+def make_mock_guild() -> MockGuild:
     """Create a mock Discord guild."""
     guild = MagicMock(spec=discord.Guild)
     guild.id = TEST_GUILD_ID
@@ -90,7 +95,7 @@ def make_mock_guild() -> MagicMock:
     return guild
 
 
-def make_mock_member() -> MagicMock:
+def make_mock_member() -> MockMember:
     """Create a mock Discord member."""
     member = MagicMock(spec=discord.Member)
     member.id = TEST_USER_ID
@@ -103,7 +108,7 @@ def make_mock_member() -> MagicMock:
     return member
 
 
-def make_mock_channel() -> MagicMock:
+def make_mock_channel() -> MockChannel:
     """Create a mock Discord channel."""
     channel = MagicMock(spec=discord.TextChannel)
     channel.name = "rp-channel"
@@ -201,7 +206,7 @@ async def test_auth_required():
     assert resp.status_code == 401
 
 
-async def fetch_thread_changelog(thread: MagicMock | None) -> dict:
+async def fetch_thread_changelog(thread: MockThread | None) -> dict:
     """The changelog of a thread post, given the thread the guild finds."""
     post = await insert_rolepost(thread=4)
     guild = make_mock_guild()

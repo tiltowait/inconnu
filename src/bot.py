@@ -126,6 +126,9 @@ class InconnuBot(discord.AutoShardedBot):
         rp_post = await RPPost.find_one({"id_chain": message.reference.message_id})
         if rp_post is None:
             return
+        if rp_post.user == message.author.id:
+            # Replying to your own post
+            return
 
         # Users can't turn off reply pings to bots, so if the replier didn't
         # already ping the author, we can safely do it for them.

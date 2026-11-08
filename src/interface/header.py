@@ -136,6 +136,12 @@ class HeaderCog(CommandCog, name="Headers"):  # pyright: ignore[reportCallIssue,
         logger.info("HEADER: Removing header records from deleted channel {}", channel.name)
         await db.headers.delete_many({"channel": channel.id})
 
+    @commands.Cog.listener()
+    async def on_raw_thread_delete(self, payload: discord.RawThreadDeleteEvent):
+        """Remove header records from the deleted thread."""
+        logger.info("Removing header records from deleted thread {}", payload.thread_id)
+        await db.headers.delete_many({"channel": payload.thread_id})
+
 
 def setup(bot: InconnuBot):
     """Add the cog to the bot."""

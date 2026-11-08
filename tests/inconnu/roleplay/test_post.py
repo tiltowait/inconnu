@@ -18,7 +18,7 @@ from bot import InconnuBot
 from ctx import AppCtx
 from inconnu.roleplay.post import PostModal, create_post, edit_post
 from models import HeaderSubdoc, RPPost, VChar
-from services.webhooks import UNKNOWN_WEBHOOK
+from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
 from tests.characters import gen_char
 from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, PostFactory
 
@@ -66,7 +66,7 @@ def interaction() -> MockInteraction:
 def posting_modal(mock_post_modal: MockPostModal, webhook: MockWebhook) -> MockPostModal:
     """A modal ready to make a two-page post with no header or mentions."""
     mock_post_modal.bot = MagicMock(spec=InconnuBot)
-    mock_post_modal.bot.prep_webhook = AsyncMock(return_value=webhook)
+    mock_post_modal.bot.prep_webhook = AsyncMock(return_value=ChannelWebhook(webhook))
     mock_post_modal.bot.webhook_send = partial(InconnuBot.webhook_send, mock_post_modal.bot)
     mock_post_modal.character = MagicMock(spec=VChar)
     mock_post_modal.character.name = "Nadea"
@@ -105,7 +105,7 @@ def editing_modal(
     """A modal ready to edit a real post, with unchanged content, whose saves do
     nothing. Reloading the post finds it unchanged."""
     mock_post_modal.bot = MagicMock(spec=InconnuBot)
-    mock_post_modal.bot.prep_webhook = AsyncMock(return_value=webhook)
+    mock_post_modal.bot.prep_webhook = AsyncMock(return_value=ChannelWebhook(webhook))
     mock_post_modal.character = MagicMock(spec=VChar)
     mock_post_modal.character.profile_image_url = None
     mock_post_modal.message = MagicMock(spec=discord.Message, id=MESSAGE_ID)
@@ -381,10 +381,10 @@ async def test_new_post_overlaps_ack_with_sending(
     """The post starts sending without waiting for the acknowledgment."""
     sending = asyncio.Event()
 
-    async def prep_webhook(_: Any) -> MockWebhook:
+    async def prep_webhook(_: Any) -> ChannelWebhook:
         """Signal that sending has started."""
         sending.set()
-        return webhook
+        return ChannelWebhook(webhook)
 
     async def defer():
         """Finish only once sending has started."""
@@ -498,7 +498,7 @@ async def test_new_post_replaces_deleted_webhook(
     stale = AsyncMock(spec=discord.Webhook)
     response = MagicMock(spec=aiohttp.ClientResponse, status=404, reason="Not Found")
     stale.send.side_effect = discord.NotFound(response, {"code": UNKNOWN_WEBHOOK, "message": ""})
-    posting_modal.bot.prep_webhook.side_effect = [stale, webhook]
+    posting_modal.bot.prep_webhook.side_effect = [ChannelWebhook(stale), ChannelWebhook(webhook)]
 
     await PostModal._new_rp_post(posting_modal, interaction)
 
@@ -508,6 +508,28 @@ async def test_new_post_replaces_deleted_webhook(
         "Second page",
     ]
     assert [call.kwargs["message"].id for call in new_post.call_args_list] == [1, 2]
+
+
+async def test_new_post_in_thread(
+    posting_modal: MockPostModal,
+    webhook: MockWebhook,
+    interaction: MockInteraction,
+    new_post: MagicMock,
+):
+    """Every message of a thread post goes to the thread."""
+    thread = MagicMock(spec=discord.Thread)
+    posting_modal.bot.prep_webhook.return_value = ChannelWebhook(webhook, thread)
+    posting_modal.show_header = True
+    posting_modal.mentions = "<@10>"
+
+    with (
+        patch("inconnu.header.embed", return_value=discord.Embed(description="Header")),
+        patch("inconnu.header.register", new_callable=AsyncMock),
+    ):
+        await PostModal._new_rp_post(posting_modal, interaction)
+
+    assert webhook.send.await_count == 4  # Header, two pages, mentions
+    assert all(call.kwargs["thread"] is thread for call in webhook.send.await_args_list)
 
 
 async def test_new_post_saves_records(
@@ -716,6 +738,21 @@ async def test_changelog_shows_diff(
     assert embed.fields[0].value == str(post.url)
 
 
+async def test_changelog_names_thread(
+    editing_modal: MockPostModal,
+    interaction: MockInteraction,
+    changelog: MockChangelog,
+):
+    """A thread post's changelog names the thread, not its parent."""
+    post = editing_modal.post_to_edit
+    post.thread = 9000
+    post.edit_post("Changed")
+
+    await PostModal._post_to_changelog(editing_modal, interaction)
+
+    assert "edited a post in <#9000>" in changelog.send.await_args.kwargs["embed"].description
+
+
 async def test_changelog_fits_embed(
     editing_modal: MockPostModal,
     interaction: MockInteraction,
@@ -826,21 +863,22 @@ async def test_create_post_opens_modal(rp_ctx: MockCtx):
 
 
 @pytest.mark.parametrize(
-    "channel_type,message",
+    "channel,message",
     [
-        (discord.Thread, "unavailable in threads"),
-        (discord.TextChannel, "`Manage Webhooks`"),
+        (MagicMock(spec=discord.Thread, locked=True), "locked"),
+        (MagicMock(spec=discord.Thread, locked=False), "`Manage Webhooks`"),
+        (MagicMock(spec=discord.TextChannel), "`Manage Webhooks`"),
     ],
 )
 async def test_create_post_without_webhooks(
     rp_ctx: MockCtx,
     show_error: AsyncMock,
-    channel_type: type[discord.Thread | discord.TextChannel],
+    channel: MagicMock,
     message: str,
 ):
     """A channel that can't use webhooks gets an error saying why."""
     rp_ctx.bot.can_webhook.return_value = False
-    rp_ctx.channel = MagicMock(spec=channel_type)
+    rp_ctx.channel = channel
 
     await inspect.unwrap(create_post)(rp_ctx, saved_vampire())
 

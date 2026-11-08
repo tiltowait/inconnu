@@ -1,12 +1,59 @@
-"""Class package."""
+"""Webhooks for Roleposts and headers."""
 
 import asyncio
 from collections import defaultdict
+from dataclasses import dataclass
+from typing import Any
 
 import discord
 from loguru import logger
 
 UNKNOWN_WEBHOOK = 10015  # Discord's error code for a deleted webhook
+
+# Threads have no webhooks of their own; they use their parent's
+type WebhookChannel = discord.TextChannel | discord.ForumChannel
+
+
+def webhook_home(channel: object) -> tuple[WebhookChannel, discord.Thread | None] | None:
+    """The channel whose webhooks can post in the given channel, and the thread
+    they'd post in, if any. None if webhooks can't post there."""
+    thread = channel if isinstance(channel, discord.Thread) else None
+    parent = thread.parent if thread is not None else channel
+    if isinstance(parent, (discord.TextChannel, discord.ForumChannel)):
+        return parent, thread
+    return None
+
+
+@dataclass(frozen=True)
+class ChannelWebhook:
+    """A webhook bound to where it posts: its own channel, or one of that
+    channel's threads. Every call passes the thread, which Discord needs to
+    find the thread's messages."""
+
+    webhook: discord.Webhook
+    thread: discord.Thread | None = None
+
+    @property
+    def id(self) -> int:
+        """The webhook's ID, which is also its messages' author ID."""
+        return self.webhook.id
+
+    def _target(self) -> dict[str, Any]:
+        """The thread argument, if posting in a thread."""
+        return {"thread": self.thread} if self.thread is not None else {}
+
+    async def send(self, **kwargs: Any) -> discord.WebhookMessage:
+        """Send a message, waiting for it."""
+        return await self.webhook.send(wait=True, **self._target(), **kwargs)
+
+    async def edit_message(self, message_id: int, **kwargs: Any) -> discord.WebhookMessage:
+        """Edit one of the webhook's messages."""
+        return await self.webhook.edit_message(message_id, **self._target(), **kwargs)
+
+    async def delete_message(self, message_id: int):
+        """Delete one of the webhook's messages."""
+        thread_id = self.thread.id if self.thread is not None else None
+        await self.webhook.delete_message(message_id, thread_id=thread_id)
 
 
 class WebhookCache:
@@ -29,7 +76,7 @@ class WebhookCache:
         """Whether the bot created the webhook."""
         return webhook.user is not None and webhook.user.id == self.bot_id
 
-    async def _check_webhook(self, channel: discord.TextChannel, webhook_id: int) -> bool:
+    async def _check_webhook(self, channel: WebhookChannel, webhook_id: int) -> bool:
         """Check that the webhook still exists in the channel. Another of our
         webhooks there doesn't count, since the cache would keep using the
         missing one."""
@@ -71,7 +118,7 @@ class WebhookCache:
 
         self._guilds_polled.add(guild.id)
 
-    async def _load_channel(self, channel: discord.TextChannel):
+    async def _load_channel(self, channel: WebhookChannel):
         """Load the channel's webhook into the cache, if we have one there.
         Raises Forbidden."""
         if channel.guild.id not in self._guilds_polled:
@@ -88,7 +135,7 @@ class WebhookCache:
                 self.webhook_ids.add(webhook.id)
                 return
 
-    async def prep_webhook(self, channel: discord.TextChannel) -> discord.Webhook:
+    async def prep_webhook(self, channel: WebhookChannel) -> discord.Webhook:
         """Prepare a webhook, either from the cache or creating one. Raises Forbidden."""
         async with self._locks[channel.id]:
             await self._load_channel(channel)
@@ -124,7 +171,7 @@ class WebhookCache:
 
     async def matching_webhook(
         self,
-        channel: discord.TextChannel,
+        channel: WebhookChannel,
         webhook_id: int,
     ) -> discord.Webhook | None:
         """Our webhook in the channel, if it has the given ID (as when a
@@ -142,7 +189,7 @@ class WebhookCache:
 
         return None
 
-    async def update_webhooks(self, channel: discord.TextChannel):
+    async def update_webhooks(self, channel: WebhookChannel):
         """Check if the webhook was deleted or not."""
         logger.debug("Checking webhook updates in #{}", channel.name)
         if channel.guild.id not in self._guilds_polled:

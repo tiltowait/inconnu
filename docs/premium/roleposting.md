@@ -18,6 +18,8 @@ Roleposting lets you post a message "from" your character rather than your Disco
 
 Opens a dialogue where you write your post: up to **8000 characters** across two fields. **Inconnu** splits long posts across several messages as needed.
 
+Post in text channels, their threads, and forum posts. Locked threads don't accept Roleposts.
+
 ![/post uses Discord's modal dialogue.](../assets/post_example.png "/post uses Discord's modal dialogue.")
 
 > [!TIP]
@@ -71,7 +73,7 @@ Lists your tags, most-used first, with how many times you've used each. Select t
 
 ## /search
 
-Discord's search has trouble with Roleposts. In particular, `from:` doesn't work with them. `/search` finds your posts, or another player's posts in channels whose history you can read.
+Discord's search has trouble with Roleposts. In particular, `from:` doesn't work with them. `/search` finds your posts, or another player's posts in channels whose history you can read. Another player's posts in private threads only show if you can manage threads in that channel.
 
 > [!TIP]
 > `/search` **doesn't** require premium. Anyone can search a premium user's posts.

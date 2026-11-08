@@ -13,6 +13,7 @@ from pymongo.asynchronous.collection import AsyncCollection
 import db
 from inconnu.roleplay.delete import DeletionModal, delete_message_chain, deletion_embed
 from models import RPPost
+from services.webhooks import ChannelWebhook
 from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, PostFactory
 from utils.urls import post_url
 
@@ -31,7 +32,7 @@ def webhook(rp_ctx: MockCtx) -> MockWebhook:
     """The channel's webhook."""
     mock = AsyncMock(spec=discord.Webhook)
     mock.id = WEBHOOK_ID
-    rp_ctx.bot.prep_webhook = AsyncMock(return_value=mock)
+    rp_ctx.bot.prep_webhook = AsyncMock(return_value=ChannelWebhook(mock))
     return mock
 
 
@@ -92,7 +93,7 @@ async def test_own_post_opens_modal(
     modal = rp_ctx.send_modal.await_args.args[0]
     assert isinstance(modal, DeletionModal)
     assert modal.rp_post is post
-    assert modal.webhook is webhook
+    assert modal.webhook == ChannelWebhook(webhook)
 
 
 async def test_user_message_rejected(
@@ -207,6 +208,16 @@ def test_deletion_embed_shows_post(make_post: PostFactory):
     assert embed.timestamp == post.utc_date
 
 
+def test_deletion_embed_shows_thread(make_post: PostFactory):
+    """A thread post's notice names the thread, not its parent."""
+    post = make_post(channel=2, thread=3)
+    post.id = PydanticObjectId()
+
+    description = cast(str, deletion_embed(post).description)
+
+    assert "**Channel:** <#3>" in description
+
+
 # Test DeletionModal
 
 
@@ -226,6 +237,22 @@ async def test_confirmation_deletes_chain(
     deleted = [call.args[0] for call in webhook.delete_message.await_args_list]
     assert deleted == [1, 2, 3]
     assert interaction.respond.await_args.args[0] == "Rolepost deleted!"
+
+
+async def test_confirmation_deletes_chain_in_thread(
+    webhook: MockWebhook, interaction: MockInteraction, make_post: PostFactory
+):
+    """A thread post's messages are deleted from the thread."""
+    thread = MagicMock(spec=discord.Thread, id=7000)
+    modal = DeletionModal(ChannelWebhook(webhook, thread), make_post(id_chain=[1, 2]))
+    modal.children[0].value = "DELETE"
+
+    await modal.callback(interaction)
+
+    assert [call.kwargs for call in webhook.delete_message.await_args_list] == [
+        {"thread_id": 7000},
+        {"thread_id": 7000},
+    ]
 
 
 async def test_missing_message_counts_as_deleted(

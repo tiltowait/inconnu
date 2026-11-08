@@ -202,7 +202,7 @@ async def test_webhook_message_uses_webhook_delete(
     ):
         await delete_header(ctx, webhook_message)
 
-    webhook.delete_message.assert_awaited_once_with(webhook_message.id)
+    webhook.delete_message.assert_awaited_once_with(webhook_message.id, thread_id=None)
     webhook_message.delete.assert_not_awaited()
 
 

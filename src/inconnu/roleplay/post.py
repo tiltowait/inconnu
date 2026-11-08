@@ -232,7 +232,7 @@ class PostModal(discord.ui.Modal):
         webhook, first = await self.bot.webhook_send(interaction.channel, **identity, **messages[0])
         sent = [first]
         for message in messages[1:]:
-            sent.append(await webhook.send(wait=True, **identity, **message))
+            sent.append(await webhook.send(**identity, **message))
 
         # Every page's record has the whole chain, not just its own ID
         id_chain = [message.id for message in sent]
@@ -290,9 +290,7 @@ class PostModal(discord.ui.Modal):
             diff = text_diff(post.history[0].content, post.content)
 
             # Prep the embed
-            description = (
-                f"{interaction.user.mention} edited a post in <#{post.channel}>.\n```diff\n{diff}\n"
-            )
+            description = f"{interaction.user.mention} edited a post in <#{post.location}>.\n```diff\n{diff}\n"
             description = description[:3996] + "```"  # Ensure we don't overflow
 
             embed = discord.Embed(
@@ -333,8 +331,8 @@ async def create_post(ctx: AppCtx, character: VChar, **kwargs: Any):
     if ctx.bot.can_webhook(ctx.channel):
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
         await ctx.send_modal(modal)
-    elif isinstance(ctx.channel, discord.threads.Thread):
-        await ui.embeds.error(ctx, "This command is unavailable in threads.")
+    elif isinstance(ctx.channel, discord.Thread) and ctx.channel.locked:
+        await ui.embeds.error(ctx, "This thread is locked.")
     else:
         await ui.embeds.error(
             ctx,

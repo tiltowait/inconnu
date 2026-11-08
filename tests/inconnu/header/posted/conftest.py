@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock, MagicMock
 import discord
 import pytest
 
+from services.webhooks import ChannelWebhook
+
 
 @pytest.fixture
 def bot_user() -> discord.User:
@@ -53,7 +55,7 @@ def ctx(owner_user: discord.Member, bot_user: discord.User, webhook: discord.Web
     ctx.user = owner_user
     ctx.bot = MagicMock()
     ctx.bot.user = bot_user
-    ctx.bot.prep_webhook = AsyncMock(return_value=webhook)
+    ctx.bot.prep_webhook = AsyncMock(return_value=ChannelWebhook(webhook))
     ctx.channel = MagicMock(spec=discord.TextChannel)
     ctx.channel.name = "test-channel"
     ctx.guild = MagicMock(spec=discord.Guild)

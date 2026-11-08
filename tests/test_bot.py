@@ -15,7 +15,7 @@ from bot import InconnuBot
 from models import RPPost
 from services import WebhookCache
 from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
-from services.webhooks import UNKNOWN_WEBHOOK
+from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
 
 type MockChannel = MagicMock
 type MockWebhook = AsyncMock
@@ -109,6 +109,64 @@ def webhook_bot(mock_bot: MagicMock) -> MagicMock:
     return mock_bot
 
 
+def webhook_parent(channel_type: type, *, manage_webhooks: bool) -> MagicMock:
+    """A channel that may hold webhooks, with the given permission."""
+    channel = MagicMock(spec=channel_type)
+    channel.permissions_for.return_value = discord.Permissions(manage_webhooks=manage_webhooks)
+    return channel
+
+
+def thread_in(parent: MagicMock | None, *, locked=False) -> MagicMock:
+    """A thread in the given channel."""
+    thread = MagicMock(spec=discord.Thread, locked=locked)
+    thread.parent = parent  # Mock() treats parent= as its own argument
+    return thread
+
+
+@pytest.mark.parametrize("manage_webhooks", [True, False])
+def test_can_webhook_in_text_channel(mock_bot: MagicMock, manage_webhooks: bool):
+    """Text channels need Manage Webhooks."""
+    channel = webhook_parent(discord.TextChannel, manage_webhooks=manage_webhooks)
+
+    assert InconnuBot.can_webhook(mock_bot, channel) is manage_webhooks
+
+
+@pytest.mark.parametrize("parent_type", [discord.TextChannel, discord.ForumChannel])
+@pytest.mark.parametrize("manage_webhooks", [True, False])
+def test_can_webhook_in_thread(mock_bot: MagicMock, parent_type: type, manage_webhooks: bool):
+    """Threads need Manage Webhooks in their parent."""
+    parent = webhook_parent(parent_type, manage_webhooks=manage_webhooks)
+
+    assert InconnuBot.can_webhook(mock_bot, thread_in(parent)) is manage_webhooks
+
+
+@pytest.mark.parametrize(
+    "channel",
+    [
+        thread_in(webhook_parent(discord.TextChannel, manage_webhooks=True), locked=True),
+        thread_in(None),
+        MagicMock(spec=discord.VoiceChannel),
+    ],
+)
+def test_cannot_webhook(mock_bot: MagicMock, channel: MagicMock):
+    """Locked threads, threads with unknown parents, and other channels can't
+    use webhooks."""
+    assert InconnuBot.can_webhook(mock_bot, channel) is False
+
+
+async def test_prep_webhook_in_thread(webhook_bot: MagicMock):
+    """A thread gets its parent's webhook, bound to the thread."""
+    parent = webhook_parent(discord.ForumChannel, manage_webhooks=True)
+    thread = thread_in(parent)
+    webhook = make_webhook(1)
+    webhook_bot.webhook_cache.prep_webhook.return_value = webhook
+
+    result = await InconnuBot.prep_webhook(webhook_bot, thread)
+
+    webhook_bot.webhook_cache.prep_webhook.assert_awaited_once_with(parent)
+    assert result == ChannelWebhook(webhook, thread)
+
+
 async def test_prep_webhook_outside_text_channel(webhook_bot: MagicMock):
     """Threads and other channels can't use webhooks."""
     channel = MagicMock(spec=discord.Thread)
@@ -135,7 +193,7 @@ async def test_webhook_send(webhook_bot: MagicMock, text_channel: MockChannel):
 
     result = await InconnuBot.webhook_send(webhook_bot, text_channel, content="Hi")
 
-    assert result == (webhook, webhook.send.return_value)
+    assert result == (ChannelWebhook(webhook), webhook.send.return_value)
     webhook.send.assert_awaited_once_with(wait=True, content="Hi")
     webhook_bot.webhook_cache.forget.assert_not_called()
 
@@ -151,7 +209,7 @@ async def test_webhook_send_replaces_deleted_webhook(
 
     result = await InconnuBot.webhook_send(webhook_bot, text_channel, content="Hi")
 
-    assert result == (fresh, fresh.send.return_value)
+    assert result == (ChannelWebhook(fresh), fresh.send.return_value)
     webhook_bot.webhook_cache.forget.assert_called_once_with(stale)
     fresh.send.assert_awaited_once_with(wait=True, content="Hi")
 

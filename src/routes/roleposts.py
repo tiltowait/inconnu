@@ -53,9 +53,16 @@ async def get_rolepost(oid: PydanticObjectId, bot: Annotated[InconnuBot, Depends
     if guild is None:
         raise HTTPException(410, detail="Inconnu is not in this guild.")
 
+    # The lookup is by ID, so this finds forum channels too
     channel = await guild.get_or_fetch(discord.TextChannel, rolepost.channel)
     if channel is None:
         raise HTTPException(410, detail="This post's channel was deleted.")
+    channel_name = channel.name
+
+    if rolepost.thread is not None:
+        # A deleted thread's posts fall back to the parent's name
+        if thread := await guild.get_or_fetch(discord.Thread, rolepost.thread):
+            channel_name = thread.name
 
     user = guild.get_member(rolepost.user)
     if user is not None:
@@ -79,7 +86,7 @@ async def get_rolepost(oid: PydanticObjectId, bot: Annotated[InconnuBot, Depends
     return Changelog(
         guild=CharacterGuild.create(guild),
         poster=owner_data,
-        channel=channel.name,
+        channel=channel_name,
         character=char_data,
         url=rolepost.url,
         history=history,

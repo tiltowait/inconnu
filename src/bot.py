@@ -16,7 +16,7 @@ from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
 from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
-from services.webhooks import UNKNOWN_WEBHOOK
+from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook, webhook_home
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -161,39 +161,46 @@ class InconnuBot(discord.AutoShardedBot):
         return guild
 
     def can_webhook(self, channel: Channel) -> bool:
-        """Whether the bot has manage webhooks permission in the channel."""
-        if not isinstance(channel, discord.TextChannel):
+        """Whether webhooks can post in the channel: a text channel, or an
+        unlocked thread, with Manage Webhooks permission (a thread's parent
+        holds its webhooks)."""
+        if isinstance(channel, discord.Thread) and channel.locked:
             return False
-        return channel.permissions_for(channel.guild.me).manage_webhooks
+        if (home := webhook_home(channel)) is None:
+            return False
+        parent = home[0]
+        return parent.permissions_for(parent.guild.me).manage_webhooks
 
-    async def prep_webhook(
-        self,
-        channel: Channel,
-    ) -> discord.Webhook:
-        """Prepare a webhook, either from the cache or creating one. Raises WebhookError."""
-        if not isinstance(channel, discord.TextChannel):
-            raise errors.WebhookError("This feature is only available in text channels.")
+    async def prep_webhook(self, channel: Channel) -> ChannelWebhook:
+        """Prepare a webhook for the channel or thread, either from the cache or
+        creating one. Raises WebhookError."""
+        if (home := webhook_home(channel)) is None:
+            raise errors.WebhookError(
+                "This feature is only available in text channels and threads."
+            )
+        parent, thread = home
         try:
-            return await self.webhook_cache.prep_webhook(channel)
+            webhook = await self.webhook_cache.prep_webhook(parent)
         except discord.Forbidden:
             raise errors.WebhookError("Inconnu needs `Manage Webhook` permission for this command.")
+        return ChannelWebhook(webhook, thread)
 
     async def webhook_send(
         self, channel: Channel, **kwargs: Any
-    ) -> tuple[discord.Webhook, discord.WebhookMessage]:
+    ) -> tuple[ChannelWebhook, discord.WebhookMessage]:
         """Send a webhook post's first message, returning the webhook for the
         rest. If the channel's webhook was deleted without the cache noticing,
         a new one replaces it. Raises WebhookError."""
         webhook = await self.prep_webhook(channel)
         try:
-            return webhook, await webhook.send(wait=True, **kwargs)
+            return webhook, await webhook.send(**kwargs)
         except discord.NotFound as err:
             if err.code != UNKNOWN_WEBHOOK:
                 raise
-            self.webhook_cache.forget(webhook)
+            self.webhook_cache.forget(webhook.webhook)
 
         webhook = await self.prep_webhook(channel)
-        return webhook, await webhook.send(wait=True, **kwargs)
+        return webhook, await webhook.send(**kwargs)
 
     async def _set_presence(self):
         """Set the bot's presence message."""

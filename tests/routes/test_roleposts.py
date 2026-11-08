@@ -199,3 +199,38 @@ async def test_auth_required():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(f"/changelog/{fake_id}")
     assert resp.status_code == 401
+
+
+async def fetch_thread_changelog(thread: MagicMock | None) -> dict:
+    """The changelog of a thread post, given the thread the guild finds."""
+    post = await insert_rolepost(thread=4)
+    guild = make_mock_guild()
+    guild.get_or_fetch = AsyncMock(side_effect=[make_mock_channel(), thread])
+    guild.get_member.return_value = None
+
+    bot = MagicMock()
+    bot.get_or_fetch_guild = AsyncMock(return_value=guild)
+    with patch.dict(app.dependency_overrides, {get_bot: lambda: bot}):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
+
+    assert resp.status_code == 200
+    assert guild.get_or_fetch.await_args_list[-1].args == (discord.Thread, 4)
+    return resp.json()
+
+
+async def test_thread_post_names_thread():
+    """A thread post's changelog names the thread."""
+    thread = MagicMock(spec=discord.Thread)
+    thread.name = "scene-thread"
+
+    data = await fetch_thread_changelog(thread)
+
+    assert data["channel"] == "scene-thread"
+
+
+async def test_deleted_thread_names_parent():
+    """If the thread is gone, the changelog names its parent."""
+    data = await fetch_thread_changelog(None)
+
+    assert data["channel"] == "rp-channel"

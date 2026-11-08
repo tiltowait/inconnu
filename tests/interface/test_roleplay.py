@@ -488,3 +488,15 @@ async def test_channel_delete_marks_its_roleposts(cog: RoleplayCog, mock_rp_post
     query, update = mock_rp_posts.update_many.await_args.args
     assert query == {"channel": 4321, "deleted": False}
     assert update["$set"]["deleted"] is True
+
+
+async def test_thread_delete_marks_its_roleposts(cog: RoleplayCog, mock_rp_posts: AsyncMock):
+    """Deleting a thread marks its Roleposts as deleted, leaving any that already
+    were."""
+    payload = MagicMock(spec=discord.RawThreadDeleteEvent, thread_id=8765)
+
+    await cog.on_raw_thread_delete(payload)
+
+    query, update = mock_rp_posts.update_many.await_args.args
+    assert query == {"thread": 8765, "deleted": False}
+    assert update["$set"]["deleted"] is True

@@ -80,6 +80,7 @@ async def test_only_finds_authors_posts(
         "guild": GUILD_ID,
         "user": AUTHOR_ID,
         "channel": {"$in": [VISIBLE_CHANNEL_ID]},
+        "private_channel": {"$in": [None]},
     }
     find.return_value.limit.assert_called_once_with(25)
 
@@ -115,6 +116,27 @@ async def test_own_posts_ignore_channel_visibility(
     await run_search(rp_ctx, rp_ctx.user)
 
     assert "channel" not in find.call_args.args[0]
+    assert "private_channel" not in find.call_args.args[0]
+
+
+async def test_private_threads_need_manage_threads(
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: AsyncMock
+):
+    """Others' posts in private threads only show in readable channels where the
+    invoker can manage threads."""
+    moderated = MagicMock(spec=discord.TextChannel, id=VISIBLE_CHANNEL_ID + 1)
+    moderated.permissions_for.return_value = discord.Permissions(
+        view_channel=True, read_message_history=True, manage_threads=True
+    )
+    unreadable = MagicMock(spec=discord.TextChannel, id=VISIBLE_CHANNEL_ID + 2)
+    unreadable.permissions_for.return_value = discord.Permissions(manage_threads=True)
+    rp_ctx.guild.channels.extend([moderated, unreadable])
+
+    await run_search(rp_ctx, author)
+
+    query = find.call_args.args[0]
+    assert query["channel"] == {"$in": [VISIBLE_CHANNEL_ID, moderated.id]}
+    assert query["private_channel"] == {"$in": [None, moderated.id]}
 
 
 async def test_no_visible_channels_finds_nothing(

@@ -7,6 +7,7 @@ import discord
 import pytest
 
 from services import WebhookCache
+from services.webhooks import ChannelWebhook, webhook_home
 
 type MockChannel = MagicMock
 type MockGuild = MagicMock
@@ -711,3 +712,85 @@ async def test_check_webhook_never_adds_new_ids_after_poll(
     mock_channel.webhooks.return_value = [webhook2]
     await cache._check_webhook(mock_channel, webhook2.id)
     assert cache.webhook_ids == ids_before_new_check, "New webhook check added IDs"
+
+
+# webhook_home Tests
+
+
+def make_thread(parent: object) -> MagicMock:
+    """A thread in the given parent channel."""
+    thread = MagicMock(spec=discord.Thread, id=6001)
+    thread.parent = parent  # Mock() treats parent= as its own argument
+    return thread
+
+
+@pytest.mark.parametrize("parent_type", [discord.TextChannel, discord.ForumChannel])
+def test_webhook_home_of_channel(parent_type: type):
+    """Text and forum channels hold their own webhooks."""
+    channel = MagicMock(spec=parent_type)
+
+    assert webhook_home(channel) == (channel, None)
+
+
+@pytest.mark.parametrize("parent_type", [discord.TextChannel, discord.ForumChannel])
+def test_webhook_home_of_thread(parent_type: type):
+    """A thread's webhooks belong to its parent."""
+    parent = MagicMock(spec=parent_type)
+    thread = make_thread(parent)
+
+    assert webhook_home(thread) == (parent, thread)
+
+
+@pytest.mark.parametrize(
+    "channel",
+    [
+        MagicMock(spec=discord.VoiceChannel),
+        MagicMock(spec=discord.DMChannel),
+        make_thread(None),  # Parent not cached
+        None,
+    ],
+)
+def test_webhook_home_unavailable(channel: object):
+    """Other channels, and threads whose parent is unknown, have no webhooks."""
+    assert webhook_home(channel) is None
+
+
+# ChannelWebhook Tests
+
+
+@pytest.fixture
+def raw_webhook() -> MockWebhook:
+    """A Discord webhook."""
+    return AsyncMock(spec=discord.Webhook, id=1001)
+
+
+def test_channel_webhook_id(raw_webhook: MockWebhook):
+    """The wrapper has its webhook's ID."""
+    assert ChannelWebhook(raw_webhook).id == 1001
+
+
+async def test_channel_webhook_in_channel(raw_webhook: MockWebhook):
+    """Outside a thread, calls pass no thread."""
+    webhook = ChannelWebhook(raw_webhook)
+
+    await webhook.send(content="Hi")
+    await webhook.edit_message(1, content="Edited")
+    await webhook.delete_message(1)
+
+    raw_webhook.send.assert_awaited_once_with(wait=True, content="Hi")
+    raw_webhook.edit_message.assert_awaited_once_with(1, content="Edited")
+    raw_webhook.delete_message.assert_awaited_once_with(1, thread_id=None)
+
+
+async def test_channel_webhook_in_thread(raw_webhook: MockWebhook):
+    """In a thread, every call passes the thread."""
+    thread = make_thread(MagicMock(spec=discord.TextChannel))
+    webhook = ChannelWebhook(raw_webhook, thread)
+
+    await webhook.send(content="Hi")
+    await webhook.edit_message(1, content="Edited")
+    await webhook.delete_message(1)
+
+    raw_webhook.send.assert_awaited_once_with(wait=True, thread=thread, content="Hi")
+    raw_webhook.edit_message.assert_awaited_once_with(1, thread=thread, content="Edited")
+    raw_webhook.delete_message.assert_awaited_once_with(1, thread_id=thread.id)

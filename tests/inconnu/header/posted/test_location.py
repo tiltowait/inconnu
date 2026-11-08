@@ -7,14 +7,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import discord
 import pytest
 
+import errors
 from bot import InconnuBot
 from inconnu.header.posted.location import LocationChangeModal, _resolve_webhook, edit_location
-from services.webhooks import ChannelWebhook, WebhookCache
+from services.webhooks import ChannelWebhook
 
 _RESOLVE_WEBHOOK = "inconnu.header.posted.location._resolve_webhook"
 
 type MockBot = MagicMock
-type MockChannel = MagicMock
 type MockCtx = AsyncMock
 type MockMessage = AsyncMock
 type MockResolve = AsyncMock
@@ -479,48 +479,29 @@ async def test_callback_uses_webhook_edit_with_webhook(interaction: discord.Inte
 # _resolve_webhook
 
 
-def thread_in(parent: MockChannel | None) -> MockChannel:
-    """A thread in the given channel."""
-    thread = MagicMock(spec=discord.Thread)
-    thread.parent = parent  # Mock() treats parent= as its own argument
-    return thread
-
-
 @pytest.fixture
 def resolving_bot() -> MockBot:
-    """A bot whose cache finds a matching webhook."""
+    """A bot that finds a matching webhook."""
     bot = MagicMock(spec=InconnuBot)
-    bot.webhook_cache = AsyncMock(spec=WebhookCache)
-    bot.webhook_cache.matching_webhook.return_value = AsyncMock(spec=discord.Webhook)
+    bot.matching_webhook = AsyncMock(return_value=ChannelWebhook(AsyncMock(spec=discord.Webhook)))
     return bot
 
 
-async def test_resolve_webhook_in_thread(resolving_bot: MockBot, webhook_message: discord.Message):
-    """A thread's header is matched against its parent's webhook, bound to the
-    thread."""
-    parent = MagicMock(spec=discord.ForumChannel)
-    thread = thread_in(parent)
+async def test_resolve_webhook(resolving_bot: MockBot, webhook_message: discord.Message):
+    """The header's webhook is the bot's match for its author."""
+    channel = MagicMock(spec=discord.Thread)
 
-    result = await _resolve_webhook(resolving_bot, thread, webhook_message)
+    result = await _resolve_webhook(resolving_bot, channel, webhook_message)
 
-    resolving_bot.webhook_cache.matching_webhook.assert_awaited_once_with(parent, 888)
-    webhook = resolving_bot.webhook_cache.matching_webhook.return_value
-    assert result == ChannelWebhook(webhook, thread)
+    resolving_bot.matching_webhook.assert_awaited_once_with(channel, 888)
+    assert result is resolving_bot.matching_webhook.return_value
 
 
-async def test_resolve_webhook_without_match(
+async def test_resolve_webhook_without_permission(
     resolving_bot: MockBot, webhook_message: discord.Message
 ):
-    """No matching webhook means no webhook."""
-    resolving_bot.webhook_cache.matching_webhook.return_value = None
+    """Without webhook permissions, there's no webhook."""
+    resolving_bot.matching_webhook.side_effect = errors.WebhookError("No permission")
     channel = MagicMock(spec=discord.TextChannel)
 
     assert await _resolve_webhook(resolving_bot, channel, webhook_message) is None
-
-
-async def test_resolve_webhook_without_parent(
-    resolving_bot: MockBot, webhook_message: discord.Message
-):
-    """A thread whose parent is unknown has no webhook."""
-    assert await _resolve_webhook(resolving_bot, thread_in(None), webhook_message) is None
-    resolving_bot.webhook_cache.matching_webhook.assert_not_awaited()

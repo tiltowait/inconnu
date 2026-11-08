@@ -6,9 +6,10 @@ import discord
 from loguru import logger
 
 import db
+import errors
 from ctx import AppCtx, Channel
 from models.rpheader import BLUSHED, NOT_BLUSHED
-from services.webhooks import ChannelWebhook, webhook_home
+from services.webhooks import ChannelWebhook
 from utils.text import clean_text
 
 if TYPE_CHECKING:
@@ -47,15 +48,11 @@ async def _resolve_webhook(
     message: discord.Message,
 ) -> ChannelWebhook | None:
     """Resolve a webhook if the message was sent by one of ours."""
-    if (home := webhook_home(channel)) is None:
-        return None
-    parent, thread = home
     try:
-        webhook = await bot.webhook_cache.matching_webhook(parent, message.author.id)
-    except discord.errors.Forbidden:
+        return await bot.matching_webhook(channel, message.author.id)
+    except errors.WebhookError:
         logger.info("No webhook permissions to edit a header")
         return None
-    return ChannelWebhook(webhook, thread) if webhook is not None else None
 
 
 class LocationChangeModal(discord.ui.Modal):

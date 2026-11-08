@@ -34,6 +34,7 @@ type MockWebhook = AsyncMock
 
 CHANGELOG_ID = 7000
 MESSAGE_ID = 8000
+WEBHOOK_ID = 9500
 
 
 @pytest.fixture
@@ -107,12 +108,14 @@ def editing_modal(
     get_post: MockGet,
 ) -> Generator[MockPostModal]:
     """A modal ready to edit a real post, with unchanged content, whose saves do
-    nothing. Reloading the post finds it unchanged."""
+    nothing. Reloading the post finds it unchanged, and the bot finds the
+    message's webhook."""
     mock_post_modal.bot = MagicMock(spec=InconnuBot)
-    mock_post_modal.bot.prep_webhook = AsyncMock(return_value=ChannelWebhook(webhook))
+    mock_post_modal.bot.matching_webhook = AsyncMock(return_value=ChannelWebhook(webhook))
     mock_post_modal.character = MagicMock(spec=VChar)
     mock_post_modal.character.profile_image_url = None
     mock_post_modal.message = MagicMock(spec=discord.Message, id=MESSAGE_ID)
+    mock_post_modal.message.author = MagicMock(spec=discord.User, id=WEBHOOK_ID)
     mock_post_modal.post_to_edit = make_post("Original", id=PydanticObjectId())
     get_post.return_value = mock_post_modal.post_to_edit
     mock_post_modal._clean_post_content.return_value = "Original"
@@ -596,7 +599,7 @@ async def test_empty_edit_rejected(mock_post_modal: MockPostModal):
 
     show_error.assert_awaited_once()
     assert "`Post: Delete`" in show_error.call_args.args[1]
-    mock_post_modal.bot.prep_webhook.assert_not_called()
+    mock_post_modal.bot.matching_webhook.assert_not_called()
     post.edit_post.assert_not_called()
     post.save.assert_not_awaited()
 
@@ -613,6 +616,8 @@ async def test_edit_updates_message_and_history(
 
     post = editing_modal.post_to_edit
     webhook.edit_message.assert_awaited_once_with(MESSAGE_ID, content="Changed")
+    editing_modal.bot.matching_webhook.assert_awaited_once_with(interaction.channel, WEBHOOK_ID)
+    editing_modal.bot.prep_webhook.assert_not_called()  # Editing never creates a webhook
     assert post.content == "Changed"
     assert post.history[0].content == "Original"
     post.save.assert_awaited_once()
@@ -666,6 +671,24 @@ async def test_edit_of_missing_message(
     assert post.content == "Original"
     post.save.assert_not_awaited()
     editing_modal._post_to_changelog.assert_not_awaited()
+
+
+async def test_edit_without_original_webhook(
+    editing_modal: MockPostModal,
+    interaction: MockInteraction,
+    show_error: MockShowError,
+):
+    """If the post's webhook is gone, no new one is made and nothing changes."""
+    editing_modal._clean_post_content.return_value = "Changed"
+    editing_modal.bot.matching_webhook.return_value = None
+
+    await PostModal._edit_rp_post(editing_modal, interaction)
+
+    post = editing_modal.post_to_edit
+    assert show_error.call_args.kwargs["title"] == "Unable to edit message"
+    assert post.content == "Original"
+    post.save.assert_not_awaited()
+    editing_modal.bot.prep_webhook.assert_not_called()
 
 
 @pytest.mark.parametrize("content", ["Original", "Changed"])

@@ -17,23 +17,24 @@ from utils.urls import post_url
 async def delete_message_chain(ctx: AppCtx, message: discord.Message):
     """Delete a Rolepost, its header, and its mentions."""
     try:
-        webhook = await ctx.bot.prep_webhook(ctx.channel)
-        rp_post = await _fetch_rp_post(ctx, webhook, message)
+        webhook, rp_post = await _fetch_rp_post(ctx, message)
         await ctx.send_modal(DeletionModal(webhook, rp_post))
 
     except (errors.WebhookError, ValueError) as err:
         await ui.embeds.error(ctx, err, title="Invalid message")
 
 
-async def _fetch_rp_post(ctx: AppCtx, webhook: ChannelWebhook, message: discord.Message) -> RPPost:
-    """Validate the message and ownership, displaying an error message if applicable."""
+async def _fetch_rp_post(ctx: AppCtx, message: discord.Message) -> tuple[ChannelWebhook, RPPost]:
+    """Validate the message and ownership, returning the webhook that can delete
+    it and its Rolepost. Raises ValueError or WebhookError."""
     if not message.author.bot:
         raise ValueError("You can't delete a user's post.")
 
     if message.author == ctx.bot.user:
         raise ValueError("This isn't a Rolepost!")
 
-    if webhook.id != message.author.id:
+    webhook = await ctx.bot.matching_webhook(ctx.channel, message.author.id)
+    if webhook is None:
         raise ValueError("Either this isn't a Rolepost, or the original webhook was deleted.")
 
     rp_post = await RPPost.find_one({"id_chain": message.id})
@@ -46,7 +47,7 @@ async def _fetch_rp_post(ctx: AppCtx, webhook: ChannelWebhook, message: discord.
     if rp_post.user != ctx.user.id:
         raise ValueError("This isn't your Rolepost!")
 
-    return rp_post
+    return webhook, rp_post
 
 
 def deletion_embed(post: RPPost) -> discord.Embed:

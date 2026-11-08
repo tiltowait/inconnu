@@ -29,10 +29,12 @@ MESSAGE_ID = 6000
 
 @pytest.fixture
 def webhook(rp_ctx: MockCtx) -> MockWebhook:
-    """The channel's webhook."""
+    """The channel's webhook, which the bot finds for its messages."""
     mock = AsyncMock(spec=discord.Webhook)
     mock.id = WEBHOOK_ID
-    rp_ctx.bot.prep_webhook = AsyncMock(return_value=ChannelWebhook(mock))
+    rp_ctx.bot.matching_webhook = AsyncMock(
+        side_effect=lambda _, webhook_id: ChannelWebhook(mock) if webhook_id == WEBHOOK_ID else None
+    )
     return mock
 
 
@@ -94,6 +96,7 @@ async def test_own_post_opens_modal(
     assert isinstance(modal, DeletionModal)
     assert modal.rp_post is post
     assert modal.webhook == ChannelWebhook(webhook)
+    rp_ctx.bot.prep_webhook.assert_not_called()  # Deleting never creates a webhook
 
 
 async def test_user_message_rejected(

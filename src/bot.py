@@ -186,6 +186,19 @@ class InconnuBot(discord.AutoShardedBot):
             raise errors.WebhookError("Inconnu needs `Manage Webhook` permission for this command.")
         return ChannelWebhook(webhook, thread)
 
+    async def matching_webhook(self, channel: Channel, webhook_id: int) -> ChannelWebhook | None:
+        """Our existing webhook for the channel or thread, if it has the given ID
+        (as when a message came from it). Unlike prep_webhook(), this never
+        creates one. Raises WebhookError."""
+        if (home := webhook_home(channel)) is None:
+            return None
+        parent, thread = home
+        try:
+            webhook = await self.webhook_cache.matching_webhook(parent, webhook_id)
+        except discord.Forbidden:
+            raise errors.WebhookError("Inconnu needs `Manage Webhook` permission for this command.")
+        return ChannelWebhook(webhook, thread) if webhook is not None else None
+
     async def webhook_send(
         self, channel: Channel, **kwargs: Any
     ) -> tuple[ChannelWebhook, discord.WebhookMessage]:

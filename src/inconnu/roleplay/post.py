@@ -162,16 +162,20 @@ class PostModal(discord.ui.Modal):
 
         if new_content != self.post_to_edit.content:
             post_to_changelog = True
-            # We have a WebhookMessage, so we need to fetch its originating
-            # Webhook, which is the only entity that can edit it. We keep this
-            # call outside of the try block so we can use our general Webhook
-            # error checker.
-            webhook = await self.bot.prep_webhook(interaction.channel)
-            try:
-                await webhook.edit_message(self.message.id, content=new_content)
-                self.post_to_edit.edit_post(new_content)
+            # Only the webhook that sent the message can edit it. Looking it up
+            # (rather than preparing one) never creates a webhook.
+            webhook = await self.bot.matching_webhook(interaction.channel, self.message.author.id)
+            edited = False
+            if webhook is not None:
+                try:
+                    await webhook.edit_message(self.message.id, content=new_content)
+                    edited = True
+                except discord.NotFound:
+                    pass
 
-            except discord.NotFound:
+            if edited:
+                self.post_to_edit.edit_post(new_content)
+            else:
                 await ui.embeds.error(
                     interaction,
                     (

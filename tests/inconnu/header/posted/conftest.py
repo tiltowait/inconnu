@@ -50,12 +50,16 @@ def header_record(owner_user: discord.Member) -> dict:
 
 @pytest.fixture
 def ctx(owner_user: discord.Member, bot_user: discord.User, webhook: discord.Webhook) -> AsyncMock:
-    """A minimal AppCtx mock with prep_webhook returning a webhook."""
+    """A minimal AppCtx mock whose bot finds the webhook for its messages."""
     ctx = AsyncMock()
     ctx.user = owner_user
     ctx.bot = MagicMock()
     ctx.bot.user = bot_user
-    ctx.bot.prep_webhook = AsyncMock(return_value=ChannelWebhook(webhook))
+    ctx.bot.matching_webhook = AsyncMock(
+        side_effect=lambda _, webhook_id: (
+            ChannelWebhook(webhook) if webhook_id == webhook.id else None
+        )
+    )
     ctx.channel = MagicMock(spec=discord.TextChannel)
     ctx.channel.name = "test-channel"
     ctx.guild = MagicMock(spec=discord.Guild)

@@ -47,8 +47,8 @@ def random_message() -> discord.Message:
 
 @pytest.fixture
 def ctx_no_webhook(ctx: AsyncMock) -> AsyncMock:
-    """A ctx where prep_webhook raises WebhookError."""
-    ctx.bot.prep_webhook = AsyncMock(side_effect=errors.WebhookError("No permissions"))
+    """A ctx where looking up the webhook raises WebhookError."""
+    ctx.bot.matching_webhook = AsyncMock(side_effect=errors.WebhookError("No permissions"))
     return ctx
 
 
@@ -68,24 +68,11 @@ async def test_random_message_rejected(ctx: AsyncMock, random_message: discord.M
 async def test_random_message_rejected_when_webhook_error(
     ctx_no_webhook: AsyncMock, random_message: discord.Message
 ):
-    """Same rejection when prep_webhook raises WebhookError."""
+    """Same rejection when the webhook lookup raises WebhookError."""
     await delete_header(ctx_no_webhook, random_message)
 
     ctx_no_webhook.respond.assert_awaited_once()
     args, _kwargs = ctx_no_webhook.respond.await_args
-    assert "not an RP header" in args[0]
-
-
-async def test_random_message_rejected_when_value_error(
-    ctx: AsyncMock, random_message: discord.Message
-):
-    """Same rejection when prep_webhook raises ValueError (non-text channel)."""
-    ctx.bot.prep_webhook = AsyncMock(side_effect=ValueError("Not a text channel"))
-
-    await delete_header(ctx, random_message)
-
-    ctx.respond.assert_awaited_once()
-    args, _kwargs = ctx.respond.await_args
     assert "not an RP header" in args[0]
 
 
@@ -270,3 +257,18 @@ async def test_missing_webhook_is_an_error(
         await delete_header(ctx, webhook_message)
 
     ctx.respond.assert_not_awaited()
+
+
+async def test_never_creates_webhook(
+    ctx: MockCtx, webhook_message: MockMessage, header_record: dict
+):
+    """Deleting looks up the existing webhook rather than preparing one, which
+    could create a webhook in the channel."""
+    with (
+        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch(_IS_APPROVED, return_value=True),
+    ):
+        await delete_header(ctx, webhook_message)
+
+    ctx.bot.matching_webhook.assert_awaited_once_with(webhook_message.channel, 888)
+    ctx.bot.prep_webhook.assert_not_called()

@@ -187,6 +187,44 @@ async def test_prep_webhook_without_permission(webhook_bot: MockBot, text_channe
         await InconnuBot.prep_webhook(webhook_bot, text_channel)
 
 
+@pytest.mark.parametrize("parent_type", [discord.TextChannel, discord.ForumChannel])
+async def test_matching_webhook_in_thread(webhook_bot: MockBot, parent_type: type):
+    """A thread's messages are matched against its parent's webhook, bound to
+    the thread."""
+    parent = MagicMock(spec=parent_type)
+    thread = thread_in(parent)
+    webhook = make_webhook(1)
+    webhook_bot.webhook_cache.matching_webhook.return_value = webhook
+
+    result = await InconnuBot.matching_webhook(webhook_bot, thread, 1)
+
+    webhook_bot.webhook_cache.matching_webhook.assert_awaited_once_with(parent, 1)
+    assert result == ChannelWebhook(webhook, thread)
+    webhook_bot.webhook_cache.prep_webhook.assert_not_awaited()
+
+
+async def test_matching_webhook_without_match(webhook_bot: MockBot, text_channel: MockChannel):
+    """No matching webhook means no webhook."""
+    webhook_bot.webhook_cache.matching_webhook.return_value = None
+
+    assert await InconnuBot.matching_webhook(webhook_bot, text_channel, 1) is None
+
+
+async def test_matching_webhook_without_parent(webhook_bot: MockBot):
+    """A thread whose parent is unknown has no webhook."""
+    assert await InconnuBot.matching_webhook(webhook_bot, thread_in(None), 1) is None
+    webhook_bot.webhook_cache.matching_webhook.assert_not_awaited()
+
+
+async def test_matching_webhook_without_permission(webhook_bot: MockBot, text_channel: MockChannel):
+    """Missing permissions become a WebhookError."""
+    response = MagicMock(spec=aiohttp.ClientResponse, status=403, reason="Forbidden")
+    webhook_bot.webhook_cache.matching_webhook.side_effect = discord.Forbidden(response, "No")
+
+    with pytest.raises(errors.WebhookError, match="Manage Webhook"):
+        await InconnuBot.matching_webhook(webhook_bot, text_channel, 1)
+
+
 async def test_webhook_send(webhook_bot: MockBot, text_channel: MockChannel):
     """The message is sent through the channel's webhook, which is returned."""
     webhook = make_webhook(1)

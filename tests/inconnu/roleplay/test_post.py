@@ -865,8 +865,7 @@ async def test_create_post_opens_modal(rp_ctx: MockCtx):
 @pytest.mark.parametrize(
     "channel,message",
     [
-        (MagicMock(spec=discord.Thread, locked=True), "locked"),
-        (MagicMock(spec=discord.Thread, locked=False), "`Manage Webhooks`"),
+        (MagicMock(spec=discord.Thread), "`Manage Webhooks`"),
         (MagicMock(spec=discord.TextChannel), "`Manage Webhooks`"),
     ],
 )

@@ -18,7 +18,7 @@ Roleposting lets you post a message "from" your character rather than your Disco
 
 Opens a dialogue where you write your post: up to **8000 characters** across two fields. **Inconnu** splits long posts across several messages as needed.
 
-Post in text channels, their threads, and forum posts. Locked threads don't accept Roleposts.
+Post in text channels, their threads, and forum posts.
 
 ![/post uses Discord's modal dialogue.](../assets/post_example.png "/post uses Discord's modal dialogue.")
 

@@ -116,9 +116,9 @@ def webhook_parent(channel_type: type, *, manage_webhooks: bool) -> MagicMock:
     return channel
 
 
-def thread_in(parent: MagicMock | None, *, locked=False) -> MagicMock:
+def thread_in(parent: MagicMock | None) -> MagicMock:
     """A thread in the given channel."""
-    thread = MagicMock(spec=discord.Thread, locked=locked)
+    thread = MagicMock(spec=discord.Thread)
     thread.parent = parent  # Mock() treats parent= as its own argument
     return thread
 
@@ -143,14 +143,12 @@ def test_can_webhook_in_thread(mock_bot: MagicMock, parent_type: type, manage_we
 @pytest.mark.parametrize(
     "channel",
     [
-        thread_in(webhook_parent(discord.TextChannel, manage_webhooks=True), locked=True),
         thread_in(None),
         MagicMock(spec=discord.VoiceChannel),
     ],
 )
 def test_cannot_webhook(mock_bot: MagicMock, channel: MagicMock):
-    """Locked threads, threads with unknown parents, and other channels can't
-    use webhooks."""
+    """Threads with unknown parents, and other channels, can't use webhooks."""
     assert InconnuBot.can_webhook(mock_bot, channel) is False
 
 

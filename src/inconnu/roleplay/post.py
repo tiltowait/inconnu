@@ -331,8 +331,6 @@ async def create_post(ctx: AppCtx, character: VChar, **kwargs: Any):
     if ctx.bot.can_webhook(ctx.channel):
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
         await ctx.send_modal(modal)
-    elif isinstance(ctx.channel, discord.Thread) and ctx.channel.locked:
-        await ui.embeds.error(ctx, "This thread is locked.")
     else:
         await ui.embeds.error(
             ctx,

@@ -161,11 +161,9 @@ class InconnuBot(discord.AutoShardedBot):
         return guild
 
     def can_webhook(self, channel: Channel) -> bool:
-        """Whether webhooks can post in the channel: a text channel, or an
-        unlocked thread, with Manage Webhooks permission (a thread's parent
-        holds its webhooks)."""
-        if isinstance(channel, discord.Thread) and channel.locked:
-            return False
+        """Whether webhooks can post in the channel: a text channel or thread,
+        with Manage Webhooks permission (a thread's parent holds its
+        webhooks)."""
         if (home := webhook_home(channel)) is None:
             return False
         parent = home[0]

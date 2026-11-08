@@ -14,6 +14,7 @@ import ui
 from ctx import AppCtx
 from models import HeaderSubdoc, RPPost, VChar
 from services.haven import haven
+from services.webhooks import UNKNOWN_WEBHOOK
 from utils import get_avatar, re_paginate
 from utils.text import clean_text, pull_mentions
 from utils.text import diff as text_diff
@@ -170,8 +171,11 @@ class PostModal(discord.ui.Modal):
                 try:
                     await webhook.edit_message(self.message.id, content=new_content)
                     edited = True
-                except discord.NotFound:
-                    pass
+                except discord.NotFound as err:
+                    logger.info("Unable to edit Rolepost {}: {}", self.message.id, err)
+                    if err.code == UNKNOWN_WEBHOOK:
+                        # Stop using it; the next post makes a new one
+                        self.bot.webhook_cache.forget(webhook.webhook)
 
             if edited:
                 self.post_to_edit.edit_post(new_content)
@@ -294,7 +298,10 @@ class PostModal(discord.ui.Modal):
             diff = text_diff(post.history[0].content, post.content)
 
             # Prep the embed
-            description = f"{interaction.user.mention} edited a post in <#{post.location}>.\n```diff\n{diff}\n"
+            description = (
+                f"{interaction.user.mention} edited a post in <#{post.location}>.\n"
+                f"```diff\n{diff}\n"
+            )
             description = description[:3996] + "```"  # Ensure we don't overflow
 
             embed = discord.Embed(

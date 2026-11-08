@@ -60,8 +60,12 @@ async def get_rolepost(oid: PydanticObjectId, bot: Annotated[InconnuBot, Depends
     channel_name = channel.name
 
     if rolepost.thread is not None:
-        # A deleted thread's posts fall back to the parent's name
-        if thread := await guild.get_or_fetch(discord.Thread, rolepost.thread):
+        # get_or_fetch() can't find cached threads, so check the cache first.
+        # A deleted thread's posts fall back to the parent's name.
+        thread = guild.get_thread(rolepost.thread) or await guild.get_or_fetch(
+            discord.Thread, rolepost.thread
+        )
+        if thread is not None:
             channel_name = thread.name
 
     user = guild.get_member(rolepost.user)

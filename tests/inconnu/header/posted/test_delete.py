@@ -246,7 +246,8 @@ async def test_already_deleted(
 async def test_missing_webhook_is_an_error(
     ctx: MockCtx, webhook: MockWebhook, webhook_message: MockMessage, header_record: dict
 ):
-    """If the webhook itself is gone, the failure is raised for reporting."""
+    """If the webhook itself is gone, it's forgotten, and the failure is raised
+    for reporting."""
     webhook.delete_message.side_effect = not_found(UNKNOWN_WEBHOOK)
 
     with (
@@ -257,6 +258,7 @@ async def test_missing_webhook_is_an_error(
         await delete_header(ctx, webhook_message)
 
     ctx.respond.assert_not_awaited()
+    ctx.bot.webhook_cache.forget.assert_called_once_with(webhook)
 
 
 async def test_never_creates_webhook(

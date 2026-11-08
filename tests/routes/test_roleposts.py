@@ -11,6 +11,7 @@ from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
 
 import db as database
+from bot import InconnuBot
 from config import settings
 from models import BlushState, RPPost
 from models.rpheader import DamageSubdoc, HeaderSubdoc
@@ -206,36 +207,53 @@ async def test_auth_required():
     assert resp.status_code == 401
 
 
-async def fetch_thread_changelog(thread: MockThread | None) -> dict:
-    """The changelog of a thread post, given the thread the guild finds."""
+async def fetch_thread_changelog(*, cached: MockThread | None, fetched: MockThread | None) -> dict:
+    """The changelog of a thread post, given the thread the guild has cached and
+    the one fetching finds."""
     post = await insert_rolepost(thread=4)
     guild = make_mock_guild()
-    guild.get_or_fetch = AsyncMock(side_effect=[make_mock_channel(), thread])
+    guild.get_thread.return_value = cached
+    guild.get_or_fetch = AsyncMock(side_effect=[make_mock_channel(), fetched])
     guild.get_member.return_value = None
 
-    bot = MagicMock()
+    bot = MagicMock(spec=InconnuBot)
     bot.get_or_fetch_guild = AsyncMock(return_value=guild)
     with patch.dict(app.dependency_overrides, {get_bot: lambda: bot}):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             resp = await client.get(f"/changelog/{post.id}", headers=auth_headers())
 
     assert resp.status_code == 200
-    assert guild.get_or_fetch.await_args_list[-1].args == (discord.Thread, 4)
+    guild.get_thread.assert_called_once_with(4)
+    if cached is not None:
+        guild.get_or_fetch.assert_awaited_once()  # Only for the parent channel
+    else:
+        assert guild.get_or_fetch.await_args_list[-1].args == (discord.Thread, 4)
     return resp.json()
 
 
-async def test_thread_post_names_thread():
-    """A thread post's changelog names the thread."""
+def make_thread(name: str) -> MockThread:
+    """A thread with the given name."""
     thread = MagicMock(spec=discord.Thread)
-    thread.name = "scene-thread"
+    thread.name = name
+    return thread
 
-    data = await fetch_thread_changelog(thread)
+
+async def test_cached_thread_names_thread():
+    """A thread post's changelog names the thread, using the cache when it can."""
+    data = await fetch_thread_changelog(cached=make_thread("scene-thread"), fetched=None)
+
+    assert data["channel"] == "scene-thread"
+
+
+async def test_fetched_thread_names_thread():
+    """An uncached thread is fetched for its name."""
+    data = await fetch_thread_changelog(cached=None, fetched=make_thread("scene-thread"))
 
     assert data["channel"] == "scene-thread"
 
 
 async def test_deleted_thread_names_parent():
     """If the thread is gone, the changelog names its parent."""
-    data = await fetch_thread_changelog(None)
+    data = await fetch_thread_changelog(cached=None, fetched=None)
 
     assert data["channel"] == "rp-channel"

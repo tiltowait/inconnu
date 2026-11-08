@@ -20,9 +20,11 @@ BLUSH_TEXT = (BLUSHED, NOT_BLUSHED)
 
 async def edit_location(ctx: AppCtx, message: discord.Message):
     """Validate ownership and open the location edit modal for a posted header."""
-    webhook = await _resolve_webhook(ctx.bot, ctx.channel, message)
+    # The bot's own headers are edited directly, without a webhook
+    is_bot_message = message.author == ctx.bot.user
+    webhook = None if is_bot_message else await _resolve_webhook(ctx.bot, ctx.channel, message)
 
-    if webhook is None and message.author != ctx.bot.user:
+    if webhook is None and not is_bot_message:
         await ctx.respond("This message isn't an RP header!", ephemeral=True)
         return
 

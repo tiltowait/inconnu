@@ -102,12 +102,14 @@ async def test_non_owner_rejected(
 async def test_owner_gets_modal(
     ctx: MockCtx, no_webhook: MockResolve, message: discord.Message, header_record: dict
 ):
-    """The header owner receives the edit modal."""
+    """The header owner receives the edit modal. The bot's own header needs no
+    webhook lookup."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record):
         await edit_location(ctx, message)
 
     ctx.respond.assert_not_awaited()
     ctx.send_modal.assert_awaited_once()
+    no_webhook.assert_not_awaited()
 
 
 async def test_webhook_message_with_record(

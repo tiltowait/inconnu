@@ -64,21 +64,30 @@ async def show_header(ctx: AppCtx, character: VChar, **kwargs):
             )
 
 
-async def register_header(ctx, message, character):
-    """Register the header in the database."""
-    await db.headers.insert_one(
-        {
-            "character": {
-                "guild": ctx.guild.id,
-                "user": ctx.user.id,
-                "charid": character.id,
-                "spc": character.is_spc,
-            },
-            "channel": ctx.channel.id,
-            "message": message.id,
-            "timestamp": discord.utils.utcnow(),
-        }
-    )
+async def register_header(
+    ctx: AppCtx | discord.Interaction, message: discord.Message, character: VChar
+):
+    """Register the header in the database. A thread's header also records the
+    thread's parent, since deleting the parent deletes the thread without a
+    thread deletion event."""
+    if ctx.guild is None or ctx.user is None or ctx.channel is None:
+        raise ValueError("Headers can only be registered in guild channels")
+
+    record = {
+        "character": {
+            "guild": ctx.guild.id,
+            "user": ctx.user.id,
+            "charid": character.id,
+            "spc": character.is_spc,
+        },
+        "channel": ctx.channel.id,
+        "message": message.id,
+        "timestamp": discord.utils.utcnow(),
+    }
+    if isinstance(ctx.channel, discord.Thread):
+        record["parent"] = ctx.channel.parent_id
+
+    await db.headers.insert_one(record)
 
 
 def header_embed(header: HeaderSubdoc, character: VChar, webhook: bool) -> discord.Embed:

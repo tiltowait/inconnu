@@ -672,6 +672,30 @@ async def test_edit_of_missing_message(
     editing_modal._post_to_changelog.assert_not_awaited()
 
 
+@pytest.mark.parametrize("code,forgotten", [(UNKNOWN_WEBHOOK, True), (10008, False)])
+async def test_edit_forgets_deleted_webhook(
+    editing_modal: MockPostModal,
+    webhook: MockWebhook,
+    interaction: MockInteraction,
+    show_error: MockShowError,
+    code: int,
+    forgotten: bool,
+):
+    """A webhook Discord says is gone is dropped from the cache; a missing
+    message leaves it alone."""
+    editing_modal._clean_post_content.return_value = "Changed"
+    response = MagicMock(spec=aiohttp.ClientResponse, status=404, reason="Not Found")
+    webhook.edit_message.side_effect = discord.NotFound(response, {"code": code, "message": ""})
+
+    await PostModal._edit_rp_post(editing_modal, interaction)
+
+    forget = editing_modal.bot.webhook_cache.forget
+    assert forget.called is forgotten
+    if forgotten:
+        forget.assert_called_once_with(webhook)
+    assert show_error.call_args.kwargs["title"] == "Unable to edit message"
+
+
 async def test_edit_without_original_webhook(
     editing_modal: MockPostModal,
     interaction: MockInteraction,

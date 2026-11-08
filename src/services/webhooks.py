@@ -159,14 +159,19 @@ class WebhookCache:
 
             return self._webhooks[channel.id]
 
+    def _drop(self, channel_id: int, webhook_id: int) -> bool:
+        """Remove the channel's cached webhook, but only if it's still the given
+        one; a replacement may have been cached since. Returns whether it was
+        removed. Its ID stays known, since its old messages still carry it."""
+        cached = self._webhooks.get(channel_id)
+        if cached is None or cached.id != webhook_id:
+            return False
+        del self._webhooks[channel_id]
+        return True
+
     def forget(self, webhook: discord.Webhook):
-        """Drop a cached webhook that Discord says no longer exists. Its ID
-        stays known, since its old messages still carry it."""
-        if webhook.channel_id is None:
-            return
-        cached = self._webhooks.get(webhook.channel_id)
-        if cached is not None and cached.id == webhook.id:
-            del self._webhooks[webhook.channel_id]
+        """Drop a cached webhook that Discord says no longer exists."""
+        if webhook.channel_id is not None and self._drop(webhook.channel_id, webhook.id):
             logger.info("Forgot deleted webhook {}", webhook.id)
 
     async def matching_webhook(
@@ -178,14 +183,22 @@ class WebhookCache:
         message came from it). Raises Forbidden."""
         await self._load_channel(channel)
 
-        if webhook := self._webhooks.get(channel.id):
-            logger.debug("Found Webhook ID# {}", webhook.id)
-            if webhook.id == webhook_id:
+        cached = self._webhooks.get(channel.id)
+        if cached is not None and cached.id == webhook_id:
+            return cached
+
+        # A channel can hold more than one of our webhooks (from before the
+        # cache was race-free), and only one is cached. Only look further for
+        # an ID we know, or could have missed in a guild we can't poll.
+        known = webhook_id in self.webhook_ids
+        if not known and channel.guild.id not in self._unpollable_guilds:
+            return None
+
+        for webhook in await channel.webhooks():
+            if webhook.id == webhook_id and self._is_ours(webhook):
+                logger.debug("Found uncached webhook {} in #{}", webhook.id, channel.name)
+                self.webhook_ids.add(webhook.id)
                 return webhook
-            else:
-                logger.debug("Webhook found, but the ID doesn't match")
-        else:
-            logger.debug("No Webhook found with ID# {}", webhook_id)
 
         return None
 
@@ -201,7 +214,9 @@ class WebhookCache:
             return
 
         # We've previously fetched this channel's webhooks, so we need to check
-        # if our webhook has been deleted
-        if not await self._check_webhook(channel, self._webhooks[channel.id].id):
-            del self._webhooks[channel.id]
+        # if our webhook has been deleted. The cache may change while we wait.
+        webhook_id = self._webhooks[channel.id].id
+        if not await self._check_webhook(channel, webhook_id) and self._drop(
+            channel.id, webhook_id
+        ):
             logger.info("Webhook deleted in #{} ({})", channel.name, channel.guild.name)

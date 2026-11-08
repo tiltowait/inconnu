@@ -651,6 +651,93 @@ async def test_update_webhooks_removes_deleted_despite_other_webhook(
     assert mock_channel.id not in cache._webhooks
 
 
+# Races and duplicate webhooks
+
+
+async def test_update_webhooks_keeps_replacement(
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook, mock_user: MockUser
+):
+    """A webhook cached while the deletion check waits on Discord survives it."""
+    replacement = MagicMock(spec=discord.Webhook, id=mock_webhook.id + 1, user=mock_user)
+    cache._guilds_polled.add(mock_channel.guild.id)
+    cache._webhooks[mock_channel.id] = mock_webhook
+
+    async def webhooks() -> list[MockWebhook]:
+        """The old webhook is gone, and a post has already replaced it."""
+        cache._webhooks[mock_channel.id] = replacement
+        return [replacement]
+
+    mock_channel.webhooks.side_effect = webhooks
+
+    await cache.update_webhooks(mock_channel)
+
+    assert cache._webhooks[mock_channel.id] == replacement
+
+
+async def test_update_webhooks_after_forget(
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook
+):
+    """A webhook forgotten while the deletion check waits doesn't raise."""
+    cache._guilds_polled.add(mock_channel.guild.id)
+    cache._webhooks[mock_channel.id] = mock_webhook
+
+    async def webhooks() -> list[MockWebhook]:
+        """A failed send forgets the webhook mid-check."""
+        cache.forget(mock_webhook)
+        return []
+
+    mock_channel.webhooks.side_effect = webhooks
+
+    await cache.update_webhooks(mock_channel)
+
+    assert mock_channel.id not in cache._webhooks
+
+
+async def test_matching_webhook_finds_duplicate(
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook, mock_user: MockUser
+):
+    """A known webhook that isn't the channel's cached one is found by ID,
+    without replacing the cached one."""
+    duplicate = MagicMock(spec=discord.Webhook, id=mock_webhook.id + 1, user=mock_user)
+    cache._guilds_polled.add(mock_channel.guild.id)
+    cache._webhooks[mock_channel.id] = mock_webhook
+    cache.webhook_ids.update({mock_webhook.id, duplicate.id})
+    mock_channel.webhooks.return_value = [mock_webhook, duplicate]
+
+    result = await cache.matching_webhook(mock_channel, duplicate.id)
+
+    assert result == duplicate
+    assert cache._webhooks[mock_channel.id] == mock_webhook
+
+
+async def test_matching_webhook_ignores_unknown_ids(
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook
+):
+    """In a polled guild, an ID that was never ours costs no lookup."""
+    cache._guilds_polled.add(mock_channel.guild.id)
+    cache._webhooks[mock_channel.id] = mock_webhook
+
+    assert await cache.matching_webhook(mock_channel, 9999) is None
+    mock_channel.webhooks.assert_not_called()
+
+
+async def test_matching_webhook_searches_unpollable_guild(
+    cache: WebhookCache,
+    unpollable_channel: MockChannel,
+    mock_webhook: MockWebhook,
+    mock_user: MockUser,
+    other_user: MockUser,
+):
+    """In a guild we can't poll, unknown IDs are looked up, but only our own
+    webhooks match."""
+    duplicate = MagicMock(spec=discord.Webhook, id=2002, user=mock_user)
+    foreign = MagicMock(spec=discord.Webhook, id=3003, user=other_user)
+    unpollable_channel.webhooks.return_value = [mock_webhook, duplicate, foreign]
+
+    assert await cache.matching_webhook(unpollable_channel, duplicate.id) == duplicate
+    assert await cache.matching_webhook(unpollable_channel, foreign.id) is None
+
+
 # webhook_home Tests
 
 

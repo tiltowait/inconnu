@@ -1,6 +1,6 @@
 """Rolepost deletion handlers."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import discord
 from loguru import logger
@@ -10,8 +10,11 @@ import errors
 import ui
 from ctx import AppCtx
 from models import RPPost
-from services.webhooks import ChannelWebhook
+from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
 from utils.urls import post_url
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 
 async def delete_message_chain(ctx: AppCtx, message: discord.Message):
@@ -95,9 +98,15 @@ class DeletionModal(discord.ui.Modal):
             for msg_id in self.rp_post.id_chain:
                 try:
                     await self.webhook.delete_message(msg_id)
-                except discord.NotFound:
-                    # Someone else already deleted it
-                    pass
+                except discord.NotFound as err:
+                    if err.code == UNKNOWN_WEBHOOK:
+                        # The webhook is gone, so none of its messages can be
+                        # deleted. Stop using it; the next post makes a new one.
+                        bot = cast("InconnuBot", interaction.client)
+                        bot.webhook_cache.forget(self.webhook.webhook)
+                        failed = True
+                        break
+                    # Otherwise, someone else already deleted the message
                 except discord.HTTPException as err:
                     logger.warning("Unable to delete Rolepost message {}: {}", msg_id, err)
                     failed = True

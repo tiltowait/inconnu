@@ -11,9 +11,10 @@ from beanie import PydanticObjectId
 from pymongo.asynchronous.collection import AsyncCollection
 
 import db
+from bot import InconnuBot
 from inconnu.roleplay.delete import DeletionModal, delete_message_chain, deletion_embed
 from models import RPPost
-from services.webhooks import ChannelWebhook
+from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
 from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, MockShowError, PostFactory
 from utils.urls import post_url
 
@@ -256,6 +257,27 @@ async def test_confirmation_deletes_chain_in_thread(
         {"thread_id": 7000},
         {"thread_id": 7000},
     ]
+
+
+async def test_deleted_webhook_is_forgotten(
+    webhook: MockWebhook, interaction: MockInteraction, make_post: PostFactory
+):
+    """If the post's webhook is gone, it's forgotten, nothing more is tried, and
+    the user is told the post wasn't deleted."""
+    response = MagicMock(spec=aiohttp.ClientResponse, status=404, reason="Not Found")
+    webhook.delete_message.side_effect = discord.NotFound(
+        response, {"code": UNKNOWN_WEBHOOK, "message": ""}
+    )
+    interaction.client = MagicMock(spec=InconnuBot)
+    modal = DeletionModal(ChannelWebhook(webhook), make_post(id_chain=[1, 2, 3]))
+    modal.children[0].value = "DELETE"
+
+    with patch("ui.embeds.error", new_callable=AsyncMock) as show_error:
+        await modal.callback(interaction)
+
+    interaction.client.webhook_cache.forget.assert_called_once_with(webhook)
+    webhook.delete_message.assert_awaited_once()
+    assert show_error.call_args.kwargs["title"] == "Unable to delete post"
 
 
 async def test_missing_message_counts_as_deleted(

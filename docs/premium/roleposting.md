@@ -118,7 +118,7 @@ When someone edits a post, **Inconnu** posts a notice in the changelog channel. 
 When someone deletes a post, **Inconnu** posts a notice in the deletion channel, with the author, the channel, the post's contents, and a link to the post's record on the **Inconnu** website. It can be the same channel as the changelog.
 
 > [!WARNING]
-> Posts deleted in bulk, or by deleting their channel, get no notice.
+> Posts deleted in bulk, or by deleting their channel or thread, get no notice.
 
 ## Troubleshooting
 

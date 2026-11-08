@@ -34,12 +34,11 @@ async def show_header(ctx: AppCtx, character: VChar, **kwargs):
 
         await ctx.respond("Generating header ...", ephemeral=True, delete_after=1)
 
-        webhook = await ctx.bot.prep_webhook(ctx.channel)
         webhook_avatar = character.profile_image_url or get_avatar(ctx.user)
         embed = header_embed(header_doc, character, True)
 
-        message = await webhook.send(
-            embed=embed, username=character.name, avatar_url=webhook_avatar, wait=True
+        _, message = await ctx.bot.webhook_send(
+            ctx.channel, embed=embed, username=character.name, avatar_url=webhook_avatar
         )
     except errors.NotPremium, errors.WebhookError:
         embed = header_embed(header_doc, character, False)

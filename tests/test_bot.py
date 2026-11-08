@@ -5,14 +5,20 @@ from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import discord
 import pytest
 
 import bot as bot_module
+import errors
 from bot import InconnuBot
 from models import RPPost
 from services import WebhookCache
 from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
+from services.webhooks import UNKNOWN_WEBHOOK
+
+type MockChannel = MagicMock
+type MockWebhook = AsyncMock
 
 # Fixtures
 
@@ -71,6 +77,95 @@ def test_end_lockdown(mock_bot: MagicMock):
     InconnuBot.start_lockdown(mock_bot, LockdownReason.MAINTENANCE)
     InconnuBot.end_lockdown(mock_bot)
     assert mock_bot.lockdown is None
+
+
+# Webhooks
+
+
+def not_found(code: int) -> discord.NotFound:
+    """A NotFound error with the given Discord error code."""
+    response = MagicMock(spec=aiohttp.ClientResponse, status=404, reason="Not Found")
+    return discord.NotFound(response, {"code": code, "message": "Unknown"})
+
+
+def make_webhook(webhook_id: int) -> MockWebhook:
+    """A webhook whose sends return a message."""
+    webhook = AsyncMock(spec=discord.Webhook, id=webhook_id)
+    webhook.send.return_value = MagicMock(spec=discord.WebhookMessage, id=webhook_id * 10)
+    return webhook
+
+
+@pytest.fixture
+def text_channel() -> MockChannel:
+    """A text channel."""
+    return MagicMock(spec=discord.TextChannel)
+
+
+@pytest.fixture
+def webhook_bot(mock_bot: MagicMock) -> MagicMock:
+    """A mock bot with a webhook cache and the real webhook methods."""
+    mock_bot.webhook_cache = AsyncMock(spec=WebhookCache)
+    mock_bot.prep_webhook = lambda channel: InconnuBot.prep_webhook(mock_bot, channel)
+    return mock_bot
+
+
+async def test_prep_webhook_outside_text_channel(webhook_bot: MagicMock):
+    """Threads and other channels can't use webhooks."""
+    channel = MagicMock(spec=discord.Thread)
+
+    with pytest.raises(errors.WebhookError, match="text channels"):
+        await InconnuBot.prep_webhook(webhook_bot, channel)
+
+    webhook_bot.webhook_cache.prep_webhook.assert_not_awaited()
+
+
+async def test_prep_webhook_without_permission(webhook_bot: MagicMock, text_channel: MockChannel):
+    """Missing permissions become a WebhookError."""
+    response = MagicMock(spec=aiohttp.ClientResponse, status=403, reason="Forbidden")
+    webhook_bot.webhook_cache.prep_webhook.side_effect = discord.Forbidden(response, "Missing")
+
+    with pytest.raises(errors.WebhookError, match="Manage Webhook"):
+        await InconnuBot.prep_webhook(webhook_bot, text_channel)
+
+
+async def test_webhook_send(webhook_bot: MagicMock, text_channel: MockChannel):
+    """The message is sent through the channel's webhook, which is returned."""
+    webhook = make_webhook(1)
+    webhook_bot.webhook_cache.prep_webhook.return_value = webhook
+
+    result = await InconnuBot.webhook_send(webhook_bot, text_channel, content="Hi")
+
+    assert result == (webhook, webhook.send.return_value)
+    webhook.send.assert_awaited_once_with(wait=True, content="Hi")
+    webhook_bot.webhook_cache.forget.assert_not_called()
+
+
+async def test_webhook_send_replaces_deleted_webhook(
+    webhook_bot: MagicMock, text_channel: MockChannel
+):
+    """A webhook deleted behind the cache's back is replaced, and the message
+    sent through the new one."""
+    stale, fresh = make_webhook(1), make_webhook(2)
+    stale.send.side_effect = not_found(UNKNOWN_WEBHOOK)
+    webhook_bot.webhook_cache.prep_webhook.side_effect = [stale, fresh]
+
+    result = await InconnuBot.webhook_send(webhook_bot, text_channel, content="Hi")
+
+    assert result == (fresh, fresh.send.return_value)
+    webhook_bot.webhook_cache.forget.assert_called_once_with(stale)
+    fresh.send.assert_awaited_once_with(wait=True, content="Hi")
+
+
+async def test_webhook_send_other_not_found(webhook_bot: MagicMock, text_channel: MockChannel):
+    """Other NotFound errors don't replace the webhook."""
+    webhook = make_webhook(1)
+    webhook.send.side_effect = not_found(10003)  # Unknown Channel
+    webhook_bot.webhook_cache.prep_webhook.return_value = webhook
+
+    with pytest.raises(discord.NotFound):
+        await InconnuBot.webhook_send(webhook_bot, text_channel, content="Hi")
+
+    webhook_bot.webhook_cache.forget.assert_not_called()
 
 
 # Rolepost reply pings

@@ -18,6 +18,7 @@ from bot import InconnuBot
 from ctx import AppCtx
 from inconnu.roleplay.post import PostModal, create_post, edit_post
 from models import HeaderSubdoc, RPPost, VChar
+from services.webhooks import UNKNOWN_WEBHOOK
 from tests.characters import gen_char
 from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, PostFactory
 
@@ -66,6 +67,7 @@ def posting_modal(mock_post_modal: MockPostModal, webhook: MockWebhook) -> MockP
     """A modal ready to make a two-page post with no header or mentions."""
     mock_post_modal.bot = MagicMock(spec=InconnuBot)
     mock_post_modal.bot.prep_webhook = AsyncMock(return_value=webhook)
+    mock_post_modal.bot.webhook_send = partial(InconnuBot.webhook_send, mock_post_modal.bot)
     mock_post_modal.character = MagicMock(spec=VChar)
     mock_post_modal.character.name = "Nadea"
     mock_post_modal.character.profile_image_url = None
@@ -483,6 +485,29 @@ async def test_new_post_records_each_page(
     assert (second["content"], second["message"].id) == ("Second page", 2)
     assert (first["title"], first["tags"]) == ("A title", ["tag"])
     assert (second["title"], second["tags"]) == (None, [])
+
+
+async def test_new_post_replaces_deleted_webhook(
+    posting_modal: MockPostModal,
+    webhook: MockWebhook,
+    interaction: MockInteraction,
+    new_post: MagicMock,
+):
+    """If the channel's webhook was deleted, the whole post goes through its
+    replacement."""
+    stale = AsyncMock(spec=discord.Webhook)
+    response = MagicMock(spec=aiohttp.ClientResponse, status=404, reason="Not Found")
+    stale.send.side_effect = discord.NotFound(response, {"code": UNKNOWN_WEBHOOK, "message": ""})
+    posting_modal.bot.prep_webhook.side_effect = [stale, webhook]
+
+    await PostModal._new_rp_post(posting_modal, interaction)
+
+    posting_modal.bot.webhook_cache.forget.assert_called_once_with(stale)
+    assert [call.kwargs["content"] for call in webhook.send.await_args_list] == [
+        "First page",
+        "Second page",
+    ]
+    assert [call.kwargs["message"].id for call in new_post.call_args_list] == [1, 2]
 
 
 async def test_new_post_saves_records(

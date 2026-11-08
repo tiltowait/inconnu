@@ -213,56 +213,35 @@ class PostModal(discord.ui.Modal):
     async def _send_rp_post(self, interaction: discord.Interaction, contents: list[str]):
         """Send the Rolepost's messages and register them."""
         assert interaction.user is not None
-        webhook = await self.bot.prep_webhook(interaction.channel)
         webhook_avatar = self.character.profile_image_url or get_avatar(interaction.user)
+        identity = {"username": self.character.name, "avatar_url": webhook_avatar}
 
+        # The Rolepost's messages, in order: header, pages, mentions
+        messages: list[dict[str, Any]] = []
         if self.show_header:
             # We take a regular header embed as a base, then modify it ... a lot
             header_embed = inconnu.header.embed(self.header, self.character, True)
             header_embed.description = (
                 header_embed.description or ""
             ) + f"\n*Author: {interaction.user.mention}*"
-
-            header_message = await webhook.send(
-                embed=header_embed,
-                username=self.character.name,
-                avatar_url=webhook_avatar,
-                wait=True,
-            )
-        else:
-            header_message = None
-
-        post_messages = []
-        id_chain = []
-        for page in contents:
-            msg = await webhook.send(
-                content=page,
-                username=self.character.name,
-                avatar_url=webhook_avatar,
-                allowed_mentions=POST_MENTIONS,
-                wait=True,
-            )
-            post_messages.append(msg)
-
-            # The ID chain has all message IDs, not just the current post's ID
-            id_chain.append(msg.id)
-
-        if self.show_header:
-            assert header_message is not None
-            id_chain.insert(0, header_message.id)
-
+            messages.append({"embed": header_embed})
+        messages.extend({"content": page, "allowed_mentions": POST_MENTIONS} for page in contents)
         if self.mentions:
-            mention_message = await webhook.send(
-                content=self.mentions,
-                username=self.character.name,
-                avatar_url=webhook_avatar,
-                allowed_mentions=POST_MENTIONS,
-                wait=True,
-            )
-            id_chain.append(mention_message.id)
+            messages.append({"content": self.mentions, "allowed_mentions": POST_MENTIONS})
+
+        webhook, first = await self.bot.webhook_send(interaction.channel, **identity, **messages[0])
+        sent = [first]
+        for message in messages[1:]:
+            sent.append(await webhook.send(wait=True, **identity, **message))
+
+        # Every page's record has the whole chain, not just its own ID
+        id_chain = [message.id for message in sent]
+        header_message = sent[0] if self.show_header else None
+        start = 1 if self.show_header else 0
+        post_messages = sent[start : start + len(contents)]
 
         # Register the messages
-        if self.show_header:
+        if header_message is not None:
             await inconnu.header.register(interaction, header_message, self.character)
             logger.info("POST: {} registered header", self.character.name)
 

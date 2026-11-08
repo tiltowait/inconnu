@@ -96,7 +96,6 @@ def test_init_creates_empty_collections(cache: WebhookCache):
     assert cache._webhooks == {}
     assert cache.webhook_ids == set()
     assert cache._guilds_polled == set()
-    assert cache.just_created == set()
 
 
 # _check_webhook Tests
@@ -360,13 +359,13 @@ async def test_prep_webhook_without_channel_permission(
         await cache.prep_webhook(unpollable_channel)
 
 
-async def test_fetch_webhook_finds_channel_webhook(
+async def test_matching_webhook_finds_channel_webhook(
     cache: WebhookCache, unpollable_channel: MockChannel, mock_webhook: MockWebhook
 ):
-    """Without a guild poll, fetch_webhook finds the channel's webhook."""
+    """Without a guild poll, matching_webhook finds the channel's webhook."""
     unpollable_channel.webhooks.return_value = [mock_webhook]
 
-    result = await cache.fetch_webhook(unpollable_channel, mock_webhook.id)
+    result = await cache.matching_webhook(unpollable_channel, mock_webhook.id)
 
     assert result == mock_webhook
 
@@ -447,7 +446,6 @@ async def test_prep_webhook_adds_to_cache_when_creating(
     assert mock_channel.id in cache._webhooks
     assert cache._webhooks[mock_channel.id] == mock_webhook
     assert mock_webhook.id in cache.webhook_ids
-    assert mock_channel.id in cache.just_created
 
 
 async def test_concurrent_prep_webhook_creates_one(
@@ -468,74 +466,114 @@ async def test_concurrent_prep_webhook_creates_one(
     mock_channel.create_webhook.assert_awaited_once()
 
 
-# fetch_webhook Tests
+# matching_webhook Tests
 
 
-async def test_fetch_webhook_polls_guild_if_not_polled(
+async def test_matching_webhook_polls_guild_if_not_polled(
     cache: WebhookCache,
     mock_channel,
     mock_webhook,
 ):
-    """Test that fetch_webhook polls guild if not already polled."""
+    """Test that matching_webhook polls guild if not already polled."""
     mock_channel.guild.webhooks.return_value = [mock_webhook]
 
-    await cache.fetch_webhook(mock_channel, mock_webhook.id)
+    await cache.matching_webhook(mock_channel, mock_webhook.id)
 
     assert mock_channel.guild.id in cache._guilds_polled
 
 
-async def test_fetch_webhook_returns_webhook_when_id_matches(
+async def test_matching_webhook_returns_webhook_when_id_matches(
     cache: WebhookCache,
     mock_channel,
     mock_webhook,
 ):
-    """Test that fetch_webhook returns webhook when cached and ID matches."""
+    """Test that matching_webhook returns webhook when cached and ID matches."""
     cache._guilds_polled.add(mock_channel.guild.id)
     cache._webhooks[mock_channel.id] = mock_webhook
 
-    result = await cache.fetch_webhook(mock_channel, mock_webhook.id)
+    result = await cache.matching_webhook(mock_channel, mock_webhook.id)
 
     assert result == mock_webhook
 
 
-async def test_fetch_webhook_returns_none_when_id_mismatch(
+async def test_matching_webhook_returns_none_when_id_mismatch(
     cache: WebhookCache,
     mock_channel,
     mock_webhook,
 ):
-    """Test that fetch_webhook returns None when cached but ID doesn't match."""
+    """Test that matching_webhook returns None when cached but ID doesn't match."""
     cache._guilds_polled.add(mock_channel.guild.id)
     cache._webhooks[mock_channel.id] = mock_webhook
 
-    result = await cache.fetch_webhook(mock_channel, 9999)
+    result = await cache.matching_webhook(mock_channel, 9999)
 
     assert result is None
 
 
-async def test_fetch_webhook_returns_none_when_not_cached(cache: WebhookCache, mock_channel):
-    """Test that fetch_webhook returns None when channel not in cache."""
+async def test_matching_webhook_returns_none_when_not_cached(cache: WebhookCache, mock_channel):
+    """Test that matching_webhook returns None when channel not in cache."""
     cache._guilds_polled.add(mock_channel.guild.id)
 
-    result = await cache.fetch_webhook(mock_channel, 1001)
+    result = await cache.matching_webhook(mock_channel, 1001)
 
     assert result is None
+
+
+# forget Tests
+
+
+def test_forget_drops_webhook(cache: WebhookCache, mock_webhook: MockWebhook):
+    """A forgotten webhook leaves the cache, but its ID stays known."""
+    cache._webhooks[mock_webhook.channel_id] = mock_webhook
+    cache.webhook_ids.add(mock_webhook.id)
+
+    cache.forget(mock_webhook)
+
+    assert mock_webhook.channel_id not in cache._webhooks
+    assert mock_webhook.id in cache.webhook_ids
+
+
+def test_forget_keeps_replacement(
+    cache: WebhookCache, mock_webhook: MockWebhook, mock_user: MockUser
+):
+    """Forgetting an old webhook doesn't drop the one that replaced it."""
+    replacement = MagicMock(spec=discord.Webhook, id=mock_webhook.id + 1, user=mock_user)
+    cache._webhooks[mock_webhook.channel_id] = replacement
+
+    cache.forget(mock_webhook)
+
+    assert cache._webhooks[mock_webhook.channel_id] == replacement
 
 
 # update_webhooks Tests
 
 
-async def test_update_webhooks_skips_and_removes_just_created(
-    cache: WebhookCache,
-    mock_channel,
+async def test_update_webhooks_keeps_just_created_webhook(
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook
 ):
-    """Test that update_webhooks skips and removes from just_created."""
-    cache._guilds_polled.add(mock_channel.guild.id)
-    cache.just_created.add(mock_channel.id)
+    """The update event for a webhook we just created leaves it cached."""
+    mock_channel.create_webhook.return_value = mock_webhook
+    await cache.prep_webhook(mock_channel)
+    mock_channel.webhooks.return_value = [mock_webhook]
 
     await cache.update_webhooks(mock_channel)
 
-    assert mock_channel.id not in cache.just_created
-    mock_channel.webhooks.assert_not_called()
+    assert cache._webhooks[mock_channel.id] == mock_webhook
+
+
+async def test_update_webhooks_after_failed_creation(
+    cache: WebhookCache, mock_channel: MockChannel, mock_webhook: MockWebhook
+):
+    """A failed creation doesn't stop the cache noticing a later deletion."""
+    mock_channel.create_webhook.side_effect = forbidden()
+    with pytest.raises(discord.Forbidden):
+        await cache.prep_webhook(mock_channel)
+    cache._webhooks[mock_channel.id] = mock_webhook
+    mock_channel.webhooks.return_value = []
+
+    await cache.update_webhooks(mock_channel)
+
+    assert mock_channel.id not in cache._webhooks
 
 
 async def test_update_webhooks_skips_if_guild_not_polled(

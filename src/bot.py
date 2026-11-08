@@ -1,7 +1,7 @@
 """Bot instance and event handlers."""
 
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import discord
 from cachetools import TTLCache
@@ -16,6 +16,7 @@ from ctx import AppCtx, Channel
 from models import RPPost, VChar
 from services import WebhookCache
 from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
+from services.webhooks import UNKNOWN_WEBHOOK
 
 
 class InconnuBot(discord.AutoShardedBot):
@@ -171,13 +172,28 @@ class InconnuBot(discord.AutoShardedBot):
     ) -> discord.Webhook:
         """Prepare a webhook, either from the cache or creating one. Raises WebhookError."""
         if not isinstance(channel, discord.TextChannel):
-            raise ValueError("Webhooks are only supported in text channels.")
+            raise errors.WebhookError("This feature is only available in text channels.")
         try:
             return await self.webhook_cache.prep_webhook(channel)
         except discord.Forbidden:
             raise errors.WebhookError("Inconnu needs `Manage Webhook` permission for this command.")
-        except AttributeError:
-            raise errors.WebhookError("This feature isn't available in threads.")
+
+    async def webhook_send(
+        self, channel: Channel, **kwargs: Any
+    ) -> tuple[discord.Webhook, discord.WebhookMessage]:
+        """Send a webhook post's first message, returning the webhook for the
+        rest. If the channel's webhook was deleted without the cache noticing,
+        a new one replaces it. Raises WebhookError."""
+        webhook = await self.prep_webhook(channel)
+        try:
+            return webhook, await webhook.send(wait=True, **kwargs)
+        except discord.NotFound as err:
+            if err.code != UNKNOWN_WEBHOOK:
+                raise
+            self.webhook_cache.forget(webhook)
+
+        webhook = await self.prep_webhook(channel)
+        return webhook, await webhook.send(wait=True, **kwargs)
 
     async def _set_presence(self):
         """Set the bot's presence message."""

@@ -6,6 +6,8 @@ from collections import defaultdict
 import discord
 from loguru import logger
 
+UNKNOWN_WEBHOOK = 10015  # Discord's error code for a deleted webhook
+
 
 class WebhookCache:
     """Maintains an active cache of webhooks."""
@@ -18,7 +20,6 @@ class WebhookCache:
         # Guilds whose webhooks must be found channel by channel, because
         # Manage Webhooks is only granted in some channels
         self._unpollable_guilds: set[int] = set()
-        self.just_created: set[int] = set()
         # Concurrent posts in a new channel must not each create a webhook
         self._locks: defaultdict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
 
@@ -94,7 +95,6 @@ class WebhookCache:
 
             if channel.id not in self._webhooks:
                 # Create the webhook
-                self.just_created.add(channel.id)
                 webhook = await channel.create_webhook(name="Inconnuhook", reason="For Roleposts")
                 self._webhooks[channel.id] = webhook
                 self.webhook_ids.add(webhook.id)
@@ -112,12 +112,23 @@ class WebhookCache:
 
             return self._webhooks[channel.id]
 
-    async def fetch_webhook(
+    def forget(self, webhook: discord.Webhook):
+        """Drop a cached webhook that Discord says no longer exists. Its ID
+        stays known, since its old messages still carry it."""
+        if webhook.channel_id is None:
+            return
+        cached = self._webhooks.get(webhook.channel_id)
+        if cached is not None and cached.id == webhook.id:
+            del self._webhooks[webhook.channel_id]
+            logger.info("Forgot deleted webhook {}", webhook.id)
+
+    async def matching_webhook(
         self,
         channel: discord.TextChannel,
         webhook_id: int,
     ) -> discord.Webhook | None:
-        """Fetch a webhook for a particular guild. Raises Forbidden."""
+        """Our webhook in the channel, if it has the given ID (as when a
+        message came from it). Raises Forbidden."""
         await self._load_channel(channel)
 
         if webhook := self._webhooks.get(channel.id):
@@ -134,19 +145,12 @@ class WebhookCache:
     async def update_webhooks(self, channel: discord.TextChannel):
         """Check if the webhook was deleted or not."""
         logger.debug("Checking webhook updates in #{}", channel.name)
-        if channel.id in self.just_created:
-            logger.debug("Ignoring just-created webhook")
-            self.just_created.remove(channel.id)
-            return
-
         if channel.guild.id not in self._guilds_polled:
             logger.debug("Ignoring #{} (guild not loaded)", channel.name)
             return
 
         if channel.id not in self._webhooks:
-            logger.debug(
-                "Ignoring #{} ({}) (no webhooks loaded)", channel.name, channel.guild.name
-            )
+            logger.debug("Ignoring #{} ({}) (no webhooks loaded)", channel.name, channel.guild.name)
             return
 
         # We've previously fetched this channel's webhooks, so we need to check

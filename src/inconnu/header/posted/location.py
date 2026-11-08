@@ -49,7 +49,7 @@ async def _resolve_webhook(
     if not isinstance(channel, discord.TextChannel):
         return None
     try:
-        return await bot.webhook_cache.fetch_webhook(channel, message.author.id)
+        return await bot.webhook_cache.matching_webhook(channel, message.author.id)
     except discord.errors.Forbidden:
         logger.info("EDIT HEADER: No webhook permissions")
         return None

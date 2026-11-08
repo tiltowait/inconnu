@@ -5,20 +5,29 @@ from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import discord
 import pytest
 
 import bot as bot_module
+import errors
 from bot import InconnuBot
 from models import RPPost
 from services import WebhookCache
 from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
+from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
+
+type MockBot = MagicMock
+type MockChannel = MagicMock
+type MockFindOne = AsyncMock
+type MockMessage = MagicMock
+type MockWebhook = AsyncMock
 
 # Fixtures
 
 
 @pytest.fixture
-def mock_bot() -> MagicMock:
+def mock_bot() -> MockBot:
     """Create a mock InconnuBot instance."""
     bot = MagicMock(spec=InconnuBot)
     bot.guilds = []
@@ -39,14 +48,14 @@ async def test_missing_cog_dir_raises(tmp_path: Path, monkeypatch: pytest.Monkey
 # Properties
 
 
-def test_me_before_login(mock_bot: MagicMock):
+def test_me_before_login(mock_bot: MockBot):
     """The bot's user is unavailable before login."""
     mock_bot.user = None
     with pytest.raises(RuntimeError):
         InconnuBot.me.__get__(mock_bot)
 
 
-def test_webhook_cache_before_connect(mock_bot: MagicMock):
+def test_webhook_cache_before_connect(mock_bot: MockBot):
     """The webhook cache is unavailable before connecting."""
     mock_bot._webhook_cache = None
     with pytest.raises(RuntimeError):
@@ -56,7 +65,7 @@ def test_webhook_cache_before_connect(mock_bot: MagicMock):
 # Lockdown
 
 
-def test_start_lockdown(mock_bot: MagicMock):
+def test_start_lockdown(mock_bot: MockBot):
     """A lockdown records its reason and schedules the shutdown LOCKDOWN_DELAY out."""
     now = datetime(2026, 11, 1, 12, tzinfo=UTC)
     with patch.object(bot_module.discord.utils, "utcnow", return_value=now):
@@ -66,11 +75,194 @@ def test_start_lockdown(mock_bot: MagicMock):
     assert mock_bot.lockdown is lockdown
 
 
-def test_end_lockdown(mock_bot: MagicMock):
+def test_end_lockdown(mock_bot: MockBot):
     """Ending a lockdown clears it."""
     InconnuBot.start_lockdown(mock_bot, LockdownReason.MAINTENANCE)
     InconnuBot.end_lockdown(mock_bot)
     assert mock_bot.lockdown is None
+
+
+# Webhooks
+
+
+def not_found(code: int) -> discord.NotFound:
+    """A NotFound error with the given Discord error code."""
+    response = MagicMock(spec=aiohttp.ClientResponse, status=404, reason="Not Found")
+    return discord.NotFound(response, {"code": code, "message": "Unknown"})
+
+
+def make_webhook(webhook_id: int) -> MockWebhook:
+    """A webhook whose sends return a message."""
+    webhook = AsyncMock(spec=discord.Webhook, id=webhook_id)
+    webhook.send.return_value = MagicMock(spec=discord.WebhookMessage, id=webhook_id * 10)
+    return webhook
+
+
+@pytest.fixture
+def text_channel() -> MockChannel:
+    """A text channel."""
+    return MagicMock(spec=discord.TextChannel)
+
+
+@pytest.fixture
+def webhook_bot(mock_bot: MockBot) -> MockBot:
+    """A mock bot with a webhook cache and the real webhook methods."""
+    mock_bot.webhook_cache = AsyncMock(spec=WebhookCache)
+    mock_bot.prep_webhook = lambda channel: InconnuBot.prep_webhook(mock_bot, channel)
+    return mock_bot
+
+
+def webhook_parent(channel_type: type, *, manage_webhooks: bool) -> MockChannel:
+    """A channel that may hold webhooks, with the given permission."""
+    channel = MagicMock(spec=channel_type)
+    channel.permissions_for.return_value = discord.Permissions(manage_webhooks=manage_webhooks)
+    return channel
+
+
+def thread_in(parent: MockChannel | None) -> MockChannel:
+    """A thread in the given channel."""
+    thread = MagicMock(spec=discord.Thread)
+    thread.parent = parent  # Mock() treats parent= as its own argument
+    return thread
+
+
+@pytest.mark.parametrize("manage_webhooks", [True, False])
+def test_can_webhook_in_text_channel(mock_bot: MockBot, manage_webhooks: bool):
+    """Text channels need Manage Webhooks."""
+    channel = webhook_parent(discord.TextChannel, manage_webhooks=manage_webhooks)
+
+    assert InconnuBot.can_webhook(mock_bot, channel) is manage_webhooks
+
+
+@pytest.mark.parametrize("parent_type", [discord.TextChannel, discord.ForumChannel])
+@pytest.mark.parametrize("manage_webhooks", [True, False])
+def test_can_webhook_in_thread(mock_bot: MockBot, parent_type: type, manage_webhooks: bool):
+    """Threads need Manage Webhooks in their parent."""
+    parent = webhook_parent(parent_type, manage_webhooks=manage_webhooks)
+
+    assert InconnuBot.can_webhook(mock_bot, thread_in(parent)) is manage_webhooks
+
+
+@pytest.mark.parametrize(
+    "channel",
+    [
+        thread_in(None),
+        MagicMock(spec=discord.VoiceChannel),
+    ],
+)
+def test_cannot_webhook(mock_bot: MockBot, channel: MockChannel):
+    """Threads with unknown parents, and other channels, can't use webhooks."""
+    assert InconnuBot.can_webhook(mock_bot, channel) is False
+
+
+async def test_prep_webhook_in_thread(webhook_bot: MockBot):
+    """A thread gets its parent's webhook, bound to the thread."""
+    parent = webhook_parent(discord.ForumChannel, manage_webhooks=True)
+    thread = thread_in(parent)
+    webhook = make_webhook(1)
+    webhook_bot.webhook_cache.prep_webhook.return_value = webhook
+
+    result = await InconnuBot.prep_webhook(webhook_bot, thread)
+
+    webhook_bot.webhook_cache.prep_webhook.assert_awaited_once_with(parent)
+    assert result == ChannelWebhook(webhook, thread)
+
+
+async def test_prep_webhook_outside_text_channel(webhook_bot: MockBot):
+    """Threads and other channels can't use webhooks."""
+    channel = MagicMock(spec=discord.Thread)
+
+    with pytest.raises(errors.WebhookError, match="text channels"):
+        await InconnuBot.prep_webhook(webhook_bot, channel)
+
+    webhook_bot.webhook_cache.prep_webhook.assert_not_awaited()
+
+
+async def test_prep_webhook_without_permission(webhook_bot: MockBot, text_channel: MockChannel):
+    """Missing permissions become a WebhookError."""
+    response = MagicMock(spec=aiohttp.ClientResponse, status=403, reason="Forbidden")
+    webhook_bot.webhook_cache.prep_webhook.side_effect = discord.Forbidden(response, "Missing")
+
+    with pytest.raises(errors.WebhookError, match="Manage Webhook"):
+        await InconnuBot.prep_webhook(webhook_bot, text_channel)
+
+
+@pytest.mark.parametrize("parent_type", [discord.TextChannel, discord.ForumChannel])
+async def test_matching_webhook_in_thread(webhook_bot: MockBot, parent_type: type):
+    """A thread's messages are matched against its parent's webhook, bound to
+    the thread."""
+    parent = MagicMock(spec=parent_type)
+    thread = thread_in(parent)
+    webhook = make_webhook(1)
+    webhook_bot.webhook_cache.matching_webhook.return_value = webhook
+
+    result = await InconnuBot.matching_webhook(webhook_bot, thread, 1)
+
+    webhook_bot.webhook_cache.matching_webhook.assert_awaited_once_with(parent, 1)
+    assert result == ChannelWebhook(webhook, thread)
+    webhook_bot.webhook_cache.prep_webhook.assert_not_awaited()
+
+
+async def test_matching_webhook_without_match(webhook_bot: MockBot, text_channel: MockChannel):
+    """No matching webhook means no webhook."""
+    webhook_bot.webhook_cache.matching_webhook.return_value = None
+
+    assert await InconnuBot.matching_webhook(webhook_bot, text_channel, 1) is None
+
+
+async def test_matching_webhook_without_parent(webhook_bot: MockBot):
+    """A thread whose parent is unknown has no webhook."""
+    assert await InconnuBot.matching_webhook(webhook_bot, thread_in(None), 1) is None
+    webhook_bot.webhook_cache.matching_webhook.assert_not_awaited()
+
+
+async def test_matching_webhook_without_permission(webhook_bot: MockBot, text_channel: MockChannel):
+    """Missing permissions become a WebhookError."""
+    response = MagicMock(spec=aiohttp.ClientResponse, status=403, reason="Forbidden")
+    webhook_bot.webhook_cache.matching_webhook.side_effect = discord.Forbidden(response, "No")
+
+    with pytest.raises(errors.WebhookError, match="Manage Webhook"):
+        await InconnuBot.matching_webhook(webhook_bot, text_channel, 1)
+
+
+async def test_webhook_send(webhook_bot: MockBot, text_channel: MockChannel):
+    """The message is sent through the channel's webhook, which is returned."""
+    webhook = make_webhook(1)
+    webhook_bot.webhook_cache.prep_webhook.return_value = webhook
+
+    result = await InconnuBot.webhook_send(webhook_bot, text_channel, content="Hi")
+
+    assert result == (ChannelWebhook(webhook), webhook.send.return_value)
+    webhook.send.assert_awaited_once_with(wait=True, content="Hi")
+    webhook_bot.webhook_cache.forget.assert_not_called()
+
+
+async def test_webhook_send_replaces_deleted_webhook(
+    webhook_bot: MockBot, text_channel: MockChannel
+):
+    """A webhook deleted behind the cache's back is replaced, and the message
+    sent through the new one."""
+    stale, fresh = make_webhook(1), make_webhook(2)
+    stale.send.side_effect = not_found(UNKNOWN_WEBHOOK)
+    webhook_bot.webhook_cache.prep_webhook.side_effect = [stale, fresh]
+
+    result = await InconnuBot.webhook_send(webhook_bot, text_channel, content="Hi")
+
+    assert result == (ChannelWebhook(fresh), fresh.send.return_value)
+    webhook_bot.webhook_cache.forget.assert_called_once_with(stale)
+    fresh.send.assert_awaited_once_with(wait=True, content="Hi")
+
+
+async def test_webhook_send_other_not_found(webhook_bot: MockBot, text_channel: MockChannel):
+    """Other NotFound errors don't replace the webhook."""
+    webhook = make_webhook(1)
+    webhook.send.side_effect = not_found(10003)  # Unknown Channel
+    webhook_bot.webhook_cache.prep_webhook.return_value = webhook
+
+    with pytest.raises(discord.NotFound):
+        await InconnuBot.webhook_send(webhook_bot, text_channel, content="Hi")
+
+    webhook_bot.webhook_cache.forget.assert_not_called()
 
 
 # Rolepost reply pings
@@ -87,7 +279,7 @@ def make_reply(
     resolved: bool = True,
     to_webhook: bool = True,
     mentions: list[int] | None = None,
-) -> MagicMock:
+) -> MockMessage:
     """A reply to a message, by default a resolved reply to one of our webhooks."""
     message = MagicMock(spec=discord.Message)
     message.author.bot = bot_author
@@ -114,7 +306,7 @@ def make_reply(
 
 
 @pytest.fixture
-def reply_bot(mock_bot: MagicMock) -> MagicMock:
+def reply_bot(mock_bot: MockBot) -> MockBot:
     """A mock bot that knows our webhook and can fetch the Rolepost's author."""
     mock_bot.webhook_cache = MagicMock(spec=WebhookCache)
     mock_bot.webhook_cache.webhook_ids = {WEBHOOK_ID}
@@ -125,7 +317,7 @@ def reply_bot(mock_bot: MagicMock) -> MagicMock:
 
 
 @pytest.fixture
-async def mock_find_post() -> AsyncGenerator[AsyncMock]:
+async def mock_find_post() -> AsyncGenerator[MockFindOne]:
     """RPPost.find_one(), patched to return a Rolepost by AUTHOR_ID."""
     rp_post = MagicMock(spec=RPPost)
     rp_post.user = AUTHOR_ID
@@ -143,7 +335,7 @@ async def mock_find_post() -> AsyncGenerator[AsyncMock]:
         {"to_webhook": False},
     ],
 )
-async def test_on_message_ignored(reply_bot: MagicMock, mock_find_post: AsyncMock, kwargs: dict):
+async def test_on_message_ignored(reply_bot: MockBot, mock_find_post: MockFindOne, kwargs: dict):
     """Messages that aren't user replies to our webhooks are ignored."""
     message = make_reply(**kwargs)
     await InconnuBot.on_message(reply_bot, message)
@@ -152,7 +344,7 @@ async def test_on_message_ignored(reply_bot: MagicMock, mock_find_post: AsyncMoc
     message.reply.assert_not_awaited()
 
 
-async def test_on_message_no_rolepost(reply_bot: MagicMock, mock_find_post: AsyncMock):
+async def test_on_message_no_rolepost(reply_bot: MockBot, mock_find_post: MockFindOne):
     """Replies to webhook messages that aren't Roleposts are ignored."""
     mock_find_post.return_value = None
     message = make_reply()
@@ -162,7 +354,7 @@ async def test_on_message_no_rolepost(reply_bot: MagicMock, mock_find_post: Asyn
     message.reply.assert_not_awaited()
 
 
-async def test_on_message_author_already_mentioned(reply_bot: MagicMock, mock_find_post: AsyncMock):
+async def test_on_message_author_already_mentioned(reply_bot: MockBot, mock_find_post: MockFindOne):
     """No ping when the replier already pinged the Rolepost's author."""
     message = make_reply(mentions=[AUTHOR_ID])
     await InconnuBot.on_message(reply_bot, message)
@@ -170,7 +362,17 @@ async def test_on_message_author_already_mentioned(reply_bot: MagicMock, mock_fi
     message.reply.assert_not_awaited()
 
 
-async def test_on_message_pings_author(reply_bot: MagicMock, mock_find_post: AsyncMock):
+async def test_on_message_own_post(reply_bot: MockBot, mock_find_post: MockFindOne):
+    """No ping when the Rolepost's author replies to it."""
+    message = make_reply()
+    message.author.id = AUTHOR_ID
+
+    await InconnuBot.on_message(reply_bot, message)
+
+    message.reply.assert_not_awaited()
+
+
+async def test_on_message_pings_author(reply_bot: MockBot, mock_find_post: MockFindOne):
     """Replies to a Rolepost ping its author."""
     message = make_reply(mentions=[AUTHOR_ID + 1])
     await InconnuBot.on_message(reply_bot, message)

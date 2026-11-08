@@ -14,6 +14,7 @@ import ui
 from ctx import AppCtx
 from models import HeaderSubdoc, RPPost, VChar
 from services.haven import haven
+from services.webhooks import UNKNOWN_WEBHOOK
 from utils import get_avatar, re_paginate
 from utils.text import clean_text, pull_mentions
 from utils.text import diff as text_diff
@@ -146,20 +147,39 @@ class PostModal(discord.ui.Modal):
             )
             return
 
+        # The post may have been deleted or edited elsewhere since the modal
+        # opened. Saving the modal's stale copy would undo that.
+        current = await RPPost.get(self.post_to_edit.id)
+        if current is None or current.deleted:
+            await ui.embeds.error(
+                interaction,
+                "The post was deleted while you were editing it.",
+                title="Unable to edit post",
+            )
+            return
+        self.post_to_edit = current
+
         post_to_changelog = False
 
         if new_content != self.post_to_edit.content:
             post_to_changelog = True
-            # We have a WebhookMessage, so we need to fetch its originating
-            # Webhook, which is the only entity that can edit it. We keep this
-            # call outside of the try block so we can use our general Webhook
-            # error checker.
-            webhook = await self.bot.prep_webhook(interaction.channel)
-            try:
-                await webhook.edit_message(self.message.id, content=new_content)
-                self.post_to_edit.edit_post(new_content)
+            # Only the webhook that sent the message can edit it. Looking it up
+            # (rather than preparing one) never creates a webhook.
+            webhook = await self.bot.matching_webhook(interaction.channel, self.message.author.id)
+            edited = False
+            if webhook is not None:
+                try:
+                    await webhook.edit_message(self.message.id, content=new_content)
+                    edited = True
+                except discord.NotFound as err:
+                    logger.info("Unable to edit Rolepost {}: {}", self.message.id, err)
+                    if err.code == UNKNOWN_WEBHOOK:
+                        # Stop using it; the next post makes a new one
+                        self.bot.webhook_cache.forget(webhook.webhook)
 
-            except discord.NotFound:
+            if edited:
+                self.post_to_edit.edit_post(new_content)
+            else:
                 await ui.embeds.error(
                     interaction,
                     (
@@ -201,56 +221,35 @@ class PostModal(discord.ui.Modal):
     async def _send_rp_post(self, interaction: discord.Interaction, contents: list[str]):
         """Send the Rolepost's messages and register them."""
         assert interaction.user is not None
-        webhook = await self.bot.prep_webhook(interaction.channel)
         webhook_avatar = self.character.profile_image_url or get_avatar(interaction.user)
+        identity = {"username": self.character.name, "avatar_url": webhook_avatar}
 
+        # The Rolepost's messages, in order: header, pages, mentions
+        messages: list[dict[str, discord.Embed | str | discord.AllowedMentions]] = []
         if self.show_header:
             # We take a regular header embed as a base, then modify it ... a lot
             header_embed = inconnu.header.embed(self.header, self.character, True)
             header_embed.description = (
                 header_embed.description or ""
             ) + f"\n*Author: {interaction.user.mention}*"
-
-            header_message = await webhook.send(
-                embed=header_embed,
-                username=self.character.name,
-                avatar_url=webhook_avatar,
-                wait=True,
-            )
-        else:
-            header_message = None
-
-        post_messages = []
-        id_chain = []
-        for page in contents:
-            msg = await webhook.send(
-                content=page,
-                username=self.character.name,
-                avatar_url=webhook_avatar,
-                allowed_mentions=POST_MENTIONS,
-                wait=True,
-            )
-            post_messages.append(msg)
-
-            # The ID chain has all message IDs, not just the current post's ID
-            id_chain.append(msg.id)
-
-        if self.show_header:
-            assert header_message is not None
-            id_chain.insert(0, header_message.id)
-
+            messages.append({"embed": header_embed})
+        messages.extend({"content": page, "allowed_mentions": POST_MENTIONS} for page in contents)
         if self.mentions:
-            mention_message = await webhook.send(
-                content=self.mentions,
-                username=self.character.name,
-                avatar_url=webhook_avatar,
-                allowed_mentions=POST_MENTIONS,
-                wait=True,
-            )
-            id_chain.append(mention_message.id)
+            messages.append({"content": self.mentions, "allowed_mentions": POST_MENTIONS})
+
+        webhook, first = await self.bot.webhook_send(interaction.channel, **identity, **messages[0])
+        sent = [first]
+        for message in messages[1:]:
+            sent.append(await webhook.send(**identity, **message))
+
+        # Every page's record has the whole chain, not just its own ID
+        id_chain = [message.id for message in sent]
+        header_message = sent[0] if self.show_header else None
+        start = 1 if self.show_header else 0
+        post_messages = sent[start : start + len(contents)]
 
         # Register the messages
-        if self.show_header:
+        if header_message is not None:
             await inconnu.header.register(interaction, header_message, self.character)
             logger.info("POST: {} registered header", self.character.name)
 
@@ -294,11 +293,14 @@ class PostModal(discord.ui.Modal):
         if changelog_id := await services.settings.changelog_channel(interaction.guild):
             # Prep the diff
             post = self.post_to_edit
+            if post.id is None:
+                raise ValueError("Rolepost has not been saved")
             diff = text_diff(post.history[0].content, post.content)
 
             # Prep the embed
             description = (
-                f"{interaction.user.mention} edited a post in <#{post.channel}>.\n```diff\n{diff}\n"
+                f"{interaction.user.mention} edited a post in <#{post.location}>.\n"
+                f"```diff\n{diff}\n"
             )
             description = description[:3996] + "```"  # Ensure we don't overflow
 
@@ -309,7 +311,7 @@ class PostModal(discord.ui.Modal):
             )
             embed.set_author(name=post.header.char_name, icon_url=get_avatar(interaction.user))
             embed.set_thumbnail(url=self.character.profile_image_url)
-            embed.add_field(name=" ", value=post.url)
+            embed.add_field(name=" ", value=str(post.url))
             embed.timestamp = self.post_to_edit.utc_date
 
             # Prep the channel and send
@@ -340,8 +342,6 @@ async def create_post(ctx: AppCtx, character: VChar, **kwargs: Any):
     if ctx.bot.can_webhook(ctx.channel):
         modal = PostModal(character, ctx.bot, title=f"{character.name}'s Post", **kwargs)
         await ctx.send_modal(modal)
-    elif isinstance(ctx.channel, discord.threads.Thread):
-        await ui.embeds.error(ctx, "This command is unavailable in threads.")
     else:
         await ui.embeds.error(
             ctx,

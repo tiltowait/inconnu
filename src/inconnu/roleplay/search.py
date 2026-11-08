@@ -41,7 +41,10 @@ async def search(
     """Search Roleposts for a given string."""
     query: dict[str, Any] = {"deleted": False, "guild": ctx.guild_id, "user": user.id}
     if user.id != ctx.user.id:
-        query["channel"] = {"$in": _visible_channels(ctx)}
+        readable, moderated = _visible_channels(ctx)
+        query["channel"] = {"$in": readable}
+        # Private threads only show where the searcher can see them all
+        query["private_channel"] = {"$in": [None, *moderated]}
 
     footer = []
     reverse_results = False
@@ -151,18 +154,23 @@ async def search(
         await ui.embeds.error(ctx, err, title="Not found")
 
 
-def _visible_channels(ctx: AppCtx) -> list[int]:
+def _visible_channels(ctx: AppCtx) -> tuple[list[int], list[int]]:
     """The IDs of the guild's channels whose past messages the invoking user can
-    read."""
+    read, and of those where they can also manage threads, which lets them see
+    every private thread. Threads share their parent's permissions."""
     guild = cast(discord.Guild, ctx.guild)
     member = cast(discord.Member, ctx.user)
 
-    def can_read(channel: discord.abc.GuildChannel) -> bool:
-        """Whether the member can see the channel and its history."""
+    readable = []
+    moderated = []
+    for channel in guild.channels:
         permissions = channel.permissions_for(member)
-        return permissions.view_channel and permissions.read_message_history
+        if permissions.view_channel and permissions.read_message_history:
+            readable.append(channel.id)
+            if permissions.manage_threads:
+                moderated.append(channel.id)
 
-    return [channel.id for channel in guild.channels if can_read(channel)]
+    return readable, moderated
 
 
 def convert_dates(after: str | None, before: str | None) -> tuple[datetime | None, datetime | None]:

@@ -290,6 +290,15 @@ class RoleplayCog(CommandCog, name="Roleposting"):  # pyright: ignore[reportCall
             {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
         )
 
+    @commands.Cog.listener()
+    async def on_raw_thread_delete(self, payload: discord.RawThreadDeleteEvent):
+        """Mark Roleposts in the deleted thread."""
+        logger.info("Marking all Roleposts in thread {} as deleted", payload.thread_id)
+        await db.rp_posts.update_many(
+            {"thread": payload.thread_id, "deleted": False},
+            {"$set": {"deleted": True, "deletion_date": discord.utils.utcnow()}},
+        )
+
     # Helpers
 
     async def _send_bulk_deletion_notice(self, payload: discord.RawBulkMessageDeleteEvent):

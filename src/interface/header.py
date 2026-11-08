@@ -131,10 +131,16 @@ class HeaderCog(CommandCog, name="Headers"):  # pyright: ignore[reportCallIssue,
         )
 
     @commands.Cog.listener()
-    async def on_guild_channel_delete(self, channel):
-        """Remove header records from the deleted channel."""
-        logger.info("HEADER: Removing header records from deleted channel {}", channel.name)
-        await db.headers.delete_many({"channel": channel.id})
+    async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
+        """Remove header records from the deleted channel and its threads."""
+        logger.info("Removing header records from deleted channel {}", channel.name)
+        await db.headers.delete_many({"$or": [{"channel": channel.id}, {"parent": channel.id}]})
+
+    @commands.Cog.listener()
+    async def on_raw_thread_delete(self, payload: discord.RawThreadDeleteEvent):
+        """Remove header records from the deleted thread."""
+        logger.info("Removing header records from deleted thread {}", payload.thread_id)
+        await db.headers.delete_many({"channel": payload.thread_id})
 
 
 def setup(bot: InconnuBot):

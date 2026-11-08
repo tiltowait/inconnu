@@ -6,8 +6,10 @@ import discord
 from loguru import logger
 
 import db
+import errors
 from ctx import AppCtx, Channel
 from models.rpheader import BLUSHED, NOT_BLUSHED
+from services.webhooks import ChannelWebhook
 from utils.text import clean_text
 
 if TYPE_CHECKING:
@@ -18,9 +20,11 @@ BLUSH_TEXT = (BLUSHED, NOT_BLUSHED)
 
 async def edit_location(ctx: AppCtx, message: discord.Message):
     """Validate ownership and open the location edit modal for a posted header."""
-    webhook = await _resolve_webhook(ctx.bot, ctx.channel, message)
+    # The bot's own headers are edited directly, without a webhook
+    is_bot_message = message.author == ctx.bot.user
+    webhook = None if is_bot_message else await _resolve_webhook(ctx.bot, ctx.channel, message)
 
-    if webhook is None and message.author != ctx.bot.user:
+    if webhook is None and not is_bot_message:
         await ctx.respond("This message isn't an RP header!", ephemeral=True)
         return
 
@@ -44,14 +48,12 @@ async def _resolve_webhook(
     bot: InconnuBot,
     channel: Channel,
     message: discord.Message,
-) -> discord.Webhook | None:
+) -> ChannelWebhook | None:
     """Resolve a webhook if the message was sent by one of ours."""
-    if not isinstance(channel, discord.TextChannel):
-        return None
     try:
-        return await bot.webhook_cache.fetch_webhook(channel, message.author.id)
-    except discord.errors.Forbidden:
-        logger.info("EDIT HEADER: No webhook permissions")
+        return await bot.matching_webhook(channel, message.author.id)
+    except errors.WebhookError:
+        logger.info("No webhook permissions to edit a header")
         return None
 
 
@@ -59,7 +61,7 @@ class LocationChangeModal(discord.ui.Modal):
     """A modal for changing RP header location."""
 
     def __init__(
-        self, header: discord.Message, webhook: discord.Webhook | None, *args: Any, **kwargs: Any
+        self, header: discord.Message, webhook: ChannelWebhook | None, *args: Any, **kwargs: Any
     ):
         super().__init__(*args, **kwargs)
         self.header = header

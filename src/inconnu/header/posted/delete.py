@@ -6,21 +6,23 @@ from loguru import logger
 import db
 import errors
 from ctx import AppCtx
+from services.webhooks import UNKNOWN_WEBHOOK
 from utils.permissions import is_approved_user
+
+UNKNOWN_MESSAGE = 10008  # Discord's error code for a deleted message
 
 
 async def delete_header(ctx: AppCtx, message: discord.Message):
     """Validate ownership and delete a posted RP header."""
-    try:
-        webhook = await ctx.bot.prep_webhook(message.channel)
-        is_bot_message = message.author == ctx.bot.user
-        is_webhook_message = message.author.id == webhook.id
-    except errors.WebhookError, ValueError:
-        webhook = None
-        is_bot_message = message.author == ctx.bot.user
-        is_webhook_message = False
+    is_bot_message = message.author == ctx.bot.user
+    webhook = None
+    if not is_bot_message:
+        try:
+            webhook = await ctx.bot.matching_webhook(message.channel, message.author.id)
+        except errors.WebhookError:
+            pass
 
-    if not is_bot_message and not is_webhook_message:
+    if not is_bot_message and webhook is None:
         await ctx.respond("This is not an RP header.", ephemeral=True)
         return
 
@@ -41,7 +43,7 @@ async def delete_header(ctx: AppCtx, message: discord.Message):
             await message.delete()
         else:
             logger.debug("Deleting header via webhook.delete_message()")
-            # Not a bot message, so it's a webhook message, which requires a webhook
+            # Not a bot message, so it's from our webhook
             assert webhook is not None
             await webhook.delete_message(message.id)
         await ctx.respond("RP header deleted!", ephemeral=True, delete_after=3)
@@ -51,3 +53,11 @@ async def delete_header(ctx: AppCtx, message: discord.Message):
             ephemeral=True,
         )
         logger.warning("Unable to delete header {}", message.jump_url)
+    except discord.NotFound as err:
+        # A missing webhook is a real failure; a missing message isn't
+        if err.code == UNKNOWN_WEBHOOK and webhook is not None:
+            # Stop using it; the next post makes a new one
+            ctx.bot.webhook_cache.forget(webhook.webhook)
+        if err.code != UNKNOWN_MESSAGE:
+            raise
+        await ctx.respond("This header was already deleted.", ephemeral=True)

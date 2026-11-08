@@ -29,7 +29,11 @@ class RPPost(Document):
     date: datetime = Field(default_factory=lambda: datetime.now(UTC))
     date_modified: datetime | None = None
     guild: int
-    channel: int
+    channel: int  # A thread's parent, so posts share its visibility and fate
+    thread: int | None = None
+    # The parent's ID for posts in private threads. Searches by other players
+    # match it against the channels where they can manage threads.
+    private_channel: int | None = None
     user: int
     message_id: int
     url: AnyUrl | None
@@ -46,6 +50,11 @@ class RPPost(Document):
     # Custom
     title: str | None = None
     tags: list[str] = Field(default_factory=list)
+
+    @property
+    def location(self) -> int:
+        """The ID of the thread or channel the post is in."""
+        return self.thread or self.channel
 
     @property
     def utc_date(self) -> datetime:
@@ -76,9 +85,20 @@ class RPPost(Document):
         if interaction.user is None:
             raise ValueError("Interaction user does not exist")
 
+        channel = interaction.channel_id
+        thread = None
+        private_channel = None
+        if isinstance(interaction.channel, discord.Thread):
+            channel = interaction.channel.parent_id
+            thread = interaction.channel.id
+            if interaction.channel.is_private():
+                private_channel = channel
+
         return cls(
             guild=character.guild,
-            channel=interaction.channel_id,
+            channel=channel,
+            thread=thread,
+            private_channel=private_channel,
             user=interaction.user.id,
             message_id=message.id,
             header=header,

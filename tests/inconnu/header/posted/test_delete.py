@@ -6,10 +6,12 @@ import discord
 import pytest
 
 import errors
-from inconnu.header.posted.delete import delete_header
+from inconnu.header.posted.delete import UNKNOWN_MESSAGE, delete_header
+from services.webhooks import UNKNOWN_WEBHOOK
 
 _IS_APPROVED = "inconnu.header.posted.delete.is_approved_user"
 
+type MockCtx = AsyncMock
 type MockMessage = AsyncMock
 type MockWebhook = AsyncMock
 
@@ -44,16 +46,16 @@ def random_message() -> discord.Message:
 
 
 @pytest.fixture
-def ctx_no_webhook(ctx: AsyncMock) -> AsyncMock:
-    """A ctx where prep_webhook raises WebhookError."""
-    ctx.bot.prep_webhook = AsyncMock(side_effect=errors.WebhookError("No permissions"))
+def ctx_no_webhook(ctx: MockCtx) -> MockCtx:
+    """A ctx where looking up the webhook raises WebhookError."""
+    ctx.bot.matching_webhook = AsyncMock(side_effect=errors.WebhookError("No permissions"))
     return ctx
 
 
 # --- Authorization: not a bot/webhook message ---
 
 
-async def test_random_message_rejected(ctx: AsyncMock, random_message: discord.Message):
+async def test_random_message_rejected(ctx: MockCtx, random_message: discord.Message):
     """A message not from the bot or webhook is rejected."""
     await delete_header(ctx, random_message)
 
@@ -64,9 +66,9 @@ async def test_random_message_rejected(ctx: AsyncMock, random_message: discord.M
 
 
 async def test_random_message_rejected_when_webhook_error(
-    ctx_no_webhook: AsyncMock, random_message: discord.Message
+    ctx_no_webhook: MockCtx, random_message: discord.Message
 ):
-    """Same rejection when prep_webhook raises WebhookError."""
+    """Same rejection when the webhook lookup raises WebhookError."""
     await delete_header(ctx_no_webhook, random_message)
 
     ctx_no_webhook.respond.assert_awaited_once()
@@ -74,23 +76,10 @@ async def test_random_message_rejected_when_webhook_error(
     assert "not an RP header" in args[0]
 
 
-async def test_random_message_rejected_when_value_error(
-    ctx: AsyncMock, random_message: discord.Message
-):
-    """Same rejection when prep_webhook raises ValueError (non-text channel)."""
-    ctx.bot.prep_webhook = AsyncMock(side_effect=ValueError("Not a text channel"))
-
-    await delete_header(ctx, random_message)
-
-    ctx.respond.assert_awaited_once()
-    args, _kwargs = ctx.respond.await_args
-    assert "not an RP header" in args[0]
-
-
 # --- Authorization: no db record ---
 
 
-async def test_bot_message_no_record(ctx: AsyncMock, bot_message: MockMessage):
+async def test_bot_message_no_record(ctx: MockCtx, bot_message: MockMessage):
     """Bot message with no header record is rejected."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
         await delete_header(ctx, bot_message)
@@ -100,7 +89,7 @@ async def test_bot_message_no_record(ctx: AsyncMock, bot_message: MockMessage):
     assert "not an RP header" in args[0]
 
 
-async def test_webhook_message_no_record(ctx: AsyncMock, webhook_message: MockMessage):
+async def test_webhook_message_no_record(ctx: MockCtx, webhook_message: MockMessage):
     """Webhook message with no header record is rejected."""
     with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
         await delete_header(ctx, webhook_message)
@@ -114,7 +103,7 @@ async def test_webhook_message_no_record(ctx: AsyncMock, webhook_message: MockMe
 
 
 async def test_non_owner_non_admin_rejected(
-    ctx: AsyncMock,
+    ctx: MockCtx,
     bot_message: MockMessage,
     other_user: discord.Member,
     header_record: dict,
@@ -138,7 +127,7 @@ async def test_non_owner_non_admin_rejected(
 
 
 async def test_owner_deletes_bot_message(
-    ctx: AsyncMock, bot_message: MockMessage, header_record: dict
+    ctx: MockCtx, bot_message: MockMessage, header_record: dict
 ):
     """Owner deletes their own bot-authored header via message.delete()."""
     with (
@@ -155,7 +144,7 @@ async def test_owner_deletes_bot_message(
 
 
 async def test_admin_deletes_header(
-    ctx: AsyncMock,
+    ctx: MockCtx,
     bot_message: MockMessage,
     other_user: discord.Member,
     header_record: dict,
@@ -179,7 +168,7 @@ async def test_admin_deletes_header(
 
 
 async def test_bot_message_uses_message_delete(
-    ctx: AsyncMock, bot_message: MockMessage, webhook: MockWebhook, header_record: dict
+    ctx: MockCtx, bot_message: MockMessage, webhook: MockWebhook, header_record: dict
 ):
     """Bot-authored header is deleted via message.delete(), not webhook."""
     with (
@@ -193,7 +182,7 @@ async def test_bot_message_uses_message_delete(
 
 
 async def test_webhook_message_uses_webhook_delete(
-    ctx: AsyncMock, webhook_message: MockMessage, webhook: MockWebhook, header_record: dict
+    ctx: MockCtx, webhook_message: MockMessage, webhook: MockWebhook, header_record: dict
 ):
     """Webhook-authored header is deleted via webhook.delete_message()."""
     with (
@@ -202,14 +191,14 @@ async def test_webhook_message_uses_webhook_delete(
     ):
         await delete_header(ctx, webhook_message)
 
-    webhook.delete_message.assert_awaited_once_with(webhook_message.id)
+    webhook.delete_message.assert_awaited_once_with(webhook_message.id, thread_id=None)
     webhook_message.delete.assert_not_awaited()
 
 
 # --- Failure handling ---
 
 
-async def test_forbidden_on_delete(ctx: AsyncMock, bot_message: MockMessage, header_record: dict):
+async def test_forbidden_on_delete(ctx: MockCtx, bot_message: MockMessage, header_record: dict):
     """discord.Forbidden during deletion shows error message."""
     bot_message.delete = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "forbidden"))
 
@@ -223,3 +212,65 @@ async def test_forbidden_on_delete(ctx: AsyncMock, bot_message: MockMessage, hea
     args, kwargs = ctx.respond.await_args
     assert "Something went wrong" in args[0]
     assert kwargs["ephemeral"] is True
+
+
+def not_found(code: int) -> discord.NotFound:
+    """A NotFound error with the given Discord error code."""
+    response = MagicMock(status=404, reason="Not Found")
+    return discord.NotFound(response, {"code": code, "message": "Unknown"})
+
+
+@pytest.mark.parametrize("fixture", ["bot_message", "webhook_message"])
+async def test_already_deleted(
+    ctx: MockCtx,
+    webhook: MockWebhook,
+    header_record: dict,
+    fixture: str,
+    request: pytest.FixtureRequest,
+):
+    """A header deleted before we got to it is reported as such, not as an
+    error."""
+    message: MockMessage = request.getfixturevalue(fixture)
+    message.delete.side_effect = not_found(UNKNOWN_MESSAGE)
+    webhook.delete_message.side_effect = not_found(UNKNOWN_MESSAGE)
+
+    with (
+        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch(_IS_APPROVED, return_value=True),
+    ):
+        await delete_header(ctx, message)
+
+    ctx.respond.assert_awaited_once_with("This header was already deleted.", ephemeral=True)
+
+
+async def test_missing_webhook_is_an_error(
+    ctx: MockCtx, webhook: MockWebhook, webhook_message: MockMessage, header_record: dict
+):
+    """If the webhook itself is gone, it's forgotten, and the failure is raised
+    for reporting."""
+    webhook.delete_message.side_effect = not_found(UNKNOWN_WEBHOOK)
+
+    with (
+        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch(_IS_APPROVED, return_value=True),
+        pytest.raises(discord.NotFound),
+    ):
+        await delete_header(ctx, webhook_message)
+
+    ctx.respond.assert_not_awaited()
+    ctx.bot.webhook_cache.forget.assert_called_once_with(webhook)
+
+
+async def test_never_creates_webhook(
+    ctx: MockCtx, webhook_message: MockMessage, header_record: dict
+):
+    """Deleting looks up the existing webhook rather than preparing one, which
+    could create a webhook in the channel."""
+    with (
+        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch(_IS_APPROVED, return_value=True),
+    ):
+        await delete_header(ctx, webhook_message)
+
+    ctx.bot.matching_webhook.assert_awaited_once_with(webhook_message.channel, 888)
+    ctx.bot.prep_webhook.assert_not_called()

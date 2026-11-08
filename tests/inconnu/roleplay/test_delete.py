@@ -11,9 +11,11 @@ from beanie import PydanticObjectId
 from pymongo.asynchronous.collection import AsyncCollection
 
 import db
+from bot import InconnuBot
 from inconnu.roleplay.delete import DeletionModal, delete_message_chain, deletion_embed
 from models import RPPost
-from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, PostFactory
+from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
+from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, MockShowError, PostFactory
 from utils.urls import post_url
 
 type MockFindOne = AsyncMock
@@ -28,10 +30,12 @@ MESSAGE_ID = 6000
 
 @pytest.fixture
 def webhook(rp_ctx: MockCtx) -> MockWebhook:
-    """The channel's webhook."""
+    """The channel's webhook, which the bot finds for its messages."""
     mock = AsyncMock(spec=discord.Webhook)
     mock.id = WEBHOOK_ID
-    rp_ctx.bot.prep_webhook = AsyncMock(return_value=mock)
+    rp_ctx.bot.matching_webhook = AsyncMock(
+        side_effect=lambda _, webhook_id: ChannelWebhook(mock) if webhook_id == WEBHOOK_ID else None
+    )
     return mock
 
 
@@ -92,14 +96,15 @@ async def test_own_post_opens_modal(
     modal = rp_ctx.send_modal.await_args.args[0]
     assert isinstance(modal, DeletionModal)
     assert modal.rp_post is post
-    assert modal.webhook is webhook
+    assert modal.webhook == ChannelWebhook(webhook)
+    rp_ctx.bot.prep_webhook.assert_not_called()  # Deleting never creates a webhook
 
 
 async def test_user_message_rejected(
     rp_ctx: MockCtx,
     webhook: MockWebhook,
     message: MockMessage,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """A regular user's message can't be deleted."""
     message.author.bot = False
@@ -114,7 +119,7 @@ async def test_bot_message_rejected(
     rp_ctx: MockCtx,
     webhook: MockWebhook,
     message: MockMessage,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """Inconnu's own messages aren't Roleposts."""
     rp_ctx.bot.user = message.author
@@ -129,7 +134,7 @@ async def test_other_webhook_rejected(
     rp_ctx: MockCtx,
     webhook: MockWebhook,
     message: MockMessage,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """A message from a different webhook can't be deleted."""
     message.author.id = WEBHOOK_ID + 1
@@ -146,7 +151,7 @@ async def test_header_points_to_header_delete(
     message: MockMessage,
     find_one: MockFindOne,
     headers: MockHeaders,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """A standalone header is deleted with a different command."""
     headers.find_one.return_value = {"message": MESSAGE_ID}
@@ -163,7 +168,7 @@ async def test_unknown_message_rejected(
     message: MockMessage,
     find_one: MockFindOne,
     headers: MockHeaders,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """An unrecorded webhook message needs a moderator."""
     await delete_message_chain(rp_ctx, message)
@@ -178,7 +183,7 @@ async def test_other_users_post_rejected(
     message: MockMessage,
     find_one: MockFindOne,
     make_post: PostFactory,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """Users can only delete their own Roleposts."""
     find_one.return_value = make_post(user=USER_ID + 1)
@@ -207,6 +212,16 @@ def test_deletion_embed_shows_post(make_post: PostFactory):
     assert embed.timestamp == post.utc_date
 
 
+def test_deletion_embed_shows_thread(make_post: PostFactory):
+    """A thread post's notice names the thread, not its parent."""
+    post = make_post(channel=2, thread=3)
+    post.id = PydanticObjectId()
+
+    description = cast(str, deletion_embed(post).description)
+
+    assert "**Channel:** <#3>" in description
+
+
 # Test DeletionModal
 
 
@@ -228,6 +243,43 @@ async def test_confirmation_deletes_chain(
     assert interaction.respond.await_args.args[0] == "Rolepost deleted!"
 
 
+async def test_confirmation_deletes_chain_in_thread(
+    webhook: MockWebhook, interaction: MockInteraction, make_post: PostFactory
+):
+    """A thread post's messages are deleted from the thread."""
+    thread = MagicMock(spec=discord.Thread, id=7000)
+    modal = DeletionModal(ChannelWebhook(webhook, thread), make_post(id_chain=[1, 2]))
+    modal.children[0].value = "DELETE"
+
+    await modal.callback(interaction)
+
+    assert [call.kwargs for call in webhook.delete_message.await_args_list] == [
+        {"thread_id": 7000},
+        {"thread_id": 7000},
+    ]
+
+
+async def test_deleted_webhook_is_forgotten(
+    webhook: MockWebhook, interaction: MockInteraction, make_post: PostFactory
+):
+    """If the post's webhook is gone, it's forgotten, nothing more is tried, and
+    the user is told the post wasn't deleted."""
+    response = MagicMock(spec=aiohttp.ClientResponse, status=404, reason="Not Found")
+    webhook.delete_message.side_effect = discord.NotFound(
+        response, {"code": UNKNOWN_WEBHOOK, "message": ""}
+    )
+    interaction.client = MagicMock(spec=InconnuBot)
+    modal = DeletionModal(ChannelWebhook(webhook), make_post(id_chain=[1, 2, 3]))
+    modal.children[0].value = "DELETE"
+
+    with patch("ui.embeds.error", new_callable=AsyncMock) as show_error:
+        await modal.callback(interaction)
+
+    interaction.client.webhook_cache.forget.assert_called_once_with(webhook)
+    webhook.delete_message.assert_awaited_once()
+    assert show_error.call_args.kwargs["title"] == "Unable to delete post"
+
+
 async def test_missing_message_counts_as_deleted(
     webhook: MockWebhook, interaction: MockInteraction, make_post: PostFactory
 ):
@@ -247,7 +299,7 @@ async def test_failed_deletion_is_reported(
     webhook: MockWebhook,
     interaction: MockInteraction,
     make_post: PostFactory,
-    show_error: AsyncMock,
+    show_error: MockShowError,
     error: type[discord.HTTPException],
 ):
     """A message that can't be deleted doesn't stop the rest, and the user is told."""
@@ -266,7 +318,7 @@ async def test_wrong_confirmation_deletes_nothing(
     webhook: MockWebhook,
     interaction: MockInteraction,
     make_post: PostFactory,
-    show_error: AsyncMock,
+    show_error: MockShowError,
 ):
     """Anything but DELETE leaves the post alone."""
     modal = DeletionModal(webhook, make_post(id_chain=[1]))

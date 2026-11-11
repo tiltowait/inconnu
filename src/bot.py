@@ -14,7 +14,7 @@ import services
 from config import settings
 from ctx import AppCtx, Channel
 from models import RPPost, VChar
-from services import WebhookCache
+from services import WebhookCache, integration_lifecycle
 from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
 from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook, webhook_home
 
@@ -290,6 +290,10 @@ class InconnuBot(discord.AutoShardedBot):
 
     # Member Events
 
+    async def on_raw_member_remove(self, payload: discord.RawMemberRemoveEvent):
+        """Revoke departing member keys even when the member was not cached."""
+        await integration_lifecycle.revoke_for_guild(payload.guild_id, payload.user.id)
+
     async def on_member_remove(self, member: discord.Member):
         """Mark all of a member's characters as inactive."""
         await services.char_mgr.mark_inactive(member)
@@ -307,8 +311,9 @@ class InconnuBot(discord.AutoShardedBot):
         await self._set_presence()
 
     async def on_guild_remove(self, guild: discord.Guild):
-        """Log guild removals."""
+        """Revoke guild integration keys and log guild removals."""
         logger.info("Left {} :(", guild.name)
+        await integration_lifecycle.revoke_for_guild(guild.id)
         await inconnu.stats.guild_left(guild)
         await self._set_presence()
 

@@ -40,6 +40,7 @@
   * [Character Transfers](advanced/storytellers/character-transfers.md)
 * [Character and Player Parameters](advanced/character-and-player-parameters.md)
 * [Settings](advanced/server-settings.md)
+* [API Keys](advanced/api-keys.md)
 * [Troubleshooting](advanced/troubleshooting.md)
 
 ***

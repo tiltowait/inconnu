@@ -19,6 +19,7 @@ characters = _db.characters
 command_log = _db.command_log
 guilds = _db.guilds
 headers = _db.headers
+integration_keys = _db.integration_keys
 log = _db.log
 rolls = _db.rolls
 rp_posts = _db.rp_posts
@@ -50,6 +51,20 @@ async def transaction[T](callback: Callable[[AsyncClientSession], Awaitable[T]])
 async def init():
     """Initialize the database."""
     await init_beanie(_db, document_models=models())
+    await integration_keys.create_index(
+        [("owner_id", 1), ("slot", 1)],
+        unique=True,
+        partialFilterExpression={"active": True},
+    )
+    await integration_keys.create_index(
+        [("owner_id", 1), ("active", -1), ("created_at", -1), ("_id", -1)]
+    )
+    await integration_keys.create_index(
+        [("owner_id", 1), ("creation_id", 1)],
+        unique=True,
+        partialFilterExpression={"creation_id": {"$type": "string"}},
+    )
+    await rolls.create_index([("guild", 1), ("channel", 1), ("date", 1), ("_id", 1)])
     logger.info("Initialized beanie. Database: {}", _db.name)
 
 

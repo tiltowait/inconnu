@@ -26,6 +26,13 @@ def is_admin(user: discord.Member | discord.User | None) -> bool:
     return isinstance(user, discord.Member) and user.guild_permissions.administrator
 
 
+def is_storyteller_role(member: discord.Member | discord.User | None, role_id: int | None) -> bool:
+    """Check the shared Storyteller policy against an explicit guild role."""
+    return isinstance(member, discord.Member) and (
+        is_admin(member) or (role_id is not None and member.get_role(role_id) is not None)
+    )
+
+
 async def is_storyteller(member: discord.Member | discord.User | None) -> bool:
     """Check if the guild member is an admin or has that server's Storyteller role.
     Users outside a server never are."""
@@ -35,9 +42,7 @@ async def is_storyteller(member: discord.Member | discord.User | None) -> bool:
         return True
 
     vguild = await VGuild.get_or_fetch(member.guild)
-    if vguild.settings.storyteller_role is not None:
-        return member.get_role(vguild.settings.storyteller_role) is not None
-    return False
+    return is_storyteller_role(member, vguild.settings.storyteller_role)
 
 
 def has_supporter_role(member: discord.Member) -> bool:

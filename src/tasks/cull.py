@@ -11,7 +11,7 @@ from models import VChar
 
 
 async def cull(days=30):
-    """Cull inactive guilds, characters, and macros."""
+    """Cull inactive guilds, characters, macros, and integration keys."""
     logger.info("Initiating culling run.")
     past = datetime.now(UTC) - timedelta(days=days)
 
@@ -27,6 +27,16 @@ async def cull(days=30):
 
     if removed_guilds:
         logger.info("Culled {} guilds", len(removed_guilds))
+
+    await db.integration_keys.delete_many(
+        {
+            "$or": [
+                {"guild_id": {"$in": removed_guilds}},
+                {"expires_at": {"$type": "date", "$lt": past}},
+                {"revoked_at": {"$type": "date", "$lt": past}},
+            ]
+        }
+    )
 
     # We remove characters separately so as to make only one database call
     # rather than potentially many

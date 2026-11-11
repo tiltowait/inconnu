@@ -8,13 +8,15 @@ If you are a [premium user](premium/character-images.md), images you upload are 
 
 Uploading of illegal content is grounds for a permanent ban from using the product and may result in legal action. Don't do it!
 
-**No** data is shared with third parties.
+Data is not shared with third parties unless a Storyteller explicitly authorizes an integration by creating and providing an [API key](advanced/api-keys.md). These keys permit read-only access to roll outcomes and dice results in one channel that are included in statistics, including hidden rolls. Exports include Discord user IDs of roll owners and character IDs, including those of players who did not create the key. The key owner must retain server membership, Storyteller status and channel access. Key owners can revoke access at any time; revocation cannot remove copies already exported.
 
 ## Data Retention
 
 Characters and all associated data, including uploaded images, may be removed with the `/character delete` command. This command is instantaneous and cannot be reversed. Independently of that, images may be deleted via the buttons in the `/character images` command.
 
 Should you leave a server on which you used **Inconnu**, all of your character data, including images, will be automatically scrubbed after thirty days unless you return to the server. To hasten this process, run `/character delete` before leaving the server.
+
+Leaving a server revokes your API keys for that server. Removing **Inconnu** revokes all API keys for the server. Returning or re-inviting the bot does not reactivate revoked keys. Revoked and expired key records are cleaned up after thirty days.
 
 If your premium membership lapses, you have seven days to reinstate it. If you do not do so within this timeframe, your character images will be automatically deleted.
 

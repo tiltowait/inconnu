@@ -146,3 +146,13 @@ class MacroNotFoundError(InconnuError):
 
 class InvalidLogKeyError(InconnuError):
     """Error for when we try to modify an invalid log."""
+
+
+class IntegrationError(InconnuError):
+    """Raised when an integration request cannot be fulfilled."""
+
+    def __init__(self, status: int, detail: str, retry_after: int | None = None):
+        self.status = status
+        self.detail = detail
+        self.retry_after = retry_after
+        super().__init__(detail)

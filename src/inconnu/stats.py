@@ -23,7 +23,8 @@ async def log_roll(
     hidden=False,
 ):
     """
-    Log a roll and its outcome. If the roll is a reroll, simply replace it.
+    Log a roll and its outcome. A reroll (any roll with a strategy) was logged
+    when first shown, so it only updates that entry's reroll field.
     Args:
         guild (int | None): The Discord ID of the guild where the roll was made (None in DMs)
         channel (int | None): The Discord ID of the channel (None in DMs)
@@ -34,14 +35,11 @@ async def log_roll(
         comment (str | None): The roll's comment, if any
         hidden (bool): Whether the dice were hidden from others
     """
-    rolls = db.rolls
-
-    if await rolls.find_one({"_id": outcome.id}) is None:
+    if outcome.strategy is None:
         roll = _gen_roll(guild, channel, user, message, char, outcome, comment, hidden=hidden)
-        await rolls.insert_one(roll)
+        await db.rolls.insert_one(roll)
     else:
-        reroll = _gen_reroll(outcome)
-        await rolls.update_one({"_id": outcome.id}, reroll)
+        await db.rolls.update_one({"_id": outcome.id}, _gen_reroll(outcome))
 
 
 async def toggle_roll_stats(message: int) -> bool | None:

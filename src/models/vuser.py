@@ -3,6 +3,7 @@
 from async_lru import alru_cache
 from beanie import Document
 from pydantic import BaseModel, Field
+from pymongo import IndexModel
 
 
 class VUserSettings(BaseModel):
@@ -37,3 +38,4 @@ class VUser(Document):
         name = "users"
         use_state_management = True
         validate_on_save = True
+        indexes = [IndexModel("user", unique=True)]

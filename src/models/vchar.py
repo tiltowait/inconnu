@@ -6,7 +6,6 @@ import math
 import random
 from collections import Counter
 from collections.abc import Callable
-from datetime import UTC, datetime
 from enum import StrEnum
 from functools import total_ordering
 from typing import Any, ClassVar, Self
@@ -90,8 +89,6 @@ class VChar(Document):
     @before_event(Insert)
     def pre_insert(self):
         """Last-minute prep."""
-        self.log.created = datetime.now(UTC)
-
         if self.splat == "thinblood":
             self.splat = "thin-blood"
 

@@ -240,33 +240,6 @@ async def test_pre_insert_hook_blush_initialization():
     await mortal.delete()
 
 
-async def test_pre_insert_hook_creation_timestamp():
-    """Test that pre_insert adds creation timestamp to log."""
-    char = VChar(
-        guild=999,
-        user=999,
-        name="Timestamp Test",
-        splat="vampire",
-        humanity=7,
-        health=6 * Damage.NONE,
-        willpower=5 * Damage.NONE,
-        potency=1,
-    )
-
-    await char.insert()
-    char_id = char.id
-
-    # Verify timestamp in memory
-    assert char.log.created is not None
-
-    # Verify timestamp persisted
-    fetched = await VChar.get(char_id)
-    assert fetched is not None
-    assert fetched.log.created is not None
-
-    await char.delete()
-
-
 # READ TESTS
 
 

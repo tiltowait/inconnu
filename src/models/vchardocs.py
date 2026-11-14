@@ -69,7 +69,7 @@ class VCharLog(BaseModel):
     """When the character was created and its owner left, and running counts
     of gameplay events. Counts only go up."""
 
-    created: datetime | None = None
+    created: datetime = Field(default_factory=lambda: datetime.now(UTC))
     left: datetime | None = None  # The owner left the server; culled after 30 days
 
     awaken: int = 0

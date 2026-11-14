@@ -29,7 +29,7 @@ def ctx() -> AppCtx:
 @pytest.fixture
 def mock_save() -> Iterator[AsyncMock]:
     """Prevent VUser saves."""
-    with patch.object(VUser, "save", new_callable=AsyncMock) as mock:
+    with patch.object(VUser, "save_changes", new_callable=AsyncMock) as mock:
         yield mock
 
 
@@ -116,7 +116,7 @@ async def test_set_hidden_dice_permissions(ctx: AppCtx):
 
     with (
         patch.object(Select, "values", new_callable=PropertyMock, return_value=["admin_only"]),
-        patch.object(VGuild, "save", new_callable=AsyncMock) as mock_save,
+        patch.object(VGuild, "save_changes", new_callable=AsyncMock) as mock_save,
     ):
         await menu.set_hidden_dice_permissions(interaction)
 
@@ -188,7 +188,7 @@ async def test_set_storyteller_role(ctx: AppCtx, before: int | None, chosen: int
 
     with (
         patch.object(Select, "values", new_callable=PropertyMock, return_value=values),
-        patch.object(VGuild, "save", new_callable=AsyncMock) as mock_save,
+        patch.object(VGuild, "save_changes", new_callable=AsyncMock) as mock_save,
     ):
         await menu.set_storyteller_role(interaction)
 

@@ -18,3 +18,17 @@ async def test_get_or_fetch_saves_new_user_once():
     assert all(user is users[0] for user in users)
     assert users[0].id is not None
     assert await VUser.find({"user": USER_ID}).count() == 1
+
+
+async def test_new_user_saves_changes():
+    """A newly created user can save just its changes."""
+    VUser.get_or_fetch.cache_clear()
+    await VUser.find({"user": USER_ID}).delete()
+
+    vuser = await VUser.get_or_fetch(USER_ID)
+    vuser.settings.auto_impairment = False
+    await vuser.save_changes()
+
+    saved = await VUser.find_one({"user": USER_ID})
+    assert saved is not None
+    assert saved.settings.auto_impairment is False

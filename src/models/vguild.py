@@ -140,7 +140,7 @@ class VGuild(Document):
         vguild = await VGuild.find_one({"guild": guild.id})
         if vguild is None:
             vguild = cls(guild=guild.id, name=guild.name)
-            await vguild.save()
+            await vguild.insert()
         return vguild
 
     class Settings:

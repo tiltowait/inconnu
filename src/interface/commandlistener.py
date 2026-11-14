@@ -194,8 +194,7 @@ class CommandListener(commands.Cog):
             # last bot version used so they'll be shown the changelog next
             # update.
             vuser.last_version_used = release_info.tag
-            if vuser.is_changed:
-                await vuser.save()
+            await vuser.save_changes()
         except (aiohttp.ClientError, KeyError) as err:
             logger.warning("Unable to fetch changelog: {!r}", err)
         finally:

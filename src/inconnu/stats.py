@@ -74,7 +74,7 @@ async def guild_joined(guild: discord.Guild):
     vguild = await VGuild.get_or_fetch(guild)
     vguild.join()
 
-    await vguild.save()
+    await vguild.save_changes()
 
 
 async def guild_left(guild: discord.Guild):
@@ -82,7 +82,7 @@ async def guild_left(guild: discord.Guild):
     vguild = await VGuild.get_or_fetch(guild)
     vguild.leave()
 
-    await vguild.save()
+    await vguild.save_changes()
 
 
 async def guild_renamed(guild: discord.Guild, new_name: str):
@@ -90,7 +90,7 @@ async def guild_renamed(guild: discord.Guild, new_name: str):
     vguild = await VGuild.get_or_fetch(guild)
     vguild.name = new_name
 
-    await vguild.save()
+    await vguild.save_changes()
 
 
 # Roll logging helpers

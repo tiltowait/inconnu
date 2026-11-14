@@ -260,6 +260,43 @@ def test_healing_is_not_counted():
     assert char.log.health_superficial == 3
 
 
+@pytest.mark.parametrize(
+    "track,severity",
+    [
+        ("....", 0),
+        ("../x", 13),
+        ("//xx", 26),
+    ],
+)
+def test_damage_severity(track: str, severity: int):
+    """Superficial damage is worth 3; Aggravated, 10."""
+    assert VChar.damage_severity(track) == severity
+
+
+def test_worst_damage_is_kept():
+    """The worst track survives healing and lighter damage, per tracker."""
+    char = gen_char("vampire")
+    char.health = "." * 8
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 4)  # 12
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 0)
+    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)  # 10
+    char.set_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, 1)
+
+    assert char.log.worst_health == "....////"
+    assert char.log.worst_willpower == char.willpower
+
+
+def test_worse_damage_replaces_worst():
+    """Heavier damage replaces the stored track."""
+    char = gen_char("vampire")
+    char.health = "." * 8
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)  # 9
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 0)
+    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)  # 10
+
+    assert char.log.worst_health == ".......x"
+
+
 @pytest.fixture
 async def stored_char() -> AsyncGenerator[VChar]:
     """A character in the database, as the bot would load it."""

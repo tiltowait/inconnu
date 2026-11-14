@@ -87,6 +87,8 @@ class VCharLog(BaseModel):
         "rouse_successes": CAREER_STATS_LIVE,
         "surges": CAREER_STATS_LIVE,
         "times_slaked": CAREER_STATS_LIVE,
+        "worst_health": CAREER_STATS_LIVE,
+        "worst_willpower": CAREER_STATS_LIVE,
     }
 
     created: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -113,6 +115,8 @@ class VCharLog(BaseModel):
     times_slaked: int = 0
     willpower_aggravated: int = 0
     willpower_superficial: int = 0
+    worst_health: str = ""  # The Health track at its worst; see VChar.damage_severity()
+    worst_willpower: str = ""  # Likewise for Willpower
 
     def record_rouse(self, successes: int, failures: int, hunger_gained: int):
         """Record a set of Rouse checks and the Hunger they caused."""

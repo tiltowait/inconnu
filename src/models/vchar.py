@@ -661,17 +661,28 @@ class VChar(Document):
         new_agg = new_track.count(Damage.AGGRAVATED)
         new_sup = new_track.count(Damage.SUPERFICIAL)
 
-        self._count_damage(tracker, new_sup - old_sup, new_agg - old_agg)
+        self._count_damage(tracker, new_sup - old_sup, new_agg - old_agg, new_track)
 
-    def _count_damage(self, tracker: Tracker, superficial: int, aggravated: int):
-        """Count damage taken. Healing isn't counted."""
+    @staticmethod
+    def damage_severity(track: str) -> int:
+        """How badly a track is damaged: 3 per Superficial, 10 per Aggravated."""
+        return 3 * track.count(Damage.SUPERFICIAL) + 10 * track.count(Damage.AGGRAVATED)
+
+    def _count_damage(self, tracker: Tracker, superficial: int, aggravated: int, track: str):
+        """Count damage taken, and keep the track if it's the worst it has been.
+        Healing isn't counted."""
         superficial, aggravated = max(superficial, 0), max(aggravated, 0)
+        log = self.log
         if tracker == Tracker.HEALTH:
-            self.log.health_superficial += superficial
-            self.log.health_aggravated += aggravated
+            log.health_superficial += superficial
+            log.health_aggravated += aggravated
+            if self.damage_severity(track) > self.damage_severity(log.worst_health):
+                log.worst_health = track
         else:
-            self.log.willpower_superficial += superficial
-            self.log.willpower_aggravated += aggravated
+            log.willpower_superficial += superficial
+            log.willpower_aggravated += aggravated
+            if self.damage_severity(track) > self.damage_severity(log.worst_willpower):
+                log.worst_willpower = track
 
     def apply_damage(self, tracker: Tracker, severity: Damage, delta: int) -> bool:
         """

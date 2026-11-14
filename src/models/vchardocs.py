@@ -87,6 +87,7 @@ class VCharLog(BaseModel):
         "rouse_successes": CAREER_STATS_LIVE,
         "surges": CAREER_STATS_LIVE,
         "times_impaired": CAREER_STATS_LIVE,
+        "times_mended": CAREER_STATS_LIVE,
         "times_slaked": CAREER_STATS_LIVE,
         "worst_health": CAREER_STATS_LIVE,
         "worst_willpower": CAREER_STATS_LIVE,
@@ -114,6 +115,7 @@ class VCharLog(BaseModel):
     times_blushed: int = Field(default=0, alias="blush", serialization_alias="times_blushed")
     times_frenzied: int = Field(default=0, alias="frenzy", serialization_alias="times_frenzied")
     times_impaired: int = 0  # Times going from unimpaired to impaired
+    times_mended: int = 0  # Superficial (/mend) and Aggravated (/aggheal) healing
     times_slaked: int = 0
     willpower_aggravated: int = 0
     willpower_superficial: int = 0

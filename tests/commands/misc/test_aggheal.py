@@ -38,6 +38,7 @@ async def test_aggheal_logs_rouse(
 
     assert vamp.aggravated_hp == 0
     assert vamp.hunger == hunger + gained
+    assert vamp.log.times_mended == 1
     assert vamp.log.rouse_checks == 3
     assert vamp.log.rouse_successes == successes
     assert vamp.log.rouse_failures == failures

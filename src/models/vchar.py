@@ -678,9 +678,13 @@ class VChar(Document):
             self.log.times_impaired += 1
 
     @staticmethod
-    def damage_severity(track: str) -> int:
-        """How badly a track is damaged: 3 per Superficial, 10 per Aggravated."""
-        return 3 * track.count(Damage.SUPERFICIAL) + 10 * track.count(Damage.AGGRAVATED)
+    def damage_severity(track: str) -> float:
+        """How badly a track is damaged: 3 per Superficial and 10 per Aggravated,
+        divided by its length, so the same damage is worse on a shorter track."""
+        if not track:
+            return 0
+        score = 3 * track.count(Damage.SUPERFICIAL) + 10 * track.count(Damage.AGGRAVATED)
+        return score / len(track)
 
     def _count_damage(self, tracker: Tracker, superficial: int, aggravated: int, track: str):
         """Count damage taken, and keep the track if it's the worst it has been.

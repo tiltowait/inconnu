@@ -293,23 +293,29 @@ def test_healing_is_not_counted():
 @pytest.mark.parametrize(
     "track,severity",
     [
+        ("", 0),
         ("....", 0),
-        ("../x", 13),
-        ("//xx", 26),
+        ("../x", 3.25),
+        ("//xx", 6.5),
     ],
 )
-def test_damage_severity(track: str, severity: int):
-    """Superficial damage is worth 3; Aggravated, 10."""
+def test_damage_severity(track: str, severity: float):
+    """Superficial damage is worth 3 and Aggravated 10, per box of the track."""
     assert VChar.damage_severity(track) == severity
+
+
+def test_shorter_track_is_worse():
+    """The same Aggravated damage is worse on a shorter track."""
+    assert VChar.damage_severity("...x") > VChar.damage_severity("." * 10 + "xx")
 
 
 def test_worst_damage_is_kept():
     """The worst track survives healing and lighter damage, per tracker."""
     char = gen_char("vampire")
     char.health = "." * 8
-    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 4)  # 12
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 4)  # 1.5
     char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 0)
-    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)  # 10
+    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)  # 1.25
     char.set_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, 1)
 
     assert char.log.worst_health == "....////"
@@ -320,9 +326,9 @@ def test_worse_damage_replaces_worst():
     """Heavier damage replaces the stored track."""
     char = gen_char("vampire")
     char.health = "." * 8
-    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)  # 9
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)  # 1.125
     char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 0)
-    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)  # 10
+    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)  # 1.25
 
     assert char.log.worst_health == ".......x"
 

@@ -435,16 +435,16 @@ class VChar(Document):
                 raise ValueError(f"`{name}` is a reserved trait and can't be added")
 
         assignments: dict[str, int] = {}
-        counter = Counter()
+        counter: Counter[Tracker] = Counter()
 
         for input_name, input_rating in traits.items():
             updated = False
             for trait in self.raw_traits:
                 if trait.matching(input_name, True):
                     if trait.name in ("Resolve", "Composure"):
-                        counter["willpower"] += input_rating - trait.rating
+                        counter[Tracker.WILLPOWER] += input_rating - trait.rating
                     elif trait.name == "Stamina":
-                        counter["health"] += input_rating - trait.rating
+                        counter[Tracker.HEALTH] += input_rating - trait.rating
 
                     trait.rating = input_rating
                     assignments[trait.name] = input_rating
@@ -605,8 +605,6 @@ class VChar(Document):
         elif track == Tracker.WILLPOWER:
             current_rating = len(self.willpower)
             current_track = self.willpower
-        else:
-            raise ValueError(f"Invalid tracker: {track}.")
 
         delta = new_rating - current_rating
         if delta > 0:

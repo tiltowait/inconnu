@@ -93,6 +93,7 @@ class VChar(Document):
             self.splat = "thin-blood"
 
         self.reset_blush()
+        self.note_worst_damage()
 
         logger.info("VCHAR: Created {}", self.name)
 
@@ -670,7 +671,7 @@ class VChar(Document):
         new_agg = new_track.count(Damage.AGGRAVATED)
         new_sup = new_track.count(Damage.SUPERFICIAL)
 
-        self._count_damage(tracker, new_sup - old_sup, new_agg - old_agg, new_track)
+        self._count_damage(tracker, new_sup - old_sup, new_agg - old_agg)
 
     def _count_impairment(self, was_impaired: bool):
         """Count the character becoming impaired, if they weren't already."""
@@ -686,7 +687,7 @@ class VChar(Document):
         score = 3 * track.count(Damage.SUPERFICIAL) + 10 * track.count(Damage.AGGRAVATED)
         return score / len(track)
 
-    def _count_damage(self, tracker: Tracker, superficial: int, aggravated: int, track: str):
+    def _count_damage(self, tracker: Tracker, superficial: int, aggravated: int):
         """Count damage taken, and keep the track if it's the worst it has been.
         Healing isn't counted."""
         superficial, aggravated = max(superficial, 0), max(aggravated, 0)
@@ -694,13 +695,26 @@ class VChar(Document):
         if tracker == Tracker.HEALTH:
             log.health_superficial += superficial
             log.health_aggravated += aggravated
-            if self.damage_severity(track) > self.damage_severity(log.worst_health):
-                log.worst_health = track
         else:
             log.willpower_superficial += superficial
             log.willpower_aggravated += aggravated
-            if self.damage_severity(track) > self.damage_severity(log.worst_willpower):
-                log.worst_willpower = track
+        self.note_worst_damage()
+
+    def note_worst_damage(self):
+        """Snapshot each track that's the worst it has been, or that has no
+        snapshot yet. Called when damage is set, when the character is created,
+        and by the character manager on load, which gives characters from
+        before the snapshots their first ones. Not called on save, so resizing
+        a track (often a mistake, quickly undone) never sets a snapshot."""
+        log = self.log
+        if not log.worst_health or (
+            self.damage_severity(self.health) > self.damage_severity(log.worst_health)
+        ):
+            log.worst_health = self.health
+        if not log.worst_willpower or (
+            self.damage_severity(self.willpower) > self.damage_severity(log.worst_willpower)
+        ):
+            log.worst_willpower = self.willpower
 
     def apply_damage(self, tracker: Tracker, severity: Damage, delta: int) -> bool:
         """

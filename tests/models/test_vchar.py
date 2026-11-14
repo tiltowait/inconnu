@@ -401,6 +401,42 @@ async def test_save_changes_writes_only_changes(stored_char: VChar):
     assert (stored["name"], stored["hunger"]) == ("Renamed", 3)
 
 
+async def test_insert_snapshots_tracks():
+    """New characters start with their current tracks as the worst."""
+    char = gen_char("vampire")
+    char.health = "...//"
+    await char.insert()
+    try:
+        stored = await characters().find_one({"_id": char.id})
+        assert stored is not None
+        assert stored["log"]["worst_health"] == "...//"
+        assert stored["log"]["worst_willpower"] == char.willpower
+    finally:
+        await char.delete()
+
+
+def test_lighter_track_keeps_snapshot():
+    """A lighter track doesn't replace a worse snapshot."""
+    char = gen_char("vampire")
+    char.log.worst_health = "..xxx"
+    char.health = "...//"
+    char.note_worst_damage()
+
+    assert char.log.worst_health == "..xxx"
+
+
+def test_resize_keeps_snapshot():
+    """Shrinking a damaged track doesn't set a snapshot, even when saved."""
+    char = gen_char("vampire")
+    char.health = "." * 6 + "xx"
+    char.note_worst_damage()
+    char.adjust_tracker_rating(Tracker.HEALTH, 4)
+    char.pre_update()
+
+    assert char.health == "..xx"
+    assert char.log.worst_health == "......xx"
+
+
 async def test_returning_owner_is_not_culled(stored_char: VChar):
     """Clearing the departure date stores it, so culling skips the character."""
     stored_char.log.left = datetime.now(UTC) - timedelta(days=60)

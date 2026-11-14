@@ -1,5 +1,6 @@
 """Character update tests."""
 
+from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -11,17 +12,18 @@ from models.vchar import VChar
 
 
 @pytest.fixture
-def mock_update_display():
+def mock_update_display() -> Generator[AsyncMock]:
     """Mock display specifically for update tests (imported into parse.py)."""
     with patch("inconnu.character.update.parse.display", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture(autouse=True)
-def mock_haven(vamp: VChar):
+def mock_haven(vamp: VChar) -> Generator[MagicMock]:
     """Mock Haven to return our test character."""
 
-    async def mock_fetch():
+    async def mock_fetch() -> VChar:
+        """Return the test character."""
         return vamp
 
     haven_instance = MagicMock()

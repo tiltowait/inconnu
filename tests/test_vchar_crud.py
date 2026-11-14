@@ -1,14 +1,17 @@
 """Test VChar CRUD operations and database persistence."""
 
+from collections.abc import AsyncGenerator
+
 import pytest_asyncio
 
 from constants import Damage
 from models import VChar
+from models.vchar import Tracker
 from models.vchardocs import VCharTrait
 
 
 @pytest_asyncio.fixture
-async def vampire():
+async def vampire() -> AsyncGenerator[VChar]:
     """Create and insert a vampire character for testing."""
     char = VChar(
         guild=1,
@@ -30,7 +33,7 @@ async def vampire():
 
 
 @pytest_asyncio.fixture
-async def thin_blood():
+async def thin_blood() -> AsyncGenerator[VChar]:
     """Create and insert a thin-blood character for testing."""
     char = VChar(
         guild=1,
@@ -52,7 +55,7 @@ async def thin_blood():
 
 
 @pytest_asyncio.fixture
-async def mortal():
+async def mortal() -> AsyncGenerator[VChar]:
     """Create and insert a mortal character for testing."""
     char = VChar(
         guild=2,
@@ -74,7 +77,7 @@ async def mortal():
 
 
 @pytest_asyncio.fixture
-async def spc():
+async def spc() -> AsyncGenerator[VChar]:
     """Create and insert an SPC character for testing."""
     char = VChar(
         guild=1,
@@ -267,7 +270,7 @@ async def test_pre_insert_hook_creation_timestamp():
 # READ TESTS
 
 
-async def test_read_by_id(vampire):
+async def test_read_by_id(vampire: VChar):
     """Test fetching a character by ID."""
     char_id = vampire.id
 
@@ -286,7 +289,7 @@ async def test_read_nonexistent_id():
     assert fetched is None
 
 
-async def test_read_by_guild_and_user(vampire, thin_blood):
+async def test_read_by_guild_and_user(vampire: VChar, thin_blood: VChar):
     """Test querying characters by guild and user."""
     # Find vampire (guild=1, user=1)
     chars = await VChar.find({"guild": 1, "user": 1}).to_list()
@@ -299,14 +302,14 @@ async def test_read_by_guild_and_user(vampire, thin_blood):
     assert any(c.id == thin_blood.id for c in chars)
 
 
-async def test_read_by_name(vampire):
+async def test_read_by_name(vampire: VChar):
     """Test querying by character name."""
     chars = await VChar.find({"name": "Test Vampire"}).to_list()
     assert len(chars) >= 1
     assert any(c.id == vampire.id for c in chars)
 
 
-async def test_read_all_guild_characters(vampire, thin_blood, mortal):
+async def test_read_all_guild_characters(vampire: VChar, thin_blood: VChar, mortal: VChar):
     """Test fetching all characters in a guild."""
     guild_1_chars = await VChar.find({"guild": 1}).to_list()
     guild_2_chars = await VChar.find({"guild": 2}).to_list()
@@ -323,7 +326,7 @@ async def test_read_all_guild_characters(vampire, thin_blood, mortal):
     assert mortal.id in guild_2_ids
 
 
-async def test_read_spc_vs_pc(vampire, spc):
+async def test_read_spc_vs_pc(vampire: VChar, spc: VChar):
     """Test querying SPCs vs PCs."""
     # Find all PCs in guild 1
     pcs = await VChar.find({"guild": 1, "user": {"$ne": VChar.SPC_OWNER}}).to_list()
@@ -336,7 +339,7 @@ async def test_read_spc_vs_pc(vampire, spc):
     assert not any(c.id == vampire.id for c in spcs)
 
 
-async def test_read_with_traits(vampire):
+async def test_read_with_traits(vampire: VChar):
     """Test that traits are properly loaded from database."""
     # Add traits to vampire
     vampire.assign_traits({"Strength": 3, "Brawl": 2})
@@ -359,7 +362,7 @@ async def test_read_with_traits(vampire):
 # UPDATE TESTS
 
 
-async def test_update_basic_field(vampire):
+async def test_update_basic_field(vampire: VChar):
     """Test updating a basic field and persisting changes."""
     original_name = vampire.name
     vampire.name = "Updated Vampire"
@@ -375,7 +378,7 @@ async def test_update_basic_field(vampire):
     assert fetched.name != original_name
 
 
-async def test_update_multiple_fields(vampire):
+async def test_update_multiple_fields(vampire: VChar):
     """Test updating multiple fields at once."""
     vampire.name = "Multi Update"
     vampire.humanity = 5
@@ -389,7 +392,7 @@ async def test_update_multiple_fields(vampire):
     assert fetched.potency == 3
 
 
-async def test_update_traits(vampire):
+async def test_update_traits(vampire: VChar):
     """Test updating traits and persisting."""
     vampire.assign_traits({"Strength": 3, "Brawl": 2})
     await vampire.save()
@@ -404,10 +407,10 @@ async def test_update_traits(vampire):
     assert fetched.find_trait("Brawl").rating == 4
 
 
-async def test_update_damage_tracking(vampire):
+async def test_update_damage_tracking(vampire: VChar):
     """Test updating health/willpower damage."""
-    vampire.apply_damage("health", Damage.SUPERFICIAL, 3)
-    vampire.apply_damage("willpower", Damage.AGGRAVATED, 2)
+    vampire.apply_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)
+    vampire.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 2)
     await vampire.save()
 
     fetched = await VChar.get(vampire.id)
@@ -416,7 +419,7 @@ async def test_update_damage_tracking(vampire):
     assert fetched.aggravated_wp == 2
 
 
-async def test_pre_update_hook_hunger_clamping_vampire(vampire):
+async def test_pre_update_hook_hunger_clamping_vampire(vampire: VChar):
     """Test that pre_update clamps vampire hunger to 0-5."""
     vampire.hunger = 10
     await vampire.save()
@@ -438,7 +441,7 @@ async def test_pre_update_hook_hunger_clamping_vampire(vampire):
     assert fetched.hunger == 0
 
 
-async def test_pre_update_hook_hunger_zero_nonvampire(mortal):
+async def test_pre_update_hook_hunger_zero_nonvampire(mortal: VChar):
     """Test that pre_update sets hunger to 0 for non-vampires."""
     mortal.hunger = 5
     await mortal.save()
@@ -451,7 +454,7 @@ async def test_pre_update_hook_hunger_zero_nonvampire(mortal):
     assert fetched.hunger == 0
 
 
-async def test_pre_update_hook_potency_clamping(vampire):
+async def test_pre_update_hook_potency_clamping(vampire: VChar):
     """Test that pre_update clamps potency to 0-10."""
     vampire.potency = 15
     await vampire.save()
@@ -467,7 +470,7 @@ async def test_pre_update_hook_potency_clamping(vampire):
     assert vampire.potency == 0
 
 
-async def test_pre_update_hook_stains_clamping(vampire):
+async def test_pre_update_hook_stains_clamping(vampire: VChar):
     """Test that pre_update clamps stains to 0-10."""
     vampire.stains = 20
     await vampire.save()
@@ -479,7 +482,7 @@ async def test_pre_update_hook_stains_clamping(vampire):
     assert fetched.stains == 10
 
 
-async def test_pre_update_hook_xp_clamping(vampire):
+async def test_pre_update_hook_xp_clamping(vampire: VChar):
     """Test that pre_update clamps unspent XP to lifetime."""
     vampire.experience.lifetime = 100
     vampire.experience.unspent = 150  # Too high
@@ -492,7 +495,7 @@ async def test_pre_update_hook_xp_clamping(vampire):
     assert fetched.experience.unspent == 100
 
 
-async def test_pre_update_hook_splat_normalization(vampire):
+async def test_pre_update_hook_splat_normalization(vampire: VChar):
     """Test that pre_update normalizes splat on update."""
     vampire.splat = "thinblood"
     await vampire.save()
@@ -504,7 +507,7 @@ async def test_pre_update_hook_splat_normalization(vampire):
     assert fetched.splat == "thin-blood"
 
 
-async def test_update_macros(vampire):
+async def test_update_macros(vampire: VChar):
     """Test updating macros persists correctly."""
     vampire.add_macro(
         name="TestMacro",
@@ -537,7 +540,7 @@ async def test_update_macros(vampire):
     assert macro.pool == ["Dexterity", "Athletics"]
 
 
-async def test_update_experience_log(vampire):
+async def test_update_experience_log(vampire: VChar):
     """Test that experience log updates persist."""
     vampire.apply_experience(10, "unspent", "Test award", 12345)
     await vampire.save()
@@ -549,7 +552,7 @@ async def test_update_experience_log(vampire):
     assert fetched.experience.log[0].reason == "Test award"
 
 
-def test_apply_zero_experience(vampire):
+def test_apply_zero_experience(vampire: VChar):
     """Applying zero XP is a no-op and creates no log entry."""
     vampire.apply_experience(0, "lifetime", "Nothing", 12345)
 

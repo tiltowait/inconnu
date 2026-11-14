@@ -21,6 +21,7 @@ from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
 from models.impairment import Impairment
 from models.vchardocs import (
     BlushState,
+    MacroUpdate,
     TraitMatch,
     VCharExperience,
     VCharExperienceEntry,
@@ -575,7 +576,7 @@ class VChar(Document):
 
         logger.debug("VCHAR: {}: Added new macro {}", self.name, macro.name)
 
-    def update_macro(self, search: str, update: dict[str, str | int | bool]) -> str:
+    def update_macro(self, search: str, update: MacroUpdate) -> str:
         """Update a macro."""
         macro = self.find_macro(search)
         for field, value in update.items():

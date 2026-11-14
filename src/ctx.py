@@ -47,3 +47,4 @@ class AppCtx(discord.ApplicationContext):
 
 
 type AppInvocation = AppCtx | AppInteraction
+type AppResponse = discord.Interaction | discord.WebhookMessage  # What respond() returns

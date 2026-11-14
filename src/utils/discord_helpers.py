@@ -11,6 +11,7 @@ from pymongo import DeleteOne, UpdateOne
 
 if TYPE_CHECKING:
     from bot import InconnuBot
+    from ctx import AppResponse
 
 
 def raw_command_options(interaction) -> dict[str, Any]:
@@ -90,7 +91,7 @@ def re_paginate(strings: list[str], *, page_len=2000) -> list[str]:
     return _strip_pages(combined[i : i + page_len] for i in range(0, len(combined), page_len))
 
 
-async def get_message(inter):
+async def get_message(inter: AppResponse | discord.Message) -> discord.Message:
     """Get the message from an interaction."""
     if isinstance(inter, discord.Message):
         return inter

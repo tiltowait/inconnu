@@ -1,6 +1,6 @@
 """Tests for inconnu/experience/bulk.py."""
 
-from collections.abc import Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
@@ -16,6 +16,7 @@ from tests.characters import gen_char
 
 type MockInteraction = MagicMock
 type MockSession = MagicMock
+type Transaction = Callable[[MockSession | None], Awaitable[object]]
 
 ADMIN_ID = 7
 
@@ -57,7 +58,7 @@ def interaction() -> MockInteraction:
 def mock_fetchone(characters: dict[tuple[int, str], VChar]) -> Iterator[AsyncMock]:
     """Look characters up in the fixture."""
 
-    async def fetchone(_guild, user: int, name: str) -> VChar:
+    async def fetchone(_guild: discord.Guild, user: int, name: str) -> VChar:
         if (char := characters.get((user, name.lower()))) is None:
             raise errors.CharacterNotFoundError(f"No character named {name}")
         return char
@@ -78,7 +79,7 @@ def session() -> MockSession:
 def mock_transaction(session: MockSession) -> Iterator[AsyncMock]:
     """Run transactions without a database."""
 
-    async def transaction(callback):
+    async def transaction(callback: Transaction) -> object:
         return await callback(session)
 
     with patch.object(
@@ -252,7 +253,7 @@ async def test_bulk_award_retry_awards_once(
 ):
     """A retried transaction saves again without awarding again."""
 
-    async def retried(callback):
+    async def retried(callback: Transaction) -> object:
         await callback(session)
         return await callback(session)
 
@@ -298,7 +299,7 @@ async def test_bulk_award_failure_keeps_later_awards(
     stored = await collection.find_one({"_id": nadea.id})
     assert stored is not None
 
-    async def aborted(callback):
+    async def aborted(callback: Transaction):
         await callback(None)  # The saves run ...
         await collection.replace_one({"_id": nadea.id}, stored)  # ... and are undone
         raise OperationFailure("Write conflict")

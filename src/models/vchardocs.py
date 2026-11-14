@@ -3,7 +3,7 @@
 import itertools
 from datetime import UTC, datetime
 from enum import IntEnum, StrEnum
-from typing import ClassVar, Literal, NamedTuple, overload
+from typing import ClassVar, Literal, NamedTuple, TypedDict, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -84,6 +84,20 @@ class VCharLog(BaseModel):
     stains: int = 0
     willpower_aggravated: int = 0
     willpower_superficial: int = 0
+
+
+class MacroUpdate(TypedDict, total=False):
+    """Changes to a macro's fields."""
+
+    name: str
+    pool: list[str]
+    hunger: bool
+    difficulty: int
+    rouses: int
+    reroll_rouses: bool
+    staining: str
+    hunt: bool
+    comment: str
 
 
 class VCharMacro(BaseModel):

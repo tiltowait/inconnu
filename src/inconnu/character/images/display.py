@@ -283,7 +283,7 @@ class ImagePager(discord.ui.View):
 
         await self.character.save_changes()
 
-    async def interaction_check(self, interaction: discord.Interaction):
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Ensure image management safety."""
         if interaction.data is None or interaction.user is None:
             # We have nothing to check (shouldn't be possible)

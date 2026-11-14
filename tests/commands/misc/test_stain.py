@@ -2,6 +2,7 @@
 
 from unittest.mock import AsyncMock, PropertyMock, patch
 
+import discord
 import pytest
 
 from ctx import AppCtx
@@ -9,11 +10,11 @@ from inconnu.misc.stain import stain
 from models.vchar import VChar
 
 
-async def test_stain_delta_zero_fails(vamp: VChar, ctx: AppCtx):
+async def test_stain_delta_zero_fails(vamp: VChar, ctx: AppCtx, user: discord.Member):
     """Test that applying 0 stains raises an error."""
     # stain() doesn't use the filter, so we call it directly
     with patch("ui.embeds.error", new_callable=AsyncMock) as mock_error:
-        await stain(ctx, vamp, 0, player=ctx.user)
+        await stain(ctx, vamp, 0, player=user)
 
         # Should call error embed
         mock_error.assert_awaited_once()
@@ -37,12 +38,13 @@ async def test_stain_no_change_fails(
     ctx: AppCtx,
     mock_char_save: AsyncMock,
     mock_character_display: AsyncMock,
+    user: discord.Member,
 ):
     """A change that clamping cancels out is an error, not "Removed 0 Stains"."""
     vamp.stains = initial_stains
 
     with patch("ui.embeds.error", new_callable=AsyncMock) as mock_error:
-        await stain(ctx, vamp, delta, player=ctx.user)
+        await stain(ctx, vamp, delta, player=user)
 
     mock_error.assert_awaited_once()
     assert mock_error.await_args is not None
@@ -68,6 +70,7 @@ async def test_add_stains_no_degeneration(
     ctx: AppCtx,
     mock_char_save: AsyncMock,
     mock_character_display: AsyncMock,
+    user: discord.Member,
 ):
     """Test adding stains without triggering degeneration.
 
@@ -77,7 +80,7 @@ async def test_add_stains_no_degeneration(
     vamp.humanity = 6
     vamp.stains = initial_stains
 
-    await stain(ctx, vamp, delta, player=ctx.user)
+    await stain(ctx, vamp, delta, player=user)
 
     assert vamp.stains == expected_stains
     assert vamp.log.stains == delta
@@ -114,11 +117,12 @@ async def test_remove_stains(
     ctx: AppCtx,
     mock_char_save: AsyncMock,
     mock_character_display: AsyncMock,
+    user: discord.Member,
 ):
     """Test removing stains. Removals aren't counted in the log."""
     vamp.stains = initial_stains
 
-    await stain(ctx, vamp, delta, player=ctx.user)
+    await stain(ctx, vamp, delta, player=user)
 
     assert vamp.stains == expected_stains
     assert vamp.log.stains == 0
@@ -137,12 +141,13 @@ async def test_add_stains_clamp_to_10(
     vamp: VChar,
     ctx: AppCtx,
     mock_char_save: AsyncMock,
+    user: discord.Member,
 ):
     """Test that adding stains clamps to maximum of 10."""
     vamp.humanity = 1  # Low humanity to avoid complications
     vamp.stains = 8
 
-    await stain(ctx, vamp, 5, player=ctx.user)
+    await stain(ctx, vamp, 5, player=user)
 
     # Should clamp to 10, not go to 13
     assert vamp.stains == 10
@@ -153,11 +158,12 @@ async def test_remove_stains_clamp_to_0(
     vamp: VChar,
     ctx: AppCtx,
     mock_char_save: AsyncMock,
+    user: discord.Member,
 ):
     """Test that removing stains clamps to minimum of 0."""
     vamp.stains = 2
 
-    await stain(ctx, vamp, -5, player=ctx.user)
+    await stain(ctx, vamp, -5, player=user)
 
     # Should clamp to 0, not go negative
     assert vamp.stains == 0
@@ -169,13 +175,14 @@ async def test_add_stains_with_degeneration(
     ctx: AppCtx,
     mock_char_save: AsyncMock,
     mock_character_display: AsyncMock,
+    user: discord.Member,
 ):
     """Test adding stains that trigger degeneration."""
     vamp.willpower = "......."
     vamp.humanity = 6  # 10 - 6 = 4 stains before degeneration
     vamp.stains = 4  # At the threshold
 
-    await stain(ctx, vamp, 2, player=ctx.user)  # Add 2 more, should trigger
+    await stain(ctx, vamp, 2, player=user)  # Add 2 more, should trigger
 
     assert vamp.stains == 6
     mock_char_save.assert_awaited()
@@ -202,6 +209,7 @@ async def test_degeneration_footer(
     ctx: AppCtx,
     mock_char_save: AsyncMock,
     mock_character_display: AsyncMock,
+    user: discord.Member,
 ):
     """Test that degeneration footer appears when character.degeneration is true."""
     vamp.willpower = "......."
@@ -212,7 +220,7 @@ async def test_degeneration_footer(
     with patch.object(type(vamp), "degeneration", new_callable=PropertyMock) as mock_degen:
         mock_degen.return_value = True
 
-        await stain(ctx, vamp, 2, player=ctx.user)
+        await stain(ctx, vamp, 2, player=user)
 
         call_args = mock_character_display.await_args
         assert call_args is not None
@@ -228,6 +236,7 @@ async def test_no_degeneration_footer_when_false(
     ctx: AppCtx,
     mock_char_save: AsyncMock,
     mock_character_display: AsyncMock,
+    user: discord.Member,
 ):
     """Test that no footer appears when degeneration is false."""
     vamp.stains = 2
@@ -236,7 +245,7 @@ async def test_no_degeneration_footer_when_false(
     with patch.object(type(vamp), "degeneration", new_callable=PropertyMock) as mock_degen:
         mock_degen.return_value = False
 
-        await stain(ctx, vamp, 1, player=ctx.user)
+        await stain(ctx, vamp, 1, player=user)
 
         call_args = mock_character_display.await_args
         assert call_args is not None
@@ -251,11 +260,12 @@ async def test_add_single_stain_singular(
     mock_char_save: AsyncMock,
     mock_character_display: AsyncMock,
     mock_common_report: AsyncMock,
+    user: discord.Member,
 ):
     """Test that adding 1 stain uses singular 'Stain' not 'Stains'."""
     vamp.stains = 0
 
-    await stain(ctx, vamp, 1, player=ctx.user)
+    await stain(ctx, vamp, 1, player=user)
     mock_char_save.assert_awaited()
 
     # Check display title
@@ -278,11 +288,12 @@ async def test_add_multiple_stains_plural(
     mock_char_save: AsyncMock,
     mock_character_display: AsyncMock,
     mock_common_report: AsyncMock,
+    user: discord.Member,
 ):
     """Test that adding multiple stains uses plural 'Stains'."""
     vamp.stains = 0
 
-    await stain(ctx, vamp, 3, player=ctx.user)
+    await stain(ctx, vamp, 3, player=user)
     mock_char_save.assert_awaited()
 
     # Check display title
@@ -304,11 +315,12 @@ async def test_remove_stains_report(
     ctx: AppCtx,
     mock_char_save: AsyncMock,
     mock_common_report: AsyncMock,
+    user: discord.Member,
 ):
     """Test that removing stains shows 'removed' in report."""
     vamp.stains = 5
 
-    await stain(ctx, vamp, -2, player=ctx.user)
+    await stain(ctx, vamp, -2, player=user)
     mock_char_save.assert_awaited()
 
     report_args = mock_common_report.await_args
@@ -322,6 +334,7 @@ async def test_degeneration_overlap_calculation(
     vamp: VChar,
     ctx: AppCtx,
     mock_char_save: AsyncMock,
+    user: discord.Member,
 ):
     """Test degeneration overlap calculation for willpower damage."""
     vamp.willpower = "......."
@@ -330,7 +343,7 @@ async def test_degeneration_overlap_calculation(
     initial_agg_wp = vamp.aggravated_wp
 
     # Adding 2 stains should cause 2 aggravated willpower damage
-    await stain(ctx, vamp, 2, player=ctx.user)
+    await stain(ctx, vamp, 2, player=user)
 
     # Verify willpower damage was applied
     assert vamp.aggravated_wp == initial_agg_wp + 2
@@ -342,6 +355,7 @@ async def test_no_willpower_damage_when_removing_stains(
     ctx: AppCtx,
     mock_char_save: AsyncMock,
     mock_character_display: AsyncMock,
+    user: discord.Member,
 ):
     """Test that removing stains doesn't add willpower damage."""
     vamp.willpower = "......."
@@ -349,7 +363,7 @@ async def test_no_willpower_damage_when_removing_stains(
     vamp.stains = 8  # In degeneration range
     initial_agg_wp = vamp.aggravated_wp
 
-    await stain(ctx, vamp, -2, player=ctx.user)
+    await stain(ctx, vamp, -2, player=user)
 
     # Willpower should not change when removing stains
     assert vamp.aggravated_wp == initial_agg_wp
@@ -367,11 +381,12 @@ async def test_thin_blood_stains(
     thin_blood: VChar,
     ctx: AppCtx,
     mock_char_save: AsyncMock,
+    user: discord.Member,
 ):
     """Test that thin-bloods can gain and remove stains."""
     thin_blood.stains = 0
 
-    await stain(ctx, thin_blood, 3, player=ctx.user)
+    await stain(ctx, thin_blood, 3, player=user)
 
     assert thin_blood.stains == 3
     mock_char_save.assert_awaited()

@@ -45,7 +45,9 @@ async def remove_entry(
         await ui.embeds.error(ctx, err)
 
 
-def _get_embed(player: discord.Member, character: VChar, entry: VCharExperienceEntry):
+def _get_embed(
+    player: discord.Member, character: VChar, entry: VCharExperienceEntry
+) -> discord.Embed:
     """Generate an embed for displaying the deletion message."""
     embed = discord.Embed(title="Deleted Experience Log Entry", description=_format_entry(entry))
     embed.set_author(name=character.name, icon_url=get_avatar(player))
@@ -57,7 +59,7 @@ def _get_embed(player: discord.Member, character: VChar, entry: VCharExperienceE
     return embed
 
 
-def _format_entry(entry: VCharExperienceEntry):
+def _format_entry(entry: VCharExperienceEntry) -> str:
     """Format the deleted entry for display."""
     date = entry.date.strftime("%b %d, %Y")
     scope = _entry_scope(entry)
@@ -65,7 +67,7 @@ def _format_entry(entry: VCharExperienceEntry):
     return f"**{entry.amount:+} {scope} XP: {entry.reason}** *({date})*"
 
 
-def _entry_scope(entry: VCharExperienceEntry):
+def _entry_scope(entry: VCharExperienceEntry) -> str:
     """Get the log entry scope."""
     return entry.event.split("_")[-1].capitalize()
 

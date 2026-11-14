@@ -791,13 +791,14 @@ async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Gui
     char2.guild = g1.id
     char2.user = u11.id
 
-    # Patch save() to add delay, forcing lock contention
-    original_save = char1.save
+    # Slow down insert() so the second registration waits on the lock while
+    # the first is mid-write
+    original_insert = VChar.insert
 
-    async def slow_save(*args: Any, **kwargs: Any) -> VChar:
-        """Save after a delay, so the registrations overlap."""
+    async def slow_insert(self: VChar, *args: Any, **kwargs: Any) -> VChar:
+        """Insert after a delay, so the registrations overlap."""
         await asyncio.sleep(0.1)  # 100ms delay to ensure overlap
-        return await original_save(*args, **kwargs)
+        return await original_insert(self, *args, **kwargs)
 
     # Track when each operation starts to verify they overlap
     start_times = []
@@ -805,16 +806,18 @@ async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Gui
     async def register_with_timing(char: VChar):
         """Record when the registration starts, then register."""
         start_times.append(asyncio.get_event_loop().time())
-        return await mgre.register(char)
+        await mgre.register(char)
 
-    with patch.object(type(char1), "save", side_effect=slow_save):
-        with patch.object(type(char2), "save", side_effect=slow_save):
-            # Try to register both concurrently
-            results = await asyncio.gather(
-                register_with_timing(char1),
-                register_with_timing(char2),
-                return_exceptions=True,
-            )
+    with patch.object(VChar, "insert", autospec=True, side_effect=slow_insert) as mock_insert:
+        # Try to register both concurrently
+        results = await asyncio.gather(
+            register_with_timing(char1),
+            register_with_timing(char2),
+            return_exceptions=True,
+        )
+
+    # Only the first registration reaches the database
+    assert mock_insert.await_count == 1
 
     # Verify both operations started (near-)simultaneously
     assert len(start_times) == 2

@@ -10,7 +10,7 @@ import errors
 import inconnu
 import services
 import ui
-from ctx import AppCtx, AppInvocation
+from ctx import AppCtx, AppInvocation, AppResponse
 from models import VChar
 from services.haven import haven
 from utils import get_message
@@ -141,7 +141,7 @@ async def __display_outcome(
     oblivion: str | bool,
     message: str | None,
     ephemeral: bool,
-) -> AppInvocation | discord.Interaction | discord.WebhookMessage:
+) -> AppResponse:
     """Process the rouse result and display to the user."""
     title = __make_title(outcome)
 

@@ -57,7 +57,14 @@ async def award_or_deduct(
     await ctx.respond(embed=embed, allowed_mentions=discord.AllowedMentions.none())
 
 
-def __get_embed(ctx, player, character, amount, scope, reason):
+def __get_embed(
+    ctx: AppCtx,
+    player: discord.Member,
+    character: VChar,
+    amount: int,
+    scope: str,
+    reason: str,
+) -> discord.Embed:
     """Generate the embed."""
     verb = "Awarded" if amount > 0 else "Deducted"
     title = f"{verb} {abs(amount)} {scope.title()} XP"

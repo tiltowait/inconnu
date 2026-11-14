@@ -154,7 +154,9 @@ def __partition_traits(character: VChar, traits: dict[str, int | None]) -> Trait
     return TraitPartition(owned=owned, unowned=unowned)
 
 
-async def __display_results(ctx, outcome, character: VChar, disciplines: bool):
+async def __display_results(
+    ctx: AppCtx, outcome: AssignmentResult, character: VChar, disciplines: bool
+):
     """Display the results of the operation."""
     tasks: list[Awaitable[object]] = [__results_embed(ctx, outcome, character, disciplines)]
 
@@ -176,7 +178,9 @@ async def __display_results(ctx, outcome, character: VChar, disciplines: bool):
     await asyncio.gather(*tasks)
 
 
-async def __results_embed(ctx, outcome, character: VChar, disciplines: bool):
+async def __results_embed(
+    ctx: AppCtx, outcome: AssignmentResult, character: VChar, disciplines: bool
+):
     """Display the results of the operation in a nice embed."""
     action_present = "Update" if outcome.updating else "Assign"
     action_past = "Updated" if outcome.updating else "Assigned"

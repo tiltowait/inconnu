@@ -5,6 +5,7 @@ from typing import NamedTuple
 import errors
 import inconnu
 import services
+from ctx import AppCtx, AppResponse
 from models import VChar
 from services.haven import haven
 from utils import get_message
@@ -25,14 +26,14 @@ class RemorseOutcome(NamedTuple):
     lasombra_alt: bool
 
 
-def _can_remorse(character):
+def _can_remorse(character: VChar):
     """Raise an exception if we have no stains."""
     if character.stains == 0:
         raise errors.CharacterError(f"{character.name} has no stains.")
 
 
 @haven(__HELP_URL, _can_remorse, "None of your characters have any stains!")
-async def remorse(ctx, character, minimum=1, lasombra_alt=False):
+async def remorse(ctx: AppCtx, character: VChar, minimum=1, lasombra_alt=False):
     """Perform a remorse check on a given character."""
     if character.stains == 0:
         await ctx.respond(f"{character.name} has no stains! No remorse necessary.", ephemeral=True)
@@ -44,7 +45,7 @@ async def remorse(ctx, character, minimum=1, lasombra_alt=False):
     await character.save_changes()
 
 
-async def __display_outcome(ctx, character: VChar, outcome):
+async def __display_outcome(ctx: AppCtx, character: VChar, outcome: RemorseOutcome) -> AppResponse:
     """Process the remorse result and display to the user."""
     title = "Remorse Success" if outcome.remorseful else "Remorse Fail"
     if outcome.remorseful:
@@ -108,7 +109,12 @@ def __remorse_roll(character: VChar, minimum: int, lasombra_alt: bool) -> Remors
     )
 
 
-async def __report(ctx, inter, character, remorseful):
+async def __report(
+    ctx: AppCtx,
+    inter: AppResponse,
+    character: VChar,
+    remorseful: bool,
+):
     """Generate the task to display the remorse outcome for the update channel."""
     if remorseful:
         verbed = "passed"

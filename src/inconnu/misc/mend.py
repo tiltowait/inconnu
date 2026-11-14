@@ -7,7 +7,7 @@ import inconnu
 import services
 import ui
 from constants import ROUSE_FAIL_COLOR, Damage
-from ctx import AppCtx
+from ctx import AppCtx, AppResponse
 from models import VChar
 from services.haven import haven
 from utils import get_message
@@ -60,7 +60,7 @@ async def mend(ctx: AppCtx, character: VChar):
         )
 
 
-async def __display_outcome(ctx: AppCtx, character: VChar, outcome: MendOutcome):
+async def __display_outcome(ctx: AppCtx, character: VChar, outcome: MendOutcome) -> AppResponse:
     """Display the results of the mend."""
     title = f"Mended {outcome.mended} damage"
     fields = [("Health", inconnu.character.DisplayField.HEALTH)]

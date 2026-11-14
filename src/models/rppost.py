@@ -6,11 +6,27 @@ from typing import TYPE_CHECKING, ClassVar
 import discord
 from beanie import Document
 from pydantic import AnyUrl, BaseModel, Field
+from pymongo import ASCENDING, TEXT, IndexModel
 
 from models.rpheader import HeaderSubdoc
 
 if TYPE_CHECKING:
     from models import VChar
+
+# Every player-facing query starts with a player's live posts in a guild
+_OWNER = [("deleted", ASCENDING), ("guild", ASCENDING), ("user", ASCENDING)]
+
+# /search with search text. This is the form MongoDB stores a text index in,
+# rather than the usual ("content", TEXT). Beanie drops and rebuilds any index
+# that doesn't match its declaration, and it compares against the stored form.
+_TEXT_INDEX = IndexModel(
+    [*_OWNER, ("_fts", TEXT), ("_ftsx", ASCENDING), ("date", ASCENDING)],
+    name="deleted_1_guild_1_user_1_content_text_date_1",
+    weights={"content": 1},
+    default_language="english",
+    language_override="language",
+    textIndexVersion=3,
+)
 
 
 class PostHistoryEntry(BaseModel):
@@ -65,6 +81,17 @@ class RPPost(Document):
         name = "rp_posts"
         use_state_management = True
         validate_on_save = True
+        indexes = [
+            IndexModel("message_id", unique=True),
+            "id_chain",  # Replies to any message of a post
+            "channel",
+            "thread",
+            # /search without search text, newest or oldest first
+            [*_OWNER, ("date", ASCENDING)],
+            _TEXT_INDEX,
+            [*_OWNER, ("tags", ASCENDING)],
+            [*_OWNER, ("title", ASCENDING)],  # Bookmarks
+        ]
 
     @classmethod
     def new(

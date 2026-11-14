@@ -19,7 +19,6 @@ characters = _db.characters
 command_log = _db.command_log
 guilds = _db.guilds
 headers = _db.headers
-log = _db.log
 rolls = _db.rolls
 rp_posts = _db.rp_posts
 supporters = _db.supporters
@@ -48,8 +47,9 @@ async def transaction[T](callback: Callable[[AsyncClientSession], Awaitable[T]])
 
 
 async def init():
-    """Initialize the database."""
-    await init_beanie(_db, document_models=models())
+    """Initialize the database. The models' indexes are the source of truth:
+    any other index on their collections is dropped."""
+    await init_beanie(_db, document_models=models(), allow_index_dropping=True)
     logger.info("Initialized beanie. Database: {}", _db.name)
 
 

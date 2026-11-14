@@ -7,6 +7,7 @@ from async_lru import alru_cache
 from beanie import Document
 from discord import Guild
 from pydantic import BaseModel, Field
+from pymongo import IndexModel
 
 
 def utcnow() -> datetime:
@@ -146,3 +147,7 @@ class VGuild(Document):
         name = "guilds"
         use_state_management = True
         validate_on_save = True
+        indexes = [
+            IndexModel("guild", unique=True),
+            "active",  # Culling
+        ]

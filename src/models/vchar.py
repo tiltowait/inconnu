@@ -14,6 +14,7 @@ from typing import Any, ClassVar, Self
 from beanie import Document, Insert, Replace, Save, SaveChanges, before_event
 from loguru import logger
 from pydantic import ConfigDict, Field
+from pymongo import ASCENDING
 
 import errors
 from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
@@ -49,6 +50,10 @@ class VChar(Document):
         name = "characters"
         use_state_management = True
         validate_on_save = True
+        indexes = [
+            [("guild", ASCENDING), ("user", ASCENDING)],
+            "log.left",  # Culling
+        ]
 
     VAMPIRE_TRAITS: ClassVar[list[str]] = ["Hunger", "Potency", "Surge", "Bane", "PowerBonus"]
     SPC_OWNER: ClassVar[int] = 0

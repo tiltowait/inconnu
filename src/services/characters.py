@@ -33,6 +33,9 @@ class CharacterManager:
         """Load the characters from the database."""
         if not self._initialized:
             self._characters = await VChar.find_all().to_list()
+            for char in self._characters:
+                # After loading, so the next save writes any new snapshot
+                char.note_worst_damage()
             self._characters.sort()
             self._id_cache = {char.id_str: char for char in self._characters}
             self._initialized = True

@@ -3,7 +3,7 @@
 import errors
 import inconnu
 from ctx import AppCtx
-from models import BlushState, VChar
+from models import VChar
 from services.haven import haven
 from utils.urls import docs_url
 
@@ -41,8 +41,7 @@ async def bol(ctx: AppCtx, character: VChar, ministry_alt: bool):
         else:
             count = 1
 
-        character.set_blush(BlushState.ON)
-        character.log.times_blushed += 1
+        character.blush()
         await inconnu.misc.rouse(
             ctx, character, count, msg, character.humanity == 8, oblivion=False
         )

@@ -93,6 +93,7 @@ class VChar(Document):
             self.splat = "thin-blood"
 
         self.reset_blush()
+        self.note_worst_damage()
 
         logger.info("VCHAR: Created {}", self.name)
 
@@ -249,6 +250,13 @@ class VChar(Document):
     def reset_blush(self):
         """Turn off the Blush of Life, or mark it N/A if the character can't Blush."""
         self.header.blush = BlushState.OFF if self.can_blush else BlushState.NA
+
+    def blush(self):
+        """Turn on the Blush of Life and count it, if the character can Blush.
+        Blushing again while it's on still counts."""
+        if self.can_blush:
+            self.set_blush(BlushState.ON)
+            self.log.times_blushed += 1
 
     def set_blush(self, new_blush: BlushState):
         """Toggle the character's Blush of Life."""
@@ -650,12 +658,14 @@ class VChar(Document):
             # No need to do anything if the track is unchanged
             return
 
+        was_impaired = self.impairment_state != Impairment.NONE
         if tracker == Tracker.HEALTH:
             self.health = new_track
         else:
             self.willpower = new_track
 
         # Log it!
+        self._count_impairment(was_impaired)
         old_agg = cur_track.count(Damage.AGGRAVATED)
         old_sup = cur_track.count(Damage.SUPERFICIAL)
         new_agg = new_track.count(Damage.AGGRAVATED)
@@ -663,15 +673,48 @@ class VChar(Document):
 
         self._count_damage(tracker, new_sup - old_sup, new_agg - old_agg)
 
+    def _count_impairment(self, was_impaired: bool):
+        """Count the character becoming impaired, if they weren't already."""
+        if not was_impaired and self.impairment_state != Impairment.NONE:
+            self.log.times_impaired += 1
+
+    @staticmethod
+    def damage_severity(track: str) -> float:
+        """How badly a track is damaged: 3 per Superficial and 10 per Aggravated,
+        divided by its length, so the same damage is worse on a shorter track."""
+        if not track:
+            return 0
+        score = 3 * track.count(Damage.SUPERFICIAL) + 10 * track.count(Damage.AGGRAVATED)
+        return score / len(track)
+
     def _count_damage(self, tracker: Tracker, superficial: int, aggravated: int):
-        """Count damage taken. Healing isn't counted."""
+        """Count damage taken, and keep the track if it's the worst it has been.
+        Healing isn't counted."""
         superficial, aggravated = max(superficial, 0), max(aggravated, 0)
+        log = self.log
         if tracker == Tracker.HEALTH:
-            self.log.health_superficial += superficial
-            self.log.health_aggravated += aggravated
+            log.health_superficial += superficial
+            log.health_aggravated += aggravated
         else:
-            self.log.willpower_superficial += superficial
-            self.log.willpower_aggravated += aggravated
+            log.willpower_superficial += superficial
+            log.willpower_aggravated += aggravated
+        self.note_worst_damage()
+
+    def note_worst_damage(self):
+        """Snapshot each track that's the worst it has been, or that has no
+        snapshot yet. Called when damage is set, when the character is created,
+        and by the character manager on load, which gives characters from
+        before the snapshots their first ones. Not called on save, so resizing
+        a track (often a mistake, quickly undone) never sets a snapshot."""
+        log = self.log
+        if not log.worst_health or (
+            self.damage_severity(self.health) > self.damage_severity(log.worst_health)
+        ):
+            log.worst_health = self.health
+        if not log.worst_willpower or (
+            self.damage_severity(self.willpower) > self.damage_severity(log.worst_willpower)
+        ):
+            log.worst_willpower = self.willpower
 
     def apply_damage(self, tracker: Tracker, severity: Damage, delta: int) -> bool:
         """
@@ -725,7 +768,11 @@ class VChar(Document):
                 self.log.degenerations += 1
             self.log.deepest_degeneration = max(self.log.deepest_degeneration, new_overflow)
 
+        # After the damage, which counts any impairment it causes itself
+        was_impaired = self.impairment_state != Impairment.NONE
         self.stains = new_stains
+        if log:
+            self._count_impairment(was_impaired)
 
         return damage
 

@@ -209,6 +209,30 @@ def wrapped_find_all() -> Generator[MockFn]:
 # Tests
 
 
+async def test_initialize_snapshots_tracks(mgre: CharacterManager, c111: VChar):
+    """Characters stored without damage snapshots get them on load, and the
+    next save writes them."""
+    await c111.insert()
+    collection = VChar.get_pymongo_collection()
+    await collection.update_one(
+        {"_id": c111.id},
+        {
+            "$set": {"health": "....x"},
+            "$unset": {"log.worst_health": "", "log.worst_willpower": ""},
+        },
+    )
+
+    await mgre.initialize()
+    char = await mgre.fetchone(c111.guild, c111.user, c111.name)
+    assert char.log.worst_health == "....x"
+
+    await char.save_changes()
+    stored = await collection.find_one({"_id": c111.id})
+    assert stored is not None
+    assert stored["log"]["worst_health"] == "....x"
+    assert stored["log"]["worst_willpower"] == char.willpower
+
+
 async def test_initializes(mgrf: CharacterManager):
     """Initializing loads every character into the cache."""
     await mgrf.initialize()

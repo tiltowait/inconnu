@@ -13,7 +13,7 @@ from ctx import AppCtx
 from inconnu.macros.roll import _SlakeView, reroll_listener
 from inconnu.macros.roll import roll as roll_macro
 from inconnu.roll import Roll
-from models import HiddenDicePerms, VChar
+from models import BlushState, HiddenDicePerms, VChar
 from models.vchardocs import VCharMacro
 from services.haven import Haven
 from tests.characters import gen_char
@@ -284,6 +284,31 @@ async def test_hunt_counted(ctx: AppCtx, character: VChar, mock_char_save: Async
     await hunt(ctx, die, False)
 
     assert character.log.hunts == 1
+    mock_char_save.assert_awaited_once()
+
+
+@pytest.mark.usefixtures("mock_haven", "mock_display_outcome")
+async def test_bol_macro_blushes(ctx: AppCtx, character: VChar, mock_char_save: AsyncMock):
+    """A macro named BoL Blushes and saves the character."""
+    character.humanity = 7
+    character.macros.append(
+        VCharMacro(
+            name="BoL",
+            pool=["1"],
+            hunger=False,
+            difficulty=0,
+            rouses=0,
+            reroll_rouses=False,
+            staining="show",
+            hunt=False,
+            comment=None,
+        )
+    )
+    with patch("inconnu.d10", side_effect=lambda count: [6] * count):
+        await roll_macro(ctx, "bol")
+
+    assert character.header.blush == BlushState.ON
+    assert character.log.times_blushed == 1
     mock_char_save.assert_awaited_once()
 
 

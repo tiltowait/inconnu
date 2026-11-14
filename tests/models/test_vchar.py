@@ -34,6 +34,36 @@ def test_non_vampire_cannot_blush(splat: str):
 
 
 @pytest.mark.parametrize(
+    "splat,humanity,blushes,state",
+    [
+        ("vampire", 7, 1, BlushState.ON),
+        ("vampire", 9, 0, BlushState.NA),
+        ("thin-blood", 7, 0, BlushState.NA),
+        ("ghoul", 7, 0, BlushState.NA),
+        ("mortal", 7, 0, BlushState.NA),
+    ],
+)
+def test_blush_counts_if_able(splat: str, humanity: int, blushes: int, state: BlushState):
+    """Blushing turns the Blush of Life on and counts it, only for those who can."""
+    char = gen_char(splat)
+    char.humanity = humanity
+    char.header.blush = BlushState.NA
+    char.blush()
+
+    assert char.header.blush == state
+    assert char.log.times_blushed == blushes
+
+
+def test_blushing_again_counts():
+    """Each Blush counts, even while it's already on."""
+    vamp = gen_char("vampire")
+    vamp.blush()
+    vamp.blush()
+
+    assert vamp.log.times_blushed == 2
+
+
+@pytest.mark.parametrize(
     "splat,can_blush,starting_blush",
     [
         ("vampire", True, 0),
@@ -260,6 +290,92 @@ def test_healing_is_not_counted():
     assert char.log.health_superficial == 3
 
 
+@pytest.mark.parametrize(
+    "track,severity",
+    [
+        ("", 0),
+        ("....", 0),
+        ("../x", 3.25),
+        ("//xx", 6.5),
+    ],
+)
+def test_damage_severity(track: str, severity: float):
+    """Superficial damage is worth 3 and Aggravated 10, per box of the track."""
+    assert VChar.damage_severity(track) == severity
+
+
+def test_shorter_track_is_worse():
+    """The same Aggravated damage is worse on a shorter track."""
+    assert VChar.damage_severity("...x") > VChar.damage_severity("." * 10 + "xx")
+
+
+def test_worst_damage_is_kept():
+    """The worst track survives healing and lighter damage, per tracker."""
+    char = gen_char("vampire")
+    char.health = "." * 8
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 4)  # 1.5
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 0)
+    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)  # 1.25
+    char.set_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, 1)
+
+    assert char.log.worst_health == "....////"
+    assert char.log.worst_willpower == char.willpower
+
+
+def test_worse_damage_replaces_worst():
+    """Heavier damage replaces the stored track."""
+    char = gen_char("vampire")
+    char.health = "." * 8
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)  # 1.125
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 0)
+    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 1)  # 1.25
+
+    assert char.log.worst_health == ".......x"
+
+
+def test_becoming_impaired_is_counted():
+    """Going from unimpaired to impaired counts once, until it ends."""
+    char = gen_char("vampire")
+    char.health = "." * 4
+    char.willpower = "." * 4
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)
+    assert char.log.times_impaired == 0
+
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 4)  # Physical
+    char.set_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 4)  # Still impaired
+    assert char.log.times_impaired == 1
+
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 0)
+    char.set_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 0)
+    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 4)
+    assert char.log.times_impaired == 2
+
+
+@pytest.mark.parametrize("log,count", [(True, 1), (False, 0)])
+def test_degeneration_impairment_is_counted(log: bool, count: int):
+    """Entering degeneration counts as becoming impaired, except in manual
+    updates."""
+    char = gen_char("vampire")
+    char.humanity = 7
+    char.willpower = "." * 10
+    char.add_stains(4, log=log)
+
+    assert char.degeneration
+    assert char.log.times_impaired == count
+
+
+def test_degeneration_filling_willpower_counts_once():
+    """Degeneration damage that also fills Willpower is one impairment."""
+    char = gen_char("vampire")
+    char.humanity = 7
+    char.willpower = "." * 3
+    char.set_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, 2)
+    char.add_stains(4, log=True)
+
+    assert Damage.NONE not in char.willpower
+    assert char.log.times_impaired == 1
+
+
 @pytest.fixture
 async def stored_char() -> AsyncGenerator[VChar]:
     """A character in the database, as the bot would load it."""
@@ -283,6 +399,42 @@ async def test_save_changes_writes_only_changes(stored_char: VChar):
     stored = await characters().find_one({"_id": stored_char.id})
     assert stored is not None
     assert (stored["name"], stored["hunger"]) == ("Renamed", 3)
+
+
+async def test_insert_snapshots_tracks():
+    """New characters start with their current tracks as the worst."""
+    char = gen_char("vampire")
+    char.health = "...//"
+    await char.insert()
+    try:
+        stored = await characters().find_one({"_id": char.id})
+        assert stored is not None
+        assert stored["log"]["worst_health"] == "...//"
+        assert stored["log"]["worst_willpower"] == char.willpower
+    finally:
+        await char.delete()
+
+
+def test_lighter_track_keeps_snapshot():
+    """A lighter track doesn't replace a worse snapshot."""
+    char = gen_char("vampire")
+    char.log.worst_health = "..xxx"
+    char.health = "...//"
+    char.note_worst_damage()
+
+    assert char.log.worst_health == "..xxx"
+
+
+def test_resize_keeps_snapshot():
+    """Shrinking a damaged track doesn't set a snapshot, even when saved."""
+    char = gen_char("vampire")
+    char.health = "." * 6 + "xx"
+    char.note_worst_damage()
+    char.adjust_tracker_rating(Tracker.HEALTH, 4)
+    char.pre_update()
+
+    assert char.health == "..xx"
+    assert char.log.worst_health == "......xx"
 
 
 async def test_returning_owner_is_not_culled(stored_char: VChar):

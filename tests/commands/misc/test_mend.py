@@ -18,6 +18,7 @@ async def test_no_superficial_damage_fails(vamp: VChar, ctx: AppCtx):
 
     with pytest.raises(errors.CharacterError, match="has no damage to mend"):
         await mend(ctx, vamp)
+    assert vamp.log.times_mended == 0
 
 
 @pytest.mark.parametrize(
@@ -46,6 +47,7 @@ async def test_vamp_mend_rouse_check(
         await mend(ctx, vamp)
 
     assert vamp.hunger == expected_hunger
+    assert vamp.log.times_mended == 1
     assert vamp.log.rouse_checks == 1
     assert vamp.log.rouse_successes == int(die_result >= 6)
     assert vamp.log.rouse_failures == int(die_result < 6)

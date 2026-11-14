@@ -58,6 +58,8 @@ class VChar(Document):
         ]
 
     VAMPIRE_TRAITS: ClassVar[list[str]] = ["Hunger", "Potency", "Surge", "Bane", "PowerBonus"]
+    MIN_TRACKER: ClassVar[int] = 3
+    MAX_TRACKER: ClassVar[int] = 25
     SPC_OWNER: ClassVar[int] = 0
 
     # Ownership
@@ -473,10 +475,8 @@ class VChar(Document):
         adjustments = []
 
         for track, delta in counter.items():
-            if delta:
+            if delta and self.adjust_tracker_rating(track, len(getattr(self, track)) + delta):
                 adjustments.append(track.title())
-                new_rating = len(getattr(self, track)) + delta
-                self.adjust_tracker_rating(track, new_rating)
 
         if adjustments:
             adjustment = " and ".join(adjustments)
@@ -598,25 +598,19 @@ class VChar(Document):
     # Specialized mutators
 
     def adjust_tracker_rating(self, track: Tracker, new_rating: int) -> bool:
-        """Adjust a character's Health or Willpower rating. Returns true if changed."""
-        if track == Tracker.HEALTH:
-            current_rating = len(self.health)
-            current_track = self.health
-        elif track == Tracker.WILLPOWER:
-            current_rating = len(self.willpower)
-            current_track = self.willpower
-
-        delta = new_rating - current_rating
-        if delta > 0:
-            # Increasing the track
-            new_track = Damage.NONE * delta + current_track
-        elif delta < 0:
-            # Decreasing the track
-            reduction = abs(delta)
-            new_track = current_track[reduction:]
-        else:
-            # No change
+        """Resize Health or Willpower, keeping its damage: boxes are added and
+        removed at the undamaged end. The rating is clamped to MIN_TRACKER and
+        MAX_TRACKER. Returns True if it changed."""
+        current_track: str = getattr(self, track)
+        new_rating = max(self.MIN_TRACKER, min(new_rating, self.MAX_TRACKER))
+        delta = new_rating - len(current_track)
+        if delta == 0:
             return False
+
+        if delta > 0:
+            new_track = Damage.NONE * delta + current_track
+        else:
+            new_track = current_track[-delta:]
 
         setattr(self, track, new_track)
         return True

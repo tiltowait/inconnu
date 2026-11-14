@@ -158,6 +158,17 @@ def test_tracker_trait_update(attribute: str, character: VChar):
     assert current == rating(tracker), "Other trait shouldn't trigger update"
 
 
+def test_tracker_trait_update_is_clamped(character: VChar):
+    """Lowering an Attribute can't shrink its tracker below the minimum."""
+    character.assign_traits({"Stamina": 5})  # The first rating doesn't resize
+    character.health = Damage.NONE * VChar.MIN_TRACKER
+
+    message, _ = character.assign_traits({"Stamina": 1})
+
+    assert len(character.health) == VChar.MIN_TRACKER
+    assert not message  # Nothing was adjusted
+
+
 # SET_AGGRAVATED_HP TESTS
 
 

@@ -550,12 +550,13 @@ async def test_changelog_fetch_failure(
     mock_fetch_changelog: AsyncMock,
     error: Exception,
 ):
-    """Nothing is shown or saved if the changelog can't be fetched."""
+    """Nothing is shown, and no version is saved, if the changelog can't be
+    fetched."""
     mock_fetch_changelog.side_effect = error
     await cog._show_changelog(changelog_ctx, "vr")
 
     assert not changelog_shown(changelog_ctx)
-    assert await saved_version(changelog_ctx) is None
+    assert await saved_version(changelog_ctx) == ""
 
 
 async def test_changelog_other_timeouts_raise(cog: CommandListener, changelog_ctx: MockCtx):

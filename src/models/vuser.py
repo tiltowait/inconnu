@@ -32,6 +32,7 @@ class VUser(Document):
         vuser = await VUser.find_one({"user": id})
         if vuser is None:
             vuser = cls(user=id)
+            await vuser.insert()
         return vuser
 
     class Settings:

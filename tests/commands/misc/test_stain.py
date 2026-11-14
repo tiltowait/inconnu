@@ -1,6 +1,6 @@
 """Stain application tests."""
 
-from unittest.mock import AsyncMock, PropertyMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import discord
 import pytest
@@ -414,3 +414,20 @@ async def test_stain_with_different_player(
     call_args = mock_character_display.await_args
     assert call_args is not None
     assert call_args.kwargs["owner"] == other_player
+
+
+async def test_stain_saved_if_display_fails(
+    vamp: VChar,
+    ctx: AppCtx,
+    mock_char_save: AsyncMock,
+    mock_character_display: AsyncMock,
+    user: discord.Member,
+):
+    """The Stains are saved before responding, so a failed response can't
+    lose them."""
+    mock_character_display.side_effect = discord.HTTPException(MagicMock(), "Failed")
+
+    with pytest.raises(discord.HTTPException):
+        await stain(ctx, vamp, 1, player=user)
+
+    mock_char_save.assert_awaited_once()

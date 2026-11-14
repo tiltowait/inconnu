@@ -56,11 +56,11 @@ async def stain(ctx: AppCtx, character: VChar, delta: int, *, player: discord.Me
         title = "Added" if delta > 0 else "Removed"
         title = f"{title} {pluralize(abs(delta), 'Stain')}"
 
+        await character.save_changes()
         inter = await inconnu.character.display(
             ctx, character, title, message=message, owner=player, fields=fields, footer=footer
         )
         await __report(ctx, inter, character, delta)
-        await character.save_changes()
 
     except ValueError as err:
         # Delta was 0, or clamping made it 0

@@ -40,9 +40,9 @@ async def remorse(ctx: AppCtx, character: VChar, minimum=1, lasombra_alt=False):
         return
 
     outcome = __remorse_roll(character, minimum, lasombra_alt)
+    await character.save_changes()
     inter = await __display_outcome(ctx, character, outcome)
     await __report(ctx, inter, character, outcome.remorseful)
-    await character.save_changes()
 
 
 async def __display_outcome(ctx: AppCtx, character: VChar, outcome: RemorseOutcome) -> AppResponse:

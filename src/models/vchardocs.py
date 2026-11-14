@@ -9,6 +9,8 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 import errors
 
+CAREER_STATS_LIVE = datetime(2026, 11, 14, tzinfo=UTC)
+
 
 class BlushState(IntEnum):
     """A character's Blush of Life status."""
@@ -74,6 +76,19 @@ class VCharLog(BaseModel):
 
     model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
 
+    # When each counter started; older characters' counts are incomplete
+    TRACKING_STARTED: ClassVar[dict[str, datetime]] = {
+        "deepest_degeneration": CAREER_STATS_LIVE,
+        "degenerations": CAREER_STATS_LIVE,
+        "frenzy_resisted": CAREER_STATS_LIVE,
+        "hunger_gained": CAREER_STATS_LIVE,
+        "hunts": CAREER_STATS_LIVE,
+        "rouse_failures": CAREER_STATS_LIVE,
+        "rouse_successes": CAREER_STATS_LIVE,
+        "surges": CAREER_STATS_LIVE,
+        "times_slaked": CAREER_STATS_LIVE,
+    }
+
     created: datetime = Field(default_factory=lambda: datetime.now(UTC))
     left: datetime | None = None  # The owner left the server; culled after 30 days
 
@@ -105,6 +120,18 @@ class VCharLog(BaseModel):
         self.rouse_successes += successes
         self.rouse_failures += failures
         self.hunger_gained += hunger_gained
+
+    @computed_field
+    @property
+    def incomplete_since(self) -> dict[str, datetime]:
+        """The counters that started after the character was created, so its
+        counts are incomplete, and when they started."""
+        # Dates loaded from the database are naive UTC
+        created = self.created
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+
+        return {field: date for field, date in self.TRACKING_STARTED.items() if created < date}
 
     @computed_field
     @property

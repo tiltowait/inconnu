@@ -1,9 +1,11 @@
 """VChar sub-document tests."""
 
+from datetime import UTC, datetime
+
 import pytest
 from beanie.odm.utils.encoder import Encoder
 
-from models.vchardocs import VCharLog
+from models.vchardocs import CAREER_STATS_LIVE, VCharLog
 
 
 @pytest.mark.parametrize(
@@ -41,3 +43,33 @@ def test_log_remorse_successes_serialized_not_stored():
 
     assert log.model_dump()["remorse_successes"] == 3
     assert "remorse_successes" not in Encoder().encode(log)
+
+
+@pytest.mark.parametrize(
+    "created,incomplete",
+    [
+        (datetime(2025, 1, 1, tzinfo=UTC), True),
+        (datetime(2025, 1, 1), True),  # Naive, as loaded from the database
+        (CAREER_STATS_LIVE, False),
+        (datetime(2027, 1, 1), False),
+    ],
+)
+def test_log_incomplete_since(created: datetime, incomplete: bool):
+    """Test that characters older than a counter flag it as incomplete."""
+    log = VCharLog(created=created)
+
+    if incomplete:
+        assert log.incomplete_since == VCharLog.TRACKING_STARTED
+    else:
+        assert log.incomplete_since == {}
+    assert "incomplete_since" in log.model_dump()
+    assert "incomplete_since" not in Encoder().encode(log)
+
+
+def test_log_tracking_started_names_real_fields():
+    """Test that every tracked counter is a field the API sends by that name."""
+    dumped = VCharLog().model_dump(by_alias=True)
+
+    for field in VCharLog.TRACKING_STARTED:
+        assert field in VCharLog.model_fields
+        assert field in dumped

@@ -284,6 +284,37 @@ async def test_bulk_award_transaction_fails(
     assert "no XP was awarded" in mock_error.await_args.args[1]
 
 
+async def test_bulk_award_failure_keeps_later_awards(
+    interaction: MockInteraction,
+    characters: dict[tuple[int, str], VChar],
+    mock_transaction: AsyncMock,
+    mock_error: AsyncMock,
+):
+    """After a failed transaction, a later award of the same XP is still
+    saved. The aborted saves mustn't leave it looking already saved."""
+    nadea = characters[(1, "nadea")]
+    await nadea.insert()
+    collection = VChar.get_pymongo_collection()
+    stored = await collection.find_one({"_id": nadea.id})
+    assert stored is not None
+
+    async def aborted(callback):
+        await callback(None)  # The saves run ...
+        await collection.replace_one({"_id": nadea.id}, stored)  # ... and are undone
+        raise OperationFailure("Write conflict")
+
+    mock_transaction.side_effect = aborted
+    await _submit(interaction, "5 xp <@1> Nadea")
+
+    nadea.apply_experience(5, "lifetime", "Weekly XP", ADMIN_ID)
+    await nadea.save_changes()
+
+    saved = await VChar.get(nadea.id)
+    assert saved is not None
+    assert (saved.experience.lifetime, saved.experience.unspent) == (5, 5)
+    await nadea.delete()
+
+
 @pytest.mark.usefixtures("mock_save")
 async def test_bulk_award_unexpected_error(
     interaction: MockInteraction,

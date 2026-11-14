@@ -1,15 +1,16 @@
 """Tests for inconnu/stats.py."""
 
 from collections.abc import Generator
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import discord
 import pytest
 from pymongo.asynchronous.collection import AsyncCollection
 
 import db
 import inconnu
-from inconnu.stats import _gen_roll, log_roll
-from models import Impairment
+from inconnu.stats import _gen_roll, guild_joined, guild_left, log_roll
+from models import Impairment, VGuild
 
 type MockCollection = AsyncMock
 
@@ -71,3 +72,20 @@ async def test_reroll_updates(rolls: MockCollection):
     assert update["$set"]["reroll"]["strategy"] == "failures"
     rolls.find_one.assert_not_awaited()
     rolls.insert_one.assert_not_awaited()
+
+
+async def test_rejoin_after_cull_recreates_guild():
+    """A guild culled after the bot left is created again when it returns."""
+    guild = MagicMock(spec=discord.Guild, id=2718281828)
+    guild.name = "Returning Guild"
+    VGuild.get_or_fetch.cache_clear()
+
+    await guild_joined(guild)
+    await guild_left(guild)
+    await VGuild.find({"guild": guild.id}).delete()  # Culled
+    await guild_joined(guild)
+
+    vguild = await VGuild.find_one({"guild": guild.id})
+    assert vguild is not None
+    assert vguild.active is True
+    await vguild.delete()

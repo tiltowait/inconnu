@@ -83,6 +83,10 @@ async def guild_left(guild: discord.Guild):
     vguild.leave()
 
     await vguild.save_changes()
+    # Culling may delete the guild before it returns, so a rejoin must look
+    # it up again. The cache key includes the class, which classmethod passes
+    # as an ordinary argument.
+    VGuild.get_or_fetch.cache_invalidate(VGuild, guild)
 
 
 async def guild_renamed(guild: discord.Guild, new_name: str):

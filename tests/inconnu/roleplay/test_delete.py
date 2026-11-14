@@ -8,12 +8,10 @@ import aiohttp
 import discord
 import pytest
 from beanie import PydanticObjectId
-from pymongo.asynchronous.collection import AsyncCollection
 
-import db
 from bot import InconnuBot
 from inconnu.roleplay.delete import DeletionModal, delete_message_chain, deletion_embed
-from models import RPPost
+from models import PostedHeader, RPPost
 from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
 from tests.inconnu.roleplay.conftest import USER_ID, MockCtx, MockShowError, PostFactory
 from utils.urls import post_url
@@ -56,11 +54,9 @@ def find_one() -> Generator[MockFindOne]:
 
 @pytest.fixture
 def headers() -> Generator[MockHeaders]:
-    """The header collection, which finds nothing unless told otherwise."""
-    collection = AsyncMock(spec=AsyncCollection)
-    collection.find_one.return_value = None
-    with patch.object(db, "headers", collection):
-        yield collection
+    """PostedHeader.find_one(), which finds nothing unless told otherwise."""
+    with patch.object(PostedHeader, "find_one", AsyncMock(return_value=None)) as mock:
+        yield mock
 
 
 @pytest.fixture
@@ -154,7 +150,7 @@ async def test_header_points_to_header_delete(
     show_error: MockShowError,
 ):
     """A standalone header is deleted with a different command."""
-    headers.find_one.return_value = {"message": MESSAGE_ID}
+    headers.return_value = MagicMock(spec=PostedHeader)
 
     await delete_message_chain(rp_ctx, message)
 

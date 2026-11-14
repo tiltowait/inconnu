@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any
 import discord
 from loguru import logger
 
-import db
 import errors
 from ctx import AppCtx, Channel
+from models import PostedHeader
 from models.rpheader import BLUSHED, NOT_BLUSHED
 from services.webhooks import ChannelWebhook
 from utils.text import clean_text
@@ -28,12 +28,12 @@ async def edit_location(ctx: AppCtx, message: discord.Message):
         await ctx.respond("This message isn't an RP header!", ephemeral=True)
         return
 
-    record = await db.headers.find_one({"message": message.id})
+    record = await PostedHeader.find_one(PostedHeader.message == message.id)
     if record is None:
         await ctx.respond("This message isn't an RP header!", ephemeral=True)
         return
 
-    owner = record["character"]["user"]
+    owner = record.character.user
     if ctx.user.id != owner:
         logger.debug("Unauthorized RP header update attempt by {}", ctx.user.name)
         await ctx.respond("This isn't your RP header!", ephemeral=True)

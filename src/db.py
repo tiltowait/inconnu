@@ -9,7 +9,7 @@ from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 
 from config import settings
-from models import RPPost, VChar, VGuild, VUser
+from models import PostedHeader, RPPost, VChar, VGuild, VUser
 
 _client = AsyncMongoClient(settings.mongo_url, serverSelectionTimeoutMS=1800)
 _db = _client.get_database()
@@ -18,7 +18,6 @@ _db = _client.get_database()
 characters = _db.characters
 command_log = _db.command_log
 guilds = _db.guilds
-headers = _db.headers
 rolls = _db.rolls
 rp_posts = _db.rp_posts
 supporters = _db.supporters
@@ -28,7 +27,7 @@ users = _db.users
 
 def models() -> list[type[Document]]:
     """Beanie database models."""
-    return [VChar, RPPost, VGuild, VUser]
+    return [VChar, RPPost, VGuild, VUser, PostedHeader]
 
 
 async def server_info() -> dict[str, Any]:

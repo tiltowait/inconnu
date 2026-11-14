@@ -10,6 +10,7 @@ import pytest
 import errors
 from bot import InconnuBot
 from inconnu.header.posted.location import LocationChangeModal, _resolve_webhook, edit_location
+from models import PostedHeader
 from services.webhooks import ChannelWebhook
 
 _RESOLVE_WEBHOOK = "inconnu.header.posted.location._resolve_webhook"
@@ -71,7 +72,7 @@ async def test_not_bot_message_and_no_webhook(
 
 async def test_no_db_record(ctx: MockCtx, no_webhook: MockResolve, message: discord.Message):
     """Bot message with no header record in the database is rejected."""
-    with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
+    with patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=None):
         await edit_location(ctx, message)
 
     ctx.respond.assert_awaited_once()
@@ -85,12 +86,12 @@ async def test_non_owner_rejected(
     no_webhook: MockResolve,
     message: discord.Message,
     other_user: discord.Member,
-    header_record: dict,
+    header_record: PostedHeader,
 ):
     """A user who doesn't own the header is rejected."""
     ctx.user = other_user
 
-    with patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record):
+    with patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record):
         await edit_location(ctx, message)
 
     ctx.respond.assert_awaited_once()
@@ -100,11 +101,11 @@ async def test_non_owner_rejected(
 
 
 async def test_owner_gets_modal(
-    ctx: MockCtx, no_webhook: MockResolve, message: discord.Message, header_record: dict
+    ctx: MockCtx, no_webhook: MockResolve, message: discord.Message, header_record: PostedHeader
 ):
     """The header owner receives the edit modal. The bot's own header needs no
     webhook lookup."""
-    with patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record):
+    with patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record):
         await edit_location(ctx, message)
 
     ctx.respond.assert_not_awaited()
@@ -116,10 +117,10 @@ async def test_webhook_message_with_record(
     ctx: MockCtx,
     mock_webhook: MockResolve,
     webhook_message: discord.Message,
-    header_record: dict,
+    header_record: PostedHeader,
 ):
     """A webhook-authored message with a valid record opens the modal."""
-    with patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record):
+    with patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record):
         await edit_location(ctx, webhook_message)
 
     ctx.respond.assert_not_awaited()
@@ -130,7 +131,7 @@ async def test_webhook_message_no_record(
     ctx: MockCtx, mock_webhook: MockResolve, webhook_message: discord.Message
 ):
     """A webhook-authored message with no db record is rejected."""
-    with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
+    with patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=None):
         await edit_location(ctx, webhook_message)
 
     ctx.respond.assert_awaited_once()

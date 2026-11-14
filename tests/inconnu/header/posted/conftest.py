@@ -4,7 +4,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
+from beanie import PydanticObjectId
 
+from models import PostedHeader
+from models.postedheader import HeaderOwner
 from services.webhooks import ChannelWebhook
 
 type MockCtx = AsyncMock
@@ -45,9 +48,14 @@ def webhook() -> discord.Webhook:
 
 
 @pytest.fixture
-def header_record(owner_user: discord.Member) -> dict:
+def header_record(owner_user: discord.Member) -> PostedHeader:
     """A database header record."""
-    return {"character": {"user": owner_user.id}, "message": 12345}
+    return PostedHeader(
+        character=HeaderOwner(guild=1, user=owner_user.id, charid=PydanticObjectId(), spc=False),
+        channel=2,
+        message=12345,
+        timestamp=discord.utils.utcnow(),
+    )
 
 
 @pytest.fixture

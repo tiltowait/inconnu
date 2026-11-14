@@ -7,6 +7,7 @@ import pytest
 
 import errors
 from inconnu.header.posted.delete import UNKNOWN_MESSAGE, delete_header
+from models import PostedHeader
 from services.webhooks import UNKNOWN_WEBHOOK
 
 _IS_APPROVED = "inconnu.header.posted.delete.is_approved_user"
@@ -81,7 +82,7 @@ async def test_random_message_rejected_when_webhook_error(
 
 async def test_bot_message_no_record(ctx: MockCtx, bot_message: MockMessage):
     """Bot message with no header record is rejected."""
-    with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
+    with patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=None):
         await delete_header(ctx, bot_message)
 
     ctx.respond.assert_awaited_once()
@@ -91,7 +92,7 @@ async def test_bot_message_no_record(ctx: MockCtx, bot_message: MockMessage):
 
 async def test_webhook_message_no_record(ctx: MockCtx, webhook_message: MockMessage):
     """Webhook message with no header record is rejected."""
-    with patch("db.headers.find_one", new_callable=AsyncMock, return_value=None):
+    with patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=None):
         await delete_header(ctx, webhook_message)
 
     ctx.respond.assert_awaited_once()
@@ -106,13 +107,13 @@ async def test_non_owner_non_admin_rejected(
     ctx: MockCtx,
     bot_message: MockMessage,
     other_user: discord.Member,
-    header_record: dict,
+    header_record: PostedHeader,
 ):
     """A non-owner, non-admin user is rejected."""
     ctx.user = other_user
 
     with (
-        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record),
         patch(_IS_APPROVED, return_value=False),
     ):
         await delete_header(ctx, bot_message)
@@ -127,11 +128,11 @@ async def test_non_owner_non_admin_rejected(
 
 
 async def test_owner_deletes_bot_message(
-    ctx: MockCtx, bot_message: MockMessage, header_record: dict
+    ctx: MockCtx, bot_message: MockMessage, header_record: PostedHeader
 ):
     """Owner deletes their own bot-authored header via message.delete()."""
     with (
-        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record),
         patch(_IS_APPROVED, return_value=True),
     ):
         await delete_header(ctx, bot_message)
@@ -147,13 +148,13 @@ async def test_admin_deletes_header(
     ctx: MockCtx,
     bot_message: MockMessage,
     other_user: discord.Member,
-    header_record: dict,
+    header_record: PostedHeader,
 ):
     """An admin can delete another user's header."""
     ctx.user = other_user
 
     with (
-        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record),
         patch(_IS_APPROVED, return_value=True),
     ):
         await delete_header(ctx, bot_message)
@@ -168,11 +169,11 @@ async def test_admin_deletes_header(
 
 
 async def test_bot_message_uses_message_delete(
-    ctx: MockCtx, bot_message: MockMessage, webhook: MockWebhook, header_record: dict
+    ctx: MockCtx, bot_message: MockMessage, webhook: MockWebhook, header_record: PostedHeader
 ):
     """Bot-authored header is deleted via message.delete(), not webhook."""
     with (
-        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record),
         patch(_IS_APPROVED, return_value=True),
     ):
         await delete_header(ctx, bot_message)
@@ -182,11 +183,11 @@ async def test_bot_message_uses_message_delete(
 
 
 async def test_webhook_message_uses_webhook_delete(
-    ctx: MockCtx, webhook_message: MockMessage, webhook: MockWebhook, header_record: dict
+    ctx: MockCtx, webhook_message: MockMessage, webhook: MockWebhook, header_record: PostedHeader
 ):
     """Webhook-authored header is deleted via webhook.delete_message()."""
     with (
-        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record),
         patch(_IS_APPROVED, return_value=True),
     ):
         await delete_header(ctx, webhook_message)
@@ -198,12 +199,14 @@ async def test_webhook_message_uses_webhook_delete(
 # --- Failure handling ---
 
 
-async def test_forbidden_on_delete(ctx: MockCtx, bot_message: MockMessage, header_record: dict):
+async def test_forbidden_on_delete(
+    ctx: MockCtx, bot_message: MockMessage, header_record: PostedHeader
+):
     """discord.Forbidden during deletion shows error message."""
     bot_message.delete = AsyncMock(side_effect=discord.errors.Forbidden(MagicMock(), "forbidden"))
 
     with (
-        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record),
         patch(_IS_APPROVED, return_value=True),
     ):
         await delete_header(ctx, bot_message)
@@ -224,7 +227,7 @@ def not_found(code: int) -> discord.NotFound:
 async def test_already_deleted(
     ctx: MockCtx,
     webhook: MockWebhook,
-    header_record: dict,
+    header_record: PostedHeader,
     fixture: str,
     request: pytest.FixtureRequest,
 ):
@@ -235,7 +238,7 @@ async def test_already_deleted(
     webhook.delete_message.side_effect = not_found(UNKNOWN_MESSAGE)
 
     with (
-        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record),
         patch(_IS_APPROVED, return_value=True),
     ):
         await delete_header(ctx, message)
@@ -244,14 +247,14 @@ async def test_already_deleted(
 
 
 async def test_missing_webhook_is_an_error(
-    ctx: MockCtx, webhook: MockWebhook, webhook_message: MockMessage, header_record: dict
+    ctx: MockCtx, webhook: MockWebhook, webhook_message: MockMessage, header_record: PostedHeader
 ):
     """If the webhook itself is gone, it's forgotten, and the failure is raised
     for reporting."""
     webhook.delete_message.side_effect = not_found(UNKNOWN_WEBHOOK)
 
     with (
-        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record),
         patch(_IS_APPROVED, return_value=True),
         pytest.raises(discord.NotFound),
     ):
@@ -262,12 +265,12 @@ async def test_missing_webhook_is_an_error(
 
 
 async def test_never_creates_webhook(
-    ctx: MockCtx, webhook_message: MockMessage, header_record: dict
+    ctx: MockCtx, webhook_message: MockMessage, header_record: PostedHeader
 ):
     """Deleting looks up the existing webhook rather than preparing one, which
     could create a webhook in the channel."""
     with (
-        patch("db.headers.find_one", new_callable=AsyncMock, return_value=header_record),
+        patch.object(PostedHeader, "find_one", new_callable=AsyncMock, return_value=header_record),
         patch(_IS_APPROVED, return_value=True),
     ):
         await delete_header(ctx, webhook_message)

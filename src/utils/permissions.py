@@ -8,8 +8,8 @@ from ctx import AppCtx, AppInvocation
 from models import VGuild
 
 
-async def is_approved_user(ctx: AppInvocation, owner: discord.User | None = None) -> bool:
-    """Check if the user owns the object or is a Storyteller."""
+async def is_approved_user(ctx: AppInvocation, owner: int | None = None) -> bool:
+    """Check if the user owns the object (owner is a user ID) or is a Storyteller."""
     if ctx.user is None:
         raise ValueError("Unexpectedly got null user")
 

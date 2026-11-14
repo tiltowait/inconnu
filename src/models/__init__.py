@@ -1,6 +1,7 @@
 """Top-level models package for database documents."""
 
 from models.impairment import IMPAIRMENT_DICE, Impairment, ImpairmentCategory, RollCategory
+from models.postedheader import PostedHeader
 from models.rpheader import HeaderSubdoc
 from models.rppost import RPPost
 from models.vchar import VChar
@@ -16,6 +17,7 @@ __all__ = (
     "HiddenDicePerms",
     "Impairment",
     "ImpairmentCategory",
+    "PostedHeader",
     "RPPost",
     "ResonanceMode",
     "RollCategory",

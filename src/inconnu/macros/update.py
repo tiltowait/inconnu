@@ -41,7 +41,7 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
 
         macro_name = character.update_macro(macro, macro_update)
         await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
-        await character.save()
+        await character.save_changes()
 
     except (
         errors.AmbiguousTraitError,

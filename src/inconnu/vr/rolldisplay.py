@@ -157,7 +157,7 @@ class RollDisplay(EphemeralSafeView):
                     fields=[("New WP", inconnu.character.DisplayField.WILLPOWER)],
                     ephemeral=self.hide_dice,
                 ),
-                self.character.save(),
+                self.character.save_changes(),
             )
             await services.post_update(
                 ctx=interaction,

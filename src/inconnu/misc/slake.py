@@ -62,7 +62,7 @@ async def perform_slake(ctx: AppInvocation, character: VChar, amount: int, **kwa
         )
         msg = await get_message(inter)
         await asyncio.gather(
-            character.save(),
+            character.save_changes(),
             services.post_update(
                 ctx=ctx,
                 msg=msg,

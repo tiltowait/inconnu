@@ -32,7 +32,7 @@ async def remove_entry(
         # Log entries are presented to the user in reverse, so we need the
         # negative index
         entry_to_delete = character.experience.log.pop(-index)
-        await character.save()  # Before responding, so a failed response can't hide the change
+        await character.save_changes()  # Before responding, so a failed response can't hide the change
 
         embed = _get_embed(player, character, entry_to_delete)
         view = _ExperienceView(character, player, entry_to_delete)
@@ -113,7 +113,7 @@ class _ExperienceView(DisablingView):
             owner=self.player,
             message=message,
         )
-        await self.character.save()
+        await self.character.save_changes()
 
         user = inter.user
         await services.post_update(

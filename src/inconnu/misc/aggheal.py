@@ -47,7 +47,7 @@ async def aggheal(ctx, character):
         else:
             update_msg += "."
 
-    inter, _ = await asyncio.gather(__display_outcome(ctx, character, outcome), character.save())
+    inter, _ = await asyncio.gather(__display_outcome(ctx, character, outcome), character.save_changes())
     msg = await get_message(inter)
     await services.post_update(
         ctx=ctx,

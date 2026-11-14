@@ -92,7 +92,7 @@ async def frenzy(
 
     msg = await get_message(inter)
     await __generate_report_task(ctx, msg, character, passed)
-    await character.save()
+    await character.save_changes()
 
 
 def __get_embed(

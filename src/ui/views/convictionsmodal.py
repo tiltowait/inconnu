@@ -74,7 +74,7 @@ class ConvictionsModal(Modal):
 
         self.character.convictions = new_convictions
 
-        tasks: list[Awaitable[object]] = [self.character.save()]
+        tasks: list[Awaitable[object]] = [self.character.save_changes()]
         if self.report:
             tasks.append(
                 interaction.response.send_message(

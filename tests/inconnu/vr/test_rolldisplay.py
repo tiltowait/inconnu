@@ -119,7 +119,7 @@ def mock_char_display() -> Iterator[AsyncMock]:
 @pytest.fixture(autouse=True)
 def mock_char_save() -> Iterator[AsyncMock]:
     """Prevent character saves."""
-    with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock:
+    with patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mock:
         yield mock
 
 

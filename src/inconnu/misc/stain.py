@@ -55,7 +55,7 @@ async def stain(ctx, character, delta, *, player):
             ctx, character, title, message=message, owner=player, fields=fields, footer=footer
         )
         await __report(ctx, inter, character, delta)
-        await character.save()
+        await character.save_changes()
 
     except ValueError as err:
         # Delta was 0, or clamping made it 0

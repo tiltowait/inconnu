@@ -118,5 +118,5 @@ class _RPHeader(discord.ui.DesignerModal):
             interaction.response.send_message(
                 f"Updated **{self.character.name}'s** RP header!", ephemeral=True
             ),
-            self.character.save(),
+            self.character.save_changes(),
         )

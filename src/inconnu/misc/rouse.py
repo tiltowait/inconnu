@@ -102,7 +102,7 @@ async def perform_rouse(
 
         inter, _ = await asyncio.gather(
             __display_outcome(ctx, character, outcome, purpose, oblivion, message, ephemeral),
-            character.save(),
+            character.save_changes(),
         )
         msg = await get_message(inter)
 
@@ -210,7 +210,7 @@ async def __damage_ghoul(ctx: AppInvocation, ghoul: VChar, ephemeral: bool):
         footer="V5 Core, p.234",
         ephemeral=ephemeral,
     )
-    await ghoul.save()
+    await ghoul.save_changes()
 
 
 async def __rouse_roll(

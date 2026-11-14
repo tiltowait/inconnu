@@ -80,7 +80,7 @@ async def delete_character_faceclaims(character: VChar):
     try:
         res = await _delete(path=f"/character/{character.id_str}")
         del character.profile.images[:]
-        await character.save()
+        await character.save_changes()
         logger.info("API: {}", res)
     except Exception as err:
         raise ApiError(str(err))

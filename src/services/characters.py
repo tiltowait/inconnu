@@ -203,7 +203,7 @@ class CharacterManager:
                 )
 
             character.user = new_owner.id
-            await character.save()
+            await character.save_changes()
 
             logger.info(
                 "Transferred '{}' from {} to {} on {}",
@@ -225,7 +225,7 @@ class CharacterManager:
             for char in self._characters:
                 if char.user == player.id and char.guild == player.guild.id:
                     char.stat_log.left = datetime.now(UTC)
-                    tasks.append(char.save())
+                    tasks.append(char.save_changes())
 
             if tasks:
                 logger.info(
@@ -252,7 +252,7 @@ class CharacterManager:
                     and char.stat_log.left is not None
                 ):
                     char.stat_log.left = None
-                    tasks.append(char.save())
+                    tasks.append(char.save_changes())
 
             if tasks:
                 logger.info(

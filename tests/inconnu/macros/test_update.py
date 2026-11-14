@@ -92,7 +92,7 @@ async def test_emptying_macro_refused(ctx: AppCtx, rouse_only: VChar, mock_error
 
 async def test_removing_rouses_with_pool(ctx: AppCtx, rouse_only: VChar, mock_error: AsyncMock):
     """Removing the Rouse Checks is fine if the same update adds a pool."""
-    with patch.object(VChar, "save", new_callable=AsyncMock):
+    with patch.object(VChar, "save_changes", new_callable=AsyncMock):
         await update(ctx, rouse_only, "rouse", "rouses=0 pool=strength")
 
     mock_error.assert_not_awaited()

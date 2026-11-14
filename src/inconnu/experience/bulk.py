@@ -169,6 +169,8 @@ class _BulkModal(Modal):
         """Save the awarded characters in the transaction. Retries save them
         again, which is harmless."""
         for character, _ in self.xp_tasks:
+            # Not save_changes(): a retry would find nothing changed since the
+            # aborted attempt and commit without the XP
             await character.save(session=session)
 
     def _chunk_fields(self):

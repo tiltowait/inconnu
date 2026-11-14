@@ -56,7 +56,7 @@ async def delete(ctx: AppCtx, char_name: str | None, traits_input: str, discipli
 
     outcome = __delete_traits(character, *traits)
     await __outcome_embed(ctx, character, outcome, disciplines)
-    await character.save()
+    await character.save_changes()
 
 
 async def __outcome_embed(

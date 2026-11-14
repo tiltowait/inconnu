@@ -351,7 +351,7 @@ async def test_update_rollback_complex(
         patch(
             "models.vchar.VChar.rollback", new_callable=Mock, wraps=vamp.rollback
         ) as mock_rollback,
-        patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock_save,
+        patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mock_save,
     ):
         # Multiple valid changes followed by invalid parameter
         # Note: update() catches exceptions and shows help, doesn't raise
@@ -491,6 +491,7 @@ async def test_update_with_custom_fields(
     vamp: VChar,
     ctx: AppCtx,
     mock_update_display: AsyncMock,
+    mock_char_save: AsyncMock,
 ):
     """Test update with custom display fields."""
     fields = [(field.value, field) for field in (DisplayField.HEALTH, DisplayField.HUNGER)]

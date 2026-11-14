@@ -48,7 +48,7 @@ async def award_or_deduct(
         return
 
     character.apply_experience(amount, scope, reason, ctx.author.id)
-    await character.save()  # Before responding, so a failed response can't hide the change
+    await character.save_changes()  # Before responding, so a failed response can't hide the change
 
     if reason[-1] not in ".!?":
         reason += "."

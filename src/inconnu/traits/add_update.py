@@ -160,7 +160,7 @@ async def __display_results(ctx, outcome, character: VChar, disciplines: bool):
 
     # Nothing changed if nothing was assigned, so the rest isn't needed
     if outcome.assigned:
-        tasks.append(character.save())
+        tasks.append(character.save_changes())
 
         # Message for the update channel
         term = "Traits" if not disciplines else "Disciplines"

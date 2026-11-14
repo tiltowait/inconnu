@@ -23,7 +23,7 @@ from models import VChar, VGuild
 from services import CharacterManager
 from tests.characters import gen_char
 
-VCHAR_SAVE = "models.vchar.VChar.save"
+VCHAR_SAVE = "models.vchar.VChar.save_changes"
 STORYTELLER_ROLE = 1234
 
 type MockAsyncFn = AsyncMock
@@ -542,7 +542,7 @@ async def test_mark_inactive(
     u11: Member,
 ):
     """Marking a player inactive saves each character and keeps them cached."""
-    with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock_save:
+    with patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mock_save:
         await mgrf.mark_inactive(u11)
         assert mock_save.await_count == 2
         chars = await mgrf.fetchall(g1, u11)
@@ -568,7 +568,7 @@ async def test_mark_active(
     await mgrf.mark_inactive(u11)
     await mgrf.mark_inactive(u21)
 
-    with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock_save:
+    with patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mock_save:
         await mgrf.mark_active(u21)
         assert mock_save.await_count == 1
 

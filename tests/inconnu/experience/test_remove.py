@@ -52,7 +52,7 @@ def mock_display() -> Iterator[MockDisplay]:
         patch.object(remove_module, "display", new_callable=AsyncMock) as display,
         patch.object(remove_module, "get_message", new_callable=AsyncMock),
         patch.object(remove_module.services, "post_update", new_callable=AsyncMock),
-        patch.object(VChar, "save", new_callable=AsyncMock),
+        patch.object(VChar, "save_changes", new_callable=AsyncMock),
     ):
         yield display
 
@@ -285,7 +285,7 @@ async def test_apply_xp_finishes(
     """Pressing removes the button, saves, reports the change, and ends the view."""
     view = _press_view(character, "award_unspent", 3)
     with (
-        patch.object(VChar, "save", new_callable=AsyncMock) as save,
+        patch.object(VChar, "save_changes", new_callable=AsyncMock) as save,
         patch.object(remove_module.services, "post_update", new_callable=AsyncMock) as post,
     ):
         await view.apply_xp(interaction)

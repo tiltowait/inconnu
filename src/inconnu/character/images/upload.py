@@ -42,7 +42,7 @@ async def upload_image(ctx: AppCtx, character: VChar, image: discord.Attachment)
     embed.set_footer(text="View your images with /character images.")
 
     await ctx.respond(embed=embed, ephemeral=True)
-    await character.save()
+    await character.save_changes()
 
     # We maintain a log of all image uploads to protect ourself against
     # potential legal claims if someone uploads something illegal

@@ -107,7 +107,7 @@ async def mock_defer() -> AsyncGenerator[AsyncMock]:
 
 @pytest.fixture
 def mock_char_save():
-    with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mocked:
+    with patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mocked:
         yield mocked
 
 

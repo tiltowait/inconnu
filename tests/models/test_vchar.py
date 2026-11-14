@@ -1,8 +1,10 @@
 """Tests for models/vchar.py."""
 
-from datetime import UTC, datetime
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
 
 import pytest
+from pymongo.asynchronous.collection import AsyncCollection
 
 from constants import Damage
 from models import BlushState, VChar
@@ -265,3 +267,39 @@ def test_log_keeps_legacy_keys():
 
     assert (log.created, log.rouse, log.left) == (created, 2, None)
     assert log.model_dump()["hunger"] == 3
+
+
+@pytest.fixture
+async def stored_char() -> AsyncGenerator[VChar]:
+    """A character in the database, as the bot would load it."""
+    char = gen_char("vampire")
+    await char.insert()
+    yield char
+    await char.delete()
+
+
+def characters() -> AsyncCollection:
+    """The raw characters collection, for changes the document doesn't see."""
+    return VChar.get_pymongo_collection()
+
+
+async def test_save_changes_writes_only_changes(stored_char: VChar):
+    """Saving changes leaves fields changed elsewhere alone."""
+    await characters().update_one({"_id": stored_char.id}, {"$set": {"name": "Renamed"}})
+    stored_char.hunger = 3
+    await stored_char.save_changes()
+
+    stored = await characters().find_one({"_id": stored_char.id})
+    assert stored is not None
+    assert (stored["name"], stored["hunger"]) == ("Renamed", 3)
+
+
+async def test_returning_owner_is_not_culled(stored_char: VChar):
+    """Clearing the departure date stores it, so culling skips the character."""
+    stored_char.stat_log.left = datetime.now(UTC) - timedelta(days=60)
+    await stored_char.save_changes()
+    stored_char.stat_log.left = None
+    await stored_char.save_changes()
+
+    culled = {"_id": stored_char.id, "log.left": {"$lt": datetime.now(UTC) - timedelta(days=30)}}
+    assert await characters().find_one(culled) is None

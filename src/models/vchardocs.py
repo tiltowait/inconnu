@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 import errors
 
-CAREER_STATS_LIVE = datetime(2026, 11, 14, tzinfo=UTC)
+CAREER_STATS_LIVE = datetime(2026, 11, 14, 20, tzinfo=UTC)  # Noon PST
 
 
 class BlushState(IntEnum):

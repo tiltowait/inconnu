@@ -47,7 +47,9 @@ async def aggheal(ctx, character):
         else:
             update_msg += "."
 
-    inter, _ = await asyncio.gather(__display_outcome(ctx, character, outcome), character.save_changes())
+    inter, _ = await asyncio.gather(
+        __display_outcome(ctx, character, outcome), character.save_changes()
+    )
     msg = await get_message(inter)
     await services.post_update(
         ctx=ctx,
@@ -78,7 +80,7 @@ async def __heal(character: VChar) -> AggHealOutcome:
     character.health = Damage.NONE + character.health[:-1]
 
     if character.is_vampire:
-        character.stat_log.rouse += 3
+        character.log.rouse += 3
 
     return AggHealOutcome(gain=hunger_gain, torpor=torpor)
 

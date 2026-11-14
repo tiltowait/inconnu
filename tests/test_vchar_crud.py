@@ -238,7 +238,7 @@ async def test_pre_insert_hook_blush_initialization():
 
 
 async def test_pre_insert_hook_creation_timestamp():
-    """Test that pre_insert adds creation timestamp to stat_log."""
+    """Test that pre_insert adds creation timestamp to log."""
     char = VChar(
         guild=999,
         user=999,
@@ -254,12 +254,12 @@ async def test_pre_insert_hook_creation_timestamp():
     char_id = char.id
 
     # Verify timestamp in memory
-    assert char.stat_log.created is not None
+    assert char.log.created is not None
 
     # Verify timestamp persisted
     fetched = await VChar.get(char_id)
     assert fetched is not None
-    assert fetched.stat_log.created is not None
+    assert fetched.log.created is not None
 
     await char.delete()
 

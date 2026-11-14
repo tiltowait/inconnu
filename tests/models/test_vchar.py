@@ -246,7 +246,7 @@ def test_damage_taken_is_counted():
     char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 2)
     char.set_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 1)
 
-    log = char.stat_log
+    log = char.log
     assert (log.health_superficial, log.health_aggravated) == (2, 0)
     assert (log.willpower_superficial, log.willpower_aggravated) == (0, 1)
 
@@ -257,7 +257,7 @@ def test_healing_is_not_counted():
     char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)
     char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 1)
 
-    assert char.stat_log.health_superficial == 3
+    assert char.log.health_superficial == 3
 
 
 def test_log_keeps_legacy_keys():
@@ -296,9 +296,9 @@ async def test_save_changes_writes_only_changes(stored_char: VChar):
 
 async def test_returning_owner_is_not_culled(stored_char: VChar):
     """Clearing the departure date stores it, so culling skips the character."""
-    stored_char.stat_log.left = datetime.now(UTC) - timedelta(days=60)
+    stored_char.log.left = datetime.now(UTC) - timedelta(days=60)
     await stored_char.save_changes()
-    stored_char.stat_log.left = None
+    stored_char.log.left = None
     await stored_char.save_changes()
 
     culled = {"_id": stored_char.id, "log.left": {"$lt": datetime.now(UTC) - timedelta(days=30)}}

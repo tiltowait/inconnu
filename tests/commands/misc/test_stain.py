@@ -80,7 +80,7 @@ async def test_add_stains_no_degeneration(
     await stain(ctx, vamp, delta, player=ctx.user)
 
     assert vamp.stains == expected_stains
-    assert vamp.stat_log.stains == delta
+    assert vamp.log.stains == delta
     mock_char_save.assert_awaited()
 
     # Verify display was called
@@ -121,7 +121,7 @@ async def test_remove_stains(
     await stain(ctx, vamp, delta, player=ctx.user)
 
     assert vamp.stains == expected_stains
-    assert vamp.stat_log.stains == 0
+    assert vamp.log.stains == 0
     mock_char_save.assert_awaited()
 
     # Verify display title

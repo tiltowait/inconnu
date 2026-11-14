@@ -224,7 +224,7 @@ class CharacterManager:
             tasks = []
             for char in self._characters:
                 if char.user == player.id and char.guild == player.guild.id:
-                    char.stat_log.left = datetime.now(UTC)
+                    char.log.left = datetime.now(UTC)
                     tasks.append(char.save_changes())
 
             if tasks:
@@ -249,9 +249,9 @@ class CharacterManager:
                 if (
                     char.user == player.id
                     and char.guild == player.guild.id
-                    and char.stat_log.left is not None
+                    and char.log.left is not None
                 ):
-                    char.stat_log.left = None
+                    char.log.left = None
                     tasks.append(char.save_changes())
 
             if tasks:

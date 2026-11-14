@@ -75,7 +75,7 @@ async def frenzy(
         title = "Failure!"
         message = "You succumb to the Beast."
         color = 0x5C0700
-        character.stat_log.frenzy += 1
+        character.log.frenzy += 1
 
     footer.append("Dice: " + ", ".join(map(str, outcome.normal.dice)))
     footer_text = "\n".join(footer)

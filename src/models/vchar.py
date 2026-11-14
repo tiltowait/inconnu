@@ -82,12 +82,12 @@ class VChar(Document):
     # Misc/convenience
     macros: list[VCharMacro] = Field(default_factory=list)
     experience: VCharExperience = Field(default_factory=VCharExperience)
-    stat_log: VCharLog = Field(alias="log", default_factory=VCharLog)
+    log: VCharLog = Field(default_factory=VCharLog)
 
     @before_event(Insert)
     def pre_insert(self):
         """Last-minute prep."""
-        self.stat_log.created = datetime.now(UTC)
+        self.log.created = datetime.now(UTC)
 
         if self.splat == "thinblood":
             self.splat = "thin-blood"
@@ -677,11 +677,11 @@ class VChar(Document):
         """Count damage taken. Healing isn't counted."""
         superficial, aggravated = max(superficial, 0), max(aggravated, 0)
         if tracker == Tracker.HEALTH:
-            self.stat_log.health_superficial += superficial
-            self.stat_log.health_aggravated += aggravated
+            self.log.health_superficial += superficial
+            self.log.health_aggravated += aggravated
         else:
-            self.stat_log.willpower_superficial += superficial
-            self.stat_log.willpower_aggravated += aggravated
+            self.log.willpower_superficial += superficial
+            self.log.willpower_aggravated += aggravated
 
     def apply_damage(self, tracker: Tracker, severity: Damage, delta: int) -> bool:
         """

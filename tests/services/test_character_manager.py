@@ -549,10 +549,10 @@ async def test_mark_inactive(
         assert len(chars) == 2
 
         for char in chars:
-            assert char.stat_log.left is not None
+            assert char.log.left is not None
 
         # Extra thoroughness ...
-        left_count = len([c for c in mgrf._characters if c.stat_log.left is not None])
+        left_count = len([c for c in mgrf._characters if c.log.left is not None])
         assert left_count == len(chars)
 
 
@@ -574,10 +574,10 @@ async def test_mark_active(
 
         # The g1 characters must remain inactive
         for char in await mgrf.fetchall(g1, u11):
-            assert char.stat_log.left is not None
+            assert char.log.left is not None
 
         for char in await mgrf.fetchall(g2, u21):
-            assert char.stat_log.left is None
+            assert char.log.left is None
 
         await mgrf.mark_active(u11)
         assert mock_save.await_count == 3
@@ -585,10 +585,10 @@ async def test_mark_active(
         assert len(chars) == 2
 
         for char in chars:
-            assert char.stat_log.left is None
+            assert char.log.left is None
 
         # Extra thoroughness ...
-        not_left_count = len([c for c in mgrf._characters if c.stat_log.left is None])
+        not_left_count = len([c for c in mgrf._characters if c.log.left is None])
         assert not_left_count == len(mgrf._characters)
 
 

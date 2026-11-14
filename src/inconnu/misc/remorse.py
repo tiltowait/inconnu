@@ -92,11 +92,11 @@ def __remorse_roll(character: VChar, minimum: int, lasombra_alt: bool) -> Remors
 
     if not successful:
         character.humanity -= 1
-        character.stat_log.degen += 1
+        character.log.degen += 1
     else:
         character.stains = 0
 
-    character.stat_log.remorse += 1
+    character.log.remorse += 1
 
     return RemorseOutcome(
         remorseful=successful,

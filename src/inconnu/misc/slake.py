@@ -43,7 +43,7 @@ async def perform_slake(ctx: AppInvocation, character: VChar, amount: int, **kwa
     else:
         old_hunger = character.hunger
         character.hunger -= slaked
-        character.stat_log.slake += slaked
+        character.log.slake += slaked
 
         if old_hunger >= 4:
             view = ui.views.FrenzyView(character, 3, ctx.user.id)

@@ -18,7 +18,6 @@ _db = _client.get_database()
 characters = _db.characters
 command_log = _db.command_log
 guilds = _db.guilds
-headers = _db.headers
 rolls = _db.rolls
 rp_posts = _db.rp_posts
 supporters = _db.supporters

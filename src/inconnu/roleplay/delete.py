@@ -5,11 +5,10 @@ from typing import TYPE_CHECKING, Any, cast
 import discord
 from loguru import logger
 
-import db
 import errors
 import ui
 from ctx import AppCtx
-from models import RPPost
+from models import PostedHeader, RPPost
 from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
 from utils.urls import post_url
 
@@ -42,7 +41,7 @@ async def _fetch_rp_post(ctx: AppCtx, message: discord.Message) -> tuple[Channel
 
     rp_post = await RPPost.find_one({"id_chain": message.id})
     if rp_post is None:
-        if await db.headers.find_one({"message": message.id}) is not None:
+        if await PostedHeader.find_one(PostedHeader.message == message.id) is not None:
             raise ValueError("Use `Header: Delete` for this.")
         raise ValueError("Something went wrong. Ask a moderator to delete the message for you.")
 

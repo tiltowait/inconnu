@@ -3,17 +3,17 @@
 from typing import TYPE_CHECKING
 
 import discord
+from beanie.operators import In, Or
 from discord import option
 from discord.commands import OptionChoice, SlashCommandGroup, slash_command
 from discord.ext import commands
 from loguru import logger
-from pymongo import DeleteOne
 
-import db
 import inconnu
 from ctx import AppCtx
 from inconnu.options import char_option
 from interface import CommandCog
+from models import PostedHeader
 from utils.discord_helpers import raw_bulk_delete_handler, raw_message_delete_handler
 from utils.urls import docs_url
 
@@ -107,12 +107,12 @@ class HeaderCog(CommandCog, name="Headers"):  # pyright: ignore[reportCallIssue,
         deletions = raw_bulk_delete_handler(
             payload,
             self.bot,
-            lambda id: DeleteOne({"message": id}),
+            lambda id: id,
             author_comparator=lambda author: author.id in self.bot.webhook_cache.webhook_ids,
         )
         if deletions:
             logger.debug("HEADER: Deleting {} potential header messages", len(deletions))
-            await db.headers.bulk_write(deletions)
+            await PostedHeader.find(In(PostedHeader.message, deletions)).delete()
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, raw_message: discord.RawMessageDeleteEvent):
@@ -121,7 +121,7 @@ class HeaderCog(CommandCog, name="Headers"):  # pyright: ignore[reportCallIssue,
         async def deletion_handler(message_id: int):
             """Delete the header record."""
             logger.debug("HEADER: Deleting possible header")
-            await db.headers.delete_one({"message": message_id})
+            await PostedHeader.find_one(PostedHeader.message == message_id).delete()
 
         await raw_message_delete_handler(
             raw_message,
@@ -134,13 +134,15 @@ class HeaderCog(CommandCog, name="Headers"):  # pyright: ignore[reportCallIssue,
     async def on_guild_channel_delete(self, channel: discord.abc.GuildChannel):
         """Remove header records from the deleted channel and its threads."""
         logger.info("Removing header records from deleted channel {}", channel.name)
-        await db.headers.delete_many({"$or": [{"channel": channel.id}, {"parent": channel.id}]})
+        await PostedHeader.find(
+            Or(PostedHeader.channel == channel.id, PostedHeader.parent == channel.id)
+        ).delete()
 
     @commands.Cog.listener()
     async def on_raw_thread_delete(self, payload: discord.RawThreadDeleteEvent):
         """Remove header records from the deleted thread."""
         logger.info("Removing header records from deleted thread {}", payload.thread_id)
-        await db.headers.delete_many({"channel": payload.thread_id})
+        await PostedHeader.find(PostedHeader.channel == payload.thread_id).delete()
 
 
 def setup(bot: InconnuBot):

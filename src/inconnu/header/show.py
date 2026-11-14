@@ -3,11 +3,11 @@
 import discord
 from loguru import logger
 
-import db
 import errors
 import ui
 from ctx import AppCtx
-from models import VChar
+from models import PostedHeader, VChar
+from models.postedheader import HeaderOwner
 from models.rpheader import HeaderSubdoc
 from services.haven import haven
 from utils import get_avatar
@@ -72,22 +72,23 @@ async def register_header(
     thread deletion event."""
     if ctx.guild is None or ctx.user is None or ctx.channel is None:
         raise ValueError("Headers can only be registered in guild channels")
+    if character.id is None:
+        raise errors.CharacterError(f"{character.name} has somehow not been saved!")
 
-    record = {
-        "character": {
-            "guild": ctx.guild.id,
-            "user": ctx.user.id,
-            "charid": character.id,
-            "spc": character.is_spc,
-        },
-        "channel": ctx.channel.id,
-        "message": message.id,
-        "timestamp": discord.utils.utcnow(),
-    }
-    if isinstance(ctx.channel, discord.Thread):
-        record["parent"] = ctx.channel.parent_id
-
-    await db.headers.insert_one(record)
+    parent = ctx.channel.parent_id if isinstance(ctx.channel, discord.Thread) else None
+    header = PostedHeader(
+        character=HeaderOwner(
+            guild=ctx.guild.id,
+            user=ctx.user.id,
+            charid=character.id,
+            spc=character.is_spc,
+        ),
+        channel=ctx.channel.id,
+        message=message.id,
+        parent=parent,
+        timestamp=discord.utils.utcnow(),
+    )
+    await header.insert()
 
 
 def header_embed(header: HeaderSubdoc, character: VChar, webhook: bool) -> discord.Embed:

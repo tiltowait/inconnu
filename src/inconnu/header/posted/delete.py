@@ -3,9 +3,9 @@
 import discord
 from loguru import logger
 
-import db
 import errors
 from ctx import AppCtx
+from models import PostedHeader
 from services.webhooks import UNKNOWN_WEBHOOK
 from utils.permissions import is_approved_user
 
@@ -26,12 +26,12 @@ async def delete_header(ctx: AppCtx, message: discord.Message):
         await ctx.respond("This is not an RP header.", ephemeral=True)
         return
 
-    record = await db.headers.find_one({"message": message.id})
+    record = await PostedHeader.find_one(PostedHeader.message == message.id)
     if record is None:
         await ctx.respond("This is not an RP header.", ephemeral=True)
         return
 
-    owner = record["character"]["user"]
+    owner = record.character.user
     if not await is_approved_user(ctx, owner=owner):
         logger.debug("Unauthorized header deletion attempt by {}", ctx.user.name)
         await ctx.respond("You don't have permission to delete this RP header.", ephemeral=True)

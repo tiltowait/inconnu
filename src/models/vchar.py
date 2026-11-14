@@ -650,18 +650,25 @@ class VChar(Document):
             # No need to do anything if the track is unchanged
             return
 
+        was_impaired = self.impairment_state != Impairment.NONE
         if tracker == Tracker.HEALTH:
             self.health = new_track
         else:
             self.willpower = new_track
 
         # Log it!
+        self._count_impairment(was_impaired)
         old_agg = cur_track.count(Damage.AGGRAVATED)
         old_sup = cur_track.count(Damage.SUPERFICIAL)
         new_agg = new_track.count(Damage.AGGRAVATED)
         new_sup = new_track.count(Damage.SUPERFICIAL)
 
         self._count_damage(tracker, new_sup - old_sup, new_agg - old_agg, new_track)
+
+    def _count_impairment(self, was_impaired: bool):
+        """Count the character becoming impaired, if they weren't already."""
+        if not was_impaired and self.impairment_state != Impairment.NONE:
+            self.log.times_impaired += 1
 
     @staticmethod
     def damage_severity(track: str) -> int:
@@ -736,7 +743,11 @@ class VChar(Document):
                 self.log.degenerations += 1
             self.log.deepest_degeneration = max(self.log.deepest_degeneration, new_overflow)
 
+        # After the damage, which counts any impairment it causes itself
+        was_impaired = self.impairment_state != Impairment.NONE
         self.stains = new_stains
+        if log:
+            self._count_impairment(was_impaired)
 
         return damage
 

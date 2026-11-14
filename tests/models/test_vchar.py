@@ -297,6 +297,49 @@ def test_worse_damage_replaces_worst():
     assert char.log.worst_health == ".......x"
 
 
+def test_becoming_impaired_is_counted():
+    """Going from unimpaired to impaired counts once, until it ends."""
+    char = gen_char("vampire")
+    char.health = "." * 4
+    char.willpower = "." * 4
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)
+    assert char.log.times_impaired == 0
+
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 4)  # Physical
+    char.set_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 4)  # Still impaired
+    assert char.log.times_impaired == 1
+
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 0)
+    char.set_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 0)
+    char.set_damage(Tracker.HEALTH, Damage.AGGRAVATED, 4)
+    assert char.log.times_impaired == 2
+
+
+@pytest.mark.parametrize("log,count", [(True, 1), (False, 0)])
+def test_degeneration_impairment_is_counted(log: bool, count: int):
+    """Entering degeneration counts as becoming impaired, except in manual
+    updates."""
+    char = gen_char("vampire")
+    char.humanity = 7
+    char.willpower = "." * 10
+    char.add_stains(4, log=log)
+
+    assert char.degeneration
+    assert char.log.times_impaired == count
+
+
+def test_degeneration_filling_willpower_counts_once():
+    """Degeneration damage that also fills Willpower is one impairment."""
+    char = gen_char("vampire")
+    char.humanity = 7
+    char.willpower = "." * 3
+    char.set_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, 2)
+    char.add_stains(4, log=True)
+
+    assert Damage.NONE not in char.willpower
+    assert char.log.times_impaired == 1
+
+
 @pytest.fixture
 async def stored_char() -> AsyncGenerator[VChar]:
     """A character in the database, as the bot would load it."""

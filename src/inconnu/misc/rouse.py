@@ -85,9 +85,7 @@ async def perform_rouse(
         outcome = await __rouse_roll(guild, character, count, reroll)
         degen_damage = 0
         if oblivion == "apply" and outcome.stains > 0:
-            old_stains = character.stains
-            degen_damage = character.add_stains(outcome.stains)
-            character.log.stains_gained += character.stains - old_stains
+            degen_damage = character.add_stains(outcome.stains, log=True)
 
         update_msg = f"**{character.name}** "
         if outcome.failures and outcome.frenzy:
@@ -250,7 +248,7 @@ async def __rouse_roll(
     character.hunger += failures
     gain = character.hunger - starting_hunger
 
-    character.log.rouse_checks += rolls
+    character.log.record_rouse(successes, failures, gain)
 
     return _RouseOutcome(
         total=rolls,

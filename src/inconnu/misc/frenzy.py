@@ -63,6 +63,7 @@ async def frenzy(
 
     passed = outcome.total_successes >= difficulty
     if passed:
+        character.log.frenzy_resisted += 1
         if outcome.is_critical:
             title = "Critical Success!"
             message = "Resist frenzy without losing a turn."

@@ -46,6 +46,10 @@ async def test_vamp_mend_rouse_check(
         await mend(ctx, vamp)
 
     assert vamp.hunger == expected_hunger
+    assert vamp.log.rouse_checks == 1
+    assert vamp.log.rouse_successes == int(die_result >= 6)
+    assert vamp.log.rouse_failures == int(die_result < 6)
+    assert vamp.log.hunger_gained == expected_hunger - 1
     mock_char_save.assert_awaited()
 
     # Verify display was called
@@ -85,6 +89,8 @@ async def test_vamp_mend_at_hunger_5_rouse_failure(
         await mend(ctx, vamp)
 
     assert vamp.hunger == 5  # Can't go above 5
+    assert vamp.log.rouse_failures == 1
+    assert vamp.log.hunger_gained == 0
     mock_char_save.assert_awaited()
 
     # Verify FrenzyView was created

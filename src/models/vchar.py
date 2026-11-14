@@ -700,12 +700,14 @@ class VChar(Document):
         self.set_damage(tracker, severity, new_dmg, wrap=True)
         return True
 
-    def add_stains(self, delta: int) -> int:
+    def add_stains(self, delta: int, *, log: bool) -> int:
         """
         Add (or remove) Stains, clamped to 0-10. Each Stain that overflows the
         boxes Humanity leaves empty deals 1 Aggravated Willpower damage.
         Args:
             delta (int): The number of Stains to add; negative removes them
+            log (bool): Whether to count Stains gained and degeneration in the
+                log (False for manual updates)
         Returns the Aggravated Willpower damage dealt.
         """
         unfilled = 10 - self.humanity
@@ -716,6 +718,13 @@ class VChar(Document):
 
         if damage > 0:
             self.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, damage)
+
+        if log:
+            self.log.stains_gained += max(new_stains - self.stains, 0)
+            if old_overflow == 0 and new_overflow > 0:
+                self.log.degenerations += 1
+            self.log.deepest_degeneration = max(self.log.deepest_degeneration, new_overflow)
+
         self.stains = new_stains
 
         return damage

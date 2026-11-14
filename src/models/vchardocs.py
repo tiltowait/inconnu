@@ -98,6 +98,13 @@ class VCharLog(BaseModel):
     willpower_aggravated: int = 0
     willpower_superficial: int = 0
 
+    def record_rouse(self, successes: int, failures: int, hunger_gained: int):
+        """Record a set of Rouse checks and the Hunger they caused."""
+        self.rouse_checks += successes + failures
+        self.rouse_successes += successes
+        self.rouse_failures += failures
+        self.hunger_gained += hunger_gained
+
     @computed_field
     @property
     def remorse_successes(self) -> int:

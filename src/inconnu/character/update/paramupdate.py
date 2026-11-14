@@ -256,7 +256,7 @@ def __update_humanity(character: VChar, hu_type: str, delta: str | int) -> str:
 
     # If a character enters degeneration, they automatically take AW damage
     message = f"Set Stains to `{new_value}`."
-    if damage := character.add_stains(new_value - character.stains):
+    if damage := character.add_stains(new_value - character.stains, log=False):
         message += f"\n**Degeneration!** `+{damage}` Aggravated Willpower damage."
 
     return message

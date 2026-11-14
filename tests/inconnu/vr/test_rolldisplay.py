@@ -1684,6 +1684,7 @@ async def test_surge(
     await press_surge(screen)
 
     mock_rouse.assert_awaited_once_with(ANY, char, 1, "Surge", oblivion, ephemeral=hide_dice)
+    assert char.log.surges == 1
     status = "Rouse Made w/ Re-roll" if oblivion else "Rouse Made"
     assert field_map(screen.embed)["Updates"] == f"`Surge:` {status}"
     assert screen.buttons == [

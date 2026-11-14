@@ -196,6 +196,7 @@ class RollDisplay(EphemeralSafeView):
         else:
             self.state.surge = _Surge.BEFORE_REROLL
         self.state.surge_reroll = reroll
+        self.character.log.surges += 1  # perform_rouse() saves it
         await self._update(interaction)
         await inconnu.misc.perform_rouse(
             interaction, self.character, 1, "Surge", reroll, ephemeral=self.hide_dice

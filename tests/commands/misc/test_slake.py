@@ -71,6 +71,8 @@ async def test_vamp_slake_basic(
     await slake(ctx, vamp, amount)
 
     assert vamp.hunger == expected_hunger
+    assert vamp.log.hunger_slaked == expected_slaked
+    assert vamp.log.times_slaked == 1
     mock_char_save.assert_awaited()
 
     # Verify display was called with correct title

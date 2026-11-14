@@ -83,9 +83,11 @@ async def perform_rouse(
         # Vampire. Characters only exist in guilds.
         guild = cast(discord.Guild, ctx.guild)
         outcome = await __rouse_roll(guild, character, count, reroll)
+        degen_damage = 0
         if oblivion == "apply" and outcome.stains > 0:
-            character.stains += outcome.stains
-            character.log.stains += outcome.stains
+            old_stains = character.stains
+            degen_damage = character.add_stains(outcome.stains)
+            character.log.stains += character.stains - old_stains
 
         update_msg = f"**{character.name}** "
         if outcome.failures and outcome.frenzy:
@@ -101,7 +103,9 @@ async def perform_rouse(
             update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
 
         inter, _ = await asyncio.gather(
-            __display_outcome(ctx, character, outcome, purpose, oblivion, message, ephemeral),
+            __display_outcome(
+                ctx, character, outcome, purpose, oblivion, degen_damage, message, ephemeral
+            ),
             character.save_changes(),
         )
         msg = await get_message(inter)
@@ -139,10 +143,12 @@ async def __display_outcome(
     outcome: _RouseOutcome,
     purpose: str | None,
     oblivion: str | bool,
+    degen_damage: int,
     message: str | None,
     ephemeral: bool,
 ) -> AppResponse:
-    """Process the rouse result and display to the user."""
+    """Process the rouse result and display to the user. Applied Oblivion
+    Stains may have dealt degen_damage Aggravated Willpower damage."""
     title = __make_title(outcome)
 
     if "ailure" in title and "0 fail" not in title:
@@ -178,6 +184,9 @@ async def __display_outcome(
             footer.append(f"If this was an Oblivion roll, gain {stains_txt}!")
         elif oblivion == "apply":
             fields.append((f"Gain {stains_txt}", inconnu.character.DisplayField.HUMANITY))
+            if degen_damage > 0:
+                fields.append(("Willpower", inconnu.character.DisplayField.WILLPOWER))
+                footer.append(f"Degeneration! +{degen_damage} Aggravated Willpower damage.")
 
     footer = "\n".join(footer)
 

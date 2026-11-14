@@ -256,6 +256,39 @@ async def test_vamp_rouse_oblivion_stains_apply(
         assert len(fields) == 2
 
 
+async def test_vamp_rouse_oblivion_stains_degeneration(
+    vamp: VChar, ctx: AppCtx, mock_char_save: AsyncMock
+):
+    """Test that applied Oblivion Stains trigger degeneration."""
+    vamp.humanity = 7
+    vamp.stains = 3
+
+    with (
+        patch("inconnu.d10", return_value=1),
+        patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
+        patch("services.post_update", new_callable=AsyncMock),
+        patch.object(
+            services.settings,
+            "oblivion_stains",
+            new_callable=AsyncMock,
+            return_value=[1, 10],
+        ),
+        patch("utils.get_message", new_callable=AsyncMock),
+    ):
+        await rouse(ctx, vamp, 1, "Test", False, oblivion="apply")
+
+    assert vamp.stains == 4
+    assert vamp.aggravated_wp == 1
+    assert vamp.log.stains == 1
+    mock_char_save.assert_awaited()
+
+    call_args = mock_display.await_args
+    assert call_args is not None
+    field_names = [name for name, _ in call_args.kwargs["fields"]]
+    assert "Willpower" in field_names
+    assert "Degeneration! +1 Aggravated Willpower damage." in call_args.kwargs["footer"]
+
+
 async def test_vamp_rouse_multiple_oblivion_stains(
     vamp: VChar, ctx: AppCtx, mock_char_save: AsyncMock
 ):

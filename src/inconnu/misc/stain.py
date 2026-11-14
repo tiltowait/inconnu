@@ -5,10 +5,8 @@ import discord
 import inconnu
 import services
 import ui
-from constants import Damage
 from ctx import AppCtx, AppResponse
 from models import VChar
-from models.vchar import Tracker
 from services.haven import haven
 from utils import get_message
 from utils.text import pluralize
@@ -35,20 +33,11 @@ async def stain(ctx: AppCtx, character: VChar, delta: int, *, player: discord.Me
                 raise ValueError(f"**{character.name}** already has `10` Stains.")
             raise ValueError(f"**{character.name}** has no Stains to remove.")
 
-        # Determine degeneration
-        if delta > 0 and total_stains > (10 - character.humanity):
-            old_overlap = abs(min(10 - character.humanity - character.stains, 0))
-            new_overlap = abs(10 - character.humanity - total_stains)
-            overlap_delta = new_overlap - old_overlap
-
-            character.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, overlap_delta)
+        message = None
+        if damage := character.add_stains(delta):
             fields.append(("Willpower", inconnu.character.DisplayField.WILLPOWER))
+            message = f"\n**Degeneration!** `+{damage}` Aggravated Willpower damage."
 
-            message = f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
-        else:
-            message = None
-
-        character.stains += delta
         character.log.stains += max(delta, 0)
         if character.degeneration:
             footer = "Degeneration! -2 dice to all rolls. Remains until /remorse or auto-drop."

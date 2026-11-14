@@ -700,6 +700,26 @@ class VChar(Document):
         self.set_damage(tracker, severity, new_dmg, wrap=True)
         return True
 
+    def add_stains(self, delta: int) -> int:
+        """
+        Add (or remove) Stains, clamped to 0-10. Each Stain that overflows the
+        boxes Humanity leaves empty deals 1 Aggravated Willpower damage.
+        Args:
+            delta (int): The number of Stains to add; negative removes them
+        Returns the Aggravated Willpower damage dealt.
+        """
+        unfilled = 10 - self.humanity
+        new_stains = max(0, min(10, self.stains + delta))
+        old_overflow = max(self.stains - unfilled, 0)
+        new_overflow = max(new_stains - unfilled, 0)
+        damage = max(new_overflow - old_overflow, 0)
+
+        if damage > 0:
+            self.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, damage)
+        self.stains = new_stains
+
+        return damage
+
     def apply_experience(self, amount: int, scope: str, reason: str, admin: int):
         """
         Add or remove experience from a character.

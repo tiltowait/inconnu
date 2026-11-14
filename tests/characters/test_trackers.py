@@ -438,3 +438,27 @@ def test_set_superficial_wp_then_apply_damage(character: VChar):
     assert character.superficial_wp == 2
     assert character.aggravated_wp == 1
     assert character.willpower == "..//x"
+
+
+@pytest.mark.parametrize(
+    "stains,delta,expected_stains,expected_damage",
+    [
+        (0, 2, 2, 0),  # Within the unfilled boxes
+        (2, 3, 5, 2),  # Two Stains overflow
+        (4, 2, 6, 2),  # Already degenerating; only new overflow counts
+        (5, -2, 3, 0),  # Removing Stains never deals damage
+        (8, 5, 10, 2),  # Clamped to 10
+        (0, -1, 0, 0),  # Clamped to 0
+    ],
+)
+def test_add_stains(stains: int, delta: int, expected_stains: int, expected_damage: int):
+    """Test that Stain overflow deals Aggravated Willpower damage."""
+    character = gen_char("vampire")
+    character.humanity = 7
+    character.stains = stains
+
+    damage = character.add_stains(delta)
+
+    assert damage == expected_damage
+    assert character.stains == expected_stains
+    assert character.aggravated_wp == expected_damage

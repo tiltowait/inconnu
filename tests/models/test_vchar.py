@@ -34,6 +34,36 @@ def test_non_vampire_cannot_blush(splat: str):
 
 
 @pytest.mark.parametrize(
+    "splat,humanity,blushes,state",
+    [
+        ("vampire", 7, 1, BlushState.ON),
+        ("vampire", 9, 0, BlushState.NA),
+        ("thin-blood", 7, 0, BlushState.NA),
+        ("ghoul", 7, 0, BlushState.NA),
+        ("mortal", 7, 0, BlushState.NA),
+    ],
+)
+def test_blush_counts_if_able(splat: str, humanity: int, blushes: int, state: BlushState):
+    """Blushing turns the Blush of Life on and counts it, only for those who can."""
+    char = gen_char(splat)
+    char.humanity = humanity
+    char.header.blush = BlushState.NA
+    char.blush()
+
+    assert char.header.blush == state
+    assert char.log.times_blushed == blushes
+
+
+def test_blushing_again_counts():
+    """Each Blush counts, even while it's already on."""
+    vamp = gen_char("vampire")
+    vamp.blush()
+    vamp.blush()
+
+    assert vamp.log.times_blushed == 2
+
+
+@pytest.mark.parametrize(
     "splat,can_blush,starting_blush",
     [
         ("vampire", True, 0),

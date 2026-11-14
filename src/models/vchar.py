@@ -250,6 +250,13 @@ class VChar(Document):
         """Turn off the Blush of Life, or mark it N/A if the character can't Blush."""
         self.header.blush = BlushState.OFF if self.can_blush else BlushState.NA
 
+    def blush(self):
+        """Turn on the Blush of Life and count it, if the character can Blush.
+        Blushing again while it's on still counts."""
+        if self.can_blush:
+            self.set_blush(BlushState.ON)
+            self.log.times_blushed += 1
+
     def set_blush(self, new_blush: BlushState):
         """Toggle the character's Blush of Life."""
         if self.header.blush == new_blush:

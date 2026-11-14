@@ -13,7 +13,7 @@ from ctx import AppCtx
 from inconnu.macros.roll import _SlakeView, reroll_listener
 from inconnu.macros.roll import roll as roll_macro
 from inconnu.roll import Roll
-from models import HiddenDicePerms, VChar
+from models import BlushState, HiddenDicePerms, VChar
 from models.vchardocs import VCharMacro
 from services.haven import Haven
 from tests.characters import gen_char
@@ -287,11 +287,10 @@ async def test_hunt_counted(ctx: AppCtx, character: VChar, mock_char_save: Async
     mock_char_save.assert_awaited_once()
 
 
-@pytest.mark.parametrize("humanity,blushes", [(7, 1), (9, 0)])
 @pytest.mark.usefixtures("mock_haven", "mock_display_outcome")
-async def test_bol_macro_counts_blush(ctx: AppCtx, character: VChar, humanity: int, blushes: int):
-    """A macro named BoL counts as a Blush of Life, if the character can Blush."""
-    character.humanity = humanity
+async def test_bol_macro_blushes(ctx: AppCtx, character: VChar, mock_char_save: AsyncMock):
+    """A macro named BoL Blushes and saves the character."""
+    character.humanity = 7
     character.macros.append(
         VCharMacro(
             name="BoL",
@@ -308,7 +307,9 @@ async def test_bol_macro_counts_blush(ctx: AppCtx, character: VChar, humanity: i
     with patch("inconnu.d10", side_effect=lambda count: [6] * count):
         await roll_macro(ctx, "bol")
 
-    assert character.log.times_blushed == blushes
+    assert character.header.blush == BlushState.ON
+    assert character.log.times_blushed == 1
+    mock_char_save.assert_awaited_once()
 
 
 @pytest.mark.usefixtures("mock_haven")

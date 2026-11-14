@@ -287,6 +287,30 @@ async def test_hunt_counted(ctx: AppCtx, character: VChar, mock_char_save: Async
     mock_char_save.assert_awaited_once()
 
 
+@pytest.mark.parametrize("humanity,blushes", [(7, 1), (9, 0)])
+@pytest.mark.usefixtures("mock_haven", "mock_display_outcome")
+async def test_bol_macro_counts_blush(ctx: AppCtx, character: VChar, humanity: int, blushes: int):
+    """A macro named BoL counts as a Blush of Life, if the character can Blush."""
+    character.humanity = humanity
+    character.macros.append(
+        VCharMacro(
+            name="BoL",
+            pool=["1"],
+            hunger=False,
+            difficulty=0,
+            rouses=0,
+            reroll_rouses=False,
+            staining="show",
+            hunt=False,
+            comment=None,
+        )
+    )
+    with patch("inconnu.d10", side_effect=lambda count: [6] * count):
+        await roll_macro(ctx, "bol")
+
+    assert character.log.times_blushed == blushes
+
+
 @pytest.mark.usefixtures("mock_haven")
 async def test_failed_hunt_waits_for_reroll(ctx: AppCtx, mock_display_outcome: AsyncMock):
     """A failed hunt shows no menu, but listens for a reroll."""

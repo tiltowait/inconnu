@@ -151,8 +151,10 @@ async def roll(
                 ctx, f"Your `{macro.name}` macro is empty!", character=character.name
             )
         elif macro.name.lower() == "bol":
-            logger.info("VM: {}'s macro mimics Blush of Life", character.name)
+            logger.info("{}'s macro mimics Blush of Life", character.name)
             character.set_blush(BlushState.ON)
+            if character.can_blush:
+                character.log.times_blushed += 1
             await character.save_changes()
 
     except ValueError, SyntaxError:

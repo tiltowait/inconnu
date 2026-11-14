@@ -138,6 +138,9 @@ async def roll(
             )
 
             if macro.hunt:
+                character.log.hunts += 1
+                await character.save_changes()
+
                 if outcome.is_successful:
                     await __slake(ctx, character, outcome, hide_dice)
                 else:

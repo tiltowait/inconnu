@@ -84,6 +84,7 @@ class VCharLog(BaseModel):
     health_superficial: int = 0
     hunger_gained: int = 0
     hunger_slaked: int = Field(default=0, alias="slake", serialization_alias="hunger_slaked")
+    hunts: int = 0  # Hunt macros rolled
     remorse_checks: int = Field(default=0, alias="remorse", serialization_alias="remorse_checks")
     remorse_failures: int = Field(default=0, alias="degen", serialization_alias="remorse_failures")
     rouse_checks: int = Field(default=0, alias="rouse", serialization_alias="rouse_checks")

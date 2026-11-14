@@ -42,7 +42,7 @@ async def bol(ctx: AppCtx, character: VChar, ministry_alt: bool):
             count = 1
 
         character.set_blush(BlushState.ON)
-        character.log.blush += 1
+        character.log.times_blushed += 1
         await inconnu.misc.rouse(
             ctx, character, count, msg, character.humanity == 8, oblivion=False
         )

@@ -27,7 +27,7 @@ async def test_remorse_outcome(
         await remorse(ctx, vamp)
 
     assert (vamp.humanity, vamp.stains) == (humanity, stains)
-    assert vamp.log.remorse == 1
+    assert vamp.log.remorse_checks == 1
     mock_char_save.assert_awaited_once()
 
 

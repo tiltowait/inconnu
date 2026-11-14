@@ -279,7 +279,7 @@ async def test_vamp_rouse_oblivion_stains_degeneration(
 
     assert vamp.stains == 4
     assert vamp.aggravated_wp == 1
-    assert vamp.log.stains == 1
+    assert vamp.log.stains_gained == 1
     mock_char_save.assert_awaited()
 
     call_args = mock_display.await_args

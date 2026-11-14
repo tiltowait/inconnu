@@ -38,7 +38,7 @@ async def stain(ctx: AppCtx, character: VChar, delta: int, *, player: discord.Me
             fields.append(("Willpower", inconnu.character.DisplayField.WILLPOWER))
             message = f"\n**Degeneration!** `+{damage}` Aggravated Willpower damage."
 
-        character.log.stains += max(delta, 0)
+        character.log.stains_gained += max(delta, 0)
         if character.degeneration:
             footer = "Degeneration! -2 dice to all rolls. Remains until /remorse or auto-drop."
 

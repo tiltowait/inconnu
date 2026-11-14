@@ -153,8 +153,8 @@ async def test_vamp_awaken_logs_correctly(
         await awaken(ctx, vamp)
 
     # Should log both awaken and rouse
-    assert vamp.log.awaken == 1
-    assert vamp.log.rouse == 1
+    assert vamp.log.times_awakened == 1
+    assert vamp.log.rouse_checks == 1
     mock_char_save.assert_awaited()
 
 
@@ -346,7 +346,7 @@ async def test_awaken_logs_awaken_for_all_types(
     await awaken(ctx, mortal)
 
     # Should log awaken
-    assert mortal.log.awaken == 1
+    assert mortal.log.times_awakened == 1
     mock_char_save.assert_awaited()
 
 
@@ -394,7 +394,7 @@ async def test_vamp_awaken_rouse_logging(
         await awaken(ctx, vamp)
 
     # Should log rouse regardless of success/failure
-    assert vamp.log.rouse == 1
+    assert vamp.log.rouse_checks == 1
     mock_char_save.assert_awaited()
 
 
@@ -409,5 +409,5 @@ async def test_mortal_no_rouse_logging(
     await awaken(ctx, mortal)
 
     # Should not log rouse
-    assert mortal.log.rouse == 0
+    assert mortal.log.rouse_checks == 0
     mock_char_save.assert_awaited()

@@ -20,7 +20,7 @@ async def delete(
     try:
         character.delete_macro(macro_name)
         await ctx.respond(f"Deleted **{character.name}'s** `{macro_name}` macro.", ephemeral=True)
-        await character.save()
+        await character.save_changes()
 
     except errors.MacroNotFoundError as err:
         await ui.embeds.error(ctx, err, character=character.name, help=__HELP_URL)

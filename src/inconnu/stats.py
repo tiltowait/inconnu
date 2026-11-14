@@ -23,7 +23,8 @@ async def log_roll(
     hidden=False,
 ):
     """
-    Log a roll and its outcome. If the roll is a reroll, simply replace it.
+    Log a roll and its outcome. A reroll (any roll with a strategy) was logged
+    when first shown, so it only updates that entry's reroll field.
     Args:
         guild (int | None): The Discord ID of the guild where the roll was made (None in DMs)
         channel (int | None): The Discord ID of the channel (None in DMs)
@@ -34,14 +35,11 @@ async def log_roll(
         comment (str | None): The roll's comment, if any
         hidden (bool): Whether the dice were hidden from others
     """
-    rolls = db.rolls
-
-    if await rolls.find_one({"_id": outcome.id}) is None:
+    if outcome.strategy is None:
         roll = _gen_roll(guild, channel, user, message, char, outcome, comment, hidden=hidden)
-        await rolls.insert_one(roll)
+        await db.rolls.insert_one(roll)
     else:
-        reroll = _gen_reroll(outcome)
-        await rolls.update_one({"_id": outcome.id}, reroll)
+        await db.rolls.update_one({"_id": outcome.id}, _gen_reroll(outcome))
 
 
 async def toggle_roll_stats(message: int) -> bool | None:
@@ -76,7 +74,7 @@ async def guild_joined(guild: discord.Guild):
     vguild = await VGuild.get_or_fetch(guild)
     vguild.join()
 
-    await vguild.save()
+    await vguild.save_changes()
 
 
 async def guild_left(guild: discord.Guild):
@@ -84,7 +82,11 @@ async def guild_left(guild: discord.Guild):
     vguild = await VGuild.get_or_fetch(guild)
     vguild.leave()
 
-    await vguild.save()
+    await vguild.save_changes()
+    # Culling may delete the guild before it returns, so a rejoin must look
+    # it up again. The cache key includes the class, which classmethod passes
+    # as an ordinary argument.
+    VGuild.get_or_fetch.cache_invalidate(VGuild, guild)
 
 
 async def guild_renamed(guild: discord.Guild, new_name: str):
@@ -92,7 +94,7 @@ async def guild_renamed(guild: discord.Guild, new_name: str):
     vguild = await VGuild.get_or_fetch(guild)
     vguild.name = new_name
 
-    await vguild.save()
+    await vguild.save_changes()
 
 
 # Roll logging helpers

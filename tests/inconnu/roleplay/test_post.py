@@ -120,7 +120,7 @@ def editing_modal(
     mock_post_modal._clean_post_content.return_value = "Original"
     mock_post_modal._clean_tags.return_value = []
     mock_post_modal._clean_title.return_value = ""
-    with patch.object(RPPost, "save", new_callable=AsyncMock):
+    with patch.object(RPPost, "save_changes", new_callable=AsyncMock):
         yield mock_post_modal
 
 
@@ -548,7 +548,7 @@ async def test_new_post_saves_records(
     with patch.object(RPPost, "new", return_value=record):
         await PostModal._new_rp_post(posting_modal, interaction)
 
-    assert record.save.await_count == 2
+    assert record.insert.await_count == 2
     assert record.id_chain == [1, 2]
 
 
@@ -600,7 +600,7 @@ async def test_empty_edit_rejected(mock_post_modal: MockPostModal):
     assert "`Post: Delete`" in show_error.call_args.args[1]
     mock_post_modal.bot.matching_webhook.assert_not_called()
     post.edit_post.assert_not_called()
-    post.save.assert_not_awaited()
+    post.save_changes.assert_not_awaited()
 
 
 async def test_edit_updates_message_and_history(
@@ -619,7 +619,7 @@ async def test_edit_updates_message_and_history(
     editing_modal.bot.prep_webhook.assert_not_called()  # Editing never creates a webhook
     assert post.content == "Changed"
     assert post.history[0].content == "Original"
-    post.save.assert_awaited_once()
+    post.save_changes.assert_awaited_once()
     editing_modal._post_to_changelog.assert_awaited_once()
     assert interaction.response.send_message.await_args.args[0] == "Post updated!"
 
@@ -639,7 +639,7 @@ async def test_edit_without_content_change(
     assert post.title == "A title"
     assert post.tags == ["tag"]
     assert post.history == []
-    post.save.assert_awaited_once()
+    post.save_changes.assert_awaited_once()
     webhook.edit_message.assert_not_awaited()
     editing_modal._post_to_changelog.assert_not_awaited()
 
@@ -668,7 +668,7 @@ async def test_edit_of_missing_message(
     post = editing_modal.post_to_edit
     assert show_error.call_args.kwargs["title"] == "Unable to edit message"
     assert post.content == "Original"
-    post.save.assert_not_awaited()
+    post.save_changes.assert_not_awaited()
     editing_modal._post_to_changelog.assert_not_awaited()
 
 
@@ -710,7 +710,7 @@ async def test_edit_without_original_webhook(
     post = editing_modal.post_to_edit
     assert show_error.call_args.kwargs["title"] == "Unable to edit message"
     assert post.content == "Original"
-    post.save.assert_not_awaited()
+    post.save_changes.assert_not_awaited()
     editing_modal.bot.prep_webhook.assert_not_called()
 
 
@@ -740,7 +740,7 @@ async def test_edit_of_post_deleted_while_editing(
     get_post.assert_awaited_once_with(post.id)
     assert show_error.call_args.kwargs["title"] == "Unable to edit post"
     webhook.edit_message.assert_not_awaited()
-    post.save.assert_not_awaited()
+    post.save_changes.assert_not_awaited()
     interaction.response.send_message.assert_not_awaited()
 
 
@@ -761,7 +761,7 @@ async def test_edit_keeps_edits_made_elsewhere(
     assert editing_modal.post_to_edit is current
     assert current.content == "Changed"
     assert [entry.content for entry in current.history] == ["Edited elsewhere", "Original"]
-    cast(AsyncMock, current.save).assert_awaited_once()  # Patched by editing_modal
+    cast(AsyncMock, current.save_changes).assert_awaited_once()  # Patched by editing_modal
 
 
 # Test _post_to_changelog

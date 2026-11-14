@@ -23,7 +23,7 @@ from models import VChar, VGuild
 from services import CharacterManager
 from tests.characters import gen_char
 
-VCHAR_SAVE = "models.vchar.VChar.save"
+VCHAR_SAVE = "models.vchar.VChar.save_changes"
 STORYTELLER_ROLE = 1234
 
 type MockAsyncFn = AsyncMock
@@ -542,17 +542,17 @@ async def test_mark_inactive(
     u11: Member,
 ):
     """Marking a player inactive saves each character and keeps them cached."""
-    with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock_save:
+    with patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mock_save:
         await mgrf.mark_inactive(u11)
         assert mock_save.await_count == 2
         chars = await mgrf.fetchall(g1, u11)
         assert len(chars) == 2
 
         for char in chars:
-            assert char.stat_log["left"] is not None
+            assert char.log.left is not None
 
         # Extra thoroughness ...
-        left_count = len([c for c in mgrf._characters if "left" in c.stat_log])
+        left_count = len([c for c in mgrf._characters if c.log.left is not None])
         assert left_count == len(chars)
 
 
@@ -568,16 +568,16 @@ async def test_mark_active(
     await mgrf.mark_inactive(u11)
     await mgrf.mark_inactive(u21)
 
-    with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock_save:
+    with patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mock_save:
         await mgrf.mark_active(u21)
         assert mock_save.await_count == 1
 
         # The g1 characters must remain inactive
         for char in await mgrf.fetchall(g1, u11):
-            assert "left" in char.stat_log
+            assert char.log.left is not None
 
         for char in await mgrf.fetchall(g2, u21):
-            assert "left" not in char.stat_log
+            assert char.log.left is None
 
         await mgrf.mark_active(u11)
         assert mock_save.await_count == 3
@@ -585,10 +585,10 @@ async def test_mark_active(
         assert len(chars) == 2
 
         for char in chars:
-            assert "left" not in char.stat_log
+            assert char.log.left is None
 
         # Extra thoroughness ...
-        not_left_count = len([c for c in mgrf._characters if "left" not in c.stat_log])
+        not_left_count = len([c for c in mgrf._characters if c.log.left is None])
         assert not_left_count == len(mgrf._characters)
 
 
@@ -791,13 +791,14 @@ async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Gui
     char2.guild = g1.id
     char2.user = u11.id
 
-    # Patch save() to add delay, forcing lock contention
-    original_save = char1.save
+    # Slow down insert() so the second registration waits on the lock while
+    # the first is mid-write
+    original_insert = VChar.insert
 
-    async def slow_save(*args: Any, **kwargs: Any) -> VChar:
-        """Save after a delay, so the registrations overlap."""
+    async def slow_insert(self: VChar, *args: Any, **kwargs: Any) -> VChar:
+        """Insert after a delay, so the registrations overlap."""
         await asyncio.sleep(0.1)  # 100ms delay to ensure overlap
-        return await original_save(*args, **kwargs)
+        return await original_insert(self, *args, **kwargs)
 
     # Track when each operation starts to verify they overlap
     start_times = []
@@ -805,16 +806,18 @@ async def test_register_race_condition_prevented(mgre: CharacterManager, g1: Gui
     async def register_with_timing(char: VChar):
         """Record when the registration starts, then register."""
         start_times.append(asyncio.get_event_loop().time())
-        return await mgre.register(char)
+        await mgre.register(char)
 
-    with patch.object(type(char1), "save", side_effect=slow_save):
-        with patch.object(type(char2), "save", side_effect=slow_save):
-            # Try to register both concurrently
-            results = await asyncio.gather(
-                register_with_timing(char1),
-                register_with_timing(char2),
-                return_exceptions=True,
-            )
+    with patch.object(VChar, "insert", autospec=True, side_effect=slow_insert) as mock_insert:
+        # Try to register both concurrently
+        results = await asyncio.gather(
+            register_with_timing(char1),
+            register_with_timing(char2),
+            return_exceptions=True,
+        )
+
+    # Only the first registration reaches the database
+    assert mock_insert.await_count == 1
 
     # Verify both operations started (near-)simultaneously
     assert len(start_times) == 2

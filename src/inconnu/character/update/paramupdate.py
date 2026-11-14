@@ -79,12 +79,12 @@ def __update_hunger_potency(character: VChar, delta: str | int, key: str, maximu
 
 def update_health(character: VChar, new_max: str) -> str:
     """Update the character's maximum HP. If decreasing, this truncates from the right."""
-    return __update_track(character, "health", new_max)
+    return __update_track(character, Tracker.HEALTH, new_max)
 
 
 def update_willpower(character: VChar, new_max: str) -> str:
     """Update the character's maximum WP. If decreasing, this truncates from the right."""
-    return __update_track(character, "willpower", new_max)
+    return __update_track(character, Tracker.WILLPOWER, new_max)
 
 
 def update_humanity(character: VChar, delta: str) -> str:
@@ -118,36 +118,26 @@ def update_aw(character: VChar, delta: str) -> str:
     return __update_damage(character, Tracker.WILLPOWER, Damage.AGGRAVATED, delta)
 
 
-def __update_track(character: VChar, tracker: str, new_len_str: str) -> str:
+def __update_track(character: VChar, tracker: Tracker, new_len_str: str) -> str:
     """
     Update the size of a character's tracker.
     Args:
         character (VChar): The character to update
-        tracker (str): "health" or "willpower"
-        new_size (str): The tracker's new size
+        tracker (Tracker): Health or Willpower
+        new_len_str (str): The tracker's new size
 
     Does not catch exceptions.
     """
-    if tracker not in {"health", "willpower"}:
-        raise SyntaxError(f"Unknown tracker {tracker}")
-
     if new_len_str[0] in "+-":
         raise ValueError(f"You must supply an exact value for {tracker.capitalize()}.")
 
-    track = getattr(character, tracker)  # Get tracker string
-    cur_len = len(track)
     new_len = int(new_len_str)
+    if not VChar.MIN_TRACKER <= new_len <= VChar.MAX_TRACKER:
+        raise ValueError(
+            f"{tracker.title()} must be between {VChar.MIN_TRACKER} and {VChar.MAX_TRACKER}."
+        )
 
-    # Ensure the tracker is the right size
-    if not 3 <= new_len <= 25:
-        raise ValueError(f"{tracker.title()} must be between 3 and 25.")
-
-    if new_len > cur_len:  # Growing
-        track = track.rjust(new_len, Damage.NONE)
-    elif new_len < cur_len:
-        track = track[-new_len:]
-
-    setattr(character, tracker, track)
+    character.adjust_tracker_rating(tracker, new_len)
     return f"Set {tracker.capitalize()} to `{new_len}`."
 
 

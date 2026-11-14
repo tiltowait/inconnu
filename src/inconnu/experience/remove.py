@@ -32,7 +32,9 @@ async def remove_entry(
         # Log entries are presented to the user in reverse, so we need the
         # negative index
         entry_to_delete = character.experience.log.pop(-index)
-        await character.save()  # Before responding, so a failed response can't hide the change
+        await (
+            character.save_changes()
+        )  # Before responding, so a failed response can't hide the change
 
         embed = _get_embed(player, character, entry_to_delete)
         view = _ExperienceView(character, player, entry_to_delete)
@@ -43,7 +45,9 @@ async def remove_entry(
         await ui.embeds.error(ctx, err)
 
 
-def _get_embed(player: discord.Member, character: VChar, entry: VCharExperienceEntry):
+def _get_embed(
+    player: discord.Member, character: VChar, entry: VCharExperienceEntry
+) -> discord.Embed:
     """Generate an embed for displaying the deletion message."""
     embed = discord.Embed(title="Deleted Experience Log Entry", description=_format_entry(entry))
     embed.set_author(name=character.name, icon_url=get_avatar(player))
@@ -55,7 +59,7 @@ def _get_embed(player: discord.Member, character: VChar, entry: VCharExperienceE
     return embed
 
 
-def _format_entry(entry: VCharExperienceEntry):
+def _format_entry(entry: VCharExperienceEntry) -> str:
     """Format the deleted entry for display."""
     date = entry.date.strftime("%b %d, %Y")
     scope = _entry_scope(entry)
@@ -63,7 +67,7 @@ def _format_entry(entry: VCharExperienceEntry):
     return f"**{entry.amount:+} {scope} XP: {entry.reason}** *({date})*"
 
 
-def _entry_scope(entry: VCharExperienceEntry):
+def _entry_scope(entry: VCharExperienceEntry) -> str:
     """Get the log entry scope."""
     return entry.event.split("_")[-1].capitalize()
 
@@ -113,7 +117,7 @@ class _ExperienceView(DisablingView):
             owner=self.player,
             message=message,
         )
-        await self.character.save()
+        await self.character.save_changes()
 
         user = inter.user
         await services.post_update(

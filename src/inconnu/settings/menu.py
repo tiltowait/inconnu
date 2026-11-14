@@ -309,7 +309,7 @@ class SettingsMenu(discord.ui.DesignerView):
         button.label = "Yes" if self.scope.settings.use_emojis else "No"
 
         await interaction.edit(view=self)
-        await self.scope.save()
+        await self.scope.save_changes()
 
         self._log_update(interaction, "Use emojis", not self.scope.settings.accessibility)
 
@@ -323,7 +323,7 @@ class SettingsMenu(discord.ui.DesignerView):
         button.label = self.button_label(vuser.settings.auto_impairment)
 
         await interaction.edit(view=self)
-        await vuser.save()
+        await vuser.save_changes()
 
         self._log_update(interaction, "Auto impairment", vuser.settings.auto_impairment)
 
@@ -337,7 +337,7 @@ class SettingsMenu(discord.ui.DesignerView):
         vguild.settings.hidden_dice_permissions = HiddenDicePerms(perms)
 
         await interaction.edit(view=self)
-        await vguild.save()
+        await vguild.save_changes()
 
         self._log_update(interaction, "Hidden dice permissions", perms)
 
@@ -352,7 +352,7 @@ class SettingsMenu(discord.ui.DesignerView):
         vguild.settings.oblivion_stains = stains
 
         await interaction.edit(view=self)
-        await vguild.save()
+        await vguild.save_changes()
 
         self._log_update(interaction, "Oblivion stains", stains)
 
@@ -366,7 +366,7 @@ class SettingsMenu(discord.ui.DesignerView):
         vguild.settings.resonance = ResonanceMode(resonance)
 
         await interaction.edit(view=self)
-        await vguild.save()
+        await vguild.save_changes()
 
         self._log_update(interaction, "Add empty resonance", vguild.settings.add_empty_resonance)
 
@@ -395,7 +395,7 @@ class SettingsMenu(discord.ui.DesignerView):
         )
 
         await interaction.edit(view=self)
-        await vguild.save()
+        await vguild.save_changes()
 
         self._log_update(interaction, "Storyteller role", role.name if role else None)
 
@@ -411,7 +411,7 @@ class SettingsMenu(discord.ui.DesignerView):
         vguild.settings.max_hunger = new_max_hunger
 
         await interaction.edit(view=self)
-        await vguild.save()
+        await vguild.save_changes()
 
         self._log_update(interaction, "Max hunger", new_max_hunger)
 
@@ -425,7 +425,7 @@ class SettingsMenu(discord.ui.DesignerView):
         vguild.settings.experience_permissions = ExpPerms(perms)
 
         await interaction.edit(view=self)
-        await vguild.save()
+        await vguild.save_changes()
 
         self._log_update(interaction, "Experience permissions", perms)
 
@@ -448,7 +448,7 @@ class SettingsMenu(discord.ui.DesignerView):
         ]
 
         await interaction.edit(view=self)
-        await self.scope.save()
+        await self.scope.save_changes()
 
         self._log_update(interaction, channel_key, f"#{channel.name}")
 

@@ -7,6 +7,7 @@ import errors
 import inconnu
 import services
 from constants import ROUSE_FAIL_COLOR, Damage
+from ctx import AppCtx, AppResponse
 from models import VChar
 from services.haven import haven
 from utils import get_message
@@ -22,14 +23,14 @@ class AggHealOutcome(NamedTuple):
     torpor: bool
 
 
-def _can_aggheal(character):
+def _can_aggheal(character: VChar):
     """Raise an error if the character can't agg heal."""
     if character.aggravated_hp == 0:
         raise errors.CharacterError(f"{character.name} has no Aggravated Health damage!")
 
 
 @haven(__HELP_URL, _can_aggheal, "None of your characters have Aggravated Health damage.")
-async def aggheal(ctx, character):
+async def aggheal(ctx: AppCtx, character: VChar):
     """Heal a point of aggravated damage."""
 
     if Damage.AGGRAVATED not in character.health:
@@ -47,7 +48,9 @@ async def aggheal(ctx, character):
         else:
             update_msg += "."
 
-    inter, _ = await asyncio.gather(__display_outcome(ctx, character, outcome), character.save())
+    inter, _ = await asyncio.gather(
+        __display_outcome(ctx, character, outcome), character.save_changes()
+    )
     msg = await get_message(inter)
     await services.post_update(
         ctx=ctx,
@@ -78,12 +81,12 @@ async def __heal(character: VChar) -> AggHealOutcome:
     character.health = Damage.NONE + character.health[:-1]
 
     if character.is_vampire:
-        character.log("rouse", 3)
+        character.log.rouse += 3
 
     return AggHealOutcome(gain=hunger_gain, torpor=torpor)
 
 
-async def __display_outcome(ctx, character, outcome):
+async def __display_outcome(ctx: AppCtx, character: VChar, outcome: AggHealOutcome) -> AppResponse:
     """Display the outcome of the healing."""
     fields = [("Health", inconnu.character.DisplayField.HEALTH)]
 

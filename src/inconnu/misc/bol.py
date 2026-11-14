@@ -2,6 +2,7 @@
 
 import errors
 import inconnu
+from ctx import AppCtx
 from models import BlushState, VChar
 from services.haven import haven
 from utils.urls import docs_url
@@ -9,14 +10,14 @@ from utils.urls import docs_url
 __HELP_URL = docs_url("guides/gameplay-shortcuts#blush-of-life")
 
 
-def _can_blush(character):
+def _can_blush(character: VChar):
     """Raises an exception if the character isn't capable of Blushing."""
     if not character.is_vampire:
         raise errors.CharacterError(f"{character.name} isn't a vampire!")
 
 
 @haven(__HELP_URL, _can_blush, "None of your characters need to Blush.")
-async def bol(ctx, character: VChar, ministry_alt):
+async def bol(ctx: AppCtx, character: VChar, ministry_alt: bool):
     """Perform a Blush of Life check based on the character's Humanity."""
     if character.is_thin_blood:
         # Thin-Bloods don't need to Blush. Their appearance depends on Humanity
@@ -41,8 +42,8 @@ async def bol(ctx, character: VChar, ministry_alt):
             count = 1
 
         character.set_blush(BlushState.ON)
-        character.log("blush")
+        character.log.blush += 1
         await inconnu.misc.rouse(
             ctx, character, count, msg, character.humanity == 8, oblivion=False
         )
-        await character.save()
+        await character.save_changes()

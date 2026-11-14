@@ -8,7 +8,7 @@ import discord
 import services
 import ui
 from constants import Damage
-from ctx import AppCtx, AppInvocation
+from ctx import AppCtx, AppInvocation, AppResponse
 from inconnu.character.display import trackmoji
 from models import VChar
 from services.haven import haven
@@ -73,7 +73,7 @@ async def display(
     view: discord.ui.View | None = None,
     ephemeral: bool = False,
     **kwargs,
-):
+) -> AppResponse:
     """
     Display a character.
     Args:
@@ -115,7 +115,7 @@ async def display(
     elif isinstance(view, ui.views.DisablingView):
         view.message = ctx.interaction if isinstance(ctx, discord.ApplicationContext) else ctx
     await ctx.response.edit_message(**msg_contents)
-    return ctx
+    return ctx.interaction if isinstance(ctx, discord.ApplicationContext) else ctx
 
 
 async def __get_embed(

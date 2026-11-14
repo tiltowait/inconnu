@@ -1,8 +1,14 @@
 """Tests for models/vchar.py."""
 
-import pytest
+from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
 
+import pytest
+from pymongo.asynchronous.collection import AsyncCollection
+
+from constants import Damage
 from models import BlushState, VChar
+from models.vchar import Tracker
 from models.vchardocs import VCharHeader
 from tests.characters import gen_char
 
@@ -232,3 +238,59 @@ def test_header_without_blush_loads_as_off():
 def test_stored_blush_loads_as_enum(stored: int):
     """Integers in the database become BlushStates."""
     assert VCharHeader.model_validate({"blush": stored}).blush is BlushState(stored)
+
+
+def test_damage_taken_is_counted():
+    """Damage taken is counted per tracker and severity."""
+    char = gen_char("vampire")
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 2)
+    char.set_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 1)
+
+    log = char.log
+    assert (log.health_superficial, log.health_aggravated) == (2, 0)
+    assert (log.willpower_superficial, log.willpower_aggravated) == (0, 1)
+
+
+def test_healing_is_not_counted():
+    """Healing leaves the damage counts alone."""
+    char = gen_char("vampire")
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 1)
+
+    assert char.log.health_superficial == 3
+
+
+@pytest.fixture
+async def stored_char() -> AsyncGenerator[VChar]:
+    """A character in the database, as the bot would load it."""
+    char = gen_char("vampire")
+    await char.insert()
+    yield char
+    await char.delete()
+
+
+def characters() -> AsyncCollection:
+    """The raw characters collection, for changes the document doesn't see."""
+    return VChar.get_pymongo_collection()
+
+
+async def test_save_changes_writes_only_changes(stored_char: VChar):
+    """Saving changes leaves fields changed elsewhere alone."""
+    await characters().update_one({"_id": stored_char.id}, {"$set": {"name": "Renamed"}})
+    stored_char.hunger = 3
+    await stored_char.save_changes()
+
+    stored = await characters().find_one({"_id": stored_char.id})
+    assert stored is not None
+    assert (stored["name"], stored["hunger"]) == ("Renamed", 3)
+
+
+async def test_returning_owner_is_not_culled(stored_char: VChar):
+    """Clearing the departure date stores it, so culling skips the character."""
+    stored_char.log.left = datetime.now(UTC) - timedelta(days=60)
+    await stored_char.save_changes()
+    stored_char.log.left = None
+    await stored_char.save_changes()
+
+    culled = {"_id": stored_char.id, "log.left": {"$lt": datetime.now(UTC) - timedelta(days=30)}}
+    assert await characters().find_one(culled) is None

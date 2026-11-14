@@ -6,6 +6,7 @@ import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
 from models import VChar
+from models.vchardocs import MacroUpdate
 from services.haven import haven
 from utils import parse_parameters
 from utils.text import strtobool
@@ -41,7 +42,7 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
 
         macro_name = character.update_macro(macro, macro_update)
         await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
-        await character.save()
+        await character.save_changes()
 
     except (
         errors.AmbiguousTraitError,
@@ -61,9 +62,9 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         await ui.embeds.error(ctx, err, *instructions, help=__HELP_URL, character=character.name)
 
 
-def __validate_parameters(character: VChar, parameters: dict):
+def __validate_parameters(character: VChar, parameters: dict[str, str]) -> MacroUpdate:
     """Parse the update parameters."""
-    macro_update = {}
+    macro_update: MacroUpdate = {}
 
     for key, value in parameters.items():
         # Each parameter should be part of a key=value pair
@@ -83,18 +84,17 @@ def __validate_parameters(character: VChar, parameters: dict):
         if key == "name":
             if not macro_common.is_macro_name_valid(value):
                 raise ValueError(f"`{value}` is not a valid macro name.")
-            macro_update[key] = value
+            macro_update["name"] = value
 
         elif key == "pool":
             pool = inconnu.vr.RollParser(
                 character, value, expand_only=True, power_bonus=False
             ).pool_stack
-            macro_update[key] = pool
+            macro_update["pool"] = pool
 
         elif key == "hunger":
             try:
-                value = bool(strtobool(value))
-                macro_update[key] = value
+                macro_update["hunger"] = bool(strtobool(value))
             except ValueError:
                 raise ValueError("`hunger` requires yes/no or true/false.") from ValueError
 
@@ -104,7 +104,7 @@ def __validate_parameters(character: VChar, parameters: dict):
             macro_update["difficulty"] = int(value)
 
         elif key == "comment":
-            macro_update[key] = value
+            macro_update["comment"] = value
 
         elif key in ("rouses", "rouse"):
             if not value.isdigit() or not 0 <= int(value) <= 3:

@@ -1,5 +1,6 @@
 """Character update tests."""
 
+from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -11,17 +12,18 @@ from models.vchar import VChar
 
 
 @pytest.fixture
-def mock_update_display():
+def mock_update_display() -> Generator[AsyncMock]:
     """Mock display specifically for update tests (imported into parse.py)."""
     with patch("inconnu.character.update.parse.display", new_callable=AsyncMock) as mock:
         yield mock
 
 
 @pytest.fixture(autouse=True)
-def mock_haven(vamp: VChar):
+def mock_haven(vamp: VChar) -> Generator[MagicMock]:
     """Mock Haven to return our test character."""
 
-    async def mock_fetch():
+    async def mock_fetch() -> VChar:
+        """Return the test character."""
         return vamp
 
     haven_instance = MagicMock()
@@ -351,7 +353,7 @@ async def test_update_rollback_complex(
         patch(
             "models.vchar.VChar.rollback", new_callable=Mock, wraps=vamp.rollback
         ) as mock_rollback,
-        patch("models.vchar.VChar.save", new_callable=AsyncMock) as mock_save,
+        patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mock_save,
     ):
         # Multiple valid changes followed by invalid parameter
         # Note: update() catches exceptions and shows help, doesn't raise
@@ -366,6 +368,25 @@ async def test_update_rollback_complex(
 
         mock_rollback.assert_called()
         mock_save.assert_not_awaited()
+
+
+async def test_update_rollback_after_change(vamp: VChar, ctx: AppCtx):
+    """A bad value after a successful change rolls the change back and shows
+    help. (Rejected keys fail before anything changes.)"""
+    await vamp.save()
+    original_hunger = vamp.hunger
+
+    with (
+        patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mock_save,
+        patch("inconnu.character.update.parse.update_help", new_callable=AsyncMock) as mock_help,
+    ):
+        await update(ctx, "hunger=4 health=abc", character=vamp)
+
+    assert vamp.hunger == original_hunger
+    assert not vamp.is_changed
+    mock_help.assert_awaited_once()
+    mock_save.assert_not_awaited()
+    await vamp.delete()
 
 
 async def test_update_unknown_parameter_error(
@@ -491,6 +512,7 @@ async def test_update_with_custom_fields(
     vamp: VChar,
     ctx: AppCtx,
     mock_update_display: AsyncMock,
+    mock_char_save: AsyncMock,
 ):
     """Test update with custom display fields."""
     fields = [(field.value, field) for field in (DisplayField.HEALTH, DisplayField.HUNGER)]

@@ -251,7 +251,7 @@ class ImagePager(discord.ui.View):
 
         await self.mode_toggle(None)  # No point in showing management buttons
         await self.goto_page(0, interaction)
-        await self.character.save()
+        await self.character.save_changes()
 
     async def _demote_image(self, interaction: discord.Interaction):
         """Demote the current image to the last position."""
@@ -260,7 +260,7 @@ class ImagePager(discord.ui.View):
 
         await self.mode_toggle(None)  # No point in showing management buttons
         await self.goto_page(self.num_pages - 1, interaction)
-        await self.character.save()
+        await self.character.save_changes()
 
     async def _delete_image(self, interaction: discord.Interaction):
         """Delete the current image."""
@@ -281,9 +281,9 @@ class ImagePager(discord.ui.View):
         else:
             logger.info("IMAGES: {} is not a managed resource", image_url)
 
-        await self.character.save()
+        await self.character.save_changes()
 
-    async def interaction_check(self, interaction: discord.Interaction):
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Ensure image management safety."""
         if interaction.data is None or interaction.user is None:
             # We have nothing to check (shouldn't be possible)

@@ -1,5 +1,6 @@
 """experience/bulk.py - Bulk award XP."""
 
+import copy
 import re
 from typing import Any, cast
 
@@ -142,7 +143,10 @@ class _BulkModal(Modal):
             embed.add_field(name="Awarding", value=page, inline=False)
 
         characters = [character for character, _ in self.xp_tasks]
-        originals = [character.experience.model_copy(deep=True) for character in characters]
+        originals = [
+            (character.experience.model_copy(deep=True), copy.deepcopy(character.get_saved_state()))
+            for character in characters
+        ]
         for character, xp_args in self.xp_tasks:
             character.apply_experience(*xp_args)
 
@@ -151,9 +155,11 @@ class _BulkModal(Modal):
         except Exception as err:
             # Nothing was saved, so undo the cached changes too. Beanie's
             # rollback() can't: save() marks the XP as saved even when the
-            # transaction is then aborted.
-            for character, experience in zip(characters, originals):
+            # transaction is then aborted. Restoring the saved state as well
+            # keeps later save_changes() calls from skipping the XP.
+            for character, (experience, saved_state) in zip(characters, originals):
                 character.experience = experience
+                character._saved_state = saved_state
             if not isinstance(err, PyMongoError):
                 raise
 
@@ -169,6 +175,8 @@ class _BulkModal(Modal):
         """Save the awarded characters in the transaction. Retries save them
         again, which is harmless."""
         for character, _ in self.xp_tasks:
+            # Not save_changes(): a retry would find nothing changed since the
+            # aborted attempt and commit without the XP
             await character.save(session=session)
 
     def _chunk_fields(self):

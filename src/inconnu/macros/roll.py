@@ -150,7 +150,7 @@ async def roll(
         elif macro.name.lower() == "bol":
             logger.info("VM: {}'s macro mimics Blush of Life", character.name)
             character.set_blush(BlushState.ON)
-            await character.save()
+            await character.save_changes()
 
     except ValueError, SyntaxError:
         err = f"**Unknown syntax:** `{syntax}`"

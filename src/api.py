@@ -2,6 +2,7 @@
 
 import functools
 import re
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 from json import dumps
 from urllib.parse import urljoin, urlparse
@@ -25,11 +26,11 @@ class ApiError(Exception):
     """An exception raised when there's an error with the API."""
 
 
-def measure(func):
+def measure[**P, R](func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
     """A decorator that measures API response time."""
 
     @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         start = datetime.now()
         val = await func(*args, **kwargs)
         end = datetime.now()
@@ -80,7 +81,7 @@ async def delete_character_faceclaims(character: VChar):
     try:
         res = await _delete(path=f"/character/{character.id_str}")
         del character.profile.images[:]
-        await character.save()
+        await character.save_changes()
         logger.info("API: {}", res)
     except Exception as err:
         raise ApiError(str(err))

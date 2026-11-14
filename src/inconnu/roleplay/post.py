@@ -193,7 +193,7 @@ class PostModal(discord.ui.Modal):
         # Finish updating the post and inform the user
         self.post_to_edit.title = self._clean_title() or None
         self.post_to_edit.tags = self._clean_tags()
-        await self.post_to_edit.save()
+        await self.post_to_edit.save_changes()
 
         await interaction.response.send_message("Post updated!", ephemeral=True, delete_after=3)
         logger.info("POST: {} edited a post ({})", self.character.name, self.message.id)
@@ -278,7 +278,7 @@ class PostModal(discord.ui.Modal):
                 tags=tags,
             )
             db_rp_post.id_chain = id_chain
-            await db_rp_post.save()
+            await db_rp_post.insert()
 
             # We only want to save the tags and bookmark for the first post
             title = None

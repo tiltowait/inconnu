@@ -21,10 +21,12 @@ from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
 from models.impairment import Impairment
 from models.vchardocs import (
     BlushState,
+    MacroUpdate,
     TraitMatch,
     VCharExperience,
     VCharExperienceEntry,
     VCharHeader,
+    VCharLog,
     VCharMacro,
     VCharProfile,
     VCharTrait,
@@ -56,6 +58,8 @@ class VChar(Document):
         ]
 
     VAMPIRE_TRAITS: ClassVar[list[str]] = ["Hunger", "Potency", "Surge", "Bane", "PowerBonus"]
+    MIN_TRACKER: ClassVar[int] = 3
+    MAX_TRACKER: ClassVar[int] = 25
     SPC_OWNER: ClassVar[int] = 0
 
     # Ownership
@@ -81,12 +85,12 @@ class VChar(Document):
     # Misc/convenience
     macros: list[VCharMacro] = Field(default_factory=list)
     experience: VCharExperience = Field(default_factory=VCharExperience)
-    stat_log: dict[str, Any] = Field(alias="log", default_factory=dict)
+    log: VCharLog = Field(default_factory=VCharLog)
 
     @before_event(Insert)
     def pre_insert(self):
         """Last-minute prep."""
-        self.stat_log["created"] = datetime.now(UTC)
+        self.log.created = datetime.now(UTC)
 
         if self.splat == "thinblood":
             self.splat = "thin-blood"
@@ -433,16 +437,16 @@ class VChar(Document):
                 raise ValueError(f"`{name}` is a reserved trait and can't be added")
 
         assignments: dict[str, int] = {}
-        counter = Counter()
+        counter: Counter[Tracker] = Counter()
 
         for input_name, input_rating in traits.items():
             updated = False
             for trait in self.raw_traits:
                 if trait.matching(input_name, True):
                     if trait.name in ("Resolve", "Composure"):
-                        counter["willpower"] += input_rating - trait.rating
+                        counter[Tracker.WILLPOWER] += input_rating - trait.rating
                     elif trait.name == "Stamina":
-                        counter["health"] += input_rating - trait.rating
+                        counter[Tracker.HEALTH] += input_rating - trait.rating
 
                     trait.rating = input_rating
                     assignments[trait.name] = input_rating
@@ -471,10 +475,8 @@ class VChar(Document):
         adjustments = []
 
         for track, delta in counter.items():
-            if delta:
+            if delta and self.adjust_tracker_rating(track, len(getattr(self, track)) + delta):
                 adjustments.append(track.title())
-                new_rating = len(getattr(self, track)) + delta
-                self.adjust_tracker_rating(track, new_rating)
 
         if adjustments:
             adjustment = " and ".join(adjustments)
@@ -574,7 +576,7 @@ class VChar(Document):
 
         logger.debug("VCHAR: {}: Added new macro {}", self.name, macro.name)
 
-    def update_macro(self, search: str, update: dict[str, str | int | bool]) -> str:
+    def update_macro(self, search: str, update: MacroUpdate) -> str:
         """Update a macro."""
         macro = self.find_macro(search)
         for field, value in update.items():
@@ -596,27 +598,19 @@ class VChar(Document):
     # Specialized mutators
 
     def adjust_tracker_rating(self, track: Tracker, new_rating: int) -> bool:
-        """Adjust a character's Health or Willpower rating. Returns true if changed."""
-        if track == Tracker.HEALTH:
-            current_rating = len(self.health)
-            current_track = self.health
-        elif track == Tracker.WILLPOWER:
-            current_rating = len(self.willpower)
-            current_track = self.willpower
-        else:
-            raise ValueError(f"Invalid tracker: {track}.")
-
-        delta = new_rating - current_rating
-        if delta > 0:
-            # Increasing the track
-            new_track = Damage.NONE * delta + current_track
-        elif delta < 0:
-            # Decreasing the track
-            reduction = abs(delta)
-            new_track = current_track[reduction:]
-        else:
-            # No change
+        """Resize Health or Willpower, keeping its damage: boxes are added and
+        removed at the undamaged end. The rating is clamped to MIN_TRACKER and
+        MAX_TRACKER. Returns True if it changed."""
+        current_track: str = getattr(self, track)
+        new_rating = max(self.MIN_TRACKER, min(new_rating, self.MAX_TRACKER))
+        delta = new_rating - len(current_track)
+        if delta == 0:
             return False
+
+        if delta > 0:
+            new_track = Damage.NONE * delta + current_track
+        else:
+            new_track = current_track[-delta:]
 
         setattr(self, track, new_track)
         return True
@@ -670,8 +664,17 @@ class VChar(Document):
         new_agg = new_track.count(Damage.AGGRAVATED)
         new_sup = new_track.count(Damage.SUPERFICIAL)
 
-        self.__update_log(f"{tracker}_superficial", old_sup, new_sup)
-        self.__update_log(f"{tracker}_aggravated", old_agg, new_agg)
+        self._count_damage(tracker, new_sup - old_sup, new_agg - old_agg)
+
+    def _count_damage(self, tracker: Tracker, superficial: int, aggravated: int):
+        """Count damage taken. Healing isn't counted."""
+        superficial, aggravated = max(superficial, 0), max(aggravated, 0)
+        if tracker == Tracker.HEALTH:
+            self.log.health_superficial += superficial
+            self.log.health_aggravated += aggravated
+        else:
+            self.log.willpower_superficial += superficial
+            self.log.willpower_aggravated += aggravated
 
     def apply_damage(self, tracker: Tracker, severity: Damage, delta: int) -> bool:
         """
@@ -727,48 +730,3 @@ class VChar(Document):
             self.set_lifetime_xp(self.experience.lifetime + amount)
         else:
             self.experience.unspent += amount
-
-    # Misc
-
-    def log(self, key: str, increment=1):
-        """Updates the log for a given field."""
-        if increment < 1:
-            # We only want to see increments, not decrements
-            return
-
-        valid_keys = {
-            "remorse",
-            "rouse",
-            "slake",
-            "awaken",
-            "frenzy",
-            "degen",
-            "health_superficial",
-            "health_aggravated",
-            "stains",
-            "willpower_superficial",
-            "willpower_aggravated",
-            "blush",
-        }
-        if key not in valid_keys:
-            raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
-
-        if key in self.stat_log:
-            self.stat_log[key] += increment
-        else:
-            self.stat_log[key] = increment
-
-    def __update_log(self, key: str, old_value: int, new_value: int):
-        """
-        Updates the character log.
-        Args:
-            key (str): The key to be updated
-            addition (int): The amount to increase it by
-        """
-        if new_value > old_value:
-            delta = new_value - old_value
-
-            if key in self.stat_log:
-                self.stat_log[key] += delta
-            else:
-                self.stat_log[key] = delta

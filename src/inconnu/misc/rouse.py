@@ -10,7 +10,7 @@ import errors
 import inconnu
 import services
 import ui
-from ctx import AppCtx, AppInvocation
+from ctx import AppCtx, AppInvocation, AppResponse
 from models import VChar
 from services.haven import haven
 from utils import get_message
@@ -85,7 +85,7 @@ async def perform_rouse(
         outcome = await __rouse_roll(guild, character, count, reroll)
         if oblivion == "apply" and outcome.stains > 0:
             character.stains += outcome.stains
-            character.log("stains", outcome.stains)
+            character.log.stains += outcome.stains
 
         update_msg = f"**{character.name}** "
         if outcome.failures and outcome.frenzy:
@@ -102,7 +102,7 @@ async def perform_rouse(
 
         inter, _ = await asyncio.gather(
             __display_outcome(ctx, character, outcome, purpose, oblivion, message, ephemeral),
-            character.save(),
+            character.save_changes(),
         )
         msg = await get_message(inter)
 
@@ -141,7 +141,7 @@ async def __display_outcome(
     oblivion: str | bool,
     message: str | None,
     ephemeral: bool,
-) -> AppInvocation | discord.Interaction | discord.WebhookMessage:
+) -> AppResponse:
     """Process the rouse result and display to the user."""
     title = __make_title(outcome)
 
@@ -210,7 +210,7 @@ async def __damage_ghoul(ctx: AppInvocation, ghoul: VChar, ephemeral: bool):
         footer="V5 Core, p.234",
         ephemeral=ephemeral,
     )
-    await ghoul.save()
+    await ghoul.save_changes()
 
 
 async def __rouse_roll(
@@ -241,7 +241,7 @@ async def __rouse_roll(
     character.hunger += failures
     gain = character.hunger - starting_hunger
 
-    character.log("rouse", rolls)
+    character.log.rouse += rolls
 
     return _RouseOutcome(
         total=rolls,

@@ -6,6 +6,8 @@ from loguru import logger
 
 import errors
 import ui
+from ctx import AppCtx
+from models import VChar
 from services.haven import haven
 from utils.text import clean_text
 from utils.urls import docs_url
@@ -14,20 +16,20 @@ __HELP_URL = docs_url("command-reference/characters#character-profile")
 
 
 @haven(__HELP_URL)
-async def edit_biography(ctx, character):
+async def edit_biography(ctx: AppCtx, character: VChar):
     """Edit a character bio."""
     modal = _CharacterBio(character, title=f"Edit Profile: {character.name}")
     await ctx.send_modal(modal)
 
 
-def _has_profile(character):
+def _has_profile(character: VChar):
     """Raises an error if the character doesn't have a profile."""
     if not character.has_biography:
         raise errors.CharacterError(f"{character.name} doesn't have a profile!")
 
 
 @haven(__HELP_URL, _has_profile, "None of your characters have a profile!", True)
-async def show_biography(ctx, character, player, ephemeral=False):
+async def show_biography(ctx: AppCtx, character: VChar, player: discord.Member, ephemeral=False):
     """Display a character's biography."""
     if character.has_biography:
         paginator = __biography_paginator(ctx, character, player)
@@ -40,7 +42,7 @@ async def show_biography(ctx, character, player, ephemeral=False):
         )
 
 
-def __biography_paginator(ctx, character, owner):
+def __biography_paginator(ctx: AppCtx, character: VChar, owner: discord.Member) -> pages.Paginator:
     """Display the biography in an embed."""
     embed = ui.embeds.VCharEmbed(
         ctx,
@@ -88,8 +90,8 @@ def __biography_paginator(ctx, character, owner):
 class _CharacterBio(discord.ui.Modal):
     """A character biography modal."""
 
-    def __init__(self, character, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, character: VChar, *, title: str):
+        super().__init__(title=title)
         self.character = character
 
         self.add_item(
@@ -130,4 +132,4 @@ class _CharacterBio(discord.ui.Modal):
 
         self.character.profile.biography = biography
         self.character.profile.description = description
-        await self.character.save()
+        await self.character.save_changes()

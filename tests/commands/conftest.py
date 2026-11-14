@@ -106,8 +106,9 @@ async def mock_defer() -> AsyncGenerator[AsyncMock]:
 
 
 @pytest.fixture
-def mock_char_save():
-    with patch("models.vchar.VChar.save", new_callable=AsyncMock) as mocked:
+def mock_char_save() -> Generator[AsyncMock]:
+    """Patch character saves."""
+    with patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mocked:
         yield mocked
 
 
@@ -129,7 +130,7 @@ def char(guild: discord.Guild, user: discord.Member) -> VChar:
 
 
 @pytest.fixture
-def vamp(char) -> VChar:
+def vamp(char: VChar) -> VChar:
     return char
 
 
@@ -152,7 +153,7 @@ def ghoul(char: VChar) -> VChar:
 
 
 @pytest.fixture(autouse=True)
-async def mock_emoji_manager():
+async def mock_emoji_manager() -> AsyncGenerator[MagicMock]:
     """Mock emoji manager to prevent initialization errors in tests."""
     # Create a mock that returns a placeholder emoji for any key
     mock_emojis = MagicMock()

@@ -64,7 +64,7 @@ async def test_empty_macro_refused(ctx: AppCtx, character: VChar, mock_error: As
 
 async def test_rouse_only_macro(ctx: AppCtx, character: VChar, mock_error: AsyncMock):
     """A macro with Rouse Checks doesn't need a pool."""
-    with patch.object(VChar, "save", new_callable=AsyncMock):
+    with patch.object(VChar, "save_changes", new_callable=AsyncMock):
         await create(ctx, character, "test", "0", True, 0, 1, False, "no", False, None)
 
     mock_error.assert_not_awaited()

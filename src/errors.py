@@ -1,7 +1,13 @@
 """Package-wide errors."""
 
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
+
 from discord.ext import commands
 from discord.ext.commands import CheckFailure
+
+if TYPE_CHECKING:
+    from models import VChar
 
 
 class NotPremium(commands.CommandError):
@@ -106,7 +112,7 @@ class TraitAlreadyExistsError(TraitError):
 class TraitNotFound(TraitError):
     """Raised when a user specifies a nonexistent trait."""
 
-    def __init__(self, character, trait: str):
+    def __init__(self, character: VChar, trait: str):
         super().__init__()
         self.name = character.name
         self.trait = trait
@@ -118,7 +124,7 @@ class TraitNotFound(TraitError):
 class AmbiguousTraitError(TraitError):
     """Raised when a user's trait argument is ambiguous."""
 
-    def __init__(self, input_trait, matches):
+    def __init__(self, input_trait: str, matches: Iterable[str]):
         self.input = input_trait
         self.matches = matches
 
@@ -142,7 +148,3 @@ class MacroAlreadyExistsError(MacroError):
 
 class MacroNotFoundError(InconnuError):
     """Error for when a macro isn't found."""
-
-
-class InvalidLogKeyError(InconnuError):
-    """Error for when we try to modify an invalid log."""

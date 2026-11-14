@@ -98,7 +98,7 @@ async def update(
                 message=update_message,
                 thumbnail=character.profile_image_url if not fields else None,
             ),
-            character.save(),
+            character.save_changes(),
         )
         if update_message:  # May not always be true in the future
             msg = await get_message(inter)

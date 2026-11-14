@@ -334,9 +334,9 @@ def make_mock_char(
     # Set ID so it appears "saved" (required by PublicCharacter.create)
     char.id = PydanticObjectId()
 
-    # Set stat_log for "left" check
+    # Set log for "left" check
     if has_left:
-        char.stat_log["left"] = True
+        char.log.left = discord.utils.utcnow()
 
     return char
 

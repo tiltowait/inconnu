@@ -6,6 +6,7 @@ from ctx import AppCtx
 from inconnu.misc.awaken import awaken
 from models import BlushState
 from models.vchar import VChar
+from models.vchardocs import VCharLog
 
 
 async def test_vamp_awaken_rouse_success_no_wp(
@@ -146,16 +147,14 @@ async def test_vamp_awaken_logs_correctly(
     mock_char_save: AsyncMock,
 ):
     """Test that vampire awakening logs both awaken and rouse."""
-    vamp.stat_log = {}
+    vamp.log = VCharLog()
 
     with patch("inconnu.d10", return_value=7):
         await awaken(ctx, vamp)
 
     # Should log both awaken and rouse
-    assert "awaken" in vamp.stat_log
-    assert "rouse" in vamp.stat_log
-    assert vamp.stat_log["awaken"] == 1
-    assert vamp.stat_log["rouse"] == 1
+    assert vamp.log.awaken == 1
+    assert vamp.log.rouse == 1
     mock_char_save.assert_awaited()
 
 
@@ -342,13 +341,12 @@ async def test_awaken_logs_awaken_for_all_types(
     mock_char_save: AsyncMock,
 ):
     """Test that all character types log 'awaken'."""
-    mortal.stat_log = {}
+    mortal.log = VCharLog()
 
     await awaken(ctx, mortal)
 
     # Should log awaken
-    assert "awaken" in mortal.stat_log
-    assert mortal.stat_log["awaken"] == 1
+    assert mortal.log.awaken == 1
     mock_char_save.assert_awaited()
 
 
@@ -390,14 +388,13 @@ async def test_vamp_awaken_rouse_logging(
     mock_char_save: AsyncMock,
 ):
     """Test that vampires log rouse even on success."""
-    vamp.stat_log = {}
+    vamp.log = VCharLog()
 
     with patch("inconnu.d10", return_value=7):  # Success
         await awaken(ctx, vamp)
 
     # Should log rouse regardless of success/failure
-    assert "rouse" in vamp.stat_log
-    assert vamp.stat_log["rouse"] == 1
+    assert vamp.log.rouse == 1
     mock_char_save.assert_awaited()
 
 
@@ -407,10 +404,10 @@ async def test_mortal_no_rouse_logging(
     mock_char_save: AsyncMock,
 ):
     """Test that mortals don't log rouse."""
-    mortal.stat_log = {}
+    mortal.log = VCharLog()
 
     await awaken(ctx, mortal)
 
     # Should not log rouse
-    assert "rouse" not in mortal.stat_log
+    assert mortal.log.rouse == 0
     mock_char_save.assert_awaited()

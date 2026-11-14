@@ -34,7 +34,7 @@ def interaction() -> MockInteraction:
 @pytest.fixture
 def mock_save() -> Iterator[AsyncMock]:
     """Patch saving the character."""
-    with patch.object(VChar, "save", new_callable=AsyncMock) as mock:
+    with patch.object(VChar, "save_changes", new_callable=AsyncMock) as mock:
         yield mock
 
 

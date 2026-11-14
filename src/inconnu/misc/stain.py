@@ -1,9 +1,14 @@
 """misc/stain.py - Apply or remove stains from characters."""
 
+import discord
+
 import inconnu
 import services
 import ui
 from constants import Damage
+from ctx import AppCtx, AppResponse
+from models import VChar
+from models.vchar import Tracker
 from services.haven import haven
 from utils import get_message
 from utils.text import pluralize
@@ -13,7 +18,7 @@ __HELP_URL = docs_url("guides/gameplay-shortcuts#applying-stains")
 
 
 @haven(__HELP_URL)
-async def stain(ctx, character, delta, *, player):
+async def stain(ctx: AppCtx, character: VChar, delta: int, *, player: discord.Member):
     """Apply or remove stains."""
     try:
         if delta == 0:
@@ -36,7 +41,7 @@ async def stain(ctx, character, delta, *, player):
             new_overlap = abs(10 - character.humanity - total_stains)
             overlap_delta = new_overlap - old_overlap
 
-            character.apply_damage("willpower", Damage.AGGRAVATED, overlap_delta)
+            character.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, overlap_delta)
             fields.append(("Willpower", inconnu.character.DisplayField.WILLPOWER))
 
             message = f"\n**Degeneration!** `+{overlap_delta}` Aggravated Willpower damage."
@@ -44,25 +49,31 @@ async def stain(ctx, character, delta, *, player):
             message = None
 
         character.stains += delta
-        character.log("stains", delta)
+        character.log.stains += max(delta, 0)
         if character.degeneration:
             footer = "Degeneration! -2 dice to all rolls. Remains until /remorse or auto-drop."
 
         title = "Added" if delta > 0 else "Removed"
         title = f"{title} {pluralize(abs(delta), 'Stain')}"
 
+        await character.save_changes()
         inter = await inconnu.character.display(
             ctx, character, title, message=message, owner=player, fields=fields, footer=footer
         )
         await __report(ctx, inter, character, delta)
-        await character.save()
 
     except ValueError as err:
         # Delta was 0, or clamping made it 0
         await ui.embeds.error(ctx, err, help=__HELP_URL)
 
 
-async def __report(ctx, inter, character, delta):
+async def __report(
+    ctx: AppCtx,
+    inter: AppResponse,
+    character: VChar,
+    delta: int,
+):
+    """Post the Stain change to the update channel."""
     verbed = "gained" if delta > 0 else "removed"
     delta = abs(delta)
     stains = "Stains" if delta > 1 else "Stain"

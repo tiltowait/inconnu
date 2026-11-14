@@ -69,9 +69,6 @@ class VCharLog(BaseModel):
     """When the character was created and its owner left, and running counts
     of gameplay events. Counts only go up."""
 
-    # Keeps keys no longer written (an old Hunger count) through full saves
-    model_config = ConfigDict(extra="allow")
-
     created: datetime | None = None
     left: datetime | None = None  # The owner left the server; culled after 30 days
 

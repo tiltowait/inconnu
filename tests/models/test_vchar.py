@@ -9,7 +9,7 @@ from pymongo.asynchronous.collection import AsyncCollection
 from constants import Damage
 from models import BlushState, VChar
 from models.vchar import Tracker
-from models.vchardocs import VCharHeader, VCharLog
+from models.vchardocs import VCharHeader
 from tests.characters import gen_char
 
 
@@ -258,15 +258,6 @@ def test_healing_is_not_counted():
     char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 1)
 
     assert char.log.health_superficial == 3
-
-
-def test_log_keeps_legacy_keys():
-    """Keys the bot no longer writes survive a load and save."""
-    created = datetime(2022, 1, 1, tzinfo=UTC)
-    log = VCharLog.model_validate({"created": created, "rouse": 2, "hunger": 3})
-
-    assert (log.created, log.rouse, log.left) == (created, 2, None)
-    assert log.model_dump()["hunger"] == 3
 
 
 @pytest.fixture

@@ -110,7 +110,7 @@ async def __heal(character: VChar) -> MendOutcome | str:
         frenzy = False
 
     if character.is_vampire:
-        character.log("rouse")
+        character.stat_log.rouse += 1
 
     await character.save()
     return MendOutcome(mended=mending, rouse=rouse, frenzy=frenzy)

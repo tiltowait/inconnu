@@ -65,6 +65,30 @@ class VCharExperience(BaseModel):
     log: list[VCharExperienceEntry] = Field(default_factory=list)
 
 
+class VCharLog(BaseModel):
+    """When the character was created and its owner left, and running counts
+    of gameplay events. Counts only go up."""
+
+    # Keeps keys no longer written (an old Hunger count) through full saves
+    model_config = ConfigDict(extra="allow")
+
+    created: datetime | None = None
+    left: datetime | None = None  # The owner left the server; culled after 30 days
+
+    awaken: int = 0
+    blush: int = 0
+    degen: int = 0
+    frenzy: int = 0
+    health_aggravated: int = 0
+    health_superficial: int = 0
+    remorse: int = 0
+    rouse: int = 0
+    slake: int = 0
+    stains: int = 0
+    willpower_aggravated: int = 0
+    willpower_superficial: int = 0
+
+
 class VCharMacro(BaseModel):
     """A roll macro."""
 

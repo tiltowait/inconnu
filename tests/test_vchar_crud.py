@@ -254,13 +254,12 @@ async def test_pre_insert_hook_creation_timestamp():
     char_id = char.id
 
     # Verify timestamp in memory
-    assert "created" in char.stat_log
-    assert char.stat_log["created"] is not None
+    assert char.stat_log.created is not None
 
     # Verify timestamp persisted
     fetched = await VChar.get(char_id)
     assert fetched is not None
-    assert "created" in fetched.stat_log
+    assert fetched.stat_log.created is not None
 
     await char.delete()
 

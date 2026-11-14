@@ -142,7 +142,3 @@ class MacroAlreadyExistsError(MacroError):
 
 class MacroNotFoundError(InconnuError):
     """Error for when a macro isn't found."""
-
-
-class InvalidLogKeyError(InconnuError):
-    """Error for when we try to modify an invalid log."""

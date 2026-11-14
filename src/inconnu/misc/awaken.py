@@ -50,7 +50,7 @@ async def awaken(ctx: AppCtx, character: VChar):
             message += f"\nRecovered **{recovered}** Health."
             recovery.append(f"sh=-{recovered}")
 
-    character.log("awaken")
+    character.stat_log.awaken += 1
 
     # If a vampire awakens, we want to turn off its blush. N/A is left
     # alone. A character who no longer needs to Blush becomes N/A.
@@ -61,7 +61,7 @@ async def awaken(ctx: AppCtx, character: VChar):
         logger.debug("AWAKEN: {} isn't Blushed; header unchanged", character.name)
 
     if character.is_vampire:
-        character.log("rouse")
+        character.stat_log.rouse += 1
 
     # The update function will commit for us
     await inconnu.character.update(

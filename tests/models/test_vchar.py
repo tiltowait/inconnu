@@ -1,9 +1,13 @@
 """Tests for models/vchar.py."""
 
+from datetime import UTC, datetime
+
 import pytest
 
+from constants import Damage
 from models import BlushState, VChar
-from models.vchardocs import VCharHeader
+from models.vchar import Tracker
+from models.vchardocs import VCharHeader, VCharLog
 from tests.characters import gen_char
 
 
@@ -232,3 +236,32 @@ def test_header_without_blush_loads_as_off():
 def test_stored_blush_loads_as_enum(stored: int):
     """Integers in the database become BlushStates."""
     assert VCharHeader.model_validate({"blush": stored}).blush is BlushState(stored)
+
+
+def test_damage_taken_is_counted():
+    """Damage taken is counted per tracker and severity."""
+    char = gen_char("vampire")
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 2)
+    char.set_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, 1)
+
+    log = char.stat_log
+    assert (log.health_superficial, log.health_aggravated) == (2, 0)
+    assert (log.willpower_superficial, log.willpower_aggravated) == (0, 1)
+
+
+def test_healing_is_not_counted():
+    """Healing leaves the damage counts alone."""
+    char = gen_char("vampire")
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 3)
+    char.set_damage(Tracker.HEALTH, Damage.SUPERFICIAL, 1)
+
+    assert char.stat_log.health_superficial == 3
+
+
+def test_log_keeps_legacy_keys():
+    """Keys the bot no longer writes survive a load and save."""
+    created = datetime(2022, 1, 1, tzinfo=UTC)
+    log = VCharLog.model_validate({"created": created, "rouse": 2, "hunger": 3})
+
+    assert (log.created, log.rouse, log.left) == (created, 2, None)
+    assert log.model_dump()["hunger"] == 3

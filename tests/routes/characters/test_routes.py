@@ -336,7 +336,7 @@ def make_mock_char(
 
     # Set stat_log for "left" check
     if has_left:
-        char.stat_log["left"] = True
+        char.stat_log.left = discord.utils.utcnow()
 
     return char
 

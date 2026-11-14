@@ -54,7 +54,7 @@ async def get_character_list(
 
     chars = []
     for char in await char_mgr.fetchuser(user_id):
-        if char.stat_log.get("left") is not None:
+        if char.stat_log.left is not None:
             continue
         if char.guild in guilds:
             guild = guilds[char.guild]
@@ -141,7 +141,7 @@ async def get_guild_characters(
     if member is None:
         raise HTTPException(403, detail="User does not belong to guild")
 
-    chars = [c for c in await char_mgr.fetchguild(guild_id) if c.stat_log.get("left") is None]
+    chars = [c for c in await char_mgr.fetchguild(guild_id) if c.stat_log.left is None]
     owner_ids = {c.user for c in chars if not c.is_spc}
     owners = {m.id: m for m in await guild_cache.fetchmembers(guild, ids=owner_ids)}
 

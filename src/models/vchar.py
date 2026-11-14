@@ -25,6 +25,7 @@ from models.vchardocs import (
     VCharExperience,
     VCharExperienceEntry,
     VCharHeader,
+    VCharLog,
     VCharMacro,
     VCharProfile,
     VCharTrait,
@@ -81,12 +82,12 @@ class VChar(Document):
     # Misc/convenience
     macros: list[VCharMacro] = Field(default_factory=list)
     experience: VCharExperience = Field(default_factory=VCharExperience)
-    stat_log: dict[str, Any] = Field(alias="log", default_factory=dict)
+    stat_log: VCharLog = Field(alias="log", default_factory=VCharLog)
 
     @before_event(Insert)
     def pre_insert(self):
         """Last-minute prep."""
-        self.stat_log["created"] = datetime.now(UTC)
+        self.stat_log.created = datetime.now(UTC)
 
         if self.splat == "thinblood":
             self.splat = "thin-blood"
@@ -670,8 +671,17 @@ class VChar(Document):
         new_agg = new_track.count(Damage.AGGRAVATED)
         new_sup = new_track.count(Damage.SUPERFICIAL)
 
-        self.__update_log(f"{tracker}_superficial", old_sup, new_sup)
-        self.__update_log(f"{tracker}_aggravated", old_agg, new_agg)
+        self._count_damage(tracker, new_sup - old_sup, new_agg - old_agg)
+
+    def _count_damage(self, tracker: Tracker, superficial: int, aggravated: int):
+        """Count damage taken. Healing isn't counted."""
+        superficial, aggravated = max(superficial, 0), max(aggravated, 0)
+        if tracker == Tracker.HEALTH:
+            self.stat_log.health_superficial += superficial
+            self.stat_log.health_aggravated += aggravated
+        else:
+            self.stat_log.willpower_superficial += superficial
+            self.stat_log.willpower_aggravated += aggravated
 
     def apply_damage(self, tracker: Tracker, severity: Damage, delta: int) -> bool:
         """
@@ -727,48 +737,3 @@ class VChar(Document):
             self.set_lifetime_xp(self.experience.lifetime + amount)
         else:
             self.experience.unspent += amount
-
-    # Misc
-
-    def log(self, key: str, increment=1):
-        """Updates the log for a given field."""
-        if increment < 1:
-            # We only want to see increments, not decrements
-            return
-
-        valid_keys = {
-            "remorse",
-            "rouse",
-            "slake",
-            "awaken",
-            "frenzy",
-            "degen",
-            "health_superficial",
-            "health_aggravated",
-            "stains",
-            "willpower_superficial",
-            "willpower_aggravated",
-            "blush",
-        }
-        if key not in valid_keys:
-            raise errors.InvalidLogKeyError(f"{key} is not a valid log key.")
-
-        if key in self.stat_log:
-            self.stat_log[key] += increment
-        else:
-            self.stat_log[key] = increment
-
-    def __update_log(self, key: str, old_value: int, new_value: int):
-        """
-        Updates the character log.
-        Args:
-            key (str): The key to be updated
-            addition (int): The amount to increase it by
-        """
-        if new_value > old_value:
-            delta = new_value - old_value
-
-            if key in self.stat_log:
-                self.stat_log[key] += delta
-            else:
-                self.stat_log[key] = delta

@@ -44,7 +44,7 @@ async def stain(ctx, character, delta, *, player):
             message = None
 
         character.stains += delta
-        character.log("stains", delta)
+        character.stat_log.stains += max(delta, 0)
         if character.degeneration:
             footer = "Degeneration! -2 dice to all rolls. Remains until /remorse or auto-drop."
 

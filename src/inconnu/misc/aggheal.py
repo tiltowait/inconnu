@@ -78,7 +78,7 @@ async def __heal(character: VChar) -> AggHealOutcome:
     character.health = Damage.NONE + character.health[:-1]
 
     if character.is_vampire:
-        character.log("rouse", 3)
+        character.stat_log.rouse += 3
 
     return AggHealOutcome(gain=hunger_gain, torpor=torpor)
 

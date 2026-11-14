@@ -85,7 +85,7 @@ async def perform_rouse(
         outcome = await __rouse_roll(guild, character, count, reroll)
         if oblivion == "apply" and outcome.stains > 0:
             character.stains += outcome.stains
-            character.log("stains", outcome.stains)
+            character.stat_log.stains += outcome.stains
 
         update_msg = f"**{character.name}** "
         if outcome.failures and outcome.frenzy:
@@ -241,7 +241,7 @@ async def __rouse_roll(
     character.hunger += failures
     gain = character.hunger - starting_hunger
 
-    character.log("rouse", rolls)
+    character.stat_log.rouse += rolls
 
     return _RouseOutcome(
         total=rolls,

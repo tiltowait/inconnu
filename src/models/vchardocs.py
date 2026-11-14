@@ -5,9 +5,11 @@ from datetime import UTC, datetime
 from enum import IntEnum, StrEnum
 from typing import ClassVar, Literal, NamedTuple, TypedDict, overload
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 import errors
+
+CAREER_STATS_LIVE = datetime(2026, 11, 14, tzinfo=UTC)
 
 
 class BlushState(IntEnum):
@@ -67,23 +69,75 @@ class VCharExperience(BaseModel):
 
 class VCharLog(BaseModel):
     """When the character was created and its owner left, and running counts
-    of gameplay events. Counts only go up."""
+    of gameplay events. Counts only go up.
 
-    created: datetime | None = None
+    Some counters are stored under older, vaguer keys. Their aliases keep those
+    keys in the database, while the API shows the clearer names."""
+
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+
+    # When each counter started; older characters' counts are incomplete
+    TRACKING_STARTED: ClassVar[dict[str, datetime]] = {
+        "deepest_degeneration": CAREER_STATS_LIVE,
+        "degenerations": CAREER_STATS_LIVE,
+        "frenzy_resisted": CAREER_STATS_LIVE,
+        "hunger_gained": CAREER_STATS_LIVE,
+        "hunts": CAREER_STATS_LIVE,
+        "rouse_failures": CAREER_STATS_LIVE,
+        "rouse_successes": CAREER_STATS_LIVE,
+        "surges": CAREER_STATS_LIVE,
+        "times_slaked": CAREER_STATS_LIVE,
+    }
+
+    created: datetime = Field(default_factory=lambda: datetime.now(UTC))
     left: datetime | None = None  # The owner left the server; culled after 30 days
 
-    awaken: int = 0
-    blush: int = 0
-    degen: int = 0
-    frenzy: int = 0
+    deepest_degeneration: int = 0  # Most Stains ever beyond Humanity's empty boxes
+    degenerations: int = 0  # Times entering degeneration
+    frenzy_resisted: int = 0
     health_aggravated: int = 0
     health_superficial: int = 0
-    remorse: int = 0
-    rouse: int = 0
-    slake: int = 0
-    stains: int = 0
+    hunger_gained: int = 0
+    hunger_slaked: int = Field(default=0, alias="slake", serialization_alias="hunger_slaked")
+    hunts: int = 0  # Hunt macros rolled
+    remorse_checks: int = Field(default=0, alias="remorse", serialization_alias="remorse_checks")
+    remorse_failures: int = Field(default=0, alias="degen", serialization_alias="remorse_failures")
+    rouse_checks: int = Field(default=0, alias="rouse", serialization_alias="rouse_checks")
+    rouse_failures: int = 0
+    rouse_successes: int = 0
+    stains_gained: int = Field(default=0, alias="stains", serialization_alias="stains_gained")
+    surges: int = 0
+    times_awakened: int = Field(default=0, alias="awaken", serialization_alias="times_awakened")
+    times_blushed: int = Field(default=0, alias="blush", serialization_alias="times_blushed")
+    times_frenzied: int = Field(default=0, alias="frenzy", serialization_alias="times_frenzied")
+    times_slaked: int = 0
     willpower_aggravated: int = 0
     willpower_superficial: int = 0
+
+    def record_rouse(self, successes: int, failures: int, hunger_gained: int):
+        """Record a set of Rouse checks and the Hunger they caused."""
+        self.rouse_checks += successes + failures
+        self.rouse_successes += successes
+        self.rouse_failures += failures
+        self.hunger_gained += hunger_gained
+
+    @computed_field
+    @property
+    def incomplete_since(self) -> dict[str, datetime]:
+        """The counters that started after the character was created, so its
+        counts are incomplete, and when they started."""
+        # Dates loaded from the database are naive UTC
+        created = self.created
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+
+        return {field: date for field, date in self.TRACKING_STARTED.items() if created < date}
+
+    @computed_field
+    @property
+    def remorse_successes(self) -> int:
+        """Successful Remorse checks."""
+        return self.remorse_checks - self.remorse_failures
 
 
 class MacroUpdate(TypedDict, total=False):

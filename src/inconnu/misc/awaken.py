@@ -28,6 +28,7 @@ async def awaken(ctx: AppCtx, character: VChar):
         message += f"\nRecovered **{recovered}** Willpower."
 
     if character.is_vampire:
+        old_hunger = character.hunger
         rouse_success = inconnu.d10() >= 6
         if rouse_success:
             message += "\n**No** Hunger gain."
@@ -40,6 +41,10 @@ async def awaken(ctx: AppCtx, character: VChar):
             else:
                 character.hunger += 1
                 message += f"Increase Hunger to **{character.hunger}**."
+
+        character.log.record_rouse(
+            int(rouse_success), int(not rouse_success), character.hunger - old_hunger
+        )
     else:
         stamina = character.find_trait("Stamina").rating
         if character.is_ghoul:
@@ -50,7 +55,7 @@ async def awaken(ctx: AppCtx, character: VChar):
             message += f"\nRecovered **{recovered}** Health."
             recovery.append(f"sh=-{recovered}")
 
-    character.log.awaken += 1
+    character.log.times_awakened += 1
 
     # If a vampire awakens, we want to turn off its blush. N/A is left
     # alone. A character who no longer needs to Blush becomes N/A.
@@ -59,9 +64,6 @@ async def awaken(ctx: AppCtx, character: VChar):
         character.reset_blush()
     else:
         logger.debug("AWAKEN: {} isn't Blushed; header unchanged", character.name)
-
-    if character.is_vampire:
-        character.log.rouse += 1
 
     # The update function will commit for us
     await inconnu.character.update(

@@ -103,6 +103,7 @@ async def __heal(character: VChar) -> MendOutcome | str:
     character.health = track
 
     rouse = inconnu.d10() >= 6
+    old_hunger = character.hunger
     if not rouse:
         frenzy = character.hunger == 5
         character.hunger += 1
@@ -110,7 +111,7 @@ async def __heal(character: VChar) -> MendOutcome | str:
         frenzy = False
 
     if character.is_vampire:
-        character.log.rouse += 1
+        character.log.record_rouse(int(rouse), int(not rouse), character.hunger - old_hunger)
 
     await character.save_changes()
     return MendOutcome(mended=mending, rouse=rouse, frenzy=frenzy)

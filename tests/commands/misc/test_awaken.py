@@ -2,6 +2,8 @@
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 from ctx import AppCtx
 from inconnu.misc.awaken import awaken
 from models import BlushState
@@ -153,8 +155,8 @@ async def test_vamp_awaken_logs_correctly(
         await awaken(ctx, vamp)
 
     # Should log both awaken and rouse
-    assert vamp.log.awaken == 1
-    assert vamp.log.rouse == 1
+    assert vamp.log.times_awakened == 1
+    assert vamp.log.rouse_checks == 1
     mock_char_save.assert_awaited()
 
 
@@ -346,7 +348,7 @@ async def test_awaken_logs_awaken_for_all_types(
     await awaken(ctx, mortal)
 
     # Should log awaken
-    assert mortal.log.awaken == 1
+    assert mortal.log.times_awakened == 1
     mock_char_save.assert_awaited()
 
 
@@ -382,19 +384,35 @@ async def test_mortal_awaken_partial_health_recovery(
     mock_char_save.assert_awaited()
 
 
+@pytest.mark.parametrize(
+    "die,hunger,successes,failures,gained",
+    [
+        (7, 1, 1, 0, 0),  # Success
+        (3, 1, 0, 1, 1),  # Failure
+        (3, 5, 0, 1, 0),  # Failure at Hunger 5: torpor, no gain
+    ],
+)
 async def test_vamp_awaken_rouse_logging(
+    die: int,
+    hunger: int,
+    successes: int,
+    failures: int,
+    gained: int,
     vamp: VChar,
     ctx: AppCtx,
     mock_char_save: AsyncMock,
 ):
-    """Test that vampires log rouse even on success."""
+    """Test that vampires log the Rouse and any Hunger it caused."""
     vamp.log = VCharLog()
+    vamp.hunger = hunger
 
-    with patch("inconnu.d10", return_value=7):  # Success
+    with patch("inconnu.d10", return_value=die):
         await awaken(ctx, vamp)
 
-    # Should log rouse regardless of success/failure
-    assert vamp.log.rouse == 1
+    assert vamp.log.rouse_checks == 1
+    assert vamp.log.rouse_successes == successes
+    assert vamp.log.rouse_failures == failures
+    assert vamp.log.hunger_gained == gained
     mock_char_save.assert_awaited()
 
 
@@ -409,5 +427,5 @@ async def test_mortal_no_rouse_logging(
     await awaken(ctx, mortal)
 
     # Should not log rouse
-    assert mortal.log.rouse == 0
+    assert mortal.log.rouse_checks == 0
     mock_char_save.assert_awaited()

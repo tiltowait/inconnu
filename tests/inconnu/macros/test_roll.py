@@ -45,6 +45,13 @@ def mock_max_hunger() -> Iterator[AsyncMock]:
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def mock_char_save() -> Iterator[AsyncMock]:
+    """Patch character saves."""
+    with patch("models.vchar.VChar.save_changes", new_callable=AsyncMock) as mock:
+        yield mock
+
+
 @pytest.fixture
 def owner() -> discord.Member:
     """The hunter's player."""
@@ -268,6 +275,16 @@ async def test_successful_hunt_shows_menu(
     assert mock_display_outcome.await_args.kwargs["hide_dice"] is hide_dice
     respond = cast(AsyncMock, ctx.respond)
     respond.assert_awaited_once_with(embed=ANY, view=ANY, ephemeral=hide_dice)
+
+
+@pytest.mark.parametrize("die", [6, 2])
+@pytest.mark.usefixtures("mock_haven", "mock_display_outcome")
+async def test_hunt_counted(ctx: AppCtx, character: VChar, mock_char_save: AsyncMock, die: int):
+    """Every hunt is counted and saved, successful or not."""
+    await hunt(ctx, die, False)
+
+    assert character.log.hunts == 1
+    mock_char_save.assert_awaited_once()
 
 
 @pytest.mark.usefixtures("mock_haven")

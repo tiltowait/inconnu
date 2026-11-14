@@ -66,10 +66,8 @@ async def __heal(character: VChar) -> AggHealOutcome:
     Heal agg damage.
     Does not check if the character has agg damage!
     """
-    hunger_gain = 0
-    for _ in range(3):
-        if inconnu.d10() < 6:
-            hunger_gain += 1
+    failures = sum(inconnu.d10() < 6 for _ in range(3))
+    hunger_gain = failures
 
     torpor = False
     if character.hunger + hunger_gain > 5:
@@ -81,7 +79,7 @@ async def __heal(character: VChar) -> AggHealOutcome:
     character.health = Damage.NONE + character.health[:-1]
 
     if character.is_vampire:
-        character.log.rouse += 3
+        character.log.record_rouse(3 - failures, failures, hunger_gain)
 
     return AggHealOutcome(gain=hunger_gain, torpor=torpor)
 

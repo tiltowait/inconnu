@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 import services
-from inconnu.character.update.paramupdate import update_name
+from inconnu.character.update.paramupdate import update_name, update_stains
 from models import VChar
 from tests.characters import gen_char
 
@@ -88,3 +88,27 @@ async def test_update_name_spc_duplicate():
     with patch_char_mgr(spc, other):
         with pytest.raises(ValueError, match="already have a character"):
             await update_name(spc, "Theron")
+
+
+@pytest.mark.parametrize(
+    "delta,expected_stains,expected_damage",
+    [
+        ("+2", 5, 2),  # Two Stains overflow Humanity 7
+        ("6", 6, 3),  # Setting rather than adding
+        ("-1", 2, 0),  # Removing Stains never deals damage
+    ],
+)
+def test_update_stains_degeneration(delta: str, expected_stains: int, expected_damage: int):
+    """Test that Stains set through updates trigger degeneration."""
+    char = gen_char("vampire")
+    char.humanity = 7
+    char.stains = 3
+
+    message = update_stains(char, delta)
+
+    assert char.stains == expected_stains
+    assert char.aggravated_wp == expected_damage
+    if expected_damage:
+        assert f"`+{expected_damage}` Aggravated Willpower damage" in message
+    else:
+        assert "Degeneration" not in message

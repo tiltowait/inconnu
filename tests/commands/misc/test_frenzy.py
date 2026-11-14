@@ -43,6 +43,9 @@ async def test_frenzy_report(
     with patch("inconnu.d10", side_effect=lambda count: [die] * count):
         await frenzy(ctx, vamp, difficulty, None, None)
 
+    passed = title == "Frenzy Success"
+    assert vamp.log.times_frenzied == int(not passed)
+    assert vamp.log.frenzy_resisted == int(passed)
     assert mock_common_report.await_args is not None
     kwargs = mock_common_report.await_args.kwargs
     assert kwargs["title"] == title

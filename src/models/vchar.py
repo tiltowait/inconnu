@@ -6,7 +6,6 @@ import math
 import random
 from collections import Counter
 from collections.abc import Callable
-from datetime import UTC, datetime
 from enum import StrEnum
 from functools import total_ordering
 from typing import Any, ClassVar, Self
@@ -90,8 +89,6 @@ class VChar(Document):
     @before_event(Insert)
     def pre_insert(self):
         """Last-minute prep."""
-        self.log.created = datetime.now(UTC)
-
         if self.splat == "thinblood":
             self.splat = "thin-blood"
 
@@ -702,6 +699,35 @@ class VChar(Document):
 
         self.set_damage(tracker, severity, new_dmg, wrap=True)
         return True
+
+    def add_stains(self, delta: int, *, log: bool) -> int:
+        """
+        Add (or remove) Stains, clamped to 0-10. Each Stain that overflows the
+        boxes Humanity leaves empty deals 1 Aggravated Willpower damage.
+        Args:
+            delta (int): The number of Stains to add; negative removes them
+            log (bool): Whether to count Stains gained and degeneration in the
+                log (False for manual updates)
+        Returns the Aggravated Willpower damage dealt.
+        """
+        unfilled = 10 - self.humanity
+        new_stains = max(0, min(10, self.stains + delta))
+        old_overflow = max(self.stains - unfilled, 0)
+        new_overflow = max(new_stains - unfilled, 0)
+        damage = max(new_overflow - old_overflow, 0)
+
+        if damage > 0:
+            self.apply_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, damage)
+
+        if log:
+            self.log.stains_gained += max(new_stains - self.stains, 0)
+            if old_overflow == 0 and new_overflow > 0:
+                self.log.degenerations += 1
+            self.log.deepest_degeneration = max(self.log.deepest_degeneration, new_overflow)
+
+        self.stains = new_stains
+
+        return damage
 
     def apply_experience(self, amount: int, scope: str, reason: str, admin: int):
         """

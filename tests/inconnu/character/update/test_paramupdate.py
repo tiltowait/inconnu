@@ -129,8 +129,8 @@ def test_update_stains_degeneration(delta: str, expected_stains: int, expected_d
         (Tracker.HEALTH, 21, False),
         (Tracker.WILLPOWER, 2, False),
         (Tracker.WILLPOWER, 3, True),
-        (Tracker.WILLPOWER, 10, True),
-        (Tracker.WILLPOWER, 11, False),
+        (Tracker.WILLPOWER, 20, True),
+        (Tracker.WILLPOWER, 21, False),
     ],
 )
 def test_update_tracker_limits(tracker: Tracker, rating: int, allowed: bool):

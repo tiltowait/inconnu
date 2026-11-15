@@ -70,7 +70,7 @@ class VChar(Document):
     MIN_HEALTH: ClassVar[int] = 4
     MAX_HEALTH: ClassVar[int] = 20
     MIN_WILLPOWER: ClassVar[int] = 3
-    MAX_WILLPOWER: ClassVar[int] = 10
+    MAX_WILLPOWER: ClassVar[int] = 20
     SPC_OWNER: ClassVar[int] = 0
 
     # Ownership

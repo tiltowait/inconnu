@@ -3,14 +3,17 @@
 import re
 
 from constants import RESERVED_TRAITS, Damage
+from utils.text import pluralize
 
 VALID_TRAIT_PATTERN = re.compile(r"^[A-Za-z_]+$")
+MAX_NAME_LENGTH = 30  # Character names
+MAX_TRAIT_LENGTH = 30  # Trait and specialty names
 
 
 def valid_name(name: str) -> bool:
     """Determine whether a character name is valid."""
     name = " ".join(name.split())
-    if len(name) > 30:
+    if len(name) > MAX_NAME_LENGTH:
         return False
     if not name:
         return False
@@ -31,8 +34,7 @@ def validate_trait_names(*traits, disciplines=False):
             raise ValueError(f"Duplicate trait: `{trait}`.")
         seen.add(normalized)
 
-        if (trait_len := len(trait)) > 20:
-            raise ValueError(f"`{trait}` is too long by {trait_len - 20} characters.")
+        _check_length(trait)
 
         if trait.title() in RESERVED_TRAITS:
             raise ValueError(
@@ -61,8 +63,7 @@ def validate_specialty_names(*specialties):
             raise ValueError(f"Duplicate specialty: {specialty}")
         seen.add(normalized)
 
-        if (spec_len := len(specialty)) > 20:
-            raise ValueError(f"`{specialty}` is too long by {spec_len - 20} characters.")
+        _check_length(specialty)
 
         if not specialty:
             raise ValueError("Specialty name cannot be empty.")
@@ -71,6 +72,12 @@ def validate_specialty_names(*specialties):
             raise SyntaxError(
                 f"Specialties can only have letters and underscores. Invalid: `{specialty}`."
             )
+
+
+def _check_length(name: str):
+    """Raise a ValueError if a trait or specialty name is too long."""
+    if (excess := len(name) - MAX_TRAIT_LENGTH) > 0:
+        raise ValueError(f"`{name}` is too long by {pluralize(excess, 'character')}.")
 
 
 def validate_tracker(track: str) -> str:

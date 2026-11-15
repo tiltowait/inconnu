@@ -286,12 +286,20 @@ def test_trait_name_with_underscore():
 
 
 def test_trait_name_too_long():
-    """Trait name longer than 20 characters rejected."""
-    trait = VCharTrait(name="A" * 21, rating=3, type=VCharTrait.Type.CUSTOM)
+    """Trait name longer than 30 characters rejected."""
+    trait = VCharTrait(name="A" * 31, rating=3, type=VCharTrait.Type.CUSTOM)
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "too long" in str(exc_info.value).lower()
+
+
+def test_trait_name_max_length():
+    """Trait and specialty names of exactly 30 characters are allowed."""
+    trait = VCharTrait(name="A" * 30, rating=3, type=VCharTrait.Type.CUSTOM, subtraits=["B" * 30])
+    body = CreationBody(**valid_creation_data(traits=[trait]))
+    assert body.traits[0].name == "A" * 30
+    assert body.traits[0].raw_subtraits == ["B" * 30]
 
 
 def test_trait_name_invalid_characters():
@@ -450,12 +458,12 @@ def test_powers_on_discipline_allowed():
 
 
 def test_specialty_name_too_long():
-    """Specialty name longer than 20 characters rejected."""
+    """Specialty name longer than 30 characters rejected."""
     trait = VCharTrait(
         name="Athletics",
         rating=2,
         type=VCharTrait.Type.SKILL,
-        subtraits=["A" * 21],
+        subtraits=["A" * 31],
     )
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:

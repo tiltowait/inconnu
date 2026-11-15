@@ -10,6 +10,7 @@ from pymongo.errors import OperationFailure
 
 import errors
 import inconnu.experience.bulk as bulk_module
+from events import CharEvents
 from inconnu.experience.bulk import _BulkModal
 from models import VChar
 from tests.characters import gen_char
@@ -283,6 +284,21 @@ async def test_bulk_award_transaction_fails(
     interaction.followup.send.assert_not_awaited()
     assert mock_error.await_args is not None
     assert "no XP was awarded" in mock_error.await_args.args[1]
+
+
+@pytest.mark.usefixtures("mock_save", "mock_error")
+async def test_bulk_award_failure_announces_restore(
+    interaction: MockInteraction,
+    characters: dict[tuple[int, str], VChar],
+    mock_transaction: AsyncMock,
+):
+    """The aborted saves announced the XP, so the restore is announced too."""
+    mock_transaction.side_effect = OperationFailure("Write conflict")
+    with patch.object(bulk_module, "char_events", spec=CharEvents) as mock_events:
+        await _submit(interaction, "5 xp <@1> Nadea\n3 xp <@2> Billy")
+
+    announced = {call.args[0] for call in mock_events.publish.call_args_list}
+    assert announced == {char.id_str for char in characters.values()}
 
 
 async def test_bulk_award_failure_keeps_later_awards(

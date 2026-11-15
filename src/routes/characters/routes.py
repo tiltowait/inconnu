@@ -1,16 +1,20 @@
 """Character API routes."""
 
+import asyncio
+from collections.abc import AsyncGenerator
 from typing import TYPE_CHECKING, Annotated
 
 import discord
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
+from fastapi.responses import StreamingResponse
 from loguru import logger
 
 import errors
 from config import settings
 from constants import Damage
+from events import char_events
 from models import VChar
 from routes.auth import get_authenticated_user, verify_api_key
 from routes.characters.models import (
@@ -25,11 +29,14 @@ from routes.characters.models import (
 )
 from routes.deps import get_bot
 from services import char_mgr, guild_cache, wizard_cache
+from services.guildcache import CachedGuild
 from services.wizard import CharacterGuild
 from utils.permissions import has_supporter_role, is_storyteller
 
 if TYPE_CHECKING:
     from bot import InconnuBot
+
+HEARTBEAT_SECONDS = 15.0
 
 router = APIRouter()
 
@@ -64,6 +71,30 @@ async def get_character_list(
     return UserCharData(guilds=list(guilds.values()), characters=chars)
 
 
+async def _fetch_guild_character(oid: PydanticObjectId, user_id: int) -> tuple[VChar, CachedGuild]:
+    """Fetch a character and its cached guild, if the user is in that guild.
+    Raises HTTPException if the bot is starting up, if the character or guild
+    doesn't exist, or if the user isn't in the guild."""
+    if not await guild_cache.ready():
+        raise HTTPException(503, detail="Bot is still starting up")
+
+    char = await char_mgr.fetchid(oid)
+    if char is None:
+        raise HTTPException(404, detail="Character not found")
+
+    # Get cached guild (primary data source for web routes)
+    guild = await guild_cache.fetchguild(char.guild)
+    if guild is None:
+        raise HTTPException(404, detail="Guild not found")
+
+    # Verify user is a member
+    cached_user = await guild_cache.fetchmember(char.guild, user_id)
+    if cached_user is None:
+        raise HTTPException(404, detail="User not in character's guild")
+
+    return char, guild
+
+
 @router.get("/characters/{oid}")
 async def get_character(
     oid: PydanticObjectId,
@@ -83,22 +114,7 @@ async def get_character(
 
     The CharData also contains guild and owner information. If the
     character is an SPC, then owner information is not returned."""
-    if not await guild_cache.ready():
-        raise HTTPException(503, detail="Bot is still starting up")
-
-    char = await char_mgr.fetchid(oid)
-    if char is None:
-        raise HTTPException(404, detail="Character not found")
-
-    # Get cached guild (primary data source for web routes)
-    guild = await guild_cache.fetchguild(char.guild)
-    if guild is None:
-        raise HTTPException(404, detail="Guild not found")
-
-    # Verify user is a member
-    cached_user = await guild_cache.fetchmember(char.guild, user_id)
-    if cached_user is None:
-        raise HTTPException(404, detail="User not in character's guild")
+    char, guild = await _fetch_guild_character(oid, user_id)
 
     # For the Storyteller check, need Discord member (has role data)
     discord_guild = bot.get_guild(char.guild)
@@ -121,6 +137,39 @@ async def get_character(
         character=character,
         spc=char.is_spc,
     )
+
+
+@router.get("/characters/{oid}/events")
+async def get_character_events(
+    oid: PydanticObjectId,
+    user_id: int = Depends(get_authenticated_user),
+) -> StreamingResponse:
+    """Stream Server-Sent Events whenever the character changes. Events carry
+    no data beyond "changed" or "deleted", so membership in the character's
+    guild is enough; the app refetches the character, which checks access."""
+    char, _ = await _fetch_guild_character(oid, user_id)
+    return StreamingResponse(
+        char_event_stream(char.id_str),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
+async def char_event_stream(oid: str, heartbeat=HEARTBEAT_SECONDS) -> AsyncGenerator[str]:
+    """Yield a character's events as SSE messages, until it's deleted. Pings
+    during quiet spells, because a dead connection only shows up when a write
+    fails."""
+    async with char_events.subscribe(oid) as queue:
+        yield "retry: 5000\n\n"
+        while True:
+            try:
+                event = await asyncio.wait_for(queue.get(), heartbeat)
+            except TimeoutError:
+                yield ": ping\n\n"
+                continue
+            yield f"data: {event}\n\n"
+            if event == "deleted":
+                return
 
 
 @router.get("/characters/guild/{guild_id}")

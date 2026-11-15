@@ -1,6 +1,7 @@
 """Tests for character API routes."""
 
-from collections.abc import AsyncIterator, Iterator
+import asyncio
+from collections.abc import AsyncGenerator, AsyncIterator, Iterator
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -12,12 +13,15 @@ from mongomock_motor import AsyncMongoMockClient
 from pymongo import AsyncMongoClient
 
 import db as database
+import routes.characters.routes as routes_module
 from config import settings
 from constants import Damage
 from errors import DuplicateCharacterError
+from events import char_events
 from models import VChar
 from models.vchardocs import VCharSplat, VCharTrait
 from routes.characters.models import OwnerData
+from routes.characters.routes import char_event_stream
 from routes.deps import get_bot
 from server import app
 from services import guild_cache
@@ -1963,3 +1967,130 @@ async def test_get_guild_characters_only_spcs(
             assert char["type"] == "public"
             assert char["owner"] is None
             assert "spc" not in char["character"]  # PublicCharacter doesn't have spc
+
+
+# Character events
+
+
+async def test_character_events_not_found(
+    auth_headers: dict[str, str], mock_char_mgr_fetchid: MockAsyncFn
+):
+    """Streaming a missing character returns 404."""
+    mock_char_mgr_fetchid.return_value = None
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            f"/characters/{PydanticObjectId()}/events", headers=auth_headers
+        )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Character not found"
+
+
+async def test_character_events_guild_not_found(
+    auth_headers: dict[str, str], mock_char_mgr_fetchid: MockAsyncFn
+):
+    """Streaming a character whose guild isn't cached returns 404."""
+    mock_char_mgr_fetchid.return_value = make_mock_char(TEST_GUILD_ID, TEST_USER_ID, "Char")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            f"/characters/{PydanticObjectId()}/events", headers=auth_headers
+        )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Guild not found"
+
+
+async def test_character_events_not_member(
+    auth_headers: dict[str, str], mock_char_mgr_fetchid: MockAsyncFn
+):
+    """Only members of the character's guild may stream its events."""
+    await populate_guild_cache([make_mock_guild(TEST_GUILD_ID, "Test Guild", user_is_member=False)])
+    mock_char_mgr_fetchid.return_value = make_mock_char(TEST_GUILD_ID, 999999, "Char")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            f"/characters/{PydanticObjectId()}/events", headers=auth_headers
+        )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "User not in character's guild"
+
+
+async def test_character_events_starting_up(auth_headers: dict[str, str]):
+    """Streaming before the guild cache is ready returns 503."""
+    with patch.object(guild_cache, "ready", new_callable=AsyncMock, return_value=False):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(
+                f"/characters/{PydanticObjectId()}/events", headers=auth_headers
+            )
+
+    assert response.status_code == 503
+
+
+async def test_character_events_member_streams(
+    auth_headers: dict[str, str], mock_char_mgr_fetchid: MockAsyncFn
+):
+    """A guild member gets an event stream, even for someone else's character."""
+    await populate_guild_cache([make_mock_guild(TEST_GUILD_ID, "Test Guild")])
+    char = make_mock_char(TEST_GUILD_ID, 999999, "Char")
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch.object(
+        routes_module, "char_event_stream", autospec=True, return_value=empty_stream()
+    ) as stream:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(f"/characters/{char.id}/events", headers=auth_headers)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    assert response.headers["cache-control"] == "no-cache"
+    stream.assert_called_once_with(char.id_str)
+
+
+async def empty_stream() -> AsyncGenerator[str]:
+    """An event stream that ends at once, so the client can finish reading."""
+    yield "retry: 5000\n\n"
+
+
+@pytest.fixture
+def oid() -> str:
+    """A character ID of the test's own, so a stream a failed test leaves open
+    can't affect the others."""
+    return str(PydanticObjectId())
+
+
+async def test_event_stream_relays_events(oid: str):
+    """The stream sets the retry delay, then relays each event."""
+    stream = char_event_stream(oid)
+    assert await anext(stream) == "retry: 5000\n\n"
+
+    pending = asyncio.create_task(anext(stream))
+    await asyncio.sleep(0)
+    char_events.publish(oid)
+    assert await pending == "data: changed\n\n"
+    await stream.aclose()
+
+
+async def test_event_stream_ends_on_deletion(oid: str):
+    """The stream ends after a deletion and unsubscribes."""
+    stream = char_event_stream(oid)
+    await anext(stream)
+
+    pending = asyncio.create_task(anext(stream))
+    await asyncio.sleep(0)
+    char_events.publish(oid, "deleted")
+    assert await pending == "data: deleted\n\n"
+    with pytest.raises(StopAsyncIteration):
+        await anext(stream)
+    assert char_events.subscribers(oid) == 0
+
+
+async def test_event_stream_pings_when_quiet(oid: str):
+    """The stream pings when nothing happens, so dead connections surface."""
+    stream = char_event_stream(oid, heartbeat=0.01)
+    await anext(stream)
+    assert await anext(stream) == ": ping\n\n"
+    await stream.aclose()
+    assert char_events.subscribers(oid) == 0

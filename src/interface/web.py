@@ -34,6 +34,8 @@ class WebCog(commands.Cog):
                 port=8000,
                 loop="asyncio",
                 log_level=None if settings.prod else "debug",
+                # Open event streams would otherwise stall graceful shutdown
+                timeout_graceful_shutdown=5,
             )
             server = uvicorn.Server(config)
             self.server_task = asyncio.create_task(server.serve())

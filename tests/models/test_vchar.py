@@ -7,7 +7,7 @@ import pytest
 from pymongo.asynchronous.collection import AsyncCollection
 
 from constants import Damage
-from events import char_events
+from events import CharEventType, char_events
 from models import BlushState, VChar
 from models.vchar import Tracker
 from models.vchardocs import VCharHeader
@@ -455,7 +455,7 @@ async def test_saving_publishes_change(stored_char: VChar, method: str):
     async with char_events.subscribe(stored_char.id_str) as queue:
         stored_char.hunger = 3
         await getattr(stored_char, method)()
-        assert queue.get_nowait() == "changed"
+        assert queue.get_nowait() == CharEventType.CHANGED
 
 
 async def test_deleting_publishes_deletion():
@@ -464,4 +464,4 @@ async def test_deleting_publishes_deletion():
     await char.insert()
     async with char_events.subscribe(char.id_str) as queue:
         await char.delete()
-        assert queue.get_nowait() == "deleted"
+        assert queue.get_nowait() == CharEventType.DELETED

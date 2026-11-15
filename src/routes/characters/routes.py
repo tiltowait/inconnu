@@ -14,7 +14,7 @@ from loguru import logger
 import errors
 from config import settings
 from constants import Damage
-from events import char_events
+from events import CharEventType, char_events
 from models import VChar
 from routes.auth import get_authenticated_user, verify_api_key
 from routes.characters.models import (
@@ -158,7 +158,8 @@ async def get_character_events(
 async def char_event_stream(oid: str, heartbeat=HEARTBEAT_SECONDS) -> AsyncGenerator[str]:
     """Yield a character's events as SSE messages, until it's deleted. Pings
     during quiet spells, because a dead connection only shows up when a write
-    fails."""
+    fails. At shutdown, the stream ends without a message, and the client
+    reconnects once the bot is back."""
     async with char_events.subscribe(oid) as queue:
         yield "retry: 5000\n\n"
         while True:
@@ -167,8 +168,10 @@ async def char_event_stream(oid: str, heartbeat=HEARTBEAT_SECONDS) -> AsyncGener
             except TimeoutError:
                 yield ": ping\n\n"
                 continue
+            if event == CharEventType.CLOSED:
+                return
             yield f"data: {event}\n\n"
-            if event == "deleted":
+            if event == CharEventType.DELETED:
                 return
 
 

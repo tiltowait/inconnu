@@ -17,7 +17,7 @@ import routes.characters.routes as routes_module
 from config import settings
 from constants import Damage
 from errors import DuplicateCharacterError
-from events import char_events
+from events import CharEvents, CharEventType, char_events
 from models import VChar
 from models.vchardocs import VCharSplat, VCharTrait
 from routes.characters.models import OwnerData
@@ -2080,7 +2080,7 @@ async def test_event_stream_ends_on_deletion(oid: str):
 
     pending = asyncio.create_task(anext(stream))
     await asyncio.sleep(0)
-    char_events.publish(oid, "deleted")
+    char_events.publish(oid, CharEventType.DELETED)
     assert await pending == "data: deleted\n\n"
     with pytest.raises(StopAsyncIteration):
         await anext(stream)
@@ -2094,3 +2094,16 @@ async def test_event_stream_pings_when_quiet(oid: str):
     assert await anext(stream) == ": ping\n\n"
     await stream.aclose()
     assert char_events.subscribers(oid) == 0
+
+
+async def test_event_stream_ends_quietly_on_close(oid: str):
+    """Shutdown ends the stream without sending anything; the client
+    reconnects on its own."""
+    events = CharEvents()  # Closing the shared one would end other tests' streams
+    with patch.object(routes_module, "char_events", events):
+        stream = char_event_stream(oid)
+        await anext(stream)
+        events.close()
+        with pytest.raises(StopAsyncIteration):
+            await anext(stream)
+    assert events.subscribers(oid) == 0

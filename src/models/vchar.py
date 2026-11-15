@@ -26,7 +26,7 @@ from pymongo import ASCENDING
 
 import errors
 from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
-from events import char_events
+from events import CharEventType, char_events
 from models.impairment import Impairment
 from models.vchardocs import (
     BlushState,
@@ -140,7 +140,7 @@ class VChar(Document):
     @after_event(Delete)
     def publish_deletion(self):
         """Tell the web app the character is gone."""
-        char_events.publish(self.id_str, "deleted")
+        char_events.publish(self.id_str, CharEventType.DELETED)
 
     # Comparators
 

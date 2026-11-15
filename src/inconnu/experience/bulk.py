@@ -16,6 +16,7 @@ import errors
 import services
 import ui
 from ctx import AppCtx, AppInteraction
+from events import char_events
 
 
 async def bulk_award_xp(ctx: AppCtx):
@@ -160,6 +161,8 @@ class _BulkModal(Modal):
             for character, (experience, saved_state) in zip(characters, originals):
                 character.experience = experience
                 character._saved_state = saved_state
+                # The aborted saves already told the web app about the XP
+                char_events.publish(character.id_str)
             if not isinstance(err, PyMongoError):
                 raise
 

@@ -10,13 +10,23 @@ from enum import StrEnum
 from functools import total_ordering
 from typing import Any, ClassVar, Self
 
-from beanie import Document, Insert, Replace, Save, SaveChanges, before_event
+from beanie import (
+    Delete,
+    Document,
+    Insert,
+    Replace,
+    Save,
+    SaveChanges,
+    after_event,
+    before_event,
+)
 from loguru import logger
 from pydantic import ConfigDict, Field
 from pymongo import ASCENDING
 
 import errors
 from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
+from events import CharEventType, char_events
 from models.impairment import Impairment
 from models.vchardocs import (
     BlushState,
@@ -118,6 +128,19 @@ class VChar(Document):
             self.header.blush = BlushState.OFF
 
         logger.info("VCHAR: {} will update", self.name)
+
+    # Bulk queries (VChar.find(...).update() or .delete()) skip these events,
+    # so the web app's live updates would miss them.
+
+    @after_event(Save, Replace, SaveChanges)
+    def publish_change(self):
+        """Tell the web app the character changed."""
+        char_events.publish(self.id_str)
+
+    @after_event(Delete)
+    def publish_deletion(self):
+        """Tell the web app the character is gone."""
+        char_events.publish(self.id_str, CharEventType.DELETED)
 
     # Comparators
 

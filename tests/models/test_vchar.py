@@ -7,6 +7,7 @@ import pytest
 from pymongo.asynchronous.collection import AsyncCollection
 
 from constants import Damage
+from events import CharEventType, char_events
 from models import BlushState, VChar
 from models.vchar import Tracker
 from models.vchardocs import VCharHeader
@@ -446,3 +447,21 @@ async def test_returning_owner_is_not_culled(stored_char: VChar):
 
     culled = {"_id": stored_char.id, "log.left": {"$lt": datetime.now(UTC) - timedelta(days=30)}}
     assert await characters().find_one(culled) is None
+
+
+@pytest.mark.parametrize("method", ["save", "save_changes", "replace"])
+async def test_saving_publishes_change(stored_char: VChar, method: str):
+    """Every kind of save tells the web app the character changed."""
+    async with char_events.subscribe(stored_char.id_str) as queue:
+        stored_char.hunger = 3
+        await getattr(stored_char, method)()
+        assert queue.get_nowait() == CharEventType.CHANGED
+
+
+async def test_deleting_publishes_deletion():
+    """Deleting a character tells the web app it's gone."""
+    char = gen_char("vampire")
+    await char.insert()
+    async with char_events.subscribe(char.id_str) as queue:
+        await char.delete()
+        assert queue.get_nowait() == CharEventType.DELETED

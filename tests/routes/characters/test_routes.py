@@ -1239,6 +1239,10 @@ async def test_get_wizard_success(mock_wizard_data: WizardData, mock_wizard_cach
         assert "traits" in result
         assert result["spc"] == mock_wizard_data.spc
         assert result["guild"]["id"] == mock_wizard_data.guild.id
+        assert result["limits"] == {
+            "health": {"min": VChar.MIN_HEALTH, "max": VChar.MAX_HEALTH},
+            "willpower": {"min": VChar.MIN_WILLPOWER, "max": VChar.MAX_WILLPOWER},
+        }
 
 
 async def test_get_wizard_invalid_token(mock_wizard_cache_get: MockFn):

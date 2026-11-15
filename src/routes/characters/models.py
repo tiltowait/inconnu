@@ -222,12 +222,29 @@ class UserCharData(BaseModel):
         return self
 
 
+class TrackerLimits(BaseModel):
+    """The minimum and maximum boxes for Health or Willpower."""
+
+    min: int
+    max: int
+
+
+def _tracker_limits() -> dict[Tracker, TrackerLimits]:
+    """The bot's Health and Willpower limits, so the wizard can follow them."""
+    limits: dict[Tracker, TrackerLimits] = {}
+    for tracker in Tracker:
+        low, high = VChar.tracker_limits(tracker)
+        limits[tracker] = TrackerLimits(min=low, max=high)
+    return limits
+
+
 class WizardSchema(BaseModel):
     """Data sent by the wizard endpoint."""
 
     spc: bool
     guild: CharacterGuild
     splats: list[VCharSplat] = list(VCharSplat)
+    limits: dict[Tracker, TrackerLimits] = Field(default_factory=_tracker_limits)
     traits: list[VCharTrait] = [
         VCharTrait(name=trait, rating=1, type=VCharTrait.Type.ATTRIBUTE) for trait in ATTRIBUTES
     ] + [VCharTrait(name=trait, rating=0, type=VCharTrait.Type.SKILL) for trait in SKILLS]

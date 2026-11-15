@@ -67,8 +67,10 @@ class VChar(Document):
         ]
 
     VAMPIRE_TRAITS: ClassVar[list[str]] = ["Hunger", "Potency", "Surge", "Bane", "PowerBonus"]
-    MIN_TRACKER: ClassVar[int] = 3
-    MAX_TRACKER: ClassVar[int] = 25
+    MIN_HEALTH: ClassVar[int] = 4
+    MAX_HEALTH: ClassVar[int] = 20
+    MIN_WILLPOWER: ClassVar[int] = 3
+    MAX_WILLPOWER: ClassVar[int] = 10
     SPC_OWNER: ClassVar[int] = 0
 
     # Ownership
@@ -625,12 +627,20 @@ class VChar(Document):
 
     # Specialized mutators
 
+    @classmethod
+    def tracker_limits(cls, track: Tracker) -> tuple[int, int]:
+        """The minimum and maximum ratings for Health or Willpower."""
+        if track == Tracker.HEALTH:
+            return cls.MIN_HEALTH, cls.MAX_HEALTH
+        return cls.MIN_WILLPOWER, cls.MAX_WILLPOWER
+
     def adjust_tracker_rating(self, track: Tracker, new_rating: int) -> bool:
         """Resize Health or Willpower, keeping its damage: boxes are added and
-        removed at the undamaged end. The rating is clamped to MIN_TRACKER and
-        MAX_TRACKER. Returns True if it changed."""
+        removed at the undamaged end. The rating is clamped to the tracker's
+        limits. Returns True if it changed."""
         current_track: str = getattr(self, track)
-        new_rating = max(self.MIN_TRACKER, min(new_rating, self.MAX_TRACKER))
+        low, high = self.tracker_limits(track)
+        new_rating = max(low, min(new_rating, high))
         delta = new_rating - len(current_track)
         if delta == 0:
             return False

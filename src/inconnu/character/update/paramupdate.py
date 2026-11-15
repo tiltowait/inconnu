@@ -132,10 +132,9 @@ def __update_track(character: VChar, tracker: Tracker, new_len_str: str) -> str:
         raise ValueError(f"You must supply an exact value for {tracker.capitalize()}.")
 
     new_len = int(new_len_str)
-    if not VChar.MIN_TRACKER <= new_len <= VChar.MAX_TRACKER:
-        raise ValueError(
-            f"{tracker.title()} must be between {VChar.MIN_TRACKER} and {VChar.MAX_TRACKER}."
-        )
+    low, high = VChar.tracker_limits(tracker)
+    if not low <= new_len <= high:
+        raise ValueError(f"{tracker.title()} must be between {low} and {high}.")
 
     character.adjust_tracker_rating(tracker, new_len)
     return f"Set {tracker.capitalize()} to `{new_len}`."

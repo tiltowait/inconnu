@@ -125,8 +125,8 @@ class CreationBody(BaseModel):
 
     name: str
     splat: VCharSplat
-    health: int = Field(ge=4, le=20)
-    willpower: int = Field(ge=3, le=10)
+    health: int = Field(ge=VChar.MIN_HEALTH, le=VChar.MAX_HEALTH)
+    willpower: int = Field(ge=VChar.MIN_WILLPOWER, le=VChar.MAX_WILLPOWER)
     humanity: int = Field(ge=0, le=10)
     blood_potency: int = Field(ge=0, le=10)
     convictions: list[str] = Field(max_length=3)

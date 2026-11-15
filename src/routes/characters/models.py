@@ -1,11 +1,14 @@
 """Pydantic models for character API endpoints."""
 
+from collections.abc import Iterator, Mapping
 from typing import Literal, Self
 
 from beanie import PydanticObjectId
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
+    ValidationInfo,
     computed_field,
     field_validator,
     model_validator,
@@ -14,11 +17,112 @@ from pydantic import (
 from constants import ATTRIBUTES, SKILLS
 from errors import CharacterError
 from models import VChar
+from models.vchar import Tracker
 from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
 from services import guild_cache
 from services.guildcache import CachedMember
 from services.wizard import CharacterGuild
-from utils.validation import valid_name, validate_specialty_names, validate_trait_names
+from utils.validation import (
+    valid_name,
+    validate_specialty_names,
+    validate_tracker,
+    validate_trait_names,
+)
+
+# Traits the web app may set. Inherent traits (Hunger, Willpower, ...) are
+# computed, never stored
+EDITABLE_TRAIT_TYPES = {
+    VCharTrait.Type.ATTRIBUTE,
+    VCharTrait.Type.SKILL,
+    VCharTrait.Type.DISCIPLINE,
+    VCharTrait.Type.CUSTOM,
+}
+SUBTRAIT_TYPES = {VCharTrait.Type.SKILL, VCharTrait.Type.CUSTOM, VCharTrait.Type.DISCIPLINE}
+CORE_TRAIT_TYPES = {name.casefold(): VCharTrait.Type.ATTRIBUTE for name in ATTRIBUTES} | {
+    name.casefold(): VCharTrait.Type.SKILL for name in SKILLS
+}
+MAX_CONVICTION_LENGTH = 200
+MAX_PROFILE_LENGTH = 1024
+
+type ErrorLoc = tuple[int | str, ...]
+
+
+def normalize_name(name: str) -> str:
+    """Collapse a character name's whitespace, raising ValueError if the
+    result isn't a valid name."""
+    normalized = " ".join(name.split())
+    if not valid_name(normalized):
+        raise ValueError(
+            "Invalid name: must be 1-30 characters and contain only letters, "
+            "numbers, spaces, hyphens, underscores, and apostrophes"
+        )
+    return normalized
+
+
+def trait_errors(
+    traits: list[VCharTrait], kept: Mapping[str, list[str]] | None = None
+) -> Iterator[tuple[ErrorLoc, str]]:
+    """Yield every problem with a list of traits, each with its location in
+    the list: (index, field) and a message. Checks names (format, reserved
+    names, uniqueness), types, ratings (0-5), and specialties.
+
+    Only skills, custom traits, and Disciplines may gain specialties. Other
+    traits may keep the ones they have, given in kept by casefolded name."""
+    kept = kept or {}
+    seen: set[str] = set()
+    for index, trait in enumerate(traits):
+        # The validators raise SyntaxError for invalid characters
+        try:
+            validate_trait_names(trait.name)
+            folded = trait.name.casefold()
+            if folded in seen:
+                raise ValueError(f"Duplicate trait: `{trait.name}`.")
+            seen.add(folded)
+        except (SyntaxError, ValueError) as err:
+            yield (index, "name"), str(err)
+
+        if trait.type not in EDITABLE_TRAIT_TYPES:
+            yield (index, "type"), f"`{trait.name}` can't be of type `{trait.type}`."
+        elif (core_type := CORE_TRAIT_TYPES.get(trait.name.casefold())) is not None:
+            if trait.type != core_type:
+                yield (index, "type"), f"`{trait.name}` must be of type `{core_type}`."
+        elif trait.type == VCharTrait.Type.ATTRIBUTE:
+            yield (index, "type"), f"`{trait.name}` isn't an Attribute."
+
+        if not 0 <= trait.rating <= 5:
+            yield (
+                (index, "rating"),
+                f"`{trait.name}` must be between 0 and 5. (Got {trait.rating}.)",
+            )
+
+        if trait.raw_subtraits:
+            if trait.type not in SUBTRAIT_TYPES:
+                allowed = {s.casefold() for s in kept.get(trait.name.casefold(), [])}
+                if any(s.casefold() not in allowed for s in trait.raw_subtraits):
+                    yield (
+                        (index, "subtraits"),
+                        f"Trait `{trait.name}` of type `{trait.type}` cannot have subtraits.",
+                    )
+            try:
+                validate_specialty_names(*trait.raw_subtraits)
+            except (SyntaxError, ValueError) as err:
+                yield (index, "subtraits"), str(err)
+
+
+def with_core_traits(traits: list[VCharTrait]) -> list[VCharTrait]:
+    """The traits, plus any missing core Attributes (at 1) and Skills (at 0),
+    sorted by name."""
+    present = {trait.name.casefold() for trait in traits}
+    restored = [
+        VCharTrait(name=name, rating=1, type=VCharTrait.Type.ATTRIBUTE)
+        for name in ATTRIBUTES
+        if name.casefold() not in present
+    ] + [
+        VCharTrait(name=name, rating=0, type=VCharTrait.Type.SKILL)
+        for name in SKILLS
+        if name.casefold() not in present
+    ]
+    return sorted(traits + restored, key=lambda t: t.name.casefold())
 
 
 class OwnerData(BaseModel):
@@ -138,47 +242,16 @@ class CreationBody(BaseModel):
     @classmethod
     def validate_name(cls, v: str) -> str:
         """Validate and normalize character name."""
-        normalized = " ".join(v.split())
-        if not valid_name(normalized):
-            raise ValueError(
-                "Invalid name: must be 1-30 characters and contain only letters, "
-                "numbers, spaces, hyphens, underscores, and apostrophes"
-            )
-        return normalized
+        return normalize_name(v)
 
     @field_validator("traits")
     @classmethod
     def validate_traits(cls, v: list[VCharTrait]) -> list[VCharTrait]:
         """Validate all trait names and specialties."""
-        # The validators raise SyntaxError for invalid characters, but pydantic
-        # only turns ValueErrors into validation errors (a 422 rather than a 500)
-        try:
-            # Validate trait names
-            trait_names = [trait.name for trait in v]
-            validate_trait_names(*trait_names)
-
-            for trait in v:
-                if not 0 <= trait.rating <= 5:
-                    raise ValueError(
-                        f"`{trait.name}` must be between 0 and 5. (Got {trait.rating}.)"
-                    )
-
-                # Validate specialties
-                if trait.raw_subtraits:
-                    # Only skills, custom traits, and disciplines can have subtraits
-                    if trait.type not in (
-                        VCharTrait.Type.SKILL,
-                        VCharTrait.Type.CUSTOM,
-                        VCharTrait.Type.DISCIPLINE,
-                    ):
-                        raise ValueError(
-                            f"Trait `{trait.name}` of type `{trait.type}` cannot have subtraits."
-                        )
-                    # Validate specialty names
-                    validate_specialty_names(*trait.raw_subtraits)
-        except SyntaxError as err:
-            raise ValueError(str(err)) from err
-
+        # Pydantic only turns ValueErrors into validation errors (a 422 rather
+        # than a 500), and one error per field
+        for _, message in trait_errors(v):
+            raise ValueError(message)
         return v
 
     @field_validator("convictions")
@@ -210,3 +283,59 @@ class CreationSuccess(BaseModel):
     character_id: str
     character_name: str
     has_premium: bool
+
+
+class EditProfile(BaseModel):
+    """The editable parts of a character's profile. Images are edited
+    elsewhere."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    description: str = Field(max_length=MAX_PROFILE_LENGTH)
+    biography: str = Field(max_length=MAX_PROFILE_LENGTH)
+
+
+class EditBody(BaseModel):
+    """A web app edit: every editable field, all at once. Checks that need the
+    character (splat, names, Attribute specialties) happen in the route."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    health: str
+    willpower: str
+    humanity: int = Field(ge=0, le=10)
+    stains: int = Field(ge=0, le=10)
+    potency: int | None = Field(default=None, ge=0, le=10)
+    hunger: int | None = Field(default=None, ge=0, le=5)
+    convictions: list[str] = Field(max_length=3)
+    profile: EditProfile
+    traits: list[VCharTrait]
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """Validate and normalize the name."""
+        return normalize_name(v)
+
+    @field_validator("health", "willpower")
+    @classmethod
+    def validate_track(cls, v: str, info: ValidationInfo) -> str:
+        """Validate a tracker's boxes and length, returning it sorted."""
+        track = validate_tracker(v)
+        low, high = VChar.tracker_limits(Tracker(info.field_name))
+        if not low <= len(track) <= high:
+            raise ValueError(f"Must have between {low} and {high} boxes.")
+        return track
+
+    @field_validator("convictions")
+    @classmethod
+    def validate_convictions(cls, v: list[str]) -> list[str]:
+        """Normalize the Convictions and drop blank ones, as the bot does."""
+        convictions = [" ".join(conviction.split()) for conviction in v]
+        for conviction in convictions:
+            if len(conviction) > MAX_CONVICTION_LENGTH:
+                raise ValueError(
+                    f"Each conviction must be {MAX_CONVICTION_LENGTH} characters or less"
+                )
+        return [conviction for conviction in convictions if conviction]

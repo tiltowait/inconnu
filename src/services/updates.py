@@ -29,30 +29,53 @@ async def post_update(
         # Update channels only exist in guilds
         return None
 
+    update_channel = await _update_channel(ctx.guild)
+    if update_channel is None:
+        return None
+
+    if embed is None:
+        # Only updates with their own embed may omit the character
+        assert character is not None
+        embed = discord.Embed(
+            title=title,
+            description=message,
+            url=msg.jump_url if msg else None,
+            color=color,
+        )
+        embed.set_author(name=character.name, icon_url=get_avatar(ctx.user))
+        content = ""
+    else:
+        content = message
+
+    return await _send(update_channel, embed, content)
+
+
+async def send_update(
+    guild: discord.Guild, embed: discord.Embed, content=""
+) -> discord.Message | None:
+    """Send an embed to the guild's update channel, if it has one. Returns the
+    sent message, if any."""
+    if (update_channel := await _update_channel(guild)) is None:
+        return None
+    return await _send(update_channel, embed, content)
+
+
+async def _update_channel(guild: discord.Guild) -> discord.TextChannel | None:
+    """The guild's update channel, if it has one."""
     # The settings menu only offers text channels
-    update_channel = await settings.update_channel(ctx.guild)
+    update_channel = await settings.update_channel(guild)
     if isinstance(update_channel, discord.TextChannel):
-        if embed is None:
-            # Only updates with their own embed may omit the character
-            assert character is not None
-            embed = discord.Embed(
-                title=title,
-                description=message,
-                url=msg.jump_url if msg else None,
-                color=color,
-            )
-            embed.set_author(name=character.name, icon_url=get_avatar(ctx.user))
-            content = ""
-        else:
-            content = message
+        return update_channel
+    return None
 
-        mentions = discord.AllowedMentions(users=False)
 
-        try:
-            return await update_channel.send(content, embed=embed, allowed_mentions=mentions)
-        except discord.errors.Forbidden:
-            logger.warning(
-                "No access to post in #{} on {}",
-                update_channel.name,
-                update_channel.guild.name,
-            )
+async def _send(
+    channel: discord.TextChannel, embed: discord.Embed, content: str
+) -> discord.Message | None:
+    """Send the update, returning None if the bot can't post there."""
+    mentions = discord.AllowedMentions(users=False)
+    try:
+        return await channel.send(content, embed=embed, allowed_mentions=mentions)
+    except discord.errors.Forbidden:
+        logger.warning("No access to post in #{} on {}", channel.name, channel.guild.name)
+        return None

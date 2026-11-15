@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Annotated
 
 import discord
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from fastapi.exceptions import HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
@@ -17,10 +17,12 @@ from constants import Damage
 from events import CharEventType, char_events
 from models import VChar
 from routes.auth import get_authenticated_user, verify_api_key
+from routes.characters.edit import apply_edit, check_edit, summarize, update_embed
 from routes.characters.models import (
     CharData,
     CreationBody,
     CreationSuccess,
+    EditBody,
     GuildChars,
     OwnerData,
     PublicCharacter,
@@ -28,7 +30,7 @@ from routes.characters.models import (
     WizardSchema,
 )
 from routes.deps import get_bot
-from services import char_mgr, guild_cache, wizard_cache
+from services import char_mgr, guild_cache, send_update, wizard_cache
 from services.guildcache import CachedGuild
 from services.wizard import CharacterGuild
 from utils.permissions import has_supporter_role, is_storyteller
@@ -137,6 +139,46 @@ async def get_character(
         character=character,
         spc=char.is_spc,
     )
+
+
+@router.patch("/characters/{oid}", status_code=204)
+async def edit_character(
+    oid: PydanticObjectId,
+    body: EditBody,
+    bot: Annotated[InconnuBot, Depends(get_bot)],
+    user_id: int = Depends(get_authenticated_user),
+) -> Response:
+    """Save the web app's edits: every editable field, at once. Only the
+    owner and Storytellers may edit. Edits are corrections, so they don't
+    touch the Chronicle log or experience, but they are posted to the
+    update channel. Other tabs refresh through the "changed" event."""
+    char, _ = await _fetch_guild_character(oid, user_id)
+
+    discord_guild = bot.get_guild(char.guild)
+    discord_member = discord_guild.get_member(user_id) if discord_guild else None
+    if not (user_id == char.user or await is_storyteller(discord_member)):
+        raise HTTPException(403, detail="Only the owner or a Storyteller may edit this character")
+
+    await check_edit(char, body)
+
+    old = char.model_copy(deep=True)
+    await apply_edit(char, body)
+    try:
+        await char.save_changes()
+    except Exception:
+        # The character manager holds this same object
+        char.rollback()
+        raise
+
+    if discord_guild is not None and discord_member is not None:
+        if changes := summarize(old, char):
+            try:
+                await send_update(discord_guild, update_embed(char, discord_member, changes))
+            except discord.HTTPException as err:
+                # The edit is saved, so don't fail the request
+                logger.warning("Couldn't post {}'s web edit: {}", char.name, err)
+
+    return Response(status_code=204)
 
 
 @router.get("/characters/{oid}/events")

@@ -157,8 +157,13 @@ class CreationBody(BaseModel):
             trait_names = [trait.name for trait in v]
             validate_trait_names(*trait_names)
 
-            # Validate specialties
             for trait in v:
+                if not 0 <= trait.rating <= 5:
+                    raise ValueError(
+                        f"`{trait.name}` must be between 0 and 5. (Got {trait.rating}.)"
+                    )
+
+                # Validate specialties
                 if trait.raw_subtraits:
                     # Only skills, custom traits, and disciplines can have subtraits
                     if trait.type not in (

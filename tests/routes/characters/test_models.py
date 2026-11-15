@@ -374,6 +374,25 @@ def test_duplicate_trait_names_case_insensitive():
     assert "duplicate" in str(exc_info.value).lower()
 
 
+@pytest.mark.parametrize("rating", [0, 5])
+def test_trait_rating_boundaries(rating: int):
+    """Trait ratings of 0 and 5 pass."""
+    trait = VCharTrait(name="Brawl", rating=rating, type=VCharTrait.Type.SKILL)
+    data = valid_creation_data(traits=[trait])
+    body = CreationBody(**data)
+    assert body.traits[0].rating == rating
+
+
+@pytest.mark.parametrize("rating", [-1, 6])
+def test_trait_rating_out_of_range(rating: int):
+    """Trait ratings outside 0-5 are rejected."""
+    trait = VCharTrait(name="Brawl", rating=rating, type=VCharTrait.Type.SKILL)
+    data = valid_creation_data(traits=[trait])
+    with pytest.raises(ValidationError) as exc_info:
+        CreationBody(**data)
+    assert "between 0 and 5" in str(exc_info.value)
+
+
 # Specialty (subtrait) validation tests
 
 

@@ -2121,7 +2121,12 @@ EDIT_OWNER_TRAITS = [
 ]
 
 
-async def make_saved_char(splat=VCharSplat.VAMPIRE, user_id=TEST_USER_ID) -> VChar:
+async def make_saved_char(
+    splat=VCharSplat.VAMPIRE,
+    user_id=TEST_USER_ID,
+    potency=1,
+    convictions: list[str] | None = None,
+) -> VChar:
     """Insert a character with a full set of core traits, as the wizard makes."""
     char = VChar(
         guild=TEST_GUILD_ID,
@@ -2132,7 +2137,8 @@ async def make_saved_char(splat=VCharSplat.VAMPIRE, user_id=TEST_USER_ID) -> VCh
         stains=0,
         health="......",
         willpower=".....",
-        potency=1,
+        potency=potency,
+        convictions=convictions or [],
         traits=with_core_traits([t.model_copy(deep=True) for t in EDIT_OWNER_TRAITS]),
     )
     await char.insert()
@@ -2584,3 +2590,108 @@ async def test_edit_character_publishes_once(
 
     assert status == 204
     publish.assert_called_once_with(char.id_str)
+
+
+@pytest.mark.parametrize("potency,status", [(3, 204), (4, 422)])
+async def test_edit_thin_blood_existing_potency(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    no_duplicates: MockAsyncFn,
+    potency: int,
+    status: int,
+):
+    """Discord allows thin-bloods any Potency, so one over 2 may be kept, but
+    not raised."""
+    char = await make_saved_char(splat=VCharSplat.THIN_BLOOD, potency=3)
+    mock_char_mgr_fetchid.return_value = char
+
+    result, data = await patch_char(char, edit_body(char, potency=potency), auth_headers)
+
+    assert result == status
+    if status == 422:
+        assert data["detail"][0]["loc"] == ["body", "potency"]
+
+
+async def test_edit_long_conviction(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    no_duplicates: MockAsyncFn,
+):
+    """An existing Conviction over the limit may be kept, but a new one is a
+    422 pointing at its slot, blanks included."""
+    old = "A" * 300
+    char = await make_saved_char(convictions=[old])
+    mock_char_mgr_fetchid.return_value = char
+
+    status, _ = await patch_char(char, edit_body(char, convictions=[old, "", ""]), auth_headers)
+    assert status == 204
+    assert (await reload(char)).convictions == [old]
+
+    body = edit_body(char, convictions=[old, "", "B" * 201])
+    status, data = await patch_char(char, body, auth_headers)
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body", "convictions", 2]
+
+
+async def test_edit_rename_sorts_after_save(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    no_duplicates: MockAsyncFn,
+):
+    """A rename re-sorts the character lists once it's saved."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch.object(char_mgr, "sort_chars", new_callable=AsyncMock) as sort_chars:
+        status, _ = await patch_char(char, edit_body(char, name="Abe"), auth_headers)
+
+    assert status == 204
+    sort_chars.assert_awaited_once()
+
+
+async def test_edit_failed_save_rolls_back(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    no_duplicates: MockAsyncFn,
+):
+    """A failed save restores the cached character and doesn't re-sort."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    with (
+        patch.object(char_mgr, "sort_chars", new_callable=AsyncMock) as sort_chars,
+        patch.object(VChar, "save_changes", side_effect=RuntimeError("Mongo down")),
+        pytest.raises(RuntimeError),
+    ):
+        await patch_char(char, edit_body(char, name="Abe"), auth_headers)
+
+    assert char.raw_name == "Nadea Theron"
+    sort_chars.assert_not_awaited()
+
+
+async def test_edit_posts_without_gateway_member(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    no_duplicates: MockAsyncFn,
+    update_channel: MockChannel,
+):
+    """The update post comes from the guild cache, so it doesn't need the
+    editor in the gateway's member cache."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    edit_guild.get_member.side_effect = None
+    edit_guild.get_member.return_value = None
+
+    status, _ = await patch_char(char, edit_body(char, humanity=5), auth_headers)
+
+    assert status == 204
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.description is not None
+    assert embed.description.startswith(f"__<@{TEST_USER_ID}> updated")
+    assert embed.author is not None
+    assert embed.author.icon_url == "http://avatar.png"

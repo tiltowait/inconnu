@@ -162,7 +162,7 @@ async def edit_character(
     await check_edit(char, body)
 
     old = char.model_copy(deep=True)
-    await apply_edit(char, body)
+    apply_edit(char, body)
     try:
         await char.save_changes()
     except Exception:
@@ -170,10 +170,17 @@ async def edit_character(
         char.rollback()
         raise
 
-    if discord_guild is not None and discord_member is not None:
+    if char.raw_name != old.raw_name:
+        # After the save, so a failed one can't leave the list misordered
+        await char_mgr.sort_chars()
+
+    # The guild cache, unlike the gateway's, is sure to have the editor: it
+    # vouched for them above
+    editor = await guild_cache.fetchmember(char.guild, user_id)
+    if discord_guild is not None and editor is not None:
         if changes := summarize(old, char):
             try:
-                await send_update(discord_guild, update_embed(char, discord_member, changes))
+                await send_update(discord_guild, update_embed(char, editor, changes))
             except discord.HTTPException as err:
                 # The edit is saved, so don't fail the request
                 logger.warning("Couldn't post {}'s web edit: {}", char.name, err)

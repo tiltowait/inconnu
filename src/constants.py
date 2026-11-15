@@ -89,6 +89,8 @@ RESERVED_TRAITS = UNIVERSAL_TRAITS + ["current_hunger"]
 
 ROUSE_FAIL_COLOR = 0xC70F0F
 
+MAX_CONVICTION_LENGTH = 200
+
 
 class Damage(StrEnum):
     """An enum for damage types."""

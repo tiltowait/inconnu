@@ -14,7 +14,7 @@ from pydantic import (
     model_validator,
 )
 
-from constants import ATTRIBUTES, SKILLS
+from constants import ATTRIBUTES, MAX_CONVICTION_LENGTH, SKILLS
 from errors import CharacterError
 from models import VChar
 from models.vchar import Tracker
@@ -41,8 +41,8 @@ SUBTRAIT_TYPES = {VCharTrait.Type.SKILL, VCharTrait.Type.CUSTOM, VCharTrait.Type
 CORE_TRAIT_TYPES = {name.casefold(): VCharTrait.Type.ATTRIBUTE for name in ATTRIBUTES} | {
     name.casefold(): VCharTrait.Type.SKILL for name in SKILLS
 }
-MAX_CONVICTION_LENGTH = 200
 MAX_PROFILE_LENGTH = 1024
+CONVICTION_TOO_LONG = f"Each conviction must be {MAX_CONVICTION_LENGTH} characters or less"
 
 type ErrorLoc = tuple[int | str, ...]
 
@@ -107,6 +107,15 @@ def trait_errors(
                 validate_specialty_names(*trait.raw_subtraits)
             except (SyntaxError, ValueError) as err:
                 yield (index, "subtraits"), str(err)
+
+
+def long_convictions(convictions: list[str], kept: list[str] | None = None) -> Iterator[int]:
+    """Yield the index of each Conviction over the length limit. Convictions
+    in kept are let through: Discord's modal didn't always enforce it."""
+    kept = kept or []
+    for index, conviction in enumerate(convictions):
+        if len(conviction) > MAX_CONVICTION_LENGTH and conviction not in kept:
+            yield index
 
 
 def with_core_traits(traits: list[VCharTrait]) -> list[VCharTrait]:
@@ -234,8 +243,8 @@ class CreationBody(BaseModel):
     humanity: int = Field(ge=0, le=10)
     blood_potency: int = Field(ge=0, le=10)
     convictions: list[str] = Field(max_length=3)
-    biography: str = Field(max_length=1024)
-    description: str = Field(max_length=1024)
+    biography: str = Field(max_length=MAX_PROFILE_LENGTH)
+    description: str = Field(max_length=MAX_PROFILE_LENGTH)
     traits: list[VCharTrait]
 
     @field_validator("name")
@@ -257,10 +266,9 @@ class CreationBody(BaseModel):
     @field_validator("convictions")
     @classmethod
     def validate_conviction_length(cls, v: list[str]) -> list[str]:
-        """Validate each conviction is max 200 characters."""
-        for conviction in v:
-            if len(conviction) > 200:
-                raise ValueError("Each conviction must be 200 characters or less")
+        """Validate each conviction's length."""
+        if next(long_convictions(v), None) is not None:
+            raise ValueError(CONVICTION_TOO_LONG)
         return v
 
     @model_validator(mode="after")
@@ -297,7 +305,8 @@ class EditProfile(BaseModel):
 
 class EditBody(BaseModel):
     """A web app edit: every editable field, all at once. Checks that need the
-    character (splat, names, Attribute specialties) happen in the route."""
+    character (splat, names, Attribute specialties, Conviction lengths) happen
+    in the route."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -331,11 +340,6 @@ class EditBody(BaseModel):
     @field_validator("convictions")
     @classmethod
     def validate_convictions(cls, v: list[str]) -> list[str]:
-        """Normalize the Convictions and drop blank ones, as the bot does."""
-        convictions = [" ".join(conviction.split()) for conviction in v]
-        for conviction in convictions:
-            if len(conviction) > MAX_CONVICTION_LENGTH:
-                raise ValueError(
-                    f"Each conviction must be {MAX_CONVICTION_LENGTH} characters or less"
-                )
-        return [conviction for conviction in convictions if conviction]
+        """Normalize the Convictions. Blanks are kept, so error locations match
+        the app's slots; the route drops them, and checks their length."""
+        return [" ".join(conviction.split()) for conviction in v]

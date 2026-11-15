@@ -8,9 +8,16 @@ from constants import Damage
 from models import VChar
 from models.vchar import Tracker
 from models.vchardocs import VCharTrait
-from routes.characters.models import EditBody, ErrorLoc, trait_errors, with_core_traits
+from routes.characters.models import (
+    CONVICTION_TOO_LONG,
+    EditBody,
+    ErrorLoc,
+    long_convictions,
+    trait_errors,
+    with_core_traits,
+)
 from services import char_mgr
-from utils import get_avatar
+from services.guildcache import CachedMember
 
 MAX_SUMMARY_LENGTH = 4000  # Embed descriptions max out at 4096
 SEVERITIES = ((Damage.SUPERFICIAL, "Superficial"), (Damage.AGGRAVATED, "Aggravated"))
@@ -25,6 +32,9 @@ async def check_edit(char: VChar, body: EditBody):
     kept = {t.name.casefold(): t.raw_subtraits for t in char.raw_traits if t.is_attribute}
     errors.extend((("traits", *loc), msg) for loc, msg in trait_errors(body.traits, kept))
 
+    for index in long_convictions(body.convictions, char.convictions):
+        errors.append((("convictions", index), CONVICTION_TOO_LONG))
+
     if body.name.casefold() != char.raw_name.casefold():
         # Changing only capitalization is fine
         if await char_mgr.has_character(char.guild, char.user, body.name):
@@ -34,7 +44,8 @@ async def check_edit(char: VChar, body: EditBody):
         for field in ("potency", "hunger"):
             if getattr(body, field) is None:
                 errors.append(((field,), "Required for vampires."))
-        if char.is_thin_blood and body.potency is not None and body.potency > 2:
+        # Discord allows thin-bloods any Potency, so only check a new one
+        if char.is_thin_blood and body.potency not in (None, char.potency) and body.potency > 2:
             errors.append((("potency",), "Thin-bloods must have Blood Potency between 0 and 2."))
     else:
         for field in ("potency", "hunger"):
@@ -47,11 +58,9 @@ async def check_edit(char: VChar, body: EditBody):
         )
 
 
-async def apply_edit(char: VChar, body: EditBody):
+def apply_edit(char: VChar, body: EditBody):
     """Assign the editable fields. Assigns raw fields, because the properties
     have side effects (the Humanity setter wipes Stains, for instance)."""
-    renamed = char.raw_name != body.name
-
     char.raw_name = body.name
     char.health = body.health
     char.willpower = body.willpower
@@ -63,13 +72,10 @@ async def apply_edit(char: VChar, body: EditBody):
             char.potency = body.potency
         if body.hunger is not None:
             char.raw_hunger = body.hunger
-    char.convictions = body.convictions
+    char.convictions = [conviction for conviction in body.convictions if conviction]
     char.profile.description = body.profile.description
     char.profile.biography = body.profile.biography
     char.raw_traits = with_core_traits(body.traits)
-
-    if renamed:
-        await char_mgr.sort_chars()
 
 
 def summarize(old: VChar, new: VChar) -> list[str]:
@@ -143,7 +149,7 @@ def _join(items: list[str]) -> str:
     return ", ".join(f"`{item}`" for item in items)
 
 
-def update_embed(char: VChar, member: discord.Member, changes: list[str]) -> discord.Embed:
+def update_embed(char: VChar, editor: CachedMember, changes: list[str]) -> discord.Embed:
     """The update-channel embed for an edit, in the style of /character update."""
     lines = "\n".join(f"* {change}" for change in changes)
     if len(lines) > MAX_SUMMARY_LENGTH:
@@ -151,7 +157,7 @@ def update_embed(char: VChar, member: discord.Member, changes: list[str]) -> dis
 
     embed = discord.Embed(
         title="Character Updated",
-        description=f"__{member.mention} updated {char.name} on the web:__\n{lines}",
+        description=f"__<@{editor.id}> updated {char.name} on the web:__\n{lines}",
     )
-    embed.set_author(name=char.name, icon_url=get_avatar(member))
+    embed.set_author(name=char.name, icon_url=editor.icon)
     return embed

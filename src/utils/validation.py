@@ -2,7 +2,7 @@
 
 import re
 
-from constants import RESERVED_TRAITS
+from constants import RESERVED_TRAITS, Damage
 
 VALID_TRAIT_PATTERN = re.compile(r"^[A-Za-z_]+$")
 
@@ -71,3 +71,15 @@ def validate_specialty_names(*specialties):
             raise SyntaxError(
                 f"Specialties can only have letters and underscores. Invalid: `{specialty}`."
             )
+
+
+def validate_tracker(track: str) -> str:
+    """Validate a Health or Willpower track, returning it sorted: undamaged,
+    then Superficial, then Aggravated. Raises ValueError if any box isn't a
+    Damage value."""
+    if invalid := set(track) - set(Damage):
+        boxes = ", ".join(f"`{box}`" for box in sorted(invalid))
+        raise ValueError(f"Invalid tracker boxes: {boxes}.")
+
+    order = (Damage.NONE, Damage.SUPERFICIAL, Damage.AGGRAVATED)
+    return "".join(damage * track.count(damage) for damage in order)

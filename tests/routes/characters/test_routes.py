@@ -18,7 +18,7 @@ from config import settings
 from constants import Damage
 from errors import DuplicateCharacterError
 from events import CharEvents, CharEventType, char_events
-from models import VChar
+from models import VChar, VGuild
 from models.vchardocs import VCharSplat, VCharTrait
 from routes.characters.models import OwnerData, with_core_traits
 from routes.characters.routes import char_event_stream
@@ -2699,3 +2699,279 @@ async def test_edit_posts_without_gateway_member(
     assert embed.description.startswith(f"__<@{TEST_USER_ID}> updated")
     assert embed.author is not None
     assert embed.author.icon_url == "http://avatar.png"
+
+
+# Rouse checks
+
+
+async def post_rouse(char: VChar, body: dict[str, Any], headers: dict[str, str]) -> tuple[int, Any]:
+    """POST Rouse checks for the character, returning the status and JSON."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(f"/characters/{char.id}/rouse", json=body, headers=headers)
+    return response.status_code, response.json()
+
+
+@pytest.mark.parametrize(
+    "dice,hunger,successes,failures",
+    [([6], 1, 1, 0), ([5], 2, 0, 1), ([6, 2, 9], 2, 2, 1), ([1, 1, 1], 4, 0, 3)],
+)
+async def test_rouse_vampire(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    dice: list[int],
+    hunger: int,
+    successes: int,
+    failures: int,
+):
+    """Failures raise Hunger, the checks are logged and saved, and the update
+    channel hears about it."""
+    char = await make_saved_char()  # Hunger 1
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10", side_effect=dice):
+        status, data = await post_rouse(
+            char, {"count": len(dice), "reroll": False, "oblivion_stains": False}, auth_headers
+        )
+
+    assert status == 200
+    assert data == {
+        "successes": successes,
+        "failures": failures,
+        "hunger": hunger,
+        "frenzy": False,
+        "aggravated": 0,
+        "stains": 0,
+        "degeneration": 0,
+    }
+    saved = await reload(char)
+    assert saved.raw_hunger == hunger
+    assert saved.log.rouse_checks == len(dice)
+    assert saved.log.rouse_failures == failures
+    update_channel.send.assert_awaited_once()
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == "Rouse Check"
+
+
+async def test_rouse_reroll(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """With reroll, a failure is rolled again."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10", side_effect=[3, 8]):
+        status, data = await post_rouse(
+            char, {"count": 1, "reroll": True, "oblivion_stains": False}, auth_headers
+        )
+
+    assert status == 200
+    assert data["successes"] == 1
+    assert data["hunger"] == 1
+
+
+@pytest.mark.parametrize("die,failures", [(7, 0), (2, 1)])
+async def test_rouse_at_hunger_5(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    die: int,
+    failures: int,
+):
+    """At Hunger 5, every Rouse calls for a frenzy check, and Hunger stays 5."""
+    char = await make_saved_char()
+    char.raw_hunger = 5
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10", return_value=die):
+        status, data = await post_rouse(
+            char, {"count": 1, "reroll": False, "oblivion_stains": False}, auth_headers
+        )
+
+    assert status == 200
+    assert data["frenzy"] is True
+    assert data["failures"] == failures
+    assert data["hunger"] == 5
+
+
+async def test_rouse_ghoul(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+):
+    """Ghouls take one Aggravated Health damage instead, whatever the count."""
+    char = await make_saved_char(splat=VCharSplat.GHOUL)
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_rouse(
+        char, {"count": 3, "reroll": False, "oblivion_stains": False}, auth_headers
+    )
+
+    assert status == 200
+    assert data == {
+        "successes": 0,
+        "failures": 0,
+        "hunger": 0,
+        "frenzy": False,
+        "aggravated": 1,
+        "stains": 0,
+        "degeneration": 0,
+    }
+    assert (await reload(char)).aggravated_hp == 1
+    update_channel.send.assert_not_awaited()
+
+
+async def test_rouse_mortal(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """Mortals can't Rouse."""
+    char = await make_saved_char(splat=VCharSplat.MORTAL)
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_rouse(
+        char, {"count": 1, "reroll": False, "oblivion_stains": False}, auth_headers
+    )
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body"]
+
+
+@pytest.mark.parametrize(
+    "body,loc",
+    [
+        ({"count": 0, "reroll": False, "oblivion_stains": False}, ["body", "count"]),
+        ({"count": 4, "reroll": False, "oblivion_stains": False}, ["body", "count"]),
+        ({"count": 1, "oblivion_stains": False}, ["body", "reroll"]),
+        ({"count": 1, "reroll": False}, ["body", "oblivion_stains"]),
+        (
+            {"count": 1, "reroll": False, "oblivion_stains": False, "oblivion": True},
+            ["body", "oblivion"],
+        ),
+    ],
+)
+async def test_rouse_invalid_body(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    body: dict[str, Any],
+    loc: list[str],
+):
+    """The count must be 1-3, reroll is required, and nothing else is allowed."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_rouse(char, body, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == loc
+    assert (await reload(char)).log.rouse_checks == 0
+
+
+@pytest.mark.parametrize("storyteller", [True, False])
+async def test_rouse_players_character_forbidden(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    storyteller: bool,
+):
+    """As in Discord, not even Storytellers may Rouse another player's
+    character."""
+    char = await make_saved_char(user_id=999999)
+    mock_char_mgr_fetchid.return_value = char
+    body = {"count": 1, "reroll": False, "oblivion_stains": False}
+
+    with patch.object(
+        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
+    ):
+        status, _ = await post_rouse(char, body, auth_headers)
+
+    assert status == 403
+    assert (await reload(char)).log.rouse_checks == 0
+
+
+@pytest.mark.parametrize("storyteller,status", [(True, 200), (False, 403)])
+async def test_rouse_spc(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    storyteller: bool,
+    status: int,
+):
+    """Storytellers may Rouse SPCs; other players may not."""
+    char = await make_saved_char(user_id=VChar.SPC_OWNER)
+    mock_char_mgr_fetchid.return_value = char
+    body = {"count": 1, "reroll": False, "oblivion_stains": False}
+
+    with (
+        patch.object(
+            routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
+        ),
+        patch("inconnu.d10", return_value=8),
+    ):
+        result, _ = await post_rouse(char, body, auth_headers)
+
+    assert result == status
+
+
+@pytest.mark.parametrize("apply,stains", [(True, 2), (False, 0)])
+async def test_rouse_oblivion_stains(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    apply: bool,
+    stains: int,
+):
+    """Oblivion Stains come from the guild's faces (1 and 10 by default), and
+    only when asked for."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    body = {"count": 3, "reroll": False, "oblivion_stains": apply}
+
+    with patch("inconnu.d10", side_effect=[1, 10, 7]):
+        status, data = await post_rouse(char, body, auth_headers)
+
+    assert status == 200
+    assert data["stains"] == stains
+    saved = await reload(char)
+    assert saved.stains == stains
+    assert saved.log.stains_gained == stains
+
+
+async def test_rouse_oblivion_guild_faces(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """A guild's own Oblivion faces are used."""
+    vguild = VGuild(guild=TEST_GUILD_ID, name="Test Guild")
+    vguild.settings.oblivion_stains = [7]
+    await vguild.insert()
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    body = {"count": 2, "reroll": False, "oblivion_stains": True}
+
+    with patch("inconnu.d10", side_effect=[1, 7]):
+        status, data = await post_rouse(char, body, auth_headers)
+
+    assert status == 200
+    assert data["stains"] == 1
+
+
+async def test_rouse_oblivion_degeneration(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """Stains past the empty Humanity boxes deal Aggravated Willpower damage."""
+    char = await make_saved_char()  # Humanity 7: 3 empty boxes
+    char.stains = 3
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+    body = {"count": 1, "reroll": False, "oblivion_stains": True}
+
+    with patch("inconnu.d10", return_value=10):
+        status, data = await post_rouse(char, body, auth_headers)
+
+    assert status == 200
+    assert data["stains"] == 1
+    assert data["degeneration"] == 1
+    assert (await reload(char)).aggravated_wp == 1

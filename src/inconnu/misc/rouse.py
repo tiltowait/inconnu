@@ -1,6 +1,7 @@
 """misc/rouse.py - Perform rouse checks."""
 
 import asyncio
+from collections.abc import Collection
 from typing import NamedTuple, cast
 
 import discord
@@ -20,7 +21,7 @@ from utils.urls import docs_url, web_asset
 __HELP_URL = docs_url("guides/gameplay-shortcuts#rouse-checks")
 
 
-class _RouseOutcome(NamedTuple):
+class RouseOutcome(NamedTuple):
     """The results of a set of Rouse checks."""
 
     total: int
@@ -87,18 +88,7 @@ async def perform_rouse(
         if oblivion == "apply" and outcome.stains > 0:
             degen_damage = character.add_stains(outcome.stains, log=True)
 
-        update_msg = f"**{character.name}** "
-        if outcome.failures and outcome.frenzy:
-            update_msg += (
-                "__failed__ a Rouse check at Hunger `5`. "
-                "Torpor if awakening; otherwise, a frenzy check."
-            )
-        elif outcome.failures:
-            update_msg += f"__failed__ a Rouse check. Hunger is now `{character.hunger}`."
-        elif outcome.frenzy:
-            update_msg += "__passed__ a Rouse check at Hunger `5`, but must make a frenzy check."
-        else:
-            update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
+        update_msg = rouse_update_message(character, outcome)
 
         inter, _ = await asyncio.gather(
             __display_outcome(
@@ -123,7 +113,24 @@ async def perform_rouse(
         )
 
 
-def __make_title(outcome: _RouseOutcome) -> str:
+def rouse_update_message(character: VChar, outcome: RouseOutcome) -> str:
+    """The update channel's summary of a vampire's Rouse checks."""
+    update_msg = f"**{character.name}** "
+    if outcome.failures and outcome.frenzy:
+        update_msg += (
+            "__failed__ a Rouse check at Hunger `5`. "
+            "Torpor if awakening; otherwise, a frenzy check."
+        )
+    elif outcome.failures:
+        update_msg += f"__failed__ a Rouse check. Hunger is now `{character.hunger}`."
+    elif outcome.frenzy:
+        update_msg += "__passed__ a Rouse check at Hunger `5`, but must make a frenzy check."
+    else:
+        update_msg += f"__passed__ a Rouse check. Hunger remains `{character.hunger}`."
+    return update_msg
+
+
+def __make_title(outcome: RouseOutcome) -> str:
     """Create the title for the output message."""
     if outcome.total == 1:
         title = "Rouse Success" if outcome.successes == 1 else "Rouse Failure"
@@ -138,7 +145,7 @@ def __make_title(outcome: _RouseOutcome) -> str:
 async def __display_outcome(
     ctx: AppInvocation,
     character: VChar,
-    outcome: _RouseOutcome,
+    outcome: RouseOutcome,
     purpose: str | None,
     oblivion: str | bool,
     degen_damage: int,
@@ -222,13 +229,20 @@ async def __damage_ghoul(ctx: AppInvocation, ghoul: VChar, ephemeral: bool):
 
 async def __rouse_roll(
     guild: discord.Guild, character: VChar, rolls: int, reroll: bool
-) -> _RouseOutcome:
-    """Perform a Rouse roll."""
+) -> RouseOutcome:
+    """Perform a Rouse roll, counting the guild's Oblivion stain faces."""
+    oblivion = await services.settings.oblivion_stains(guild)
+    return roll_rouse_checks(character, rolls, reroll, oblivion)
+
+
+def roll_rouse_checks(
+    character: VChar, rolls: int, reroll: bool, oblivion: Collection[int] = ()
+) -> RouseOutcome:
+    """Make a vampire's Rouse checks, raising Hunger and logging them. Dice
+    showing an oblivion face count as Stains."""
     successes = 0
     failures = 0
     stains = 0
-
-    oblivion = await services.settings.oblivion_stains(guild)
 
     for _ in range(rolls):
         die = inconnu.d10()
@@ -250,7 +264,7 @@ async def __rouse_roll(
 
     character.log.record_rouse(successes, failures, gain)
 
-    return _RouseOutcome(
+    return RouseOutcome(
         total=rolls,
         successes=successes,
         failures=failures,

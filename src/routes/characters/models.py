@@ -360,3 +360,26 @@ class EditBody(BaseModel):
         """Normalize the Convictions. Blanks are kept, so error locations match
         the app's slots; the route drops them, and checks their length."""
         return [" ".join(conviction.split()) for conviction in v]
+
+
+class RouseBody(BaseModel):
+    """A request for Rouse checks."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    count: int = Field(ge=1, le=3)
+    reroll: bool  # Re-roll failures, as high Blood Potency allows
+    oblivion_stains: bool  # Apply the guild's Oblivion Stains, as for an Oblivion power
+
+
+class RouseResult(BaseModel):
+    """The outcome of Rouse checks. Ghouls take Aggravated Health damage
+    instead, so they have no successes or failures."""
+
+    successes: int
+    failures: int
+    hunger: int  # After the checks
+    frenzy: bool  # At Hunger 5: a frenzy check, or torpor on a failure if awakening
+    aggravated: int  # Ghouls' Aggravated Health damage
+    stains: int  # Oblivion Stains gained
+    degeneration: int  # Aggravated Willpower damage from those Stains

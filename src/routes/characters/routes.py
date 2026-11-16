@@ -7,17 +7,19 @@ from typing import TYPE_CHECKING, Annotated
 import discord
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, Response
-from fastapi.exceptions import HTTPException
+from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.responses import StreamingResponse
 from loguru import logger
 
 import errors
 from config import settings
-from constants import Damage
+from constants import ROUSE_FAIL_COLOR, Damage
 from events import CharEventType, char_events
-from models import VChar
+from inconnu.misc.rouse import roll_rouse_checks, rouse_update_message
+from models import VChar, VGuild
+from models.vguild import VGuildSettings
 from routes.auth import get_authenticated_user, verify_api_key
-from routes.characters.edit import apply_edit, check_edit, summarize, update_embed
+from routes.characters.edit import apply_edit, check_edit, edit_summary, summarize
 from routes.characters.models import (
     CharData,
     CreationBody,
@@ -26,6 +28,8 @@ from routes.characters.models import (
     GuildChars,
     OwnerData,
     PublicCharacter,
+    RouseBody,
+    RouseResult,
     UserCharData,
     WizardSchema,
 )
@@ -141,6 +145,62 @@ async def get_character(
     )
 
 
+async def _fetch_editable_character(
+    oid: PydanticObjectId, user_id: int, bot: InconnuBot, players=True
+) -> tuple[VChar, discord.Guild | None]:
+    """Fetch a character the user may change, and its Discord guild, if the
+    bot has it: the owner always may, and Storytellers may change SPCs, and
+    players' characters if players is True. Raises 403 otherwise, and as
+    _fetch_guild_character() does."""
+    char, _ = await _fetch_guild_character(oid, user_id)
+
+    discord_guild = bot.get_guild(char.guild)
+    discord_member = discord_guild.get_member(user_id) if discord_guild else None
+    if user_id != char.user:
+        if not (players or char.is_spc):
+            raise HTTPException(403, detail="Only the owner may do this")
+        if not await is_storyteller(discord_member):
+            raise HTTPException(
+                403, detail="Only the owner or a Storyteller may change this character"
+            )
+
+    return char, discord_guild
+
+
+async def _save(char: VChar):
+    """Save the character, undoing its changes if the save fails, since the
+    character manager holds this same object."""
+    try:
+        await char.save_changes()
+    except Exception:
+        char.rollback()
+        raise
+
+
+async def _post_update(
+    discord_guild: discord.Guild | None,
+    char: VChar,
+    user_id: int,
+    *,
+    title: str,
+    description: str,
+    color: int | None = None,
+):
+    """Post a web change to the guild's update channel. The guild cache,
+    unlike the gateway's, is sure to have the user: it vouched for them. The
+    change is already saved, so a failed post is only logged."""
+    editor = await guild_cache.fetchmember(char.guild, user_id)
+    if discord_guild is None or editor is None:
+        return
+
+    embed = discord.Embed(title=title, description=description, color=color)
+    embed.set_author(name=char.name, icon_url=editor.icon)
+    try:
+        await send_update(discord_guild, embed)
+    except discord.HTTPException as err:
+        logger.warning("Couldn't post {}'s web update: {}", char.name, err)
+
+
 @router.patch("/characters/{oid}", status_code=204)
 async def edit_character(
     oid: PydanticObjectId,
@@ -152,40 +212,82 @@ async def edit_character(
     owner and Storytellers may edit. Edits are corrections, so they don't
     touch the Chronicle log or experience, but they are posted to the
     update channel. Other tabs refresh through the "changed" event."""
-    char, _ = await _fetch_guild_character(oid, user_id)
-
-    discord_guild = bot.get_guild(char.guild)
-    discord_member = discord_guild.get_member(user_id) if discord_guild else None
-    if not (user_id == char.user or await is_storyteller(discord_member)):
-        raise HTTPException(403, detail="Only the owner or a Storyteller may edit this character")
-
+    char, discord_guild = await _fetch_editable_character(oid, user_id, bot)
     await check_edit(char, body)
 
     old = char.model_copy(deep=True)
     apply_edit(char, body)
-    try:
-        await char.save_changes()
-    except Exception:
-        # The character manager holds this same object
-        char.rollback()
-        raise
+    await _save(char)
 
     if char.raw_name != old.raw_name:
         # After the save, so a failed one can't leave the list misordered
         await char_mgr.sort_chars()
 
-    # The guild cache, unlike the gateway's, is sure to have the editor: it
-    # vouched for them above
-    editor = await guild_cache.fetchmember(char.guild, user_id)
-    if discord_guild is not None and editor is not None:
-        if changes := summarize(old, char):
-            try:
-                await send_update(discord_guild, update_embed(char, editor, changes))
-            except discord.HTTPException as err:
-                # The edit is saved, so don't fail the request
-                logger.warning("Couldn't post {}'s web edit: {}", char.name, err)
+    if changes := summarize(old, char):
+        await _post_update(
+            discord_guild,
+            char,
+            user_id,
+            title="Character Updated",
+            description=edit_summary(char, user_id, changes),
+        )
 
     return Response(status_code=204)
+
+
+@router.post("/characters/{oid}/rouse")
+async def rouse_character(
+    oid: PydanticObjectId,
+    body: RouseBody,
+    bot: Annotated[InconnuBot, Depends(get_bot)],
+    user_id: int = Depends(get_authenticated_user),
+) -> RouseResult:
+    """Make Rouse checks, as /rouse does: Hunger rises on failures, the
+    checks are logged, and Oblivion Stains are applied if asked for. Ghouls take one Aggravated Health damage instead, and
+    mortals can't Rouse. As in Discord, only the owner may Rouse, though
+    Storytellers may Rouse SPCs."""
+    char, discord_guild = await _fetch_editable_character(oid, user_id, bot, players=False)
+
+    if char.is_ghoul:
+        char.set_aggravated_hp(char.aggravated_hp + 1)
+        await _save(char)
+        return RouseResult(
+            successes=0, failures=0, hunger=0, frenzy=False, aggravated=1, stains=0, degeneration=0
+        )
+
+    if not char.is_vampire:
+        raise RequestValidationError(
+            [{"loc": ("body",), "msg": f"{char.name} is a mortal.", "type": "value_error"}]
+        )
+
+    if body.oblivion_stains:
+        # By ID, so it works without the gateway's guild
+        vguild = await VGuild.find_one(VGuild.guild == char.guild)
+        faces = (vguild.settings if vguild else VGuildSettings()).oblivion_stains
+    else:
+        faces = []
+
+    outcome = roll_rouse_checks(char, body.count, body.reroll, faces)
+    degeneration = char.add_stains(outcome.stains, log=True) if outcome.stains else 0
+    await _save(char)
+    await _post_update(
+        discord_guild,
+        char,
+        user_id,
+        title="Rouse Check",
+        description=rouse_update_message(char, outcome),
+        color=ROUSE_FAIL_COLOR if char.hunger >= 4 else None,
+    )
+
+    return RouseResult(
+        successes=outcome.successes,
+        failures=outcome.failures,
+        hunger=char.hunger,
+        frenzy=outcome.frenzy,
+        aggravated=0,
+        stains=outcome.stains,
+        degeneration=degeneration,
+    )
 
 
 @router.get("/characters/{oid}/events")

@@ -1,7 +1,6 @@
 """Applying the web app's character edits. Edits are corrections: they never
 touch the Chronicle log or experience."""
 
-import discord
 from fastapi.exceptions import RequestValidationError
 
 from constants import Damage
@@ -17,7 +16,6 @@ from routes.characters.models import (
     with_core_traits,
 )
 from services import char_mgr
-from services.guildcache import CachedMember
 
 MAX_SUMMARY_LENGTH = 4000  # Embed descriptions max out at 4096
 SEVERITIES = ((Damage.SUPERFICIAL, "Superficial"), (Damage.AGGRAVATED, "Aggravated"))
@@ -149,15 +147,10 @@ def _join(items: list[str]) -> str:
     return ", ".join(f"`{item}`" for item in items)
 
 
-def update_embed(char: VChar, editor: CachedMember, changes: list[str]) -> discord.Embed:
-    """The update-channel embed for an edit, in the style of /character update."""
+def edit_summary(char: VChar, editor_id: int, changes: list[str]) -> str:
+    """The update channel's summary of an edit, in the style of /character
+    update."""
     lines = "\n".join(f"* {change}" for change in changes)
     if len(lines) > MAX_SUMMARY_LENGTH:
         lines = lines[:MAX_SUMMARY_LENGTH].rsplit("\n", 1)[0] + "\n* …"
-
-    embed = discord.Embed(
-        title="Character Updated",
-        description=f"__<@{editor.id}> updated {char.name} on the web:__\n{lines}",
-    )
-    embed.set_author(name=char.name, icon_url=editor.icon)
-    return embed
+    return f"__<@{editor_id}> updated {char.name} on the web:__\n{lines}"

@@ -42,6 +42,9 @@ CORE_TRAIT_TYPES = {name.casefold(): VCharTrait.Type.ATTRIBUTE for name in ATTRI
     name.casefold(): VCharTrait.Type.SKILL for name in SKILLS
 }
 MAX_PROFILE_LENGTH = 1024
+# Enough to wrap a full track twice over; a cap so huge counts can't build
+# huge tracks
+MAX_DAMAGE = 2 * max(VChar.MAX_HEALTH, VChar.MAX_WILLPOWER)
 CONVICTION_TOO_LONG = f"Each conviction must be {MAX_CONVICTION_LENGTH} characters or less"
 
 type ErrorLoc = tuple[int | str, ...]
@@ -404,3 +407,21 @@ class MendResult(BaseModel):
     hunger: int  # After the Rouse Checks
     frenzy: bool  # A failed mending Rouse at Hunger 5 calls for a frenzy check (DC 4)
     torpor: bool  # Healing Aggravated damage pushed Hunger past 5
+
+
+class DamageBody(BaseModel):
+    """Damage to deal to a track. Superficial damage past the track's end
+    wraps into Aggravated, as in /character update."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    track: Tracker
+    superficial: int = Field(ge=0, le=MAX_DAMAGE)
+    aggravated: int = Field(ge=0, le=MAX_DAMAGE)
+
+    @model_validator(mode="after")
+    def validate_some_damage(self) -> Self:
+        """There must be some damage to deal."""
+        if self.superficial == 0 and self.aggravated == 0:
+            raise ValueError("Deal at least one damage.")
+        return self

@@ -27,6 +27,7 @@ from routes.characters.models import (
     CharData,
     CreationBody,
     CreationSuccess,
+    DamageBody,
     EditBody,
     GuildChars,
     MendBody,
@@ -293,6 +294,45 @@ async def rouse_character(
         stains=outcome.stains,
         degeneration=degeneration,
     )
+
+
+@router.post("/characters/{oid}/damage", status_code=204)
+async def damage_character(
+    oid: PydanticObjectId,
+    body: DamageBody,
+    bot: Annotated[InconnuBot, Depends(get_bot)],
+    user_id: int = Depends(get_authenticated_user),
+) -> Response:
+    """Deal Superficial, then Aggravated, damage to a track, as /character
+    update does: Superficial damage past the track's end wraps into
+    Aggravated. The damage is logged. As in Discord, Storytellers may damage
+    players' characters."""
+    char, discord_guild = await _fetch_editable_character(oid, user_id, bot)
+    track_name = body.track.title()
+
+    lines: list[str] = []
+    if body.superficial:
+        aggravated = getattr(char, body.track).count(Damage.AGGRAVATED)
+        char.apply_damage(body.track, Damage.SUPERFICIAL, body.superficial)
+        line = f"`+{body.superficial}` Superficial {track_name} damage."
+        if wrapped := getattr(char, body.track).count(Damage.AGGRAVATED) - aggravated:
+            line += f" `{wrapped}` wrapped to Aggravated."
+        lines.append(line)
+    if body.aggravated:
+        char.apply_damage(body.track, Damage.AGGRAVATED, body.aggravated)
+        lines.append(f"`+{body.aggravated}` Aggravated {track_name} damage.")
+
+    await _save(char)
+    summary = "\n".join(f"* {line}" for line in lines)
+    await _post_update(
+        discord_guild,
+        char,
+        user_id,
+        title="Damage Taken",
+        description=f"__<@{user_id}> damaged {char.name} on the web:__\n{summary}",
+    )
+
+    return Response(status_code=204)
 
 
 def _heal_willpower(char: VChar, severity: Damage) -> int:

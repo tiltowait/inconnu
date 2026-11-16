@@ -3285,3 +3285,124 @@ async def test_mend_willpower_nothing_to_heal(
 
     assert status == 422
     assert data["detail"][0]["loc"] == ["body", "type"]
+
+
+# Damage
+
+
+async def post_damage(
+    char: VChar, body: dict[str, Any], headers: dict[str, str]
+) -> tuple[int, Any]:
+    """POST damage to the character, returning the status and JSON, if any."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(f"/characters/{char.id}/damage", json=body, headers=headers)
+    return response.status_code, response.json() if response.content else None
+
+
+@pytest.mark.parametrize(
+    "body,track",
+    [
+        ({"track": "health", "superficial": 2, "aggravated": 0}, "health"),
+        ({"track": "willpower", "superficial": 0, "aggravated": 1}, "willpower"),
+    ],
+)
+async def test_damage(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    body: dict[str, Any],
+    track: str,
+):
+    """Damage is dealt, logged, and posted, with no response body."""
+    char = await make_saved_char()  # Health 6, Willpower 5
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_damage(char, body, auth_headers)
+
+    assert status == 204
+    assert data is None
+    saved = await reload(char)
+    damaged: str = getattr(saved, track)
+    assert damaged.count("/") == body["superficial"]
+    assert damaged.count("x") == body["aggravated"]
+    assert getattr(saved.log, f"{track}_superficial") == body["superficial"]
+    assert getattr(saved.log, f"{track}_aggravated") == body["aggravated"]
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == "Damage Taken"
+
+
+async def test_damage_wraps(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+):
+    """Superficial damage past the track's end wraps into Aggravated, before
+    the Aggravated damage is dealt."""
+    char = await make_saved_char()  # Health 6
+    mock_char_mgr_fetchid.return_value = char
+    body = {"track": "health", "superficial": 11, "aggravated": 1}
+
+    status, _ = await post_damage(char, body, auth_headers)
+
+    assert status == 204
+    saved = await reload(char)
+    assert saved.health == "xxxxxx"
+    assert saved.log.times_impaired == 1
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.description is not None
+    assert "`+11` Superficial Health damage. `5` wrapped to Aggravated." in embed.description
+    assert "`+1` Aggravated Health damage." in embed.description
+
+
+@pytest.mark.parametrize(
+    "body,loc",
+    [
+        ({"track": "health", "superficial": -1, "aggravated": 0}, ["body", "superficial"]),
+        ({"track": "health", "superficial": 0, "aggravated": -2}, ["body", "aggravated"]),
+        ({"track": "health", "superficial": 41, "aggravated": 0}, ["body", "superficial"]),
+        ({"track": "health", "superficial": 0, "aggravated": 0}, ["body"]),
+        ({"track": "humanity", "superficial": 1, "aggravated": 0}, ["body", "track"]),
+        ({"track": "health", "superficial": 1}, ["body", "aggravated"]),
+        ({"track": "health", "superficial": 1, "aggravated": 0, "x": 1}, ["body", "x"]),
+    ],
+)
+async def test_damage_invalid_body(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    body: dict[str, Any],
+    loc: list[str],
+):
+    """Counts must be 0-40, with some damage, on Health or Willpower."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_damage(char, body, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == loc
+    assert (await reload(char)).health == "......"
+
+
+@pytest.mark.parametrize("storyteller,status", [(True, 204), (False, 403)])
+async def test_damage_players_character(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    storyteller: bool,
+    status: int,
+):
+    """As with /character update, Storytellers may damage players' characters,
+    and other players may not."""
+    char = await make_saved_char(user_id=999999)
+    mock_char_mgr_fetchid.return_value = char
+    body = {"track": "health", "superficial": 1, "aggravated": 0}
+
+    with patch.object(
+        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
+    ):
+        result, _ = await post_damage(char, body, auth_headers)
+
+    assert result == status

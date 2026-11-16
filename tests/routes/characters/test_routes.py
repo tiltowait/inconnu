@@ -19,6 +19,7 @@ from constants import Damage
 from errors import DuplicateCharacterError
 from events import CharEvents, CharEventType, char_events
 from models import VChar, VGuild
+from models.vchar import Tracker
 from models.vchardocs import VCharSplat, VCharTrait
 from routes.characters.models import OwnerData, with_core_traits
 from routes.characters.routes import char_event_stream
@@ -3147,7 +3148,6 @@ async def test_mend_nothing_to_heal(
 @pytest.mark.parametrize(
     "body,loc",
     [
-        ({"type": "superficial", "track": "willpower"}, ["body", "track"]),
         ({"type": "superficial", "track": "humanity"}, ["body", "track"]),
         ({"type": "lethal", "track": "health"}, ["body", "type"]),
         ({"track": "health"}, ["body", "type"]),
@@ -3161,7 +3161,7 @@ async def test_mend_invalid_body(
     body: dict[str, Any],
     loc: list[str],
 ):
-    """Only Superficial or Aggravated Health may be healed."""
+    """Only Superficial or Aggravated Health or Willpower may be healed."""
     char = await make_saved_char()
     await hurt(char, "...//x")
     mock_char_mgr_fetchid.return_value = char
@@ -3195,3 +3195,93 @@ async def test_mend_access(
         result, _ = await post_mend(char, SUPERFICIAL, auth_headers)
 
     assert result == status
+
+
+@pytest.mark.parametrize(
+    "body,willpower,expected,healed",
+    [
+        # Resolve and Composure are 1 (the core default), so recovery is 1
+        ({"type": "superficial", "track": "willpower"}, "..///", "...//", 1),
+        ({"type": "aggravated", "track": "willpower"}, "../xx", ".../x", 1),
+    ],
+)
+async def test_mend_willpower(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    body: dict[str, str],
+    willpower: str,
+    expected: str,
+    healed: int,
+):
+    """Willpower heals without Rouse Checks or logging, and posts an update."""
+    char = await make_saved_char()
+    # Damage as play deals it, so the log's worst-track snapshot includes it
+    char.set_damage(Tracker.WILLPOWER, Damage.SUPERFICIAL, willpower.count(Damage.SUPERFICIAL))
+    char.set_damage(Tracker.WILLPOWER, Damage.AGGRAVATED, willpower.count(Damage.AGGRAVATED))
+    assert char.willpower == willpower
+    await char.save_changes()
+    stored = await reload(char)
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10") as d10:
+        status, data = await post_mend(char, body, auth_headers)
+
+    assert status == 200
+    assert data == {
+        "track": expected,
+        "dice": [],
+        "hunger": 1,
+        "frenzy": False,
+        "torpor": False,
+    }
+    d10.assert_not_called()
+    saved = await reload(char)
+    assert saved.willpower == expected
+    assert saved.raw_hunger == 1
+    assert saved.log == stored.log
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == "Willpower Recovered"
+    assert embed.description is not None
+    assert f"Recovered `{healed}`" in embed.description
+
+
+async def test_mend_willpower_recovery_amount(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """Superficial Willpower recovers the higher of Resolve and Composure, as
+    /awaken does."""
+    char = await make_saved_char()
+    for trait in char.raw_traits:
+        if trait.name == "Resolve":
+            trait.rating = 3
+        elif trait.name == "Composure":
+            trait.rating = 2
+    char.willpower = "/////"
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_mend(
+        char, {"type": "superficial", "track": "willpower"}, auth_headers
+    )
+
+    assert status == 200
+    assert data["track"] == "...//"
+
+
+@pytest.mark.parametrize("type_", ["superficial", "aggravated"])
+async def test_mend_willpower_nothing_to_heal(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    type_: str,
+):
+    """Healing Willpower damage the character doesn't have is a 422."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_mend(char, {"type": type_, "track": "willpower"}, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body", "type"]

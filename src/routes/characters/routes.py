@@ -19,6 +19,7 @@ from inconnu.misc.aggheal import aggheal_update_message, heal_aggravated
 from inconnu.misc.mend import mend_superficial, mend_update_message
 from inconnu.misc.rouse import roll_rouse_checks, rouse_update_message
 from models import VChar, VGuild
+from models.vchar import Tracker
 from models.vguild import VGuildSettings
 from routes.auth import get_authenticated_user, verify_api_key
 from routes.characters.edit import apply_edit, check_edit, edit_summary, summarize
@@ -294,6 +295,17 @@ async def rouse_character(
     )
 
 
+def _heal_willpower(char: VChar, severity: Damage) -> int:
+    """Heal Superficial Willpower (as much as /awaken would) or one
+    Aggravated, returning the amount healed."""
+    if severity == Damage.SUPERFICIAL:
+        healed = min(char.superficial_wp, char.willpower_recovery)
+    else:
+        healed = 1
+    char.apply_damage(Tracker.WILLPOWER, severity, -healed)
+    return healed
+
+
 @router.post("/characters/{oid}/mend")
 async def mend_character(
     oid: PydanticObjectId,
@@ -301,9 +313,11 @@ async def mend_character(
     bot: Annotated[InconnuBot, Depends(get_bot)],
     user_id: int = Depends(get_authenticated_user),
 ) -> MendResult:
-    """Heal damage, as /mend (Superficial) and /aggheal (Aggravated) do,
-    Rouse Checks included. As in Discord, only the owner may heal, though
-    Storytellers may heal SPCs."""
+    """Heal damage. Health heals as /mend (Superficial) and /aggheal
+    (Aggravated) do, Rouse Checks and logging included. Willpower recovers
+    what /awaken would (Superficial) or one Aggravated, with no Rouse Checks
+    or logging. As in Discord, only the owner may heal, though Storytellers
+    may heal SPCs."""
     char, discord_guild = await _fetch_editable_character(oid, user_id, bot, players=False)
 
     severity = Damage.SUPERFICIAL if body.type == "superficial" else Damage.AGGRAVATED
@@ -312,6 +326,24 @@ async def mend_character(
         message = f"{char.name} has no {body.type.title()} {body.track.title()} damage to heal."
         raise RequestValidationError(
             [{"loc": ("body", "type"), "msg": message, "type": "value_error"}]
+        )
+
+    if body.track == Tracker.WILLPOWER:
+        healed = _heal_willpower(char, severity)
+        await _save(char)
+        remaining = char.willpower.count(severity)
+        await _post_update(
+            discord_guild,
+            char,
+            user_id,
+            title="Willpower Recovered",
+            description=(
+                f"Recovered `{healed}` {body.type.title()} Willpower damage.\n"
+                f"`{remaining}` remaining."
+            ),
+        )
+        return MendResult(
+            track=char.willpower, dice=[], hunger=char.hunger, frenzy=False, torpor=False
         )
 
     if severity == Damage.SUPERFICIAL:

@@ -386,28 +386,21 @@ class RouseResult(BaseModel):
 
 
 class MendBody(BaseModel):
-    """A request to heal damage, as /mend (Superficial) or /aggheal
-    (Aggravated) do."""
+    """A request to heal damage. Health heals as /mend (Superficial) or
+    /aggheal (Aggravated) do. Willpower recovers what /awaken would
+    (Superficial) or one Aggravated, without Rouse Checks."""
 
     model_config = ConfigDict(extra="forbid")
 
     type: Literal["superficial", "aggravated"]
     track: Tracker
 
-    @field_validator("track")
-    @classmethod
-    def validate_track(cls, v: Tracker) -> Tracker:
-        """Only Health can be healed for now."""
-        if v != Tracker.HEALTH:
-            raise ValueError("Only Health can be healed.")
-        return v
-
 
 class MendResult(BaseModel):
     """The outcome of healing damage."""
 
     track: str  # The healed track
-    dice: list[int]  # Rouse dice: one to mend, three for Aggravated; none for non-vampires
+    dice: list[int]  # Health's Rouse dice: one to mend, three for Aggravated; else none
     hunger: int  # After the Rouse Checks
     frenzy: bool  # A failed mending Rouse at Hunger 5 calls for a frenzy check (DC 4)
     torpor: bool  # Healing Aggravated damage pushed Hunger past 5

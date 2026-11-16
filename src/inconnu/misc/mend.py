@@ -17,9 +17,12 @@ __HELP_URL = docs_url("guides/gameplay-shortcuts#mending-damage")
 
 
 class MendOutcome(NamedTuple):
+    """The outcome of mending Superficial Health damage."""
+
     mended: int
-    rouse: bool
+    rouse: bool  # Whether the Rouse Check passed (non-vampires don't Rouse)
     frenzy: bool
+    dice: list[int]  # The Rouse die, for vampires
 
 
 def _can_mend(character: VChar):
@@ -35,29 +38,41 @@ def _can_mend(character: VChar):
 )
 async def mend(ctx: AppCtx, character: VChar):
     """Mend damage on a character OR the user's only character."""
-    outcome = await __heal(character)
-
-    if isinstance(outcome, str):
-        await ctx.respond(outcome, ephemeral=True)
-    else:
-        # Build the update message
-        update_msg = f"Mended `{outcome.mended}` Superficial Damage.\n"
-        update_msg += f"`{character.superficial_hp}` remaining."
-
-        if character.is_vampire:
-            if outcome.rouse:
-                update_msg += " No Hunger gain."
-            else:
-                update_msg += f" Gained `1` Hunger (now at `{character.hunger}`)."
-
-        if outcome.frenzy:
-            update_msg += "\nMust make a frenzy check at DC 4."
-
-        inter = await __display_outcome(ctx, character, outcome)
-        msg = await get_message(inter)
-        await services.post_update(
-            ctx=ctx, character=character, title="Damage Mended", message=update_msg, msg=msg
+    if character.superficial_hp == 0:
+        await ctx.respond(
+            f"**{character.name}** has no Superficial damage to mend!", ephemeral=True
         )
+        return
+
+    outcome = mend_superficial(character)
+    await character.save_changes()
+
+    inter = await __display_outcome(ctx, character, outcome)
+    msg = await get_message(inter)
+    await services.post_update(
+        ctx=ctx,
+        character=character,
+        title="Damage Mended",
+        message=mend_update_message(character, outcome),
+        msg=msg,
+    )
+
+
+def mend_update_message(character: VChar, outcome: MendOutcome) -> str:
+    """The update channel's summary of a mend."""
+    update_msg = f"Mended `{outcome.mended}` Superficial Damage.\n"
+    update_msg += f"`{character.superficial_hp}` remaining."
+
+    if character.is_vampire:
+        if outcome.rouse:
+            update_msg += " No Hunger gain."
+        else:
+            update_msg += f" Gained `1` Hunger (now at `{character.hunger}`)."
+
+    if outcome.frenzy:
+        update_msg += "\nMust make a frenzy check at DC 4."
+
+    return update_msg
 
 
 async def __display_outcome(ctx: AppCtx, character: VChar, outcome: MendOutcome) -> AppResponse:
@@ -88,12 +103,10 @@ async def __display_outcome(ctx: AppCtx, character: VChar, outcome: MendOutcome)
     )
 
 
-async def __heal(character: VChar) -> MendOutcome | str:
-    """Heal the character and perform the Rouse check."""
+def mend_superficial(character: VChar) -> MendOutcome:
+    """Mend the character's Superficial Health damage, with a Rouse Check for
+    vampires, and log it. Doesn't save. The caller checks there's damage."""
     superficial = character.superficial_hp
-    if superficial == 0:
-        return f"**{character.name}** has no Superficial damage to mend!"
-
     mending = min(character.mend_amount, superficial)
     superficial -= mending
     aggravated = character.aggravated_hp
@@ -101,8 +114,13 @@ async def __heal(character: VChar) -> MendOutcome | str:
 
     track = Damage.NONE * unhurt + Damage.SUPERFICIAL * superficial + Damage.AGGRAVATED * aggravated
     character.health = track
+    character.log.times_mended += 1
 
-    rouse = inconnu.d10() >= 6
+    if not character.is_vampire:
+        return MendOutcome(mended=mending, rouse=True, frenzy=False, dice=[])
+
+    die = inconnu.d10()
+    rouse = die >= 6
     old_hunger = character.hunger
     if not rouse:
         frenzy = character.hunger == 5
@@ -110,9 +128,5 @@ async def __heal(character: VChar) -> MendOutcome | str:
     else:
         frenzy = False
 
-    character.log.times_mended += 1
-    if character.is_vampire:
-        character.log.record_rouse(int(rouse), int(not rouse), character.hunger - old_hunger)
-
-    await character.save_changes()
-    return MendOutcome(mended=mending, rouse=rouse, frenzy=frenzy)
+    character.log.record_rouse(int(rouse), int(not rouse), character.hunger - old_hunger)
+    return MendOutcome(mended=mending, rouse=rouse, frenzy=frenzy, dice=[die])

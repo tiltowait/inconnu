@@ -2975,3 +2975,223 @@ async def test_rouse_oblivion_degeneration(
     assert data["stains"] == 1
     assert data["degeneration"] == 1
     assert (await reload(char)).aggravated_wp == 1
+
+
+# Mending
+
+
+async def post_mend(char: VChar, body: dict[str, Any], headers: dict[str, str]) -> tuple[int, Any]:
+    """POST a heal for the character, returning the status and JSON."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(f"/characters/{char.id}/mend", json=body, headers=headers)
+    return response.status_code, response.json()
+
+
+async def hurt(char: VChar, health: str, hunger=1):
+    """Give the character a Health track and Hunger, and save them."""
+    char.health = health
+    char.raw_hunger = hunger
+    await char.save_changes()
+
+
+SUPERFICIAL = {"type": "superficial", "track": "health"}
+AGGRAVATED = {"type": "aggravated", "track": "health"}
+
+
+@pytest.mark.parametrize("die,hunger", [(7, 1), (3, 2)])
+async def test_mend_superficial(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    die: int,
+    hunger: int,
+):
+    """Mending heals Blood Potency's amount (1 at BP 1) with a Rouse Check,
+    and posts to the update channel."""
+    char = await make_saved_char()
+    await hurt(char, "...///")
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10", return_value=die):
+        status, data = await post_mend(char, SUPERFICIAL, auth_headers)
+
+    assert status == 200
+    assert data == {
+        "track": "....//",
+        "dice": [die],
+        "hunger": hunger,
+        "frenzy": False,
+        "torpor": False,
+    }
+    saved = await reload(char)
+    assert saved.health == "....//"
+    assert saved.log.times_mended == 1
+    assert saved.log.rouse_checks == 1
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == "Damage Mended"
+
+
+async def test_mend_frenzy_at_hunger_5(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """A failed mending Rouse at Hunger 5 calls for a frenzy check."""
+    char = await make_saved_char()
+    await hurt(char, ".....//", hunger=5)
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10", return_value=2):
+        status, data = await post_mend(char, SUPERFICIAL, auth_headers)
+
+    assert status == 200
+    assert data["frenzy"] is True
+    assert data["hunger"] == 5
+
+
+@pytest.mark.parametrize(
+    "dice,hunger,torpor",
+    [([7, 8, 9], 1, False), ([1, 7, 2], 3, False), ([1, 2, 3], 4, False)],
+)
+async def test_mend_aggravated(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    dice: list[int],
+    hunger: int,
+    torpor: bool,
+):
+    """Healing Aggravated damage heals one, with three Rouse Checks."""
+    char = await make_saved_char()
+    await hurt(char, "..../xx")
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10", side_effect=dice):
+        status, data = await post_mend(char, AGGRAVATED, auth_headers)
+
+    assert status == 200
+    assert data == {
+        "track": "...../x",
+        "dice": dice,
+        "hunger": hunger,
+        "frenzy": False,
+        "torpor": torpor,
+    }
+    saved = await reload(char)
+    assert saved.log.rouse_checks == 3
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == "Aggravated Damage Healed"
+
+
+async def test_mend_aggravated_torpor(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """Hunger past 5 caps at 5, and the vampire falls into torpor."""
+    char = await make_saved_char()
+    await hurt(char, ".....x", hunger=4)
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10", side_effect=[1, 2, 7]):
+        status, data = await post_mend(char, AGGRAVATED, auth_headers)
+
+    assert status == 200
+    assert data["torpor"] is True
+    assert data["hunger"] == 5
+
+
+@pytest.mark.parametrize("splat", [VCharSplat.MORTAL, VCharSplat.GHOUL])
+@pytest.mark.parametrize("body,track", [(SUPERFICIAL, "....//"), (AGGRAVATED, "....//")])
+async def test_mend_non_vampire(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    splat: VCharSplat,
+    body: dict[str, str],
+    track: str,
+):
+    """Non-vampires heal without Rouse Checks. Mortals mend Stamina's worth
+    (1 here)."""
+    char = await make_saved_char(splat=splat)
+    await hurt(char, "...///" if body is SUPERFICIAL else "...//x", hunger=0)
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10") as d10:
+        status, data = await post_mend(char, body, auth_headers)
+
+    assert status == 200
+    assert data["dice"] == []
+    assert data["track"] == track
+    assert data["hunger"] == 0
+    d10.assert_not_called()
+    assert (await reload(char)).log.rouse_checks == 0
+
+
+@pytest.mark.parametrize("body", [SUPERFICIAL, AGGRAVATED])
+async def test_mend_nothing_to_heal(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    body: dict[str, str],
+):
+    """Healing damage the character doesn't have is a 422."""
+    char = await make_saved_char()
+    await hurt(char, "....//" if body is AGGRAVATED else "....xx")
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_mend(char, body, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body", "type"]
+
+
+@pytest.mark.parametrize(
+    "body,loc",
+    [
+        ({"type": "superficial", "track": "willpower"}, ["body", "track"]),
+        ({"type": "superficial", "track": "humanity"}, ["body", "track"]),
+        ({"type": "lethal", "track": "health"}, ["body", "type"]),
+        ({"track": "health"}, ["body", "type"]),
+        ({**SUPERFICIAL, "amount": 2}, ["body", "amount"]),
+    ],
+)
+async def test_mend_invalid_body(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    body: dict[str, Any],
+    loc: list[str],
+):
+    """Only Superficial or Aggravated Health may be healed."""
+    char = await make_saved_char()
+    await hurt(char, "...//x")
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_mend(char, body, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == loc
+
+
+@pytest.mark.parametrize("spc,storyteller,status", [(False, True, 403), (True, True, 200)])
+async def test_mend_access(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    spc: bool,
+    storyteller: bool,
+    status: int,
+):
+    """As with Rouse, Storytellers may heal SPCs but not players' characters."""
+    char = await make_saved_char(user_id=VChar.SPC_OWNER if spc else 999999)
+    await hurt(char, "...///")
+    mock_char_mgr_fetchid.return_value = char
+
+    with (
+        patch.object(
+            routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
+        ),
+        patch("inconnu.d10", return_value=8),
+    ):
+        result, _ = await post_mend(char, SUPERFICIAL, auth_headers)
+
+    assert result == status

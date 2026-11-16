@@ -15,6 +15,8 @@ import errors
 from config import settings
 from constants import ROUSE_FAIL_COLOR, Damage
 from events import CharEventType, char_events
+from inconnu.misc.aggheal import aggheal_update_message, heal_aggravated
+from inconnu.misc.mend import mend_superficial, mend_update_message
 from inconnu.misc.rouse import roll_rouse_checks, rouse_update_message
 from models import VChar, VGuild
 from models.vguild import VGuildSettings
@@ -26,6 +28,8 @@ from routes.characters.models import (
     CreationSuccess,
     EditBody,
     GuildChars,
+    MendBody,
+    MendResult,
     OwnerData,
     PublicCharacter,
     RouseBody,
@@ -287,6 +291,58 @@ async def rouse_character(
         aggravated=0,
         stains=outcome.stains,
         degeneration=degeneration,
+    )
+
+
+@router.post("/characters/{oid}/mend")
+async def mend_character(
+    oid: PydanticObjectId,
+    body: MendBody,
+    bot: Annotated[InconnuBot, Depends(get_bot)],
+    user_id: int = Depends(get_authenticated_user),
+) -> MendResult:
+    """Heal damage, as /mend (Superficial) and /aggheal (Aggravated) do,
+    Rouse Checks included. As in Discord, only the owner may heal, though
+    Storytellers may heal SPCs."""
+    char, discord_guild = await _fetch_editable_character(oid, user_id, bot, players=False)
+
+    severity = Damage.SUPERFICIAL if body.type == "superficial" else Damage.AGGRAVATED
+    track: str = getattr(char, body.track)
+    if severity not in track:
+        message = f"{char.name} has no {body.type.title()} {body.track.title()} damage to heal."
+        raise RequestValidationError(
+            [{"loc": ("body", "type"), "msg": message, "type": "value_error"}]
+        )
+
+    if severity == Damage.SUPERFICIAL:
+        mended = mend_superficial(char)
+        await _save(char)
+        await _post_update(
+            discord_guild,
+            char,
+            user_id,
+            title="Damage Mended",
+            description=mend_update_message(char, mended),
+        )
+        dice, frenzy, torpor = mended.dice, mended.frenzy, False
+    else:
+        healed = heal_aggravated(char)
+        await _save(char)
+        await _post_update(
+            discord_guild,
+            char,
+            user_id,
+            title="Aggravated Damage Healed",
+            description=aggheal_update_message(char, healed),
+        )
+        dice, frenzy, torpor = healed.dice, False, healed.torpor
+
+    return MendResult(
+        track=getattr(char, body.track),
+        dice=dice,
+        hunger=char.hunger,
+        frenzy=frenzy,
+        torpor=torpor,
     )
 
 

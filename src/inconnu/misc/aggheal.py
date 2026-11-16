@@ -21,6 +21,7 @@ class AggHealOutcome(NamedTuple):
 
     gain: int
     torpor: bool
+    dice: list[int]  # The three Rouse dice, for vampires
 
 
 def _can_aggheal(character: VChar):
@@ -37,16 +38,7 @@ async def aggheal(ctx: AppCtx, character: VChar):
         await ctx.respond(f"{character.name} has no aggravated damage to heal!", ephemeral=True)
         return
 
-    outcome = await __heal(character)
-
-    # Build the update message
-    update_msg = f"`{character.aggravated_hp}` Aggravated Damage remaining."
-    if character.is_vampire:
-        update_msg += f"\nGained `{outcome.gain}` Hunger (now at `{character.hunger}`)"
-        if outcome.torpor:
-            update_msg += " and fell into torpor!"
-        else:
-            update_msg += "."
+    outcome = heal_aggravated(character)
 
     inter, _ = await asyncio.gather(
         __display_outcome(ctx, character, outcome), character.save_changes()
@@ -57,16 +49,27 @@ async def aggheal(ctx: AppCtx, character: VChar):
         msg=msg,
         character=character,
         title="Aggravated Damage Healed",
-        message=update_msg,
+        message=aggheal_update_message(character, outcome),
     )
 
 
-async def __heal(character: VChar) -> AggHealOutcome:
-    """
-    Heal agg damage.
-    Does not check if the character has agg damage!
-    """
-    failures = sum(inconnu.d10() < 6 for _ in range(3))
+def aggheal_update_message(character: VChar, outcome: AggHealOutcome) -> str:
+    """The update channel's summary of healing Aggravated damage."""
+    update_msg = f"`{character.aggravated_hp}` Aggravated Damage remaining."
+    if character.is_vampire:
+        update_msg += f"\nGained `{outcome.gain}` Hunger (now at `{character.hunger}`)"
+        if outcome.torpor:
+            update_msg += " and fell into torpor!"
+        else:
+            update_msg += "."
+    return update_msg
+
+
+def heal_aggravated(character: VChar) -> AggHealOutcome:
+    """Heal one Aggravated Health damage, with three Rouse Checks for
+    vampires, and log it. Doesn't save. The caller checks there's damage."""
+    dice = [inconnu.d10() for _ in range(3)] if character.is_vampire else []
+    failures = sum(die < 6 for die in dice)
     hunger_gain = failures
 
     torpor = False
@@ -82,7 +85,7 @@ async def __heal(character: VChar) -> AggHealOutcome:
     if character.is_vampire:
         character.log.record_rouse(3 - failures, failures, hunger_gain)
 
-    return AggHealOutcome(gain=hunger_gain, torpor=torpor)
+    return AggHealOutcome(gain=hunger_gain, torpor=torpor, dice=dice)
 
 
 async def __display_outcome(ctx: AppCtx, character: VChar, outcome: AggHealOutcome) -> AppResponse:

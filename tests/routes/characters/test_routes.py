@@ -3406,3 +3406,225 @@ async def test_damage_players_character(
         result, _ = await post_damage(char, body, auth_headers)
 
     assert result == status
+
+
+# Stains and slaking
+
+
+async def post_action(
+    char: VChar, action: str, body: dict[str, Any], headers: dict[str, str]
+) -> tuple[int, Any]:
+    """POST an action for the character, returning the status and JSON, if any."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(f"/characters/{char.id}/{action}", json=body, headers=headers)
+    return response.status_code, response.json() if response.content else None
+
+
+@pytest.mark.parametrize("amount,stains", [(2, 2), (10, 10)])
+async def test_stain(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    amount: int,
+    stains: int,
+):
+    """Stains are added up to 10, logged, and posted."""
+    char = await make_saved_char()  # Humanity 7
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "stain", {"amount": amount}, auth_headers)
+
+    assert status == 204
+    assert data is None
+    saved = await reload(char)
+    assert saved.stains == stains
+    assert saved.raw_humanity == 7
+    assert saved.log.stains_gained == stains
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == "Stains"
+    assert embed.description == f"**Nadea Theron** gained `{stains}` Stains."
+
+
+async def test_stain_degeneration(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """Stains past the empty Humanity boxes deal Aggravated Willpower damage."""
+    char = await make_saved_char()  # Humanity 7: 3 empty boxes
+    mock_char_mgr_fetchid.return_value = char
+
+    status, _ = await post_action(char, "stain", {"amount": 4}, auth_headers)
+
+    assert status == 204
+    saved = await reload(char)
+    assert saved.aggravated_wp == 1
+    assert saved.log.degenerations == 1
+
+
+async def test_stain_full(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """A character with 10 Stains can't gain more."""
+    char = await make_saved_char()
+    char.stains = 10
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "stain", {"amount": 1}, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body", "amount"]
+
+
+@pytest.mark.parametrize("splat", [VCharSplat.MORTAL, VCharSplat.GHOUL])
+async def test_stain_non_vampire(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    splat: VCharSplat,
+):
+    """Anyone can gain Stains, as with /stain."""
+    char = await make_saved_char(splat=splat)
+    mock_char_mgr_fetchid.return_value = char
+
+    status, _ = await post_action(char, "stain", {"amount": 1}, auth_headers)
+
+    assert status == 204
+    assert (await reload(char)).stains == 1
+
+
+@pytest.mark.parametrize("amount,hunger,slaked", [(1, 2, 1), (5, 0, 3)])
+async def test_slake(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    amount: int,
+    hunger: int,
+    slaked: int,
+):
+    """Slaking lowers Hunger to no less than 0, and is logged and posted."""
+    char = await make_saved_char()
+    char.raw_hunger = 3
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "slake", {"amount": amount}, auth_headers)
+
+    assert status == 204
+    assert data is None
+    saved = await reload(char)
+    assert saved.raw_hunger == hunger
+    assert saved.log.hunger_slaked == slaked
+    assert saved.log.times_slaked == 1
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == "Hunger Slaked"
+    assert embed.description == (f"**Nadea Theron** slaked `{slaked}` Hunger (now at `{hunger}`).")
+
+
+async def test_slake_no_hunger(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """A vampire at Hunger 0 can't slake."""
+    char = await make_saved_char()
+    char.raw_hunger = 0
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "slake", {"amount": 1}, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body", "amount"]
+
+
+@pytest.mark.parametrize("splat", [VCharSplat.MORTAL, VCharSplat.GHOUL])
+async def test_slake_non_vampire(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    splat: VCharSplat,
+):
+    """Only vampires slake."""
+    char = await make_saved_char(splat=splat)
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "slake", {"amount": 1}, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body"]
+
+
+@pytest.mark.parametrize("action", ["stain", "slake"])
+@pytest.mark.parametrize(
+    "body,loc",
+    [
+        ({"amount": 0}, ["body", "amount"]),
+        ({"amount": -1}, ["body", "amount"]),
+        ({"amount": 11}, ["body", "amount"]),
+        ({}, ["body", "amount"]),
+        ({"amount": 1, "delta": 1}, ["body", "delta"]),
+    ],
+)
+async def test_amount_invalid_body(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    action: str,
+    body: dict[str, Any],
+    loc: list[str],
+):
+    """Amounts are 1-10, and nothing else is allowed."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, action, body, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == loc
+
+
+@pytest.mark.parametrize(
+    "action,spc,status",
+    [
+        ("stain", False, 204),  # /stain has a player option
+        ("slake", False, 403),  # /slake doesn't
+        ("slake", True, 204),  # but Storytellers may slake SPCs
+    ],
+)
+async def test_amount_storyteller_access(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    action: str,
+    spc: bool,
+    status: int,
+):
+    """Storytellers have the same access as in Discord."""
+    char = await make_saved_char(user_id=VChar.SPC_OWNER if spc else 999999)
+    char.raw_hunger = 2
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch.object(routes_module, "is_storyteller", new_callable=AsyncMock, return_value=True):
+        result, _ = await post_action(char, action, {"amount": 1}, auth_headers)
+
+    assert result == status
+
+
+@pytest.mark.parametrize("action", ["stain", "slake"])
+async def test_amount_public_access_forbidden(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    action: str,
+):
+    """Other players may neither stain nor slake someone's character."""
+    char = await make_saved_char(user_id=999999)
+    char.raw_hunger = 2
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch.object(routes_module, "is_storyteller", new_callable=AsyncMock, return_value=False):
+        status, _ = await post_action(char, action, {"amount": 1}, auth_headers)
+
+    assert status == 403

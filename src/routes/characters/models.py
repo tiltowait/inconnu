@@ -425,3 +425,11 @@ class DamageBody(BaseModel):
         if self.superficial == 0 and self.aggravated == 0:
             raise ValueError("Deal at least one damage.")
         return self
+
+
+class AmountBody(BaseModel):
+    """An amount of Stains to add or Hunger to slake."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    amount: int = Field(ge=1, le=10)

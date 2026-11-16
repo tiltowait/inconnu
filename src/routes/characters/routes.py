@@ -24,6 +24,7 @@ from models.vguild import VGuildSettings
 from routes.auth import get_authenticated_user, verify_api_key
 from routes.characters.edit import apply_edit, check_edit, edit_summary, summarize
 from routes.characters.models import (
+    AmountBody,
     CharData,
     CreationBody,
     CreationSuccess,
@@ -330,6 +331,74 @@ async def damage_character(
         user_id,
         title="Damage Taken",
         description=f"__<@{user_id}> damaged {char.name} on the web:__\n{summary}",
+    )
+
+    return Response(status_code=204)
+
+
+def _invalid(message: str, *loc: str | int) -> RequestValidationError:
+    """A 422 in FastAPI's own shape, at loc within the body."""
+    return RequestValidationError([{"loc": ("body", *loc), "msg": message, "type": "value_error"}])
+
+
+@router.post("/characters/{oid}/stain", status_code=204)
+async def stain_character(
+    oid: PydanticObjectId,
+    body: AmountBody,
+    bot: Annotated[InconnuBot, Depends(get_bot)],
+    user_id: int = Depends(get_authenticated_user),
+) -> Response:
+    """Add Stains, as /stain does, up to 10. Stains past the empty Humanity
+    boxes deal Aggravated Willpower damage. Both are logged. As in Discord,
+    Storytellers may stain players' characters."""
+    char, discord_guild = await _fetch_editable_character(oid, user_id, bot)
+
+    added = min(char.stains + body.amount, 10) - char.stains
+    if added == 0:
+        raise _invalid(f"{char.name} already has 10 Stains.", "amount")
+
+    char.add_stains(added, log=True)
+    await _save(char)
+    stains = "Stains" if added > 1 else "Stain"
+    await _post_update(
+        discord_guild,
+        char,
+        user_id,
+        title="Stains",
+        description=f"**{char.name}** gained `{added}` {stains}.",
+    )
+
+    return Response(status_code=204)
+
+
+@router.post("/characters/{oid}/slake", status_code=204)
+async def slake_character(
+    oid: PydanticObjectId,
+    body: AmountBody,
+    bot: Annotated[InconnuBot, Depends(get_bot)],
+    user_id: int = Depends(get_authenticated_user),
+) -> Response:
+    """Slake Hunger, as /slake does, down to 0, and log it. Only vampires
+    have Hunger. As in Discord, only the owner may slake, though
+    Storytellers may slake SPCs."""
+    char, discord_guild = await _fetch_editable_character(oid, user_id, bot, players=False)
+
+    if not char.is_vampire:
+        raise _invalid("Only vampires need to slake Hunger.")
+    if char.hunger == 0:
+        raise _invalid(f"{char.name} has no Hunger.", "amount")
+
+    slaked = min(body.amount, char.hunger)
+    char.hunger -= slaked
+    char.log.hunger_slaked += slaked
+    char.log.times_slaked += 1
+    await _save(char)
+    await _post_update(
+        discord_guild,
+        char,
+        user_id,
+        title="Hunger Slaked",
+        description=f"**{char.name}** slaked `{slaked}` Hunger (now at `{char.hunger}`).",
     )
 
     return Response(status_code=204)

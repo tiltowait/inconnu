@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import pytest
 from beanie.odm.utils.encoder import Encoder
 
-from models.vchardocs import CAREER_STATS_LIVE, VCharLog
+from models.vchardocs import CAREER_STATS_LIVE, VICTIMS_DRAINED_LIVE, VCharLog
 
 
 @pytest.mark.parametrize(
@@ -50,7 +50,7 @@ def test_log_remorse_successes_serialized_not_stored():
     [
         (datetime(2025, 1, 1, tzinfo=UTC), True),
         (datetime(2025, 1, 1), True),  # Naive, as loaded from the database
-        (CAREER_STATS_LIVE, False),
+        (VICTIMS_DRAINED_LIVE, False),
         (datetime(2027, 1, 1), False),
     ],
 )
@@ -64,6 +64,14 @@ def test_log_incomplete_since(created: datetime, incomplete: bool):
         assert log.incomplete_since == {}
     assert "incomplete_since" in log.model_dump()
     assert "incomplete_since" not in Encoder().encode(log)
+
+
+def test_log_incomplete_since_per_counter():
+    """Test that each counter is incomplete only for characters created
+    before it started."""
+    log = VCharLog(created=CAREER_STATS_LIVE)
+
+    assert log.incomplete_since == {"num_victims_drained": VICTIMS_DRAINED_LIVE}
 
 
 def test_log_tracking_started_names_real_fields():

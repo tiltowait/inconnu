@@ -259,6 +259,7 @@ class _SlakeView(View):
         self.owner = owner
         self.character = character
         self.buttons: dict[str, int] = {}
+        self.drain_id = ""
         self.outcome = outcome
 
         for hunger in range(1, character.hunger + 1):
@@ -281,6 +282,8 @@ class _SlakeView(View):
 
             custom_id = str(uuid4())
             self.buttons[custom_id] = hunger
+            if label == "Drain":
+                self.drain_id = custom_id
 
             button = Button(label=label, style=button_style, custom_id=custom_id, row=0)
             button.callback = self.callback
@@ -316,6 +319,9 @@ class _SlakeView(View):
             await interaction.delete_original_response()
         else:
             # await interaction.message.delete()
+            if custom_id == self.drain_id:
+                # Before slaking, so its save includes this
+                self.character.log.num_victims_drained += 1
             inter = cast(AppInteraction, interaction)
             await inconnu.misc.perform_slake(inter, self.character, slake_amount, edit_message=True)
             await inconnu.reference.resonance(inter, character=self.character.name)

@@ -228,6 +228,31 @@ async def test_slaking_shows_resonance(
     mock_resonance.assert_awaited_once()
 
 
+@pytest.mark.parametrize("slake_amount,drained", [(5, 1), (2, 0), (_SlakeView.CANCEL_SLAKE, 0)])
+@patch("inconnu.reference.resonance", new_callable=AsyncMock)
+@patch("inconnu.misc.perform_slake", new_callable=AsyncMock)
+async def test_drain_counts_victim(
+    mock_slake: AsyncMock,
+    _: AsyncMock,
+    owner: discord.Member,
+    character: VChar,
+    outcome: Roll,
+    slake_amount: int,
+    drained: int,
+):
+    """Only Drain counts a drained victim, and before slaking, so the slake's
+    save includes it."""
+    view, _menu = show_menu(owner, character, outcome)
+    counted: list[int] = []
+    mock_slake.side_effect = lambda *_, **__: counted.append(character.log.num_victims_drained)
+
+    await press(view, make_interaction(owner), slake_amount)
+
+    assert character.log.num_victims_drained == drained
+    if slake_amount != _SlakeView.CANCEL_SLAKE:
+        assert counted == [drained]
+
+
 @patch("inconnu.reference.resonance", new_callable=AsyncMock)
 @patch("inconnu.misc.perform_slake", new_callable=AsyncMock)
 async def test_menu_removed_when_hunger_already_gone(

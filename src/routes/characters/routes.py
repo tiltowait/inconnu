@@ -17,7 +17,18 @@ from constants import ROUSE_FAIL_COLOR, Damage
 from events import CharEventType, char_events
 from inconnu.misc.aggheal import aggheal_update_message, heal_aggravated
 from inconnu.misc.mend import mend_superficial, mend_update_message
-from inconnu.misc.rouse import roll_rouse_checks, rouse_update_message
+from inconnu.misc.remorse import (
+    REMORSE_FAIL_COLOR,
+    remorse_roll,
+    remorse_update_message,
+    remorse_update_title,
+)
+from inconnu.misc.rouse import (
+    GHOUL_ROUSE_TITLE,
+    ghoul_rouse_update_message,
+    roll_rouse_checks,
+    rouse_update_message,
+)
 from models import VChar, VGuild
 from models.vchar import Tracker
 from models.vguild import VGuildSettings
@@ -35,14 +46,17 @@ from routes.characters.models import (
     MendResult,
     OwnerData,
     PublicCharacter,
+    RemorseBody,
+    RemorseResult,
     RouseBody,
     RouseResult,
+    SlakeResult,
     UserCharData,
     WizardSchema,
 )
 from routes.deps import get_bot
 from services import char_mgr, guild_cache, send_update, wizard_cache
-from services.guildcache import CachedGuild
+from services.guildcache import CachedGuild, CachedMember
 from services.wizard import CharacterGuild
 from utils.permissions import has_supporter_role, is_storyteller
 
@@ -84,9 +98,11 @@ async def get_character_list(
     return UserCharData(guilds=list(guilds.values()), characters=chars)
 
 
-async def _fetch_guild_character(oid: PydanticObjectId, user_id: int) -> tuple[VChar, CachedGuild]:
-    """Fetch a character and its cached guild, if the user is in that guild.
-    Raises HTTPException if the bot is starting up, if the character or guild
+async def _fetch_guild_character(
+    oid: PydanticObjectId, user_id: int
+) -> tuple[VChar, CachedGuild, CachedMember]:
+    """Fetch a character, its cached guild, and the user's cached member, if
+    the user is in that guild. Raises HTTPException if the bot is starting up, if the character or guild
     doesn't exist, or if the user isn't in the guild."""
     if not await guild_cache.ready():
         raise HTTPException(503, detail="Bot is still starting up")
@@ -105,7 +121,7 @@ async def _fetch_guild_character(oid: PydanticObjectId, user_id: int) -> tuple[V
     if cached_user is None:
         raise HTTPException(404, detail="User not in character's guild")
 
-    return char, guild
+    return char, guild, cached_user
 
 
 @router.get("/characters/{oid}")
@@ -127,7 +143,7 @@ async def get_character(
 
     The CharData also contains guild and owner information. If the
     character is an SPC, then owner information is not returned."""
-    char, guild = await _fetch_guild_character(oid, user_id)
+    char, guild, _ = await _fetch_guild_character(oid, user_id)
 
     # For the Storyteller check, need Discord member (has role data)
     discord_guild = bot.get_guild(char.guild)
@@ -154,12 +170,12 @@ async def get_character(
 
 async def _fetch_editable_character(
     oid: PydanticObjectId, user_id: int, bot: InconnuBot, players=True
-) -> tuple[VChar, discord.Guild | None]:
-    """Fetch a character the user may change, and its Discord guild, if the
-    bot has it: the owner always may, and Storytellers may change SPCs, and
+) -> tuple[VChar, discord.Guild | None, CachedMember]:
+    """Fetch a character the user may change, its Discord guild, if the bot
+    has it, and the user's cached member, for update posts: the owner always may, and Storytellers may change SPCs, and
     players' characters if players is True. Raises 403 otherwise, and as
     _fetch_guild_character() does."""
-    char, _ = await _fetch_guild_character(oid, user_id)
+    char, _, editor = await _fetch_guild_character(oid, user_id)
 
     discord_guild = bot.get_guild(char.guild)
     discord_member = discord_guild.get_member(user_id) if discord_guild else None
@@ -171,7 +187,7 @@ async def _fetch_editable_character(
                 403, detail="Only the owner or a Storyteller may change this character"
             )
 
-    return char, discord_guild
+    return char, discord_guild, editor
 
 
 async def _save(char: VChar):
@@ -187,17 +203,17 @@ async def _save(char: VChar):
 async def _post_update(
     discord_guild: discord.Guild | None,
     char: VChar,
-    user_id: int,
+    editor: CachedMember,
     *,
     title: str,
     description: str,
     color: int | None = None,
 ):
-    """Post a web change to the guild's update channel. The guild cache,
-    unlike the gateway's, is sure to have the user: it vouched for them. The
-    change is already saved, so a failed post is only logged."""
-    editor = await guild_cache.fetchmember(char.guild, user_id)
-    if discord_guild is None or editor is None:
+    """Post a web change to the guild's update channel. The editor comes from
+    the guild cache, which, unlike the gateway's, is sure to have the user:
+    it vouched for them. The change is already saved, so a failed post is
+    only logged."""
+    if discord_guild is None:
         return
 
     embed = discord.Embed(title=title, description=description, color=color)
@@ -219,7 +235,7 @@ async def edit_character(
     owner and Storytellers may edit. Edits are corrections, so they don't
     touch the Chronicle log or experience, but they are posted to the
     update channel. Other tabs refresh through the "changed" event."""
-    char, discord_guild = await _fetch_editable_character(oid, user_id, bot)
+    char, discord_guild, editor = await _fetch_editable_character(oid, user_id, bot)
     await check_edit(char, body)
 
     old = char.model_copy(deep=True)
@@ -234,7 +250,7 @@ async def edit_character(
         await _post_update(
             discord_guild,
             char,
-            user_id,
+            editor,
             title="Character Updated",
             description=edit_summary(char, user_id, changes),
         )
@@ -250,14 +266,24 @@ async def rouse_character(
     user_id: int = Depends(get_authenticated_user),
 ) -> RouseResult:
     """Make Rouse checks, as /rouse does: Hunger rises on failures, the
-    checks are logged, and Oblivion Stains are applied if asked for. Ghouls take one Aggravated Health damage instead, and
+    checks are logged, and Oblivion Stains are applied if asked for. Ghouls
+    take one Aggravated Health damage instead, unless they're dead, and
     mortals can't Rouse. As in Discord, only the owner may Rouse, though
     Storytellers may Rouse SPCs."""
-    char, discord_guild = await _fetch_editable_character(oid, user_id, bot, players=False)
+    char, discord_guild, editor = await _fetch_editable_character(oid, user_id, bot, players=False)
 
     if char.is_ghoul:
+        if char.incapacitated:
+            raise _invalid(f"{char.name} is dead.")
         char.set_aggravated_hp(char.aggravated_hp + 1)
         await _save(char)
+        await _post_update(
+            discord_guild,
+            char,
+            editor,
+            title=GHOUL_ROUSE_TITLE,
+            description=ghoul_rouse_update_message(char),
+        )
         return RouseResult(
             successes=0, failures=0, hunger=0, frenzy=False, aggravated=1, stains=0, degeneration=0
         )
@@ -280,7 +306,7 @@ async def rouse_character(
     await _post_update(
         discord_guild,
         char,
-        user_id,
+        editor,
         title="Rouse Check",
         description=rouse_update_message(char, outcome),
         color=ROUSE_FAIL_COLOR if char.hunger >= 4 else None,
@@ -306,10 +332,16 @@ async def damage_character(
 ) -> Response:
     """Deal Superficial, then Aggravated, damage to a track, as /character
     update does: Superficial damage past the track's end wraps into
-    Aggravated. The damage is logged. As in Discord, Storytellers may damage
-    players' characters."""
-    char, discord_guild = await _fetch_editable_character(oid, user_id, bot)
+    Aggravated. The damage is logged. A track that's all Aggravated can take
+    no more. As in Discord, Storytellers may damage players' characters."""
+    char, discord_guild, editor = await _fetch_editable_character(oid, user_id, bot)
     track_name = body.track.title()
+
+    track: str = getattr(char, body.track)
+    if track.count(Damage.AGGRAVATED) == len(track):
+        if body.track == Tracker.WILLPOWER:
+            raise _invalid(f"{char.name} has no Willpower left.")
+        raise _invalid(f"{char.name} is {'in torpor' if char.is_vampire else 'dead'}.")
 
     lines: list[str] = []
     if body.superficial:
@@ -328,7 +360,7 @@ async def damage_character(
     await _post_update(
         discord_guild,
         char,
-        user_id,
+        editor,
         title="Damage Taken",
         description=f"__<@{user_id}> damaged {char.name} on the web:__\n{summary}",
     )
@@ -351,7 +383,7 @@ async def stain_character(
     """Add Stains, as /stain does, up to 10. Stains past the empty Humanity
     boxes deal Aggravated Willpower damage. Both are logged. As in Discord,
     Storytellers may stain players' characters."""
-    char, discord_guild = await _fetch_editable_character(oid, user_id, bot)
+    char, discord_guild, editor = await _fetch_editable_character(oid, user_id, bot)
 
     added = min(char.stains + body.amount, 10) - char.stains
     if added == 0:
@@ -363,7 +395,7 @@ async def stain_character(
     await _post_update(
         discord_guild,
         char,
-        user_id,
+        editor,
         title="Stains",
         description=f"**{char.name}** gained `{added}` {stains}.",
     )
@@ -371,17 +403,18 @@ async def stain_character(
     return Response(status_code=204)
 
 
-@router.post("/characters/{oid}/slake", status_code=204)
+@router.post("/characters/{oid}/slake")
 async def slake_character(
     oid: PydanticObjectId,
     body: AmountBody,
     bot: Annotated[InconnuBot, Depends(get_bot)],
     user_id: int = Depends(get_authenticated_user),
-) -> Response:
-    """Slake Hunger, as /slake does, down to 0, and log it. Only vampires
-    have Hunger. As in Discord, only the owner may slake, though
-    Storytellers may slake SPCs."""
-    char, discord_guild = await _fetch_editable_character(oid, user_id, bot, players=False)
+) -> SlakeResult:
+    """Slake Hunger, as /slake does, down to 0, and log it. Slaking from
+    Hunger 4 or more calls for a frenzy check. Only vampires have Hunger.
+    As in Discord, only the owner may slake, though Storytellers may slake
+    SPCs."""
+    char, discord_guild, editor = await _fetch_editable_character(oid, user_id, bot, players=False)
 
     if not char.is_vampire:
         raise _invalid("Only vampires need to slake Hunger.")
@@ -389,6 +422,7 @@ async def slake_character(
         raise _invalid(f"{char.name} has no Hunger.", "amount")
 
     slaked = min(body.amount, char.hunger)
+    frenzy = char.hunger >= 4
     char.hunger -= slaked
     char.log.hunger_slaked += slaked
     char.log.times_slaked += 1
@@ -396,12 +430,41 @@ async def slake_character(
     await _post_update(
         discord_guild,
         char,
-        user_id,
+        editor,
         title="Hunger Slaked",
         description=f"**{char.name}** slaked `{slaked}` Hunger (now at `{char.hunger}`).",
     )
 
-    return Response(status_code=204)
+    return SlakeResult(frenzy=frenzy)
+
+
+@router.post("/characters/{oid}/remorse")
+async def remorse_character(
+    oid: PydanticObjectId,
+    body: RemorseBody,
+    bot: Annotated[InconnuBot, Depends(get_bot)],
+    user_id: int = Depends(get_authenticated_user),
+) -> RemorseResult:
+    """Make a Remorse test, as /remorse does: failing costs a Humanity, and
+    either way clears the Stains. The test is logged. As in Discord, only
+    the owner may make it, though Storytellers may for SPCs."""
+    char, discord_guild, editor = await _fetch_editable_character(oid, user_id, bot, players=False)
+
+    if char.stains == 0:
+        raise _invalid(f"{char.name} has no Stains.")
+
+    outcome = remorse_roll(char, body.min_override, body.lasombra_alt)
+    await _save(char)
+    await _post_update(
+        discord_guild,
+        char,
+        editor,
+        title=remorse_update_title(outcome.remorseful),
+        description=remorse_update_message(char, outcome.remorseful),
+        color=None if outcome.remorseful else REMORSE_FAIL_COLOR,
+    )
+
+    return RemorseResult(remorseful=outcome.remorseful, dice=outcome.dice, humanity=char.humanity)
 
 
 def _heal_willpower(char: VChar, severity: Damage) -> int:
@@ -427,7 +490,7 @@ async def mend_character(
     what /awaken would (Superficial) or one Aggravated, with no Rouse Checks
     or logging. As in Discord, only the owner may heal, though Storytellers
     may heal SPCs."""
-    char, discord_guild = await _fetch_editable_character(oid, user_id, bot, players=False)
+    char, discord_guild, editor = await _fetch_editable_character(oid, user_id, bot, players=False)
 
     severity = Damage.SUPERFICIAL if body.type == "superficial" else Damage.AGGRAVATED
     track: str = getattr(char, body.track)
@@ -444,7 +507,7 @@ async def mend_character(
         await _post_update(
             discord_guild,
             char,
-            user_id,
+            editor,
             title="Willpower Recovered",
             description=(
                 f"Recovered `{healed}` {body.type.title()} Willpower damage.\n"
@@ -461,7 +524,7 @@ async def mend_character(
         await _post_update(
             discord_guild,
             char,
-            user_id,
+            editor,
             title="Damage Mended",
             description=mend_update_message(char, mended),
         )
@@ -472,7 +535,7 @@ async def mend_character(
         await _post_update(
             discord_guild,
             char,
-            user_id,
+            editor,
             title="Aggravated Damage Healed",
             description=aggheal_update_message(char, healed),
         )
@@ -495,7 +558,7 @@ async def get_character_events(
     """Stream Server-Sent Events whenever the character changes. Events carry
     no data beyond "changed" or "deleted", so membership in the character's
     guild is enough; the app refetches the character, which checks access."""
-    char, _ = await _fetch_guild_character(oid, user_id)
+    char, _, _ = await _fetch_guild_character(oid, user_id)
     return StreamingResponse(
         char_event_stream(char.id_str),
         media_type="text/event-stream",

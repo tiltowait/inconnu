@@ -45,7 +45,6 @@ MAX_PROFILE_LENGTH = 1024
 # Enough to wrap a full track twice over; a cap so huge counts can't build
 # huge tracks
 MAX_DAMAGE = 2 * max(VChar.MAX_HEALTH, VChar.MAX_WILLPOWER)
-CONVICTION_TOO_LONG = f"Each conviction must be {MAX_CONVICTION_LENGTH} characters or less"
 
 type ErrorLoc = tuple[int | str, ...]
 
@@ -112,13 +111,22 @@ def trait_errors(
                 yield (index, "subtraits"), str(err)
 
 
-def long_convictions(convictions: list[str], kept: list[str] | None = None) -> Iterator[int]:
-    """Yield the index of each Conviction over the length limit. Convictions
-    in kept are let through: Discord's modal didn't always enforce it."""
+def long_convictions(
+    convictions: list[str], kept: list[str] | None = None
+) -> Iterator[tuple[int, int]]:
+    """Yield the index and limit of each Conviction over its limit. Discord's
+    modal didn't always enforce one, so, as the modal does now, a Conviction
+    may be as long as the kept one in its slot."""
     kept = kept or []
     for index, conviction in enumerate(convictions):
-        if len(conviction) > MAX_CONVICTION_LENGTH and conviction not in kept:
-            yield index
+        limit = max(MAX_CONVICTION_LENGTH, len(kept[index]) if index < len(kept) else 0)
+        if len(conviction) > limit:
+            yield index, limit
+
+
+def conviction_too_long(limit: int) -> str:
+    """The error for a Conviction over its limit."""
+    return f"Each conviction must be {limit} characters or less"
 
 
 def with_core_traits(traits: list[VCharTrait]) -> list[VCharTrait]:
@@ -288,7 +296,7 @@ class CreationBody(BaseModel):
     def validate_conviction_length(cls, v: list[str]) -> list[str]:
         """Validate each conviction's length."""
         if next(long_convictions(v), None) is not None:
-            raise ValueError(CONVICTION_TOO_LONG)
+            raise ValueError(conviction_too_long(MAX_CONVICTION_LENGTH))
         return v
 
     @model_validator(mode="after")
@@ -433,3 +441,26 @@ class AmountBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     amount: int = Field(ge=1, le=10)
+
+
+class SlakeResult(BaseModel):
+    """The outcome of slaking Hunger."""
+
+    frenzy: bool  # Slaking from Hunger 4+ calls for a frenzy check (DC 3)
+
+
+class RemorseBody(BaseModel):
+    """A request for a Remorse test, with /remorse's options."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    min_override: int = Field(ge=1, le=5)  # The fewest dice to roll; normally 1
+    lasombra_alt: bool  # The Lasombra alternative bane: Bane Severity fewer dice
+
+
+class RemorseResult(BaseModel):
+    """The outcome of a Remorse test. Either way, Stains are cleared."""
+
+    remorseful: bool  # Passed, keeping Humanity
+    dice: list[int]
+    humanity: int  # After the test

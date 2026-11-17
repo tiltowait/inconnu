@@ -13,6 +13,7 @@ from utils.text import pluralize
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("guides/gameplay-shortcuts#remorse-checks")
+REMORSE_FAIL_COLOR = 0x5E005E
 
 
 class RemorseOutcome(NamedTuple):
@@ -39,7 +40,7 @@ async def remorse(ctx: AppCtx, character: VChar, minimum=1, lasombra_alt=False):
         await ctx.respond(f"{character.name} has no stains! No remorse necessary.", ephemeral=True)
         return
 
-    outcome = __remorse_roll(character, minimum, lasombra_alt)
+    outcome = remorse_roll(character, minimum, lasombra_alt)
     await character.save_changes()
     inter = await __display_outcome(ctx, character, outcome)
     await __report(ctx, inter, character, outcome.remorseful)
@@ -74,8 +75,8 @@ async def __display_outcome(ctx: AppCtx, character: VChar, outcome: RemorseOutco
     )
 
 
-def __remorse_roll(character: VChar, minimum: int, lasombra_alt: bool) -> RemorseOutcome:
-    """Perform a remorse roll."""
+def remorse_roll(character: VChar, minimum: int, lasombra_alt: bool) -> RemorseOutcome:
+    """Perform a remorse roll, applying its outcome to the character."""
     unfilled = 10 - character.humanity - character.stains
     rolls = max(unfilled, minimum)
     if lasombra_alt:
@@ -116,19 +117,28 @@ async def __report(
     remorseful: bool,
 ):
     """Generate the task to display the remorse outcome for the update channel."""
+    msg = await get_message(inter)
+    await services.post_update(
+        ctx=ctx,
+        msg=msg,
+        character=character,
+        title=remorse_update_title(remorseful),
+        message=remorse_update_message(character, remorseful),
+        color=None if remorseful else REMORSE_FAIL_COLOR,
+    )
+
+
+def remorse_update_title(remorseful: bool) -> str:
+    """The update channel's title for a Remorse test."""
+    return "Remorse Success" if remorseful else "Remorse Failure"
+
+
+def remorse_update_message(character: VChar, remorseful: bool) -> str:
+    """The update channel's description of a Remorse test."""
     if remorseful:
         verbed = "passed"
         humanity_str = f"Humanity remains at `{character.humanity}`."
     else:
         verbed = "failed"
         humanity_str = f"Humanity drops to `{character.humanity}`."
-
-    msg = await get_message(inter)
-    await services.post_update(
-        ctx=ctx,
-        msg=msg,
-        character=character,
-        title="Remorse Success" if remorseful else "Remorse Failure",
-        message=f"**{character.name}** {verbed} a Remorse test.\n{humanity_str}",
-        color=0x5E005E if not remorseful else None,
-    )
+    return f"**{character.name}** {verbed} a Remorse test.\n{humanity_str}"

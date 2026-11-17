@@ -19,6 +19,7 @@ from utils.text import pluralize
 from utils.urls import docs_url, web_asset
 
 __HELP_URL = docs_url("guides/gameplay-shortcuts#rouse-checks")
+GHOUL_ROUSE_TITLE = "Ghoul Rouse Damage"
 
 
 class RouseOutcome(NamedTuple):
@@ -213,18 +214,32 @@ async def __display_outcome(
 
 
 async def __damage_ghoul(ctx: AppInvocation, ghoul: VChar, ephemeral: bool):
-    """Apply Aggravated damage to a ghoul and display."""
+    """Apply Aggravated damage to a ghoul, display, and report it."""
     ghoul.set_aggravated_hp(ghoul.aggravated_hp + 1)
-    await inconnu.character.display(
+    inter = await inconnu.character.display(
         ctx,
         ghoul,
-        title="Ghoul Rouse Damage",
+        title=GHOUL_ROUSE_TITLE,
         message="Ghouls take Aggravated damage instead of making a Rouse check.",
         fields=[("Health", inconnu.character.DisplayField.HEALTH)],
         footer="V5 Core, p.234",
         ephemeral=ephemeral,
     )
     await ghoul.save_changes()
+
+    msg = await get_message(inter)
+    await services.post_update(
+        ctx=ctx,
+        msg=msg,
+        character=ghoul,
+        title=GHOUL_ROUSE_TITLE,
+        message=ghoul_rouse_update_message(ghoul),
+    )
+
+
+def ghoul_rouse_update_message(ghoul: VChar) -> str:
+    """The update channel's summary of a ghoul's Rouse damage."""
+    return f"**{ghoul.name}** took `1` Aggravated Health damage instead of a Rouse check."
 
 
 async def __rouse_roll(

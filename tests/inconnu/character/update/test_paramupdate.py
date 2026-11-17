@@ -125,10 +125,10 @@ def test_update_stains_degeneration(delta: str, expected_stains: int, expected_d
     [
         (Tracker.HEALTH, 3, False),
         (Tracker.HEALTH, 4, True),
-        (Tracker.HEALTH, 20, True),
-        (Tracker.HEALTH, 21, False),
-        (Tracker.WILLPOWER, 2, False),
-        (Tracker.WILLPOWER, 3, True),
+        (Tracker.HEALTH, 25, True),
+        (Tracker.HEALTH, 26, False),
+        (Tracker.WILLPOWER, 1, False),
+        (Tracker.WILLPOWER, 2, True),  # Retainers can have 1 Resolve and Composure
         (Tracker.WILLPOWER, 20, True),
         (Tracker.WILLPOWER, 21, False),
     ],

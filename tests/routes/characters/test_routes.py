@@ -21,7 +21,7 @@ from events import CharEvents, CharEventType, char_events
 from models import VChar, VGuild
 from models.vchar import Tracker
 from models.vchardocs import VCharSplat, VCharTrait
-from routes.characters.models import OwnerData, with_core_traits
+from routes.characters.models import MAX_DAMAGE, OwnerData, with_core_traits
 from routes.characters.routes import char_event_stream
 from routes.deps import get_bot
 from server import app
@@ -2618,26 +2618,41 @@ async def test_edit_thin_blood_existing_potency(
         assert data["detail"][0]["loc"] == ["body", "potency"]
 
 
+LEGACY = "word  " * 50  # 300 characters; 249 once its whitespace is collapsed
+
+
+@pytest.mark.parametrize(
+    "convictions,error",
+    [
+        ([LEGACY, "", ""], None),  # Untouched, but its whitespace is collapsed
+        (["B" * 300, "", ""], None),  # Rewritten within its slot's length
+        (["B" * 301, "", ""], (0, 300)),  # Longer than its slot's
+        ([LEGACY, "", "B" * 201], (2, 200)),  # A new slot gets the usual limit
+    ],
+)
 async def test_edit_long_conviction(
     auth_headers: dict[str, str],
     edit_guild: MockGuild,
     mock_char_mgr_fetchid: MockAsyncFn,
     no_duplicates: MockAsyncFn,
+    convictions: list[str],
+    error: tuple[int, int] | None,
 ):
-    """An existing Conviction over the limit may be kept, but a new one is a
-    422 pointing at its slot, blanks included."""
-    old = "A" * 300
-    char = await make_saved_char(convictions=[old])
+    """As in Discord's modal, a Conviction may be as long as the stored one in
+    its slot. Errors point at the slot, blanks included."""
+    char = await make_saved_char(convictions=[LEGACY])
     mock_char_mgr_fetchid.return_value = char
 
-    status, _ = await patch_char(char, edit_body(char, convictions=[old, "", ""]), auth_headers)
-    assert status == 204
-    assert (await reload(char)).convictions == [old]
+    status, data = await patch_char(char, edit_body(char, convictions=convictions), auth_headers)
 
-    body = edit_body(char, convictions=[old, "", "B" * 201])
-    status, data = await patch_char(char, body, auth_headers)
-    assert status == 422
-    assert data["detail"][0]["loc"] == ["body", "convictions", 2]
+    if error is None:
+        assert status == 204
+        assert (await reload(char)).convictions == [" ".join(convictions[0].split())]
+    else:
+        index, limit = error
+        assert status == 422
+        assert data["detail"][0]["loc"] == ["body", "convictions", index]
+        assert data["detail"][0]["msg"] == f"Each conviction must be {limit} characters or less"
 
 
 async def test_edit_rename_sorts_after_save(
@@ -2803,7 +2818,8 @@ async def test_rouse_ghoul(
     mock_char_mgr_fetchid: MockAsyncFn,
     update_channel: MockChannel,
 ):
-    """Ghouls take one Aggravated Health damage instead, whatever the count."""
+    """Ghouls take one Aggravated Health damage instead, whatever the count,
+    and the update channel hears about it."""
     char = await make_saved_char(splat=VCharSplat.GHOUL)
     mock_char_mgr_fetchid.return_value = char
 
@@ -2822,7 +2838,30 @@ async def test_rouse_ghoul(
         "degeneration": 0,
     }
     assert (await reload(char)).aggravated_hp == 1
-    update_channel.send.assert_not_awaited()
+    update_channel.send.assert_awaited_once()
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == "Ghoul Rouse Damage"
+    assert embed.description == (
+        "**Nadea Theron** took `1` Aggravated Health damage instead of a Rouse check."
+    )
+
+
+async def test_rouse_dead_ghoul(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """A ghoul with no Health left is dead, and can't Rouse."""
+    char = await make_saved_char(splat=VCharSplat.GHOUL)
+    char.set_aggravated_hp(len(char.health))
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_rouse(
+        char, {"count": 1, "reroll": False, "oblivion_stains": False}, auth_headers
+    )
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body"]
+    assert data["detail"][0]["msg"] == "Nadea Theron is dead."
 
 
 async def test_rouse_mortal(
@@ -3357,11 +3396,47 @@ async def test_damage_wraps(
 
 
 @pytest.mark.parametrize(
+    "splat,track,message",
+    [
+        (VCharSplat.VAMPIRE, "health", "Nadea Theron is in torpor."),
+        (VCharSplat.GHOUL, "health", "Nadea Theron is dead."),
+        (VCharSplat.MORTAL, "health", "Nadea Theron is dead."),
+        (VCharSplat.VAMPIRE, "willpower", "Nadea Theron has no Willpower left."),
+    ],
+)
+async def test_damage_track_full(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    splat: VCharSplat,
+    track: str,
+    message: str,
+):
+    """A track that's all Aggravated can take no more damage."""
+    char = await make_saved_char(splat=splat)
+    char.set_damage(Tracker(track), Damage.AGGRAVATED, len(getattr(char, track)))
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    body = {"track": track, "superficial": 1, "aggravated": 1}
+    status, data = await post_damage(char, body, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body"]
+    assert data["detail"][0]["msg"] == message
+    update_channel.send.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
     "body,loc",
     [
         ({"track": "health", "superficial": -1, "aggravated": 0}, ["body", "superficial"]),
         ({"track": "health", "superficial": 0, "aggravated": -2}, ["body", "aggravated"]),
-        ({"track": "health", "superficial": 41, "aggravated": 0}, ["body", "superficial"]),
+        (
+            {"track": "health", "superficial": MAX_DAMAGE + 1, "aggravated": 0},
+            ["body", "superficial"],
+        ),
         ({"track": "health", "superficial": 0, "aggravated": 0}, ["body"]),
         ({"track": "humanity", "superficial": 1, "aggravated": 0}, ["body", "track"]),
         ({"track": "health", "superficial": 1}, ["body", "aggravated"]),
@@ -3511,8 +3586,8 @@ async def test_slake(
 
     status, data = await post_action(char, "slake", {"amount": amount}, auth_headers)
 
-    assert status == 204
-    assert data is None
+    assert status == 200
+    assert data == {"frenzy": False}
     saved = await reload(char)
     assert saved.raw_hunger == hunger
     assert saved.log.hunger_slaked == slaked
@@ -3520,6 +3595,26 @@ async def test_slake(
     embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
     assert embed.title == "Hunger Slaked"
     assert embed.description == (f"**Nadea Theron** slaked `{slaked}` Hunger (now at `{hunger}`).")
+
+
+@pytest.mark.parametrize("hunger,frenzy", [(3, False), (4, True), (5, True)])
+async def test_slake_frenzy(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    hunger: int,
+    frenzy: bool,
+):
+    """Slaking from Hunger 4 or more calls for a frenzy check, as in /slake."""
+    char = await make_saved_char()
+    char.raw_hunger = hunger
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "slake", {"amount": 3}, auth_headers)
+
+    assert status == 200
+    assert data == {"frenzy": frenzy}
 
 
 async def test_slake_no_hunger(
@@ -3588,7 +3683,7 @@ async def test_amount_invalid_body(
     [
         ("stain", False, 204),  # /stain has a player option
         ("slake", False, 403),  # /slake doesn't
-        ("slake", True, 204),  # but Storytellers may slake SPCs
+        ("slake", True, 200),  # but Storytellers may slake SPCs
     ],
 )
 async def test_amount_storyteller_access(
@@ -3628,3 +3723,145 @@ async def test_amount_public_access_forbidden(
         status, _ = await post_action(char, action, {"amount": 1}, auth_headers)
 
     assert status == 403
+
+
+async def stained_char(stains: int, user_id=TEST_USER_ID, potency=1) -> VChar:
+    """A saved character at Humanity 7, with some Stains."""
+    char = await make_saved_char(user_id=user_id, potency=potency)
+    char.stains = stains
+    await char.save_changes()
+    return char
+
+
+REMORSE = {"min_override": 1, "lasombra_alt": False}
+
+
+@pytest.mark.parametrize(
+    "dice,remorseful,humanity,title",
+    [([3, 6], True, 7, "Remorse Success"), ([3, 5], False, 6, "Remorse Failure")],
+)
+async def test_remorse(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    dice: list[int],
+    remorseful: bool,
+    humanity: int,
+    title: str,
+):
+    """Failing costs a Humanity; either way, Stains clear, and the test is
+    logged and posted."""
+    char = await stained_char(1)  # Two unfilled boxes: two dice
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10", side_effect=dice):
+        status, data = await post_action(char, "remorse", REMORSE, auth_headers)
+
+    assert status == 200
+    assert data == {"remorseful": remorseful, "dice": dice, "humanity": humanity}
+    saved = await reload(char)
+    assert saved.raw_humanity == humanity
+    assert saved.stains == 0
+    assert saved.log.remorse_checks == 1
+    assert saved.log.remorse_failures == (0 if remorseful else 1)
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == title
+
+
+@pytest.mark.parametrize(
+    "stains,body,count",
+    [
+        (2, {"min_override": 4, "lasombra_alt": False}, 4),  # One unfilled box
+        (8, {"min_override": 1, "lasombra_alt": False}, 1),  # None unfilled
+        (1, {"min_override": 1, "lasombra_alt": True}, 1),  # 2 - Bane Severity 3
+    ],
+)
+async def test_remorse_dice_count(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    stains: int,
+    body: dict[str, Any],
+    count: int,
+):
+    """The minimum and the Lasombra alternative bane change the pool, as in
+    /remorse, though at least one die is always rolled."""
+    char = await stained_char(stains, potency=3)
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch("inconnu.d10", return_value=6):
+        status, data = await post_action(char, "remorse", body, auth_headers)
+
+    assert status == 200
+    assert data["dice"] == [6] * count
+
+
+async def test_remorse_no_stains(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """A character without Stains has nothing to feel remorse for."""
+    char = await stained_char(0)
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "remorse", REMORSE, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body"]
+    assert (await reload(char)).log.remorse_checks == 0
+
+
+@pytest.mark.parametrize(
+    "body,loc",
+    [
+        ({"min_override": 0, "lasombra_alt": False}, ["body", "min_override"]),
+        ({"min_override": 6, "lasombra_alt": False}, ["body", "min_override"]),
+        ({"lasombra_alt": False}, ["body", "min_override"]),
+        ({"min_override": 1}, ["body", "lasombra_alt"]),
+        ({**REMORSE, "count": 1}, ["body", "count"]),
+    ],
+)
+async def test_remorse_invalid_body(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    body: dict[str, Any],
+    loc: list[str],
+):
+    """The minimum is 1-5, both options are required, and nothing else is
+    allowed."""
+    char = await stained_char(1)
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "remorse", body, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == loc
+
+
+@pytest.mark.parametrize(
+    "spc,storyteller,status",
+    [
+        (False, True, 403),  # /remorse has no player option
+        (True, True, 200),  # but Storytellers may test SPCs
+        (False, False, 403),
+    ],
+)
+async def test_remorse_access(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    spc: bool,
+    storyteller: bool,
+    status: int,
+):
+    """Only the owner may make a Remorse test, except Storytellers on SPCs."""
+    char = await stained_char(1, user_id=VChar.SPC_OWNER if spc else 999999)
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch.object(
+        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
+    ):
+        result, _ = await post_action(char, "remorse", REMORSE, auth_headers)
+
+    assert result == status

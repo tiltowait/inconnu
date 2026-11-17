@@ -19,11 +19,22 @@ async def test_mortal_rouse_fails(mortal: VChar, ctx: AppCtx):
 
 
 async def test_ghoul_rouse_takes_damage(ghoul: VChar, ctx: AppCtx, mock_char_save: AsyncMock):
-    """Test that ghouls take aggravated damage instead of rouse check."""
+    """Ghouls take Aggravated damage instead of a Rouse check, and it's
+    reported to the update channel."""
     initial_agg = ghoul.aggravated_hp
 
-    with patch("inconnu.character.display", new_callable=AsyncMock) as mock_display:
+    with (
+        patch("inconnu.character.display", new_callable=AsyncMock) as mock_display,
+        patch("services.post_update", new_callable=AsyncMock) as mock_report,
+    ):
         await rouse(ctx, ghoul, 1, "Test", False)
+
+        report_args = mock_report.await_args
+        assert report_args is not None
+        assert report_args.kwargs["title"] == "Ghoul Rouse Damage"
+        assert report_args.kwargs["message"] == (
+            f"**{ghoul.name}** took `1` Aggravated Health damage instead of a Rouse check."
+        )
 
         # Verify aggravated damage increased
         assert ghoul.aggravated_hp == initial_agg + 1

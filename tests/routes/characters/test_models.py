@@ -92,10 +92,10 @@ def test_health_min_boundary():
 
 
 def test_health_max_boundary():
-    """Health at maximum (20) passes."""
-    data = valid_creation_data(health=20)
+    """Health at maximum (25) passes."""
+    data = valid_creation_data(health=25)
     body = CreationBody(**data)
-    assert body.health == 20
+    assert body.health == 25
 
 
 def test_health_below_min():
@@ -107,21 +107,21 @@ def test_health_below_min():
 
 
 def test_health_above_max():
-    """Health above 20 rejected."""
-    data = valid_creation_data(health=21)
+    """Health above 25 rejected."""
+    data = valid_creation_data(health=26)
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "health" in str(exc_info.value).lower()
 
 
 def test_willpower_range():
-    """Willpower range (3-20) enforced."""
-    for val in [3, 5, 20]:
+    """Willpower range (2-20) enforced."""
+    for val in [2, 5, 20]:
         data = valid_creation_data(willpower=val)
         body = CreationBody(**data)
         assert body.willpower == val
 
-    for val in [2, 21]:
+    for val in [1, 21]:
         data = valid_creation_data(willpower=val)
         with pytest.raises(ValidationError):
             CreationBody(**data)

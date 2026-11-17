@@ -68,8 +68,8 @@ class VChar(Document):
 
     VAMPIRE_TRAITS: ClassVar[list[str]] = ["Hunger", "Potency", "Surge", "Bane", "PowerBonus"]
     MIN_HEALTH: ClassVar[int] = 4
-    MAX_HEALTH: ClassVar[int] = 20
-    MIN_WILLPOWER: ClassVar[int] = 3
+    MAX_HEALTH: ClassVar[int] = 25
+    MIN_WILLPOWER: ClassVar[int] = 2
     MAX_WILLPOWER: ClassVar[int] = 20
     SPC_OWNER: ClassVar[int] = 0
 

@@ -8,9 +8,9 @@ from models import VChar
 from models.vchar import Tracker
 from models.vchardocs import VCharTrait
 from routes.characters.models import (
-    CONVICTION_TOO_LONG,
     EditBody,
     ErrorLoc,
+    conviction_too_long,
     long_convictions,
     trait_errors,
     with_core_traits,
@@ -30,8 +30,8 @@ async def check_edit(char: VChar, body: EditBody):
     kept = {t.name.casefold(): t.raw_subtraits for t in char.raw_traits if t.is_attribute}
     errors.extend((("traits", *loc), msg) for loc, msg in trait_errors(body.traits, kept))
 
-    for index in long_convictions(body.convictions, char.convictions):
-        errors.append((("convictions", index), CONVICTION_TOO_LONG))
+    for index, limit in long_convictions(body.convictions, char.convictions):
+        errors.append((("convictions", index), conviction_too_long(limit)))
 
     if body.name.casefold() != char.raw_name.casefold():
         # Changing only capitalization is fine

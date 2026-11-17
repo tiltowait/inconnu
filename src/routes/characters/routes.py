@@ -272,6 +272,13 @@ async def rouse_character(
     Storytellers may Rouse SPCs."""
     char, discord_guild, editor = await _fetch_editable_character(oid, user_id, bot, players=False)
 
+    if not (char.is_vampire or char.is_ghoul):
+        raise _invalid(f"{char.name} is a mortal.")
+
+    # By ID, so it works without the gateway's guild
+    vguild = await VGuild.find_one(VGuild.guild == char.guild)
+    faces = (vguild.settings if vguild else VGuildSettings()).oblivion_stains
+
     if char.is_ghoul:
         if char.incapacitated:
             raise _invalid(f"{char.name} is dead.")
@@ -285,22 +292,20 @@ async def rouse_character(
             description=ghoul_rouse_update_message(char),
         )
         return RouseResult(
-            successes=0, failures=0, hunger=0, frenzy=False, aggravated=1, stains=0, degeneration=0
+            successes=0,
+            failures=0,
+            hunger=0,
+            frenzy=False,
+            aggravated=1,
+            stains=0,
+            degeneration=0,
+            dice=[],
+            oblivion_faces=faces,
         )
 
-    if not char.is_vampire:
-        raise RequestValidationError(
-            [{"loc": ("body",), "msg": f"{char.name} is a mortal.", "type": "value_error"}]
-        )
-
-    if body.oblivion_stains:
-        # By ID, so it works without the gateway's guild
-        vguild = await VGuild.find_one(VGuild.guild == char.guild)
-        faces = (vguild.settings if vguild else VGuildSettings()).oblivion_stains
-    else:
-        faces = []
-
-    outcome = roll_rouse_checks(char, body.count, body.reroll, faces)
+    outcome = roll_rouse_checks(
+        char, body.count, body.reroll, faces if body.oblivion_stains else ()
+    )
     degeneration = char.add_stains(outcome.stains, log=True) if outcome.stains else 0
     await _save(char)
     await _post_update(
@@ -320,6 +325,8 @@ async def rouse_character(
         aggravated=0,
         stains=outcome.stains,
         degeneration=degeneration,
+        dice=outcome.dice,
+        oblivion_faces=faces,
     )
 
 

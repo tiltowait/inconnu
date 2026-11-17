@@ -2760,6 +2760,8 @@ async def test_rouse_vampire(
         "aggravated": 0,
         "stains": 0,
         "degeneration": 0,
+        "dice": [[die] for die in dice],
+        "oblivion_faces": [1, 10],  # The default
     }
     saved = await reload(char)
     assert saved.raw_hunger == hunger
@@ -2773,18 +2775,21 @@ async def test_rouse_vampire(
 async def test_rouse_reroll(
     auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
 ):
-    """With reroll, a failure is rolled again."""
+    """With reroll, each failure is rolled again, and both faces are returned;
+    successes aren't re-rolled."""
     char = await make_saved_char()
     mock_char_mgr_fetchid.return_value = char
 
-    with patch("inconnu.d10", side_effect=[3, 8]):
+    with patch("inconnu.d10", side_effect=[3, 8, 7, 1, 2]):
         status, data = await post_rouse(
-            char, {"count": 1, "reroll": True, "oblivion_stains": False}, auth_headers
+            char, {"count": 3, "reroll": True, "oblivion_stains": False}, auth_headers
         )
 
     assert status == 200
-    assert data["successes"] == 1
-    assert data["hunger"] == 1
+    assert data["dice"] == [[3, 8], [7], [1, 2]]
+    assert data["successes"] == 2
+    assert data["failures"] == 1
+    assert data["hunger"] == 2
 
 
 @pytest.mark.parametrize("die,failures", [(7, 0), (2, 1)])
@@ -2836,6 +2841,8 @@ async def test_rouse_ghoul(
         "aggravated": 1,
         "stains": 0,
         "degeneration": 0,
+        "dice": [],
+        "oblivion_faces": [1, 10],
     }
     assert (await reload(char)).aggravated_hp == 1
     update_channel.send.assert_awaited_once()
@@ -2983,7 +2990,7 @@ async def test_rouse_oblivion_stains(
 async def test_rouse_oblivion_guild_faces(
     auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
 ):
-    """A guild's own Oblivion faces are used."""
+    """A guild's own Oblivion faces are used, and returned."""
     vguild = VGuild(guild=TEST_GUILD_ID, name="Test Guild")
     vguild.settings.oblivion_stains = [7]
     await vguild.insert()
@@ -2996,6 +3003,28 @@ async def test_rouse_oblivion_guild_faces(
 
     assert status == 200
     assert data["stains"] == 1
+    assert data["oblivion_faces"] == [7]
+
+
+async def test_rouse_oblivion_faces_not_applied(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """The guild's faces are returned even when they aren't applied, so the
+    app can say whether the dice would have Stained."""
+    vguild = VGuild(guild=TEST_GUILD_ID, name="Test Guild")
+    vguild.settings.oblivion_stains = [10]
+    await vguild.insert()
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    body = {"count": 1, "reroll": False, "oblivion_stains": False}
+
+    with patch("inconnu.d10", return_value=10):
+        status, data = await post_rouse(char, body, auth_headers)
+
+    assert status == 200
+    assert data["stains"] == 0
+    assert data["oblivion_faces"] == [10]
+    assert (await reload(char)).stains == 0
 
 
 async def test_rouse_oblivion_degeneration(

@@ -32,6 +32,7 @@ class RouseOutcome(NamedTuple):
     frenzy: bool
     gain: int
     reroll: bool
+    dice: list[tuple[int, ...]]  # Each check's faces: the first, then any re-roll
 
 
 def _can_rouse(character: VChar):
@@ -258,11 +259,15 @@ def roll_rouse_checks(
     successes = 0
     failures = 0
     stains = 0
+    dice: list[tuple[int, ...]] = []
 
     for _ in range(rolls):
         die = inconnu.d10()
         if reroll and die < 6:
-            die = inconnu.d10()
+            first, die = die, inconnu.d10()
+            dice.append((first, die))
+        else:
+            dice.append((die,))
 
         if die in oblivion:
             stains += 1
@@ -287,4 +292,5 @@ def roll_rouse_checks(
         frenzy=frenzy,
         gain=gain,
         reroll=reroll,
+        dice=dice,
     )

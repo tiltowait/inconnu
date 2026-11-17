@@ -394,6 +394,8 @@ class RouseResult(BaseModel):
     aggravated: int  # Ghouls' Aggravated Health damage
     stains: int  # Oblivion Stains gained
     degeneration: int  # Aggravated Willpower damage from those Stains
+    dice: list[tuple[int, ...]]  # Each check's faces: the first, then any re-roll
+    oblivion_faces: list[int]  # The server's Oblivion Stain faces, applied or not
 
 
 class MendBody(BaseModel):

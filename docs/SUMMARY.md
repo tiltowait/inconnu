@@ -22,6 +22,7 @@
 
 * [Character Images](premium/character-images.md)
 * [Roleposting](premium/roleposting.md)
+* [Web App](premium/web-app.md)
 
 ## Command Reference
 

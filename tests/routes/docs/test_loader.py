@@ -1,11 +1,15 @@
 """Tests for loading the Markdown docs."""
 
+import posixpath
+import re
 from pathlib import Path
 
 import pytest
 
 from routes.docs import loader
 from routes.docs.models import DocPage
+
+LINK = re.compile(r"\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
 SUMMARY = """# Table of contents
 
@@ -227,3 +231,65 @@ def test_load_redirects(tmp_path: Path):
 
     assert redirected.redirects == {"old": ""}
     assert redirected.version != bundle.version
+
+
+def broken_links(pages: list[DocPage], directory: Path) -> list[str]:
+    """Each relative link, outside of code blocks, whose page, asset, or heading
+    doesn't exist, as "file: link"."""
+    by_file = {page.file: page for page in pages}
+    broken = []
+    for page in pages:
+        in_code = False
+        for line in page.markdown.splitlines():
+            if line.startswith("```"):
+                in_code = not in_code
+            if in_code:
+                continue
+            for link in LINK.findall(line):
+                if link.startswith(("http://", "https://", "mailto:")):
+                    continue
+                target, _, anchor = link.partition("#")
+                if target:
+                    file = posixpath.normpath(posixpath.join(posixpath.dirname(page.file), target))
+                else:
+                    file = page.file
+                if file in by_file:
+                    if anchor and anchor not in loader.heading_anchors(by_file[file].markdown):
+                        broken.append(f"{page.file}: {link}")
+                elif not (directory / file).is_file():
+                    broken.append(f"{page.file}: {link}")
+    return broken
+
+
+def test_real_docs_links():
+    """Every relative link in the repo's docs points to a page, a heading on
+    one, or an asset."""
+    bundle = loader.load(loader.DOCS_DIR)
+    assert broken_links(bundle.pages, loader.DOCS_DIR) == []
+
+
+def test_broken_links(tmp_path: Path):
+    """Missing pages, headings, and assets are caught, relative to the linking
+    page; links in code blocks and external links are skipped."""
+    write_docs(
+        tmp_path,
+        {
+            "README.md": "# Home\n\n## Setup\n",
+            "guides/page.md": (
+                "# Page\n\n"
+                '[ok](../README.md#setup) [ok](#page) ![ok](../assets/image.png "Title")\n'
+                "[ok](https://example.com/missing.md)\n"
+                "[bad](README.md) [bad](../README.md#nope) [bad](#nope)\n"
+                "![bad](../assets/missing.png)\n"
+                "```\n[skipped](missing.md)\n```\n"
+            ),
+        },
+    )
+    bundle = loader.load(tmp_path)
+
+    assert broken_links(bundle.pages, tmp_path) == [
+        "guides/page.md: README.md",
+        "guides/page.md: ../README.md#nope",
+        "guides/page.md: #nope",
+        "guides/page.md: ../assets/missing.png",
+    ]

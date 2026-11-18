@@ -32,7 +32,7 @@ from inconnu.misc.rouse import (
 from models import VChar, VGuild
 from models.vchar import Tracker
 from models.vguild import VGuildSettings
-from routes.auth import get_authenticated_user, verify_api_key
+from routes.auth import get_authenticated_user, require_supporter, verify_api_key
 from routes.characters.edit import apply_edit, check_edit, edit_summary, summarize
 from routes.characters.models import (
     AmountBody,
@@ -224,7 +224,7 @@ async def _post_update(
         logger.warning("Couldn't post {}'s web update: {}", char.name, err)
 
 
-@router.patch("/characters/{oid}", status_code=204)
+@router.patch("/characters/{oid}", status_code=204, dependencies=[Depends(require_supporter)])
 async def edit_character(
     oid: PydanticObjectId,
     body: EditBody,
@@ -258,7 +258,7 @@ async def edit_character(
     return Response(status_code=204)
 
 
-@router.post("/characters/{oid}/rouse")
+@router.post("/characters/{oid}/rouse", dependencies=[Depends(require_supporter)])
 async def rouse_character(
     oid: PydanticObjectId,
     body: RouseBody,
@@ -330,7 +330,7 @@ async def rouse_character(
     )
 
 
-@router.post("/characters/{oid}/damage", status_code=204)
+@router.post("/characters/{oid}/damage", status_code=204, dependencies=[Depends(require_supporter)])
 async def damage_character(
     oid: PydanticObjectId,
     body: DamageBody,
@@ -380,7 +380,7 @@ def _invalid(message: str, *loc: str | int) -> RequestValidationError:
     return RequestValidationError([{"loc": ("body", *loc), "msg": message, "type": "value_error"}])
 
 
-@router.post("/characters/{oid}/stain", status_code=204)
+@router.post("/characters/{oid}/stain", status_code=204, dependencies=[Depends(require_supporter)])
 async def stain_character(
     oid: PydanticObjectId,
     body: AmountBody,
@@ -410,7 +410,7 @@ async def stain_character(
     return Response(status_code=204)
 
 
-@router.post("/characters/{oid}/slake")
+@router.post("/characters/{oid}/slake", dependencies=[Depends(require_supporter)])
 async def slake_character(
     oid: PydanticObjectId,
     body: AmountBody,
@@ -445,7 +445,7 @@ async def slake_character(
     return SlakeResult(frenzy=frenzy)
 
 
-@router.post("/characters/{oid}/remorse")
+@router.post("/characters/{oid}/remorse", dependencies=[Depends(require_supporter)])
 async def remorse_character(
     oid: PydanticObjectId,
     body: RemorseBody,
@@ -485,7 +485,7 @@ def _heal_willpower(char: VChar, severity: Damage) -> int:
     return healed
 
 
-@router.post("/characters/{oid}/mend")
+@router.post("/characters/{oid}/mend", dependencies=[Depends(require_supporter)])
 async def mend_character(
     oid: PydanticObjectId,
     body: MendBody,

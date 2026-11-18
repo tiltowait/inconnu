@@ -21,6 +21,7 @@ from events import CharEvents, CharEventType, char_events
 from models import VChar, VGuild
 from models.vchar import Tracker
 from models.vchardocs import VCharSplat, VCharTrait
+from routes.auth import require_supporter
 from routes.characters.models import MAX_DAMAGE, OwnerData, with_core_traits
 from routes.characters.routes import char_event_stream
 from routes.deps import get_bot
@@ -80,6 +81,14 @@ async def setup_guild_cache() -> AsyncIterator[GuildCache]:
 def mock_api_key() -> Iterator[None]:
     """Mock API_KEY for all tests."""
     with patch.object(settings, "inconnu_api_token", TEST_API_KEY):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def bypass_supporter_gate() -> Iterator[None]:
+    """Let every requester through the supporter gate. test_supporter_gate()
+    removes the override to check the gate itself."""
+    with patch.dict(app.dependency_overrides, {require_supporter: lambda: None}):
         yield
 
 
@@ -3894,3 +3903,33 @@ async def test_remorse_access(
         result, _ = await post_action(char, "remorse", REMORSE, auth_headers)
 
     assert result == status
+
+
+@pytest.mark.parametrize(
+    "method,path",
+    [
+        ("PATCH", ""),
+        ("POST", "/rouse"),
+        ("POST", "/damage"),
+        ("POST", "/stain"),
+        ("POST", "/slake"),
+        ("POST", "/remorse"),
+        ("POST", "/mend"),
+    ],
+)
+async def test_supporter_gate(
+    mock_bot: MockBot, auth_headers: dict[str, str], method: str, path: str
+):
+    """Gameplay and edit routes refuse requesters who aren't supporters."""
+    del app.dependency_overrides[require_supporter]
+    support_server = MagicMock(spec=discord.Guild)
+    support_server.get_or_fetch = AsyncMock(return_value=None)
+    mock_bot.get_or_fetch_guild = AsyncMock(return_value=support_server)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.request(
+            method, f"/characters/{PydanticObjectId()}{path}", headers=auth_headers, json={}
+        )
+
+    assert response.status_code == 403
+    support_server.get_or_fetch.assert_awaited_once_with(discord.Member, TEST_USER_ID)

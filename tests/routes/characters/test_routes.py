@@ -472,8 +472,8 @@ async def test_create_character_health_out_of_range(
     mock_wizard_data: WizardData,
     mock_wizard_cache_pop: tuple[MockFn, MockFn],
 ):
-    """Health out of range (4-20) returns 422."""
-    valid_character_data["health"] = 3  # Too low
+    """Health out of range (3-25) returns 422."""
+    valid_character_data["health"] = 2  # Too low
     mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
@@ -2481,7 +2481,7 @@ async def test_edit_character_name_uniqueness(
         (VCharSplat.GHOUL, {"hunger": 1}, "hunger"),
         (VCharSplat.THIN_BLOOD, {"potency": 3}, "potency"),
         (VCharSplat.VAMPIRE, {"hunger": None}, "hunger"),
-        (VCharSplat.VAMPIRE, {"health": "..."}, "health"),
+        (VCharSplat.VAMPIRE, {"health": ".."}, "health"),
         (VCharSplat.VAMPIRE, {"willpower": "..?.."}, "willpower"),
         (VCharSplat.VAMPIRE, {"stains": 11}, "stains"),
         (VCharSplat.VAMPIRE, {"convictions": ["a", "b", "c", "d"]}, "convictions"),

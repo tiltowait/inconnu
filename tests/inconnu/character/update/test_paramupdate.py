@@ -123,18 +123,18 @@ def test_update_stains_degeneration(delta: str, expected_stains: int, expected_d
 @pytest.mark.parametrize(
     "tracker,rating,allowed",
     [
-        (Tracker.HEALTH, 3, False),
-        (Tracker.HEALTH, 4, True),
+        (Tracker.HEALTH, 2, False),
+        (Tracker.HEALTH, 3, True),
         (Tracker.HEALTH, 25, True),
         (Tracker.HEALTH, 26, False),
         (Tracker.WILLPOWER, 1, False),
         (Tracker.WILLPOWER, 2, True),  # Retainers can have 1 Resolve and Composure
-        (Tracker.WILLPOWER, 20, True),
-        (Tracker.WILLPOWER, 21, False),
+        (Tracker.WILLPOWER, 25, True),
+        (Tracker.WILLPOWER, 26, False),
     ],
 )
 def test_update_tracker_limits(tracker: Tracker, rating: int, allowed: bool):
-    """Health and Willpower updates are limited to the wizard's ranges."""
+    """Health and Willpower updates are limited to the tracker ranges."""
     char = gen_char("vampire")
     update = update_health if tracker == Tracker.HEALTH else update_willpower
 

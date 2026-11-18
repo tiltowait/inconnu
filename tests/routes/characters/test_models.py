@@ -99,8 +99,8 @@ def test_health_max_boundary():
 
 
 def test_health_below_min():
-    """Health below 4 rejected."""
-    data = valid_creation_data(health=3)
+    """Health below 3 rejected."""
+    data = valid_creation_data(health=2)
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "health" in str(exc_info.value).lower()
@@ -115,13 +115,13 @@ def test_health_above_max():
 
 
 def test_willpower_range():
-    """Willpower range (2-20) enforced."""
-    for val in [2, 5, 20]:
+    """Willpower range (2-25) enforced."""
+    for val in [2, 5, 25]:
         data = valid_creation_data(willpower=val)
         body = CreationBody(**data)
         assert body.willpower == val
 
-    for val in [1, 21]:
+    for val in [1, 26]:
         data = valid_creation_data(willpower=val)
         with pytest.raises(ValidationError):
             CreationBody(**data)

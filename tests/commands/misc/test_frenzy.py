@@ -6,7 +6,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from ctx import AppCtx
-from inconnu.misc.frenzy import FrenzyAdvantage, FrenzyPenalty, frenzy, frenzy_roll
+from inconnu.misc.frenzy import frenzy, frenzy_roll
+from models import FrenzyAdvantage, FrenzyPenalty
 from models.vchar import VChar
 
 
@@ -149,8 +150,8 @@ def test_frenzy_outcome(vamp: VChar, die: int, passed: bool, critical: bool):
     [
         (None, 0, []),
         ("3", 3, []),
-        ("Gentle Mind", 0, [FrenzyAdvantage.GENTLE_MIND]),
-        ("The Dream", 0, [FrenzyAdvantage.THE_DREAM]),
+        ("gentle_mind", 0, [FrenzyAdvantage.GENTLE_MIND]),
+        ("the_dream", 0, [FrenzyAdvantage.THE_DREAM]),
     ],
 )
 async def test_frenzy_bonus_option(
@@ -167,3 +168,53 @@ async def test_frenzy_bonus_option(
         await frenzy(ctx, vamp, 1, None, bonus)
 
     mock_roll.assert_called_once_with(vamp, 1, None, dice, advantages)
+
+
+@pytest.mark.parametrize(
+    "penalty,potency,pool,note",
+    [
+        ("brujah", 3, 1, "-1 die from the Brujah bane."),  # The floor absorbs 2
+        ("brujah", 0, 2, None),  # Bane Severity 0
+        ("malkavian", 1, 1, "-1 die from the Malkavian compulsion."),
+    ],
+)
+def test_frenzy_penalty_note(
+    vamp: VChar, penalty: FrenzyPenalty, potency: int, pool: int, note: str | None
+):
+    """Penalty notes count the dice actually removed, and are left out when
+    none were."""
+    vamp.willpower = "////."  # One Willpower
+    vamp.humanity = 3  # Plus one
+    vamp.potency = potency
+
+    with patch("inconnu.d10", side_effect=fixed_dice(6)):
+        outcome = frenzy_roll(vamp, 1, penalty, 0, [])
+
+    assert outcome.pool == pool
+    assert outcome.notes == ([note] if note else [])
+
+
+def test_frenzy_the_dream_no_failures(vamp: VChar):
+    """The Dream has nothing to re-roll when every die succeeds."""
+    with patch("inconnu.d10", side_effect=fixed_dice(6)):
+        outcome = frenzy_roll(vamp, 1, None, 0, [FrenzyAdvantage.THE_DREAM])
+
+    assert outcome.original is None
+    assert outcome.notes == []
+
+
+async def test_frenzy_saves_before_responding(
+    vamp: VChar, ctx: AppCtx, mock_char_save: AsyncMock, mock_common_report: AsyncMock
+):
+    """The check is saved before it's shown, so a failed response can't
+    lose it."""
+    saved_first: list[bool] = []
+
+    async def respond(*_args: object, **_kwargs: object):
+        """Record whether the check was saved yet."""
+        saved_first.append(mock_char_save.await_count == 1)
+
+    with patch("ctx.AppCtx.respond", side_effect=respond):
+        await frenzy(ctx, vamp, 1, None, None)
+
+    assert saved_first == [True]

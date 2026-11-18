@@ -10,7 +10,7 @@ import inconnu
 from ctx import AppCtx
 from inconnu.options import char_option, dice_option, impairment_option, player_option
 from interface import CommandCog
-from models import ImpairmentCategory, VChar
+from models import MAX_FRENZY_BONUS, FrenzyAdvantage, FrenzyPenalty, ImpairmentCategory, VChar
 from utils.urls import docs_url
 
 if TYPE_CHECKING:
@@ -166,6 +166,7 @@ class Gameplay(CommandCog, name="Gameplay"):  # pyright: ignore[reportCallIssue,
     )
     @option(
         "penalty",
+        str,  # FrenzyPenalty is a Literal, which py-cord can't map to a type
         description="A dice penalty to apply to the roll",
         choices=[
             OptionChoice("Brujah Fury", "brujah"),
@@ -177,18 +178,8 @@ class Gameplay(CommandCog, name="Gameplay"):  # pyright: ignore[reportCallIssue,
         "bonus",
         description="A dice bonus to apply to the roll",
         choices=[
-            "Cold Dead Hunger",
-            "The Dream",
-            "Gentle Mind",
-            "Jewel in the Garden",
-            "The Heart of Darkness",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
+            *(OptionChoice(a.display, a.value) for a in FrenzyAdvantage),
+            *(str(n) for n in range(1, MAX_FRENZY_BONUS + 1)),
         ],
         required=False,
     )
@@ -197,8 +188,8 @@ class Gameplay(CommandCog, name="Gameplay"):  # pyright: ignore[reportCallIssue,
         self,
         ctx: AppCtx,
         difficulty: int,
-        penalty: str,
-        bonus: str,
+        penalty: FrenzyPenalty | None,
+        bonus: str | None,
         character: str,
     ):
         """Perform a frenzy check."""

@@ -234,7 +234,8 @@ async def _post_update(
     """Post a web change to the guild's update channel. The editor comes from
     the guild cache, which, unlike the gateway's, is sure to have the user:
     it vouched for them. The change is already saved, so a failed post is
-    only logged."""
+    only logged, whatever went wrong: a 500 would invite a retry that applies
+    it twice."""
     if discord_guild is None:
         return
 
@@ -242,8 +243,8 @@ async def _post_update(
     embed.set_author(name=char.name, icon_url=editor.icon)
     try:
         await send_update(discord_guild, embed)
-    except discord.HTTPException as err:
-        logger.warning("Couldn't post {}'s web update: {}", char.name, err)
+    except Exception as err:
+        logger.warning("Couldn't post {}'s web update: {!r}", char.name, err)
 
 
 @router.patch("/characters/{oid}", status_code=204, dependencies=[Depends(require_supporter)])

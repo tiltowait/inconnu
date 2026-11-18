@@ -2571,7 +2571,12 @@ async def test_edit_character_no_changes_no_post(
     update_channel.send.assert_not_awaited()
 
 
+@pytest.mark.parametrize(
+    "error",
+    [discord.HTTPException(MagicMock(status=500), "Oops"), TimeoutError()],
+)
 async def test_edit_character_post_failure(
+    error: Exception,
     auth_headers: dict[str, str],
     edit_guild: MockGuild,
     mock_char_mgr_fetchid: MockAsyncFn,
@@ -2581,7 +2586,7 @@ async def test_edit_character_post_failure(
     """A failed update post doesn't fail the saved edit."""
     char = await make_saved_char()
     mock_char_mgr_fetchid.return_value = char
-    update_channel.send.side_effect = discord.HTTPException(MagicMock(status=500), "Oops")
+    update_channel.send.side_effect = error
 
     status, _ = await patch_char(char, edit_body(char, humanity=5), auth_headers)
 

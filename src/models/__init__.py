@@ -1,5 +1,6 @@
 """Top-level models package for database documents."""
 
+from models.frenzy import MAX_FRENZY_BONUS, FrenzyAdvantage, FrenzyPenalty
 from models.impairment import IMPAIRMENT_DICE, Impairment, ImpairmentCategory, RollCategory
 from models.postedheader import PostedHeader
 from models.rpheader import HeaderSubdoc
@@ -11,8 +12,11 @@ from models.vuser import VUser
 
 __all__ = (
     "IMPAIRMENT_DICE",
+    "MAX_FRENZY_BONUS",
     "BlushState",
     "ExpPerms",
+    "FrenzyAdvantage",
+    "FrenzyPenalty",
     "HeaderSubdoc",
     "HiddenDicePerms",
     "Impairment",

@@ -16,8 +16,7 @@ from pydantic import (
 
 from constants import ATTRIBUTES, MAX_CONVICTION_LENGTH, SKILLS
 from errors import CharacterError
-from inconnu.misc.frenzy import MAX_FRENZY_BONUS, FrenzyAdvantage, FrenzyPenalty
-from models import VChar
+from models import MAX_FRENZY_BONUS, FrenzyAdvantage, FrenzyPenalty, VChar
 from models.vchar import Tracker
 from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
 from services import guild_cache

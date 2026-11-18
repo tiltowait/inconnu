@@ -1,8 +1,7 @@
 """misc/frenzy.py - Perform a frenzy check."""
 
 from collections.abc import Iterable
-from enum import StrEnum
-from typing import Literal, NamedTuple
+from typing import NamedTuple
 
 import discord
 
@@ -10,7 +9,7 @@ import errors
 import inconnu
 import services
 from ctx import AppCtx
-from models import VChar
+from models import FrenzyAdvantage, FrenzyPenalty, VChar
 from services.haven import haven
 from utils import get_avatar, get_message
 from utils.text import pluralize
@@ -18,42 +17,6 @@ from utils.urls import docs_url, web_asset
 
 __HELP_URL = docs_url("guides/gameplay-shortcuts#frenzy-checks")
 FRENZY_FAIL_COLOR = 0x880000
-MAX_FRENZY_BONUS = 7
-
-
-class FrenzyAdvantage(StrEnum):
-    """An advantage that aids in resisting frenzy."""
-
-    COLD_DEAD_HUNGER = "cold_dead_hunger"
-    GENTLE_MIND = "gentle_mind"
-    JEWEL_IN_THE_GARDEN = "jewel_in_the_garden"
-    THE_DREAM = "the_dream"
-    THE_HEART_OF_DARKNESS = "the_heart_of_darkness"
-
-    @property
-    def display(self) -> str:
-        """The advantage's name."""
-        return {
-            FrenzyAdvantage.COLD_DEAD_HUNGER: "Cold Dead Hunger",
-            FrenzyAdvantage.GENTLE_MIND: "Gentle Mind",
-            FrenzyAdvantage.JEWEL_IN_THE_GARDEN: "Jewel in the Garden",
-            FrenzyAdvantage.THE_DREAM: "The Dream",
-            FrenzyAdvantage.THE_HEART_OF_DARKNESS: "The Heart of Darkness",
-        }[self]
-
-    @property
-    def dice(self) -> int:
-        """The bonus dice the advantage grants. The Dream re-rolls instead."""
-        return {
-            FrenzyAdvantage.COLD_DEAD_HUNGER: 2,
-            FrenzyAdvantage.GENTLE_MIND: 4,
-            FrenzyAdvantage.JEWEL_IN_THE_GARDEN: 4,
-            FrenzyAdvantage.THE_DREAM: 0,
-            FrenzyAdvantage.THE_HEART_OF_DARKNESS: 2,
-        }[self]
-
-
-type FrenzyPenalty = Literal["brujah", "malkavian"]
 
 
 class FrenzyOutcome(NamedTuple):
@@ -81,16 +44,18 @@ async def frenzy(
     penalty: FrenzyPenalty | None,
     bonus: str | None,
 ):
-    """Perform a frenzy check. The bonus is a number of dice or an advantage's
-    name."""
+    """Perform a frenzy check. The bonus is a number of dice or an
+    advantage's value."""
     if bonus is None:
         dice, advantages = 0, []
     elif bonus.isdigit():
         dice, advantages = int(bonus), []
     else:
-        dice, advantages = 0, [next(p for p in FrenzyAdvantage if p.display == bonus)]
+        dice, advantages = 0, [FrenzyAdvantage(bonus)]
 
     outcome = frenzy_roll(character, difficulty, penalty, dice, advantages)
+    await character.save_changes()
+
     if outcome.passed:
         if outcome.critical:
             title = "Critical Success!"
@@ -120,7 +85,6 @@ async def frenzy(
 
     msg = await get_message(inter)
     await __generate_report_task(ctx, msg, character, outcome.passed)
-    await character.save_changes()
 
 
 def frenzy_roll(
@@ -135,34 +99,32 @@ def frenzy_roll(
     pool = character.frenzy_resist
     notes: list[str] = []
 
-    if penalty == "brujah":
-        pool = max(pool - character.bane_severity, 1)
-        notes.append(f"-{character.bane_severity} dice from the Brujah bane.")
-    elif penalty == "malkavian":
-        pool = max(pool - 2, 1)
-        notes.append("-2 dice from the Malkavian compulsion.")
+    if penalty is not None:
+        reduced = max(pool - _penalty_dice(character, penalty), 1)
+        if removed := pool - reduced:
+            source = "the Brujah bane" if penalty == "brujah" else "the Malkavian compulsion"
+            notes.append(f"-{pluralize(removed, 'die')} from {source}.")
+        pool = reduced
 
     if bonus > 0:
         pool += bonus
-        dice = "die" if bonus == 1 else "dice"
-        notes.append(f"{bonus:+} bonus {dice}.")
+        notes.append(f"{_bonus(bonus)}.")
 
     advantages = sorted(set(advantages))
     for advantage in advantages:
         if advantage.dice > 0:
             pool += advantage.dice
-            notes.append(f"{advantage.dice:+} bonus dice from {advantage.display}.")
+            notes.append(f"{_bonus(advantage.dice)} from {advantage.display}.")
 
     outcome = inconnu.Roll(pool, 0, difficulty)
 
     original = None
-    if FrenzyAdvantage.THE_DREAM in advantages:
+    if FrenzyAdvantage.THE_DREAM in advantages and outcome.can_reroll_failures:
         original = list(outcome.normal.dice)
         failures = min(outcome.normal.failures, 3)
         outcome.reroll("reroll_failures")
-        notes.append(
-            f"Re-rolled {pluralize(failures, 'die')} from {FrenzyAdvantage.THE_DREAM.display}"
-        )
+        dream = FrenzyAdvantage.THE_DREAM.display
+        notes.append(f"Re-rolled {pluralize(failures, 'die')} from {dream}.")
 
     passed = outcome.total_successes >= difficulty
     if passed:
@@ -178,6 +140,16 @@ def frenzy_roll(
         original=original,
         notes=notes,
     )
+
+
+def _penalty_dice(character: VChar, penalty: FrenzyPenalty) -> int:
+    """The dice a penalty removes, before the one-die floor."""
+    return character.bane_severity if penalty == "brujah" else 2
+
+
+def _bonus(count: int) -> str:
+    """A count of bonus dice, e.g. "+2 bonus dice"."""
+    return f"+{count} bonus {'die' if count == 1 else 'dice'}"
 
 
 def __get_embed(

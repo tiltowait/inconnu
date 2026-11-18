@@ -116,9 +116,14 @@ def long_convictions(
 ) -> Iterator[tuple[int, int]]:
     """Yield the index and limit of each Conviction over its limit. Discord's
     modal didn't always enforce one, so, as the modal does now, a Conviction
-    may be as long as the kept one in its slot."""
+    may be as long as the kept one in its slot. A kept Conviction is never
+    too long, in any slot, since stored ones have no blanks to hold their
+    places."""
     kept = kept or []
+    unchanged = {" ".join(conviction.split()) for conviction in kept}
     for index, conviction in enumerate(convictions):
+        if conviction in unchanged:
+            continue
         limit = max(MAX_CONVICTION_LENGTH, len(kept[index]) if index < len(kept) else 0)
         if len(conviction) > limit:
             yield index, limit

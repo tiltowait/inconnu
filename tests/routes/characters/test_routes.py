@@ -2637,6 +2637,8 @@ LEGACY = "word  " * 50  # 300 characters; 249 once its whitespace is collapsed
         (["B" * 300, "", ""], None),  # Rewritten within its slot's length
         (["B" * 301, "", ""], (0, 300)),  # Longer than its slot's
         ([LEGACY, "", "B" * 201], (2, 200)),  # A new slot gets the usual limit
+        (["", LEGACY, ""], None),  # Moved, but untouched
+        (["", LEGACY + "B", ""], (1, 200)),  # Moved and rewritten
     ],
 )
 async def test_edit_long_conviction(
@@ -2648,7 +2650,8 @@ async def test_edit_long_conviction(
     error: tuple[int, int] | None,
 ):
     """As in Discord's modal, a Conviction may be as long as the stored one in
-    its slot. Errors point at the slot, blanks included."""
+    its slot, and an untouched one may move. Errors point at the slot, blanks
+    included."""
     char = await make_saved_char(convictions=[LEGACY])
     mock_char_mgr_fetchid.return_value = char
 
@@ -2656,7 +2659,8 @@ async def test_edit_long_conviction(
 
     if error is None:
         assert status == 204
-        assert (await reload(char)).convictions == [" ".join(convictions[0].split())]
+        kept = [" ".join(conviction.split()) for conviction in convictions if conviction]
+        assert (await reload(char)).convictions == kept
     else:
         index, limit = error
         assert status == 422

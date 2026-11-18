@@ -12,7 +12,6 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 
 import errors
-from config import settings
 from constants import ROUSE_FAIL_COLOR, Damage
 from events import CharEventType, char_events
 from inconnu.misc.aggheal import aggheal_update_message, heal_aggravated
@@ -29,11 +28,23 @@ from inconnu.misc.rouse import (
     roll_rouse_checks,
     rouse_update_message,
 )
+from inconnu.misc.slake import slake_hunger, slake_update_message
 from models import VChar, VGuild
 from models.vchar import Tracker
 from models.vguild import VGuildSettings
-from routes.auth import get_authenticated_user, require_supporter, verify_api_key
-from routes.characters.edit import apply_edit, check_edit, edit_summary, summarize
+from routes.auth import (
+    get_authenticated_user,
+    is_supporter,
+    require_supporter,
+    verify_api_key,
+)
+from routes.characters.edit import (
+    apply_edit,
+    body_errors,
+    check_edit,
+    edit_summary,
+    summarize,
+)
 from routes.characters.models import (
     AmountBody,
     CharData,
@@ -57,8 +68,9 @@ from routes.characters.models import (
 from routes.deps import get_bot
 from services import char_mgr, guild_cache, send_update, wizard_cache
 from services.guildcache import CachedGuild, CachedMember
+from services.settings import oblivion_stains
 from services.wizard import CharacterGuild
-from utils.permissions import has_supporter_role, is_storyteller
+from utils.permissions import is_storyteller
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -102,8 +114,9 @@ async def _fetch_guild_character(
     oid: PydanticObjectId, user_id: int
 ) -> tuple[VChar, CachedGuild, CachedMember]:
     """Fetch a character, its cached guild, and the user's cached member, if
-    the user is in that guild. Raises HTTPException if the bot is starting up, if the character or guild
-    doesn't exist, or if the user isn't in the guild."""
+    the user is in that guild. Raises HTTPException if the bot is starting
+    up, if the character or guild doesn't exist, or if the user isn't in the
+    guild."""
     if not await guild_cache.ready():
         raise HTTPException(503, detail="Bot is still starting up")
 
@@ -172,9 +185,10 @@ async def _fetch_editable_character(
     oid: PydanticObjectId, user_id: int, bot: InconnuBot, players=True
 ) -> tuple[VChar, discord.Guild | None, CachedMember]:
     """Fetch a character the user may change, its Discord guild, if the bot
-    has it, and the user's cached member, for update posts: the owner always may, and Storytellers may change SPCs, and
-    players' characters if players is True. Raises 403 otherwise, and as
-    _fetch_guild_character() does."""
+    has it, and the user's cached member, for update posts: the owner always
+    may, and Storytellers may change SPCs, and players' characters if
+    players is True. Raises 403 otherwise, and as _fetch_guild_character()
+    does."""
     char, _, editor = await _fetch_guild_character(oid, user_id)
 
     discord_guild = bot.get_guild(char.guild)
@@ -275,9 +289,12 @@ async def rouse_character(
     if not (char.is_vampire or char.is_ghoul):
         raise _invalid(f"{char.name} is a mortal.")
 
-    # By ID, so it works without the gateway's guild
-    vguild = await VGuild.find_one(VGuild.guild == char.guild)
-    faces = (vguild.settings if vguild else VGuildSettings()).oblivion_stains
+    if discord_guild is not None:
+        faces = await oblivion_stains(discord_guild)
+    else:
+        # By ID, since the gateway doesn't have the guild
+        vguild = await VGuild.find_one(VGuild.guild == char.guild)
+        faces = (vguild.settings if vguild else VGuildSettings()).oblivion_stains
 
     if char.is_ghoul:
         if char.incapacitated:
@@ -377,7 +394,7 @@ async def damage_character(
 
 def _invalid(message: str, *loc: str | int) -> RequestValidationError:
     """A 422 in FastAPI's own shape, at loc within the body."""
-    return RequestValidationError([{"loc": ("body", *loc), "msg": message, "type": "value_error"}])
+    return body_errors([(loc, message)])
 
 
 @router.post("/characters/{oid}/stain", status_code=204, dependencies=[Depends(require_supporter)])
@@ -428,18 +445,14 @@ async def slake_character(
     if char.hunger == 0:
         raise _invalid(f"{char.name} has no Hunger.", "amount")
 
-    slaked = min(body.amount, char.hunger)
-    frenzy = char.hunger >= 4
-    char.hunger -= slaked
-    char.log.hunger_slaked += slaked
-    char.log.times_slaked += 1
+    slaked, frenzy = slake_hunger(char, body.amount)
     await _save(char)
     await _post_update(
         discord_guild,
         char,
         editor,
         title="Hunger Slaked",
-        description=f"**{char.name}** slaked `{slaked}` Hunger (now at `{char.hunger}`).",
+        description=slake_update_message(char, slaked),
     )
 
     return SlakeResult(frenzy=frenzy)
@@ -503,9 +516,7 @@ async def mend_character(
     track: str = getattr(char, body.track)
     if severity not in track:
         message = f"{char.name} has no {body.type.title()} {body.track.title()} damage to heal."
-        raise RequestValidationError(
-            [{"loc": ("body", "type"), "msg": message, "type": "value_error"}]
-        )
+        raise _invalid(message, "type")
 
     if body.track == Tracker.WILLPOWER:
         if severity == Damage.SUPERFICIAL and char.willpower_recovery == 0:
@@ -718,14 +729,7 @@ async def create_character(
 
     wizard_cache.delete(token)
 
-    # Figure out if the user has premium
-    has_premium = False
-    guild = await bot.get_or_fetch_guild(settings.supporter_guild)
-    if guild is not None:
-        user = await guild.get_or_fetch(discord.Member, wizard.user)
-        has_premium = user is not None and has_supporter_role(user)
-    else:
-        logger.warning("Supporter guild not found")
+    has_premium = await is_supporter(bot, wizard.user)
 
     return CreationSuccess(
         guild=wizard.guild,

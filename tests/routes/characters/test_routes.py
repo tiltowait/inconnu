@@ -3015,6 +3015,30 @@ async def test_rouse_oblivion_guild_faces(
     assert data["oblivion_faces"] == [7]
 
 
+async def test_rouse_oblivion_faces_without_gateway_guild(
+    auth_headers: dict[str, str],
+    mock_bot: MockBot,
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+):
+    """Without the gateway's guild, the faces are read from the database by
+    ID."""
+    vguild = VGuild(guild=TEST_GUILD_ID, name="Test Guild")
+    vguild.settings.oblivion_stains = [7]
+    await vguild.insert()
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    mock_bot.get_guild = MagicMock(return_value=None)
+    body = {"count": 1, "reroll": False, "oblivion_stains": True}
+
+    with patch("inconnu.d10", return_value=7):
+        status, data = await post_rouse(char, body, auth_headers)
+
+    assert status == 200
+    assert data["stains"] == 1
+    assert data["oblivion_faces"] == [7]
+
+
 async def test_rouse_oblivion_faces_not_applied(
     auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
 ):

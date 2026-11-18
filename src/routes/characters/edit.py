@@ -21,6 +21,14 @@ MAX_SUMMARY_LENGTH = 4000  # Embed descriptions max out at 4096
 SEVERITIES = ((Damage.SUPERFICIAL, "Superficial"), (Damage.AGGRAVATED, "Aggravated"))
 
 
+def body_errors(errors: list[tuple[ErrorLoc, str]]) -> RequestValidationError:
+    """A 422 in FastAPI's own shape, with each message at its loc within the
+    body."""
+    return RequestValidationError(
+        [{"loc": ("body", *loc), "msg": msg, "type": "value_error"} for loc, msg in errors]
+    )
+
+
 async def check_edit(char: VChar, body: EditBody):
     """Run the checks that need the character. Raises RequestValidationError,
     so the app gets FastAPI's own 422 shape, with every error at once."""
@@ -51,9 +59,7 @@ async def check_edit(char: VChar, body: EditBody):
                 errors.append(((field,), f"{char.splat.title()}s don't have {field.title()}."))
 
     if errors:
-        raise RequestValidationError(
-            [{"loc": ("body", *loc), "msg": msg, "type": "value_error"} for loc, msg in errors]
-        )
+        raise body_errors(errors)
 
 
 def apply_edit(char: VChar, body: EditBody):

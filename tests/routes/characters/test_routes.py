@@ -1,7 +1,7 @@
 """Tests for character API routes."""
 
 import asyncio
-from collections.abc import AsyncGenerator, AsyncIterator, Iterator
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterator
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -3959,6 +3959,159 @@ async def test_remorse_access(
     assert result == status
 
 
+def frenzy_dice(die: int, reroll=10) -> Callable[[int | None], int | list[int]]:
+    """A d10 that throws the same face, and another on re-rolls."""
+
+    def d10(count: int | None = None) -> int | list[int]:
+        """Throw the dice."""
+        return reroll if count is None else [die] * count
+
+    return d10
+
+
+@pytest.mark.parametrize(
+    "die,passed,critical,title",
+    [
+        (10, True, True, "Frenzy Success"),
+        (6, True, False, "Frenzy Success"),
+        (5, False, False, "Frenzy Failure"),
+    ],
+)
+async def test_frenzy(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    die: int,
+    passed: bool,
+    critical: bool,
+    title: str,
+):
+    """The check is logged and posted."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    pool = char.frenzy_resist
+
+    with patch("inconnu.d10", side_effect=frenzy_dice(die)):
+        status, data = await post_action(char, "frenzy", {"difficulty": 2}, auth_headers)
+
+    assert status == 200
+    assert data == {
+        "passed": passed,
+        "critical": critical,
+        "pool": pool,
+        "dice": [die] * pool,
+        "original": None,
+    }
+    saved = await reload(char)
+    assert saved.log.frenzy_resisted == int(passed)
+    assert saved.log.times_frenzied == int(not passed)
+    embed: discord.Embed = update_channel.send.call_args.kwargs["embed"]
+    assert embed.title == title
+
+
+async def test_frenzy_modifiers(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """The penalty, bonus dice, and advantages all combine, and The Dream's
+    re-roll keeps the original faces."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    pool = char.frenzy_resist - 2 + 3 + 4  # Malkavian, bonus, Gentle Mind
+    body = {
+        "difficulty": 3,
+        "penalty": "malkavian",
+        "bonus": 3,
+        "advantages": ["gentle_mind", "the_dream", "gentle_mind"],
+    }
+
+    with patch("inconnu.d10", side_effect=frenzy_dice(1, reroll=7)):
+        status, data = await post_action(char, "frenzy", body, auth_headers)
+
+    assert status == 200
+    assert data["pool"] == pool
+    assert data["original"] == [1] * pool
+    assert data["dice"] == [7, 7, 7] + [1] * (pool - 3)
+    assert data["passed"]
+
+
+@pytest.mark.parametrize("splat", [VCharSplat.MORTAL, VCharSplat.GHOUL])
+async def test_frenzy_not_vampire(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    splat: VCharSplat,
+):
+    """Only vampires frenzy."""
+    char = await make_saved_char(splat=splat)
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "frenzy", {"difficulty": 2}, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body"]
+    assert (await reload(char)).log.times_frenzied == 0
+
+
+@pytest.mark.parametrize(
+    "body,loc",
+    [
+        ({}, ["body", "difficulty"]),
+        ({"difficulty": 0}, ["body", "difficulty"]),
+        ({"difficulty": 11}, ["body", "difficulty"]),
+        ({"difficulty": 2, "penalty": "gangrel"}, ["body", "penalty"]),
+        ({"difficulty": 2, "bonus": -1}, ["body", "bonus"]),
+        ({"difficulty": 2, "bonus": 8}, ["body", "bonus"]),
+        ({"difficulty": 2, "advantages": ["Gentle Mind"]}, ["body", "advantages", 0]),
+        ({"difficulty": 2, "hunger": 3}, ["body", "hunger"]),
+    ],
+)
+async def test_frenzy_invalid_body(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    body: dict[str, Any],
+    loc: list[str | int],
+):
+    """The Difficulty is 1-10, the bonus 0-7, the penalty and advantages known
+    values, and nothing else is allowed."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_action(char, "frenzy", body, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == loc
+
+
+@pytest.mark.parametrize(
+    "spc,storyteller,status",
+    [
+        (False, True, 403),  # /frenzy has no player option
+        (True, True, 200),  # but Storytellers may check SPCs
+        (False, False, 403),
+    ],
+)
+async def test_frenzy_access(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    spc: bool,
+    storyteller: bool,
+    status: int,
+):
+    """Only the owner may make a frenzy check, except Storytellers on SPCs."""
+    char = await make_saved_char(user_id=VChar.SPC_OWNER if spc else 999999)
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch.object(
+        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
+    ):
+        result, _ = await post_action(char, "frenzy", {"difficulty": 2}, auth_headers)
+
+    assert result == status
+
+
 @pytest.mark.parametrize(
     "method,path",
     [
@@ -3968,6 +4121,7 @@ async def test_remorse_access(
         ("POST", "/stain"),
         ("POST", "/slake"),
         ("POST", "/remorse"),
+        ("POST", "/frenzy"),
         ("POST", "/mend"),
     ],
 )

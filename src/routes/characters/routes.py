@@ -15,6 +15,12 @@ import errors
 from constants import ROUSE_FAIL_COLOR, Damage
 from events import CharEventType, char_events
 from inconnu.misc.aggheal import aggheal_update_message, heal_aggravated
+from inconnu.misc.frenzy import (
+    FRENZY_FAIL_COLOR,
+    frenzy_roll,
+    frenzy_update_message,
+    frenzy_update_title,
+)
 from inconnu.misc.mend import mend_superficial, mend_update_message
 from inconnu.misc.remorse import (
     REMORSE_FAIL_COLOR,
@@ -52,6 +58,8 @@ from routes.characters.models import (
     CreationSuccess,
     DamageBody,
     EditBody,
+    FrenzyBody,
+    FrenzyResult,
     GuildChars,
     MendBody,
     MendResult,
@@ -485,6 +493,41 @@ async def remorse_character(
     )
 
     return RemorseResult(remorseful=outcome.remorseful, dice=outcome.dice, humanity=char.humanity)
+
+
+@router.post("/characters/{oid}/frenzy", dependencies=[Depends(require_supporter)])
+async def frenzy_character(
+    oid: PydanticObjectId,
+    body: FrenzyBody,
+    bot: Annotated[InconnuBot, Depends(get_bot)],
+    user_id: int = Depends(get_authenticated_user),
+) -> FrenzyResult:
+    """Make a frenzy check, as /frenzy does, and log it. Only vampires
+    frenzy. As in Discord, only the owner may make it, though Storytellers
+    may for SPCs."""
+    char, discord_guild, editor = await _fetch_editable_character(oid, user_id, bot, players=False)
+
+    if not char.is_vampire:
+        raise _invalid("Only vampires can frenzy.")
+
+    outcome = frenzy_roll(char, body.difficulty, body.penalty, body.bonus, body.advantages)
+    await _save(char)
+    await _post_update(
+        discord_guild,
+        char,
+        editor,
+        title=frenzy_update_title(outcome.passed),
+        description=frenzy_update_message(char, outcome.passed),
+        color=None if outcome.passed else FRENZY_FAIL_COLOR,
+    )
+
+    return FrenzyResult(
+        passed=outcome.passed,
+        critical=outcome.critical,
+        pool=outcome.pool,
+        dice=outcome.dice,
+        original=outcome.original,
+    )
 
 
 def _heal_willpower(char: VChar, severity: Damage) -> int:

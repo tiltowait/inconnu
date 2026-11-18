@@ -30,6 +30,7 @@ The sheet handles many common gameplay actions, as the [gameplay shortcuts](../g
 * **Taking damage** to Health or Willpower
 * **Stains** and **Remorse**
 * **Slaking** Hunger
+* **Frenzy Checks,** which, unlike `/frenzy`, can combine bonus dice and advantages
 
 These count toward the character's Chronicle, as they would in Discord.
 

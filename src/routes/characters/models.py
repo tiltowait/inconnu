@@ -16,6 +16,7 @@ from pydantic import (
 
 from constants import ATTRIBUTES, MAX_CONVICTION_LENGTH, SKILLS
 from errors import CharacterError
+from inconnu.misc.frenzy import MAX_FRENZY_BONUS, FrenzyAdvantage, FrenzyPenalty
 from models import VChar
 from models.vchar import Tracker
 from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
@@ -471,3 +472,25 @@ class RemorseResult(BaseModel):
     remorseful: bool  # Passed, keeping Humanity
     dice: list[int]
     humanity: int  # After the test
+
+
+class FrenzyBody(BaseModel):
+    """A request for a frenzy check, with /frenzy's options. Unlike /frenzy,
+    bonus dice and advantages may be combined."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    difficulty: int = Field(ge=1, le=10)
+    penalty: FrenzyPenalty | None = None  # Brujah: Bane Severity fewer dice; Malkavian: 2
+    bonus: int = Field(default=0, ge=0, le=MAX_FRENZY_BONUS)  # Flat bonus dice
+    advantages: set[FrenzyAdvantage] = set()  # Advantages' bonus dice, or The Dream's re-roll
+
+
+class FrenzyResult(BaseModel):
+    """The outcome of a frenzy check."""
+
+    passed: bool  # Resisted frenzy
+    critical: bool  # Resisted without losing a turn
+    pool: int  # After the penalty and bonuses
+    dice: list[int]  # The final faces
+    original: list[int] | None  # The faces before The Dream's re-roll, if used

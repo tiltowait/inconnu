@@ -508,6 +508,9 @@ async def mend_character(
         )
 
     if body.track == Tracker.WILLPOWER:
+        if severity == Damage.SUPERFICIAL and char.willpower_recovery == 0:
+            message = f"{char.name} has no Resolve or Composure to recover Willpower with."
+            raise _invalid(message, "type")
         healed = _heal_willpower(char, severity)
         await _save(char)
         remaining = char.willpower.count(severity)

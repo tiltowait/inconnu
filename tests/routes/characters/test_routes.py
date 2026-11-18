@@ -3347,6 +3347,32 @@ async def test_mend_willpower_recovery_amount(
     assert data["track"] == "...//"
 
 
+async def test_mend_willpower_no_recovery(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+):
+    """Superficial Willpower with no Resolve or Composure to recover it is a
+    422, not an empty heal."""
+    char = await make_saved_char()
+    for trait in char.raw_traits:
+        if trait.name in ("Resolve", "Composure"):
+            trait.rating = 0
+    char.willpower = "/////"
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await post_mend(
+        char, {"type": "superficial", "track": "willpower"}, auth_headers
+    )
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body", "type"]
+    assert (await reload(char)).willpower == "/////"
+    update_channel.send.assert_not_called()
+
+
 @pytest.mark.parametrize("type_", ["superficial", "aggravated"])
 async def test_mend_willpower_nothing_to_heal(
     auth_headers: dict[str, str],

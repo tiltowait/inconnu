@@ -35,14 +35,20 @@ def specced(character: VChar) -> VChar:
     [
         ("brawl=kindred", [("brawl", ["kindred"])]),
         ("brawl=kindred,kine", [("brawl", ["kindred", "kine"])]),
-        ("brawl=kindred occult=bahari", [("brawl", ["kindred"]), ("occult", ["bahari"])]),
+        ("brawl=kindred; occult=bahari", [("brawl", ["kindred"]), ("occult", ["bahari"])]),
         (
-            "brawl=kindred,kine occult=bahari",
+            "brawl=kindred,kine;occult=bahari;",
             [("brawl", ["kindred", "kine"]), ("occult", ["bahari"])],
         ),
         ("brawl = kindred,", [("brawl", ["kindred"])]),
         ("brawl = kindred, kine", [("brawl", ["kindred", "kine"])]),
         ("animal_ken=squirrels", [("animal_ken", ["squirrels"])]),
+        # Multiword traits and specialties
+        ("animal ken=big cats", [("animal ken", ["big cats"])]),
+        (
+            "animal   ken = big  cats , dogs; brawl=kindred hunters",
+            [("animal ken", ["big cats", "dogs"]), ("brawl", ["kindred hunters"])],
+        ),
     ],
 )
 def test_valid_syntax(syntax: str, expected: list[tuple[str, list[str]]]):
@@ -60,14 +66,32 @@ def test_valid_syntax(syntax: str, expected: list[tuple[str, list[str]]]):
 @pytest.mark.parametrize(
     "syntax",
     [
+        "",  # Nothing given
+        " ; ",
         "b",  # No specialty given
-        "9",  # Invalid character
-        "brawl=kindred=kine,test",  # Multi equals
-        "brawl=kindred, kine=test",
+        "b=",
+        "b=,",
+        "9=kindred",  # Invalid characters
+        "brawl=kindred-kine",
+        "brawl=kindred, ravenous hunger",  # Hunger after the first word
     ],
 )
 def test_invalid_syntax(syntax: str):
     with pytest.raises(SyntaxError):
+        _ = tokenize(syntax)
+
+
+@pytest.mark.parametrize(
+    "syntax",
+    [
+        "brawl=kindred=kine,test",
+        "brawl=kindred, kine=test",
+        "brawl=kindred occult=bahari",
+    ],
+)
+def test_missing_semicolon(syntax: str):
+    """A second = means a missing semicolon."""
+    with pytest.raises(SyntaxError, match="Separate traits with `;`"):
         _ = tokenize(syntax)
 
 
@@ -77,7 +101,7 @@ def test_invalid_syntax(syntax: str):
         ("brawl=Kindred", [("Brawl", ["Kindred"], ["Kindred"])]),
         ("brawl=Kindred,Kine", [("Brawl", ["Kindred", "Kine"], ["Kindred", "Kine"])]),
         (
-            "brawl=Kindred craft=Knives",
+            "brawl=Kindred; craft=Knives",
             [("Brawl", ["Kindred"], ["Kindred"]), ("Craft", ["Knives"], ["Knives"])],
         ),
     ],
@@ -112,7 +136,7 @@ def test_add_specialties_intersection(syntax: str, expected: list[str], characte
     "syntax",
     [
         "Performance=Piano",  # Only invalid
-        "Brawl=Kindred Performance=Piano",  # One valid, one invalid
+        "Brawl=Kindred; Performance=Piano",  # One valid, one invalid
     ],
 )
 def test_fail_add_specialties(syntax: str, character: VChar):
@@ -126,7 +150,7 @@ def test_fail_add_specialties(syntax: str, character: VChar):
         ("Brawl=Kindred", [("Brawl", ["Kine"], ["Kindred"])]),
         ("Brawl=Kindred,Kine", [("Brawl", [], ["Kindred", "Kine"])]),
         (
-            "Brawl=Kindred Craft=Knives",
+            "Brawl=Kindred; Craft=Knives",
             [("Brawl", ["Kine"], ["Kindred"]), ("Craft", [], ["Knives"])],
         ),
     ],
@@ -141,6 +165,20 @@ def test_remove_specialties(syntax: str, expected: list, specced: VChar):
         assert trait.name == e_trait
         assert trait.specialties == e_specs
         assert delta == e_delta
+
+
+def test_multiword_specialties(character: VChar):
+    """Multiword specialties are added to multiword traits and removed."""
+    character.assign_traits({"Animal Ken": 2})
+    traits = add_specialties(character, "animal ken=Big Cats, Dogs", Category.SPECIALTY)
+    trait, delta = traits[0]
+    assert trait.name == "Animal Ken"
+    assert trait.specialties == ["Big Cats", "Dogs"]
+    assert delta == ["Big Cats", "Dogs"]
+
+    trait, delta = remove_specialties(character, "animal ken=big cats")[0]
+    assert trait.specialties == ["Dogs"]
+    assert delta == ["Big Cats"]
 
 
 def test_add_powers(character: VChar):

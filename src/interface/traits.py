@@ -134,7 +134,10 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
     )
 
     @specialties.command(name="add")
-    @option("specialties", description="The specialties to add. Ex: Performance=Piano,Singing")
+    @option(
+        "specialties",
+        description="The specialties to add. Ex: Performance=Piano, Singing; Brawl=Kindred",
+    )
     @inconnu.options.char_option("The character to modify")
     async def add_specialties(
         self,
@@ -151,7 +154,10 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         )
 
     @specialties.command(name="remove")
-    @option("specialties", description="The specialties to remove. Ex: Brawl=Kindred,Kine")
+    @option(
+        "specialties",
+        description="The specialties to remove. Ex: Brawl=Kindred, Kine; Performance=Piano",
+    )
     @inconnu.options.char_option("The character to modify")
     async def remove_specialties(
         self,
@@ -175,7 +181,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
     )
 
     @powers.command(name="add")
-    @option("powers", description="The powers to add. Ex: Auspex=Premonition,HeightenedSenses")
+    @option("powers", description="The powers to add. Ex: Auspex=Premonition, Heightened Senses")
     @inconnu.options.char_option("The character to modify")
     async def add_powers(
         self,

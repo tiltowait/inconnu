@@ -480,7 +480,6 @@ dependencies = [
     { name = "py-cord", extra = ["speed"] },
     { name = "pydantic-settings" },
     { name = "pymongo" },
-    { name = "pyparsing" },
     { name = "pypcg" },
     { name = "pyyaml" },
     { name = "uvicorn" },
@@ -512,7 +511,6 @@ requires-dist = [
     { name = "py-cord", extras = ["speed"], specifier = ">=2.8.0,<2.9.0" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
     { name = "pymongo", specifier = ">=4.2.0,<5" },
-    { name = "pyparsing", specifier = ">=3.1.1,<4" },
     { name = "pypcg", specifier = ">=0.0.4,<1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "uvicorn", specifier = ">=0.37.0,<1" },
@@ -938,15 +936,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/98/46/df3db9a21884fceaafe14097d405832bf6e19d8cc5fff923b887fc0d349b/pymongo-4.20.0-cp314-cp314t-win32.whl", hash = "sha256:0065752ba62672047c7d81484850d413bc0a40461ca5178df3bd261a6453c9c3", size = 821746, upload-time = "2026-11-12T20:51:49.241Z" },
     { url = "https://files.pythonhosted.org/packages/42/14/1c042c812e64cc271f96cba244349cf16df7b16d25be1078c8cdbedd64cb/pymongo-4.20.0-cp314-cp314t-win_amd64.whl", hash = "sha256:ffea4011a5cbadeb7d11cf6fdf237867ef4f32933d38b18fac242efef1d1bef0", size = 829190, upload-time = "2026-11-12T20:51:50.601Z" },
     { url = "https://files.pythonhosted.org/packages/42/79/f3feb891c3412602994513af87b328fdbfd59ff3cb357acd0ab2324bcff8/pymongo-4.20.0-cp314-cp314t-win_arm64.whl", hash = "sha256:91e213262e95dfeb374c1d04ce0b97adac8c9128f60f2246ece47dcee215df04", size = 822617, upload-time = "2026-11-12T20:51:52.14Z" },
-]
-
-[[package]]
-name = "pyparsing"
-version = "3.3.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e4/11/b213bebff182584360cb8d17c72c1677fec5c5c228de439e63bcf8ab1c8f/pyparsing-3.3.3.tar.gz", hash = "sha256:928ae7e20211f3b6f3915a72f06a0cfd29ab9d24279dd6346b6b1a7146397d36", size = 1050487, upload-time = "2026-09-20T20:59:05.609Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/bb/d215ee7c73b61497b28a5503f9f53523f294fcc936762b7caf90e0c1c2b5/pyparsing-3.3.3-py3-none-any.whl", hash = "sha256:ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4", size = 126420, upload-time = "2026-09-20T20:59:04.025Z" },
 ]
 
 [[package]]

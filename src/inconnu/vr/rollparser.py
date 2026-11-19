@@ -120,7 +120,7 @@ class RollParser:
 
         if self.power_bonus and using_discipline and self._char.power_bonus > 0:
             logger.debug("ROLLPARSER: Adding power bonus")
-            self._stacks["q_pool_stack"].extend(["+", "PowerBonus"])
+            self._stacks["q_pool_stack"].extend(["+", "Power Bonus"])
             self._stacks["i_pool_stack"].extend(["+", str(self._char.power_bonus)])
 
         if "Hunger" in self.pool_stack:

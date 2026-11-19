@@ -104,15 +104,15 @@ def test_hunger_in_pool(syntax: str, should_fail: bool, character: VChar):
     "syntax,bp,pool,dice",
     [
         ("res+obl", 1, "Resolve + Oblivion", 9),
-        ("res+obl", 2, "Resolve + Oblivion + PowerBonus", 10),
-        ("res+obl", 3, "Resolve + Oblivion + PowerBonus", 10),
-        ("res+obl", 4, "Resolve + Oblivion + PowerBonus", 11),
-        ("res+obl", 5, "Resolve + Oblivion + PowerBonus", 11),
-        ("res+obl", 6, "Resolve + Oblivion + PowerBonus", 12),
-        ("res+obl", 7, "Resolve + Oblivion + PowerBonus", 12),
-        ("res+obl", 8, "Resolve + Oblivion + PowerBonus", 13),
-        ("res+obl", 9, "Resolve + Oblivion + PowerBonus", 13),
-        ("res+obl", 10, "Resolve + Oblivion + PowerBonus", 14),
+        ("res+obl", 2, "Resolve + Oblivion + Power Bonus", 10),
+        ("res+obl", 3, "Resolve + Oblivion + Power Bonus", 10),
+        ("res+obl", 4, "Resolve + Oblivion + Power Bonus", 11),
+        ("res+obl", 5, "Resolve + Oblivion + Power Bonus", 11),
+        ("res+obl", 6, "Resolve + Oblivion + Power Bonus", 12),
+        ("res+obl", 7, "Resolve + Oblivion + Power Bonus", 12),
+        ("res+obl", 8, "Resolve + Oblivion + Power Bonus", 13),
+        ("res+obl", 9, "Resolve + Oblivion + Power Bonus", 13),
+        ("res+obl", 10, "Resolve + Oblivion + Power Bonus", 14),
         ("stren+br", 10, "Strength + Brawl", 7),  # No power bonus on non-Disciplines
     ],
 )
@@ -126,7 +126,7 @@ def test_auto_blood_potency(syntax: str, bp: int, pool: str, dice: int, characte
 @pytest.mark.parametrize(
     "syntax,expected_str,expected_dice,add_bonus",
     [
-        ("Resolve + Oblivion", "Resolve + Oblivion + PowerBonus", 10, True),
+        ("Resolve + Oblivion", "Resolve + Oblivion + Power Bonus", 10, True),
         ("Resolve + Oblivion", "Resolve + Oblivion", 9, False),
         ("Strength + Brawl", "Strength + Brawl", 7, True),
         ("Strength + Brawl", "Strength + Brawl", 7, False),

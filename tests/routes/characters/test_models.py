@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from models.vchardocs import VCharSplat, VCharTrait
 from routes.characters.models import CreationBody, trait_errors, with_core_traits
+from utils.validation import MAX_TRAIT_LENGTH
 
 
 def valid_creation_data(**overrides: Any) -> dict[str, Any]:
@@ -286,8 +287,8 @@ def test_trait_name_with_underscore():
 
 
 def test_trait_name_too_long():
-    """Trait name longer than 30 characters rejected."""
-    trait = VCharTrait(name="A" * 31, rating=3, type=VCharTrait.Type.CUSTOM)
+    """Trait name longer than the maximum rejected."""
+    trait = VCharTrait(name="A" * (MAX_TRAIT_LENGTH + 1), rating=3, type=VCharTrait.Type.CUSTOM)
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
@@ -295,11 +296,12 @@ def test_trait_name_too_long():
 
 
 def test_trait_name_max_length():
-    """Trait and specialty names of exactly 30 characters are allowed."""
-    trait = VCharTrait(name="A" * 30, rating=3, type=VCharTrait.Type.CUSTOM, subtraits=["B" * 30])
+    """Trait and specialty names of exactly the maximum length are allowed."""
+    name, specialty = "A" * MAX_TRAIT_LENGTH, "B" * MAX_TRAIT_LENGTH
+    trait = VCharTrait(name=name, rating=3, type=VCharTrait.Type.CUSTOM, subtraits=[specialty])
     body = CreationBody(**valid_creation_data(traits=[trait]))
-    assert body.traits[0].name == "A" * 30
-    assert body.traits[0].raw_subtraits == ["B" * 30]
+    assert body.traits[0].name == name
+    assert body.traits[0].raw_subtraits == [specialty]
 
 
 def test_trait_name_invalid_characters():
@@ -487,12 +489,12 @@ def test_powers_on_discipline_allowed():
 
 
 def test_specialty_name_too_long():
-    """Specialty name longer than 30 characters rejected."""
+    """Specialty name longer than the maximum rejected."""
     trait = VCharTrait(
         name="Athletics",
         rating=2,
         type=VCharTrait.Type.SKILL,
-        subtraits=["A" * 31],
+        subtraits=["A" * (MAX_TRAIT_LENGTH + 1)],
     )
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:

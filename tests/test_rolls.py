@@ -154,7 +154,7 @@ def test_can_reroll_failures():
         ("Animal Ken (Big Cats) + 2", True),
         ("Night Driving + 2", False),
         ("Strength Training + 2", False),
-        ("Oblivion + PowerBonus", False),
+        ("Oblivion + Power Bonus", False),
     ],
 )
 def test_can_reroll(pool_str: str, expected: bool):

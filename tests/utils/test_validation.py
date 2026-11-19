@@ -155,3 +155,9 @@ def test_name_too_long(validator: NameValidator, excess: int, message: str):
     with pytest.raises(ValueError) as exc_info:
         validator("A" * (MAX_TRAIT_LENGTH + excess))
     assert str(exc_info.value).endswith(message)
+
+
+def test_duplicate_specialties_ignore_spaces():
+    """Specialties differing only in case or spaces are duplicates."""
+    with pytest.raises(ValueError, match="Duplicate specialty: BigCats"):
+        validate_specialty_names("Big Cats", "BigCats")

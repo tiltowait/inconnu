@@ -292,8 +292,9 @@ class VCharTrait(BaseModel):
         else:
             specialties = set(specialties)
 
+        # Compared as lookups compare them, so "BigCats" is Big Cats
         for specialty in specialties:
-            if specialty.lower() not in map(str.lower, self.raw_subtraits):
+            if _fold(specialty, True) not in (_fold(s, True) for s in self.raw_subtraits):
                 self.raw_subtraits.append(specialty)
 
         self.raw_subtraits.sort()
@@ -305,8 +306,9 @@ class VCharTrait(BaseModel):
         else:
             specialties = set(specialties)
 
-        for specialty in map(str.lower, specialties):
-            current = [spec.lower() for spec in self.raw_subtraits]
+        # Compared as lookups compare them, so "BigCats" removes Big Cats
+        for specialty in (_fold(s, True) for s in specialties):
+            current = [_fold(spec, True) for spec in self.raw_subtraits]
             try:
                 index = current.index(specialty)
                 del self.raw_subtraits[index]

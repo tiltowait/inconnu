@@ -2,7 +2,7 @@
 
 import re
 
-from constants import RESERVED_TRAITS, Damage
+from constants import RESERVED_TRAITS, Damage, name_key
 from utils.text import pluralize
 
 # Words separated by single spaces. Linear, unlike ([A-Za-z_]+ ?)+, which
@@ -12,7 +12,7 @@ _TRAIT_WORD = r"'*[A-Za-z_][A-Za-z_']*"
 VALID_TRAIT_PATTERN = re.compile(rf"^{_TRAIT_WORD}(?: {_TRAIT_WORD})*$")
 VALID_NAME_PATTERN = re.compile(r"^[\w\s'-]+$")
 MAX_NAME_LENGTH = 30  # Character names
-MAX_TRAIT_LENGTH = 30  # Trait and specialty names
+MAX_TRAIT_LENGTH = 40  # Trait and specialty names
 
 
 def reads_as_hunger(word: str) -> bool:
@@ -69,7 +69,7 @@ def validate_specialty_names(*specialties: str):
     seen = set()
 
     for specialty in specialties:
-        normalized = specialty.casefold()
+        normalized = name_key(specialty)  # "BigCats" duplicates Big Cats
         if normalized in seen:
             raise ValueError(f"Duplicate specialty: {specialty}")
         seen.add(normalized)

@@ -374,3 +374,15 @@ def test_exactness_ignores_specialty_order(
     matches = skill.matching(needle, False, ignore_spaces=ignore_spaces)
     assert len(matches) == 1
     assert matches[0].exact
+
+
+def test_specialties_ignore_spaces(skill: VCharTrait):
+    """Adding or removing a specialty by an old spelling finds the existing
+    one, as rolls do."""
+    skill.add_specialties("Big Cats")
+
+    skill.add_specialties("BigCats")
+    assert skill.specialties == ["Big Cats"]
+
+    skill.remove_specialties("bigcats")
+    assert skill.specialties == []

@@ -15,7 +15,7 @@ from models.impairment import PoolOperand, join_pool, pool_traits, split_pool
         ("Brawl (Kindred) + Strength", RollCategory.PHYSICAL),
         ("Wits + Awareness", RollCategory.MENTAL),
         ("Charisma + Persuasion", RollCategory.MENTAL),
-        ("Resolve + Oblivion + PowerBonus", RollCategory.MENTAL),
+        ("Resolve + Oblivion + Power Bonus", RollCategory.MENTAL),
         ("Strength + Intimidation", RollCategory.PHYSICAL),
         ("Composure + Firearms", RollCategory.MENTAL),
         ("Intelligence + Brawl", RollCategory.MENTAL),
@@ -66,7 +66,7 @@ def test_split_pool():
         "Strength",
         "Wits + Awareness",
         "-Strength + Animal Ken (Big Cats, Dogs) - 1",
-        "Oblivion (Where the Shroud Thins) + PowerBonus",
+        "Oblivion (Where the Shroud Thins) + Power Bonus",
         "Beast's Fang - 2",
     ],
 )

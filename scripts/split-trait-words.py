@@ -21,7 +21,7 @@ from beanie import PydanticObjectId
 from pymongo import UpdateOne
 
 import db
-from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS
+from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, name_key
 from models import VChar
 from models.vchardocs import VCharMacro, VCharTrait
 from utils.text import split_words
@@ -29,9 +29,10 @@ from utils.validation import validate_specialty_names, validate_trait_names
 
 ROLL_BATCH_SIZE = 1000
 
-# Standard traits' names and types, keyed by casefolded name
+# Standard traits' names and types, keyed by name_key(), so "Animalken" (split
+# from "animalken") still finds Animal Ken
 STANDARD_TRAITS: dict[str, tuple[str, VCharTrait.Type]] = {
-    name.casefold(): (name, trait_type)
+    name_key(name): (name, trait_type)
     for names, trait_type in (
         (ATTRIBUTES, VCharTrait.Type.ATTRIBUTE),
         (SKILLS, VCharTrait.Type.SKILL),
@@ -168,7 +169,7 @@ class Splitter:
     def _standardize(self, trait: VCharTrait, name: str) -> str:
         """Give a standard trait its standard name and type. Old characters
         (SPCs, especially) may have them as custom traits."""
-        if (standard := STANDARD_TRAITS.get(name.casefold())) is None:
+        if (standard := STANDARD_TRAITS.get(name_key(name))) is None:
             return name
 
         standard_name, standard_type = standard
@@ -182,24 +183,41 @@ class Splitter:
 
     def _rename(self, names: list[str], validator: Validator, label: str) -> list[str]:
         """Split each name into words. A name that would be invalid, or would
-        duplicate another name in the list, keeps its original form."""
+        clash with another name in the list, keeps its original form."""
         candidates = [self._split(name, validator, label) for name in names]
 
-        # Unchanged names keep priority, so a split name can't take theirs
-        taken = {new.casefold() for old, new in zip(names, candidates) if old == new}
-        renamed: list[str] = []
+        # Names are compared as lookups compare them, ignoring case and spaces.
+        # Unchanged names claim theirs first. Then come names whose split only
+        # adds spaces or changes case (VentrueStatus), which would clash even
+        # as they are if they lost; their twins (Ventrue_Status) keep their
+        # own. The rest claim theirs in order.
+        def rank(i: int) -> int:
+            """Claim order: unchanged, then same key, then the rest."""
+            if names[i] == candidates[i]:
+                return 0
+            return 1 if name_key(names[i]) == name_key(candidates[i]) else 2
 
-        for old, new in zip(names, candidates):
-            if old != new:
-                if new.casefold() in taken:
-                    self.problems.append(f"Kept {label} `{old}`: `{new}` is taken.")
-                    new = old
-                    if new.casefold() in taken:
-                        raise RuntimeError(f"Can't resolve {label} `{old}`; fix it by hand.")
-                taken.add(new.casefold())
-            renamed.append(new)
+        order = sorted(range(len(names)), key=rank)
 
-        return renamed
+        # A name that loses keeps its original, which may clash with a name
+        # claimed earlier. That one gives way too, and the claims start over.
+        # Each restart reverts a name, so this ends
+        while True:
+            claims: dict[str, int] = {}
+            for i in order:
+                if names[i] != candidates[i] and name_key(candidates[i]) in claims:
+                    self.problems.append(f"Kept {label} `{names[i]}`: `{candidates[i]}` is taken.")
+                    candidates[i] = names[i]
+                key = name_key(candidates[i])
+                if (j := claims.get(key)) is not None and names[j] != candidates[j]:
+                    self.problems.append(
+                        f"Kept {label} `{names[j]}`: `{candidates[j]}` clashes with `{names[i]}`."
+                    )
+                    candidates[j] = names[j]
+                    break
+                claims[key] = i
+            else:
+                return candidates
 
     def _split(self, name: str, validator: Validator, label: str) -> str:
         """Split a name into words, or return it unchanged if the result is
@@ -252,12 +270,7 @@ async def migrate(char: VChar, commit: bool) -> CharacterLog:
     old_traits = char.traits  # Deep copies
     old_macros = {macro.name: list(macro.pool) for macro in char.macros}
 
-    try:
-        new_traits = splitter.split_traits(char.traits)
-    except RuntimeError as err:
-        log.problems.append(f"Skipped: {err}")
-        return log
-
+    new_traits = splitter.split_traits(char.traits)
     new_macros = splitter.split_macros(char.macros)
     log.problems = splitter.problems
     log.types = splitter.types

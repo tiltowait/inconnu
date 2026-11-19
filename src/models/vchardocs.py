@@ -200,6 +200,13 @@ def _fold(name: str, ignore_spaces: bool) -> str:
     return name.replace(" ", "") if ignore_spaces else name
 
 
+def _folded_key(parts: list[str], ignore_spaces: bool) -> list[str]:
+    """A trait and its specialties, folded, with the specialties sorted, for
+    comparing keys regardless of specialty order."""
+    folded = [_fold(part, ignore_spaces) for part in parts]
+    return [folded[0], *sorted(folded[1:])]
+
+
 class VCharTrait(BaseModel):
     """A character trait, which may be an attribute, skill, Discipline, or custom.
     They're called specialties because I'm too lazy to rename them to subtraits."""
@@ -312,11 +319,10 @@ class VCharTrait(BaseModel):
         Animal Ken."""
         matches = []
         if groups := self.expanding(identifier, exact, False, ignore_spaces=ignore_spaces):
-            # The expanded values are sorted alphabetically, and we need
-            # that to match our input for testing exactness
-            tokens = [_fold(t, ignore_spaces) for t in identifier.split(VCharTrait.DELIMITER)]
-            tokens = [tokens[0]] + sorted(tokens[1:])
-            normalized = VCharTrait.DELIMITER.join(tokens)
+            # Specialties may come in any order, so exactness compares them
+            # folded and sorted on both sides. (Sorting before folding would
+            # disagree: "Zebra" sorts before "apple", but "zebra" after.)
+            normalized = _folded_key(identifier.split(VCharTrait.DELIMITER), ignore_spaces)
 
             for expanded in groups:
                 full_name = self.name
@@ -333,7 +339,7 @@ class VCharTrait(BaseModel):
                     TraitMatch(
                         name=full_name,
                         rating=rating,
-                        exact=normalized == _fold(key, ignore_spaces),
+                        exact=normalized == _folded_key(expanded, ignore_spaces),
                         key=key,
                         type=self.type,
                         discipline=self.is_discipline,

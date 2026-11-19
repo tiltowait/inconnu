@@ -9,7 +9,7 @@ from ctx import AppCtx
 from inconnu.stats import trait_renamed
 from inconnu.traits import traitcommon
 from services.haven import Haven
-from utils.text import straighten_apostrophes
+from utils.text import pluralize, straighten_apostrophes
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("command-reference/traits#traits-rename")
@@ -41,7 +41,7 @@ async def rename(ctx: AppCtx, char_name: str | None, trait: str, new_name: str):
         ctx.interaction = haven.new_interaction
 
     try:
-        old_name = character.rename_trait(trait, new_name)
+        result = character.rename_trait(trait, new_name)
     except errors.TraitError as err:
         await ui.embeds.error(ctx, err, character=character, help=__HELP_URL)
         return
@@ -49,14 +49,15 @@ async def rename(ctx: AppCtx, char_name: str | None, trait: str, new_name: str):
     # Save first, so a failed response can't hide the change
     await character.save_changes()
     try:
-        await trait_renamed(character.id, old_name, new_name)
+        await trait_renamed(character.id, result.old, result.new)
     except Exception:
         # The rename is saved; only its trait statistics are at stake
-        logger.exception("Couldn't rename {} in {}'s rolls", old_name, character.name)
+        logger.exception("Couldn't rename {} in {}'s rolls", result.old, character.name)
 
-    change = f"`{old_name}` → `{new_name}`"
+    change = f"`{result.old}` → `{result.new}`"
     embed = ui.embeds.VCharEmbed(ctx, character, title="Trait Renamed", description=change)
-    embed.set_footer(text="Macros using it were updated, too.")
+    if result.macros:
+        embed.set_footer(text=f"Updated {pluralize(result.macros, 'macro')} using it, too.")
     view = ui.views.TraitsView(character, ctx.user)
     await ctx.respond(embed=embed, view=view, ephemeral=True)
 

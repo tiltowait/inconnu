@@ -353,3 +353,24 @@ def test_vague_specialties_are_capped(skill: VCharTrait):
     assert len(matches) == MAX_SUBTRAIT_MATCHES
     assert matches == sorted(matches)
     assert matches[0] == "Brawl.SpecA.SpecB.SpecC.SpecD.SpecE"
+
+
+@pytest.mark.parametrize(
+    "specialties,needle,ignore_spaces",
+    [
+        (["Zebra", "apple"], "brawl.apple.zebra", False),
+        (["Zebra", "apple"], "BRAWL.ZEBRA.APPLE", False),
+        (["Big Cats", "Bigamy"], "brawl.bigcats.bigamy", True),
+        (["Big Cats", "Bigamy"], "brawl.bigamy.bigcats", True),
+    ],
+)
+def test_exactness_ignores_specialty_order(
+    specialties: list[str], needle: str, ignore_spaces: bool, skill: VCharTrait
+):
+    """Every specialty named in full is exact, whatever their case, spacing,
+    or order."""
+    skill.add_specialties(specialties)
+
+    matches = skill.matching(needle, False, ignore_spaces=ignore_spaces)
+    assert len(matches) == 1
+    assert matches[0].exact

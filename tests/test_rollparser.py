@@ -298,6 +298,14 @@ def test_no_character_stacks():
     assert p.pool_str is None
 
 
+@pytest.mark.parametrize("syntax", ["strength + 2", "3 hunger", "3 current_hunger"])
+def test_traits_need_a_character(syntax: str):
+    """Rolling traits (or current Hunger) without a character is a roll error,
+    not a crash."""
+    with pytest.raises(errors.RollError, match="need a character"):
+        RollParser(None, syntax)
+
+
 @pytest.mark.parametrize(
     "syntax,count,pool,hunger,difficulty,extra",
     [

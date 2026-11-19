@@ -6,6 +6,7 @@ import errors
 import tests.characters
 from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS
 from models import VChar
+from models.vchar import RenameResult
 from models.vchardocs import VCharMacro, VCharTrait
 
 
@@ -364,7 +365,7 @@ def test_rename_trait(empty_vampire: VChar):
     empty_vampire.macros.append(make_macro("fly", ["Wits", "+", "QoNos.Bird of Prey", "+", "1"]))
     empty_vampire.macros.append(make_macro("punch", ["Brawl", "+", "Wits"]))
 
-    assert empty_vampire.rename_trait("qonos", "Qo'noS") == "QoNos"
+    assert empty_vampire.rename_trait("qonos", "Qo'noS") == RenameResult("QoNos", "Qo'noS", 1)
 
     trait = empty_vampire.find_trait("Qo'noS", True)
     assert trait.rating == 3
@@ -380,7 +381,7 @@ def test_rename_trait_lookups(empty_vampire: VChar):
     fallback), and a trait may change only its case."""
     empty_vampire.assign_traits({"Qo Nos": 1})
 
-    assert empty_vampire.rename_trait("qonos", "QO NOS") == "Qo Nos"
+    assert empty_vampire.rename_trait("qonos", "QO NOS") == RenameResult("Qo Nos", "QO NOS", 0)
     assert empty_vampire.traits[0].name == "QO NOS"
 
 
@@ -404,3 +405,19 @@ def test_rename_trait_errors(
     empty_vampire.assign_traits({"Strength": 2, "Animal Ken": 1, "Night Driving": 2, "Big Cats": 1})
     with pytest.raises(error, match=match):
         empty_vampire.rename_trait(old, new)
+
+
+@pytest.mark.parametrize("new", ["Blood Sorcery", "bloodsorcery", "BLOOD SORCERY"])
+def test_rename_to_standard_discipline(new: str, empty_vampire: VChar):
+    """Renaming a trait to a standard Discipline gives it the standard
+    spelling and type, as adding it would."""
+    empty_vampire.raw_traits.append(
+        VCharTrait(name="Thaumaturgy", rating=3, type=VCharTrait.Type.CUSTOM.value)
+    )
+
+    result = empty_vampire.rename_trait("Thaumaturgy", new)
+
+    assert result == RenameResult("Thaumaturgy", "Blood Sorcery", 0)
+    trait = empty_vampire.find_trait("Blood Sorcery", True)
+    assert trait.rating == 3
+    assert trait.type == VCharTrait.Type.DISCIPLINE

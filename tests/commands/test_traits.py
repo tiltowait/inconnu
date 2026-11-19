@@ -13,6 +13,7 @@ import tests.characters
 from ctx import AppCtx
 from inconnu.traits import add, delete, rename, update
 from models import VChar
+from models.vchardocs import VCharMacro
 
 # inconnu.traits exports a rename() function, which shadows the module
 RENAME_MODULE = importlib.import_module("inconnu.traits.rename")
@@ -289,3 +290,35 @@ async def test_rename_survives_roll_failure(
     assert bob.has_trait("Bar Room")
     mock_char_save.assert_awaited_once()
     mock_respond.assert_awaited_once()
+
+
+@pytest.mark.parametrize("macros,footer", [(0, None), (1, "Updated 1 macro using it, too.")])
+async def test_rename_macro_footer(
+    ctx: AppCtx,
+    bob: VChar,
+    macros: int,
+    footer: str | None,
+    mock_respond: AsyncMock,
+    mock_char_save: AsyncMock,
+):
+    """The confirmation mentions macros only when some were updated."""
+    if macros:
+        bob.macros.append(
+            VCharMacro(
+                name="drink",
+                pool=["Bar", "+", "Strength"],
+                hunger=True,
+                difficulty=0,
+                rouses=0,
+                reroll_rouses=False,
+                staining="show",
+                hunt=False,
+                comment=None,
+            )
+        )
+
+    await rename(ctx, None, "Bar", "Bar Room")
+
+    assert mock_respond.await_args is not None
+    embed = mock_respond.await_args.kwargs["embed"]
+    assert (embed.footer.text if embed.footer else None) == footer

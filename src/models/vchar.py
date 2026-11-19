@@ -8,7 +8,7 @@ from collections import Counter
 from collections.abc import Callable
 from enum import StrEnum
 from functools import total_ordering
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar, NamedTuple, Self
 
 from beanie import (
     Delete,
@@ -25,7 +25,15 @@ from pydantic import ConfigDict, Field
 from pymongo import ASCENDING
 
 import errors
-from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage, core_trait
+from constants import (
+    ATTRIBUTES,
+    DISCIPLINES,
+    SKILLS,
+    UNIVERSAL_TRAITS,
+    Damage,
+    core_trait,
+    name_key,
+)
 from events import CharEventType, char_events
 from models.impairment import Impairment
 from models.vchardocs import (
@@ -44,7 +52,7 @@ from models.vchardocs import (
 # Standard traits' names and types, keyed by name without case or spaces, so
 # new traits get the standard name: "bloodsorcery" becomes Blood Sorcery
 _STANDARD_TRAITS: dict[str, tuple[str, VCharTrait.Type]] = {
-    name.casefold().replace(" ", ""): (name, trait_type)
+    name_key(name): (name, trait_type)
     for names, trait_type in (
         (ATTRIBUTES, VCharTrait.Type.ATTRIBUTE),
         (SKILLS, VCharTrait.Type.SKILL),
@@ -52,6 +60,14 @@ _STANDARD_TRAITS: dict[str, tuple[str, VCharTrait.Type]] = {
     )
     for name in names
 }
+
+
+class RenameResult(NamedTuple):
+    """The outcome of renaming a trait."""
+
+    old: str  # The trait's old name
+    new: str  # Its new name, standardized for standard Disciplines
+    macros: int  # How many macros used it, and were updated
 
 
 def _rename_operand(token: str, old: str, new: str) -> str:
@@ -513,7 +529,7 @@ class VChar(Document):
             else:
                 # Automatically categorize standard traits, giving them their
                 # standard names (helps with chargen)
-                standard = _STANDARD_TRAITS.get(input_name.casefold().replace(" ", ""))
+                standard = _STANDARD_TRAITS.get(name_key(input_name))
                 name, assigned_category = standard or (input_name, category)
 
                 new_trait = VCharTrait(
@@ -547,10 +563,11 @@ class VChar(Document):
 
         return self.raw_traits.pop(index).name
 
-    def rename_trait(self, old: str, new: str) -> str:
-        """Rename a trait, keeping its rating, specialties, and type, and update
-        the macros that use it. Returns the trait's old name. The new name
-        must already be valid.
+    def rename_trait(self, old: str, new: str) -> RenameResult:
+        """Rename a trait, keeping its rating and specialties, and update the
+        macros that use it. A standard Discipline's name gets its standard
+        spelling and type, as assign_traits() gives them. The new name must
+        already be valid.
 
         Raises TraitNotFound if the trait doesn't exist, and TraitError if
         either name is a standard Attribute or Skill, another trait has the
@@ -572,14 +589,22 @@ class VChar(Document):
                 f"**{self.name}** already has a trait named `{self.raw_traits[other].name}`."
             )
 
+        if (standard := _STANDARD_TRAITS.get(name_key(new))) is not None:
+            new, standard_type = standard
+            trait.type = standard_type.value
+
         trait.name = new
         self.raw_traits.sort(key=lambda t: t.name.casefold())  # assign_traits()' order
 
         # Macros store full trait names
+        macros = 0
         for macro in self.macros:
-            macro.pool = [_rename_operand(token, old_name, new) for token in macro.pool]
+            pool = [_rename_operand(token, old_name, new) for token in macro.pool]
+            if pool != macro.pool:
+                macro.pool = pool
+                macros += 1
 
-        return old_name
+        return RenameResult(old=old_name, new=new, macros=macros)
 
     def add_powers(self, trait_name: str, powers: list[str] | str) -> tuple[VCharTrait, list[str]]:
         """Add powers to a Discipline and return a copy."""

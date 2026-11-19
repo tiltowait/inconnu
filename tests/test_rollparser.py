@@ -1,10 +1,12 @@
 """Test the roll syntax parser."""
 
+from unittest.mock import patch
+
 import pytest
 
 import errors
 from inconnu.vr.parse import needs_character
-from inconnu.vr.rollparser import RollParser, eval_expr
+from inconnu.vr.rollparser import MAX_SPLIT_WORDS, RollParser, eval_expr
 from models.vchar import VChar
 from tests.characters import gen_char
 
@@ -524,6 +526,35 @@ def test_missing_plus_no_hint(syntax: str, operand: str, hungry: VChar):
     assert exc_info.value.trait == operand
     assert exc_info.value.hint is None
     assert "Hint" not in str(exc_info.value)
+
+
+def test_missing_plus_search_is_bounded(hungry: VChar):
+    """Each run of words is looked up at most once. Every "s" matches some
+    trait, so a search trying each way to split them would make about 2^9
+    lookups here, rather than at most 10 * 11 / 2."""
+    words = ["s"] * (MAX_SPLIT_WORDS - 1) + ["zzz"]
+    with patch.object(RollParser, "_is_trait", autospec=True, wraps=RollParser._is_trait) as spy:
+        with pytest.raises(errors.TraitNotFound) as exc_info:
+            RollParser(hungry, "strength + " + " ".join(words))
+
+    assert exc_info.value.hint is None
+    assert spy.call_count <= MAX_SPLIT_WORDS * (MAX_SPLIT_WORDS + 1) // 2
+
+
+def test_missing_plus_hint_word_limit(hungry: VChar):
+    """Operands over the word limit get no hint, and no search."""
+    at_limit = " ".join(["brawl"] * MAX_SPLIT_WORDS)
+    with pytest.raises(errors.TraitNotFound) as exc_info:
+        RollParser(hungry, at_limit)
+    assert exc_info.value.hint == f"Did you mean `{at_limit.replace(' ', ' + ')}`?"
+
+    over_limit = " ".join(["s"] * 2000)
+    with patch.object(RollParser, "_is_trait", autospec=True) as spy:
+        with pytest.raises(errors.TraitNotFound) as exc_info:
+            RollParser(hungry, f"strength + {over_limit}")
+
+    assert exc_info.value.hint is None
+    spy.assert_not_called()
 
 
 # Multiword traits

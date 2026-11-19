@@ -1,9 +1,11 @@
 """Specialty test suite."""
 
+import math
+
 import pytest
 
 import errors
-from models.vchardocs import VCharTrait
+from models.vchardocs import MAX_SUBTRAIT_TOKENS, VCharTrait
 
 
 @pytest.fixture
@@ -319,3 +321,25 @@ def test_matching_ignoring_spaces(
 def test_matching_spaces_by_default(needle: str, multiword: VCharTrait):
     """By default, spaces count."""
     assert not multiword.matching(needle, False)
+
+
+def test_repeated_specialty_tokens_merge(skill: VCharTrait):
+    """Tokens matching the same specialties merge into distinct selections, so
+    repeating a token can't multiply the work."""
+    skill.add_specialties(["Kindred", "Kine", "Kinfolk"])
+
+    assert skill.expanding("b.k.k", False) == [
+        "Brawl.Kindred.Kine",
+        "Brawl.Kindred.Kinfolk",
+        "Brawl.Kine.Kinfolk",
+    ]
+    assert skill.expanding("b.k.k.k", False) == ["Brawl.Kindred.Kine.Kinfolk"]
+
+
+def test_specialty_token_limit(skill: VCharTrait):
+    """An operand may name at most MAX_SUBTRAIT_TOKENS specialties."""
+    skill.add_specialties([f"Spec{letter}" for letter in "ABCDEFGHIJ"])
+
+    at_limit = "brawl" + ".spec" * MAX_SUBTRAIT_TOKENS
+    assert len(skill.expanding(at_limit, False)) == math.comb(10, MAX_SUBTRAIT_TOKENS)
+    assert skill.expanding(at_limit + ".spec", False) == []

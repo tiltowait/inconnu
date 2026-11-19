@@ -16,6 +16,10 @@ from utils.validation import reads_as_hunger
 
 DELIMITER = re.escape(VCharTrait.DELIMITER)
 
+# Longer operands get no missing-+ hint: nobody leaves out that many, and the
+# search grows with the square of the word count
+MAX_SPLIT_WORDS = 10
+
 
 class RollParser:
     """Parse user roll input."""
@@ -239,18 +243,28 @@ class RollParser:
         """If a multiword operand isn't a trait but splits into traits, the
         user probably left out a +. Return the operand with a + between each
         trait, preferring longer leading traits, or None if it doesn't split
-        into traits."""
+        into traits (or is too long to bother).
+
+        splits[i] is the best split of the words from i on, built from the
+        end, so each run of words is looked up at most once."""
         words = operand.split(" ")
-        for i in range(len(words) - 1, 0, -1):
-            head = " ".join(words[:i])
-            if not self._is_trait(head):
-                continue
-            rest = " ".join(words[i:])
-            if self._is_trait(rest):
-                return f"{head} + {rest}"
-            if split := self._split_operand(rest):
-                return f"{head} + {split}"
-        return None
+        count = len(words)
+        if count > MAX_SPLIT_WORDS:
+            return None
+
+        splits: list[str | None] = [None] * count + [""]
+        for start in range(count - 1, -1, -1):
+            # The whole operand isn't a trait, so a split needs a +
+            longest = count - 1 if start == 0 else count
+            for end in range(longest, start, -1):
+                if splits[end] is None:
+                    continue
+                head = " ".join(words[start:end])
+                if self._is_trait(head):
+                    splits[start] = f"{head} + {splits[end]}" if splits[end] else head
+                    break
+
+        return splits[0]
 
     def _is_trait(self, operand: str) -> bool:
         """Whether an operand names at least one of the character's traits."""

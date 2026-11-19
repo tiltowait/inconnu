@@ -1,6 +1,5 @@
 """Sub-documents used in VChars."""
 
-import itertools
 from datetime import UTC, datetime
 from enum import IntEnum, StrEnum
 from typing import ClassVar, Literal, NamedTuple, TypedDict, overload
@@ -11,6 +10,10 @@ import errors
 
 CAREER_STATS_LIVE = datetime(2026, 11, 14, 20, tzinfo=UTC)  # Noon PST
 VICTIMS_DRAINED_LIVE = datetime(2026, 11, 18, 20, tzinfo=UTC)  # Noon PST
+
+# The most specialties one roll operand may name ("brawl.kindred.kine"). Rolls
+# use one, so this is generous; it keeps matching cheap on hostile input
+MAX_SUBTRAIT_TOKENS = 3
 
 
 class BlushState(IntEnum):
@@ -391,55 +394,24 @@ class VCharTrait(BaseModel):
                 return _fold(i, ignore_spaces).startswith(t)
 
         if comp(tokens[0], self.name):
-            # A token might match multiple specs in the same skill. Therefore,
-            # we need to make a list of all matching specs. We don't need to
-            # track ratings, however, as we can just sum the spec counts at the
-            # end.
-            spec_groups = []
+            if len(tokens) - 1 > MAX_SUBTRAIT_TOKENS:
+                return []
+
+            # Each selection is a set of distinct specialties, one per token
+            # so far. A token may match several, so equal selections merge as
+            # we go: listing every combination first would grow with their
+            # product ("b.k.k.k..." with Kindred and Kine doubles each time).
+            selections: set[frozenset[str]] = {frozenset()}
             for token in tokens[1:]:
-                found_specs = []
-                for specialty in self.raw_subtraits:
-                    if comp(token, specialty):
-                        found_specs.append(specialty)
-                spec_groups.append(found_specs)
+                found = [spec for spec in self.raw_subtraits if comp(token, spec)]
+                selections = {
+                    selection | {spec}
+                    for selection in selections
+                    for spec in found
+                    if spec not in selection
+                }
 
-            # If no specialties were given, then spec_groups is empty. If
-            # specialties were given but not found, then we have [[]], which
-            # will eventually return [].
-            #
-            # This also holds true if multiple specs are given and only one
-            # fails to match (e.g. [["Kindred"], []]). It works because
-            # itertools.product() will return an empty list if one of its
-            # arguments is itself an empty list. Therefore, we don't need any
-            # "if not group: return None" patterns in this next block.
-
-            if spec_groups:
-                matches = []
-                if len(spec_groups) > 1:
-                    # Multiple matching specs per token; get all combinations:
-                    #     [[1, 2], [3]] -> [(1, 3), (2, 3)]
-                    spec_groups = itertools.product(*spec_groups)
-                else:
-                    # Zero or one match; golden path
-                    spec_groups = spec_groups[0]
-
-                seen_groups = set()
-                for group in spec_groups:
-                    if isinstance(group, str):
-                        group = [group]
-                    if len(set(group)) < len(group):
-                        # Don't add groups with duplicate elements
-                        continue
-
-                    group = frozenset(group)
-                    if group in seen_groups:
-                        # Prevent (A, B) and (B, A) from both showing in the results
-                        continue
-
-                    seen_groups.add(group)
-                    matches.append([self.name] + sorted(group))
-            else:
-                matches = [[self.name]]
+            matches = sorted([self.name, *sorted(selection)] for selection in selections)
 
             if join:
                 return [VCharTrait.DELIMITER.join(match) for match in matches]

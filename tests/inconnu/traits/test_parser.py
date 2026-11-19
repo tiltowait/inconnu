@@ -68,6 +68,9 @@ def test_parse_traits_missing_semicolon(syntax: str):
         ("t-x=1", SyntaxError, "letters, underscores, and apostrophes"),
         ("Ravenous Hunger=1", SyntaxError, "after its first word"),
         ("t=1; t=2", SyntaxError, "only add `t` once"),
+        ("Brawl=1; brawl=2", SyntaxError, "`Brawl` and `brawl` are the same trait"),
+        ("Blood Sorcery=2; BloodSorcery=3", SyntaxError, "`Blood Sorcery` and `BloodSorcery`"),
+        ("Night Driving; night  driving", SyntaxError, "`Night Driving` and `night driving`"),
     ],
 )
 def test_parse_traits_errors(syntax: str, error: type[Exception], match: str):

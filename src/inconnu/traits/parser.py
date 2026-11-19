@@ -20,6 +20,7 @@ def parse_traits(syntax: str, *, disciplines: bool) -> dict[str, int | None]:
     """Parse semicolon-delimited "trait=rating" input into a dictionary. The
     rating is optional, and "trait rating" works, too."""
     ratings: dict[str, int | None] = {}
+    seen: dict[str, str] = {}  # Name without case or spaces -> name as given
 
     for item in split_traits(syntax):
         if re.search(r"\d\s*['A-Za-z_]", item):
@@ -45,8 +46,13 @@ def parse_traits(syntax: str, *, disciplines: bool) -> dict[str, int | None]:
             if not 0 <= rating <= 5:
                 raise ValueError(f"`{trait}` must be between 0 and 5. (Got {rating}.)")
 
-        if trait in ratings:
-            raise SyntaxError(f"You can only add `{trait}` once.")
+        # Lookups ignore case and, failing that, spaces, so these are the same
+        key = trait.casefold().replace(" ", "")
+        if (first := seen.get(key)) is not None:
+            if first == trait:
+                raise SyntaxError(f"You can only add `{trait}` once.")
+            raise SyntaxError(f"`{first}` and `{trait}` are the same trait.")
+        seen[key] = trait
 
         ratings[trait] = rating
 

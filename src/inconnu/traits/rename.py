@@ -1,9 +1,12 @@
 """traits/rename.py - Rename a character's trait."""
 
+from loguru import logger
+
 import errors
 import services
 import ui
 from ctx import AppCtx
+from inconnu.stats import trait_renamed
 from inconnu.traits import traitcommon
 from services.haven import Haven
 from utils.text import straighten_apostrophes
@@ -42,6 +45,11 @@ async def rename(ctx: AppCtx, char_name: str | None, trait: str, new_name: str):
 
     # Save first, so a failed response can't hide the change
     await character.save_changes()
+    try:
+        await trait_renamed(character.id, old_name, new_name)
+    except Exception:
+        # The rename is saved; only its trait statistics are at stake
+        logger.exception("Couldn't rename {} in {}'s rolls", old_name, character.name)
 
     change = f"`{old_name}` → `{new_name}`"
     embed = ui.embeds.VCharEmbed(ctx, character, title="Trait Renamed", description=change)

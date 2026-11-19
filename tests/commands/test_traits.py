@@ -1,5 +1,6 @@
 """Tests for /traits update and /traits delete character filtering."""
 
+import importlib
 from collections.abc import Generator
 from unittest.mock import AsyncMock, patch
 
@@ -12,6 +13,9 @@ import tests.characters
 from ctx import AppCtx
 from inconnu.traits import add, delete, rename, update
 from models import VChar
+
+# inconnu.traits exports a rename() function, which shadows the module
+RENAME_MODULE = importlib.import_module("inconnu.traits.rename")
 
 
 def make_char(name: str, traits: dict[str, int]) -> VChar:
@@ -48,6 +52,13 @@ def mock_chars(alice: VChar, bob: VChar) -> Generator[AsyncMock]:
         patch.object(services.char_mgr, "fetchall", AsyncMock(return_value=[alice, bob])),
     ):
         yield fetchone
+
+
+@pytest.fixture(autouse=True)
+def mock_trait_renamed() -> Generator[AsyncMock]:
+    """Keep renames from touching the rolls collection."""
+    with patch.object(RENAME_MODULE, "trait_renamed", new_callable=AsyncMock) as mock:
+        yield mock
 
 
 @pytest.fixture
@@ -198,9 +209,13 @@ async def test_rename_selects_sole_owner(
     mock_respond: AsyncMock,
     mock_char_save: AsyncMock,
     mock_common_report: AsyncMock,
+    mock_trait_renamed: AsyncMock,
 ):
-    """Only Bob has Bar, so it's renamed without a selector, saved, and reported."""
+    """Only Bob has Bar, so it's renamed without a selector, saved, renamed in
+    his rolls, and reported."""
     await rename(ctx, None, "bar", "Bar  Room")
+
+    mock_trait_renamed.assert_awaited_once_with(bob.id, "Bar", "Bar Room")
 
     assert bob.has_trait("Bar Room")
     assert not any(t.name == "Bar" for t in bob.traits)
@@ -230,3 +245,20 @@ async def test_rename_error_not_saved(
     assert "`Strength` is a standard trait" in str(mock_error.await_args.args[1])
     assert bob.has_trait("Bar")
     mock_char_save.assert_not_awaited()
+
+
+async def test_rename_survives_roll_failure(
+    ctx: AppCtx,
+    bob: VChar,
+    mock_respond: AsyncMock,
+    mock_char_save: AsyncMock,
+    mock_trait_renamed: AsyncMock,
+):
+    """The rename is saved before its rolls, so a failure there is only
+    logged, and the user still sees the rename."""
+    mock_trait_renamed.side_effect = RuntimeError("Mongo is down")
+    await rename(ctx, None, "Bar", "Bar Room")
+
+    assert bob.has_trait("Bar Room")
+    mock_char_save.assert_awaited_once()
+    mock_respond.assert_awaited_once()

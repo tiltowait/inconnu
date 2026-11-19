@@ -1,9 +1,11 @@
 """stats.py - Various packages for user statistics."""
 
+import re
 from datetime import UTC, datetime
 from typing import Any
 
 import discord
+from beanie import PydanticObjectId
 from pymongo import ReturnDocument, UpdateOne
 
 import db
@@ -95,6 +97,33 @@ async def guild_renamed(guild: discord.Guild, new_name: str):
     vguild.name = new_name
 
     await vguild.save_changes()
+
+
+async def trait_renamed(charid: PydanticObjectId | None, old: str, new: str) -> int:
+    """Rename a trait in a character's logged roll pools, so trait statistics
+    keep its history. Returns how many rolls changed."""
+    query = {"charid": charid, "pool": {"$regex": re.escape(old), "$options": "i"}}
+    updates = []
+    async for roll in db.rolls.find(query, {"pool": 1}):
+        pool = _rename_pool_trait(roll["pool"], old, new)
+        if pool != roll["pool"]:
+            updates.append(UpdateOne({"_id": roll["_id"]}, {"$set": {"pool": pool}}))
+
+    if updates:
+        await db.rolls.bulk_write(updates, ordered=False)
+    return len(updates)
+
+
+def _rename_pool_trait(pool: str, old: str, new: str) -> str:
+    """Rename a trait in a pool string, such as "Strength + Night Driving
+    (Rain) - 1". Only whole trait names match, ignoring case; specialties and
+    names that merely contain the old one are left alone."""
+    parts = re.split(r"( [+-] )", pool)
+    for index, part in enumerate(parts):
+        match = re.fullmatch(r"(-?)(.*?)( \(.*\))?", part)
+        if match and match[2].casefold() == old.casefold():
+            parts[index] = f"{match[1]}{new}{match[3] or ''}"
+    return "".join(parts)
 
 
 # Roll logging helpers

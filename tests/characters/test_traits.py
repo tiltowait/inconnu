@@ -195,6 +195,24 @@ def test_exact_trait_find(vampire: VChar):
         _ = vampire.find_trait("b", True)
 
 
+def test_multiword_find(empty_vampire: VChar):
+    """An exact match wins over a longer multiword trait it prefixes, and
+    exact lookups don't confuse the two."""
+    empty_vampire.assign_traits({"Animal": 1, "Animal Ken": 3})
+
+    assert empty_vampire.find_trait("animal").name == "Animal"
+    assert empty_vampire.find_trait("animal ken").name == "Animal Ken"
+    assert empty_vampire.find_trait("animal k").name == "Animal Ken"
+    with pytest.raises(errors.AmbiguousTraitError):
+        _ = empty_vampire.find_trait("anim")
+
+    assert empty_vampire.has_trait("Animal Ken")
+    assert not empty_vampire.has_trait("animal k")
+
+    assert empty_vampire.delete_trait("animal") == "Animal"
+    assert empty_vampire.has_trait("Animal Ken")
+
+
 def test_trait_binsort(empty_vampire: VChar):
     empty_vampire.assign_traits({"B": 2, "C": 3})
     empty_vampire.assign_traits({"A": 1})

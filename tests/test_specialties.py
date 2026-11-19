@@ -219,3 +219,74 @@ def test_subtrait_delineation(skill: VCharTrait, discipline: VCharTrait):
         skill.add_powers("Prowess")
     with pytest.raises(errors.SpecialtiesNotAllowed):
         discipline.add_specialties("Kindred")
+
+
+# Multiword names
+
+
+@pytest.fixture
+def multiword() -> VCharTrait:
+    """A multiword skill with multiword specialties."""
+    trait = VCharTrait(name="Animal Ken", rating=3, type=VCharTrait.Type.SKILL.value)
+    trait.add_specialties(["Big Cats", "Big Game", "Dogs"])
+    return trait
+
+
+@pytest.mark.parametrize(
+    "needle,exact,expected",
+    [
+        # Only the last word abbreviates
+        ("animal ken", False, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("Animal K", False, [("Animal Ken", 3, False, "Animal Ken")]),
+        ("animal", False, [("Animal Ken", 3, False, "Animal Ken")]),
+        ("an k", False, []),
+        ("animalken", False, []),
+        ("animal  ken", False, []),
+        # Specialties
+        ("animal ken.big cats", False, [("Animal Ken (Big Cats)", 4, True, "Animal Ken.Big Cats")]),
+        ("an.big c", False, [("Animal Ken (Big Cats)", 4, False, "Animal Ken.Big Cats")]),
+        (
+            "animal ken.big",
+            False,
+            [
+                ("Animal Ken (Big Cats)", 4, False, "Animal Ken.Big Cats"),
+                ("Animal Ken (Big Game)", 4, False, "Animal Ken.Big Game"),
+            ],
+        ),
+        ("animal ken.b c", False, []),
+        # Specialties sort, and exactness ignores their order
+        (
+            "animal ken.dogs.big cats",
+            False,
+            [("Animal Ken (Big Cats, Dogs)", 5, True, "Animal Ken.Big Cats.Dogs")],
+        ),
+        # Exact
+        ("animal ken", True, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("animal", True, []),
+        ("animal ken.big cats", True, [("Animal Ken (Big Cats)", 4, True, "Animal Ken.Big Cats")]),
+        ("animal ken.big", True, []),
+    ],
+)
+def test_multiword_matching(
+    needle: str,
+    exact: bool,
+    expected: list[tuple[str, int, bool, str]],
+    multiword: VCharTrait,
+):
+    """Multiword names match by prefix of the whole name, like single words."""
+    matches = multiword.matching(needle, exact)
+    assert [(m.name, m.rating, m.exact, m.key) for m in matches] == expected
+
+
+@pytest.mark.parametrize(
+    "needle,expected",
+    [
+        ("animal k", ["Animal Ken"]),
+        ("animal ken.big", ["Animal Ken.Big Cats", "Animal Ken.Big Game"]),
+        ("animal ken.big g.d", ["Animal Ken.Big Game.Dogs"]),
+        ("animal ken.big.big", ["Animal Ken.Big Cats.Big Game"]),
+    ],
+)
+def test_multiword_expansion(needle: str, expected: list[str], multiword: VCharTrait):
+    """Multiword specialties expand to their full names."""
+    assert sorted(multiword.expanding(needle, False)) == expected

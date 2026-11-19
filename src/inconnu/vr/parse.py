@@ -143,11 +143,12 @@ async def parse(
 
 def unrollable_message(syntax: str) -> str:
     """The error when none of the user's characters can roll the syntax. If
-    words joined into a multiword operand, a + may be missing. The characters
-    may differ in which words are traits, so it can't say where."""
+    words joined into a multiword operand, a + may be missing, or the name
+    may be right and the characters lack it. They may differ in which words
+    are traits, so the hint covers both and can't say where a + goes."""
     message = f"None of your characters can roll `{syntax}`."
     if any(" " in token for token in RollParser.join_words(RollParser.tokenize(syntax))):
-        message += "\n*Hint: Missing a `+`?*"
+        message += "\n*Hint: If these are separate traits, add a `+` between them.*"
     return message
 
 

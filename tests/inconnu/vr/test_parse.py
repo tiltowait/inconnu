@@ -463,7 +463,8 @@ def test_unrollable_message(syntax: str, hint: bool):
     """A multiword operand adds a hint that doesn't depend on the character."""
     message = unrollable_message(syntax)
     assert message.startswith(f"None of your characters can roll `{syntax}`.")
-    assert ("*Hint: Missing a `+`?*" in message) is hint
+    hint_text = "*Hint: If these are separate traits, add a `+` between them.*"
+    assert (hint_text in message) is hint
 
 
 def test_validate_roll_hunger_beats_similar_traits(vampire: VChar):

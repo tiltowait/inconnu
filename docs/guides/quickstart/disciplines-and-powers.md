@@ -6,10 +6,10 @@
 > **Adding Disciplines**
 >
 > ```
-> /disciplines add disciplines:<DISC1=RATING> [DISC2=RATING2] ...
+> /disciplines add disciplines:<DISC1=RATING>; [DISC2=RATING2]; ...
 > ```
 >
-> You can add multiple Disciplines at once.
+> You can add multiple Disciplines at once, separated by semicolons.
 
 > [!TIP]
 > **Example**
@@ -17,7 +17,7 @@
 > Adding Auspex 2 and Oblivion 3 to a character:
 >
 > ```
-> /disciplines add disciplines:Auspex=2 Oblivion=3
+> /disciplines add disciplines:Auspex=2; Oblivion=3
 > ```
 
 ![Discord screenshot showing Disciplines add](../../assets/disciplines_add.png "Example")
@@ -32,7 +32,7 @@ The syntax matches [adding specialties](specialties.md):
 > **Adding powers**
 >
 > ```
-> /powers add powers:<DISC1>=<POWER1>,[POWER2],... [DISC2]=...
+> /powers add powers:<DISC1>=<POWER1>, [POWER2], ...; [DISC2]=...
 > ```
 
 ![Discord screenshot showing powers add](../../assets/powers_add.png "Example")

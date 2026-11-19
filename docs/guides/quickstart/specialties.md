@@ -6,10 +6,10 @@ You can add specialties in the [character wizard](creating-a-character.md) or la
 > **Adding specialties**
 >
 > ```
-> /specialties add specialties:<TRAIT1>=<SPEC1>,[SPEC2],... [TRAIT2]=...
+> /specialties add specialties:<TRAIT1>=<SPEC1>, [SPEC2], ...; [TRAIT2]=...
 > ```
 
-You can add several specialties at once.
+You can add several specialties at once. Separate them with commas, and separate Traits with semicolons. Specialties can have spaces, too.
 
 > [!TIP]
 > **Example:** Nadea has a Medicine specialty called _Cadavers_.
@@ -26,7 +26,7 @@ Removing them uses the same syntax:
 > **Removing specialties**
 >
 > ```
-> /specialties remove specialties:<TRAIT1>=<SPEC1>,[SPEC2]...
+> /specialties remove specialties:<TRAIT1>=<SPEC1>, [SPEC2], ...; [TRAIT2]=...
 > ```
 
 ### Listing specialties
@@ -43,6 +43,8 @@ To roll with a specialty, use dot syntax: a Brawl specialty called Kindred is `b
 
 > [!NOTE]
 > Shorthand works here, too: `brawl.kin`, `b.k`, or even `.k`, as long as it's unambiguous.
+
+Type multiword specialties as they're written: a Medicine specialty called Field Surgery is `medicine.field surgery`. You can abbreviate only the last word, so `med.field s` works, but `med.f s` doesn't.
 
 The specialty adds a die to your pool and shows in parentheses after the Skill, like "Brawl (Kindred)".
 

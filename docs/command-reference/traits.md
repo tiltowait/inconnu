@@ -12,22 +12,27 @@ A Trait is anything you can roll: Attributes, Skills, Disciplines, and any custo
 
 The character wizard sets your Attributes, Skills, and (for vampires) Blood Potency. You can add, update, and remove Traits whenever you like.
 
+Trait, specialty, and power names have letters, underscores, and spaces, up to 30 characters. Since names can have spaces, these commands separate Traits with semicolons (`;`) and specialties with commas.
+
+> [!NOTE]
+> A name's later words can't be `hunger` or an abbreviation of it (`h`, `hu`, and so on), since [rolls](rolls/README.md#multiword-traits) read those as Hunger. _Hunger Pangs_ is fine; _Ravenous Hunger_ isn't.
+
 > [!WARNING]
 > **Universal Traits:** Every character has `willpower` and `humanity`, and vampires also have `hunger`, `surge`, `potency`, and `bane` (Bane Severity). You can roll them, and they update with your character's trackers, but you can't create or delete Traits with those names.
 
 ## /traits add
 
 ```
-/traits add traits:<trait=rating ...> character:[character]
+/traits add traits:<trait=rating; ...> character:[character]
 ```
 
 Adds one or more Traits.
 
 > [!TIP]
-> **Example:** Adding Oblivion 4, Fortitude 2, and a custom Trait, Stunning 2:
+> **Example:** Adding Oblivion 4, Fortitude 2, and a custom Trait, Night Driving 2:
 >
 > ```
-> /traits add traits:Oblivion=4 Fortitude=2 Stunning=2 character:Nadea
+> /traits add traits:Oblivion=4; Fortitude=2; Night Driving=2 character:Nadea
 > ```
 
 > [!CAUTION]
@@ -36,7 +41,7 @@ Adds one or more Traits.
 ## /traits update
 
 ```
-/traits update traits:<trait=rating ...> character:[character]
+/traits update traits:<trait=rating; ...> character:[character]
 ```
 
 Changes the ratings of one or more existing Traits. Use each Trait's full name.
@@ -59,7 +64,7 @@ Shows the character's Traits, grouped by category, plus their specialties and po
 ## /traits delete
 
 ```
-/traits delete traits:<trait ...> character:[character]
+/traits delete traits:<trait; ...> character:[character]
 ```
 
 Removes one or more Traits.
@@ -68,7 +73,7 @@ Removes one or more Traits.
 > **Example:** Removing Oblivion and Fortitude:
 >
 > ```
-> /traits delete traits:Oblivion Fortitude character:Nadea
+> /traits delete traits:Oblivion; Fortitude character:Nadea
 > ```
 
 > [!CAUTION]
@@ -77,9 +82,9 @@ Removes one or more Traits.
 ## /disciplines
 
 ```
-/disciplines add disciplines:<discipline=rating ...>
-/disciplines update disciplines:<discipline=rating ...>
-/disciplines remove disciplines:<discipline ...>
+/disciplines add disciplines:<discipline=rating; ...>
+/disciplines update disciplines:<discipline=rating; ...>
+/disciplines remove disciplines:<discipline; ...>
 ```
 
 The same as the `/traits` commands, but for Disciplines. See [Disciplines & powers](../guides/quickstart/disciplines-and-powers.md).
@@ -87,8 +92,8 @@ The same as the `/traits` commands, but for Disciplines. See [Disciplines & powe
 ## /specialties
 
 ```
-/specialties add specialties:<skill=specialty,...>
-/specialties remove specialties:<skill=specialty,...>
+/specialties add specialties:<skill=specialty, ...; ...>
+/specialties remove specialties:<skill=specialty, ...; ...>
 ```
 
 See [Specialties](../guides/quickstart/specialties.md).
@@ -96,8 +101,8 @@ See [Specialties](../guides/quickstart/specialties.md).
 ## /powers
 
 ```
-/powers add powers:<discipline=power,...>
-/powers remove powers:<discipline=power,...>
+/powers add powers:<discipline=power, ...; ...>
+/powers remove powers:<discipline=power, ...; ...>
 ```
 
 See [Disciplines & powers](../guides/quickstart/disciplines-and-powers.md).

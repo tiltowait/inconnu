@@ -6,8 +6,10 @@ from constants import RESERVED_TRAITS, Damage
 from utils.text import pluralize
 
 # Words separated by single spaces. Linear, unlike ([A-Za-z_]+ ?)+, which
-# backtracks exponentially on a near miss
-VALID_TRAIT_PATTERN = re.compile(r"^[A-Za-z_]+(?: [A-Za-z_]+)*$")
+# backtracks exponentially on a near miss. Words may have apostrophes
+# (O'Brien, Dogs', 'Til), but need a letter or underscore
+_TRAIT_WORD = r"'*[A-Za-z_][A-Za-z_']*"
+VALID_TRAIT_PATTERN = re.compile(rf"^{_TRAIT_WORD}(?: {_TRAIT_WORD})*$")
 VALID_NAME_PATTERN = re.compile(r"^[\w\s'-]+$")
 MAX_NAME_LENGTH = 30  # Character names
 MAX_TRAIT_LENGTH = 30  # Trait and specialty names
@@ -88,8 +90,8 @@ def _check_words(name: str, term: str):
     it's safe.)"""
     if VALID_TRAIT_PATTERN.match(name) is None:
         raise SyntaxError(
-            f"{term} can only have letters and underscores, with single spaces between "
-            f"words. Invalid: `{name}`."
+            f"{term} can only have letters, underscores, and apostrophes, with single spaces "
+            f"between words. Invalid: `{name}`."
         )
     for word in name.split()[1:]:
         if reads_as_hunger(word):

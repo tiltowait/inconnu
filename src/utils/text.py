@@ -7,10 +7,17 @@ from typing import Any, Literal, overload
 
 from titlecase import titlecase
 
+_CURLY_APOSTROPHES = str.maketrans("\u2018\u2019", "''")
+
 
 def collapse_text(text: str) -> str:
     """Remove extra spaces in text."""
     return " ".join(text.split()).strip()
+
+
+def straighten_apostrophes(text: str) -> str:
+    """Replace curly apostrophes, which phones type, with straight ones."""
+    return text.translate(_CURLY_APOSTROPHES)
 
 
 def split_words(text: str, de_underscore=True) -> str:

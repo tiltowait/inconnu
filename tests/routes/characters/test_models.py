@@ -315,23 +315,23 @@ def test_trait_name_invalid_characters():
     )
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
-    assert "letters and underscores" in str(exc_info.value).lower()
+    assert "letters, underscores, and apostrophes" in str(exc_info.value).lower()
 
 
-def test_trait_name_with_apostrophe_rejected():
-    """Trait names with apostrophes rejected."""
+def test_trait_name_with_apostrophe_accepted():
+    """Trait names and specialties may have apostrophes."""
     data = valid_creation_data()
     data["traits"].append(
         {
             "name": "O'Strength",
             "rating": 3,
             "type": VCharTrait.Type.CUSTOM,
-            "subtraits": [],
+            "subtraits": ["Dogs'"],
         }
     )
-    with pytest.raises(ValidationError) as exc_info:
-        CreationBody(**data)
-    assert "letters and underscores" in str(exc_info.value).lower()
+    body = CreationBody(**data)
+    assert body.traits[-1].name == "O'Strength"
+    assert body.traits[-1].raw_subtraits == ["Dogs'"]
 
 
 def test_reserved_trait_rejected():
@@ -482,7 +482,7 @@ def test_specialty_name_invalid_characters():
     )
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
-    assert "letters and underscores" in str(exc_info.value).lower()
+    assert "letters, underscores, and apostrophes" in str(exc_info.value).lower()
 
 
 def test_duplicate_specialty_names_rejected():

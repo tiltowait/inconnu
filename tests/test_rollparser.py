@@ -26,6 +26,9 @@ def character() -> VChar:
         ("strength - 1", False),
         ("strength * 3", True),
         (",", True),
+        ("wits + beast's fang", False),
+        ("wits + beast\u2019s fang", False),  # Phones type curly apostrophes
+        ('wits + "fang"', True),
     ],
 )
 def test_has_invalid_characters(string: str, should_fail: bool):
@@ -626,6 +629,26 @@ def test_multiword_expansion(multiword: VChar):
     assert p.pool == 6
     assert p.hunger == 2
     assert p.difficulty == 3
+
+
+@pytest.mark.parametrize(
+    "syntax,pool_str,pool",
+    [
+        ("wits + beast's fang", "Wits + Beast's Fang", 4),
+        ("wits + beast\u2019s fang", "Wits + Beast's Fang", 4),
+        ("wits + beast\u2018s f", "Wits + Beast's Fang", 4),
+        ("wits + animal ken.dogs'", "Wits + Animal Ken (Dogs')", 6),
+        ("wits + animal ken.dogs\u2019", "Wits + Animal Ken (Dogs')", 6),
+    ],
+)
+def test_apostrophes(syntax: str, pool_str: str, pool: int, multiword: VChar):
+    """Traits and specialties may have apostrophes, curly or straight."""
+    multiword.assign_traits({"Beast's Fang": 2})
+    multiword.add_specialties("Animal Ken", ["Dogs'"])
+
+    p = RollParser(multiword, syntax)
+    assert p.pool_str == pool_str
+    assert p.pool == pool
 
 
 def test_mortal_multiword(mortal: VChar):

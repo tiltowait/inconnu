@@ -49,6 +49,9 @@ def specced(character: VChar) -> VChar:
             "animal   ken = big  cats , dogs; brawl=kindred hunters",
             [("animal ken", ["big cats", "dogs"]), ("brawl", ["kindred hunters"])],
         ),
+        # Apostrophes, and curly ones from phones
+        ("beast's fang=o'brien, dogs'", [("beast's fang", ["o'brien", "dogs'"])]),
+        ("beast\u2019s fang=o\u2019brien", [("beast's fang", ["o'brien"])]),
     ],
 )
 def test_valid_syntax(syntax: str, expected: list[tuple[str, list[str]]]):

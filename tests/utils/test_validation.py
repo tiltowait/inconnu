@@ -39,23 +39,47 @@ def test_reads_as_hunger(word: str, expected: bool):
 @pytest.mark.parametrize("validator", NAME_VALIDATORS)
 @pytest.mark.parametrize(
     "name",
-    ["Brawl", "Animal Ken", "big cats", "Foo_Bar Baz", "A B C", "Hunger Pangs", "Bloodhound"],
+    [
+        "Brawl",
+        "Animal Ken",
+        "big cats",
+        "Foo_Bar Baz",
+        "A B C",
+        "Hunger Pangs",
+        "Bloodhound",
+        "Beast's Fang",
+        "O'Brien",
+        "Dogs'",
+        "'Til Death",
+        "Rock'n'Roll",
+    ],
 )
 def test_valid_names(validator: NameValidator, name: str):
-    """Words of letters and underscores, separated by single spaces, are
-    valid. Hunger may be the first word."""
+    """Words of letters, underscores, and apostrophes, separated by single
+    spaces, are valid. Hunger may be the first word."""
     validator(name)
 
 
 @pytest.mark.parametrize("validator", NAME_VALIDATORS)
 @pytest.mark.parametrize(
     "name",
-    ["Animal  Ken", " Brawl", "Brawl ", "Animal\tKen", "Big-Cats", "O'Brien", "Brawl2", "A.B"],
+    [
+        "Animal  Ken",
+        " Brawl",
+        "Brawl ",
+        "Animal\tKen",
+        "Big-Cats",
+        "Brawl2",
+        "A.B",
+        "'",
+        "Dog ' Fang",
+        "O’Brien",  # Input parsers straighten curly apostrophes first
+    ],
 )
 def test_invalid_characters(validator: NameValidator, name: str):
-    """Anything but single spaces between words of letters and underscores
-    is rejected."""
-    with pytest.raises(SyntaxError, match="letters and underscores"):
+    """Anything but single spaces between words of letters, underscores, and
+    apostrophes is rejected. A word needs a letter or underscore."""
+    with pytest.raises(SyntaxError, match="letters, underscores, and apostrophes"):
         validator(name)
 
 

@@ -3,13 +3,15 @@
 import re
 
 from inconnu.traits import traitcommon
+from utils.text import straighten_apostrophes
 
 DELIMITER = ";"
 
 
 def split_traits(syntax: str) -> list[str]:
-    """Split semicolon-delimited input into its items, collapsing whitespace
-    and dropping empty items."""
+    """Split semicolon-delimited input into its items, collapsing whitespace,
+    straightening curly apostrophes, and dropping empty items."""
+    syntax = straighten_apostrophes(syntax)
     items = (" ".join(item.split()) for item in syntax.split(DELIMITER))
     return [item for item in items if item]
 
@@ -20,12 +22,12 @@ def parse_traits(syntax: str, *, disciplines: bool) -> dict[str, int | None]:
     ratings: dict[str, int | None] = {}
 
     for item in split_traits(syntax):
-        if re.search(r"\d\s*[A-Za-z_]", item):
+        if re.search(r"\d\s*['A-Za-z_]", item):
             # A word after a rating starts another trait
             raise SyntaxError(f"Separate traits with `{DELIMITER}`. Invalid: `{item}`.")
 
         item = re.sub(r"\s*=\s*", "=", item)
-        item = re.sub(r"(?<=[A-Za-z_]) (?=\d+$)", "=", item)  # "trait rating"
+        item = re.sub(r"(?<=[A-Za-z_']) (?=\d+$)", "=", item)  # "trait rating"
         trait, *values = item.split("=")
 
         traitcommon.validate_trait_names(trait, disciplines=disciplines)

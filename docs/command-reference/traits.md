@@ -12,7 +12,7 @@ A Trait is anything you can roll: Attributes, Skills, Disciplines, and any custo
 
 The character wizard sets your Attributes, Skills, and (for vampires) Blood Potency. You can add, update, and remove Traits whenever you like.
 
-Trait, specialty, and power names have letters, underscores, and spaces, up to 30 characters. Since names can have spaces, these commands separate Traits with semicolons (`;`) and specialties with commas.
+Trait, specialty, and power names have letters, apostrophes, underscores, and spaces, up to 30 characters. Since names can have spaces, these commands separate Traits with semicolons (`;`) and specialties with commas.
 
 > [!NOTE]
 > A name's later words can't be `hunger` or an abbreviation of it (`h`, `hu`, and so on), since [rolls](rolls/README.md#multiword-traits) read those as Hunger. _Hunger Pangs_ is fine; _Ravenous Hunger_ isn't.

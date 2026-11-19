@@ -11,6 +11,7 @@ from loguru import logger
 
 import errors
 from models.vchardocs import VCharTrait
+from utils.text import straighten_apostrophes
 from utils.validation import reads_as_hunger
 
 DELIMITER = re.escape(VCharTrait.DELIMITER)
@@ -282,6 +283,8 @@ class RollParser:
         if cls.has_invalid_characters(syntax):
             raise SyntaxError("Invalid syntax.")
 
+        syntax = straighten_apostrophes(syntax)
+
         # Whitespace around the delimiter is ignored, so "brawl . kindred" is
         # one operand
         syntax = re.sub(rf"\s*{DELIMITER}\s*", VCharTrait.DELIMITER, syntax)
@@ -307,9 +310,11 @@ class RollParser:
         return joined
 
     @classmethod
-    def has_invalid_characters(cls, syntax) -> bool:
-        """Check whether the roll has invalid characters."""
-        return re.search(rf"[^\w+\-\s{DELIMITER}]", syntax) is not None
+    def has_invalid_characters(cls, syntax: str) -> bool:
+        """Check whether the roll has invalid characters. Curly apostrophes
+        are fine, since tokenize() straightens them."""
+        syntax = straighten_apostrophes(syntax)
+        return re.search(rf"[^\w'+\-\s{DELIMITER}]", syntax) is not None
 
     @classmethod
     def possible_spec_use(cls, syntax: str) -> bool:

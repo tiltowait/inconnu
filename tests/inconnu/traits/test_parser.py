@@ -36,6 +36,9 @@ def test_split_traits(syntax: str, expected: list[str]):
         ("Brawl=4;Academics=0;", {"Brawl": 4, "Academics": 0}),
         ("Animal Ken=3; Brawl=2 ", {"Animal Ken": 3, "Brawl": 2}),
         ("Animal   Ken 3; Big Cats", {"Animal Ken": 3, "Big Cats": None}),
+        # Apostrophes, and curly ones from phones
+        ("Beast's Fang=2; Dogs' 1", {"Beast's Fang": 2, "Dogs'": 1}),
+        ("Beast\u2019s Fang=2; \u2018Til Death", {"Beast's Fang": 2, "'Til Death": None}),
     ],
 )
 def test_parse_traits(syntax: str, expected: dict[str, int | None]):
@@ -45,7 +48,7 @@ def test_parse_traits(syntax: str, expected: dict[str, int | None]):
 
 @pytest.mark.parametrize(
     "syntax",
-    ["a=1 b=2", "a 1 b 2", "Animal Ken=3 Brawl", "a=1 b=2; c=3", "a=1b"],
+    ["a=1 b=2", "a 1 b 2", "Animal Ken=3 Brawl", "a=1 b=2; c=3", "a=1b", "a=1 'Til=2"],
 )
 def test_parse_traits_missing_semicolon(syntax: str):
     """A word after a rating means a missing semicolon."""
@@ -60,9 +63,9 @@ def test_parse_traits_missing_semicolon(syntax: str):
         ("t=", SyntaxError, "must be a number"),
         ("t=x", SyntaxError, "must be a number"),
         ("t=6", ValueError, "must be between 0 and 5"),
-        ("=1", SyntaxError, "letters and underscores"),
-        ("1=1", SyntaxError, "letters and underscores"),
-        ("t-x=1", SyntaxError, "letters and underscores"),
+        ("=1", SyntaxError, "letters, underscores, and apostrophes"),
+        ("1=1", SyntaxError, "letters, underscores, and apostrophes"),
+        ("t-x=1", SyntaxError, "letters, underscores, and apostrophes"),
         ("Ravenous Hunger=1", SyntaxError, "after its first word"),
         ("t=1; t=2", SyntaxError, "only add `t` once"),
     ],

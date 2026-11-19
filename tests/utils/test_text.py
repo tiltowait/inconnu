@@ -13,6 +13,7 @@ from utils.text import (
     pluralize,
     pull_mentions,
     split_words,
+    straighten_apostrophes,
 )
 
 
@@ -41,6 +42,20 @@ from utils.text import (
 )
 def test_split_words(text: str, de_underscore: bool, expected: str):
     assert split_words(text, de_underscore) == expected
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("Beast's Fang", "Beast's Fang"),
+        ("Beast\u2019s Fang", "Beast's Fang"),
+        ("\u2018Til Death", "'Til Death"),
+        ('"Quoted"', '"Quoted"'),
+    ],
+)
+def test_straighten_apostrophes(text: str, expected: str):
+    """Curly apostrophes become straight; nothing else changes."""
+    assert straighten_apostrophes(text) == expected
 
 
 @pytest.mark.parametrize(

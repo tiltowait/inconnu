@@ -241,7 +241,8 @@ def __normalize_syntax(syntax: str) -> tuple[str, list[str]]:
     if not tokens:
         raise SyntaxError("You must supply a macro name.")
 
-    return tokens[0], tokens[1:]
+    # The macro's pool is already joined, so only the modifiers need it
+    return tokens[0], inconnu.vr.RollParser.join_words(tokens[1:])
 
 
 class _SlakeView(View):

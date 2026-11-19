@@ -399,7 +399,7 @@ async def test_hidden_hunt_disallowed(
 @pytest.fixture
 def mock_punch(character: VChar) -> Iterator[MagicMock]:
     """Select the character, which has a Hungry Strength macro."""
-    character.assign_traits({"Strength": 3, "Brawl": 1})
+    character.assign_traits({"Strength": 3, "Brawl": 1, "Animal Ken": 2})
     character.macros.append(
         VCharMacro(
             name="punch",
@@ -430,6 +430,9 @@ def mock_punch(character: VChar) -> Iterator[MagicMock]:
         ("punch + br - 1 1 0", "Strength + Brawl - 1", 3, 1, 0),
         ("punch hun", "Strength", 3, 3, 2),
         ("punch hunger - 1", "Strength", 3, 2, 2),
+        # Multiword modifiers
+        ("punch + animal ken 1", "Strength + Animal Ken", 5, 1, 2),
+        ("punch + animal k", "Strength + Animal Ken", 5, 3, 2),
     ],
 )
 @pytest.mark.usefixtures("mock_punch")

@@ -116,9 +116,13 @@ class TraitNotFound(TraitError):
         super().__init__()
         self.name = character.name
         self.trait = trait
+        self.hint: str | None = None
 
     def __str__(self) -> str:
-        return f"{self.name} has no trait named `{self.trait}`."
+        message = f"{self.name} has no trait named `{self.trait}`."
+        if self.hint:
+            message += f"\n*Hint: {self.hint}*"
+        return message
 
 
 class AmbiguousTraitError(TraitError):

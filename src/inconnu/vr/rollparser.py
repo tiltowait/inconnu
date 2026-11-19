@@ -3,6 +3,7 @@
 import ast
 import operator as op
 import re
+from collections.abc import Iterable
 from itertools import chain
 from typing import cast
 
@@ -10,6 +11,7 @@ from loguru import logger
 
 import errors
 from models.vchardocs import VCharTrait
+from utils.validation import reads_as_hunger
 
 DELIMITER = re.escape(VCharTrait.DELIMITER)
 
@@ -35,9 +37,10 @@ class RollParser:
         self.default_hunger = default_hunger
         self.default_difficulty = default_difficulty
 
-        # Convert the syntax into tokens, if necessary
+        # Convert the syntax into tokens, if necessary. Token lists (macros)
+        # are already joined.
         if isinstance(raw_syntax, str):
-            self.tokens = self.tokenize(raw_syntax)
+            self.tokens = self.join_words(self.tokenize(raw_syntax))
         else:
             self.tokens = map(str, raw_syntax)
 
@@ -120,7 +123,7 @@ class RollParser:
             for token in stacks.pop(0) if stacks else [self.default_hunger]:
                 if token in "+-" or token.isdigit():
                     hunger.append(token)
-                elif token.lower() == "current_hunger" or "hunger".startswith(token.lower()):
+                elif reads_as_hunger(token):
                     hunger.append("hunger")
                 else:
                     raise errors.HungerIsntHunger(
@@ -216,7 +219,12 @@ class RollParser:
             else:
                 # We have a character trait, which needs to be qualified and
                 # interpolated before adding it to the stacks
-                trait = self.character.find_trait(token)
+                try:
+                    trait = self.character.find_trait(token)
+                except errors.TraitNotFound as err:
+                    if split := self._split_operand(token):
+                        err.hint = f"Did you mean `{split}`?"
+                    raise
                 qualified.append(trait.key if self.expand_only else trait.name)
                 interpolated.append(str(trait.rating))
 
@@ -225,6 +233,33 @@ class RollParser:
                     using_discipline = True
 
         return qualified, interpolated, using_discipline
+
+    def _split_operand(self, operand: str) -> str | None:
+        """If a multiword operand isn't a trait but splits into traits, the
+        user probably left out a +. Return the operand with a + between each
+        trait, preferring longer leading traits, or None if it doesn't split
+        into traits."""
+        words = operand.split(" ")
+        for i in range(len(words) - 1, 0, -1):
+            head = " ".join(words[:i])
+            if not self._is_trait(head):
+                continue
+            rest = " ".join(words[i:])
+            if self._is_trait(rest):
+                return f"{head} + {rest}"
+            if split := self._split_operand(rest):
+                return f"{head} + {split}"
+        return None
+
+    def _is_trait(self, operand: str) -> bool:
+        """Whether an operand names at least one of the character's traits."""
+        try:
+            self.character.find_trait(operand)
+        except errors.TraitNotFound:
+            return False
+        except errors.AmbiguousTraitError:
+            pass  # It's still a trait
+        return True
 
     def _evaluate_stacks(self):
         """Convert the pool, hunger, and difficulty into values."""
@@ -252,6 +287,25 @@ class RollParser:
         syntax = re.sub(rf"\s*{DELIMITER}\s*", VCharTrait.DELIMITER, syntax)
         return re.findall(r"[+-]|[^\s+-]+", syntax)
 
+    @staticmethod
+    def join_words(tokens: Iterable[str]) -> list[str]:
+        """Join each word to the word before it, making multiword traits and
+        specialties single operands: "animal", "ken.big", "cats" becomes
+        "animal ken.big cats".
+
+        Words that read as Hunger aren't joined, since they start the Hunger
+        stack. No other word can start a stack (Hunger takes only numbers and
+        Hunger; Difficulty, only numbers), so joining never changes the
+        meaning of a valid roll. It needs no character, so a roll's operands
+        are the same for every character."""
+        joined: list[str] = []
+        for token in tokens:
+            if joined and _is_word(joined[-1]) and _is_word(token) and not reads_as_hunger(token):
+                joined[-1] += f" {token}"
+            else:
+                joined.append(token)
+        return joined
+
     @classmethod
     def has_invalid_characters(cls, syntax) -> bool:
         """Check whether the roll has invalid characters."""
@@ -261,6 +315,11 @@ class RollParser:
     def possible_spec_use(cls, syntax: str) -> bool:
         """Check if the user might be trying to use a spec."""
         return re.search(r"\(.*\)", syntax) is not None
+
+
+def _is_word(token: str) -> bool:
+    """Whether a token is a word, not an operator or a number."""
+    return token not in ("+", "-") and not token.isdigit()
 
 
 # Math Helpers

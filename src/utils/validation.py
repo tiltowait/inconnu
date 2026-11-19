@@ -6,6 +6,7 @@ from constants import RESERVED_TRAITS, Damage
 from utils.text import pluralize
 
 VALID_TRAIT_PATTERN = re.compile(r"^[A-Za-z_]+$")
+VALID_NAME_PATTERN = re.compile(r"^[\w\s'-]+$")
 MAX_NAME_LENGTH = 30  # Character names
 MAX_TRAIT_LENGTH = 30  # Trait and specialty names
 
@@ -17,7 +18,7 @@ def valid_name(name: str) -> bool:
         return False
     if not name:
         return False
-    return bool(re.match(r"^([^\W]|[-_\s\'])+$", name))
+    return VALID_NAME_PATTERN.match(name) is not None
 
 
 def validate_trait_names(*traits, disciplines=False):

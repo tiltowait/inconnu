@@ -6,7 +6,7 @@ from services.emoji import emojis
 from services.guildcache import guild_cache
 from services.log import report_database_error
 from services.reporter import ErrorReporter
-from services.updates import post_update
+from services.updates import post_update, send_update
 from services.webhooks import WebhookCache
 
 wizard_cache = wizard.WizardCache()
@@ -21,6 +21,7 @@ __all__ = (
     "post_update",
     "premium",
     "report_database_error",
+    "send_update",
     "settings",
     "wizard",
     "wizard_cache",

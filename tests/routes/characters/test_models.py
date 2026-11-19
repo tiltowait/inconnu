@@ -92,36 +92,36 @@ def test_health_min_boundary():
 
 
 def test_health_max_boundary():
-    """Health at maximum (20) passes."""
-    data = valid_creation_data(health=20)
+    """Health at maximum (25) passes."""
+    data = valid_creation_data(health=25)
     body = CreationBody(**data)
-    assert body.health == 20
+    assert body.health == 25
 
 
 def test_health_below_min():
-    """Health below 4 rejected."""
-    data = valid_creation_data(health=3)
+    """Health below 3 rejected."""
+    data = valid_creation_data(health=2)
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "health" in str(exc_info.value).lower()
 
 
 def test_health_above_max():
-    """Health above 20 rejected."""
-    data = valid_creation_data(health=21)
+    """Health above 25 rejected."""
+    data = valid_creation_data(health=26)
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "health" in str(exc_info.value).lower()
 
 
 def test_willpower_range():
-    """Willpower range (2-10) enforced."""
-    for val in [2, 5, 10]:
+    """Willpower range (2-25) enforced."""
+    for val in [2, 5, 25]:
         data = valid_creation_data(willpower=val)
         body = CreationBody(**data)
         assert body.willpower == val
 
-    for val in [1, 11]:
+    for val in [1, 26]:
         data = valid_creation_data(willpower=val)
         with pytest.raises(ValidationError):
             CreationBody(**data)
@@ -286,12 +286,20 @@ def test_trait_name_with_underscore():
 
 
 def test_trait_name_too_long():
-    """Trait name longer than 20 characters rejected."""
-    trait = VCharTrait(name="A" * 21, rating=3, type=VCharTrait.Type.CUSTOM)
+    """Trait name longer than 30 characters rejected."""
+    trait = VCharTrait(name="A" * 31, rating=3, type=VCharTrait.Type.CUSTOM)
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "too long" in str(exc_info.value).lower()
+
+
+def test_trait_name_max_length():
+    """Trait and specialty names of exactly 30 characters are allowed."""
+    trait = VCharTrait(name="A" * 30, rating=3, type=VCharTrait.Type.CUSTOM, subtraits=["B" * 30])
+    body = CreationBody(**valid_creation_data(traits=[trait]))
+    assert body.traits[0].name == "A" * 30
+    assert body.traits[0].raw_subtraits == ["B" * 30]
 
 
 def test_trait_name_invalid_characters():
@@ -374,6 +382,25 @@ def test_duplicate_trait_names_case_insensitive():
     assert "duplicate" in str(exc_info.value).lower()
 
 
+@pytest.mark.parametrize("rating", [0, 5])
+def test_trait_rating_boundaries(rating: int):
+    """Trait ratings of 0 and 5 pass."""
+    trait = VCharTrait(name="Brawl", rating=rating, type=VCharTrait.Type.SKILL)
+    data = valid_creation_data(traits=[trait])
+    body = CreationBody(**data)
+    assert body.traits[0].rating == rating
+
+
+@pytest.mark.parametrize("rating", [-1, 6])
+def test_trait_rating_out_of_range(rating: int):
+    """Trait ratings outside 0-5 are rejected."""
+    trait = VCharTrait(name="Brawl", rating=rating, type=VCharTrait.Type.SKILL)
+    data = valid_creation_data(traits=[trait])
+    with pytest.raises(ValidationError) as exc_info:
+        CreationBody(**data)
+    assert "between 0 and 5" in str(exc_info.value)
+
+
 # Specialty (subtrait) validation tests
 
 
@@ -431,12 +458,12 @@ def test_powers_on_discipline_allowed():
 
 
 def test_specialty_name_too_long():
-    """Specialty name longer than 20 characters rejected."""
+    """Specialty name longer than 30 characters rejected."""
     trait = VCharTrait(
         name="Athletics",
         rating=2,
         type=VCharTrait.Type.SKILL,
-        subtraits=["A" * 21],
+        subtraits=["A" * 31],
     )
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:

@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field
 import errors
 
 CAREER_STATS_LIVE = datetime(2026, 11, 14, 20, tzinfo=UTC)  # Noon PST
+VICTIMS_DRAINED_LIVE = datetime(2026, 11, 18, 20, tzinfo=UTC)  # Noon PST
 
 
 class BlushState(IntEnum):
@@ -83,6 +84,7 @@ class VCharLog(BaseModel):
         "frenzy_resisted": CAREER_STATS_LIVE,
         "hunger_gained": CAREER_STATS_LIVE,
         "hunts": CAREER_STATS_LIVE,
+        "num_victims_drained": VICTIMS_DRAINED_LIVE,
         "rouse_failures": CAREER_STATS_LIVE,
         "rouse_successes": CAREER_STATS_LIVE,
         "surges": CAREER_STATS_LIVE,
@@ -104,6 +106,7 @@ class VCharLog(BaseModel):
     hunger_gained: int = 0
     hunger_slaked: int = Field(default=0, alias="slake", serialization_alias="hunger_slaked")
     hunts: int = 0  # Hunt macros rolled
+    num_victims_drained: int = 0  # Drain chosen in a hunt's Slake menu
     remorse_checks: int = Field(default=0, alias="remorse", serialization_alias="remorse_checks")
     remorse_failures: int = Field(default=0, alias="degen", serialization_alias="remorse_failures")
     rouse_checks: int = Field(default=0, alias="rouse", serialization_alias="rouse_checks")

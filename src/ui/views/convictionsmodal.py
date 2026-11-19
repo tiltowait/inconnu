@@ -8,6 +8,7 @@ import discord
 from discord.ui import InputText, Modal
 
 import services
+from constants import MAX_CONVICTION_LENGTH
 from ctx import AppInteraction
 from models import VChar
 
@@ -22,30 +23,9 @@ class ConvictionsModal(Modal):
 
         convictions = character.convictions.copy()
 
-        self.add_item(
-            InputText(
-                label="First Conviction",
-                placeholder="First Conviction",
-                value=_pop_first(convictions),
-                required=False,
-            )
-        )
-        self.add_item(
-            InputText(
-                label="Second Conviction",
-                placeholder="Second Conviction",
-                value=_pop_first(convictions),
-                required=False,
-            )
-        )
-        self.add_item(
-            InputText(
-                label="Third Conviction",
-                placeholder="Third Conviction",
-                value=_pop_first(convictions),
-                required=False,
-            )
-        )
+        self.add_item(_conviction_input("First", _pop_first(convictions)))
+        self.add_item(_conviction_input("Second", _pop_first(convictions)))
+        self.add_item(_conviction_input("Third", _pop_first(convictions)))
 
     async def callback(self, interaction: discord.Interaction):
         """Set the character's Convictions."""
@@ -93,6 +73,19 @@ class ConvictionsModal(Modal):
             tasks.append(interaction.response.send_message("Convictions set!", ephemeral=True))
 
         await asyncio.gather(*tasks)
+
+
+def _conviction_input(ordinal: str, value: str) -> InputText:
+    """A Conviction's text input. A period may be added to the entry, so it
+    leaves room for one. Older Convictions may be longer, and the modal can't
+    open with a value over its limit."""
+    return InputText(
+        label=f"{ordinal} Conviction",
+        placeholder=f"{ordinal} Conviction",
+        value=value,
+        required=False,
+        max_length=max(MAX_CONVICTION_LENGTH - 1, len(value)),
+    )
 
 
 def _pop_first(convictions_list: list[str]) -> str:

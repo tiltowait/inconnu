@@ -5,8 +5,14 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 import services
-from inconnu.character.update.paramupdate import update_name, update_stains
+from inconnu.character.update.paramupdate import (
+    update_health,
+    update_name,
+    update_stains,
+    update_willpower,
+)
 from models import VChar
+from models.vchar import Tracker
 from tests.characters import gen_char
 
 
@@ -112,3 +118,30 @@ def test_update_stains_degeneration(delta: str, expected_stains: int, expected_d
         assert f"`+{expected_damage}` Aggravated Willpower damage" in message
     else:
         assert "Degeneration" not in message
+
+
+@pytest.mark.parametrize(
+    "tracker,rating,allowed",
+    [
+        (Tracker.HEALTH, 2, False),
+        (Tracker.HEALTH, 3, True),
+        (Tracker.HEALTH, 25, True),
+        (Tracker.HEALTH, 26, False),
+        (Tracker.WILLPOWER, 1, False),
+        (Tracker.WILLPOWER, 2, True),  # Retainers can have 1 Resolve and Composure
+        (Tracker.WILLPOWER, 25, True),
+        (Tracker.WILLPOWER, 26, False),
+    ],
+)
+def test_update_tracker_limits(tracker: Tracker, rating: int, allowed: bool):
+    """Health and Willpower updates are limited to the tracker ranges."""
+    char = gen_char("vampire")
+    update = update_health if tracker == Tracker.HEALTH else update_willpower
+
+    if allowed:
+        update(char, str(rating))
+        assert len(getattr(char, tracker)) == rating
+    else:
+        low, high = VChar.tracker_limits(tracker)
+        with pytest.raises(ValueError, match=f"between {low} and {high}"):
+            update(char, str(rating))

@@ -1,7 +1,7 @@
 """misc/slake.py - Slake 1 or more Hunger."""
 
 import asyncio
-from typing import Any
+from typing import Any, NamedTuple
 
 import errors
 import inconnu
@@ -14,6 +14,14 @@ from utils import get_message
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("guides/gameplay-shortcuts#slaking-hunger")
+FRENZY_HUNGER = 4  # Slaking from this Hunger or more calls for a frenzy check
+
+
+class SlakeOutcome(NamedTuple):
+    """The outcome of slaking Hunger."""
+
+    slaked: int
+    frenzy: bool  # Whether a DC 3 frenzy check is due
 
 
 def _can_slake(character: VChar):
@@ -36,22 +44,12 @@ async def perform_slake(ctx: AppInvocation, character: VChar, amount: int, **kwa
         await ctx.respond("Only vampires need to slake Hunger!", ephemeral=True)
         return
 
-    slaked = min(amount, character.hunger)
-
-    if slaked == 0:
+    if character.hunger == 0:
         await ctx.respond(f"**{character.name}** has no Hunger!", ephemeral=True)
     else:
-        old_hunger = character.hunger
-        character.hunger -= slaked
-        character.log.hunger_slaked += slaked
-        character.log.times_slaked += 1
-
-        if old_hunger >= 4:
-            view = ui.views.FrenzyView(character, 3, ctx.user.id)
-        else:
-            view = None
-
-        update = f"**{character.name}** slaked `{slaked}` Hunger (now at `{character.hunger}`)."
+        slaked, frenzy = slake_hunger(character, amount)
+        view = ui.views.FrenzyView(character, 3, ctx.user.id) if frenzy else None
+        update = slake_update_message(character, slaked)
 
         inter = await inconnu.character.display(
             ctx,
@@ -72,3 +70,19 @@ async def perform_slake(ctx: AppInvocation, character: VChar, amount: int, **kwa
                 message=update,
             ),
         )
+
+
+def slake_hunger(character: VChar, amount: int) -> SlakeOutcome:
+    """Slake up to amount Hunger, down to 0, and log it. The character must
+    be a vampire with Hunger."""
+    frenzy = character.hunger >= FRENZY_HUNGER
+    slaked = min(amount, character.hunger)
+    character.hunger -= slaked
+    character.log.hunger_slaked += slaked
+    character.log.times_slaked += 1
+    return SlakeOutcome(slaked=slaked, frenzy=frenzy)
+
+
+def slake_update_message(character: VChar, slaked: int) -> str:
+    """The update channel's description of a slake."""
+    return f"**{character.name}** slaked `{slaked}` Hunger (now at `{character.hunger}`)."

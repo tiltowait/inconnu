@@ -161,12 +161,23 @@ def test_tracker_trait_update(attribute: str, character: VChar):
 def test_tracker_trait_update_is_clamped(character: VChar):
     """Lowering an Attribute can't shrink its tracker below the minimum."""
     character.assign_traits({"Stamina": 5})  # The first rating doesn't resize
-    character.health = Damage.NONE * VChar.MIN_TRACKER
+    character.health = Damage.NONE * VChar.MIN_HEALTH
 
     message, _ = character.assign_traits({"Stamina": 1})
 
-    assert len(character.health) == VChar.MIN_TRACKER
+    assert len(character.health) == VChar.MIN_HEALTH
     assert not message  # Nothing was adjusted
+
+
+def test_willpower_trait_update_is_clamped(character: VChar):
+    """Raising Composure and Resolve can't grow Willpower past its maximum."""
+    character.assign_traits({"Composure": 4, "Resolve": 5})  # The first rating doesn't resize
+    character.willpower = Damage.NONE * VChar.MAX_WILLPOWER
+
+    message, _ = character.assign_traits({"Composure": 5})
+
+    assert len(character.willpower) == VChar.MAX_WILLPOWER
+    assert not message
 
 
 # SET_AGGRAVATED_HP TESTS

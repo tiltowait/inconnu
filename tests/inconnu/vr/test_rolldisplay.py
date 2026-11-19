@@ -396,10 +396,16 @@ async def test_stat_fields(ctx: AppCtx, owner: discord.Member):
         ("Dexterity + AnimalKen", "Dexterity + Animal Ken"),
         ("Wits + blood_potency", "Wits + Blood Potency"),
         ("Wits + XYZ", "Wits + XYZ"),
+        # Each operand is its own title, with small words lowercased inside it
+        ("Wits + WhereTheShroudThins", "Wits + Where the Shroud Thins"),
+        ("Strength + Of the Night - 1", "Strength + Of the Night - 1"),
+        ("-of the night + 2", "-Of the Night + 2"),
+        ("Brawl (Of the Night, Kindred)", "Brawl (Of the Night, Kindred)"),
     ],
 )
 async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str, expected: str):
-    """Pool strings are de-cameled and capitalized without lowercasing."""
+    """Pool strings are de-cameled and title-cased, operand by operand,
+    without lowercasing."""
     display = make_display(ctx, owner, make_roll([6], [], pool_str=pool_str))
     embed = await render(display)
     field = embed.fields[4]

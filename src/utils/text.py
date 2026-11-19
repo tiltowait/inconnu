@@ -5,18 +5,30 @@ from collections.abc import Iterable
 from difflib import Differ
 from typing import Any, Literal, overload
 
+from titlecase import titlecase
 
-def clean_text(text: str) -> str:
+
+def collapse_text(text: str) -> str:
     """Remove extra spaces in text."""
-    return " ".join(text.split())
+    return " ".join(text.split()).strip()
 
 
-def de_camel(text: str, de_underscore=True) -> str:
-    """CamelCase -> Camel Case. Also does underscores."""
-    temp = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
+def split_words(text: str, de_underscore=True) -> str:
+    """Split CamelCase and snake_case words. Also applies Title Case, so
+    WhereTheShroudThins becomes Where the Shroud Thins. Acronyms split from
+    the next word (XPBonus becomes XP Bonus), and all-caps words keep their
+    case."""
+    temp = re.sub(r"([A-Z])([A-Z][a-z])", r"\1 \2", text)  # XPBonus -> XP Bonus
+    temp = re.sub(r"([a-z])([A-Z])", r"\1 \2", temp)  # AnimalKen -> Animal Ken
     if de_underscore:
-        return temp.replace("_", " ")
-    return temp
+        temp = temp.replace("_", " ")
+    return titlecase(temp, callback=_keep_all_caps)
+
+
+def _keep_all_caps(word: str, all_caps: bool) -> str | None:
+    """A titlecase() callback that keeps all-caps words as they are, so BP
+    doesn't become Bp. None lets titlecase() handle the word."""
+    return word if word.isupper() else None
 
 
 @overload

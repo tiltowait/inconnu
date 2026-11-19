@@ -482,6 +482,7 @@ dependencies = [
     { name = "pymongo" },
     { name = "pypcg" },
     { name = "pyyaml" },
+    { name = "titlecase" },
     { name = "uvicorn" },
     { name = "uvloop" },
 ]
@@ -513,6 +514,7 @@ requires-dist = [
     { name = "pymongo", specifier = ">=4.2.0,<5" },
     { name = "pypcg", specifier = ">=0.0.4,<1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "titlecase", specifier = ">=2.4.1" },
     { name = "uvicorn", specifier = ">=0.37.0,<1" },
     { name = "uvloop", specifier = ">=0.21.0,<1" },
 ]
@@ -1078,6 +1080,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/48/bb/3d8757f21e9a53d90
 wheels = [
     { url = "https://files.pythonhosted.org/packages/88/2e/947cfe02def9371c07cd5bf5b6b61c829e9aecb9904db02a66cfafbc1eec/starlette-1.10.0-py3-none-any.whl", hash = "sha256:478c0ab3b4ced6e82719849c118fa406f0278a3499c1a898cd15cd31bdc38ce4", size = 80571, upload-time = "2026-10-24T15:04:10.371Z" },
 ]
+
+[[package]]
+name = "titlecase"
+version = "2.4.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/63/17/04d2d3e30e2bc5a3eefa1060b08e3fb628510440f938eaecabbe08976a26/titlecase-2.4.1.tar.gz", hash = "sha256:7d83a277ccbbda11a2944e78a63e5ccaf3d32f828c594312e4862f9a07f635f5", size = 14434, upload-time = "2023-09-23T05:03:46.389Z" }
 
 [[package]]
 name = "types-pyyaml"

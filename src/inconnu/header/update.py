@@ -11,7 +11,7 @@ from ctx import AppCtx
 from models import BlushState, VChar
 from models.rpheader import NOT_BLUSHED
 from services.haven import haven
-from utils.text import clean_text
+from utils.text import collapse_text
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("command-reference/characters#rp-headers")
@@ -102,7 +102,7 @@ class _RPHeader(discord.ui.DesignerModal):
 
     async def callback(self, interaction: discord.Interaction):
         """Set the header and tell the user."""
-        location = clean_text((self.location_input.value or "").replace("•", ""))
+        location = collapse_text((self.location_input.value or "").replace("•", ""))
         if not location:
             # Not responding keeps the modal open, with the player's input intact
             return
@@ -110,9 +110,9 @@ class _RPHeader(discord.ui.DesignerModal):
         header = self.character.header
         header.location = location
         header.blush = BlushState(int(cast(list[str], self.blush_select.values)[0]))
-        header.merits = clean_text(self.merits_input.value or "")
-        header.flaws = clean_text(self.flaws_input.value or "")
-        header.temp = clean_text(self.temp_input.value or "")
+        header.merits = collapse_text(self.merits_input.value or "")
+        header.flaws = collapse_text(self.flaws_input.value or "")
+        header.temp = collapse_text(self.temp_input.value or "")
 
         await asyncio.gather(
             interaction.response.send_message(

@@ -21,7 +21,7 @@ from inconnu.vr import dicemoji
 from models import IMPAIRMENT_DICE, ImpairmentCategory, RollCategory, VChar
 from ui.views.ephemeralsafeview import EphemeralSafeView
 from utils import get_avatar, get_message
-from utils.text import de_camel
+from utils.text import split_words
 from utils.urls import web_asset
 
 type RerollListener = Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]]
@@ -30,6 +30,12 @@ type TimeoutHandler = Callable[[Roll], Awaitable[None]]
 PRIMARY = discord.ButtonStyle.primary
 SECONDARY = discord.ButtonStyle.secondary
 DANGER = discord.ButtonStyle.danger
+
+
+def _readable_operand(operand: str) -> str:
+    """De-camel and title-case a pool operand, keeping a leading minus sign."""
+    sign = "-" if operand.startswith("-") else ""
+    return sign + split_words(operand.removeprefix("-"))
 
 
 class _Surge(Enum):
@@ -513,13 +519,12 @@ class RollDisplay(EphemeralSafeView):
         if not self.outcome.pool_str:
             return None
 
-        splitted = de_camel(self.outcome.pool_str).split()
-
-        # Uppercase each word in the pool. We can't use .title(), because
-        # .title() will make everything else lowercase. "XYZ" would become
-        # "Xyz", which is not desired.
-        splitted = (t[0].upper() + t[1:] if t[0].islower() else t for t in splitted)
-        return " ".join(splitted)
+        # Title-case each operand on its own, since titlecase() doesn't start
+        # a new title after an operator: "Strength + of the Night"
+        parts = re.split(r"( [+-] )", self.outcome.pool_str)
+        return "".join(
+            part if part in (" + ", " - ") else _readable_operand(part) for part in parts
+        )
 
     @property
     def comment(self) -> str | None:

@@ -3,9 +3,8 @@
 import pytest
 
 from utils.text import (
-    clean_text,
+    collapse_text,
     contains_digit,
-    de_camel,
     diff,
     fence,
     format_join,
@@ -13,6 +12,7 @@ from utils.text import (
     paginate,
     pluralize,
     pull_mentions,
+    split_words,
 )
 
 
@@ -24,11 +24,23 @@ from utils.text import (
         ("Camel_Case", False, "Camel_Case"),
         ("TheCamel_Case", False, "The Camel_Case"),
         ("TheCamel_Case", True, "The Camel Case"),
-        ("dB", True, "d B"),
+        ("WhereTheShroudThins", True, "Where the Shroud Thins"),
+        # Acronyms split from the next word
+        ("XPBonus", True, "XP Bonus"),
+        ("NPCContacts", True, "NPC Contacts"),
+        ("ABCDefGhi", True, "ABC Def Ghi"),
+        ("ABloodyMess", True, "A Bloody Mess"),
+        ("IAmLegend", True, "I Am Legend"),
+        # All-caps words keep their case
+        ("BP", True, "BP"),
+        ("SWAT", True, "SWAT"),
+        ("STUNNING", True, "STUNNING"),
+        ("SWAT_Training", True, "SWAT Training"),
+        ("stunning", True, "Stunning"),
     ],
 )
-def test_de_camel(text: str, de_underscore: bool, expected: str):
-    assert de_camel(text, de_underscore) == expected
+def test_split_words(text: str, de_underscore: bool, expected: str):
+    assert split_words(text, de_underscore) == expected
 
 
 @pytest.mark.parametrize(
@@ -97,7 +109,7 @@ def test_paginate_strings():
 )
 def test_clean_text(text: str, expected: str):
     """Test removing extra spaces from text."""
-    assert clean_text(text) == expected
+    assert collapse_text(text) == expected
 
 
 @pytest.mark.parametrize(

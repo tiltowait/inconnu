@@ -19,6 +19,7 @@ from inconnu.character.impairment import impairment_reminder, incapacitation_rem
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
 from models import IMPAIRMENT_DICE, ImpairmentCategory, RollCategory, VChar
+from models.impairment import pool_traits
 from ui.views.ephemeralsafeview import EphemeralSafeView
 from utils import get_avatar, get_message
 from utils.text import split_words
@@ -634,5 +635,10 @@ class RollDisplay(EphemeralSafeView):
         if self.character is None or self.character.splat == "mortal":
             return False
 
-        search = f"{self.outcome.pool_str} {self.comment}"
-        return re.search(r"\bsurge\b", search, re.IGNORECASE) is not None
+        # A pool surges only by naming the Surge trait itself; multiword names
+        # such as "Surge Strike" or "Brawl (Power Surge)" don't count
+        if self.outcome.pool_str and any(
+            trait.casefold() == "surge" for trait in pool_traits(self.outcome.pool_str)
+        ):
+            return True
+        return re.search(r"\bsurge\b", self.comment or "", re.IGNORECASE) is not None

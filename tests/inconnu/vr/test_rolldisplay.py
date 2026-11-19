@@ -691,18 +691,24 @@ async def test_footer_category_override_without_effect(ctx: AppCtx, owner: disco
         (None, "biting, surge", True),
         ("Strength + Brawl + surge", None, True),
         (None, "surge, then bite", True),
-        ("Strength+Brawl+surge", None, True),
+        ("Strength + Brawl + Surge", None, True),
+        ("Surge + Strength - 1", None, True),
         (None, "surged earlier", False),
         (None, "resurge", False),
         (None, "insurgent", False),
         (None, "no blood", False),
         (None, None, False),
+        # Multiword traits and specialties naming Surge aren't the Surge trait
+        ("Strength + Surge Strike", None, False),
+        ("Brawl (Power Surge) + Strength", None, False),
+        ("Strength + Surge Strike", "surge", True),
     ],
 )
 async def test_surging(
     ctx: AppCtx, owner: discord.Member, pool_str: str | None, comment: str | None, expected: bool
 ):
-    """Vampires surge when "surge" appears in the pool or comment."""
+    """Vampires surge when the pool has the Surge trait, or "surge" appears in
+    the comment."""
     roll = make_roll([6], [], pool_str=pool_str)
     display = make_display(ctx, owner, roll, comment=comment, character=make_char("vampire"))
 

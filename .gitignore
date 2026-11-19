@@ -4,3 +4,4 @@
 .wizard.lock
 logs
 local.db
+*.jsonl

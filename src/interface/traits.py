@@ -69,8 +69,8 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         await inconnu.traits.update(ctx, character, traits)
 
     @traits.command(name="rename")
-    @option("trait", description="The trait to rename. Ex: QoNos")
-    @option("new_name", description="The trait's new name. Ex: Qo'noS")
+    @option("trait", description="The trait to rename.")
+    @option("new_name", description="The trait's new name.")
     @inconnu.options.char_option("The character to modify")
     async def traits_rename(
         self,

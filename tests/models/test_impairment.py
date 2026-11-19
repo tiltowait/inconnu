@@ -3,7 +3,7 @@
 import pytest
 
 from models import Impairment, ImpairmentCategory, RollCategory
-from models.impairment import pool_traits
+from models.impairment import PoolOperand, join_pool, pool_traits, split_pool
 
 
 @pytest.mark.parametrize(
@@ -46,6 +46,33 @@ def test_roll_category_from_pool(pool: str | None, expected: RollCategory):
 def test_pool_traits(pool: str, expected: set[str]):
     """Pools split on their operators, without specialties or minus signs."""
     assert pool_traits(pool) == expected
+
+
+def test_split_pool():
+    """Pools split into operands, with their signs and specialties, and the
+    operators between them."""
+    assert split_pool("-Strength + Animal Ken (Big Cats, Dogs) - 1") == [
+        PoolOperand("-", "Strength", None),
+        " + ",
+        PoolOperand("", "Animal Ken", "Big Cats, Dogs"),
+        " - ",
+        PoolOperand("", "1", None),
+    ]
+
+
+@pytest.mark.parametrize(
+    "pool",
+    [
+        "Strength",
+        "Wits + Awareness",
+        "-Strength + Animal Ken (Big Cats, Dogs) - 1",
+        "Oblivion (Where the Shroud Thins) + PowerBonus",
+        "Beast's Fang - 2",
+    ],
+)
+def test_join_pool_reverses_split(pool: str):
+    """Splitting and rejoining gives back the same pool."""
+    assert join_pool(split_pool(pool)) == pool
 
 
 NONE, PHYSICAL, MENTAL, MIXED = (

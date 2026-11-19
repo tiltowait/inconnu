@@ -11,6 +11,7 @@ from pymongo import ReturnDocument, UpdateOne
 import db
 from inconnu.roll import Roll
 from models import VChar, VGuild
+from models.impairment import PoolOperand, join_pool, split_pool
 
 
 async def log_roll(
@@ -118,12 +119,11 @@ def _rename_pool_trait(pool: str, old: str, new: str) -> str:
     """Rename a trait in a pool string, such as "Strength + Night Driving
     (Rain) - 1". Only whole trait names match, ignoring case; specialties and
     names that merely contain the old one are left alone."""
-    parts = re.split(r"( [+-] )", pool)
+    parts = split_pool(pool)
     for index, part in enumerate(parts):
-        match = re.fullmatch(r"(-?)(.*?)( \(.*\))?", part)
-        if match and match[2].casefold() == old.casefold():
-            parts[index] = f"{match[1]}{new}{match[3] or ''}"
-    return "".join(parts)
+        if isinstance(part, PoolOperand) and part.name.casefold() == old.casefold():
+            parts[index] = part._replace(name=new)
+    return join_pool(parts)
 
 
 # Roll logging helpers

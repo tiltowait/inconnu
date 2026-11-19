@@ -87,14 +87,19 @@ def test_invalid_syntax(syntax: str):
 @pytest.mark.parametrize(
     "syntax",
     [
-        "brawl=kindred=kine,test",
-        "brawl=kindred, kine=test",
-        "brawl=kindred occult=bahari",
+        "brawl=kindred occult=bahari",  # Missing ;
+        "brawl=kindred, occult=bahari",  # A comma in place of ;
+        "Brawl=Kindred=Kine",  # Extra =
+        "brawl=big cats=dogs",  # Extra =, after a multiword specialty
+        "brawl=kindred=kine occult=bahari",  # Both
     ],
 )
-def test_missing_semicolon(syntax: str):
-    """A second = means a missing semicolon."""
-    with pytest.raises(SyntaxError, match="Separate traits with `;`"):
+def test_extra_equals(syntax: str):
+    """A second = may be a missing ; or an extra =, which look alike, so the
+    message covers both."""
+    with pytest.raises(
+        SyntaxError, match="Each trait takes one `=`, and traits are separated by `;`"
+    ):
         _ = tokenize(syntax)
 
 

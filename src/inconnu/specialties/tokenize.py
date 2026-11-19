@@ -17,7 +17,13 @@ def tokenize(syntax: str) -> list[tuple[str, list[str]]]:
     for item in items:
         trait, *values = (part.strip() for part in item.split("="))
         if len(values) > 1:
-            raise SyntaxError(f"Separate traits with `{DELIMITER}`. Invalid: `{item}`.")
+            # A missing ; ("brawl=kindred occult=bahari", or a comma in its
+            # place) and an extra = ("brawl=big cats=dogs") look alike, since
+            # names have spaces, so the message covers both
+            raise SyntaxError(
+                f"Each trait takes one `=`, and traits are separated by `{DELIMITER}`. "
+                f"Invalid: `{item}`."
+            )
         if not values:
             raise SyntaxError(f"`{trait}` needs specialties after `=`.")
 

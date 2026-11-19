@@ -267,7 +267,11 @@ class RollParser:
         return splits[0]
 
     def _is_trait(self, operand: str) -> bool:
-        """Whether an operand names at least one of the character's traits."""
+        """Whether an operand names at least one of the character's traits
+        that can go in a pool. Hunger can't, so a suggestion with it would only
+        fail again."""
+        if reads_as_hunger(operand):
+            return False
         try:
             self.character.find_trait(operand)
         except errors.TraitNotFound:

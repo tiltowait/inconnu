@@ -492,6 +492,8 @@ def test_hunger_prefixes_beat_similar_traits(token: str, hungry: VChar):
         ("strength + brawl strength dex", "brawl strength dex", "brawl strength + dex"),
         # Several missing +s
         ("strength brawl fin 2", "strength brawl fin", "strength + brawl + fin"),
+        # Other inherent traits can go in a pool, so they're suggested
+        ("strength + brawl humanity", "brawl humanity", "brawl + humanity"),
         ("str + brawl strength dex fin", "brawl strength dex fin", "brawl strength + dex + fin"),
     ],
 )
@@ -515,6 +517,9 @@ def test_missing_plus_hint(syntax: str, operand: str, split: str, hungry: VChar)
         ("strength + brawl lung 2", "brawl lung"),
         # A middle word isn't a trait
         ("strength + brawl lung fin 2", "brawl lung fin"),
+        # Hunger can't go in a pool, so it's never suggested
+        ("strength + hunger brawl 2", "hunger brawl"),
+        ("strength + h fin 2", "h fin"),
     ],
 )
 def test_missing_plus_no_hint(syntax: str, operand: str, hungry: VChar):

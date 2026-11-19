@@ -3,6 +3,7 @@
 import pytest
 
 from models import Impairment, ImpairmentCategory, RollCategory
+from models.impairment import pool_traits
 
 
 @pytest.mark.parametrize(
@@ -21,11 +22,30 @@ from models import Impairment, ImpairmentCategory, RollCategory
         ("Strength + Wits", RollCategory.MIXED),
         ("Brawl + 2", RollCategory.NONE),
         ("Potence", RollCategory.NONE),
+        # Multiword traits containing an Attribute's name aren't that Attribute
+        ("Strength Training + Brawl", RollCategory.NONE),
+        ("Brawl + Charisma Bonus", RollCategory.NONE),
+        ("Animal Ken (Big Cats) + Charisma", RollCategory.MENTAL),
     ],
 )
 def test_roll_category_from_pool(pool: str | None, expected: RollCategory):
     """A pool's category comes from its Attributes. Skills are ignored."""
     assert RollCategory.from_pool(pool) == expected
+
+
+@pytest.mark.parametrize(
+    "pool,expected",
+    [
+        ("Strength", {"Strength"}),
+        ("Strength + Brawl", {"Strength", "Brawl"}),
+        ("Strength + Animal Ken (Big Cats, Dogs) - 1", {"Strength", "Animal Ken", "1"}),
+        ("-Strength + Beast's Fang", {"Strength", "Beast's Fang"}),
+        ("Wits - Night Driving", {"Wits", "Night Driving"}),
+    ],
+)
+def test_pool_traits(pool: str, expected: set[str]):
+    """Pools split on their operators, without specialties or minus signs."""
+    assert pool_traits(pool) == expected
 
 
 NONE, PHYSICAL, MENTAL, MIXED = (

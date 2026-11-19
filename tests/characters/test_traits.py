@@ -285,6 +285,29 @@ def test_discipline_fallback(discipline: str, empty_vampire: VChar):
 
 
 @pytest.mark.parametrize(
+    "input_name,name,trait_type",
+    [
+        ("BloodSorcery", "Blood Sorcery", VCharTrait.Type.DISCIPLINE),
+        ("bloodsorcery", "Blood Sorcery", VCharTrait.Type.DISCIPLINE),
+        ("blood sorcery", "Blood Sorcery", VCharTrait.Type.DISCIPLINE),
+        ("WatcherValeren", "Watcher Valeren", VCharTrait.Type.DISCIPLINE),
+        ("AnimalKen", "Animal Ken", VCharTrait.Type.SKILL),
+        ("strength", "Strength", VCharTrait.Type.ATTRIBUTE),
+        ("QoNos", "QoNos", VCharTrait.Type.CUSTOM),
+    ],
+)
+def test_standard_names(input_name: str, name: str, trait_type: str, empty_vampire: VChar):
+    """New standard traits get their standard names and types, ignoring case
+    and spaces. Other new traits are left as given."""
+    _, assignments = empty_vampire.assign_traits({input_name: 2})
+
+    assert assignments == {name: 2}
+    trait = empty_vampire.traits[0]
+    assert trait.name == name
+    assert trait.type == trait_type
+
+
+@pytest.mark.parametrize(
     "auto_trait,expected_type",
     [
         ("Strength", VCharTrait.Type.ATTRIBUTE),

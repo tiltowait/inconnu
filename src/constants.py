@@ -28,7 +28,7 @@ GROUPED_TRAITS = {
             "Survival",
         ],
         "Social": [
-            "AnimalKen",
+            "Animal Ken",
             "Etiquette",
             "Insight",
             "Intimidation",
@@ -68,7 +68,7 @@ MENTAL_SOCIAL_ATTRIBUTES = set(
 DISCIPLINES = [
     "Animalism",
     "Auspex",
-    "BloodSorcery",
+    "Blood Sorcery",
     "Celerity",
     "Dominate",
     "Fortitude",
@@ -80,8 +80,8 @@ DISCIPLINES = [
     "Protean",
     "Valeren",
     "Vicissitude",
-    "WarriorValeren",
-    "WatcherValeren",
+    "Warrior Valeren",
+    "Watcher Valeren",
 ]
 
 UNIVERSAL_TRAITS = ["Willpower", "Hunger", "Humanity", "Surge", "Potency", "Bane"]

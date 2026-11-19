@@ -1,5 +1,6 @@
 """models/impairment.py - Impairment rules: which rolls an impairment penalizes."""
 
+import re
 from enum import Flag, StrEnum, auto
 from typing import Self
 
@@ -7,6 +8,14 @@ from constants import MENTAL_SOCIAL_ATTRIBUTES, PHYSICAL_ATTRIBUTES
 
 # The number of dice impairment removes from a pool
 IMPAIRMENT_DICE = 2
+
+
+def pool_traits(pool: str) -> set[str]:
+    """The trait names in a pool string, such as "Strength + Animal Ken (Big
+    Cats) - 1": {"Strength", "Animal Ken", "1"}. Names have spaces, so we
+    split on the operators, then drop any specialties and minus signs."""
+    operands = re.split(r" [+-] ", pool)
+    return {operand.split(" (")[0].lstrip("-") for operand in operands}
 
 
 class RollCategory(Flag):
@@ -25,7 +34,7 @@ class RollCategory(Flag):
         number-only pools, have no category."""
         category = cls(cls.NONE)  # Constructed via cls so the type stays Self
         if pool:
-            elements = set(pool.split())
+            elements = pool_traits(pool)
             if elements & PHYSICAL_ATTRIBUTES:
                 category |= cls.PHYSICAL
             if elements & MENTAL_SOCIAL_ATTRIBUTES:

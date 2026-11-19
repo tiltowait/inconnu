@@ -156,16 +156,16 @@ async def test_multiword_traits(
     ctx: AppCtx, alice: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
 ):
     """Multiword traits are added, updated, and deleted like any other."""
-    await add(ctx, alice, "Big  Cats=2; Animal Ken 1")
+    await add(ctx, alice, "Big  Cats=2; Night Driving 1")
     assert alice.find_trait("Big Cats", exact=True).rating == 2
-    assert alice.find_trait("Animal Ken", exact=True).rating == 1
+    assert alice.find_trait("Night Driving", exact=True).rating == 1
 
     await update(ctx, None, "big cats=4")
     assert alice.find_trait("Big Cats", exact=True).rating == 4
 
-    await delete(ctx, None, "Big Cats; Animal Ken")
+    await delete(ctx, None, "Big Cats; Night Driving")
     assert not alice.has_trait("Big Cats")
-    assert not alice.has_trait("Animal Ken")
+    assert not alice.has_trait("Night Driving")
 
 
 async def test_delete_core_trait_shows_selector(

@@ -146,6 +146,22 @@ def test_can_reroll_failures():
     assert not roll.can_reroll_failures
 
 
+@pytest.mark.parametrize(
+    "pool_str,expected",
+    [
+        ("Strength + Brawl", True),
+        ("Animal Ken + 2", True),
+        ("Animal Ken (Big Cats) + 2", True),
+        ("Night Driving + 2", False),
+        ("Strength Training + 2", False),
+        ("Oblivion + PowerBonus", False),
+    ],
+)
+def test_can_reroll(pool_str: str, expected: bool):
+    """Willpower re-rolls need an Attribute or Skill, multiword ones included."""
+    assert inconnu.Roll(5, 0, 1, pool_str=pool_str).can_reroll is expected
+
+
 def test_can_maximize_crits():
     """Test the maximize crits options."""
     roll = gen_roll(1, 1, 3, 0, 0, 0, 0, 3)

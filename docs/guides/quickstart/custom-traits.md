@@ -32,7 +32,7 @@ You can add several Traits at once. Names can have spaces, so separate the Trait
 
 * Animalism
 * Auspex
-* BloodSorcery
+* Blood Sorcery
 * Celerity
 * Dominate
 * Fortitude
@@ -44,8 +44,8 @@ You can add several Traits at once. Names can have spaces, so separate the Trait
 * Protean
 * Valeren
 * Vicissitude
-* WarriorValeren
-* WatcherValeren
+* Warrior Valeren
+* Watcher Valeren
 
 </details>
 

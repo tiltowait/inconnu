@@ -41,6 +41,18 @@ from models.vchardocs import (
     VCharTrait,
 )
 
+# Standard traits' names and types, keyed by name without case or spaces, so
+# new traits get the standard name: "bloodsorcery" becomes Blood Sorcery
+_STANDARD_TRAITS: dict[str, tuple[str, VCharTrait.Type]] = {
+    name.casefold().replace(" ", ""): (name, trait_type)
+    for names, trait_type in (
+        (ATTRIBUTES, VCharTrait.Type.ATTRIBUTE),
+        (SKILLS, VCharTrait.Type.SKILL),
+        (DISCIPLINES, VCharTrait.Type.DISCIPLINE),
+    )
+    for name in names
+}
+
 
 class Tracker(StrEnum):
     """An enum to avoid stringly typing database fields."""
@@ -491,23 +503,18 @@ class VChar(Document):
                 trait.rating = input_rating
                 assignments[trait.name] = input_rating
             else:
-                # Automatically categorize attributes and skills (helps with chargen)
-                if input_name in ATTRIBUTES:
-                    assigned_category = VCharTrait.Type.ATTRIBUTE
-                elif input_name in SKILLS:
-                    assigned_category = VCharTrait.Type.SKILL
-                elif input_name.lower() in map(str.lower, DISCIPLINES):
-                    assigned_category = VCharTrait.Type.DISCIPLINE
-                else:
-                    assigned_category = category
+                # Automatically categorize standard traits, giving them their
+                # standard names (helps with chargen)
+                standard = _STANDARD_TRAITS.get(input_name.casefold().replace(" ", ""))
+                name, assigned_category = standard or (input_name, category)
 
                 new_trait = VCharTrait(
-                    name=input_name,
+                    name=name,
                     rating=input_rating,
                     type=assigned_category.value,
                 )
                 bisect.insort(self.raw_traits, new_trait, key=lambda t: t.name.casefold())
-                assignments[input_name] = input_rating
+                assignments[name] = input_rating
 
         # Traits added; now adjust HP/WP
         adjustments = []

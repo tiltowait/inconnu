@@ -32,3 +32,14 @@ def test_delete_core_trait_clears_specialties():
     assert brawl.rating == 0
     assert brawl.specialties == []
     assert athletics.specialties == ["Climbing"]
+
+
+def test_delete_core_trait_without_spaces():
+    """A core Trait typed without its spaces is still zeroed, not removed."""
+    char = tests.characters.gen_char("vampire")
+    char.assign_traits({"Animal Ken": 3})
+
+    outcome = delete_traits(char, "animalken")
+
+    assert outcome.deleted == ["Animal Ken"]
+    assert char.find_trait("Animal Ken", True).rating == 0

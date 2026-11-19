@@ -38,8 +38,7 @@ async def delete(ctx: AppCtx, char_name: str | None, traits_input: str, discipli
         return
 
     # Every character can "delete" a core trait, as it's just set to 0
-    standard_traits = {t.lower() for t in constants.get_standard_traits()}
-    if any(trait.lower() in standard_traits for trait in traits):
+    if any(constants.core_trait(trait) for trait in traits):
         char_filter = None
     else:
         char_filter = traitcommon.any_trait_filter(*traits)
@@ -90,12 +89,11 @@ def __delete_traits(character: VChar, *traits: str) -> DeletionResult:
     """
     deleted = []
     errs = []
-    standard_traits = {t.lower() for t in constants.get_standard_traits()}
 
     for trait_name in traits:
-        if trait_name.lower() in standard_traits:
+        if standard := constants.core_trait(trait_name):
             # Set attributes and skills to 0 for better UX, clearing their specialties
-            _, trait = character.assign_traits({trait_name: 0})
+            _, trait = character.assign_traits({standard: 0})
             for core in character.traits:
                 if core.name in trait and core.has_specialties:
                     character.remove_specialties(core.name, core.specialties)

@@ -53,6 +53,21 @@ Changes the ratings of one or more existing Traits. Use each Trait's full name.
 > /traits update traits:Awareness=3 character:Nadea
 > ```
 
+## /traits rename
+
+```
+/traits rename trait:<trait> new_name:<new name> character:[character]
+```
+
+Renames a Trait, keeping its rating and specialties. Macros that use it are updated, too. Attributes and Skills can't be renamed.
+
+> [!TIP]
+> **Example:** Renaming Nadea's Night Driving to Getaway Driving:
+>
+> ```
+> /traits rename trait:Night Driving new_name:Getaway Driving character:Nadea
+> ```
+
 ## /traits list
 
 ```

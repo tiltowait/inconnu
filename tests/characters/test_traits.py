@@ -6,7 +6,7 @@ import errors
 import tests.characters
 from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS
 from models import VChar
-from models.vchardocs import VCharTrait
+from models.vchardocs import VCharMacro, VCharTrait
 
 
 @pytest.fixture
@@ -339,3 +339,67 @@ def test_update_trait(vampire: VChar):
     vampire.assign_traits({trait: 5})
     assert vampire.traits[0].rating == 5
     assert vampire.find_trait(trait).rating == 5
+
+
+def make_macro(name: str, pool: list[str]) -> VCharMacro:
+    """A macro with the given pool."""
+    return VCharMacro(
+        name=name,
+        pool=pool,
+        hunger=True,
+        difficulty=0,
+        rouses=0,
+        reroll_rouses=False,
+        staining="show",
+        hunt=False,
+        comment=None,
+    )
+
+
+def test_rename_trait(empty_vampire: VChar):
+    """A renamed trait keeps its rating, specialties, and type, stays sorted,
+    and is renamed in macros."""
+    empty_vampire.assign_traits({"Wits": 2, "QoNos": 3, "Brawl": 1})
+    empty_vampire.add_specialties("QoNos", ["Bird of Prey", "Dogs"])
+    empty_vampire.macros.append(make_macro("fly", ["Wits", "+", "QoNos.Bird of Prey", "+", "1"]))
+    empty_vampire.macros.append(make_macro("punch", ["Brawl", "+", "Wits"]))
+
+    assert empty_vampire.rename_trait("qonos", "Qo'noS") == "QoNos"
+
+    trait = empty_vampire.find_trait("Qo'noS", True)
+    assert trait.rating == 3
+    assert trait.type == VCharTrait.Type.CUSTOM
+    assert [t.name for t in empty_vampire.traits] == ["Brawl", "Qo'noS", "Wits"]
+    assert empty_vampire.traits[1].specialties == ["Bird of Prey", "Dogs"]
+    assert empty_vampire.macros[0].pool == ["Wits", "+", "Qo'noS.Bird of Prey", "+", "1"]
+    assert empty_vampire.macros[1].pool == ["Brawl", "+", "Wits"]
+
+
+def test_rename_trait_lookups(empty_vampire: VChar):
+    """The old name is found as other lookups find it (ignoring spaces as a
+    fallback), and a trait may change only its case."""
+    empty_vampire.assign_traits({"Qo Nos": 1})
+
+    assert empty_vampire.rename_trait("qonos", "QO NOS") == "Qo Nos"
+    assert empty_vampire.traits[0].name == "QO NOS"
+
+
+@pytest.mark.parametrize(
+    "old,new,error,match",
+    [
+        ("Missing", "Anything", errors.TraitNotFound, "no trait named `Missing`"),
+        ("Strength", "Might", errors.TraitError, "`Strength` is a standard trait and can't"),
+        ("animalken", "Beast Talk", errors.TraitError, "`Animal Ken` is a standard trait and"),
+        ("Night Driving", "strength", errors.TraitError, "`Strength` is a standard trait"),
+        ("Night Driving", "Big Cats", errors.TraitAlreadyExistsError, "named `Big Cats`"),
+        ("Night Driving", "BigCats", errors.TraitAlreadyExistsError, "named `Big Cats`"),
+    ],
+)
+def test_rename_trait_errors(
+    old: str, new: str, error: type[Exception], match: str, empty_vampire: VChar
+):
+    """Standard traits can't be renamed or used as new names, and a new name
+    can't belong to another trait."""
+    empty_vampire.assign_traits({"Strength": 2, "Animal Ken": 1, "Night Driving": 2, "Big Cats": 1})
+    with pytest.raises(error, match=match):
+        empty_vampire.rename_trait(old, new)

@@ -105,3 +105,12 @@ def get_standard_traits() -> list[str]:
     function to remove any possibility of modifying the source list."""
     trait_lists = cast(list[list[str]], FlatDict(GROUPED_TRAITS).values())
     return list(chain.from_iterable(trait_lists))
+
+
+def core_trait(name: str) -> str | None:
+    """The standard Attribute or Skill a name refers to, ignoring case and
+    spaces ("animalken" is Animal Ken), or None."""
+    return _CORE_TRAITS.get(name.casefold().replace(" ", ""))
+
+
+_CORE_TRAITS = {name.casefold().replace(" ", ""): name for name in get_standard_traits()}

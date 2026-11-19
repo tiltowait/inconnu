@@ -68,6 +68,20 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         """Update one or more Traits. Traits must already exist (use /traits add)."""
         await inconnu.traits.update(ctx, character, traits)
 
+    @traits.command(name="rename")
+    @option("trait", description="The trait to rename. Ex: QoNos")
+    @option("new_name", description="The trait's new name. Ex: Qo'noS")
+    @inconnu.options.char_option("The character to modify")
+    async def traits_rename(
+        self,
+        ctx: AppCtx,
+        trait: str,
+        new_name: str,
+        character: str,
+    ):
+        """Rename a Trait, keeping its rating and specialties."""
+        await inconnu.traits.rename(ctx, character, trait, new_name)
+
     @traits.command(name="delete")
     @option("traits", description="The traits to delete. Ex: Oblivion; Blood Sorcery")
     @inconnu.options.char_option("The character to modify")

@@ -10,7 +10,7 @@ import errors
 import services
 import tests.characters
 from ctx import AppCtx
-from inconnu.traits import add, delete, update
+from inconnu.traits import add, delete, rename, update
 from models import VChar
 
 
@@ -189,4 +189,44 @@ async def test_delete_no_owners(ctx: AppCtx, mock_error: AsyncMock, mock_char_sa
         mock_error.await_args.args[1]
         == "None of your characters have any of these traits: `Baz`, `Qux`."
     )
+    mock_char_save.assert_not_awaited()
+
+
+async def test_rename_selects_sole_owner(
+    ctx: AppCtx,
+    bob: VChar,
+    mock_respond: AsyncMock,
+    mock_char_save: AsyncMock,
+    mock_common_report: AsyncMock,
+):
+    """Only Bob has Bar, so it's renamed without a selector, saved, and reported."""
+    await rename(ctx, None, "bar", "Bar  Room")
+
+    assert bob.has_trait("Bar Room")
+    assert not any(t.name == "Bar" for t in bob.traits)
+    mock_char_save.assert_awaited_once()
+    mock_respond.assert_awaited_once()
+    mock_common_report.assert_awaited_once()
+
+
+async def test_rename_invalid_name_before_lookup(
+    ctx: AppCtx, mock_chars: AsyncMock, mock_error: AsyncMock, mock_char_save: AsyncMock
+):
+    """An invalid new name is rejected before any character is fetched."""
+    await rename(ctx, None, "Bar", "Bar-Room")
+
+    mock_error.assert_awaited_once()
+    mock_chars.assert_not_awaited()
+    mock_char_save.assert_not_awaited()
+
+
+async def test_rename_error_not_saved(
+    ctx: AppCtx, bob: VChar, mock_error: AsyncMock, mock_char_save: AsyncMock
+):
+    """A rename the character refuses shows the error and saves nothing."""
+    await rename(ctx, None, "Bar", "Strength")
+
+    assert mock_error.await_args is not None
+    assert "`Strength` is a standard trait" in str(mock_error.await_args.args[1])
+    assert bob.has_trait("Bar")
     mock_char_save.assert_not_awaited()

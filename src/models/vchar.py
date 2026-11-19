@@ -25,7 +25,7 @@ from pydantic import ConfigDict, Field
 from pymongo import ASCENDING
 
 import errors
-from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
+from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage, core_trait
 from events import CharEventType, char_events
 from models.impairment import Impairment
 from models.vchardocs import (
@@ -52,6 +52,14 @@ _STANDARD_TRAITS: dict[str, tuple[str, VCharTrait.Type]] = {
     )
     for name in names
 }
+
+
+def _rename_operand(token: str, old: str, new: str) -> str:
+    """Rename a macro pool token's trait ("Trait.Subtrait") if it's old."""
+    trait, *subtraits = token.split(VCharTrait.DELIMITER)
+    if trait.casefold() != old.casefold():
+        return token
+    return VCharTrait.DELIMITER.join([new, *subtraits])
 
 
 class Tracker(StrEnum):
@@ -538,6 +546,38 @@ class VChar(Document):
             raise errors.TraitNotFound(self, name)
 
         return self.raw_traits.pop(index).name
+
+    def rename_trait(self, old: str, new: str) -> str:
+        """Rename a trait, keeping its rating, specialties, and type, and update
+        the macros that use it. Returns the trait's old name. The new name
+        must already be valid.
+
+        Raises TraitNotFound if the trait doesn't exist, and TraitError if
+        either name is a standard Attribute or Skill, or another trait has
+        the new name."""
+        if (index := self._raw_trait_index(old)) is None:
+            raise errors.TraitNotFound(self, old)
+
+        trait = self.raw_traits[index]
+        old_name = trait.name
+
+        if core_trait(old_name):
+            raise errors.TraitError(f"`{old_name}` is a standard trait and can't be renamed.")
+        if standard := core_trait(new):
+            raise errors.TraitError(f"`{standard}` is a standard trait.")
+        if (other := self._raw_trait_index(new)) is not None and other != index:
+            raise errors.TraitAlreadyExistsError(
+                f"**{self.name}** already has a trait named `{self.raw_traits[other].name}`."
+            )
+
+        trait.name = new
+        self.raw_traits.sort(key=lambda t: t.name.casefold())  # assign_traits()' order
+
+        # Macros store full trait names
+        for macro in self.macros:
+            macro.pool = [_rename_operand(token, old_name, new) for token in macro.pool]
+
+        return old_name
 
     def add_powers(self, trait_name: str, powers: list[str] | str) -> tuple[VCharTrait, list[str]]:
         """Add powers to a Discipline and return a copy."""

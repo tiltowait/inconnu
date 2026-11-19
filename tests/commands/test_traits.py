@@ -105,7 +105,7 @@ async def test_update_matches_any_trait(
     ctx: AppCtx, alice: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
 ):
     """A character needs only one of the traits to be chosen."""
-    await update(ctx, None, "Foo=3 Baz=2")
+    await update(ctx, None, "Foo=3; Baz=2")
 
     assert alice.find_trait("Foo").rating == 3
 
@@ -145,11 +145,27 @@ async def test_delete_selects_sole_owner(
     ctx: AppCtx, alice: VChar, bob: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
 ):
     """Only Bob has Bar, so it's deleted from him without a selector."""
-    await delete(ctx, None, "Bar Baz")
+    await delete(ctx, None, "Bar; Baz")
 
     assert not bob.has_trait("Bar")
     assert alice.has_trait("Foo")
     mock_char_save.assert_awaited_once()
+
+
+async def test_multiword_traits(
+    ctx: AppCtx, alice: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
+):
+    """Multiword traits are added, updated, and deleted like any other."""
+    await add(ctx, alice, "Big  Cats=2; Animal Ken 1")
+    assert alice.find_trait("Big Cats", exact=True).rating == 2
+    assert alice.find_trait("Animal Ken", exact=True).rating == 1
+
+    await update(ctx, None, "big cats=4")
+    assert alice.find_trait("Big Cats", exact=True).rating == 4
+
+    await delete(ctx, None, "Big Cats; Animal Ken")
+    assert not alice.has_trait("Big Cats")
+    assert not alice.has_trait("Animal Ken")
 
 
 async def test_delete_core_trait_shows_selector(
@@ -157,7 +173,7 @@ async def test_delete_core_trait_shows_selector(
 ):
     """Every character can zero a core trait, so none are filtered out."""
     with pytest.raises(errors.HandledError):
-        await delete(ctx, None, "Foo Wits")
+        await delete(ctx, None, "Foo; Wits")
 
     mock_selection.assert_awaited_once()
     mock_char_save.assert_not_awaited()
@@ -166,7 +182,7 @@ async def test_delete_core_trait_shows_selector(
 async def test_delete_no_owners(ctx: AppCtx, mock_error: AsyncMock, mock_char_save: AsyncMock):
     """No character has the traits, so the user is told so."""
     with pytest.raises(errors.HandledError):
-        await delete(ctx, None, "Baz Qux")
+        await delete(ctx, None, "Baz; Qux")
 
     assert mock_error.await_args is not None
     assert (

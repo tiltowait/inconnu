@@ -1,7 +1,6 @@
 """traits/add.py - Add traits to a character."""
 
 import asyncio
-import re
 from collections.abc import Awaitable
 from typing import NamedTuple
 
@@ -45,7 +44,7 @@ class TraitPartition(NamedTuple):
 async def add(ctx: AppCtx, character: VChar, traits: str, disciplines=False):
     """Add traits to a character."""
     try:
-        traits_dict = __parse(traits, disciplines)
+        traits_dict = parse_traits(traits, disciplines=disciplines)
     except (ValueError, SyntaxError) as err:
         await ui.embeds.error(ctx, err, character=character, help=__HELP_ADD)
         return
@@ -57,7 +56,7 @@ async def update(ctx: AppCtx, char_name: str | None, traits: str, disciplines=Fa
     """Update a character's traits. Only characters with at least one of the
     traits are offered for selection."""
     try:
-        traits_dict = __parse(traits, disciplines)
+        traits_dict = parse_traits(traits, disciplines=disciplines)
     except (ValueError, SyntaxError) as err:
         await ui.embeds.error(ctx, err, character=char_name, help=__HELP_UPDATE)
         return
@@ -74,14 +73,6 @@ async def update(ctx: AppCtx, char_name: str | None, traits: str, disciplines=Fa
         ctx.interaction = haven.new_interaction
 
     await __assign(ctx, character, traits_dict, True, disciplines)
-
-
-def __parse(traits: str, disciplines: bool) -> dict[str, int | None]:
-    """Parse the user's trait input into a {trait: rating} dict."""
-    # Allow the user to input "trait rating", not only "trait=rating"
-    traits = re.sub(r"\s*=\s*", r"=", traits)
-    traits = re.sub(r"([A-Za-z_])\s+(\d)", r"\g<1>=\g<2>", traits)
-    return parse_traits(*traits.split(), disciplines=disciplines)
 
 
 async def __assign(

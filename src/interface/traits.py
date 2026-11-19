@@ -33,7 +33,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
     )
 
     @traits.command(name="add")
-    @option("traits", description="The traits to add. Ex: Oblivion=4 BloodSorcery=2")
+    @option("traits", description="The traits to add. Ex: Oblivion=4; BloodSorcery=2")
     @inconnu.options.char_option("The character to modify")
     async def traits_add(
         self,
@@ -57,7 +57,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         await inconnu.traits.show(ctx, character, player=player)
 
     @traits.command(name="update")
-    @option("traits", description="The traits to update. Ex: Oblivion=4 BloodSorcery=2")
+    @option("traits", description="The traits to update. Ex: Oblivion=4; BloodSorcery=2")
     @inconnu.options.char_option("The character to modify")
     async def traits_update(
         self,
@@ -69,7 +69,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         await inconnu.traits.update(ctx, character, traits)
 
     @traits.command(name="delete")
-    @option("traits", description="The traits to delete. Ex: Oblivion BloodSorcery")
+    @option("traits", description="The traits to delete. Ex: Oblivion; BloodSorcery")
     @inconnu.options.char_option("The character to modify")
     async def delete_traits(
         self,
@@ -91,7 +91,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
     )
 
     @disciplines.command(name="add")
-    @option("disciplines", description="The Disciplines to add. Ex: Potence=3 Auspex=2")
+    @option("disciplines", description="The Disciplines to add. Ex: Potence=3; Auspex=2")
     @inconnu.options.char_option("The character to modify")
     async def add_disciplines(
         self,
@@ -103,7 +103,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         await inconnu.traits.add(ctx, character, disciplines, True)
 
     @disciplines.command(name="remove")
-    @option("disciplines", description="The Disciplines to remove. Ex: Potence Auspex")
+    @option("disciplines", description="The Disciplines to remove. Ex: Potence; Auspex")
     @inconnu.options.char_option("The character to modify")
     async def remove_disciplines(
         self,

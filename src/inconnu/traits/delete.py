@@ -7,6 +7,7 @@ import errors
 import ui
 from ctx import AppCtx, AppInvocation
 from inconnu.traits import traitcommon
+from inconnu.traits.parser import split_traits
 from models import VChar
 from services.haven import Haven
 from utils.urls import docs_url
@@ -25,7 +26,7 @@ async def delete(ctx: AppCtx, char_name: str | None, traits_input: str, discipli
     """Delete character traits. Core attributes and abilities are set to 0. Only
     characters with at least one of the traits are offered for selection."""
     try:
-        traits = traits_input.split()
+        traits = split_traits(traits_input)
         if not traits:
             # Shouldn't be possible to reach here, but just in case Discord messes up
             raise SyntaxError("You must supply a list of traits or disciplines to delete.")

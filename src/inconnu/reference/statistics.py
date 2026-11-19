@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 
 import discord
+from beanie import PydanticObjectId
 
 import constants
 import db
@@ -65,6 +66,42 @@ async def statistics(
         await ui.embeds.error(ctx, err, help=__HELP_URL)
 
 
+def trait_successes_pipeline(charid: PydanticObjectId | None, date: datetime) -> list[dict]:
+    """An aggregation pipeline totaling the successes of each pool operand in
+    a character's rolls since a date. Each result is {_id: operand,
+    successes: total}.
+
+    Stored pools look like "Strength + Animal Ken (Big Cats) - 1". Names have
+    spaces, so we split on the operators, then drop any specialties.
+    Subtracted traits aren't counted: we keep only what comes before a " - ",
+    and a leading one keeps its minus sign ("-Strength")."""
+    return [
+        {
+            "$match": {
+                "charid": charid,
+                "use_in_stats": True,
+                "date": {"$gte": date},
+                "pool": {"$ne": None},
+            }
+        },
+        {
+            "$project": {
+                "pool": {"$split": ["$pool", " + "]},
+                "successes": {
+                    "$add": [
+                        {"$cond": [{"$ne": ["$reroll", None]}, "$reroll.margin", "$margin"]},
+                        "$difficulty",
+                    ]
+                },
+            }
+        },
+        {"$unwind": "$pool"},
+        {"$project": {"pool": {"$arrayElemAt": [{"$split": ["$pool", " - "]}, 0]}, "successes": 1}},
+        {"$project": {"pool": {"$arrayElemAt": [{"$split": ["$pool", " ("]}, 0]}, "successes": 1}},
+        {"$group": {"_id": "$pool", "successes": {"$sum": "$successes"}}},
+    ]
+
+
 @haven(__HELP_URL)
 async def __traits_statistics(
     ctx: AppCtx,
@@ -75,50 +112,19 @@ async def __traits_statistics(
     player: discord.Member,
 ):
     """View the statistics for all traits since a given date."""
-    pipeline = [
-        {
-            "$match": {
-                "charid": character.id,
-                "use_in_stats": True,
-                "date": {"$gte": date},
-                "pool": {"$ne": None},
-            }
-        },
-        {
-            "$project": {
-                "charid": 1,
-                "pool": {"$split": ["$pool", " "]},
-                "successes": {
-                    "$add": [
-                        {"$cond": [{"$ne": ["$reroll", None]}, "$reroll.margin", "$margin"]},
-                        "$difficulty",
-                    ]
-                },
-            }
-        },
-        {"$unwind": "$pool"},
-        {
-            "$group": {
-                "_id": {"charid": "$charid", "pool": "$pool"},
-                "count": {"$sum": "$successes"},
-            }
-        },
-        {"$group": {"_id": "$_id.charid", "docs": {"$push": {"k": "$_id.pool", "v": "$count"}}}},
-        {"$replaceRoot": {"newRoot": {"_id": "$_id", "traits": {"$arrayToObject": ["$docs"]}}}},
-    ]
+    pipeline = trait_successes_pipeline(character.id, date)
     async with await db.rolls.aggregate(pipeline) as cursor:
-        raw_stats = await cursor.to_list(1)
+        successes = {doc["_id"]: doc["successes"] async for doc in cursor}
 
-    if raw_stats:
+    if successes:
         stats = {}
 
         for trait in character.traits:
-            # The raw_stats object has a bunch of bogus data, such as
-            # math operators and numbers, that we don't want. So we
-            # get only those traits that the character actually has.
-            # If there aren't any successes, we store a 0, because that
-            # is useful information, too.
-            stats[trait.name] = raw_stats[0]["traits"].get(trait.name, 0)
+            # The successes include numbers, as well as traits the
+            # character no longer has, so we get only the traits the
+            # character actually has. If there aren't any successes, we
+            # store a 0, because that is useful information, too.
+            stats[trait.name] = successes.get(trait.name, 0)
 
         await __display_trait_statistics(ctx, character, stats, date, player, hidden)
     else:

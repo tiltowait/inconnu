@@ -21,6 +21,9 @@ async def rename(ctx: AppCtx, char_name: str | None, trait: str, new_name: str):
     trait = _clean(trait)
     new_name = _clean(new_name)
     try:
+        # Separately, since a case-only rename isn't a duplicate. Validating the
+        # old name rejects "Trait.Specialty", which would find the trait
+        traitcommon.validate_trait_names(trait)
         traitcommon.validate_trait_names(new_name)
     except (ValueError, SyntaxError) as err:
         await ui.embeds.error(ctx, err, character=char_name, help=__HELP_URL)

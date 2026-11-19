@@ -388,6 +388,7 @@ def test_rename_trait_lookups(empty_vampire: VChar):
     "old,new,error,match",
     [
         ("Missing", "Anything", errors.TraitNotFound, "no trait named `Missing`"),
+        ("Night Driving.Rain", "Rain Driving", errors.TraitError, "not specialties"),
         ("Strength", "Might", errors.TraitError, "`Strength` is a standard trait and can't"),
         ("animalken", "Beast Talk", errors.TraitError, "`Animal Ken` is a standard trait and"),
         ("Night Driving", "strength", errors.TraitError, "`Strength` is a standard trait"),

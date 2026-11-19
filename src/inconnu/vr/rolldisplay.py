@@ -22,7 +22,6 @@ from models import IMPAIRMENT_DICE, ImpairmentCategory, RollCategory, VChar
 from models.impairment import pool_traits
 from ui.views.ephemeralsafeview import EphemeralSafeView
 from utils import get_avatar, get_message
-from utils.text import split_words
 from utils.urls import web_asset
 
 type RerollListener = Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]]
@@ -31,12 +30,6 @@ type TimeoutHandler = Callable[[Roll], Awaitable[None]]
 PRIMARY = discord.ButtonStyle.primary
 SECONDARY = discord.ButtonStyle.secondary
 DANGER = discord.ButtonStyle.danger
-
-
-def _readable_operand(operand: str) -> str:
-    """De-camel and title-case a pool operand, keeping a leading minus sign."""
-    sign = "-" if operand.startswith("-") else ""
-    return sign + split_words(operand.removeprefix("-"))
 
 
 class _Surge(Enum):
@@ -420,7 +413,7 @@ class RollDisplay(EphemeralSafeView):
             )
             # A number-only pool would reveal its size, and an Impairment
             # penalty would reveal the character's condition
-            embed.add_field(name="Pool", value=self.readable_pool or "`Hidden`")
+            embed.add_field(name="Pool", value=self.outcome.pool_str or "`Hidden`")
         else:
             self._add_dice_fields(embed)
 
@@ -499,33 +492,18 @@ class RollDisplay(EphemeralSafeView):
 
     @property
     def pool_str(self) -> str | None:
-        """The readable pool plus any impairment penalty. A penalized
-        number-only pool shows its pre-penalty size."""
+        """The pool plus any impairment penalty. A penalized number-only pool
+        shows its pre-penalty size."""
         penalty = None
         if self.outcome.impairment_penalty:
             impairment = self.outcome.impairment_penalty.description
             penalty = f"- {IMPAIRMENT_DICE} ({impairment} impairment)"
 
-        pool_str = self.readable_pool
-        if pool_str is None:
+        pool_str = self.outcome.pool_str
+        if not pool_str:
             return f"{self.outcome.base_pool} {penalty}" if penalty else None
 
-        # Added after readable_pool's capitalization, which would otherwise
-        # turn "(physical impairment)" into "(physical Impairment)"
         return f"{pool_str} {penalty}" if penalty else pool_str
-
-    @property
-    def readable_pool(self) -> str | None:
-        """The pool string, made nicer to read, or None for number-only pools."""
-        if not self.outcome.pool_str:
-            return None
-
-        # Title-case each operand on its own, since titlecase() doesn't start
-        # a new title after an operator: "Strength + of the Night"
-        parts = re.split(r"( [+-] )", self.outcome.pool_str)
-        return "".join(
-            part if part in (" + ", " - ") else _readable_operand(part) for part in parts
-        )
 
     @property
     def comment(self) -> str | None:

@@ -553,8 +553,10 @@ class VChar(Document):
         must already be valid.
 
         Raises TraitNotFound if the trait doesn't exist, and TraitError if
-        either name is a standard Attribute or Skill, or another trait has
-        the new name."""
+        either name is a standard Attribute or Skill, another trait has the
+        new name, or the old name is a specialty ("Trait.Specialty")."""
+        if VCharTrait.DELIMITER in old:
+            raise errors.TraitError("Only traits can be renamed, not specialties.")
         if (index := self._raw_trait_index(old)) is None:
             raise errors.TraitNotFound(self, old)
 

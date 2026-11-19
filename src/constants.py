@@ -107,10 +107,16 @@ def get_standard_traits() -> list[str]:
     return list(chain.from_iterable(trait_lists))
 
 
+def name_key(name: str) -> str:
+    """A trait name without case or spaces, as lookups compare them:
+    "Animal Ken", "animalken", and "AnimalKen" are all "animalken"."""
+    return name.casefold().replace(" ", "")
+
+
 def core_trait(name: str) -> str | None:
     """The standard Attribute or Skill a name refers to, ignoring case and
     spaces ("animalken" is Animal Ken), or None."""
-    return _CORE_TRAITS.get(name.casefold().replace(" ", ""))
+    return _CORE_TRAITS.get(name_key(name))
 
 
-_CORE_TRAITS = {name.casefold().replace(" ", ""): name for name in get_standard_traits()}
+_CORE_TRAITS = {name_key(name): name for name in get_standard_traits()}

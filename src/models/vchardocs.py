@@ -11,9 +11,10 @@ import errors
 CAREER_STATS_LIVE = datetime(2026, 11, 14, 20, tzinfo=UTC)  # Noon PST
 VICTIMS_DRAINED_LIVE = datetime(2026, 11, 18, 20, tzinfo=UTC)  # Noon PST
 
-# The most specialties one roll operand may name ("brawl.kindred.kine"). Rolls
-# use one, so this is generous; it keeps matching cheap on hostile input
-MAX_SUBTRAIT_TOKENS = 3
+# The most specialty combinations matching keeps while expanding. Exact names
+# narrow to one, so only vague input ("brawl....." on a trait with many
+# specialties) reaches it; capping it keeps matching cheap
+MAX_SUBTRAIT_MATCHES = 100
 
 
 class BlushState(IntEnum):
@@ -394,9 +395,6 @@ class VCharTrait(BaseModel):
                 return _fold(i, ignore_spaces).startswith(t)
 
         if comp(tokens[0], self.name):
-            if len(tokens) - 1 > MAX_SUBTRAIT_TOKENS:
-                return []
-
             # Each selection is a set of distinct specialties, one per token
             # so far. A token may match several, so equal selections merge as
             # we go: listing every combination first would grow with their
@@ -410,6 +408,10 @@ class VCharTrait(BaseModel):
                     for spec in found
                     if spec not in selection
                 }
+                if len(selections) > MAX_SUBTRAIT_MATCHES:
+                    # Too vague to list; keep the first few, so it fails as
+                    # ambiguous without the cost of every combination
+                    selections = set(sorted(selections, key=sorted)[:MAX_SUBTRAIT_MATCHES])
 
             matches = sorted([self.name, *sorted(selection)] for selection in selections)
 

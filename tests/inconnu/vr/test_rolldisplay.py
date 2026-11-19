@@ -389,29 +389,25 @@ async def test_stat_fields(ctx: AppCtx, owner: discord.Member):
 
 
 @pytest.mark.parametrize(
-    "pool_str,expected",
+    "pool_str",
     [
-        ("Strength + Brawl", "Strength + Brawl"),
-        ("strength + brawl", "Strength + Brawl"),
-        ("Dexterity + AnimalKen", "Dexterity + Animal Ken"),
-        ("Wits + blood_potency", "Wits + Blood Potency"),
-        ("Wits + XYZ", "Wits + XYZ"),
-        # Each operand is its own title, with small words lowercased inside it
-        ("Wits + WhereTheShroudThins", "Wits + Where the Shroud Thins"),
-        ("Strength + Of the Night - 1", "Strength + Of the Night - 1"),
-        ("-of the night + 2", "-Of the Night + 2"),
-        ("Brawl (Of the Night, Kindred)", "Brawl (Of the Night, Kindred)"),
+        "Strength + Brawl",
+        "Wits + Animal Ken (Big Cats, Dogs) - 1",
+        "Wits + Where the Shroud Thins",
+        "-Strength + Beast's Fang",
+        # Names are shown as stored, even if they look like CamelCase
+        "Intelligence + QoNos",
+        "Contacts (McAllister)",
     ],
 )
-async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str, expected: str):
-    """Pool strings are de-cameled and title-cased, operand by operand,
-    without lowercasing."""
+async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str):
+    """Pools are shown with their traits' names as stored."""
     display = make_display(ctx, owner, make_roll([6], [], pool_str=pool_str))
     embed = await render(display)
     field = embed.fields[4]
 
     assert field.name == "Pool"
-    assert field.value == expected
+    assert field.value == pool_str
     assert field.inline
 
 

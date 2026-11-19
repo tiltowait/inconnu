@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from models.vchardocs import VCharSplat, VCharTrait
-from routes.characters.models import CreationBody
+from routes.characters.models import CreationBody, trait_errors, with_core_traits
 
 
 def valid_creation_data(**overrides: Any) -> dict[str, Any]:
@@ -380,6 +380,35 @@ def test_duplicate_trait_names_case_insensitive():
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "duplicate" in str(exc_info.value).lower()
+
+
+def test_duplicate_trait_names_ignore_spaces():
+    """Names that differ only in spaces are duplicates, as lookups see them."""
+    traits = [
+        VCharTrait(name="Night Driving", rating=1, type=VCharTrait.Type.CUSTOM),
+        VCharTrait(name="NightDriving", rating=2, type=VCharTrait.Type.CUSTOM),
+    ]
+    assert list(trait_errors(traits)) == [((1, "name"), "Duplicate trait: `NightDriving`.")]
+
+
+def test_core_trait_type_ignores_spaces():
+    """An old spelling of a core trait must still have the core type."""
+    traits = [VCharTrait(name="AnimalKen", rating=1, type=VCharTrait.Type.CUSTOM)]
+    assert list(trait_errors(traits)) == [((0, "type"), "`AnimalKen` must be of type `skill`.")]
+
+
+def test_with_core_traits_standardizes_names():
+    """An old spelling of a core trait becomes the core trait, rather than
+    joining a restored copy of it at 0."""
+    traits = with_core_traits(
+        [VCharTrait(name="AnimalKen", rating=3, type=VCharTrait.Type.SKILL, subtraits=["Dogs"])]
+    )
+
+    animal_ken = [t for t in traits if t.name.casefold().replace(" ", "") == "animalken"]
+    assert len(animal_ken) == 1
+    assert animal_ken[0].name == "Animal Ken"
+    assert animal_ken[0].rating == 3
+    assert animal_ken[0].raw_subtraits == ["Dogs"]
 
 
 @pytest.mark.parametrize("rating", [0, 5])

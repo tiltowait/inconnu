@@ -1,11 +1,9 @@
 """Specialty test suite."""
 
-import math
-
 import pytest
 
 import errors
-from models.vchardocs import MAX_SUBTRAIT_TOKENS, VCharTrait
+from models.vchardocs import MAX_SUBTRAIT_MATCHES, VCharTrait
 
 
 @pytest.fixture
@@ -336,10 +334,22 @@ def test_repeated_specialty_tokens_merge(skill: VCharTrait):
     assert skill.expanding("b.k.k.k", False) == ["Brawl.Kindred.Kine.Kinfolk"]
 
 
-def test_specialty_token_limit(skill: VCharTrait):
-    """An operand may name at most MAX_SUBTRAIT_TOKENS specialties."""
+def test_long_exact_specialty_lists(skill: VCharTrait):
+    """Exact specialties narrow to one combination, however many there are,
+    so stored macro keys of any length still match."""
+    specs = [f"Spec{letter}" for letter in "ABCDEFGH"]
+    skill.add_specialties(specs)
+
+    key = "Brawl." + ".".join(specs)
+    assert skill.expanding(key.lower(), False) == [key]
+
+
+def test_vague_specialties_are_capped(skill: VCharTrait):
+    """Vague input that matches many combinations keeps only the first
+    MAX_SUBTRAIT_MATCHES, in order."""
     skill.add_specialties([f"Spec{letter}" for letter in "ABCDEFGHIJ"])
 
-    at_limit = "brawl" + ".spec" * MAX_SUBTRAIT_TOKENS
-    assert len(skill.expanding(at_limit, False)) == math.comb(10, MAX_SUBTRAIT_TOKENS)
-    assert skill.expanding(at_limit + ".spec", False) == []
+    matches = skill.expanding("brawl" + ".spec" * 5, False)  # 252 combinations
+    assert len(matches) == MAX_SUBTRAIT_MATCHES
+    assert matches == sorted(matches)
+    assert matches[0] == "Brawl.SpecA.SpecB.SpecC.SpecD.SpecE"

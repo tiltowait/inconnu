@@ -235,6 +235,33 @@ async def test_rename_invalid_name_before_lookup(
     mock_char_save.assert_not_awaited()
 
 
+@pytest.mark.parametrize("trait", ["Bar.Kindred", "Bar-Room"])
+async def test_rename_invalid_old_name_before_lookup(
+    ctx: AppCtx,
+    trait: str,
+    mock_chars: AsyncMock,
+    mock_error: AsyncMock,
+    mock_char_save: AsyncMock,
+):
+    """The old name is validated, too, so a specialty ("Trait.Specialty")
+    can't rename its trait."""
+    await rename(ctx, None, trait, "Bar Room")
+
+    mock_error.assert_awaited_once()
+    mock_chars.assert_not_awaited()
+    mock_char_save.assert_not_awaited()
+
+
+async def test_rename_case_only(
+    ctx: AppCtx, bob: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
+):
+    """Changing only a name's case isn't a duplicate."""
+    await rename(ctx, None, "Bar", "BAR")
+
+    assert any(t.name == "BAR" for t in bob.traits)
+    mock_char_save.assert_awaited_once()
+
+
 async def test_rename_error_not_saved(
     ctx: AppCtx, bob: VChar, mock_error: AsyncMock, mock_char_save: AsyncMock
 ):

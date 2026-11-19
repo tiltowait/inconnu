@@ -429,24 +429,35 @@ class VChar(Document):
 
     def has_trait(self, name: str) -> bool:
         """Determine whether a character has a given trait."""
-        for trait in self.raw_traits:
-            if trait.matching(name, True):
-                return True
-        return False
+        return self._raw_trait_index(name) is not None
+
+    def _raw_trait_index(self, name: str) -> int | None:
+        """The index of the raw trait with this exact name (ignoring case), or
+        None. If no name matches, spaces are ignored, so "AnimalKen" finds
+        Animal Ken."""
+        for ignore_spaces in (False, True):
+            for index, trait in enumerate(self.raw_traits):
+                if trait.matching(name, True, ignore_spaces=ignore_spaces):
+                    return index
+        return None
 
     def find_trait(self, name: str, exact=False) -> TraitMatch:
         """
-        Finds the closest matching trait.
+        Finds the closest matching trait. If nothing matches, spaces are
+        ignored, so "animalk" finds Animal Ken.
         Raises AmbiguousTraitError if more than one are found.
         """
         found = []
 
-        for trait in self._all_traits:
-            if matches := trait.matching(name, exact):
-                for match in matches:
-                    if match.exact:
-                        return match
-            found.extend(matches)
+        for ignore_spaces in (False, True):
+            for trait in self._all_traits:
+                if matches := trait.matching(name, exact, ignore_spaces=ignore_spaces):
+                    for match in matches:
+                        if match.exact:
+                            return match
+                found.extend(matches)
+            if found:
+                break
 
         if not found:
             raise errors.TraitNotFound(self, name)
@@ -470,19 +481,16 @@ class VChar(Document):
         counter: Counter[Tracker] = Counter()
 
         for input_name, input_rating in traits.items():
-            updated = False
-            for trait in self.raw_traits:
-                if trait.matching(input_name, True):
-                    if trait.name in ("Resolve", "Composure"):
-                        counter[Tracker.WILLPOWER] += input_rating - trait.rating
-                    elif trait.name == "Stamina":
-                        counter[Tracker.HEALTH] += input_rating - trait.rating
+            if (index := self._raw_trait_index(input_name)) is not None:
+                trait = self.raw_traits[index]
+                if trait.name in ("Resolve", "Composure"):
+                    counter[Tracker.WILLPOWER] += input_rating - trait.rating
+                elif trait.name == "Stamina":
+                    counter[Tracker.HEALTH] += input_rating - trait.rating
 
-                    trait.rating = input_rating
-                    assignments[trait.name] = input_rating
-                    updated = True
-
-            if not updated:
+                trait.rating = input_rating
+                assignments[trait.name] = input_rating
+            else:
                 # Automatically categorize attributes and skills (helps with chargen)
                 if input_name in ATTRIBUTES:
                     assigned_category = VCharTrait.Type.ATTRIBUTE
@@ -519,12 +527,10 @@ class VChar(Document):
 
     def delete_trait(self, name: str) -> str:
         """Delete a trait. Raises TraitNotFound if the trait doesn't exist."""
-        for index, trait in enumerate(self.raw_traits):
-            if trait.matching(name, True):
-                del self.raw_traits[index]
-                return trait.name
+        if (index := self._raw_trait_index(name)) is None:
+            raise errors.TraitNotFound(self, name)
 
-        raise errors.TraitNotFound(self, name)
+        return self.raw_traits.pop(index).name
 
     def add_powers(self, trait_name: str, powers: list[str] | str) -> tuple[VCharTrait, list[str]]:
         """Add powers to a Discipline and return a copy."""
@@ -543,31 +549,31 @@ class VChar(Document):
         action: Callable,
     ) -> tuple[VCharTrait, list[str]]:
         """The actual work of adding subtraits."""
-        for trait in self.raw_traits:
-            if trait.matching(trait_name, True):
-                before = set(trait.specialties)
-                action(trait, specialties)
-                after = set(trait.specialties)
-                delta = sorted(after.symmetric_difference(before))
+        if (index := self._raw_trait_index(trait_name)) is None:
+            raise errors.TraitNotFound(self, trait_name)
 
-                return copy.deepcopy(trait), delta
+        trait = self.raw_traits[index]
+        before = set(trait.specialties)
+        action(trait, specialties)
+        after = set(trait.specialties)
+        delta = sorted(after.symmetric_difference(before))
 
-        raise errors.TraitNotFound(self, trait_name)
+        return copy.deepcopy(trait), delta
 
     def remove_specialties(
         self, trait_name: str, specialties: list[str] | str
     ) -> tuple[VCharTrait, list[str]]:
         """Remove specialties from a trait."""
-        for trait in self.raw_traits:
-            if trait.matching(trait_name, True):
-                before = set(trait.specialties)
-                trait.remove_specialties(specialties)
-                after = set(trait.specialties)
-                delta = sorted(after.symmetric_difference(before))
+        if (index := self._raw_trait_index(trait_name)) is None:
+            raise errors.TraitNotFound(self, trait_name)
 
-                return copy.deepcopy(trait), delta
+        trait = self.raw_traits[index]
+        before = set(trait.specialties)
+        trait.remove_specialties(specialties)
+        after = set(trait.specialties)
+        delta = sorted(after.symmetric_difference(before))
 
-        raise errors.TraitNotFound(self, trait_name)
+        return copy.deepcopy(trait), delta
 
     # Macros!
 

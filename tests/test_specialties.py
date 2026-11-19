@@ -290,3 +290,32 @@ def test_multiword_matching(
 def test_multiword_expansion(needle: str, expected: list[str], multiword: VCharTrait):
     """Multiword specialties expand to their full names."""
     assert sorted(multiword.expanding(needle, False)) == expected
+
+
+@pytest.mark.parametrize(
+    "needle,exact,expected",
+    [
+        ("animalken", False, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("animalk", False, [("Animal Ken", 3, False, "Animal Ken")]),
+        ("animal ken", False, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("animalken.bigcats", False, [("Animal Ken (Big Cats)", 4, True, "Animal Ken.Big Cats")]),
+        ("animalk.bigc", False, [("Animal Ken (Big Cats)", 4, False, "Animal Ken.Big Cats")]),
+        ("AnimalKen", True, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("animalk", True, []),
+    ],
+)
+def test_matching_ignoring_spaces(
+    needle: str,
+    exact: bool,
+    expected: list[tuple[str, int, bool, str]],
+    multiword: VCharTrait,
+):
+    """With ignore_spaces, names match without their spaces."""
+    matches = multiword.matching(needle, exact, ignore_spaces=True)
+    assert [(m.name, m.rating, m.exact, m.key) for m in matches] == expected
+
+
+@pytest.mark.parametrize("needle", ["animalken", "animalk", "animalken.bigcats"])
+def test_matching_spaces_by_default(needle: str, multiword: VCharTrait):
+    """By default, spaces count."""
+    assert not multiword.matching(needle, False)

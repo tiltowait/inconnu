@@ -190,6 +190,12 @@ class TraitMatch(NamedTuple):
     discipline: bool
 
 
+def _fold(name: str, ignore_spaces: bool) -> str:
+    """Lowercase a name for comparison, removing its spaces if asked."""
+    name = name.lower()
+    return name.replace(" ", "") if ignore_spaces else name
+
+
 class VCharTrait(BaseModel):
     """A character trait, which may be an attribute, skill, Discipline, or custom.
     They're called specialties because I'm too lazy to rename them to subtraits."""
@@ -296,15 +302,17 @@ class VCharTrait(BaseModel):
             except ValueError:
                 continue
 
-    def matching(self, identifier: str, exact: bool) -> list[TraitMatch]:
-        """Returns the fully qualified name if a string matches, or None."""
+    def matching(self, identifier: str, exact: bool, *, ignore_spaces=False) -> list[TraitMatch]:
+        """Returns the fully qualified name if a string matches, or None. With
+        ignore_spaces, names match without their spaces: "animalken" matches
+        Animal Ken."""
         matches = []
-        if groups := self.expanding(identifier, exact, False):
+        if groups := self.expanding(identifier, exact, False, ignore_spaces=ignore_spaces):
             # The expanded values are sorted alphabetically, and we need
             # that to match our input for testing exactness
-            tokens = identifier.split(VCharTrait.DELIMITER)
+            tokens = [_fold(t, ignore_spaces) for t in identifier.split(VCharTrait.DELIMITER)]
             tokens = [tokens[0]] + sorted(tokens[1:])
-            normalized = VCharTrait.DELIMITER.join(tokens).lower()
+            normalized = VCharTrait.DELIMITER.join(tokens)
 
             for expanded in groups:
                 full_name = self.name
@@ -321,7 +329,7 @@ class VCharTrait(BaseModel):
                     TraitMatch(
                         name=full_name,
                         rating=rating,
-                        exact=normalized == key.lower(),
+                        exact=normalized == _fold(key, ignore_spaces),
                         key=key,
                         type=self.type,
                         discipline=self.is_discipline,
@@ -330,15 +338,31 @@ class VCharTrait(BaseModel):
         return matches
 
     @overload
-    def expanding(self, identifier: str, exact: bool, join: Literal[True] = ...) -> list[str]: ...
+    def expanding(
+        self,
+        identifier: str,
+        exact: bool,
+        join: Literal[True] = ...,
+        *,
+        ignore_spaces: bool = ...,
+    ) -> list[str]: ...
     @overload
-    def expanding(self, identifier: str, exact: bool, join: Literal[False]) -> list[list[str]]: ...
+    def expanding(
+        self,
+        identifier: str,
+        exact: bool,
+        join: Literal[False],
+        *,
+        ignore_spaces: bool = ...,
+    ) -> list[list[str]]: ...
 
     def expanding(
         self,
         identifier: str,
         exact: bool,
         join: bool = True,
+        *,
+        ignore_spaces=False,
     ) -> list[str] | list[list[str]]:
         """Expand a dot-delimited identifier into all matching fully qualified
         trait.specialty names.
@@ -349,21 +373,22 @@ class VCharTrait(BaseModel):
             identifier: Dot-delimited string, e.g. "melee.swords".
             exact: Require exact matches (case-insensitive) vs prefix matching.
             join: If True, return joined strings. If False, return split lists.
+            ignore_spaces: Compare names without their spaces.
 
         Returns:
             Empty list on no match. Otherwise, all matching expansions.
         """
-        tokens = [token.lower() for token in identifier.split(VCharTrait.DELIMITER)]
+        tokens = [_fold(t, ignore_spaces) for t in identifier.split(VCharTrait.DELIMITER)]
 
         # The comparison function takes a token and an instance var
         if exact:
 
             def comp(t: str, i: str) -> bool:
-                return t == i.lower()
+                return t == _fold(i, ignore_spaces)
         else:
 
             def comp(t: str, i: str) -> bool:
-                return i.lower().startswith(t)
+                return _fold(i, ignore_spaces).startswith(t)
 
         if comp(tokens[0], self.name):
             # A token might match multiple specs in the same skill. Therefore,

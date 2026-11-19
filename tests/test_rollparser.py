@@ -651,6 +651,19 @@ def test_apostrophes(syntax: str, pool_str: str, pool: int, multiword: VChar):
     assert p.pool == pool
 
 
+@pytest.mark.parametrize(
+    "syntax,pool_str",
+    [
+        ("wits + animalken", "Wits + Animal Ken"),
+        ("wits + animalk.bigcats", "Wits + Animal Ken (Big Cats)"),
+        ("animalken.dogs + wits", "Animal Ken (Dogs) + Wits"),
+    ],
+)
+def test_rolls_ignore_spaces(syntax: str, pool_str: str, multiword: VChar):
+    """Names typed without spaces still roll, when nothing matches with them."""
+    assert RollParser(multiword, syntax).pool_str == pool_str
+
+
 def test_mortal_multiword(mortal: VChar):
     """Mortals join words too, so a missing + is a missing trait."""
     mortal.assign_traits({"Animal Ken": 2})

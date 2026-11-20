@@ -75,7 +75,7 @@ async def probability(
                 character=char_name,
                 tip=f"`/probability` `roll:{syntax}` `character:CHARACTER`",
                 char_filter=partial(roll.validate_roll, syntax=syntax),
-                errmsg=f"None of your characters can roll `{syntax}`.",
+                errmsg=roll.unrollable_message(syntax),
                 help=HELP_URL,
             )
             character = await haven.fetch()

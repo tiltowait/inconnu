@@ -73,7 +73,7 @@ class HeaderSubdoc(BaseModel):
 
         if kwargs["blush"] is not None:
             header.blush = kwargs["blush"]
-        # Bullets separate the heading's elements. utils.text.clean_text() would
+        # Bullets separate the heading's elements. utils.text.collapse_text() would
         # do, but importing utils here is circular
         location = kwargs["location"] or header.location
         header.location = " ".join(location.replace("•", "").split())

@@ -4,6 +4,7 @@ from enum import Flag, StrEnum, auto
 from typing import Self
 
 from constants import MENTAL_SOCIAL_ATTRIBUTES, PHYSICAL_ATTRIBUTES
+from models.pool import pool_traits
 
 # The number of dice impairment removes from a pool
 IMPAIRMENT_DICE = 2
@@ -25,7 +26,7 @@ class RollCategory(Flag):
         number-only pools, have no category."""
         category = cls(cls.NONE)  # Constructed via cls so the type stays Self
         if pool:
-            elements = set(pool.split())
+            elements = pool_traits(pool)
             if elements & PHYSICAL_ATTRIBUTES:
                 category |= cls.PHYSICAL
             if elements & MENTAL_SOCIAL_ATTRIBUTES:

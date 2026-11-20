@@ -8,7 +8,7 @@ from collections import Counter
 from collections.abc import Callable
 from enum import StrEnum
 from functools import total_ordering
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar, NamedTuple, Self
 
 from beanie import (
     Delete,
@@ -25,7 +25,15 @@ from pydantic import ConfigDict, Field
 from pymongo import ASCENDING
 
 import errors
-from constants import ATTRIBUTES, DISCIPLINES, SKILLS, UNIVERSAL_TRAITS, Damage
+from constants import (
+    ATTRIBUTES,
+    DISCIPLINES,
+    SKILLS,
+    UNIVERSAL_TRAITS,
+    Damage,
+    core_trait,
+    name_key,
+)
 from events import CharEventType, char_events
 from models.impairment import Impairment
 from models.vchardocs import (
@@ -40,6 +48,34 @@ from models.vchardocs import (
     VCharProfile,
     VCharTrait,
 )
+
+# Standard traits' names and types, keyed by name without case or spaces, so
+# new traits get the standard name: "bloodsorcery" becomes Blood Sorcery
+_STANDARD_TRAITS: dict[str, tuple[str, VCharTrait.Type]] = {
+    name_key(name): (name, trait_type)
+    for names, trait_type in (
+        (ATTRIBUTES, VCharTrait.Type.ATTRIBUTE),
+        (SKILLS, VCharTrait.Type.SKILL),
+        (DISCIPLINES, VCharTrait.Type.DISCIPLINE),
+    )
+    for name in names
+}
+
+
+class RenameResult(NamedTuple):
+    """The outcome of renaming a trait."""
+
+    old: str  # The trait's old name
+    new: str  # Its new name, standardized for standard Disciplines
+    macros: int  # How many macros used it, and were updated
+
+
+def _rename_operand(token: str, old: str, new: str) -> str:
+    """Rename a macro pool token's trait ("Trait.Subtrait") if it's old."""
+    trait, *subtraits = token.split(VCharTrait.DELIMITER)
+    if trait.casefold() != old.casefold():
+        return token
+    return VCharTrait.DELIMITER.join([new, *subtraits])
 
 
 class Tracker(StrEnum):
@@ -429,24 +465,35 @@ class VChar(Document):
 
     def has_trait(self, name: str) -> bool:
         """Determine whether a character has a given trait."""
-        for trait in self.raw_traits:
-            if trait.matching(name, True):
-                return True
-        return False
+        return self._raw_trait_index(name) is not None
+
+    def _raw_trait_index(self, name: str) -> int | None:
+        """The index of the raw trait with this exact name (ignoring case), or
+        None. If no name matches, spaces are ignored, so "AnimalKen" finds
+        Animal Ken."""
+        for ignore_spaces in (False, True):
+            for index, trait in enumerate(self.raw_traits):
+                if trait.matching(name, True, ignore_spaces=ignore_spaces):
+                    return index
+        return None
 
     def find_trait(self, name: str, exact=False) -> TraitMatch:
         """
-        Finds the closest matching trait.
+        Finds the closest matching trait. If nothing matches, spaces are
+        ignored, so "animalk" finds Animal Ken.
         Raises AmbiguousTraitError if more than one are found.
         """
         found = []
 
-        for trait in self._all_traits:
-            if matches := trait.matching(name, exact):
-                for match in matches:
-                    if match.exact:
-                        return match
-            found.extend(matches)
+        for ignore_spaces in (False, True):
+            for trait in self._all_traits:
+                if matches := trait.matching(name, exact, ignore_spaces=ignore_spaces):
+                    for match in matches:
+                        if match.exact:
+                            return match
+                found.extend(matches)
+            if found:
+                break
 
         if not found:
             raise errors.TraitNotFound(self, name)
@@ -470,36 +517,28 @@ class VChar(Document):
         counter: Counter[Tracker] = Counter()
 
         for input_name, input_rating in traits.items():
-            updated = False
-            for trait in self.raw_traits:
-                if trait.matching(input_name, True):
-                    if trait.name in ("Resolve", "Composure"):
-                        counter[Tracker.WILLPOWER] += input_rating - trait.rating
-                    elif trait.name == "Stamina":
-                        counter[Tracker.HEALTH] += input_rating - trait.rating
+            if (index := self._raw_trait_index(input_name)) is not None:
+                trait = self.raw_traits[index]
+                if trait.name in ("Resolve", "Composure"):
+                    counter[Tracker.WILLPOWER] += input_rating - trait.rating
+                elif trait.name == "Stamina":
+                    counter[Tracker.HEALTH] += input_rating - trait.rating
 
-                    trait.rating = input_rating
-                    assignments[trait.name] = input_rating
-                    updated = True
-
-            if not updated:
-                # Automatically categorize attributes and skills (helps with chargen)
-                if input_name in ATTRIBUTES:
-                    assigned_category = VCharTrait.Type.ATTRIBUTE
-                elif input_name in SKILLS:
-                    assigned_category = VCharTrait.Type.SKILL
-                elif input_name.lower() in map(str.lower, DISCIPLINES):
-                    assigned_category = VCharTrait.Type.DISCIPLINE
-                else:
-                    assigned_category = category
+                trait.rating = input_rating
+                assignments[trait.name] = input_rating
+            else:
+                # Automatically categorize standard traits, giving them their
+                # standard names (helps with chargen)
+                standard = _STANDARD_TRAITS.get(name_key(input_name))
+                name, assigned_category = standard or (input_name, category)
 
                 new_trait = VCharTrait(
-                    name=input_name,
+                    name=name,
                     rating=input_rating,
                     type=assigned_category.value,
                 )
                 bisect.insort(self.raw_traits, new_trait, key=lambda t: t.name.casefold())
-                assignments[input_name] = input_rating
+                assignments[name] = input_rating
 
         # Traits added; now adjust HP/WP
         adjustments = []
@@ -519,12 +558,53 @@ class VChar(Document):
 
     def delete_trait(self, name: str) -> str:
         """Delete a trait. Raises TraitNotFound if the trait doesn't exist."""
-        for index, trait in enumerate(self.raw_traits):
-            if trait.matching(name, True):
-                del self.raw_traits[index]
-                return trait.name
+        if (index := self._raw_trait_index(name)) is None:
+            raise errors.TraitNotFound(self, name)
 
-        raise errors.TraitNotFound(self, name)
+        return self.raw_traits.pop(index).name
+
+    def rename_trait(self, old: str, new: str) -> RenameResult:
+        """Rename a trait, keeping its rating and specialties, and update the
+        macros that use it. A standard Discipline's name gets its standard
+        spelling and type, as assign_traits() gives them. The new name must
+        already be valid.
+
+        Raises TraitNotFound if the trait doesn't exist, and TraitError if
+        either name is a standard Attribute or Skill, another trait has the
+        new name, or the old name is a specialty ("Trait.Specialty")."""
+        if VCharTrait.DELIMITER in old:
+            raise errors.TraitError("Only traits can be renamed, not specialties.")
+        if (index := self._raw_trait_index(old)) is None:
+            raise errors.TraitNotFound(self, old)
+
+        trait = self.raw_traits[index]
+        old_name = trait.name
+
+        if core_trait(old_name):
+            raise errors.TraitError(f"`{old_name}` is a standard trait and can't be renamed.")
+        if standard := core_trait(new):
+            raise errors.TraitError(f"`{standard}` is a standard trait.")
+        if (other := self._raw_trait_index(new)) is not None and other != index:
+            raise errors.TraitAlreadyExistsError(
+                f"**{self.name}** already has a trait named `{self.raw_traits[other].name}`."
+            )
+
+        if (standard := _STANDARD_TRAITS.get(name_key(new))) is not None:
+            new, standard_type = standard
+            trait.type = standard_type.value
+
+        trait.name = new
+        self.raw_traits.sort(key=lambda t: t.name.casefold())  # assign_traits()' order
+
+        # Macros store full trait names
+        macros = 0
+        for macro in self.macros:
+            pool = [_rename_operand(token, old_name, new) for token in macro.pool]
+            if pool != macro.pool:
+                macro.pool = pool
+                macros += 1
+
+        return RenameResult(old=old_name, new=new, macros=macros)
 
     def add_powers(self, trait_name: str, powers: list[str] | str) -> tuple[VCharTrait, list[str]]:
         """Add powers to a Discipline and return a copy."""
@@ -543,31 +623,31 @@ class VChar(Document):
         action: Callable,
     ) -> tuple[VCharTrait, list[str]]:
         """The actual work of adding subtraits."""
-        for trait in self.raw_traits:
-            if trait.matching(trait_name, True):
-                before = set(trait.specialties)
-                action(trait, specialties)
-                after = set(trait.specialties)
-                delta = sorted(after.symmetric_difference(before))
+        if (index := self._raw_trait_index(trait_name)) is None:
+            raise errors.TraitNotFound(self, trait_name)
 
-                return copy.deepcopy(trait), delta
+        trait = self.raw_traits[index]
+        before = set(trait.specialties)
+        action(trait, specialties)
+        after = set(trait.specialties)
+        delta = sorted(after.symmetric_difference(before))
 
-        raise errors.TraitNotFound(self, trait_name)
+        return copy.deepcopy(trait), delta
 
     def remove_specialties(
         self, trait_name: str, specialties: list[str] | str
     ) -> tuple[VCharTrait, list[str]]:
         """Remove specialties from a trait."""
-        for trait in self.raw_traits:
-            if trait.matching(trait_name, True):
-                before = set(trait.specialties)
-                trait.remove_specialties(specialties)
-                after = set(trait.specialties)
-                delta = sorted(after.symmetric_difference(before))
+        if (index := self._raw_trait_index(trait_name)) is None:
+            raise errors.TraitNotFound(self, trait_name)
 
-                return copy.deepcopy(trait), delta
+        trait = self.raw_traits[index]
+        before = set(trait.specialties)
+        trait.remove_specialties(specialties)
+        after = set(trait.specialties)
+        delta = sorted(after.symmetric_difference(before))
 
-        raise errors.TraitNotFound(self, trait_name)
+        return copy.deepcopy(trait), delta
 
     # Macros!
 

@@ -3,15 +3,23 @@
 import ast
 import operator as op
 import re
+from collections.abc import Iterable, Sequence
 from itertools import chain
 from typing import cast
 
 from loguru import logger
 
 import errors
+from models import VChar
 from models.vchardocs import VCharTrait
+from utils.text import straighten_apostrophes
+from utils.validation import reads_as_hunger
 
 DELIMITER = re.escape(VCharTrait.DELIMITER)
+
+# Longer operands get no missing-+ hint: nobody leaves out that many, and the
+# search grows with the square of the word count
+MAX_SPLIT_WORDS = 10
 
 
 class RollParser:
@@ -19,8 +27,8 @@ class RollParser:
 
     def __init__(
         self,
-        character,
-        raw_syntax,
+        character: VChar | None,
+        raw_syntax: str | Sequence[str | int],
         expand_only=False,
         power_bonus=True,
         *,
@@ -29,33 +37,43 @@ class RollParser:
     ):
         """The defaults fill in Hunger and Difficulty if the syntax omits them."""
         self.character = character
-        self._parameters = {}
+        self._stacks: dict[str, list[str]] = {}  # Qualified and interpolated
+        self._values: dict[str, int] = {}  # Evaluated pool, Hunger, and Difficulty
         self.expand_only = expand_only
         self.power_bonus = power_bonus
         self.default_hunger = default_hunger
         self.default_difficulty = default_difficulty
 
-        # Convert the syntax into tokens, if necessary
+        # Convert the syntax into tokens, if necessary. Token lists (macros)
+        # are already joined.
+        self.tokens: list[str]
         if isinstance(raw_syntax, str):
-            self.tokens = self.tokenize(raw_syntax)
+            self.tokens = self.join_words(self.tokenize(raw_syntax))
         else:
-            self.tokens = map(str, raw_syntax)
+            self.tokens = list(map(str, raw_syntax))
 
         self._create_stacks()
         self._evaluate_stacks()
 
     @property
-    def pool(self):
+    def _char(self) -> VChar:
+        """The character, for operands that need one."""
+        if self.character is None:
+            raise errors.RollError("You need a character to roll traits.")
+        return self.character
+
+    @property
+    def pool(self) -> int:
         """The int value of the roll's pool."""
-        return self._parameters["eval_pool"]
+        return self._values["eval_pool"]
 
     @property
-    def pool_stack(self):
+    def pool_stack(self) -> list[str]:
         """The fully qualified pool stack."""
-        return self._parameters["q_pool_stack"]
+        return self._stacks["q_pool_stack"]
 
     @property
-    def pool_str(self):
+    def pool_str(self) -> str | None:
         """The pool's attribute+skill string."""
         string = " ".join(self.pool_stack)
 
@@ -73,16 +91,16 @@ class RollParser:
         return string
 
     @property
-    def hunger(self):
+    def hunger(self) -> int:
         """The int value of the roll's hunger."""
         if self.character is None or self.character.is_vampire:
-            return self._parameters["eval_hunger"]
+            return self._values["eval_hunger"]
         return 0
 
     @property
-    def difficulty(self):
+    def difficulty(self) -> int:
         """The int value of the roll's difficulty."""
-        return self._parameters["eval_difficulty"]
+        return self._values["eval_difficulty"]
 
     def _create_stacks(self):
         """Create both the fully qualified stacks and the interpolated stacks."""
@@ -97,13 +115,13 @@ class RollParser:
 
         stacks = self._split_stacks(self.tokens)
         q_pool, i_pool, using_discipline = self._qualify(stacks.pop(0))
-        self._parameters["q_pool_stack"] = q_pool
-        self._parameters["i_pool_stack"] = i_pool
+        self._stacks["q_pool_stack"] = q_pool
+        self._stacks["i_pool_stack"] = i_pool
 
-        if self.power_bonus and using_discipline and self.character.power_bonus > 0:
+        if self.power_bonus and using_discipline and self._char.power_bonus > 0:
             logger.debug("ROLLPARSER: Adding power bonus")
-            self._parameters["q_pool_stack"].extend(["+", "PowerBonus"])
-            self._parameters["i_pool_stack"].extend(["+", str(self.character.power_bonus)])
+            self._stacks["q_pool_stack"].extend(["+", "Power Bonus"])
+            self._stacks["i_pool_stack"].extend(["+", str(self._char.power_bonus)])
 
         if "Hunger" in self.pool_stack:
             errmsg = "Hunger can't be a part of your pool.\n*Hint: Write `hunger`, not `+ hunger`.*"
@@ -120,7 +138,7 @@ class RollParser:
             for token in stacks.pop(0) if stacks else [self.default_hunger]:
                 if token in "+-" or token.isdigit():
                     hunger.append(token)
-                elif token.lower() == "current_hunger" or "hunger".startswith(token.lower()):
+                elif reads_as_hunger(token):
                     hunger.append("hunger")
                 else:
                     raise errors.HungerIsntHunger(
@@ -129,8 +147,8 @@ class RollParser:
                     )
 
             q_hunger, i_hunger, _ = self._qualify(hunger)
-            self._parameters["q_hunger_stack"] = q_hunger
-            self._parameters["i_hunger_stack"] = i_hunger
+            self._stacks["q_hunger_stack"] = q_hunger
+            self._stacks["i_hunger_stack"] = i_hunger
         else:
             # This is a mortal character. Mortals don't have Hunger, so asking
             # for it is an error.
@@ -144,16 +162,16 @@ class RollParser:
             if stacks and stacks[0] in (["0"], ["current_hunger"]):
                 del stacks[0]
 
-            self._parameters["q_hunger_stack"] = ["0"]
-            self._parameters["i_hunger_stack"] = ["0"]
+            self._stacks["q_hunger_stack"] = ["0"]
+            self._stacks["i_hunger_stack"] = ["0"]
 
         difficulty = stacks.pop(0) if stacks else [self.default_difficulty]
 
         if stacks:
             # They gave us too many stacks! Show our interpretation as well as the extra
             # First, get human-readable representations of the stacks
-            _pool = self.pool_str or " ".join(self._parameters["q_pool_stack"])
-            if (_hunger := " ".join(self._parameters["q_hunger_stack"])) == "Hunger":
+            _pool = self.pool_str or " ".join(self._stacks["q_pool_stack"])
+            if (_hunger := " ".join(self._stacks["q_hunger_stack"])) == "Hunger":
                 _hunger = "Current Hunger"
             _difficulty = " ".join(difficulty)
 
@@ -173,11 +191,11 @@ class RollParser:
                 f"Difficulty must be a number, not `{' '.join(difficulty)}`."
             )
 
-        self._parameters["q_difficulty_stack"] = difficulty
-        self._parameters["i_difficulty_stack"] = difficulty
+        self._stacks["q_difficulty_stack"] = difficulty
+        self._stacks["i_difficulty_stack"] = difficulty
 
     @staticmethod
-    def _split_stacks(tokens) -> list[list[str]]:
+    def _split_stacks(tokens: Iterable[str]) -> list[list[str]]:
         """Split the tokens into stacks. When we encounter two operands in a
         row, the user has switched parameter types (e.g. pool -> hunger ->
         difficulty), so we wrap up the current stack and start a new one."""
@@ -207,7 +225,7 @@ class RollParser:
 
         for token in stack:
             if token == "current_hunger":
-                token = "hunger" if self.character.is_vampire else "0"
+                token = "hunger" if self._char.is_vampire else "0"
 
             if token in "+-" or token.isdigit():
                 # Operators and digits require no interpolation
@@ -216,7 +234,12 @@ class RollParser:
             else:
                 # We have a character trait, which needs to be qualified and
                 # interpolated before adding it to the stacks
-                trait = self.character.find_trait(token)
+                try:
+                    trait = self._char.find_trait(token)
+                except errors.TraitNotFound as err:
+                    if split := self._split_operand(token):
+                        err.hint = f"Did you mean `{split}`?"
+                    raise
                 qualified.append(trait.key if self.expand_only else trait.name)
                 interpolated.append(str(trait.rating))
 
@@ -226,17 +249,58 @@ class RollParser:
 
         return qualified, interpolated, using_discipline
 
+    def _split_operand(self, operand: str) -> str | None:
+        """If a multiword operand isn't a trait but splits into traits, the
+        user probably left out a +. Return the operand with a + between each
+        trait, preferring longer leading traits, or None if it doesn't split
+        into traits (or is too long to bother).
+
+        splits[i] is the best split of the words from i on, built from the
+        end, so each run of words is looked up at most once."""
+        words = operand.split(" ")
+        count = len(words)
+        if count > MAX_SPLIT_WORDS:
+            return None
+
+        splits: list[str | None] = [None] * count + [""]
+        for start in range(count - 1, -1, -1):
+            # The whole operand isn't a trait, so a split needs a +
+            longest = count - 1 if start == 0 else count
+            for end in range(longest, start, -1):
+                if splits[end] is None:
+                    continue
+                head = " ".join(words[start:end])
+                if self._is_trait(head):
+                    splits[start] = f"{head} + {splits[end]}" if splits[end] else head
+                    break
+
+        return splits[0]
+
+    def _is_trait(self, operand: str) -> bool:
+        """Whether an operand names at least one of the character's traits
+        that can go in a pool. Hunger can't, so a suggestion with it would only
+        fail again."""
+        if reads_as_hunger(operand):
+            return False
+        try:
+            self._char.find_trait(operand)
+        except errors.TraitNotFound:
+            return False
+        except errors.AmbiguousTraitError:
+            pass  # It's still a trait
+        return True
+
     def _evaluate_stacks(self):
         """Convert the pool, hunger, and difficulty into values."""
-        pool = " ".join(self._parameters["i_pool_stack"])
-        hunger = " ".join(self._parameters["i_hunger_stack"])
-        difficulty = " ".join(self._parameters["i_difficulty_stack"])
+        pool = " ".join(self._stacks["i_pool_stack"])
+        hunger = " ".join(self._stacks["i_hunger_stack"])
+        difficulty = " ".join(self._stacks["i_difficulty_stack"])
 
         # We can just use eval for this rather than looping through
         try:
-            self._parameters["eval_pool"] = eval_expr(pool)
-            self._parameters["eval_hunger"] = eval_expr(hunger)
-            self._parameters["eval_difficulty"] = eval_expr(difficulty)
+            self._values["eval_pool"] = eval_expr(pool)
+            self._values["eval_hunger"] = eval_expr(hunger)
+            self._values["eval_difficulty"] = eval_expr(difficulty)
         except SyntaxError as err:
             raise SyntaxError("Invalid syntax!") from err
 
@@ -247,20 +311,48 @@ class RollParser:
         if cls.has_invalid_characters(syntax):
             raise SyntaxError("Invalid syntax.")
 
+        syntax = straighten_apostrophes(syntax)
+
         # Whitespace around the delimiter is ignored, so "brawl . kindred" is
         # one operand
         syntax = re.sub(rf"\s*{DELIMITER}\s*", VCharTrait.DELIMITER, syntax)
         return re.findall(r"[+-]|[^\s+-]+", syntax)
 
+    @staticmethod
+    def join_words(tokens: Iterable[str]) -> list[str]:
+        """Join each word to the word before it, making multiword traits and
+        specialties single operands: "animal", "ken.big", "cats" becomes
+        "animal ken.big cats".
+
+        Words that read as Hunger aren't joined, since they start the Hunger
+        stack. No other word can start a stack (Hunger takes only numbers and
+        Hunger; Difficulty, only numbers), so joining never changes the
+        meaning of a valid roll. It needs no character, so a roll's operands
+        are the same for every character."""
+        joined: list[str] = []
+        for token in tokens:
+            if joined and _is_word(joined[-1]) and _is_word(token) and not reads_as_hunger(token):
+                joined[-1] += f" {token}"
+            else:
+                joined.append(token)
+        return joined
+
     @classmethod
-    def has_invalid_characters(cls, syntax) -> bool:
-        """Check whether the roll has invalid characters."""
-        return re.search(rf"[^\w+\-\s{DELIMITER}]", syntax) is not None
+    def has_invalid_characters(cls, syntax: str) -> bool:
+        """Check whether the roll has invalid characters. Curly apostrophes
+        are fine, since tokenize() straightens them."""
+        syntax = straighten_apostrophes(syntax)
+        return re.search(rf"[^\w'+\-\s{DELIMITER}]", syntax) is not None
 
     @classmethod
     def possible_spec_use(cls, syntax: str) -> bool:
         """Check if the user might be trying to use a spec."""
         return re.search(r"\(.*\)", syntax) is not None
+
+
+def _is_word(token: str) -> bool:
+    """Whether a token is a word, not an operator or a number."""
+    return token not in ("+", "-") and not token.isdigit()
 
 
 # Math Helpers

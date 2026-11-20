@@ -12,7 +12,7 @@ from loguru import logger
 import errors
 from models.vchar import VChar
 from utils.permissions import is_storyteller
-from utils.text import clean_text, pluralize
+from utils.text import collapse_text, pluralize
 
 
 class CharacterManager:
@@ -140,7 +140,7 @@ class CharacterManager:
         name: str,
     ) -> bool:
         """Returns True if the player has a character by a given name."""
-        name = clean_text(name).casefold()
+        name = collapse_text(name).casefold()
         guild_id = guild.id if isinstance(guild, discord.Guild) else guild
         player_id = player.id if isinstance(player, discord.Member) else player
 

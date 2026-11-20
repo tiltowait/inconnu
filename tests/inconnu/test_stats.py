@@ -5,11 +5,21 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
+from beanie import PydanticObjectId
+from mongomock_motor import AsyncMongoMockClient
+from pymongo import UpdateOne
 from pymongo.asynchronous.collection import AsyncCollection
 
 import db
 import inconnu
-from inconnu.stats import _gen_roll, guild_joined, guild_left, log_roll
+from inconnu.stats import (
+    _gen_roll,
+    _rename_pool_trait,
+    guild_joined,
+    guild_left,
+    log_roll,
+    trait_renamed,
+)
 from models import Impairment, VGuild
 
 type MockCollection = AsyncMock
@@ -89,3 +99,59 @@ async def test_rejoin_after_cull_recreates_guild():
     assert vguild is not None
     assert vguild.active is True
     await vguild.delete()
+
+
+@pytest.mark.parametrize(
+    "pool,expected",
+    [
+        ("Night Driving", "Getaway Driving"),
+        (
+            "Strength + Night Driving (Rain, Snow) - 1",
+            "Strength + Getaway Driving (Rain, Snow) - 1",
+        ),
+        ("-night driving + Wits", "-Getaway Driving + Wits"),
+        ("Wits - Night Driving", "Wits - Getaway Driving"),
+        # Only whole trait names
+        ("Night Driving Expert + Night", "Night Driving Expert + Night"),
+        ("Drive (Night Driving)", "Drive (Night Driving)"),
+    ],
+)
+def test_rename_pool_trait(pool: str, expected: str):
+    """A renamed trait is replaced wherever it's a whole operand's trait."""
+    assert _rename_pool_trait(pool, "Night Driving", "Getaway Driving") == expected
+
+
+async def test_trait_renamed():
+    """Only the character's rolls using the trait are rewritten."""
+    charid, other = PydanticObjectId(), PydanticObjectId()
+    collection = AsyncMongoMockClient().db.rolls
+    await collection.insert_many(
+        [
+            {"charid": charid, "pool": "Wits + Night Driving"},
+            {"charid": charid, "pool": "Strength + Brawl"},
+            {"charid": charid, "pool": "Night Driving Expert"},
+            {"charid": charid, "pool": None},
+            {"charid": other, "pool": "Wits + Night Driving"},
+        ]
+    )
+
+    async def bulk_write(updates: list[UpdateOne], ordered=True):
+        """Apply the updates; mongomock's bulk_write rejects pymongo's."""
+        for update in updates:
+            await collection.update_one(update._filter, update._doc)
+
+    with (
+        patch.object(db, "rolls", collection),
+        patch.object(collection, "bulk_write", bulk_write),
+    ):
+        assert await trait_renamed(charid, "night driving", "Getaway Driving") == 1
+
+    docs = [doc async for doc in collection.find()]
+    pools = sorted([doc["charid"] == charid, doc["pool"] or ""] for doc in docs)
+    assert pools == [
+        [False, "Wits + Night Driving"],
+        [True, ""],
+        [True, "Night Driving Expert"],
+        [True, "Strength + Brawl"],
+        [True, "Wits + Getaway Driving"],
+    ]

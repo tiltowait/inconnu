@@ -92,7 +92,7 @@ async def parse(
                     char_filter=partial(validate_roll, syntax=syntax),
                     tip=f"`/vr` `syntax:{raw_syntax}` `character:CHARACTER`",
                     help=__HELP_URL,
-                    errmsg=f"None of your characters can roll `{syntax}`.",
+                    errmsg=unrollable_message(syntax),
                 )
                 character = await haven.fetch()
                 owner = haven.owner
@@ -139,6 +139,17 @@ async def parse(
         )
 
     return character
+
+
+def unrollable_message(syntax: str) -> str:
+    """The error when none of the user's characters can roll the syntax. If
+    words joined into a multiword operand, a + may be missing, or the name
+    may be right and the characters lack it. They may differ in which words
+    are traits, so the hint covers both and can't say where a + goes."""
+    message = f"None of your characters can roll `{syntax}`."
+    if any(" " in token for token in RollParser.join_words(RollParser.tokenize(syntax))):
+        message += "\n*Hint: If these are separate traits, add a `+` between them.*"
+    return message
 
 
 def validate_roll(character: VChar, syntax: str):

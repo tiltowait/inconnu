@@ -9,7 +9,7 @@ import ui
 from ctx import AppCtx
 from models import VChar
 from services.haven import haven
-from utils.text import clean_text
+from utils.text import collapse_text
 from utils.urls import docs_url
 
 __HELP_URL = docs_url("command-reference/characters#character-profile")
@@ -117,8 +117,8 @@ class _CharacterBio(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Finalize the modal."""
-        biography = clean_text(self.children[0].value or "")
-        description = clean_text(self.children[1].value or "")
+        biography = collapse_text(self.children[0].value or "")
+        description = collapse_text(self.children[1].value or "")
 
         embed = ui.embeds.VCharEmbed(
             interaction,

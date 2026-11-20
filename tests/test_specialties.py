@@ -3,7 +3,7 @@
 import pytest
 
 import errors
-from models.vchardocs import VCharTrait
+from models.vchardocs import MAX_SUBTRAIT_MATCHES, VCharTrait
 
 
 @pytest.fixture
@@ -219,3 +219,170 @@ def test_subtrait_delineation(skill: VCharTrait, discipline: VCharTrait):
         skill.add_powers("Prowess")
     with pytest.raises(errors.SpecialtiesNotAllowed):
         discipline.add_specialties("Kindred")
+
+
+# Multiword names
+
+
+@pytest.fixture
+def multiword() -> VCharTrait:
+    """A multiword skill with multiword specialties."""
+    trait = VCharTrait(name="Animal Ken", rating=3, type=VCharTrait.Type.SKILL.value)
+    trait.add_specialties(["Big Cats", "Big Game", "Dogs"])
+    return trait
+
+
+@pytest.mark.parametrize(
+    "needle,exact,expected",
+    [
+        # Only the last word abbreviates
+        ("animal ken", False, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("Animal K", False, [("Animal Ken", 3, False, "Animal Ken")]),
+        ("animal", False, [("Animal Ken", 3, False, "Animal Ken")]),
+        ("an k", False, []),
+        ("animalken", False, []),
+        ("animal  ken", False, []),
+        # Specialties
+        ("animal ken.big cats", False, [("Animal Ken (Big Cats)", 4, True, "Animal Ken.Big Cats")]),
+        ("an.big c", False, [("Animal Ken (Big Cats)", 4, False, "Animal Ken.Big Cats")]),
+        (
+            "animal ken.big",
+            False,
+            [
+                ("Animal Ken (Big Cats)", 4, False, "Animal Ken.Big Cats"),
+                ("Animal Ken (Big Game)", 4, False, "Animal Ken.Big Game"),
+            ],
+        ),
+        ("animal ken.b c", False, []),
+        # Specialties sort, and exactness ignores their order
+        (
+            "animal ken.dogs.big cats",
+            False,
+            [("Animal Ken (Big Cats, Dogs)", 5, True, "Animal Ken.Big Cats.Dogs")],
+        ),
+        # Exact
+        ("animal ken", True, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("animal", True, []),
+        ("animal ken.big cats", True, [("Animal Ken (Big Cats)", 4, True, "Animal Ken.Big Cats")]),
+        ("animal ken.big", True, []),
+    ],
+)
+def test_multiword_matching(
+    needle: str,
+    exact: bool,
+    expected: list[tuple[str, int, bool, str]],
+    multiword: VCharTrait,
+):
+    """Multiword names match by prefix of the whole name, like single words."""
+    matches = multiword.matching(needle, exact)
+    assert [(m.name, m.rating, m.exact, m.key) for m in matches] == expected
+
+
+@pytest.mark.parametrize(
+    "needle,expected",
+    [
+        ("animal k", ["Animal Ken"]),
+        ("animal ken.big", ["Animal Ken.Big Cats", "Animal Ken.Big Game"]),
+        ("animal ken.big g.d", ["Animal Ken.Big Game.Dogs"]),
+        ("animal ken.big.big", ["Animal Ken.Big Cats.Big Game"]),
+    ],
+)
+def test_multiword_expansion(needle: str, expected: list[str], multiword: VCharTrait):
+    """Multiword specialties expand to their full names."""
+    assert sorted(multiword.expanding(needle, False)) == expected
+
+
+@pytest.mark.parametrize(
+    "needle,exact,expected",
+    [
+        ("animalken", False, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("animalk", False, [("Animal Ken", 3, False, "Animal Ken")]),
+        ("animal ken", False, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("animalken.bigcats", False, [("Animal Ken (Big Cats)", 4, True, "Animal Ken.Big Cats")]),
+        ("animalk.bigc", False, [("Animal Ken (Big Cats)", 4, False, "Animal Ken.Big Cats")]),
+        ("AnimalKen", True, [("Animal Ken", 3, True, "Animal Ken")]),
+        ("animalk", True, []),
+    ],
+)
+def test_matching_ignoring_spaces(
+    needle: str,
+    exact: bool,
+    expected: list[tuple[str, int, bool, str]],
+    multiword: VCharTrait,
+):
+    """With ignore_spaces, names match without their spaces."""
+    matches = multiword.matching(needle, exact, ignore_spaces=True)
+    assert [(m.name, m.rating, m.exact, m.key) for m in matches] == expected
+
+
+@pytest.mark.parametrize("needle", ["animalken", "animalk", "animalken.bigcats"])
+def test_matching_spaces_by_default(needle: str, multiword: VCharTrait):
+    """By default, spaces count."""
+    assert not multiword.matching(needle, False)
+
+
+def test_repeated_specialty_tokens_merge(skill: VCharTrait):
+    """Tokens matching the same specialties merge into distinct selections, so
+    repeating a token can't multiply the work."""
+    skill.add_specialties(["Kindred", "Kine", "Kinfolk"])
+
+    assert skill.expanding("b.k.k", False) == [
+        "Brawl.Kindred.Kine",
+        "Brawl.Kindred.Kinfolk",
+        "Brawl.Kine.Kinfolk",
+    ]
+    assert skill.expanding("b.k.k.k", False) == ["Brawl.Kindred.Kine.Kinfolk"]
+
+
+def test_long_exact_specialty_lists(skill: VCharTrait):
+    """Exact specialties narrow to one combination, however many there are,
+    so stored macro keys of any length still match."""
+    specs = [f"Spec{letter}" for letter in "ABCDEFGH"]
+    skill.add_specialties(specs)
+
+    key = "Brawl." + ".".join(specs)
+    assert skill.expanding(key.lower(), False) == [key]
+
+
+def test_vague_specialties_are_capped(skill: VCharTrait):
+    """Vague input that matches many combinations keeps only the first
+    MAX_SUBTRAIT_MATCHES, in order."""
+    skill.add_specialties([f"Spec{letter}" for letter in "ABCDEFGHIJ"])
+
+    matches = skill.expanding("brawl" + ".spec" * 5, False)  # 252 combinations
+    assert len(matches) == MAX_SUBTRAIT_MATCHES
+    assert matches == sorted(matches)
+    assert matches[0] == "Brawl.SpecA.SpecB.SpecC.SpecD.SpecE"
+
+
+@pytest.mark.parametrize(
+    "specialties,needle,ignore_spaces",
+    [
+        (["Zebra", "apple"], "brawl.apple.zebra", False),
+        (["Zebra", "apple"], "BRAWL.ZEBRA.APPLE", False),
+        (["Big Cats", "Bigamy"], "brawl.bigcats.bigamy", True),
+        (["Big Cats", "Bigamy"], "brawl.bigamy.bigcats", True),
+    ],
+)
+def test_exactness_ignores_specialty_order(
+    specialties: list[str], needle: str, ignore_spaces: bool, skill: VCharTrait
+):
+    """Every specialty named in full is exact, whatever their case, spacing,
+    or order."""
+    skill.add_specialties(specialties)
+
+    matches = skill.matching(needle, False, ignore_spaces=ignore_spaces)
+    assert len(matches) == 1
+    assert matches[0].exact
+
+
+def test_specialties_ignore_spaces(skill: VCharTrait):
+    """Adding or removing a specialty by an old spelling finds the existing
+    one, as rolls do."""
+    skill.add_specialties("Big Cats")
+
+    skill.add_specialties("BigCats")
+    assert skill.specialties == ["Big Cats"]
+
+    skill.remove_specialties("bigcats")
+    assert skill.specialties == []

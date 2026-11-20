@@ -6,10 +6,10 @@ You can add specialties in the [character wizard](creating-a-character.md) or la
 > **Adding specialties**
 >
 > ```
-> /specialties add specialties:<TRAIT1>=<SPEC1>,[SPEC2],... [TRAIT2]=...
+> /specialties add specialties:<TRAIT1>=<SPEC1>, [SPEC2], ...; [TRAIT2]=...
 > ```
 
-You can add several specialties at once.
+You can add several specialties at once. Separate them with commas, and separate Traits with semicolons.
 
 > [!TIP]
 > **Example:** Nadea has a Medicine specialty called _Cadavers_.
@@ -26,7 +26,7 @@ Removing them uses the same syntax:
 > **Removing specialties**
 >
 > ```
-> /specialties remove specialties:<TRAIT1>=<SPEC1>,[SPEC2]...
+> /specialties remove specialties:<TRAIT1>=<SPEC1>, [SPEC2], ...; [TRAIT2]=...
 > ```
 
 ### Listing specialties

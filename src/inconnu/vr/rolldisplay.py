@@ -19,9 +19,9 @@ from inconnu.character.impairment import impairment_reminder, incapacitation_rem
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
 from models import IMPAIRMENT_DICE, ImpairmentCategory, RollCategory, VChar
+from models.pool import pool_traits
 from ui.views.ephemeralsafeview import EphemeralSafeView
 from utils import get_avatar, get_message
-from utils.text import de_camel
 from utils.urls import web_asset
 
 type RerollListener = Callable[[AppInteraction, VChar | None, Roll], Awaitable[None]]
@@ -413,7 +413,7 @@ class RollDisplay(EphemeralSafeView):
             )
             # A number-only pool would reveal its size, and an Impairment
             # penalty would reveal the character's condition
-            embed.add_field(name="Pool", value=self.readable_pool or "`Hidden`")
+            embed.add_field(name="Pool", value=self.outcome.pool_str or "`Hidden`")
         else:
             self._add_dice_fields(embed)
 
@@ -492,34 +492,18 @@ class RollDisplay(EphemeralSafeView):
 
     @property
     def pool_str(self) -> str | None:
-        """The readable pool plus any impairment penalty. A penalized
-        number-only pool shows its pre-penalty size."""
+        """The pool plus any impairment penalty. A penalized number-only pool
+        shows its pre-penalty size."""
         penalty = None
         if self.outcome.impairment_penalty:
             impairment = self.outcome.impairment_penalty.description
             penalty = f"- {IMPAIRMENT_DICE} ({impairment} impairment)"
 
-        pool_str = self.readable_pool
-        if pool_str is None:
+        pool_str = self.outcome.pool_str
+        if not pool_str:
             return f"{self.outcome.base_pool} {penalty}" if penalty else None
 
-        # Added after readable_pool's capitalization, which would otherwise
-        # turn "(physical impairment)" into "(physical Impairment)"
         return f"{pool_str} {penalty}" if penalty else pool_str
-
-    @property
-    def readable_pool(self) -> str | None:
-        """The pool string, made nicer to read, or None for number-only pools."""
-        if not self.outcome.pool_str:
-            return None
-
-        splitted = de_camel(self.outcome.pool_str).split()
-
-        # Uppercase each word in the pool. We can't use .title(), because
-        # .title() will make everything else lowercase. "XYZ" would become
-        # "Xyz", which is not desired.
-        splitted = (t[0].upper() + t[1:] if t[0].islower() else t for t in splitted)
-        return " ".join(splitted)
 
     @property
     def comment(self) -> str | None:
@@ -629,5 +613,10 @@ class RollDisplay(EphemeralSafeView):
         if self.character is None or self.character.splat == "mortal":
             return False
 
-        search = f"{self.outcome.pool_str} {self.comment}"
-        return re.search(r"\bsurge\b", search, re.IGNORECASE) is not None
+        # A pool surges only by naming the Surge trait itself; multiword names
+        # such as "Surge Strike" or "Brawl (Power Surge)" don't count
+        if self.outcome.pool_str and any(
+            trait.casefold() == "surge" for trait in pool_traits(self.outcome.pool_str)
+        ):
+            return True
+        return re.search(r"\bsurge\b", self.comment or "", re.IGNORECASE) is not None

@@ -10,7 +10,7 @@ from ctx import AppCtx, Channel
 from models import PostedHeader
 from models.rpheader import BLUSHED, NOT_BLUSHED
 from services.webhooks import ChannelWebhook
-from utils.text import clean_text
+from utils.text import collapse_text
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -108,8 +108,8 @@ class LocationChangeModal(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         """Update the RP header."""
-        location = clean_text((self.children[0].value or "").replace("•", ""))
-        temp_effects = clean_text(self.children[1].value or "")
+        location = collapse_text((self.children[0].value or "").replace("•", ""))
+        temp_effects = collapse_text(self.children[1].value or "")
 
         if not location:
             # Not responding keeps the modal open, with the player's input intact

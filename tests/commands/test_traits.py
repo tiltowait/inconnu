@@ -1,5 +1,6 @@
 """Tests for /traits update and /traits delete character filtering."""
 
+import importlib
 from collections.abc import Generator
 from unittest.mock import AsyncMock, patch
 
@@ -10,8 +11,12 @@ import errors
 import services
 import tests.characters
 from ctx import AppCtx
-from inconnu.traits import add, delete, update
+from inconnu.traits import add, delete, rename, update
 from models import VChar
+from models.vchardocs import VCharMacro
+
+# inconnu.traits exports a rename() function, which shadows the module
+RENAME_MODULE = importlib.import_module("inconnu.traits.rename")
 
 
 def make_char(name: str, traits: dict[str, int]) -> VChar:
@@ -48,6 +53,13 @@ def mock_chars(alice: VChar, bob: VChar) -> Generator[AsyncMock]:
         patch.object(services.char_mgr, "fetchall", AsyncMock(return_value=[alice, bob])),
     ):
         yield fetchone
+
+
+@pytest.fixture(autouse=True)
+def mock_trait_renamed() -> Generator[AsyncMock]:
+    """Keep renames from touching the rolls collection."""
+    with patch.object(RENAME_MODULE, "trait_renamed", new_callable=AsyncMock) as mock:
+        yield mock
 
 
 @pytest.fixture
@@ -105,7 +117,7 @@ async def test_update_matches_any_trait(
     ctx: AppCtx, alice: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
 ):
     """A character needs only one of the traits to be chosen."""
-    await update(ctx, None, "Foo=3 Baz=2")
+    await update(ctx, None, "Foo=3; Baz=2")
 
     assert alice.find_trait("Foo").rating == 3
 
@@ -145,11 +157,27 @@ async def test_delete_selects_sole_owner(
     ctx: AppCtx, alice: VChar, bob: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
 ):
     """Only Bob has Bar, so it's deleted from him without a selector."""
-    await delete(ctx, None, "Bar Baz")
+    await delete(ctx, None, "Bar; Baz")
 
     assert not bob.has_trait("Bar")
     assert alice.has_trait("Foo")
     mock_char_save.assert_awaited_once()
+
+
+async def test_multiword_traits(
+    ctx: AppCtx, alice: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
+):
+    """Multiword traits are added, updated, and deleted like any other."""
+    await add(ctx, alice, "Big  Cats=2; Night Driving 1")
+    assert alice.find_trait("Big Cats", exact=True).rating == 2
+    assert alice.find_trait("Night Driving", exact=True).rating == 1
+
+    await update(ctx, None, "big cats=4")
+    assert alice.find_trait("Big Cats", exact=True).rating == 4
+
+    await delete(ctx, None, "Big Cats; Night Driving")
+    assert not alice.has_trait("Big Cats")
+    assert not alice.has_trait("Night Driving")
 
 
 async def test_delete_core_trait_shows_selector(
@@ -157,7 +185,7 @@ async def test_delete_core_trait_shows_selector(
 ):
     """Every character can zero a core trait, so none are filtered out."""
     with pytest.raises(errors.HandledError):
-        await delete(ctx, None, "Foo Wits")
+        await delete(ctx, None, "Foo; Wits")
 
     mock_selection.assert_awaited_once()
     mock_char_save.assert_not_awaited()
@@ -166,7 +194,7 @@ async def test_delete_core_trait_shows_selector(
 async def test_delete_no_owners(ctx: AppCtx, mock_error: AsyncMock, mock_char_save: AsyncMock):
     """No character has the traits, so the user is told so."""
     with pytest.raises(errors.HandledError):
-        await delete(ctx, None, "Baz Qux")
+        await delete(ctx, None, "Baz; Qux")
 
     assert mock_error.await_args is not None
     assert (
@@ -174,3 +202,123 @@ async def test_delete_no_owners(ctx: AppCtx, mock_error: AsyncMock, mock_char_sa
         == "None of your characters have any of these traits: `Baz`, `Qux`."
     )
     mock_char_save.assert_not_awaited()
+
+
+async def test_rename_selects_sole_owner(
+    ctx: AppCtx,
+    bob: VChar,
+    mock_respond: AsyncMock,
+    mock_char_save: AsyncMock,
+    mock_common_report: AsyncMock,
+    mock_trait_renamed: AsyncMock,
+):
+    """Only Bob has Bar, so it's renamed without a selector, saved, renamed in
+    his rolls, and reported."""
+    await rename(ctx, None, "bar", "Bar  Room")
+
+    mock_trait_renamed.assert_awaited_once_with(bob.id, "Bar", "Bar Room")
+
+    assert bob.has_trait("Bar Room")
+    assert not any(t.name == "Bar" for t in bob.traits)
+    mock_char_save.assert_awaited_once()
+    mock_respond.assert_awaited_once()
+    mock_common_report.assert_awaited_once()
+
+
+async def test_rename_invalid_name_before_lookup(
+    ctx: AppCtx, mock_chars: AsyncMock, mock_error: AsyncMock, mock_char_save: AsyncMock
+):
+    """An invalid new name is rejected before any character is fetched."""
+    await rename(ctx, None, "Bar", "Bar-Room")
+
+    mock_error.assert_awaited_once()
+    mock_chars.assert_not_awaited()
+    mock_char_save.assert_not_awaited()
+
+
+@pytest.mark.parametrize("trait", ["Bar.Kindred", "Bar-Room"])
+async def test_rename_invalid_old_name_before_lookup(
+    ctx: AppCtx,
+    trait: str,
+    mock_chars: AsyncMock,
+    mock_error: AsyncMock,
+    mock_char_save: AsyncMock,
+):
+    """The old name is validated, too, so a specialty ("Trait.Specialty")
+    can't rename its trait."""
+    await rename(ctx, None, trait, "Bar Room")
+
+    mock_error.assert_awaited_once()
+    mock_chars.assert_not_awaited()
+    mock_char_save.assert_not_awaited()
+
+
+async def test_rename_case_only(
+    ctx: AppCtx, bob: VChar, mock_respond: AsyncMock, mock_char_save: AsyncMock
+):
+    """Changing only a name's case isn't a duplicate."""
+    await rename(ctx, None, "Bar", "BAR")
+
+    assert any(t.name == "BAR" for t in bob.traits)
+    mock_char_save.assert_awaited_once()
+
+
+async def test_rename_error_not_saved(
+    ctx: AppCtx, bob: VChar, mock_error: AsyncMock, mock_char_save: AsyncMock
+):
+    """A rename the character refuses shows the error and saves nothing."""
+    await rename(ctx, None, "Bar", "Strength")
+
+    assert mock_error.await_args is not None
+    assert "`Strength` is a standard trait" in str(mock_error.await_args.args[1])
+    assert bob.has_trait("Bar")
+    mock_char_save.assert_not_awaited()
+
+
+async def test_rename_survives_roll_failure(
+    ctx: AppCtx,
+    bob: VChar,
+    mock_respond: AsyncMock,
+    mock_char_save: AsyncMock,
+    mock_trait_renamed: AsyncMock,
+):
+    """The rename is saved before its rolls, so a failure there is only
+    logged, and the user still sees the rename."""
+    mock_trait_renamed.side_effect = RuntimeError("Mongo is down")
+    await rename(ctx, None, "Bar", "Bar Room")
+
+    assert bob.has_trait("Bar Room")
+    mock_char_save.assert_awaited_once()
+    mock_respond.assert_awaited_once()
+
+
+@pytest.mark.parametrize("macros,footer", [(0, None), (1, "Updated 1 macro using it, too.")])
+async def test_rename_macro_footer(
+    ctx: AppCtx,
+    bob: VChar,
+    macros: int,
+    footer: str | None,
+    mock_respond: AsyncMock,
+    mock_char_save: AsyncMock,
+):
+    """The confirmation mentions macros only when some were updated."""
+    if macros:
+        bob.macros.append(
+            VCharMacro(
+                name="drink",
+                pool=["Bar", "+", "Strength"],
+                hunger=True,
+                difficulty=0,
+                rouses=0,
+                reroll_rouses=False,
+                staining="show",
+                hunt=False,
+                comment=None,
+            )
+        )
+
+    await rename(ctx, None, "Bar", "Bar Room")
+
+    assert mock_respond.await_args is not None
+    embed = mock_respond.await_args.kwargs["embed"]
+    assert (embed.footer.text if embed.footer else None) == footer

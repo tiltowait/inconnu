@@ -33,7 +33,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
     )
 
     @traits.command(name="add")
-    @option("traits", description="The traits to add. Ex: Oblivion=4 BloodSorcery=2")
+    @option("traits", description="The traits to add. Ex: Oblivion=4; Blood Sorcery=2")
     @inconnu.options.char_option("The character to modify")
     async def traits_add(
         self,
@@ -57,7 +57,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         await inconnu.traits.show(ctx, character, player=player)
 
     @traits.command(name="update")
-    @option("traits", description="The traits to update. Ex: Oblivion=4 BloodSorcery=2")
+    @option("traits", description="The traits to update. Ex: Oblivion=4; Blood Sorcery=2")
     @inconnu.options.char_option("The character to modify")
     async def traits_update(
         self,
@@ -68,8 +68,22 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         """Update one or more Traits. Traits must already exist (use /traits add)."""
         await inconnu.traits.update(ctx, character, traits)
 
+    @traits.command(name="rename")
+    @option("trait", description="The trait to rename.")
+    @option("new_name", description="The trait's new name.")
+    @inconnu.options.char_option("The character to modify")
+    async def traits_rename(
+        self,
+        ctx: AppCtx,
+        trait: str,
+        new_name: str,
+        character: str,
+    ):
+        """Rename a Trait, keeping its rating and specialties."""
+        await inconnu.traits.rename(ctx, character, trait, new_name)
+
     @traits.command(name="delete")
-    @option("traits", description="The traits to delete. Ex: Oblivion BloodSorcery")
+    @option("traits", description="The traits to delete. Ex: Oblivion; Blood Sorcery")
     @inconnu.options.char_option("The character to modify")
     async def delete_traits(
         self,
@@ -91,7 +105,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
     )
 
     @disciplines.command(name="add")
-    @option("disciplines", description="The Disciplines to add. Ex: Potence=3 Auspex=2")
+    @option("disciplines", description="The Disciplines to add. Ex: Potence=3; Auspex=2")
     @inconnu.options.char_option("The character to modify")
     async def add_disciplines(
         self,
@@ -103,7 +117,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         await inconnu.traits.add(ctx, character, disciplines, True)
 
     @disciplines.command(name="remove")
-    @option("disciplines", description="The Disciplines to remove. Ex: Potence Auspex")
+    @option("disciplines", description="The Disciplines to remove. Ex: Potence; Auspex")
     @inconnu.options.char_option("The character to modify")
     async def remove_disciplines(
         self,
@@ -134,7 +148,10 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
     )
 
     @specialties.command(name="add")
-    @option("specialties", description="The specialties to add. Ex: Performance=Piano,Singing")
+    @option(
+        "specialties",
+        description="The specialties to add. Ex: Performance=Piano, Singing; Brawl=Kindred",
+    )
     @inconnu.options.char_option("The character to modify")
     async def add_specialties(
         self,
@@ -151,7 +168,10 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
         )
 
     @specialties.command(name="remove")
-    @option("specialties", description="The specialties to remove. Ex: Brawl=Kindred,Kine")
+    @option(
+        "specialties",
+        description="The specialties to remove. Ex: Brawl=Kindred, Kine; Performance=Piano",
+    )
     @inconnu.options.char_option("The character to modify")
     async def remove_specialties(
         self,
@@ -175,7 +195,7 @@ class Traits(CommandCog, name="Traits"):  # pyright: ignore[reportCallIssue, rep
     )
 
     @powers.command(name="add")
-    @option("powers", description="The powers to add. Ex: Auspex=Premonition,HeightenedSenses")
+    @option("powers", description="The powers to add. Ex: Auspex=Premonition, Heightened Senses")
     @inconnu.options.char_option("The character to modify")
     async def add_powers(
         self,

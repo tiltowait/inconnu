@@ -8,6 +8,7 @@ from inconnu.vr.parse import (
     needs_character,
     parse,
     perform_roll,
+    unrollable_message,
     validate_roll,
 )
 from inconnu.vr.rolldisplay import RollDisplay
@@ -23,5 +24,6 @@ __all__ = (
     "needs_character",
     "parse",
     "perform_roll",
+    "unrollable_message",
     "validate_roll",
 )

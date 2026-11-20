@@ -1,6 +1,5 @@
 """Sub-documents used in VChars."""
 
-import itertools
 from datetime import UTC, datetime
 from enum import IntEnum, StrEnum
 from typing import ClassVar, Literal, NamedTuple, TypedDict, overload
@@ -8,9 +7,15 @@ from typing import ClassVar, Literal, NamedTuple, TypedDict, overload
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 import errors
+from constants import name_key
 
 CAREER_STATS_LIVE = datetime(2026, 11, 14, 20, tzinfo=UTC)  # Noon PST
 VICTIMS_DRAINED_LIVE = datetime(2026, 11, 18, 20, tzinfo=UTC)  # Noon PST
+
+# The most specialty combinations matching keeps while expanding. Exact names
+# narrow to one, so only vague input ("brawl....." on a trait with many
+# specialties) reaches it; capping it keeps matching cheap
+MAX_SUBTRAIT_MATCHES = 100
 
 
 class BlushState(IntEnum):
@@ -190,6 +195,18 @@ class TraitMatch(NamedTuple):
     discipline: bool
 
 
+def _fold(name: str, ignore_spaces: bool) -> str:
+    """Casefold a name for comparison, removing its spaces if asked."""
+    return name_key(name) if ignore_spaces else name.casefold()
+
+
+def _folded_key(parts: list[str], ignore_spaces: bool) -> list[str]:
+    """A trait and its specialties, folded, with the specialties sorted, for
+    comparing keys regardless of specialty order."""
+    folded = [_fold(part, ignore_spaces) for part in parts]
+    return [folded[0], *sorted(folded[1:])]
+
+
 class VCharTrait(BaseModel):
     """A character trait, which may be an attribute, skill, Discipline, or custom.
     They're called specialties because I'm too lazy to rename them to subtraits."""
@@ -275,8 +292,9 @@ class VCharTrait(BaseModel):
         else:
             specialties = set(specialties)
 
+        # Compared as lookups compare them, so "BigCats" is Big Cats
         for specialty in specialties:
-            if specialty.lower() not in map(str.lower, self.raw_subtraits):
+            if name_key(specialty) not in (name_key(s) for s in self.raw_subtraits):
                 self.raw_subtraits.append(specialty)
 
         self.raw_subtraits.sort()
@@ -288,23 +306,25 @@ class VCharTrait(BaseModel):
         else:
             specialties = set(specialties)
 
-        for specialty in map(str.lower, specialties):
-            current = [spec.lower() for spec in self.raw_subtraits]
+        # Compared as lookups compare them, so "BigCats" removes Big Cats
+        for specialty in map(name_key, specialties):
+            current = [name_key(spec) for spec in self.raw_subtraits]
             try:
                 index = current.index(specialty)
                 del self.raw_subtraits[index]
             except ValueError:
                 continue
 
-    def matching(self, identifier: str, exact: bool) -> list[TraitMatch]:
-        """Returns the fully qualified name if a string matches, or None."""
+    def matching(self, identifier: str, exact: bool, *, ignore_spaces=False) -> list[TraitMatch]:
+        """Returns the fully qualified name if a string matches, or None. With
+        ignore_spaces, names match without their spaces: "animalken" matches
+        Animal Ken."""
         matches = []
-        if groups := self.expanding(identifier, exact, False):
-            # The expanded values are sorted alphabetically, and we need
-            # that to match our input for testing exactness
-            tokens = identifier.split(VCharTrait.DELIMITER)
-            tokens = [tokens[0]] + sorted(tokens[1:])
-            normalized = VCharTrait.DELIMITER.join(tokens).lower()
+        if groups := self.expanding(identifier, exact, False, ignore_spaces=ignore_spaces):
+            # Specialties may come in any order, so exactness compares them
+            # folded and sorted on both sides. (Sorting before folding would
+            # disagree: "Zebra" sorts before "apple", but "zebra" after.)
+            normalized = _folded_key(identifier.split(VCharTrait.DELIMITER), ignore_spaces)
 
             for expanded in groups:
                 full_name = self.name
@@ -321,7 +341,7 @@ class VCharTrait(BaseModel):
                     TraitMatch(
                         name=full_name,
                         rating=rating,
-                        exact=normalized == key.lower(),
+                        exact=normalized == _folded_key(expanded, ignore_spaces),
                         key=key,
                         type=self.type,
                         discipline=self.is_discipline,
@@ -330,15 +350,31 @@ class VCharTrait(BaseModel):
         return matches
 
     @overload
-    def expanding(self, identifier: str, exact: bool, join: Literal[True] = ...) -> list[str]: ...
+    def expanding(
+        self,
+        identifier: str,
+        exact: bool,
+        join: Literal[True] = ...,
+        *,
+        ignore_spaces: bool = ...,
+    ) -> list[str]: ...
     @overload
-    def expanding(self, identifier: str, exact: bool, join: Literal[False]) -> list[list[str]]: ...
+    def expanding(
+        self,
+        identifier: str,
+        exact: bool,
+        join: Literal[False],
+        *,
+        ignore_spaces: bool = ...,
+    ) -> list[list[str]]: ...
 
     def expanding(
         self,
         identifier: str,
         exact: bool,
         join: bool = True,
+        *,
+        ignore_spaces=False,
     ) -> list[str] | list[list[str]]:
         """Expand a dot-delimited identifier into all matching fully qualified
         trait.specialty names.
@@ -349,72 +385,43 @@ class VCharTrait(BaseModel):
             identifier: Dot-delimited string, e.g. "melee.swords".
             exact: Require exact matches (case-insensitive) vs prefix matching.
             join: If True, return joined strings. If False, return split lists.
+            ignore_spaces: Compare names without their spaces.
 
         Returns:
             Empty list on no match. Otherwise, all matching expansions.
         """
-        tokens = [token.lower() for token in identifier.split(VCharTrait.DELIMITER)]
+        tokens = [_fold(t, ignore_spaces) for t in identifier.split(VCharTrait.DELIMITER)]
 
         # The comparison function takes a token and an instance var
         if exact:
 
             def comp(t: str, i: str) -> bool:
-                return t == i.lower()
+                return t == _fold(i, ignore_spaces)
         else:
 
             def comp(t: str, i: str) -> bool:
-                return i.lower().startswith(t)
+                return _fold(i, ignore_spaces).startswith(t)
 
         if comp(tokens[0], self.name):
-            # A token might match multiple specs in the same skill. Therefore,
-            # we need to make a list of all matching specs. We don't need to
-            # track ratings, however, as we can just sum the spec counts at the
-            # end.
-            spec_groups = []
+            # Each selection is a set of distinct specialties, one per token
+            # so far. A token may match several, so equal selections merge as
+            # we go: listing every combination first would grow with their
+            # product ("b.k.k.k..." with Kindred and Kine doubles each time).
+            selections: set[frozenset[str]] = {frozenset()}
             for token in tokens[1:]:
-                found_specs = []
-                for specialty in self.raw_subtraits:
-                    if comp(token, specialty):
-                        found_specs.append(specialty)
-                spec_groups.append(found_specs)
+                found = [spec for spec in self.raw_subtraits if comp(token, spec)]
+                selections = {
+                    selection | {spec}
+                    for selection in selections
+                    for spec in found
+                    if spec not in selection
+                }
+                if len(selections) > MAX_SUBTRAIT_MATCHES:
+                    # Too vague to list; keep the first few, so it fails as
+                    # ambiguous without the cost of every combination
+                    selections = set(sorted(selections, key=sorted)[:MAX_SUBTRAIT_MATCHES])
 
-            # If no specialties were given, then spec_groups is empty. If
-            # specialties were given but not found, then we have [[]], which
-            # will eventually return [].
-            #
-            # This also holds true if multiple specs are given and only one
-            # fails to match (e.g. [["Kindred"], []]). It works because
-            # itertools.product() will return an empty list if one of its
-            # arguments is itself an empty list. Therefore, we don't need any
-            # "if not group: return None" patterns in this next block.
-
-            if spec_groups:
-                matches = []
-                if len(spec_groups) > 1:
-                    # Multiple matching specs per token; get all combinations:
-                    #     [[1, 2], [3]] -> [(1, 3), (2, 3)]
-                    spec_groups = itertools.product(*spec_groups)
-                else:
-                    # Zero or one match; golden path
-                    spec_groups = spec_groups[0]
-
-                seen_groups = set()
-                for group in spec_groups:
-                    if isinstance(group, str):
-                        group = [group]
-                    if len(set(group)) < len(group):
-                        # Don't add groups with duplicate elements
-                        continue
-
-                    group = frozenset(group)
-                    if group in seen_groups:
-                        # Prevent (A, B) and (B, A) from both showing in the results
-                        continue
-
-                    seen_groups.add(group)
-                    matches.append([self.name] + sorted(group))
-            else:
-                matches = [[self.name]]
+            matches = sorted([self.name, *sorted(selection)] for selection in selections)
 
             if join:
                 return [VCharTrait.DELIMITER.join(match) for match in matches]

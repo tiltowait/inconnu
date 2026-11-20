@@ -8,6 +8,7 @@ import inconnu
 from constants import ATTRIBUTES_AND_SKILLS
 from inconnu.roll.dicethrow import DiceThrow
 from models import Impairment
+from models.pool import pool_traits
 
 __MAX_REROLL = 3
 
@@ -77,8 +78,7 @@ class Roll:
         self.can_reroll = True
 
         if self.pool_str:
-            elements = set(self.pool_str.split())
-            if not elements.intersection(ATTRIBUTES_AND_SKILLS):
+            if not pool_traits(self.pool_str) & ATTRIBUTES_AND_SKILLS:
                 self.can_reroll = False
 
     # We could technically do this with stored properties, but the math is extremely

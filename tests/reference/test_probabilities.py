@@ -224,7 +224,7 @@ async def test_probability_uses_roll_filter(ctx: AppCtx, mock_haven: MagicMock):
     char = gen_char("vampire")
     char.assign_traits({"Strength": 3, "Brawl": 2})
     with pytest.raises(SyntaxError, match="Hunger must be a number"):
-        char_filter(char, syntax="strength + brawl brawl 1")
+        char_filter(char, syntax="strength + brawl hunger + brawl 1")
 
 
 @pytest.mark.parametrize("syntax", ["strength + hunger 1", "strength+brawl brawl 1"])

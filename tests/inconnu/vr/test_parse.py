@@ -15,6 +15,7 @@ from inconnu.vr.parse import (
     parse,
     perform_roll,
     stringify_mentions,
+    unrollable_message,
     validate_roll,
 )
 from models import HiddenDicePerms, Impairment, ImpairmentCategory, VChar
@@ -419,8 +420,8 @@ async def test_parse_disallowed_hidden_dice():
 @pytest.mark.parametrize(
     "syntax,message",
     [
-        ("strength + brawl awareness 2", "Hunger must be a number"),
-        ("strength + brawl finance 2", "Hunger must be a number"),  # Not even a trait
+        ("strength + brawl hunger + awareness 2", "Hunger must be a number"),
+        ("strength + brawl 1 + finance 2", "Hunger must be a number"),  # Not even a trait
         ("strength + brawl 2 wits", "Difficulty must be a number"),
     ],
 )
@@ -435,6 +436,35 @@ def test_validate_roll_rejects_missing_traits(vampire: VChar):
     """A character without a pool trait is filtered out."""
     with pytest.raises(errors.TraitNotFound):
         validate_roll(vampire, "strength + finance 2")
+
+
+def test_validate_roll_filters_missing_plus(vampire: VChar):
+    """Without a +, words join into one operand, which another character
+    might have as a trait. So the character is filtered out, rather than the
+    search stopping."""
+    with pytest.raises(errors.TraitNotFound, match="Did you mean `brawl \\+ awareness`"):
+        validate_roll(vampire, "strength + brawl awareness 2")
+
+    vampire.assign_traits({"Brawl Awareness": 1})
+    validate_roll(vampire, "strength + brawl awareness 2")
+
+
+@pytest.mark.parametrize(
+    "syntax,hint",
+    [
+        ("strength + brawl 2", False),
+        ("strength + brawl hunger 2", False),
+        ("brawl.kindred", False),
+        ("strength + brawl awareness 2", True),
+        ("animal ken.big cats", True),
+    ],
+)
+def test_unrollable_message(syntax: str, hint: bool):
+    """A multiword operand adds a hint that doesn't depend on the character."""
+    message = unrollable_message(syntax)
+    assert message.startswith(f"None of your characters can roll `{syntax}`.")
+    hint_text = "*Hint: If these are separate traits, add a `+` between them.*"
+    assert (hint_text in message) is hint
 
 
 def test_validate_roll_hunger_beats_similar_traits(vampire: VChar):

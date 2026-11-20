@@ -6,7 +6,8 @@ import pytest
 from pydantic import ValidationError
 
 from models.vchardocs import VCharSplat, VCharTrait
-from routes.characters.models import CreationBody
+from routes.characters.models import CreationBody, trait_errors, with_core_traits
+from utils.validation import MAX_TRAIT_LENGTH
 
 
 def valid_creation_data(**overrides: Any) -> dict[str, Any]:
@@ -286,8 +287,8 @@ def test_trait_name_with_underscore():
 
 
 def test_trait_name_too_long():
-    """Trait name longer than 30 characters rejected."""
-    trait = VCharTrait(name="A" * 31, rating=3, type=VCharTrait.Type.CUSTOM)
+    """Trait name longer than the maximum rejected."""
+    trait = VCharTrait(name="A" * (MAX_TRAIT_LENGTH + 1), rating=3, type=VCharTrait.Type.CUSTOM)
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
@@ -295,11 +296,12 @@ def test_trait_name_too_long():
 
 
 def test_trait_name_max_length():
-    """Trait and specialty names of exactly 30 characters are allowed."""
-    trait = VCharTrait(name="A" * 30, rating=3, type=VCharTrait.Type.CUSTOM, subtraits=["B" * 30])
+    """Trait and specialty names of exactly the maximum length are allowed."""
+    name, specialty = "A" * MAX_TRAIT_LENGTH, "B" * MAX_TRAIT_LENGTH
+    trait = VCharTrait(name=name, rating=3, type=VCharTrait.Type.CUSTOM, subtraits=[specialty])
     body = CreationBody(**valid_creation_data(traits=[trait]))
-    assert body.traits[0].name == "A" * 30
-    assert body.traits[0].raw_subtraits == ["B" * 30]
+    assert body.traits[0].name == name
+    assert body.traits[0].raw_subtraits == [specialty]
 
 
 def test_trait_name_invalid_characters():
@@ -315,23 +317,23 @@ def test_trait_name_invalid_characters():
     )
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
-    assert "letters and underscores" in str(exc_info.value).lower()
+    assert "letters, underscores, and apostrophes" in str(exc_info.value).lower()
 
 
-def test_trait_name_with_apostrophe_rejected():
-    """Trait names with apostrophes rejected."""
+def test_trait_name_with_apostrophe_accepted():
+    """Trait names and specialties may have apostrophes."""
     data = valid_creation_data()
     data["traits"].append(
         {
             "name": "O'Strength",
             "rating": 3,
             "type": VCharTrait.Type.CUSTOM,
-            "subtraits": [],
+            "subtraits": ["Dogs'"],
         }
     )
-    with pytest.raises(ValidationError) as exc_info:
-        CreationBody(**data)
-    assert "letters and underscores" in str(exc_info.value).lower()
+    body = CreationBody(**data)
+    assert body.traits[-1].name == "O'Strength"
+    assert body.traits[-1].raw_subtraits == ["Dogs'"]
 
 
 def test_reserved_trait_rejected():
@@ -380,6 +382,35 @@ def test_duplicate_trait_names_case_insensitive():
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
     assert "duplicate" in str(exc_info.value).lower()
+
+
+def test_duplicate_trait_names_ignore_spaces():
+    """Names that differ only in spaces are duplicates, as lookups see them."""
+    traits = [
+        VCharTrait(name="Night Driving", rating=1, type=VCharTrait.Type.CUSTOM),
+        VCharTrait(name="NightDriving", rating=2, type=VCharTrait.Type.CUSTOM),
+    ]
+    assert list(trait_errors(traits)) == [((1, "name"), "Duplicate trait: `NightDriving`.")]
+
+
+def test_core_trait_type_ignores_spaces():
+    """An old spelling of a core trait must still have the core type."""
+    traits = [VCharTrait(name="AnimalKen", rating=1, type=VCharTrait.Type.CUSTOM)]
+    assert list(trait_errors(traits)) == [((0, "type"), "`AnimalKen` must be of type `skill`.")]
+
+
+def test_with_core_traits_standardizes_names():
+    """An old spelling of a core trait becomes the core trait, rather than
+    joining a restored copy of it at 0."""
+    traits = with_core_traits(
+        [VCharTrait(name="AnimalKen", rating=3, type=VCharTrait.Type.SKILL, subtraits=["Dogs"])]
+    )
+
+    animal_ken = [t for t in traits if t.name.casefold().replace(" ", "") == "animalken"]
+    assert len(animal_ken) == 1
+    assert animal_ken[0].name == "Animal Ken"
+    assert animal_ken[0].rating == 3
+    assert animal_ken[0].raw_subtraits == ["Dogs"]
 
 
 @pytest.mark.parametrize("rating", [0, 5])
@@ -458,12 +489,12 @@ def test_powers_on_discipline_allowed():
 
 
 def test_specialty_name_too_long():
-    """Specialty name longer than 30 characters rejected."""
+    """Specialty name longer than the maximum rejected."""
     trait = VCharTrait(
         name="Athletics",
         rating=2,
         type=VCharTrait.Type.SKILL,
-        subtraits=["A" * 31],
+        subtraits=["A" * (MAX_TRAIT_LENGTH + 1)],
     )
     data = valid_creation_data(traits=[trait])
     with pytest.raises(ValidationError) as exc_info:
@@ -482,7 +513,7 @@ def test_specialty_name_invalid_characters():
     )
     with pytest.raises(ValidationError) as exc_info:
         CreationBody(**data)
-    assert "letters and underscores" in str(exc_info.value).lower()
+    assert "letters, underscores, and apostrophes" in str(exc_info.value).lower()
 
 
 def test_duplicate_specialty_names_rejected():

@@ -16,7 +16,7 @@ from models import HeaderSubdoc, RPPost, VChar
 from services.haven import haven
 from services.webhooks import UNKNOWN_WEBHOOK
 from utils import get_avatar, re_paginate
-from utils.text import clean_text, pull_mentions
+from utils.text import collapse_text, pull_mentions
 from utils.text import diff as text_diff
 from utils.urls import docs_url, post_url
 
@@ -113,7 +113,7 @@ class PostModal(discord.ui.Modal):
 
     def _clean_title(self) -> str:
         """Clean the title."""
-        return clean_text(self.children[-2].value or "")
+        return collapse_text(self.children[-2].value or "")
 
     def _clean_tags(self) -> list[str]:
         """Clean and separate the tags."""
@@ -123,7 +123,7 @@ class PostModal(discord.ui.Modal):
 
         cleaned_tags = []
         for tag in tags:
-            if cleaned := clean_text(tag):
+            if cleaned := collapse_text(tag):
                 cleaned_tags.append(cleaned[: RPPost.MAX_TAG_LEN].strip())
 
         return sorted(set(cleaned_tags))  # Make sure the tags are unique

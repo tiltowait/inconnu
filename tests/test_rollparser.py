@@ -1,10 +1,12 @@
 """Test the roll syntax parser."""
 
+from unittest.mock import patch
+
 import pytest
 
 import errors
 from inconnu.vr.parse import needs_character
-from inconnu.vr.rollparser import RollParser, eval_expr
+from inconnu.vr.rollparser import MAX_SPLIT_WORDS, RollParser, eval_expr
 from models.vchar import VChar
 from tests.characters import gen_char
 
@@ -26,6 +28,9 @@ def character() -> VChar:
         ("strength - 1", False),
         ("strength * 3", True),
         (",", True),
+        ("wits + beast's fang", False),
+        ("wits + beast\u2019s fang", False),  # Phones type curly apostrophes
+        ('wits + "fang"', True),
     ],
 )
 def test_has_invalid_characters(string: str, should_fail: bool):
@@ -99,15 +104,15 @@ def test_hunger_in_pool(syntax: str, should_fail: bool, character: VChar):
     "syntax,bp,pool,dice",
     [
         ("res+obl", 1, "Resolve + Oblivion", 9),
-        ("res+obl", 2, "Resolve + Oblivion + PowerBonus", 10),
-        ("res+obl", 3, "Resolve + Oblivion + PowerBonus", 10),
-        ("res+obl", 4, "Resolve + Oblivion + PowerBonus", 11),
-        ("res+obl", 5, "Resolve + Oblivion + PowerBonus", 11),
-        ("res+obl", 6, "Resolve + Oblivion + PowerBonus", 12),
-        ("res+obl", 7, "Resolve + Oblivion + PowerBonus", 12),
-        ("res+obl", 8, "Resolve + Oblivion + PowerBonus", 13),
-        ("res+obl", 9, "Resolve + Oblivion + PowerBonus", 13),
-        ("res+obl", 10, "Resolve + Oblivion + PowerBonus", 14),
+        ("res+obl", 2, "Resolve + Oblivion + Power Bonus", 10),
+        ("res+obl", 3, "Resolve + Oblivion + Power Bonus", 10),
+        ("res+obl", 4, "Resolve + Oblivion + Power Bonus", 11),
+        ("res+obl", 5, "Resolve + Oblivion + Power Bonus", 11),
+        ("res+obl", 6, "Resolve + Oblivion + Power Bonus", 12),
+        ("res+obl", 7, "Resolve + Oblivion + Power Bonus", 12),
+        ("res+obl", 8, "Resolve + Oblivion + Power Bonus", 13),
+        ("res+obl", 9, "Resolve + Oblivion + Power Bonus", 13),
+        ("res+obl", 10, "Resolve + Oblivion + Power Bonus", 14),
         ("stren+br", 10, "Strength + Brawl", 7),  # No power bonus on non-Disciplines
     ],
 )
@@ -121,7 +126,7 @@ def test_auto_blood_potency(syntax: str, bp: int, pool: str, dice: int, characte
 @pytest.mark.parametrize(
     "syntax,expected_str,expected_dice,add_bonus",
     [
-        ("Resolve + Oblivion", "Resolve + Oblivion + PowerBonus", 10, True),
+        ("Resolve + Oblivion", "Resolve + Oblivion + Power Bonus", 10, True),
         ("Resolve + Oblivion", "Resolve + Oblivion", 9, False),
         ("Strength + Brawl", "Strength + Brawl", 7, True),
         ("Strength + Brawl", "Strength + Brawl", 7, False),
@@ -272,7 +277,7 @@ def test_mortal_stacks(syntax: str, hunger: int, difficulty: int, mortal: VChar)
     assert p.difficulty == difficulty
 
 
-@pytest.mark.parametrize("syntax", ["stren+br 2 3", "stren+br stren 3", "stren+br finance 3"])
+@pytest.mark.parametrize("syntax", ["stren+br 2 3", "stren+br 2 stren", "stren+br 2 finance"])
 def test_mortal_nonzero_hunger_and_difficulty(syntax: str, mortal: VChar):
     """A mortal's nonzero Hunger is read as Difficulty, so a Difficulty is extra.
     Too many parameters wins over an invalid or unknown Difficulty."""
@@ -291,6 +296,14 @@ def test_no_character_stacks():
     p = RollParser(None, "7 3 2")
     assert (p.pool, p.hunger, p.difficulty) == (7, 3, 2)
     assert p.pool_str is None
+
+
+@pytest.mark.parametrize("syntax", ["strength + 2", "3 hunger", "3 current_hunger"])
+def test_traits_need_a_character(syntax: str):
+    """Rolling traits (or current Hunger) without a character is a roll error,
+    not a crash."""
+    with pytest.raises(errors.RollError, match="need a character"):
+        RollParser(None, syntax)
 
 
 @pytest.mark.parametrize(
@@ -400,17 +413,11 @@ def hungry() -> VChar:
 @pytest.mark.parametrize(
     "syntax",
     [
-        # A missing "+" before Surge, the most common misroll in the roll history
-        "strength + brawl surge 2",
-        "strength + brawl surge hunger",
-        # No operators at all
-        "intelligence finance hunger",
-        # Traits as Hunger
-        "strength + brawl finance 2",
-        "strength + brawl strength resolve",
-        # Hunger arithmetic with a trait other than Hunger
+        # Hunger arithmetic with a trait other than Hunger. (A trait right
+        # after the pool joins it instead; see test_missing_plus_hint.)
         "strength + brawl hunger + surge 2",
         "strength + brawl 1 + finance 2",
+        "strength + brawl hunger - finance",
     ],
 )
 def test_hunger_isnt_hunger(syntax: str, hungry: VChar):
@@ -454,10 +461,8 @@ def test_difficulty_arithmetic(syntax: str, hunger: int, difficulty: int, hungry
 @pytest.mark.parametrize(
     "syntax,typed",
     [
-        ("strength + brawl surge 2", "surge"),
-        ("intelligence finance hunger", "finance"),
-        ("strength + brawl fin 2", "fin"),
         ("strength + brawl hunger + Fin 2", "Fin"),
+        ("strength + brawl 1 + lung 2", "lung"),
     ],
 )
 def test_hunger_isnt_hunger_hint(syntax: str, typed: str, hungry: VChar):
@@ -482,10 +487,236 @@ def test_hunger_prefixes_beat_similar_traits(token: str, hungry: VChar):
     assert p.difficulty == 1
 
 
-def test_hunger_isnt_a_trait(hungry: VChar):
-    """A word that isn't a trait is still the wrong kind of Hunger."""
-    with pytest.raises(errors.HungerIsntHunger, match="not `lung`"):
-        RollParser(hungry, "strength + brawl lung 2")
+@pytest.mark.parametrize(
+    "syntax,operand,split",
+    [
+        # A missing "+" before Surge, the most common misroll in the roll history
+        ("strength + brawl surge 2", "brawl surge", "brawl + surge"),
+        ("strength + brawl surge hunger", "brawl surge", "brawl + surge"),
+        # No operators at all
+        ("intelligence finance hunger", "intelligence finance", "intelligence + finance"),
+        ("strength + brawl fin 2", "brawl fin", "brawl + fin"),
+        # Longer leading traits win
+        ("strength + brawl strength dex", "brawl strength dex", "brawl strength + dex"),
+        # Several missing +s
+        ("strength brawl fin 2", "strength brawl fin", "strength + brawl + fin"),
+        # Other inherent traits can go in a pool, so they're suggested
+        ("strength + brawl humanity", "brawl humanity", "brawl + humanity"),
+        ("str + brawl strength dex fin", "brawl strength dex fin", "brawl strength + dex + fin"),
+    ],
+)
+def test_missing_plus_hint(syntax: str, operand: str, split: str, hungry: VChar):
+    """Without a +, words join into one operand. If it isn't a trait but
+    splits into traits, the error suggests where the +s go."""
+    hungry.assign_traits({"Brawl Strength": 1})
+    with pytest.raises(errors.TraitNotFound) as exc_info:
+        RollParser(hungry, syntax)
+
+    assert exc_info.value.trait == operand
+    assert f"*Hint: Did you mean `{split}`?*" in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "syntax,operand",
+    [
+        # The first word isn't a trait
+        ("strength + lung brawl 2", "lung brawl"),
+        # The last word isn't a trait
+        ("strength + brawl lung 2", "brawl lung"),
+        # A middle word isn't a trait
+        ("strength + brawl lung fin 2", "brawl lung fin"),
+        # Hunger can't go in a pool, so it's never suggested
+        ("strength + hunger brawl 2", "hunger brawl"),
+        ("strength + h fin 2", "h fin"),
+    ],
+)
+def test_missing_plus_no_hint(syntax: str, operand: str, hungry: VChar):
+    """There's no hint unless every part of the split is a trait, so it never
+    suggests an invalid roll."""
+    with pytest.raises(errors.TraitNotFound) as exc_info:
+        RollParser(hungry, syntax)
+
+    assert exc_info.value.trait == operand
+    assert exc_info.value.hint is None
+    assert "Hint" not in str(exc_info.value)
+
+
+def test_missing_plus_search_is_bounded(hungry: VChar):
+    """Each run of words is looked up at most once. Every "s" matches some
+    trait, so a search trying each way to split them would make about 2^9
+    lookups here, rather than at most 10 * 11 / 2."""
+    words = ["s"] * (MAX_SPLIT_WORDS - 1) + ["zzz"]
+    with patch.object(RollParser, "_is_trait", autospec=True, wraps=RollParser._is_trait) as spy:
+        with pytest.raises(errors.TraitNotFound) as exc_info:
+            RollParser(hungry, "strength + " + " ".join(words))
+
+    assert exc_info.value.hint is None
+    assert spy.call_count <= MAX_SPLIT_WORDS * (MAX_SPLIT_WORDS + 1) // 2
+
+
+def test_missing_plus_hint_word_limit(hungry: VChar):
+    """Operands over the word limit get no hint, and no search."""
+    at_limit = " ".join(["brawl"] * MAX_SPLIT_WORDS)
+    with pytest.raises(errors.TraitNotFound) as exc_info:
+        RollParser(hungry, at_limit)
+    assert exc_info.value.hint == f"Did you mean `{at_limit.replace(' ', ' + ')}`?"
+
+    over_limit = " ".join(["s"] * 2000)
+    with patch.object(RollParser, "_is_trait", autospec=True) as spy:
+        with pytest.raises(errors.TraitNotFound) as exc_info:
+            RollParser(hungry, f"strength + {over_limit}")
+
+    assert exc_info.value.hint is None
+    spy.assert_not_called()
+
+
+# Multiword traits
+
+
+@pytest.fixture
+def multiword() -> VChar:
+    """A vampire with multiword traits and specialties."""
+    char = gen_char("vampire")
+    char.hunger = 2
+    char.assign_traits({"Wits": 2, "Animal": 1, "Animal Ken": 3, "Brawl": 2, "Ravenous": 1})
+    char.add_specialties("Animal Ken", ["Big Cats", "Dogs"])
+    char.add_specialties("Brawl", ["Kindred", "Kindred Hunters"])
+    return char
+
+
+@pytest.mark.parametrize(
+    "tokens,joined",
+    [
+        ([], []),
+        (["animal", "ken"], ["animal ken"]),
+        (["animal", "ken.big", "cats"], ["animal ken.big cats"]),
+        (["a", "b", "c", "+", "d", "e"], ["a b c", "+", "d e"]),
+        # Numbers and operators never join
+        (["wits", "2", "3"], ["wits", "2", "3"]),
+        (["3", "wits"], ["3", "wits"]),
+        (["wits", "-", "animal"], ["wits", "-", "animal"]),
+        # Words that read as Hunger start the Hunger stack
+        (["ravenous", "hunger", "3"], ["ravenous", "hunger", "3"]),
+        (["ravenous", "h"], ["ravenous", "h"]),
+        (["ravenous", "current_hunger"], ["ravenous", "current_hunger"]),
+        # But Hunger may be a first word
+        (["+", "hunger", "pangs"], ["+", "hunger pangs"]),
+    ],
+)
+def test_join_words(tokens: list[str], joined: list[str]):
+    """Adjacent words join into one operand, unless the later reads as Hunger."""
+    assert RollParser.join_words(tokens) == joined
+
+
+@pytest.mark.parametrize(
+    "syntax,pool_str,pool",
+    [
+        ("wits + animal ken", "Wits + Animal Ken", 5),
+        ("wits+animal  ken", "Wits + Animal Ken", 5),
+        # Only the last word abbreviates
+        ("wits + animal k", "Wits + Animal Ken", 5),
+        # Exact matches win
+        ("wits + animal", "Wits + Animal", 3),
+        ("animal ken + animal", "Animal Ken + Animal", 4),
+        # Multiword specialties
+        ("wits + animal ken.big cats", "Wits + Animal Ken (Big Cats)", 6),
+        ("wits + animal ken . big c", "Wits + Animal Ken (Big Cats)", 6),
+        ("wits + an.big c", "Wits + Animal Ken (Big Cats)", 6),
+        ("wits + brawl.kindred hunters", "Wits + Brawl (Kindred Hunters)", 5),
+        ("wits + brawl.kindred", "Wits + Brawl (Kindred)", 5),
+        ("animal ken.dogs.big cats", "Animal Ken (Big Cats, Dogs)", 5),
+    ],
+)
+def test_multiword_pools(syntax: str, pool_str: str, pool: int, multiword: VChar):
+    """Multiword traits and specialties roll like single words."""
+    p = RollParser(multiword, syntax)
+    assert p.pool_str == pool_str
+    assert p.pool == pool
+
+
+@pytest.mark.parametrize(
+    "syntax,pool_str,hunger,difficulty",
+    [
+        ("wits + ravenous hunger 3", "Wits + Ravenous", 2, 3),
+        ("wits + animal ken h 3", "Wits + Animal Ken", 2, 3),
+        ("wits + animal ken 1 3", "Wits + Animal Ken", 1, 3),
+        # A Hunger word ends a specialty, too
+        ("wits + brawl.kindred h 3", "Wits + Brawl (Kindred)", 2, 3),
+    ],
+)
+def test_multiword_stacks(
+    syntax: str, pool_str: str, hunger: int, difficulty: int, multiword: VChar
+):
+    """Hunger and Difficulty still follow a multiword pool."""
+    p = RollParser(multiword, syntax)
+    assert p.pool_str == pool_str
+    assert p.hunger == hunger
+    assert p.difficulty == difficulty
+
+
+def test_multiword_ambiguous(multiword: VChar):
+    """Only the last word abbreviates, so "an k" isn't Animal Ken, and a
+    prefix matching several specialties is ambiguous."""
+    with pytest.raises(errors.TraitNotFound):
+        RollParser(multiword, "wits + an k")
+    with pytest.raises(errors.AmbiguousTraitError):
+        RollParser(multiword, "wits + brawl.kin")
+
+
+def test_multiword_expansion(multiword: VChar):
+    """Macros store multiword keys as single tokens, which roll from a list."""
+    p = RollParser(multiword, "wits + animal k.big", expand_only=True)
+    assert p.pool_stack == ["Wits", "+", "Animal Ken.Big Cats"]
+
+    p = RollParser(multiword, [*p.pool_stack, "current_hunger", "3"])
+    assert p.pool_str == "Wits + Animal Ken (Big Cats)"
+    assert p.pool == 6
+    assert p.hunger == 2
+    assert p.difficulty == 3
+
+
+@pytest.mark.parametrize(
+    "syntax,pool_str,pool",
+    [
+        ("wits + beast's fang", "Wits + Beast's Fang", 4),
+        ("wits + beast\u2019s fang", "Wits + Beast's Fang", 4),
+        ("wits + beast\u2018s f", "Wits + Beast's Fang", 4),
+        ("wits + animal ken.dogs'", "Wits + Animal Ken (Dogs')", 6),
+        ("wits + animal ken.dogs\u2019", "Wits + Animal Ken (Dogs')", 6),
+    ],
+)
+def test_apostrophes(syntax: str, pool_str: str, pool: int, multiword: VChar):
+    """Traits and specialties may have apostrophes, curly or straight."""
+    multiword.assign_traits({"Beast's Fang": 2})
+    multiword.add_specialties("Animal Ken", ["Dogs'"])
+
+    p = RollParser(multiword, syntax)
+    assert p.pool_str == pool_str
+    assert p.pool == pool
+
+
+@pytest.mark.parametrize(
+    "syntax,pool_str",
+    [
+        ("wits + animalken", "Wits + Animal Ken"),
+        ("wits + animalk.bigcats", "Wits + Animal Ken (Big Cats)"),
+        ("animalken.dogs + wits", "Animal Ken (Dogs) + Wits"),
+    ],
+)
+def test_rolls_ignore_spaces(syntax: str, pool_str: str, multiword: VChar):
+    """Names typed without spaces still roll, when nothing matches with them."""
+    assert RollParser(multiword, syntax).pool_str == pool_str
+
+
+def test_mortal_multiword(mortal: VChar):
+    """Mortals join words too, so a missing + is a missing trait."""
+    mortal.assign_traits({"Animal Ken": 2})
+    p = RollParser(mortal, "stren + animal ken 3")
+    assert p.pool == 5
+    assert p.difficulty == 3
+
+    with pytest.raises(errors.TraitNotFound):
+        RollParser(mortal, "stren + brawl animal 3")
 
 
 @pytest.mark.parametrize(

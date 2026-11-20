@@ -6,12 +6,104 @@ import pytest
 
 from utils.validation import (
     MAX_TRAIT_LENGTH,
+    reads_as_hunger,
     validate_specialty_names,
     validate_tracker,
     validate_trait_names,
 )
 
 type NameValidator = Callable[..., None]
+
+NAME_VALIDATORS = [validate_trait_names, validate_specialty_names]
+
+
+@pytest.mark.parametrize(
+    "word,expected",
+    [
+        ("h", True),
+        ("Hun", True),
+        ("HUNGER", True),
+        ("current_hunger", True),
+        ("", False),
+        ("hungry", False),
+        ("hunters", False),
+        ("hungers", False),
+        ("current", False),
+    ],
+)
+def test_reads_as_hunger(word: str, expected: bool):
+    """Only hunger, its prefixes, and current_hunger read as Hunger."""
+    assert reads_as_hunger(word) is expected
+
+
+@pytest.mark.parametrize("validator", NAME_VALIDATORS)
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Brawl",
+        "Animal Ken",
+        "big cats",
+        "Foo_Bar Baz",
+        "A B C",
+        "Hunger Pangs",
+        "Bloodhound",
+        "Beast's Fang",
+        "O'Brien",
+        "Dogs'",
+        "'Til Death",
+        "Rock'n'Roll",
+    ],
+)
+def test_valid_names(validator: NameValidator, name: str):
+    """Words of letters, underscores, and apostrophes, separated by single
+    spaces, are valid. Hunger may be the first word."""
+    validator(name)
+
+
+@pytest.mark.parametrize("validator", NAME_VALIDATORS)
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Animal  Ken",
+        " Brawl",
+        "Brawl ",
+        "Animal\tKen",
+        "Big-Cats",
+        "Brawl2",
+        "A.B",
+        "'",
+        "Dog ' Fang",
+        "O’Brien",  # Input parsers straighten curly apostrophes first
+    ],
+)
+def test_invalid_characters(validator: NameValidator, name: str):
+    """Anything but single spaces between words of letters, underscores, and
+    apostrophes is rejected. A word needs a letter or underscore."""
+    with pytest.raises(SyntaxError, match="letters, underscores, and apostrophes"):
+        validator(name)
+
+
+@pytest.mark.parametrize("validator", NAME_VALIDATORS)
+@pytest.mark.parametrize(
+    "name,word",
+    [
+        ("Ravenous Hunger", "Hunger"),
+        ("Animal H", "H"),
+        ("Foo hu Bar", "hu"),
+        ("Foo current_hunger", "current_hunger"),
+    ],
+)
+def test_hunger_after_first_word(validator: NameValidator, name: str, word: str):
+    """A later word that reads as Hunger is rejected, since a roll would
+    start the Hunger stack there."""
+    with pytest.raises(SyntaxError, match=f"`{word}` after its first word"):
+        validator(name)
+
+
+def test_power_bonus_with_space_reserved():
+    """Power Bonus is reserved however it's spaced."""
+    with pytest.raises(ValueError, match="Power bonus is automatic"):
+        validate_trait_names("Power Bonus")
 
 
 @pytest.mark.parametrize(
@@ -63,3 +155,15 @@ def test_name_too_long(validator: NameValidator, excess: int, message: str):
     with pytest.raises(ValueError) as exc_info:
         validator("A" * (MAX_TRAIT_LENGTH + excess))
     assert str(exc_info.value).endswith(message)
+
+
+def test_duplicate_specialties_ignore_spaces():
+    """Specialties differing only in case or spaces are duplicates."""
+    with pytest.raises(ValueError, match="Duplicate specialty: BigCats"):
+        validate_specialty_names("Big Cats", "BigCats")
+
+
+def test_duplicate_traits_ignore_spaces():
+    """Traits differing only in case or spaces are duplicates."""
+    with pytest.raises(ValueError, match="Duplicate trait: `NightDriving`"):
+        validate_trait_names("Night Driving", "NightDriving")

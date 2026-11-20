@@ -116,19 +116,28 @@ class TraitNotFound(TraitError):
         super().__init__()
         self.name = character.name
         self.trait = trait
+        self.hint: str | None = None
 
     def __str__(self) -> str:
-        return f"{self.name} has no trait named `{self.trait}`."
+        message = f"{self.name} has no trait named `{self.trait}`."
+        if self.hint:
+            message += f"\n*Hint: {self.hint}*"
+        return message
 
 
 class AmbiguousTraitError(TraitError):
     """Raised when a user's trait argument is ambiguous."""
 
+    MAX_SHOWN = 10  # Matches listed in the message; specialties can make thousands
+
     def __init__(self, input_trait: str, matches: Iterable[str]):
         self.input = input_trait
-        self.matches = matches
+        self.matches = list(matches)
 
-        formatted_matches = ", ".join(f"`{match}`" for match in matches)
+        shown = self.matches[: self.MAX_SHOWN]
+        formatted_matches = ", ".join(f"`{match}`" for match in shown)
+        if hidden := len(self.matches) - len(shown):
+            formatted_matches += f", and {hidden} more"
         self.message = f"`{input_trait}` is ambiguous. Do you mean: {formatted_matches}?"
 
         super().__init__(self.message)

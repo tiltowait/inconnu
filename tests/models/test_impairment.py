@@ -14,13 +14,17 @@ from models import Impairment, ImpairmentCategory, RollCategory
         ("Brawl (Kindred) + Strength", RollCategory.PHYSICAL),
         ("Wits + Awareness", RollCategory.MENTAL),
         ("Charisma + Persuasion", RollCategory.MENTAL),
-        ("Resolve + Oblivion + PowerBonus", RollCategory.MENTAL),
+        ("Resolve + Oblivion + Power Bonus", RollCategory.MENTAL),
         ("Strength + Intimidation", RollCategory.PHYSICAL),
         ("Composure + Firearms", RollCategory.MENTAL),
         ("Intelligence + Brawl", RollCategory.MENTAL),
         ("Strength + Wits", RollCategory.MIXED),
         ("Brawl + 2", RollCategory.NONE),
         ("Potence", RollCategory.NONE),
+        # Multiword traits containing an Attribute's name aren't that Attribute
+        ("Strength Training + Brawl", RollCategory.NONE),
+        ("Brawl + Charisma Bonus", RollCategory.NONE),
+        ("Animal Ken (Big Cats) + Charisma", RollCategory.MENTAL),
     ],
 )
 def test_roll_category_from_pool(pool: str | None, expected: RollCategory):

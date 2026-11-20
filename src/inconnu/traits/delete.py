@@ -7,6 +7,7 @@ import errors
 import ui
 from ctx import AppCtx, AppInvocation
 from inconnu.traits import traitcommon
+from inconnu.traits.parser import split_traits
 from models import VChar
 from services.haven import Haven
 from utils.urls import docs_url
@@ -25,7 +26,7 @@ async def delete(ctx: AppCtx, char_name: str | None, traits_input: str, discipli
     """Delete character traits. Core attributes and abilities are set to 0. Only
     characters with at least one of the traits are offered for selection."""
     try:
-        traits = traits_input.split()
+        traits = split_traits(traits_input)
         if not traits:
             # Shouldn't be possible to reach here, but just in case Discord messes up
             raise SyntaxError("You must supply a list of traits or disciplines to delete.")
@@ -37,8 +38,7 @@ async def delete(ctx: AppCtx, char_name: str | None, traits_input: str, discipli
         return
 
     # Every character can "delete" a core trait, as it's just set to 0
-    standard_traits = {t.lower() for t in constants.get_standard_traits()}
-    if any(trait.lower() in standard_traits for trait in traits):
+    if any(constants.core_trait(trait) for trait in traits):
         char_filter = None
     else:
         char_filter = traitcommon.any_trait_filter(*traits)
@@ -89,12 +89,11 @@ def __delete_traits(character: VChar, *traits: str) -> DeletionResult:
     """
     deleted = []
     errs = []
-    standard_traits = {t.lower() for t in constants.get_standard_traits()}
 
     for trait_name in traits:
-        if trait_name.lower() in standard_traits:
+        if standard := constants.core_trait(trait_name):
             # Set attributes and skills to 0 for better UX, clearing their specialties
-            _, trait = character.assign_traits({trait_name: 0})
+            _, trait = character.assign_traits({standard: 0})
             for core in character.traits:
                 if core.name in trait and core.has_specialties:
                     character.remove_specialties(core.name, core.specialties)

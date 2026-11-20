@@ -100,7 +100,7 @@ async def _add_or_remove(
             err,
             ("Proper syntax", SYNTAX),
             ("Given", "```" + syntax + "```"),
-            ("Reminder", "Don't leave a trailing `,`!"),
+            ("Reminder", "Separate traits with `;` and specialties with `,`."),
             title="Invalid syntax",
         )
     except (errors.TraitError, ValueError) as err:

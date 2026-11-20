@@ -389,23 +389,25 @@ async def test_stat_fields(ctx: AppCtx, owner: discord.Member):
 
 
 @pytest.mark.parametrize(
-    "pool_str,expected",
+    "pool_str",
     [
-        ("Strength + Brawl", "Strength + Brawl"),
-        ("strength + brawl", "Strength + Brawl"),
-        ("Dexterity + AnimalKen", "Dexterity + Animal Ken"),
-        ("Wits + blood_potency", "Wits + Blood Potency"),
-        ("Wits + XYZ", "Wits + XYZ"),
+        "Strength + Brawl",
+        "Wits + Animal Ken (Big Cats, Dogs) - 1",
+        "Wits + Where the Shroud Thins",
+        "-Strength + Beast's Fang",
+        # Names are shown as stored, even if they look like CamelCase
+        "Intelligence + QoNos",
+        "Contacts (McAllister)",
     ],
 )
-async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str, expected: str):
-    """Pool strings are de-cameled and capitalized without lowercasing."""
+async def test_pool_field(ctx: AppCtx, owner: discord.Member, pool_str: str):
+    """Pools are shown with their traits' names as stored."""
     display = make_display(ctx, owner, make_roll([6], [], pool_str=pool_str))
     embed = await render(display)
     field = embed.fields[4]
 
     assert field.name == "Pool"
-    assert field.value == expected
+    assert field.value == pool_str
     assert field.inline
 
 
@@ -685,18 +687,24 @@ async def test_footer_category_override_without_effect(ctx: AppCtx, owner: disco
         (None, "biting, surge", True),
         ("Strength + Brawl + surge", None, True),
         (None, "surge, then bite", True),
-        ("Strength+Brawl+surge", None, True),
+        ("Strength + Brawl + Surge", None, True),
+        ("Surge + Strength - 1", None, True),
         (None, "surged earlier", False),
         (None, "resurge", False),
         (None, "insurgent", False),
         (None, "no blood", False),
         (None, None, False),
+        # Multiword traits and specialties naming Surge aren't the Surge trait
+        ("Strength + Surge Strike", None, False),
+        ("Brawl (Power Surge) + Strength", None, False),
+        ("Strength + Surge Strike", "surge", True),
     ],
 )
 async def test_surging(
     ctx: AppCtx, owner: discord.Member, pool_str: str | None, comment: str | None, expected: bool
 ):
-    """Vampires surge when "surge" appears in the pool or comment."""
+    """Vampires surge when the pool has the Surge trait, or "surge" appears in
+    the comment."""
     roll = make_roll([6], [], pool_str=pool_str)
     display = make_display(ctx, owner, roll, comment=comment, character=make_char("vampire"))
 

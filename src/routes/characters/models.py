@@ -14,7 +14,7 @@ from pydantic import (
     model_validator,
 )
 
-from constants import ATTRIBUTES, MAX_CONVICTION_LENGTH, SKILLS
+from constants import ATTRIBUTES, MAX_CONVICTION_LENGTH, SKILLS, core_trait, name_key
 from errors import CharacterError
 from models import MAX_FRENZY_BONUS, FrenzyAdvantage, FrenzyPenalty, VChar
 from models.vchar import Tracker
@@ -38,8 +38,9 @@ EDITABLE_TRAIT_TYPES = {
     VCharTrait.Type.CUSTOM,
 }
 SUBTRAIT_TYPES = {VCharTrait.Type.SKILL, VCharTrait.Type.CUSTOM, VCharTrait.Type.DISCIPLINE}
-CORE_TRAIT_TYPES = {name.casefold(): VCharTrait.Type.ATTRIBUTE for name in ATTRIBUTES} | {
-    name.casefold(): VCharTrait.Type.SKILL for name in SKILLS
+# Keyed by name_key(), since lookups ignore case and spaces
+CORE_TRAIT_TYPES = {name_key(name): VCharTrait.Type.ATTRIBUTE for name in ATTRIBUTES} | {
+    name_key(name): VCharTrait.Type.SKILL for name in SKILLS
 }
 MAX_PROFILE_LENGTH = 1024
 # Enough to wrap a full track twice over; a cap so huge counts can't build
@@ -76,16 +77,16 @@ def trait_errors(
         # The validators raise SyntaxError for invalid characters
         try:
             validate_trait_names(trait.name)
-            folded = trait.name.casefold()
-            if folded in seen:
+            key = name_key(trait.name)
+            if key in seen:
                 raise ValueError(f"Duplicate trait: `{trait.name}`.")
-            seen.add(folded)
+            seen.add(key)
         except (SyntaxError, ValueError) as err:
             yield (index, "name"), str(err)
 
         if trait.type not in EDITABLE_TRAIT_TYPES:
             yield (index, "type"), f"`{trait.name}` can't be of type `{trait.type}`."
-        elif (core_type := CORE_TRAIT_TYPES.get(trait.name.casefold())) is not None:
+        elif (core_type := CORE_TRAIT_TYPES.get(name_key(trait.name))) is not None:
             if trait.type != core_type:
                 yield (index, "type"), f"`{trait.name}` must be of type `{core_type}`."
         elif trait.type == VCharTrait.Type.ATTRIBUTE:
@@ -136,16 +137,23 @@ def conviction_too_long(limit: int) -> str:
 
 def with_core_traits(traits: list[VCharTrait]) -> list[VCharTrait]:
     """The traits, plus any missing core Attributes (at 1) and Skills (at 0),
-    sorted by name."""
-    present = {trait.name.casefold() for trait in traits}
+    sorted by name. Core traits get their standard names, so an old spelling
+    ("AnimalKen") replaces the core trait rather than joining it."""
+    traits = [
+        trait.model_copy(update={"name": standard})
+        if (standard := core_trait(trait.name)) and standard != trait.name
+        else trait
+        for trait in traits
+    ]
+    present = {name_key(trait.name) for trait in traits}
     restored = [
         VCharTrait(name=name, rating=1, type=VCharTrait.Type.ATTRIBUTE)
         for name in ATTRIBUTES
-        if name.casefold() not in present
+        if name_key(name) not in present
     ] + [
         VCharTrait(name=name, rating=0, type=VCharTrait.Type.SKILL)
         for name in SKILLS
-        if name.casefold() not in present
+        if name_key(name) not in present
     ]
     return sorted(traits + restored, key=lambda t: t.name.casefold())
 

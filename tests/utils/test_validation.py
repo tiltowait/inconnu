@@ -161,3 +161,9 @@ def test_duplicate_specialties_ignore_spaces():
     """Specialties differing only in case or spaces are duplicates."""
     with pytest.raises(ValueError, match="Duplicate specialty: BigCats"):
         validate_specialty_names("Big Cats", "BigCats")
+
+
+def test_duplicate_traits_ignore_spaces():
+    """Traits differing only in case or spaces are duplicates."""
+    with pytest.raises(ValueError, match="Duplicate trait: `NightDriving`"):
+        validate_trait_names("Night Driving", "NightDriving")

@@ -8,7 +8,7 @@ import inconnu
 from constants import ATTRIBUTES_AND_SKILLS
 from inconnu.roll.dicethrow import DiceThrow
 from models import Impairment
-from models.impairment import pool_traits
+from models.pool import pool_traits
 
 __MAX_REROLL = 3
 

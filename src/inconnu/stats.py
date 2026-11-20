@@ -11,7 +11,7 @@ from pymongo import ReturnDocument, UpdateOne
 import db
 from inconnu.roll import Roll
 from models import VChar, VGuild
-from models.impairment import PoolOperand, join_pool, split_pool
+from models.pool import PoolOperand, join_pool, split_pool
 
 
 async def log_roll(

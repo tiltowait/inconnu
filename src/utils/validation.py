@@ -37,11 +37,10 @@ def validate_trait_names(*traits: str, disciplines=False):
     Raises a ValueError if a trait doesn't exist and a SyntaxError
     if the syntax is bad.
     """
-    # Check for duplicates (case-insensitive)
     seen = set()
 
     for trait in traits:
-        normalized = trait.casefold()
+        normalized = name_key(trait)  # "NightDriving" duplicates Night Driving
         if normalized in seen:
             raise ValueError(f"Duplicate trait: `{trait}`.")
         seen.add(normalized)
@@ -54,7 +53,7 @@ def validate_trait_names(*traits: str, disciplines=False):
             )
         if trait.lower() in RESERVED_TRAITS:
             raise ValueError("Set Hunger with `/character adjust`.")
-        if trait.lower() in ("powerbonus", "power_bonus", "power bonus"):
+        if name_key(trait) in ("powerbonus", "power_bonus"):
             raise ValueError("Power bonus is automatic if you roll with a Discipline.")
 
         term = "Traits" if not disciplines else "Disciplines"

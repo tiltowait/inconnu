@@ -19,7 +19,7 @@ from inconnu.character.impairment import impairment_reminder, incapacitation_rem
 from inconnu.roll import Roll, Strategy
 from inconnu.vr import dicemoji
 from models import IMPAIRMENT_DICE, ImpairmentCategory, RollCategory, VChar
-from models.impairment import pool_traits
+from models.pool import pool_traits
 from ui.views.ephemeralsafeview import EphemeralSafeView
 from utils import get_avatar, get_message
 from utils.urls import web_asset

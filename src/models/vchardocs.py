@@ -7,6 +7,7 @@ from typing import ClassVar, Literal, NamedTuple, TypedDict, overload
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 import errors
+from constants import name_key
 
 CAREER_STATS_LIVE = datetime(2026, 11, 14, 20, tzinfo=UTC)  # Noon PST
 VICTIMS_DRAINED_LIVE = datetime(2026, 11, 18, 20, tzinfo=UTC)  # Noon PST
@@ -195,9 +196,8 @@ class TraitMatch(NamedTuple):
 
 
 def _fold(name: str, ignore_spaces: bool) -> str:
-    """Lowercase a name for comparison, removing its spaces if asked."""
-    name = name.lower()
-    return name.replace(" ", "") if ignore_spaces else name
+    """Casefold a name for comparison, removing its spaces if asked."""
+    return name_key(name) if ignore_spaces else name.casefold()
 
 
 def _folded_key(parts: list[str], ignore_spaces: bool) -> list[str]:
@@ -294,7 +294,7 @@ class VCharTrait(BaseModel):
 
         # Compared as lookups compare them, so "BigCats" is Big Cats
         for specialty in specialties:
-            if _fold(specialty, True) not in (_fold(s, True) for s in self.raw_subtraits):
+            if name_key(specialty) not in (name_key(s) for s in self.raw_subtraits):
                 self.raw_subtraits.append(specialty)
 
         self.raw_subtraits.sort()
@@ -307,8 +307,8 @@ class VCharTrait(BaseModel):
             specialties = set(specialties)
 
         # Compared as lookups compare them, so "BigCats" removes Big Cats
-        for specialty in (_fold(s, True) for s in specialties):
-            current = [_fold(spec, True) for spec in self.raw_subtraits]
+        for specialty in map(name_key, specialties):
+            current = [name_key(spec) for spec in self.raw_subtraits]
             try:
                 index = current.index(specialty)
                 del self.raw_subtraits[index]

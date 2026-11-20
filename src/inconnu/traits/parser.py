@@ -2,6 +2,7 @@
 
 import re
 
+from constants import name_key
 from inconnu.traits import traitcommon
 from utils.text import straighten_apostrophes
 
@@ -47,7 +48,7 @@ def parse_traits(syntax: str, *, disciplines: bool) -> dict[str, int | None]:
                 raise ValueError(f"`{trait}` must be between 0 and 5. (Got {rating}.)")
 
         # Lookups ignore case and, failing that, spaces, so these are the same
-        key = trait.casefold().replace(" ", "")
+        key = name_key(trait)
         if (first := seen.get(key)) is not None:
             if first == trait:
                 raise SyntaxError(f"You can only add `{trait}` once.")

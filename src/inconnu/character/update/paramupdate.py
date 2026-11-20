@@ -8,14 +8,16 @@ from constants import MAX_HUMANITY, MAX_HUNGER, MAX_POTENCY, MAX_STAINS, Damage
 from models import VChar
 from models.vchar import Tracker
 from utils.text import pluralize
-from utils.validation import MAX_NAME_LENGTH
+from utils.validation import MAX_NAME_LENGTH, clean_name
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal", "thinblood"]
 
 
 async def update_name(character: VChar, new_name: str) -> str:
-    """Update the character's name, with its whitespace collapsed."""
-    new_name = " ".join(new_name.split())
+    """Update the character's name, cleaned (see clean_name())."""
+    new_name = clean_name(new_name)
+    if not new_name:
+        raise ValueError("Names can't be blank.")
     if (excess := len(new_name) - MAX_NAME_LENGTH) > 0:
         raise ValueError(f"`{new_name}` is too long by {pluralize(excess, 'character')}.")
     if not inconnu.character.valid_name(new_name):

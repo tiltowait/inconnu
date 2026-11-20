@@ -153,6 +153,10 @@ class VChar(Document):
     def pre_update(self):
         """Clamp values within required bounds, and keep the Blush consistent
         with changes to Humanity and splat."""
+        # First, since is_vampire doesn't recognize "thinblood"
+        if self.splat == "thinblood":
+            self.splat = "thin-blood"
+
         if self.is_vampire:
             self.hunger = max(0, min(MAX_HUNGER, self.hunger))
         else:
@@ -160,9 +164,6 @@ class VChar(Document):
         self.potency = max(0, min(MAX_POTENCY, self.potency))
         self.stains = max(0, min(MAX_STAINS, self.stains))
         self.experience.unspent = max(0, min(self.experience.unspent, self.experience.lifetime))
-
-        if self.splat == "thinblood":
-            self.splat = "thin-blood"
 
         if not self.can_blush:
             self.header.blush = BlushState.NA

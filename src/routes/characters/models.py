@@ -39,6 +39,7 @@ from services.guildcache import CachedMember
 from services.wizard import CharacterGuild
 from utils.validation import (
     MAX_NAME_LENGTH,
+    clean_name,
     valid_name,
     validate_specialty_names,
     validate_tracker,
@@ -66,15 +67,24 @@ type ErrorLoc = tuple[int | str, ...]
 
 
 def normalize_name(name: str) -> str:
-    """Collapse a character name's whitespace, raising ValueError if the
+    """Clean a character name (see clean_name()), raising ValueError if the
     result isn't a valid name."""
-    normalized = " ".join(name.split())
+    normalized = clean_name(name)
     if not valid_name(normalized):
         raise ValueError(
             f"Invalid name: must be 1-{MAX_NAME_LENGTH} characters and contain only letters, "
             "numbers, spaces, hyphens, underscores, and apostrophes"
         )
     return normalized
+
+
+def clean_traits(traits: list[VCharTrait]) -> list[VCharTrait]:
+    """Clean each trait's name and specialties (see clean_name()) in place,
+    as Discord's commands do."""
+    for trait in traits:
+        trait.name = clean_name(trait.name)
+        trait.raw_subtraits = [clean_name(subtrait) for subtrait in trait.raw_subtraits]
+    return traits
 
 
 def trait_errors(
@@ -296,10 +306,10 @@ class CreationBody(BaseModel):
     @field_validator("traits")
     @classmethod
     def validate_traits(cls, v: list[VCharTrait]) -> list[VCharTrait]:
-        """Validate all trait names and specialties."""
+        """Clean, then validate, all trait names and specialties."""
         # Pydantic only turns ValueErrors into validation errors (a 422 rather
         # than a 500), and one error per field
-        for _, message in trait_errors(v):
+        for _, message in trait_errors(clean_traits(v)):
             raise ValueError(message)
         return v
 
@@ -368,6 +378,13 @@ class EditBody(BaseModel):
     def validate_name(cls, v: str) -> str:
         """Validate and normalize the name."""
         return normalize_name(v)
+
+    @field_validator("traits")
+    @classmethod
+    def clean_trait_names(cls, v: list[VCharTrait]) -> list[VCharTrait]:
+        """Clean trait names and specialties. The route validates them, since
+        some checks need the character."""
+        return clean_traits(v)
 
     @field_validator("health", "willpower")
     @classmethod

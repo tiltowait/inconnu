@@ -71,8 +71,11 @@ def _hunger_ranges() -> dict[VCharSplat, Range | None]:
 
 class Constraints(BaseModel):
     """What the bot accepts for character names, traits, and sheet values.
-    Names are whitespace-collapsed before checking. Trait comparisons use
-    name keys: casefolded, spaces removed."""
+    Character, trait, and specialty names are checked after collapsing
+    whitespace and straightening curly apostrophes (U+2018, U+2019), so the
+    app should do the same first. Lengths count code points, not UTF-16 units
+    (in JS, [...name].length). Trait comparisons use name keys: casefolded,
+    spaces removed."""
 
     # A JS pattern; use it with the u flag
     name_pattern: str = VALID_NAME_PATTERN_JS

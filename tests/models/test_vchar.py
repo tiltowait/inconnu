@@ -465,3 +465,16 @@ async def test_deleting_publishes_deletion():
     async with char_events.subscribe(char.id_str) as queue:
         await char.delete()
         assert queue.get_nowait() == CharEventType.DELETED
+
+
+def test_thinblood_splat_keeps_hunger():
+    """Discord's "thinblood" splat becomes "thin-blood" before the Hunger
+    clamp, which would otherwise zero a non-vampire's Hunger."""
+    char = gen_char("vampire")
+    char.hunger = 3
+    char.splat = "thinblood"
+
+    char.pre_update()
+
+    assert char.splat == "thin-blood"
+    assert char.hunger == 3

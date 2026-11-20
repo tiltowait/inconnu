@@ -57,6 +57,25 @@ async def test_update_name_collapses_whitespace():
     assert "`Theron Dusk`" in message
 
 
+async def test_update_name_straightens_apostrophes():
+    """Curly apostrophes, which phones type, are stored straight."""
+    char = make_char("Nadea", user=1)
+
+    with patch_char_mgr(char):
+        await update_name(char, "O\u2019Brien")
+
+    assert char.raw_name == "O'Brien"
+
+
+@pytest.mark.parametrize("name", ["", "   "])
+async def test_update_name_blank(name: str):
+    """A blank name says so, rather than blaming its characters."""
+    char = make_char("Nadea", user=1)
+
+    with pytest.raises(ValueError, match="can't be blank"):
+        await update_name(char, name)
+
+
 async def test_update_name_too_long():
     """A name over the limit, once collapsed, reports the excess."""
     char = make_char("Nadea", user=1)

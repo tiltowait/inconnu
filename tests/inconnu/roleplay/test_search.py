@@ -176,6 +176,18 @@ async def test_character_filter(
     assert find.call_args.args[0]["header.char_name"] == re.compile("Nadea", re.IGNORECASE)
 
 
+async def test_character_filter_cleans_name(
+    rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
+):
+    """A character name is searched for as names are stored: whitespace
+    collapsed and curly apostrophes straightened."""
+    await run_search(rp_ctx, author, character="  Theron   O\u2019Brien ")
+
+    pattern = find.call_args.args[0]["header.char_name"]
+    assert pattern == re.compile(re.escape("Theron O'Brien"), re.IGNORECASE)
+    assert pattern.search("theron o'brien")
+
+
 async def test_invalid_character_ignored(
     rp_ctx: MockCtx, author: MockMember, find: MockFind, show_error: MockShowError
 ):

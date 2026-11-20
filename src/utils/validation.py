@@ -3,7 +3,7 @@
 import re
 
 from constants import RESERVED_TRAITS, Damage, name_key
-from utils.text import pluralize
+from utils.text import pluralize, straighten_apostrophes
 
 # Words separated by single spaces. Linear, unlike ([A-Za-z_]+ ?)+, which
 # backtracks exponentially on a near miss. Words may have apostrophes
@@ -12,7 +12,8 @@ _TRAIT_WORD = r"'*[A-Za-z_][A-Za-z_']*"
 VALID_TRAIT_PATTERN = re.compile(rf"^{_TRAIT_WORD}(?: {_TRAIT_WORD})*$")
 # Names are checked with whitespace collapsed, so a space is the only
 # whitespace left. Python's \w is exactly [\p{L}\p{N}_], so the JS form (for
-# the web app; needs the u flag) matches the same names
+# the web app; needs the u flag) matches the same names, given the same
+# Unicode version. Characters newer than one side's version may differ
 VALID_NAME_PATTERN = re.compile(r"^[\w '-]+$")
 VALID_NAME_PATTERN_JS = r"^[\p{L}\p{N}_ '-]+$"
 MAX_NAME_LENGTH = 30  # Character names
@@ -23,6 +24,13 @@ HUNGER_ALIASES = ("current_hunger",)
 # Reserved trait names, compared by name_key()
 RESERVED_TRAIT_KEYS = {name_key(trait): trait for trait in RESERVED_TRAITS}
 POWER_BONUS_KEYS = ("powerbonus", "power_bonus")
+
+
+def clean_name(name: str) -> str:
+    """A character, trait, or specialty name with its whitespace collapsed and
+    curly apostrophes, which phones type, straightened. Names are checked and
+    stored in this form."""
+    return " ".join(straighten_apostrophes(name).split())
 
 
 def reads_as_hunger(word: str) -> bool:

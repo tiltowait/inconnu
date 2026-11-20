@@ -2322,6 +2322,32 @@ async def test_edit_character_writes_fields(
     assert saved.experience == stored.experience
 
 
+async def test_edit_character_cleans_traits(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    no_duplicates: MockAsyncFn,
+):
+    """Trait and specialty names are stored with whitespace collapsed and
+    curly apostrophes straightened, as Discord's commands store them."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    added = {
+        "name": " Dogs\u2019   Best",
+        "rating": 2,
+        "type": VCharTrait.Type.CUSTOM,
+        "subtraits": ["Big  Cats\u2019"],
+    }
+    body = edit_body(char, traits=body_traits(char, add=[added]))
+
+    status, data = await patch_char(char, body, auth_headers)
+
+    assert status == 204, data
+    saved = await reload(char)
+    trait = next(t for t in saved.raw_traits if t.name == "Dogs' Best")
+    assert trait.raw_subtraits == ["Big Cats'"]
+
+
 async def test_edit_character_unknown_field(
     auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
 ):

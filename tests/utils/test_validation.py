@@ -10,6 +10,7 @@ from utils.validation import (
     MAX_TRAIT_LENGTH,
     VALID_NAME_PATTERN,
     VALID_NAME_PATTERN_JS,
+    clean_name,
     reads_as_hunger,
     validate_specialty_names,
     validate_tracker,
@@ -206,3 +207,17 @@ def test_name_patterns_agree_on_every_character():
         if (VALID_NAME_PATTERN.match(chr(code)) is not None) != js_name_char(chr(code))
     ]
     assert disagreements == []
+
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("  Animal   Ken ", "Animal Ken"),
+        ("Dogs\u2019", "Dogs'"),
+        ("\u2018Til\tDawn", "'Til Dawn"),
+        ("O'Brien", "O'Brien"),
+    ],
+)
+def test_clean_name(name: str, expected: str):
+    """Whitespace collapses and curly apostrophes straighten."""
+    assert clean_name(name) == expected

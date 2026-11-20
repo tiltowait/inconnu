@@ -1,11 +1,15 @@
 """Tests for utils/validation.py."""
 
+import sys
+import unicodedata
 from collections.abc import Callable
 
 import pytest
 
 from utils.validation import (
     MAX_TRAIT_LENGTH,
+    VALID_NAME_PATTERN,
+    VALID_NAME_PATTERN_JS,
     reads_as_hunger,
     validate_specialty_names,
     validate_tracker,
@@ -100,6 +104,19 @@ def test_hunger_after_first_word(validator: NameValidator, name: str, word: str)
         validator(name)
 
 
+@pytest.mark.parametrize("name", ["Willpower", "will power", "POTENCY", "Hu Manity"])
+def test_reserved_traits_however_spaced(name: str):
+    """Reserved traits are compared by name key, ignoring case and spaces."""
+    with pytest.raises(ValueError, match="is a reserved trait"):
+        validate_trait_names(name)
+
+
+def test_current_hunger_reserved():
+    """current_hunger points the player to /character adjust."""
+    with pytest.raises(ValueError, match="Set Hunger"):
+        validate_trait_names("Current_Hunger")
+
+
 def test_power_bonus_with_space_reserved():
     """Power Bonus is reserved however it's spaced."""
     with pytest.raises(ValueError, match="Power bonus is automatic"):
@@ -167,3 +184,25 @@ def test_duplicate_traits_ignore_spaces():
     """Traits differing only in case or spaces are duplicates."""
     with pytest.raises(ValueError, match="Duplicate trait: `NightDriving`"):
         validate_trait_names("Night Driving", "NightDriving")
+
+
+def js_name_char(char: str) -> bool:
+    """Whether VALID_NAME_PATTERN_JS's class, [\\p{L}\\p{N}_ '-], takes a
+    character, emulated with Unicode categories."""
+    return char in "_ '-" or unicodedata.category(char)[0] in "LN"
+
+
+def test_js_name_pattern_is_emulated():
+    """The emulation below is of the pattern actually served."""
+    assert VALID_NAME_PATTERN_JS == r"^[\p{L}\p{N}_ '-]+$"
+
+
+def test_name_patterns_agree_on_every_character():
+    """The Python and JS name patterns take exactly the same characters, so
+    the web app accepts the names the bot does."""
+    disagreements = [
+        hex(code)
+        for code in range(sys.maxunicode + 1)
+        if (VALID_NAME_PATTERN.match(chr(code)) is not None) != js_name_char(chr(code))
+    ]
+    assert disagreements == []

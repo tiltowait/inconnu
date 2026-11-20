@@ -10,16 +10,26 @@ from utils.text import pluralize
 # (O'Brien, Dogs', 'Til), but need a letter or underscore
 _TRAIT_WORD = r"'*[A-Za-z_][A-Za-z_']*"
 VALID_TRAIT_PATTERN = re.compile(rf"^{_TRAIT_WORD}(?: {_TRAIT_WORD})*$")
-VALID_NAME_PATTERN = re.compile(r"^[\w\s'-]+$")
+# Names are checked with whitespace collapsed, so a space is the only
+# whitespace left. Python's \w is exactly [\p{L}\p{N}_], so the JS form (for
+# the web app; needs the u flag) matches the same names
+VALID_NAME_PATTERN = re.compile(r"^[\w '-]+$")
+VALID_NAME_PATTERN_JS = r"^[\p{L}\p{N}_ '-]+$"
 MAX_NAME_LENGTH = 30  # Character names
 MAX_TRAIT_LENGTH = 40  # Trait and specialty names
+# Rolls read a word as Hunger if it's an alias or a prefix of HUNGER_WORD
+HUNGER_WORD = "hunger"
+HUNGER_ALIASES = ("current_hunger",)
+# Reserved trait names, compared by name_key()
+RESERVED_TRAIT_KEYS = {name_key(trait): trait for trait in RESERVED_TRAITS}
+POWER_BONUS_KEYS = ("powerbonus", "power_bonus")
 
 
 def reads_as_hunger(word: str) -> bool:
     """Whether the roll parser reads a word as Hunger: current_hunger, or
     hunger or a prefix of it."""
     word = word.lower()
-    return word == "current_hunger" or (bool(word) and "hunger".startswith(word))
+    return word in HUNGER_ALIASES or (bool(word) and HUNGER_WORD.startswith(word))
 
 
 def valid_name(name: str) -> bool:
@@ -37,7 +47,7 @@ def validate_trait_names(*traits: str, disciplines=False):
     Raises a ValueError if a trait doesn't exist and a SyntaxError
     if the syntax is bad.
     """
-    seen = set()
+    seen: set[str] = set()
 
     for trait in traits:
         normalized = name_key(trait)  # "NightDriving" duplicates Night Driving
@@ -47,13 +57,11 @@ def validate_trait_names(*traits: str, disciplines=False):
 
         _check_length(trait)
 
-        if trait.title() in RESERVED_TRAITS:
-            raise ValueError(
-                f"`{trait.title()}` is a reserved trait. Use `/character adjust` to set."
-            )
-        if trait.lower() in RESERVED_TRAITS:
+        if normalized in HUNGER_ALIASES:
             raise ValueError("Set Hunger with `/character adjust`.")
-        if name_key(trait) in ("powerbonus", "power_bonus"):
+        if (reserved := RESERVED_TRAIT_KEYS.get(normalized)) is not None:
+            raise ValueError(f"`{reserved}` is a reserved trait. Use `/character adjust` to set.")
+        if normalized in POWER_BONUS_KEYS:
             raise ValueError("Power bonus is automatic if you roll with a Discipline.")
 
         term = "Traits" if not disciplines else "Disciplines"
@@ -65,7 +73,7 @@ def validate_specialty_names(*specialties: str):
     Validates specialty (subtrait) names.
     Raises ValueError if a specialty is invalid.
     """
-    seen = set()
+    seen: set[str] = set()
 
     for specialty in specialties:
         normalized = name_key(specialty)  # "BigCats" duplicates Big Cats

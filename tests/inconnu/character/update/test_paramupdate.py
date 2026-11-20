@@ -46,6 +46,33 @@ async def test_update_name():
     assert "Theron" in message
 
 
+async def test_update_name_collapses_whitespace():
+    """The name is stored with its whitespace collapsed, as it was checked."""
+    char = make_char("Nadea", user=1)
+
+    with patch_char_mgr(char):
+        message = await update_name(char, "  Theron\u00a0 Dusk\t")
+
+    assert char.raw_name == "Theron Dusk"
+    assert "`Theron Dusk`" in message
+
+
+async def test_update_name_too_long():
+    """A name over the limit, once collapsed, reports the excess."""
+    char = make_char("Nadea", user=1)
+
+    with pytest.raises(ValueError, match="too long by 1 character\\."):
+        await update_name(char, "a" * 31)
+
+
+async def test_update_name_invalid_characters():
+    """Invalid characters name everything a name may contain."""
+    char = make_char("Nadea", user=1)
+
+    with pytest.raises(ValueError, match="spaces, underscores, hyphens, and apostrophes"):
+        await update_name(char, "Bad!")
+
+
 async def test_update_name_same_name():
     """Renaming a character to its current name is rejected."""
     char = make_char("Nadea", user=1)

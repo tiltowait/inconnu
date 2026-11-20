@@ -24,6 +24,7 @@ from models.vchardocs import VCharSplat, VCharTrait
 from routes.auth import require_supporter
 from routes.characters.models import MAX_DAMAGE, OwnerData, with_core_traits
 from routes.characters.routes import char_event_stream
+from routes.constraints import Constraints
 from routes.deps import get_bot
 from server import app
 from services import char_mgr, guild_cache
@@ -1249,10 +1250,7 @@ async def test_get_wizard_success(mock_wizard_data: WizardData, mock_wizard_cach
         assert "traits" in result
         assert result["spc"] == mock_wizard_data.spc
         assert result["guild"]["id"] == mock_wizard_data.guild.id
-        assert result["limits"] == {
-            "health": {"min": VChar.MIN_HEALTH, "max": VChar.MAX_HEALTH},
-            "willpower": {"min": VChar.MIN_WILLPOWER, "max": VChar.MAX_WILLPOWER},
-        }
+        assert result["constraints"] == Constraints().model_dump(mode="json")
 
 
 async def test_get_wizard_invalid_token(mock_wizard_cache_get: MockFn):

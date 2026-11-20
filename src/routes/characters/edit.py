@@ -3,7 +3,7 @@ touch the Chronicle log or experience."""
 
 from fastapi.exceptions import RequestValidationError
 
-from constants import Damage
+from constants import MAX_THIN_BLOOD_POTENCY, Damage
 from models import VChar
 from models.vchar import Tracker
 from models.vchardocs import VCharTrait
@@ -51,8 +51,13 @@ async def check_edit(char: VChar, body: EditBody):
             if getattr(body, field) is None:
                 errors.append(((field,), "Required for vampires."))
         # Discord allows thin-bloods any Potency, so only check a new one
-        if char.is_thin_blood and body.potency not in (None, char.potency) and body.potency > 2:
-            errors.append((("potency",), "Thin-bloods must have Blood Potency between 0 and 2."))
+        if (
+            char.is_thin_blood
+            and body.potency not in (None, char.potency)
+            and body.potency > MAX_THIN_BLOOD_POTENCY
+        ):
+            message = f"Thin-bloods must have Blood Potency between 0 and {MAX_THIN_BLOOD_POTENCY}."
+            errors.append((("potency",), message))
     else:
         for field in ("potency", "hunger"):
             if getattr(body, field) is not None:

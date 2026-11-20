@@ -55,11 +55,3 @@ The standard character sheet has seven Traits starting with "S": Science, Stamin
 
 > [!WARNING]
 > [Custom Traits](../../guides/quickstart/custom-traits.md) count, too. Add a Trait called "Staking", and you'll need `stam` for Stamina and `stak` for Staking.
-
-### Multiword Traits
-
-Type multiword Traits and specialties as they're written: `wits + night driving`. You can abbreviate only the last word, so `night d` works, but `n d` doesn't. A full name always picks its Trait, so with both "Night" and "Night Driving", `night` is Night.
-
-Without a `+`, words run together into one name: `strength brawl` looks for a Trait called "Strength Brawl". If there isn't one, **Inconnu** suggests where the `+` goes.
-
-A word that could be Hunger (`h` through `hunger`) always ends the pool, so `brawl.kindred h 3` rolls Brawl (Kindred) with current Hunger, even if you have a Kindred Hunters specialty. Type `brawl.kindred hunters h 3` for that one.

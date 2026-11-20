@@ -15,7 +15,7 @@ Running homebrew? Have some Merits or Flaws you roll? You can track these (and a
 > /traits add traits:<TRAIT=RATING>; [TRAIT2=RATING2]; [TRAIT3=RATING3]; ...
 > ```
 
-You can add several Traits at once. Names can have spaces, so separate the Traits with semicolons:
+You can add several Traits at once, separated by semicolons:
 
 > [!TIP]
 > **Example:** Nadea has 3 dots in _Status_, 2 in _Night Driving_, and the _Stunning_ Merit, which gives two dice.

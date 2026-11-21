@@ -28,6 +28,7 @@ import errors
 from constants import (
     ATTRIBUTES,
     DISCIPLINES,
+    MAX_CONVICTIONS,
     MAX_HUMANITY,
     MAX_HUNGER,
     MAX_POTENCY,
@@ -130,7 +131,7 @@ class VChar(Document):
 
     # Biographical/profile data
     profile: VCharProfile = Field(default_factory=VCharProfile)
-    convictions: list[str] = Field(default_factory=list)
+    convictions: list[str] = Field(default_factory=list, max_length=MAX_CONVICTIONS)
     header: VCharHeader = Field(default_factory=VCharHeader)
 
     # Misc/convenience

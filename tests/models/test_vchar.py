@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from pydantic import ValidationError
 from pymongo.asynchronous.collection import AsyncCollection
 
 from constants import Damage
@@ -478,3 +479,13 @@ def test_thinblood_splat_keeps_hunger():
 
     assert char.splat == "thin-blood"
     assert char.hunger == 3
+
+
+def test_convictions_limited():
+    """A character has at most three Convictions."""
+    char = gen_char("vampire")
+    char.convictions = ["One.", "Two.", "Three."]
+
+    with pytest.raises(ValidationError):
+        char.convictions = ["One.", "Two.", "Three.", "Four."]
+    assert char.convictions == ["One.", "Two.", "Three."]

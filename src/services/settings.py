@@ -2,9 +2,10 @@
 
 import discord
 
+from constants import Theme
 from ctx import AppCtx, AppInvocation
 from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
-from utils.permissions import is_storyteller
+from utils.permissions import is_storyteller, is_supporter
 
 # Accessibility
 
@@ -32,6 +33,15 @@ async def accessible(ctx: AppInvocation):
 async def can_emoji(ctx: AppInvocation) -> bool:
     """Wrapper for accessible() that simply inverts the logic."""
     return not await accessible(ctx)
+
+
+async def theme(ctx: AppInvocation) -> Theme:
+    """The user's emoji theme. Non-supporters always get the standard theme."""
+    if not is_supporter(ctx):
+        return Theme.STANDARD
+
+    vuser = await VUser.get_or_fetch(ctx.user.id)
+    return vuser.settings.theme
 
 
 # XP Permissions

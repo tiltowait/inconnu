@@ -9,6 +9,7 @@ import pytest
 from bot import InconnuBot
 from ctx import AppCtx
 from models.vchar import VChar
+from services.emoji import _EmojiManager
 
 
 @pytest.fixture
@@ -156,8 +157,9 @@ def ghoul(char: VChar) -> VChar:
 async def mock_emoji_manager() -> AsyncGenerator[MagicMock]:
     """Mock emoji manager to prevent initialization errors in tests."""
     # Create a mock that returns a placeholder emoji for any key
-    mock_emojis = MagicMock()
-    mock_emojis.__getitem__ = MagicMock(side_effect=lambda key: f":{key}:")
+    mock_emojis = MagicMock(spec=_EmojiManager)
+    mock_emojis.emoji = MagicMock(side_effect=lambda theme, key: f":{key}:")
+    mock_emojis.get = MagicMock(side_effect=lambda theme, key, count=1: [f":{key}:"] * count)
     mock_emojis.loaded = True
 
     with patch("services.emojis", mock_emojis):

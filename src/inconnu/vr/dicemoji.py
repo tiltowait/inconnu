@@ -1,12 +1,14 @@
 """dicemoji.py - A tool for fetching emoji for representing dice rolls."""
 
 import services
+from constants import Theme
 
 
-def emojify(dice: list, hunger: bool):
+def emojify(theme: Theme, dice: list[int], hunger: bool) -> str:
     """
     Generate a string of emoji.
     Args:
+        theme (Theme): The emoji theme
         dice (list): The dice to emojify
         hunger (bool): Whether they are hunger dice
     Returns (str): The emojified string
@@ -14,16 +16,17 @@ def emojify(dice: list, hunger: bool):
     emojified = []
 
     for die in dice:
-        emoji = emojify_die(die, hunger)
+        emoji = emojify_die(theme, die, hunger)
         emojified.append(emoji)
 
     return " ".join(emojified)
 
 
-def emojify_die(die: int, hunger: bool):
+def emojify_die(theme: Theme, die: int, hunger: bool) -> str:
     """
     Fetch the emoji associated with a given die.
     Args:
+        theme (Theme): The emoji theme
         die (int): The value of the die
         hunger (bool): Whether it's a hunger die
     Returns (emoji): The associated emoji
@@ -40,4 +43,4 @@ def emojify_die(die: int, hunger: bool):
     else:
         emoji_name += "fail"
 
-    return services.emojis[emoji_name]
+    return services.emojis.emoji(theme, emoji_name)

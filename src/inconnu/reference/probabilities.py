@@ -134,19 +134,20 @@ async def __display_embed(
     # Bestial (Opt)
 
     can_emoji = await services.settings.can_emoji(ctx)
+    theme = await services.settings.theme(ctx)
     breakdown = []
 
     if probs.critical >= DISPLAY_MIN:
-        crit = roll.dicemoji.emojify_die(10, False) if can_emoji else ""
+        crit = roll.dicemoji.emojify_die(theme, 10, False) if can_emoji else ""
         crit += f"{probs.critical:.2%} Critical Win"
         breakdown.append(crit)
 
-    success = roll.dicemoji.emojify_die(6, False) if can_emoji else ""
+    success = roll.dicemoji.emojify_die(theme, 6, False) if can_emoji else ""
     success += f"{probs.success:.2%} Success"
     breakdown.append(success)
 
     if probs.messy >= DISPLAY_MIN:
-        messy = roll.dicemoji.emojify_die(10, True) if can_emoji else ""
+        messy = roll.dicemoji.emojify_die(theme, 10, True) if can_emoji else ""
         messy += f"{probs.messy:.2%} Messy Critical"
         breakdown.append(messy)
 
@@ -154,16 +155,16 @@ async def __display_embed(
 
     if probs.fail >= DISPLAY_MIN:
         # Only show regular failure if there's a distinction between it and total failure
-        fail = roll.dicemoji.emojify_die(3, False) if can_emoji else ""
+        fail = roll.dicemoji.emojify_die(theme, 3, False) if can_emoji else ""
         fail += f"{probs.fail:.2%} Failure"
         breakdown.append(fail)
 
-    total = roll.dicemoji.emojify_die(3, True) if can_emoji else ""
+    total = roll.dicemoji.emojify_die(theme, 3, True) if can_emoji else ""
     total += f"{probs.total_fail:.2%} Total Failure"
     breakdown.append(total)
 
     if probs.bestial >= DISPLAY_MIN:
-        bestial = roll.dicemoji.emojify_die(1, True) if can_emoji else ""
+        bestial = roll.dicemoji.emojify_die(theme, 1, True) if can_emoji else ""
         bestial += f"{probs.bestial:.2%} Bestial Failure"
         breakdown.append(bestial)
 

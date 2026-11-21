@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from discord import AppEmoji
 from loguru import logger
 
-from constants import Damage
+from constants import Damage, Theme
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -18,7 +18,8 @@ class _EmojiManager:
         self._emojis: dict[str, AppEmoji] = {}
         self.loaded = False
 
-    def __getitem__(self, emoji_name: str) -> str:
+    def emoji(self, theme: Theme, emoji_name: str) -> str:
+        """Get an emoji in the given theme."""
         standard = {"bp_filled": ":red_circle:\u200b", "bp_unfilled": ":o:\u200b"}
         emoji_map = {
             Damage.NONE.value: "no_dmg",
@@ -32,14 +33,16 @@ class _EmojiManager:
             return emoji + "\u200b"
 
         emoji_name = emoji_map.get(emoji_name, emoji_name)
+        if theme:
+            emoji_name = f"{theme}_{emoji_name}"
 
         # We attach <0x200b>, a zero-width space, to every emoji. This prevents
         # a weird Android bug where emojis in embeds are gigantic.
         return str(self._emojis[emoji_name]) + "\u200b"
 
-    def get(self, emoji_name, count=1) -> list[str]:
-        """Get 'count' copies of an emoji."""
-        return [self[emoji_name]] * count
+    def get(self, theme: Theme, emoji_name: str, count=1) -> list[str]:
+        """Get 'count' copies of an emoji in the given theme."""
+        return [self.emoji(theme, emoji_name)] * count
 
     async def load(self, bot: InconnuBot):
         """Load the emoji from the specified guild ."""

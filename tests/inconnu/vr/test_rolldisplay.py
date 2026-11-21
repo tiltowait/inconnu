@@ -13,10 +13,12 @@ from discord.ui import Button
 import inconnu
 import inconnu.vr.rolldisplay
 import services
+from constants import Theme
 from ctx import AppCtx
 from inconnu.character.impairment import impairment_reminder
 from inconnu.vr.rolldisplay import RollDisplay
 from models import Impairment, ImpairmentCategory, VChar
+from services.emoji import _EmojiManager
 from tests.characters import gen_char
 
 AVATAR = "https://example.com/avatar.png"
@@ -66,12 +68,31 @@ def mock_can_emoji() -> Iterator[AsyncMock]:
 
 
 @pytest.fixture(autouse=True)
+def mock_theme() -> Iterator[AsyncMock]:
+    """Use the standard theme by default."""
+    with patch(
+        "services.settings.theme", new_callable=AsyncMock, return_value=Theme.STANDARD
+    ) as mock:
+        yield mock
+
+
+@pytest.fixture(autouse=True)
 def mock_emojis() -> Iterator[None]:
-    """Replace dice emoji with readable placeholders."""
-    names = [
+    """Replace dice emoji with readable placeholders: ":ln_succ:", or
+    ":bruised_ln_succ:" in a theme."""
+    names = {
         f"{kind}_{face}" for kind in ("ln", "h") for face in ("bestial", "crit", "succ", "fail")
-    ]
-    with patch("services.emojis", {name: f":{name}:" for name in names}):
+    }
+
+    def placeholder(theme: Theme, name: str) -> str:
+        """The emoji's placeholder, refusing unknown names as the manager does."""
+        if name not in names:
+            raise KeyError(name)
+        return f":{theme}_{name}:" if theme else f":{name}:"
+
+    emojis = MagicMock(spec=_EmojiManager)
+    emojis.emoji = MagicMock(side_effect=placeholder)
+    with patch("services.emojis", emojis):
         yield
 
 
@@ -338,6 +359,17 @@ async def test_dice_field_emoji_max_pool(ctx: AppCtx, owner: discord.Member):
     embed = await render(display)
 
     assert ":ln_succ:" in embed.fields[0].value
+
+
+async def test_dice_field_uses_roller_theme(
+    ctx: AppCtx, owner: discord.Member, mock_theme: AsyncMock
+):
+    """Dice are shown in the roller's theme."""
+    mock_theme.return_value = Theme.BRUISED
+    embed = await render(make_display(ctx, owner, make_roll([6], [1])))
+
+    assert embed.fields[0].value == ":bruised_ln_succ: :bruised_h_bestial:"
+    mock_theme.assert_awaited_once_with(ctx)
 
 
 async def test_dice_field_text_when_emoji_disallowed(

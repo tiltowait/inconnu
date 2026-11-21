@@ -54,7 +54,12 @@ def test_unicode_emoji_ignore_theme(manager: _EmojiManager):
     assert manager.emoji(Theme.BRUISED, "bp_filled").startswith(":red_circle:")
 
 
-def test_missing_themed_emoji_raises(manager: _EmojiManager):
-    """A theme without the emoji doesn't fall back to the standard one."""
+def test_missing_themed_emoji_falls_back(manager: _EmojiManager):
+    """A theme without the emoji falls back to the standard one."""
+    assert manager.emoji(Theme.BRUISED, "ln_succ") == ":ln_succ:" + ZWSP
+
+
+def test_missing_emoji_raises(manager: _EmojiManager):
+    """An emoji missing from every theme is an error."""
     with pytest.raises(KeyError):
-        manager.emoji(Theme.BRUISED, "ln_succ")
+        manager.emoji(Theme.BRUISED, "ln_crit")

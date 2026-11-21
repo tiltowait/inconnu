@@ -28,6 +28,11 @@ import errors
 from constants import (
     ATTRIBUTES,
     DISCIPLINES,
+    MAX_CONVICTIONS,
+    MAX_HUMANITY,
+    MAX_HUNGER,
+    MAX_POTENCY,
+    MAX_STAINS,
     SKILLS,
     UNIVERSAL_TRAITS,
     Damage,
@@ -126,7 +131,7 @@ class VChar(Document):
 
     # Biographical/profile data
     profile: VCharProfile = Field(default_factory=VCharProfile)
-    convictions: list[str] = Field(default_factory=list)
+    convictions: list[str] = Field(default_factory=list, max_length=MAX_CONVICTIONS)
     header: VCharHeader = Field(default_factory=VCharHeader)
 
     # Misc/convenience
@@ -149,16 +154,17 @@ class VChar(Document):
     def pre_update(self):
         """Clamp values within required bounds, and keep the Blush consistent
         with changes to Humanity and splat."""
-        if self.is_vampire:
-            self.hunger = max(0, min(5, self.hunger))
-        else:
-            self.hunger = 0
-        self.potency = max(0, min(10, self.potency))
-        self.stains = max(0, min(10, self.stains))
-        self.experience.unspent = max(0, min(self.experience.unspent, self.experience.lifetime))
-
+        # First, since is_vampire doesn't recognize "thinblood"
         if self.splat == "thinblood":
             self.splat = "thin-blood"
+
+        if self.is_vampire:
+            self.hunger = max(0, min(MAX_HUNGER, self.hunger))
+        else:
+            self.hunger = 0
+        self.potency = max(0, min(MAX_POTENCY, self.potency))
+        self.stains = max(0, min(MAX_STAINS, self.stains))
+        self.experience.unspent = max(0, min(self.experience.unspent, self.experience.lifetime))
 
         if not self.can_blush:
             self.header.blush = BlushState.NA
@@ -218,7 +224,7 @@ class VChar(Document):
     @hunger.setter
     def hunger(self, new_hunger: int):
         """Set the character's Hunger rating."""
-        new_hunger = max(0, min(new_hunger, 5))
+        new_hunger = max(0, min(new_hunger, MAX_HUNGER))
         self.raw_hunger = new_hunger
 
     @property
@@ -229,7 +235,7 @@ class VChar(Document):
     @humanity.setter
     def humanity(self, new_humanity: int):
         """Set the character's new Humanity rating, clamped, and wipe stains."""
-        new_humanity = max(0, min(new_humanity, 10))
+        new_humanity = max(0, min(new_humanity, MAX_HUMANITY))
         self.raw_humanity = new_humanity
         self.stains = 0
 
@@ -337,7 +343,7 @@ class VChar(Document):
     @property
     def degeneration(self) -> bool:
         """Whether the character is in degeneration."""
-        return self.stains > (10 - self.humanity)
+        return self.stains > (MAX_HUMANITY - self.humanity)
 
     @property
     def incapacitated(self) -> bool:
@@ -866,8 +872,8 @@ class VChar(Document):
                 log (False for manual updates)
         Returns the Aggravated Willpower damage dealt.
         """
-        unfilled = 10 - self.humanity
-        new_stains = max(0, min(10, self.stains + delta))
+        unfilled = MAX_HUMANITY - self.humanity
+        new_stains = max(0, min(MAX_STAINS, self.stains + delta))
         old_overflow = max(self.stains - unfilled, 0)
         new_overflow = max(new_stains - unfilled, 0)
         damage = max(new_overflow - old_overflow, 0)

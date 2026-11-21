@@ -50,6 +50,27 @@ def test_name_normalized_whitespace():
     assert body.name == "John Doe"
 
 
+def test_name_straightens_apostrophes():
+    """Curly apostrophes, which phones type, are straightened."""
+    body = CreationBody(**valid_creation_data(name="Ma\u2018ayan O\u2019Brien"))
+    assert body.name == "Ma'ayan O'Brien"
+
+
+def test_traits_cleaned():
+    """Trait and specialty names are cleaned, as Discord's commands do."""
+    traits = [
+        VCharTrait(
+            name="  Dogs\u2019   Best ",
+            rating=2,
+            type=VCharTrait.Type.CUSTOM,
+            subtraits=["Big  Cats\u2019", " \u2018Til Dawn"],
+        )
+    ]
+    body = CreationBody(**valid_creation_data(traits=traits))
+    assert body.traits[0].name == "Dogs' Best"
+    assert body.traits[0].raw_subtraits == ["Big Cats'", "'Til Dawn"]
+
+
 def test_name_too_long():
     """Name longer than 30 characters rejected."""
     data = valid_creation_data(name="A" * 31)

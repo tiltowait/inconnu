@@ -24,6 +24,7 @@ from models.vchardocs import VCharSplat, VCharTrait
 from routes.auth import require_supporter
 from routes.characters.models import MAX_DAMAGE, OwnerData, with_core_traits
 from routes.characters.routes import char_event_stream
+from routes.constraints import Constraints
 from routes.deps import get_bot
 from server import app
 from services import char_mgr, guild_cache
@@ -1249,10 +1250,7 @@ async def test_get_wizard_success(mock_wizard_data: WizardData, mock_wizard_cach
         assert "traits" in result
         assert result["spc"] == mock_wizard_data.spc
         assert result["guild"]["id"] == mock_wizard_data.guild.id
-        assert result["limits"] == {
-            "health": {"min": VChar.MIN_HEALTH, "max": VChar.MAX_HEALTH},
-            "willpower": {"min": VChar.MIN_WILLPOWER, "max": VChar.MAX_WILLPOWER},
-        }
+        assert result["constraints"] == Constraints().model_dump(mode="json")
 
 
 async def test_get_wizard_invalid_token(mock_wizard_cache_get: MockFn):
@@ -2322,6 +2320,32 @@ async def test_edit_character_writes_fields(
     assert saved.profile.biography == "Born."
     assert saved.log == stored.log
     assert saved.experience == stored.experience
+
+
+async def test_edit_character_cleans_traits(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    no_duplicates: MockAsyncFn,
+):
+    """Trait and specialty names are stored with whitespace collapsed and
+    curly apostrophes straightened, as Discord's commands store them."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    added = {
+        "name": " Dogs\u2019   Best",
+        "rating": 2,
+        "type": VCharTrait.Type.CUSTOM,
+        "subtraits": ["Big  Cats\u2019"],
+    }
+    body = edit_body(char, traits=body_traits(char, add=[added]))
+
+    status, data = await patch_char(char, body, auth_headers)
+
+    assert status == 204, data
+    saved = await reload(char)
+    trait = next(t for t in saved.raw_traits if t.name == "Dogs' Best")
+    assert trait.raw_subtraits == ["Big Cats'"]
 
 
 async def test_edit_character_unknown_field(

@@ -14,15 +14,32 @@ from pydantic import (
     model_validator,
 )
 
-from constants import ATTRIBUTES, MAX_CONVICTION_LENGTH, SKILLS, core_trait, name_key
+from constants import (
+    ATTRIBUTES,
+    MAX_CONVICTION_LENGTH,
+    MAX_CONVICTIONS,
+    MAX_HUMANITY,
+    MAX_HUNGER,
+    MAX_POTENCY,
+    MAX_PROFILE_LENGTH,
+    MAX_STAINS,
+    MAX_THIN_BLOOD_POTENCY,
+    MAX_TRAIT_RATING,
+    SKILLS,
+    core_trait,
+    name_key,
+)
 from errors import CharacterError
 from models import MAX_FRENZY_BONUS, FrenzyAdvantage, FrenzyPenalty, VChar
 from models.vchar import Tracker
 from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
+from routes.constraints import Constraints
 from services import guild_cache
 from services.guildcache import CachedMember
 from services.wizard import CharacterGuild
 from utils.validation import (
+    MAX_NAME_LENGTH,
+    clean_name,
     valid_name,
     validate_specialty_names,
     validate_tracker,
@@ -42,7 +59,6 @@ SUBTRAIT_TYPES = {VCharTrait.Type.SKILL, VCharTrait.Type.CUSTOM, VCharTrait.Type
 CORE_TRAIT_TYPES = {name_key(name): VCharTrait.Type.ATTRIBUTE for name in ATTRIBUTES} | {
     name_key(name): VCharTrait.Type.SKILL for name in SKILLS
 }
-MAX_PROFILE_LENGTH = 1024
 # Enough to wrap a full track twice over; a cap so huge counts can't build
 # huge tracks
 MAX_DAMAGE = 2 * max(VChar.MAX_HEALTH, VChar.MAX_WILLPOWER)
@@ -51,15 +67,24 @@ type ErrorLoc = tuple[int | str, ...]
 
 
 def normalize_name(name: str) -> str:
-    """Collapse a character name's whitespace, raising ValueError if the
+    """Clean a character name (see clean_name()), raising ValueError if the
     result isn't a valid name."""
-    normalized = " ".join(name.split())
+    normalized = clean_name(name)
     if not valid_name(normalized):
         raise ValueError(
-            "Invalid name: must be 1-30 characters and contain only letters, "
+            f"Invalid name: must be 1-{MAX_NAME_LENGTH} characters and contain only letters, "
             "numbers, spaces, hyphens, underscores, and apostrophes"
         )
     return normalized
+
+
+def clean_traits(traits: list[VCharTrait]) -> list[VCharTrait]:
+    """Clean each trait's name and specialties (see clean_name()) in place,
+    as Discord's commands do."""
+    for trait in traits:
+        trait.name = clean_name(trait.name)
+        trait.raw_subtraits = [clean_name(subtrait) for subtrait in trait.raw_subtraits]
+    return traits
 
 
 def trait_errors(
@@ -92,10 +117,10 @@ def trait_errors(
         elif trait.type == VCharTrait.Type.ATTRIBUTE:
             yield (index, "type"), f"`{trait.name}` isn't an Attribute."
 
-        if not 0 <= trait.rating <= 5:
+        if not 0 <= trait.rating <= MAX_TRAIT_RATING:
             yield (
                 (index, "rating"),
-                f"`{trait.name}` must be between 0 and 5. (Got {trait.rating}.)",
+                f"`{trait.name}` must be between 0 and {MAX_TRAIT_RATING}. (Got {trait.rating}.)",
             )
 
         if trait.raw_subtraits:
@@ -246,29 +271,13 @@ class UserCharData(BaseModel):
         return self
 
 
-class TrackerLimits(BaseModel):
-    """The minimum and maximum boxes for Health or Willpower."""
-
-    min: int
-    max: int
-
-
-def _tracker_limits() -> dict[Tracker, TrackerLimits]:
-    """The bot's Health and Willpower limits, so the wizard can follow them."""
-    limits: dict[Tracker, TrackerLimits] = {}
-    for tracker in Tracker:
-        low, high = VChar.tracker_limits(tracker)
-        limits[tracker] = TrackerLimits(min=low, max=high)
-    return limits
-
-
 class WizardSchema(BaseModel):
     """Data sent by the wizard endpoint."""
 
     spc: bool
     guild: CharacterGuild
     splats: list[VCharSplat] = list(VCharSplat)
-    limits: dict[Tracker, TrackerLimits] = Field(default_factory=_tracker_limits)
+    constraints: Constraints = Field(default_factory=Constraints)
     traits: list[VCharTrait] = [
         VCharTrait(name=trait, rating=1, type=VCharTrait.Type.ATTRIBUTE) for trait in ATTRIBUTES
     ] + [VCharTrait(name=trait, rating=0, type=VCharTrait.Type.SKILL) for trait in SKILLS]
@@ -281,9 +290,9 @@ class CreationBody(BaseModel):
     splat: VCharSplat
     health: int = Field(ge=VChar.MIN_HEALTH, le=VChar.MAX_HEALTH)
     willpower: int = Field(ge=VChar.MIN_WILLPOWER, le=VChar.MAX_WILLPOWER)
-    humanity: int = Field(ge=0, le=10)
-    blood_potency: int = Field(ge=0, le=10)
-    convictions: list[str] = Field(max_length=3)
+    humanity: int = Field(ge=0, le=MAX_HUMANITY)
+    blood_potency: int = Field(ge=0, le=MAX_POTENCY)
+    convictions: list[str] = Field(max_length=MAX_CONVICTIONS)
     biography: str = Field(max_length=MAX_PROFILE_LENGTH)
     description: str = Field(max_length=MAX_PROFILE_LENGTH)
     traits: list[VCharTrait]
@@ -297,10 +306,10 @@ class CreationBody(BaseModel):
     @field_validator("traits")
     @classmethod
     def validate_traits(cls, v: list[VCharTrait]) -> list[VCharTrait]:
-        """Validate all trait names and specialties."""
+        """Clean, then validate, all trait names and specialties."""
         # Pydantic only turns ValueErrors into validation errors (a 422 rather
         # than a 500), and one error per field
-        for _, message in trait_errors(v):
+        for _, message in trait_errors(clean_traits(v)):
             raise ValueError(message)
         return v
 
@@ -319,8 +328,10 @@ class CreationBody(BaseModel):
             if self.blood_potency != 0:
                 raise ValueError(f"{self.splat.value.title()}s must have blood potency of 0")
         elif self.splat == VCharSplat.THIN_BLOOD:
-            if not (0 <= self.blood_potency <= 2):
-                raise ValueError("Thin-bloods must have blood potency between 0 and 2")
+            if not (0 <= self.blood_potency <= MAX_THIN_BLOOD_POTENCY):
+                raise ValueError(
+                    f"Thin-bloods must have blood potency between 0 and {MAX_THIN_BLOOD_POTENCY}"
+                )
         # VAMPIRE uses the default 0-10 range from Field constraint
         return self
 
@@ -354,11 +365,11 @@ class EditBody(BaseModel):
     name: str
     health: str
     willpower: str
-    humanity: int = Field(ge=0, le=10)
-    stains: int = Field(ge=0, le=10)
-    potency: int | None = Field(default=None, ge=0, le=10)
-    hunger: int | None = Field(default=None, ge=0, le=5)
-    convictions: list[str] = Field(max_length=3)
+    humanity: int = Field(ge=0, le=MAX_HUMANITY)
+    stains: int = Field(ge=0, le=MAX_STAINS)
+    potency: int | None = Field(default=None, ge=0, le=MAX_POTENCY)
+    hunger: int | None = Field(default=None, ge=0, le=MAX_HUNGER)
+    convictions: list[str] = Field(max_length=MAX_CONVICTIONS)
     profile: EditProfile
     traits: list[VCharTrait]
 
@@ -367,6 +378,13 @@ class EditBody(BaseModel):
     def validate_name(cls, v: str) -> str:
         """Validate and normalize the name."""
         return normalize_name(v)
+
+    @field_validator("traits")
+    @classmethod
+    def clean_trait_names(cls, v: list[VCharTrait]) -> list[VCharTrait]:
+        """Clean trait names and specialties. The route validates them, since
+        some checks need the character."""
+        return clean_traits(v)
 
     @field_validator("health", "willpower")
     @classmethod

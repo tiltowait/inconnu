@@ -4,19 +4,27 @@ from typing import cast
 
 import inconnu
 import services
-from constants import Damage
+from constants import MAX_HUMANITY, MAX_HUNGER, MAX_POTENCY, MAX_STAINS, Damage
 from models import VChar
 from models.vchar import Tracker
+from utils.text import pluralize
+from utils.validation import MAX_NAME_LENGTH, clean_name
 
 VALID_SPLATS = ["vampire", "ghoul", "mortal", "thinblood"]
 
 
 async def update_name(character: VChar, new_name: str) -> str:
-    """Update the character's name."""
+    """Update the character's name, cleaned (see clean_name())."""
+    new_name = clean_name(new_name)
+    if not new_name:
+        raise ValueError("Names can't be blank.")
+    if (excess := len(new_name) - MAX_NAME_LENGTH) > 0:
+        raise ValueError(f"`{new_name}` is too long by {pluralize(excess, 'character')}.")
     if not inconnu.character.valid_name(new_name):
-        raise ValueError("Names may only contain letters, numbers, and underscores.")
-    if (name_len := len(new_name)) > 30:
-        raise ValueError(f"`{new_name}` is too long by {name_len - 30} characters.")
+        raise ValueError(
+            "Names may only contain letters, numbers, spaces, underscores, hyphens, "
+            "and apostrophes."
+        )
 
     # Compare raw names: the name property appends " (SPC)" to SPC names,
     # which would defeat these checks
@@ -46,12 +54,12 @@ def update_splat(character: VChar, new_splat: str) -> str:
 
 def update_hunger(character: VChar, delta: str) -> str:
     """Update the character's Hunger."""
-    return __update_hunger_potency(character, delta, "hunger", 5)
+    return __update_hunger_potency(character, delta, "hunger", MAX_HUNGER)
 
 
 def update_potency(character: VChar, delta: str) -> str:
     """Update the character's Blood Potency."""
-    return __update_hunger_potency(character, delta, "potency", 10)
+    return __update_hunger_potency(character, delta, "potency", MAX_POTENCY)
 
 
 def __update_hunger_potency(character: VChar, delta: str | int, key: str, maximum: int) -> str:
@@ -246,8 +254,9 @@ def __update_humanity(character: VChar, hu_type: str, delta: str | int) -> str:
         current = cast(int, getattr(character, hu_type))
         new_value = current + delta
 
-    if not 0 <= new_value <= 10:
-        raise ValueError(f"{hu_type.title()} must be between 0 and 10.")
+    maximum = MAX_HUMANITY if hu_type == "humanity" else MAX_STAINS
+    if not 0 <= new_value <= maximum:
+        raise ValueError(f"{hu_type.title()} must be between 0 and {maximum}.")
 
     if hu_type == "humanity":
         character.humanity = new_value

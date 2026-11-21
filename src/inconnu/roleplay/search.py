@@ -15,6 +15,7 @@ import ui
 from ctx import AppCtx
 from models import RPPost
 from utils import get_avatar
+from utils.validation import clean_name
 
 
 class SortOrder(Enum):
@@ -76,8 +77,9 @@ async def search(
         footer.append(f"Search key: {needle}")
 
     if character:
+        character = clean_name(character)  # As names are stored
         if inconnu.character.valid_name(character):
-            query["header.char_name"] = re.compile(character, re.IGNORECASE)
+            query["header.char_name"] = re.compile(re.escape(character), re.IGNORECASE)
         else:
             logger.debug("RP SEARCH: Ignoring invalid character name")
     if mentioning is not None:

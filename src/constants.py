@@ -89,7 +89,18 @@ RESERVED_TRAITS = UNIVERSAL_TRAITS + ["current_hunger"]
 
 ROUSE_FAIL_COLOR = 0xC70F0F
 
+MAX_PROFILE_LENGTH = 1024  # Biography and description, each
+MAX_CONVICTIONS = 3
 MAX_CONVICTION_LENGTH = 200
+
+# Sheet limits. All minimums are 0. Servers' max Hunger setting only caps
+# rolls, never the sheet
+MAX_TRAIT_RATING = 5
+MAX_HUMANITY = 10
+MAX_STAINS = 10
+MAX_POTENCY = 10
+MAX_THIN_BLOOD_POTENCY = 2
+MAX_HUNGER = 5
 
 
 class Damage(StrEnum):

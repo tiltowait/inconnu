@@ -9,8 +9,9 @@ from ctx import AppCtx
 from inconnu.stats import trait_renamed
 from inconnu.traits import traitcommon
 from services.haven import Haven
-from utils.text import pluralize, straighten_apostrophes
+from utils.text import pluralize
 from utils.urls import docs_url
+from utils.validation import clean_name
 
 __HELP_URL = docs_url("command-reference/traits#traits-rename")
 
@@ -18,8 +19,8 @@ __HELP_URL = docs_url("command-reference/traits#traits-rename")
 async def rename(ctx: AppCtx, char_name: str | None, trait: str, new_name: str):
     """Rename a trait, keeping its rating and specialties. Only characters with
     the trait are offered for selection."""
-    trait = _clean(trait)
-    new_name = _clean(new_name)
+    trait = clean_name(trait)
+    new_name = clean_name(new_name)
     try:
         # Separately, since a case-only rename isn't a duplicate. Validating the
         # old name rejects "Trait.Specialty", which would find the trait
@@ -68,8 +69,3 @@ async def rename(ctx: AppCtx, char_name: str | None, trait: str, new_name: str):
         message=f"__{ctx.user.mention} renamed {character.name}'s trait:__\n{change}",
         color=0xFF9400,
     )
-
-
-def _clean(name: str) -> str:
-    """Collapse whitespace and straighten apostrophes in a trait name."""
-    return " ".join(straighten_apostrophes(name).split())

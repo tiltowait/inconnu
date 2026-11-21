@@ -6,6 +6,7 @@ from loguru import logger
 
 import errors
 import ui
+from constants import MAX_PROFILE_LENGTH
 from ctx import AppCtx
 from models import VChar
 from services.haven import haven
@@ -100,7 +101,7 @@ class _CharacterBio(discord.ui.Modal):
                 placeholder="Character biography and history. Will be publicly shown.",
                 value=character.profile.biography,
                 style=discord.InputTextStyle.long,
-                max_length=1024,
+                max_length=MAX_PROFILE_LENGTH,
                 required=False,
             )
         )
@@ -110,7 +111,7 @@ class _CharacterBio(discord.ui.Modal):
                 placeholder="The character's physical description. Will be publicly shown.",
                 value=character.profile.description,
                 style=discord.InputTextStyle.long,
-                max_length=1024,
+                max_length=MAX_PROFILE_LENGTH,
                 required=False,
             )
         )

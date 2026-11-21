@@ -2,7 +2,7 @@
 
 import re
 
-from constants import name_key
+from constants import MAX_TRAIT_RATING, name_key
 from inconnu.traits import traitcommon
 from utils.text import straighten_apostrophes
 
@@ -40,12 +40,14 @@ def parse_traits(syntax: str, *, disciplines: bool) -> dict[str, int | None]:
         rating = None
         if values:
             if not values[0].isdigit():
-                raise SyntaxError(f"`{trait}` must be a number between 0 and 5.")
+                raise SyntaxError(f"`{trait}` must be a number between 0 and {MAX_TRAIT_RATING}.")
 
             rating = int(values[0])
 
-            if not 0 <= rating <= 5:
-                raise ValueError(f"`{trait}` must be between 0 and 5. (Got {rating}.)")
+            if not 0 <= rating <= MAX_TRAIT_RATING:
+                raise ValueError(
+                    f"`{trait}` must be between 0 and {MAX_TRAIT_RATING}. (Got {rating}.)"
+                )
 
         # Lookups ignore case and, failing that, spaces, so these are the same
         key = name_key(trait)

@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from pydantic import ValidationError
 from pymongo.asynchronous.collection import AsyncCollection
 
 from constants import Damage
@@ -465,3 +466,26 @@ async def test_deleting_publishes_deletion():
     async with char_events.subscribe(char.id_str) as queue:
         await char.delete()
         assert queue.get_nowait() == CharEventType.DELETED
+
+
+def test_thinblood_splat_keeps_hunger():
+    """Discord's "thinblood" splat becomes "thin-blood" before the Hunger
+    clamp, which would otherwise zero a non-vampire's Hunger."""
+    char = gen_char("vampire")
+    char.hunger = 3
+    char.splat = "thinblood"
+
+    char.pre_update()
+
+    assert char.splat == "thin-blood"
+    assert char.hunger == 3
+
+
+def test_convictions_limited():
+    """A character has at most three Convictions."""
+    char = gen_char("vampire")
+    char.convictions = ["One.", "Two.", "Three."]
+
+    with pytest.raises(ValidationError):
+        char.convictions = ["One.", "Two.", "Three.", "Four."]
+    assert char.convictions == ["One.", "Two.", "Three."]

@@ -1,8 +1,10 @@
 """Basic WizardCache and CharacterGuild tests."""
 
 from collections.abc import AsyncGenerator
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import discord
 import pytest
 from discord import Guild
 
@@ -38,6 +40,17 @@ def test_registration(wc: WizardCache, guild: Guild, uk: tuple[int, int]):
     assert key in wc.cache
     assert uk in wc.users
     assert isinstance(wc.get(key), WizardData)
+
+
+def test_expiry(wc: WizardCache, guild: Guild):
+    """The wizard expires when its cache entry does."""
+    before = discord.utils.utcnow()
+    wizard = wc.get(wc.register(guild, USER, False))
+    after = discord.utils.utcnow()
+
+    assert wizard is not None
+    ttl = timedelta(seconds=wc.ttl)
+    assert before + ttl <= wizard.expires_at <= after + ttl
 
 
 def test_anti_spam(wc: WizardCache, guild: Guild):

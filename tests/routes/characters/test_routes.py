@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterator
+from datetime import UTC, datetime
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -36,6 +37,7 @@ TEST_API_KEY = "test-api-key-12345"
 TEST_USER_ID = 987654321
 TEST_GUILD_ID = 123456789
 TEST_TOKEN = "valid-wizard-token"
+TEST_EXPIRY = datetime(2026, 1, 1, tzinfo=UTC)
 TEST_SUPPORTER_GUILD_ID = 54321
 TEST_SUPPORTER_ROLE_ID = 99999
 
@@ -110,6 +112,7 @@ def mock_wizard_data(mock_guild: discord.Guild) -> WizardData:
         spc=False,
         guild=CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None, count=None),
         user=TEST_USER_ID,
+        expires_at=TEST_EXPIRY,
     )
 
 
@@ -120,6 +123,7 @@ def mock_spc_wizard_data(mock_guild: discord.Guild) -> WizardData:
         spc=True,
         guild=CharacterGuild(id=str(mock_guild.id), name=mock_guild.name, icon=None, count=None),
         user=TEST_USER_ID,
+        expires_at=TEST_EXPIRY,
     )
 
 
@@ -1251,6 +1255,7 @@ async def test_get_wizard_success(mock_wizard_data: WizardData, mock_wizard_cach
         assert result["spc"] == mock_wizard_data.spc
         assert result["guild"]["id"] == mock_wizard_data.guild.id
         assert result["constraints"] == Constraints().model_dump(mode="json")
+        assert datetime.fromisoformat(result["expires_at"]) == TEST_EXPIRY
 
 
 async def test_get_wizard_invalid_token(mock_wizard_cache_get: MockFn):

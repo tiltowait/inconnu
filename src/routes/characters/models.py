@@ -1,6 +1,7 @@
 """Pydantic models for character API endpoints."""
 
 from collections.abc import Iterator, Mapping
+from datetime import datetime
 from typing import Literal, Self
 
 from beanie import PydanticObjectId
@@ -276,6 +277,7 @@ class WizardSchema(BaseModel):
 
     spc: bool
     guild: CharacterGuild
+    expires_at: datetime
     splats: list[VCharSplat] = list(VCharSplat)
     constraints: Constraints = Field(default_factory=Constraints)
     traits: list[VCharTrait] = [

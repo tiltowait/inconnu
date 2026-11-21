@@ -736,6 +736,7 @@ async def get_wizard(token: str) -> WizardSchema:
     return WizardSchema(
         spc=wizard.spc,
         guild=wizard.guild,
+        expires_at=wizard.expires_at,
     )
 
 

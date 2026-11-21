@@ -1,5 +1,6 @@
 """Character wizard cache and related models."""
 
+from datetime import datetime, timedelta
 from typing import Self
 
 import discord
@@ -50,6 +51,7 @@ class WizardData(BaseModel):
     spc: bool
     guild: CharacterGuild
     user: int
+    expires_at: datetime
 
 
 class WizardCache:
@@ -77,7 +79,12 @@ class WizardCache:
             if existing_wizard and existing_wizard.spc == spc:
                 return existing_token
 
-        request = WizardData(guild=CharacterGuild.create(guild), user=user, spc=spc)
+        request = WizardData(
+            guild=CharacterGuild.create(guild),
+            user=user,
+            spc=spc,
+            expires_at=discord.utils.utcnow() + timedelta(seconds=self.ttl),
+        )
         key = petname.Generate(3)
         if not isinstance(key, str):
             raise ValueError("Unable to generate key")

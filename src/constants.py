@@ -111,6 +111,14 @@ class Damage(StrEnum):
     AGGRAVATED = "x"
 
 
+class Theme(StrEnum):
+    """Emoji themes. The value is the themed emoji names' suffix."""
+
+    STANDARD = ""
+    CITRUS_SHERBERT = "peach"  # Discord's spelling
+    BRUISED = "bruised"
+
+
 def get_standard_traits() -> list[str]:
     """Generate a flattened list of all standard traits. We use a generator
     function to remove any possibility of modifying the source list."""

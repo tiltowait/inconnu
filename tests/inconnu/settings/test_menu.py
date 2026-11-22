@@ -9,6 +9,7 @@ import pytest
 from discord.ui import Button, Select
 
 from bot import InconnuBot
+from constants import Theme
 from ctx import AppCtx
 from inconnu.settings.menu import OblivionOptions, SettingsIDs, SettingsMenu
 from models import HiddenDicePerms, VGuild, VUser
@@ -80,6 +81,58 @@ async def test_toggle_auto_impairment(ctx: AppCtx, mock_save: AsyncMock):
 
     await menu.toggle_auto_impairment(interaction)
     assert vuser.settings.auto_impairment
+
+
+def theme_select(menu: SettingsMenu) -> Select | None:
+    """The emoji theme select, if the menu has one."""
+    return cast(Select | None, menu.get_item(SettingsIDs.THEME))
+
+
+@pytest.mark.parametrize("theme", list(Theme))
+async def test_user_menu_shows_theme_to_supporters(ctx: AppCtx, theme: Theme):
+    """Supporters get an enabled select that defaults to their theme."""
+    vuser = VUser(user=1)
+    vuser.settings.theme = theme
+    select = theme_select(SettingsMenu(ctx, vuser, admin=False, supporter=True))
+
+    assert select is not None
+    assert [opt.value for opt in select.options if opt.default] == [theme.name]
+    assert [opt.label for opt in select.options] == [t.description for t in Theme]
+    assert not select.disabled
+
+
+async def test_user_menu_disables_theme_for_non_supporters(ctx: AppCtx):
+    """Non-supporters see the select disabled, on the standard theme they get."""
+    vuser = VUser(user=1)
+    vuser.settings.theme = Theme.BRUISED
+    select = theme_select(SettingsMenu(ctx, vuser, admin=False))
+
+    assert select is not None
+    assert [opt.value for opt in select.options if opt.default] == [Theme.STANDARD.name]
+    assert select.disabled
+
+
+async def test_guild_menu_has_no_theme(ctx: AppCtx):
+    """Themes are a personal setting, so servers don't get them."""
+    vguild = VGuild(guild=1, name="Test Guild")
+    assert theme_select(SettingsMenu(ctx, vguild, admin=True, supporter=True)) is None
+
+
+async def test_set_theme(ctx: AppCtx, mock_save: AsyncMock):
+    """Choosing a theme updates the setting and the select's default, and saves."""
+    vuser = VUser(user=1)
+    menu = SettingsMenu(ctx, vuser, admin=False, supporter=True)
+    select = theme_select(menu)
+    assert select is not None
+    interaction = AsyncMock(spec=discord.Interaction)
+
+    with patch.object(Select, "values", new_callable=PropertyMock, return_value=["BRUISED"]):
+        await menu.set_theme(interaction)
+
+    assert vuser.settings.theme == Theme.BRUISED
+    assert [opt.value for opt in select.options if opt.default] == ["BRUISED"]
+    interaction.edit.assert_awaited_once_with(view=menu)
+    mock_save.assert_awaited_once()
 
 
 def hidden_dice_select(menu: SettingsMenu) -> Select | None:
@@ -211,6 +264,6 @@ async def test_menu_within_component_limit(ctx: AppCtx, guild: bool):
     """Discord rejects messages with more than 40 components, counting nested
     ones, so both menus must stay within it."""
     scope = VGuild(guild=1, name="Test Guild") if guild else VUser(user=1)
-    menu = SettingsMenu(ctx, scope, admin=True)
+    menu = SettingsMenu(ctx, scope, admin=True, supporter=True)
     total = sum(count_components(component) for component in menu.to_components())
     assert total <= MAX_COMPONENTS

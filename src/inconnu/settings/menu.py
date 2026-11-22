@@ -16,9 +16,10 @@ from discord import (
 from discord.ui import Button, Select, TextDisplay
 from loguru import logger
 
+from constants import Theme
 from ctx import AppCtx
 from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
-from utils.permissions import is_admin
+from utils.permissions import is_admin, is_supporter
 
 
 async def show(ctx: AppCtx, scope: str):
@@ -28,7 +29,7 @@ async def show(ctx: AppCtx, scope: str):
     else:
         obj = await VUser.get_or_fetch(ctx.user.id)
 
-    view = SettingsMenu(ctx, obj, is_admin(ctx.user))
+    view = SettingsMenu(ctx, obj, is_admin(ctx.user), supporter=is_supporter(ctx))
     await ctx.respond(view=view, ephemeral=True)
 
 
@@ -49,6 +50,7 @@ class SettingsIDs(IntEnum):
     MAX_HUNGER = auto()
     HIDDEN_DICE = auto()
     STORYTELLER_ROLE = auto()
+    THEME = auto()
 
 
 class OblivionOptions(StrEnum):
@@ -89,7 +91,7 @@ class OblivionOptions(StrEnum):
 class SettingsMenu(discord.ui.DesignerView):
     """The settings menu."""
 
-    def __init__(self, ctx: AppCtx, scope: VGuild | VUser, admin: bool):
+    def __init__(self, ctx: AppCtx, scope: VGuild | VUser, admin: bool, *, supporter=False):
         super().__init__(timeout=300, disable_on_timeout=True)
         self.scope = scope
 
@@ -120,6 +122,24 @@ class SettingsMenu(discord.ui.DesignerView):
         )
 
         if isinstance(self.scope, VUser):
+            # APPEARANCE SETTINGS
+            container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
+
+            # Non-supporters get the standard theme, whatever they chose before
+            current_theme = self.scope.settings.theme if supporter else Theme.STANDARD
+            options = [
+                SelectOption(
+                    label=theme.description, value=theme.name, default=theme == current_theme
+                )
+                for theme in Theme
+            ]
+            select = Select(options=options, id=SettingsIDs.THEME, disabled=not supporter)
+            select.callback = self.set_theme
+            container.add_text(
+                "## Appearance\n### Emoji theme\nRestyle dice and tracker emoji. Supporters only."
+            )
+            container.add_row(select)
+
             # GAMEPLAY SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
             container.add_text("## Gameplay")
@@ -326,6 +346,20 @@ class SettingsMenu(discord.ui.DesignerView):
         await vuser.save_changes()
 
         self._log_update(interaction, "Auto impairment", vuser.settings.auto_impairment)
+
+    async def set_theme(self, interaction: discord.Interaction):
+        """Set the emoji theme (user only)."""
+        select = cast(Select, self.get_item(SettingsIDs.THEME))
+        name = cast(list[str], select.values)[0]
+        self._update_select_default(select, name)
+
+        vuser = cast(VUser, self.scope)
+        vuser.settings.theme = Theme[name]
+
+        await interaction.edit(view=self)
+        await vuser.save_changes()
+
+        self._log_update(interaction, "Theme", vuser.settings.theme.description)
 
     async def set_hidden_dice_permissions(self, interaction: discord.Interaction):
         """Set who may hide their dice (server only)."""

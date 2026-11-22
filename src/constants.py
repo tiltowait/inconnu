@@ -118,6 +118,17 @@ class Theme(StrEnum):
     CITRUS_SHERBERT = "peach"  # Discord's spelling
     BRUISED = "bruised"
 
+    @property
+    def description(self) -> str:
+        """Human-readable name."""
+        match self:
+            case Theme.STANDARD:
+                return "Standard"
+            case Theme.CITRUS_SHERBERT:
+                return "Citrus Sherbert"
+            case Theme.BRUISED:
+                return "Bruised"
+
 
 def get_standard_traits() -> list[str]:
     """Generate a flattened list of all standard traits. We use a generator

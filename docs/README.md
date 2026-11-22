@@ -34,7 +34,7 @@ Attributes, Skills, Disciplines, specialties, powers, and any [custom Traits](gu
 
 ## Premium
 
-[Supporters](https://www.patreon.com/tiltowait) can add [character images](premium/character-images.md), post as their characters with [Roleposting](premium/roleposting.md), and edit and play their characters in the [web app](premium/web-app.md).
+[Supporters](https://www.patreon.com/tiltowait) can add [character images](premium/character-images.md), post as their characters with [Roleposting](premium/roleposting.md), choose an [emoji theme](advanced/server-settings.md#emoji-theme), and edit and play their characters in the [web app](premium/web-app.md).
 
 ## For Storytellers
 

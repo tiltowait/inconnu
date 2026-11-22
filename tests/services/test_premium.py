@@ -8,9 +8,7 @@ import discord
 import pytest
 
 from config import settings
-from models import VChar
 from services import premium
-from tests.characters import gen_char
 from tests.mocks import MockGuild, MockMember
 
 type MockClient = MagicMock
@@ -90,15 +88,6 @@ def make_client(guild: MockGuild) -> MockClient:
     client = MagicMock(spec=discord.Client)
     client.fetch_guild.return_value = guild
     return client
-
-
-def char_with_images() -> VChar:
-    """A character with a profile image, already transferred to its new owner."""
-    char = gen_char("vampire")
-    char.raw_name = "Nadea"
-    char.user = 1
-    char.profile.images.append("https://example.com/image.webp")
-    return char
 
 
 async def test_mark_lost(mock_update: AsyncMock):
@@ -229,71 +218,38 @@ async def test_dm_failure_is_ignored(mock_update: AsyncMock):
     mock_update.assert_awaited_once()
 
 
-async def test_check_transfer_without_images(mock_update: AsyncMock, mock_find: AsyncMock):
-    """Characters without images don't affect the new owner."""
-    member = make_member()
-    await premium.check_transfer(member, gen_char("vampire"))
-
-    mock_find.assert_not_awaited()
-    mock_update.assert_not_awaited()
-    member.send.assert_not_awaited()
-
-
-async def test_check_transfer_stale_record(mock_update: AsyncMock, mock_find: AsyncMock):
-    """Non-supporters whose record still says active are marked as lapsed."""
-    mock_find.return_value = {"_id": 1, "discontinued": None}
-    member = make_member()
-
-    await premium.check_transfer(member, char_with_images())
-
-    mock_find.assert_awaited_once_with({"_id": member.id})
-    assert recorded_discontinued(mock_update) is not None
-    assert "deleted in 7 days" in sent_description(member)
-
-
-async def test_check_transfer_supporter_without_record(
+async def test_lapse_date_supporter(
     mock_update: AsyncMock, mock_find: AsyncMock, supporters: set[int]
 ):
-    """Supporters without a record aren't marked as lapsed."""
-    member = make_member()
-    supporters.add(member.id)
+    """Supporters haven't lapsed, whatever their record says."""
+    supporters.add(1)
 
-    await premium.check_transfer(member, char_with_images())
-
+    assert await premium.lapse_date(1) is None
     mock_find.assert_not_awaited()
     mock_update.assert_not_awaited()
-    member.send.assert_not_awaited()
 
 
-async def test_check_transfer_no_record(mock_update: AsyncMock, mock_find: AsyncMock):
-    """New owners without a record are marked as lapsed and get the full grace period."""
-    member = make_member()
-
-    await premium.check_transfer(member, char_with_images())
-
-    assert recorded_discontinued(mock_update) is not None
-    assert sent_title(member) == "Nadea has profile images"
-    assert "deleted in 7 days" in sent_description(member)
-
-
-@pytest.mark.parametrize(
-    "lapsed,deadline",
-    [
-        (timedelta(days=3), "in 4 days"),
-        (timedelta(days=6), "in 1 day"),
-        (timedelta(days=6, hours=20), "within a day"),
-    ],
-)
-async def test_check_transfer_lapsed_supporter(
-    mock_update: AsyncMock, mock_find: AsyncMock, lapsed: timedelta, deadline: str
+@pytest.mark.parametrize("record", [None, {"_id": 1, "discontinued": None}])
+async def test_lapse_date_marks_lapsed(
+    mock_update: AsyncMock, mock_find: AsyncMock, record: dict | None
 ):
-    """Lapsed supporters keep their existing deadline, so transfers can't extend it."""
+    """Non-supporters without a lapsed record (most users, or a stale active
+    one) lapse now, getting the full grace period."""
+    mock_find.return_value = record
+    now = datetime.now(UTC)
+
+    with patch("discord.utils.utcnow", return_value=now):
+        assert await premium.lapse_date(1) == now
+
+    mock_find.assert_awaited_once_with({"_id": 1})
+    assert recorded_discontinued(mock_update) == now
+
+
+async def test_lapse_date_lapsed_supporter(mock_update: AsyncMock, mock_find: AsyncMock):
+    """Lapsed supporters keep their date, so transfers can't extend it."""
+    discontinued = datetime.now(UTC) - timedelta(days=3)
     # Mongo returns naive UTC datetimes
-    discontinued = (datetime.now(UTC) - lapsed).replace(tzinfo=None)
-    mock_find.return_value = {"_id": 1, "discontinued": discontinued}
-    member = make_member()
+    mock_find.return_value = {"_id": 1, "discontinued": discontinued.replace(tzinfo=None)}
 
-    await premium.check_transfer(member, char_with_images())
-
+    assert await premium.lapse_date(1) == discontinued
     mock_update.assert_not_awaited()
-    assert f"deleted {deadline}" in sent_description(member)

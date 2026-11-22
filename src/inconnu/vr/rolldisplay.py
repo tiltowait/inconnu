@@ -97,7 +97,8 @@ class RollDisplay(EphemeralSafeView):
     async def display(self):
         """Send the roll."""
         self.use_emoji = await services.settings.can_emoji(self.ctx)
-        self.theme = await services.settings.theme(self.ctx)
+        if self.use_emoji:
+            self.theme = await services.settings.theme(self.ctx)
         if self.character is not None:
             # Only needed to word the Impairment reminder, which requires a character
             self.auto_impairment = await services.settings.auto_impairment(self.ctx)

@@ -112,7 +112,7 @@ class Damage(StrEnum):
 
 
 class Theme(StrEnum):
-    """Emoji themes. The value is the themed emoji names' suffix."""
+    """Emoji themes. The value is the themed emoji names' prefix."""
 
     STANDARD = ""
     CITRUS_SHERBERT = "peach"  # Discord's spelling

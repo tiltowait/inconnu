@@ -372,6 +372,16 @@ async def test_dice_field_uses_roller_theme(
     mock_theme.assert_awaited_once_with(ctx)
 
 
+async def test_no_theme_lookup_without_emoji(
+    ctx: AppCtx, owner: discord.Member, mock_can_emoji: AsyncMock, mock_theme: AsyncMock
+):
+    """Text dice don't need a theme, so it isn't looked up."""
+    mock_can_emoji.return_value = False
+    await render(make_display(ctx, owner, make_roll([6], [])))
+
+    mock_theme.assert_not_awaited()
+
+
 async def test_dice_field_text_when_emoji_disallowed(
     ctx: AppCtx, owner: discord.Member, mock_can_emoji: AsyncMock
 ):

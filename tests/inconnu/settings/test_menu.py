@@ -180,6 +180,46 @@ async def test_non_supporters_see_patreon_link(ctx: AppCtx):
     assert patreon_button(menu) is not None
 
 
+@pytest.mark.parametrize("supporter", [True, False])
+async def test_theme_hidden_without_emojis(ctx: AppCtx, supporter: bool):
+    """Users with emojis off get a note instead of the select, preview, or Patreon link."""
+    vuser = VUser(user=1)
+    vuser.settings.accessibility = True
+    menu = SettingsMenu(ctx, vuser, admin=False, supporter=supporter)
+
+    assert theme_select(menu) is None
+    assert theme_preview(menu) is None
+    assert patreon_button(menu) is None
+    assert any(
+        isinstance(item, TextDisplay) and "Disabled by the **Use emojis?** setting" in item.content
+        for item in menu.walk_children()
+    )
+
+
+async def test_toggle_emojis_refreshes_theme(ctx: AppCtx, mock_save: AsyncMock):
+    """Turning emojis off rebuilds the menu without the theme select, and
+    turning them back on restores it."""
+    vuser = VUser(user=1)
+    menu = SettingsMenu(ctx, vuser, admin=False, supporter=True)
+    interaction = AsyncMock(spec=discord.Interaction)
+
+    await menu.toggle_emojis(interaction)
+
+    assert not vuser.settings.use_emojis
+    assert menu.is_finished()
+    rebuilt = interaction.edit.await_args.kwargs["view"]
+    assert rebuilt is not menu
+    assert theme_select(rebuilt) is None
+    button = cast(Button, rebuilt.get_item(SettingsIDs.EMOJIS))
+    assert button.label == "No"
+    mock_save.assert_awaited_once()
+
+    await rebuilt.toggle_emojis(interaction)
+
+    assert vuser.settings.use_emojis
+    assert theme_select(interaction.edit.await_args.kwargs["view"]) is not None
+
+
 async def test_guild_menu_has_no_theme(ctx: AppCtx):
     """Themes are a personal setting, so servers don't get them."""
     vguild = VGuild(guild=1, name="Test Guild")

@@ -157,7 +157,7 @@ async def __get_embed(
     embed.set_thumbnail(url=thumbnail or None)
 
     can_emoji = await services.settings.can_emoji(ctx)
-    theme = await services.settings.theme(ctx)
+    theme = await services.settings.theme(ctx) if can_emoji else Theme.STANDARD
 
     for field, parameter in fields:
         # We use optionals because ghouls and mortals don't have every parameter

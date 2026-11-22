@@ -11,6 +11,7 @@ import discord
 import errors
 import services
 import ui
+from constants import Theme
 from ctx import AppCtx
 from inconnu import vr as roll
 from inconnu.roll import Strategy
@@ -134,7 +135,7 @@ async def __display_embed(
     # Bestial (Opt)
 
     can_emoji = await services.settings.can_emoji(ctx)
-    theme = await services.settings.theme(ctx)
+    theme = await services.settings.theme(ctx) if can_emoji else Theme.STANDARD
     breakdown = []
 
     if probs.critical >= DISPLAY_MIN:

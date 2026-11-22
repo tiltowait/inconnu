@@ -118,6 +118,9 @@ class SettingsMenu(discord.ui.DesignerView):
     def __init__(self, ctx: AppCtx, scope: VGuild | VUser, admin: bool, *, supporter=False):
         super().__init__(timeout=300, disable_on_timeout=True)
         self.scope = scope
+        self.ctx = ctx
+        self.admin = admin
+        self.supporter = supporter
 
         if isinstance(self.scope, VUser):
             title = "User Settings"
@@ -148,34 +151,7 @@ class SettingsMenu(discord.ui.DesignerView):
         if isinstance(self.scope, VUser):
             # APPEARANCE SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
-
-            # Non-supporters get the standard theme, whatever they chose before.
-            # Values are member names, since Discord rejects the standard
-            # theme's empty value.
-            current_theme = self.scope.settings.theme if supporter else Theme.STANDARD
-            options = [
-                SelectOption(
-                    label=theme.human_name,
-                    value=theme.name,
-                    description=theme.description or None,
-                    default=theme == current_theme,
-                )
-                for theme in Theme
-            ]
-            select = Select(options=options, id=SettingsIDs.THEME, disabled=not supporter)
-            select.callback = self.set_theme
-            container.add_text("## Appearance\n### Emoji theme\nRestyle dice and tracker emoji.")
-            container.add_row(select)
-
-            if supporter:
-                container.add_item(
-                    TextDisplay(theme_preview(current_theme), id=SettingsIDs.THEME_PREVIEW)
-                )
-            else:
-                patreon = Button(label="Patreon", url=PATREON)
-                container.add_section(
-                    TextDisplay("Become a patron to choose a theme!"), accessory=patreon
-                )
+            self._add_theme_settings(container, self.scope, supporter)
 
             # GAMEPLAY SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
@@ -336,6 +312,43 @@ class SettingsMenu(discord.ui.DesignerView):
                 admin,
             )
 
+    def _add_theme_settings(self, container: discord.ui.Container, vuser: VUser, supporter: bool):
+        """Add the emoji theme select, with a preview for supporters and a
+        Patreon link for everyone else. Users without emojis get a note instead."""
+        heading = "## Appearance\n### Emoji theme\nRestyle dice and tracker emojis."
+        if not vuser.settings.use_emojis:
+            container.add_text(f"{heading}\n-# Disabled by the **Use emojis?** setting.")
+            return
+
+        container.add_text(heading)
+
+        # Non-supporters get the standard theme, whatever they chose before.
+        # Values are member names, since Discord rejects the standard
+        # theme's empty value.
+        current_theme = vuser.settings.theme if supporter else Theme.STANDARD
+        options = [
+            SelectOption(
+                label=theme.human_name,
+                value=theme.name,
+                description=theme.description or None,
+                default=theme == current_theme,
+            )
+            for theme in Theme
+        ]
+        select = Select(options=options, id=SettingsIDs.THEME, disabled=not supporter)
+        select.callback = self.set_theme
+        container.add_row(select)
+
+        if supporter:
+            container.add_item(
+                TextDisplay(theme_preview(current_theme), id=SettingsIDs.THEME_PREVIEW)
+            )
+        else:
+            patreon = Button(label="Patreon", url=PATREON)
+            container.add_section(
+                TextDisplay("Become a patron to choose a theme!"), accessory=patreon
+            )
+
     @staticmethod
     def button_label(setting: bool) -> str:
         """The button label (Yes/No) for the setting."""
@@ -361,11 +374,17 @@ class SettingsMenu(discord.ui.DesignerView):
         """Toggle emoji display (server/user)."""
         self.scope.settings.accessibility = not self.scope.settings.accessibility
 
-        button = cast(Button, self.get_item(SettingsIDs.EMOJIS))
-        button.style = self.button_style(self.scope.settings.use_emojis)
-        button.label = "Yes" if self.scope.settings.use_emojis else "No"
+        if isinstance(self.scope, VUser):
+            # The theme settings depend on emojis, so rebuild the whole menu
+            self.stop()
+            menu = SettingsMenu(self.ctx, self.scope, self.admin, supporter=self.supporter)
+            await interaction.edit(view=menu)
+        else:
+            button = cast(Button, self.get_item(SettingsIDs.EMOJIS))
+            button.style = self.button_style(self.scope.settings.use_emojis)
+            button.label = "Yes" if self.scope.settings.use_emojis else "No"
+            await interaction.edit(view=self)
 
-        await interaction.edit(view=self)
         await self.scope.save_changes()
 
         self._log_update(interaction, "Use emojis", not self.scope.settings.accessibility)

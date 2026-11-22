@@ -149,11 +149,16 @@ class SettingsMenu(discord.ui.DesignerView):
             # APPEARANCE SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
 
-            # Non-supporters get the standard theme, whatever they chose before
+            # Non-supporters get the standard theme, whatever they chose before.
+            # Values are member names, since Discord rejects the standard
+            # theme's empty value.
             current_theme = self.scope.settings.theme if supporter else Theme.STANDARD
             options = [
                 SelectOption(
-                    label=theme.description, value=theme.name, default=theme == current_theme
+                    label=theme.human_name,
+                    value=theme.name,
+                    description=theme.description or None,
+                    default=theme == current_theme,
                 )
                 for theme in Theme
             ]
@@ -394,7 +399,7 @@ class SettingsMenu(discord.ui.DesignerView):
         await interaction.edit(view=self)
         await vuser.save_changes()
 
-        self._log_update(interaction, "Theme", vuser.settings.theme.description)
+        self._log_update(interaction, "Theme", vuser.settings.theme.human_name)
 
     async def set_hidden_dice_permissions(self, interaction: discord.Interaction):
         """Set who may hide their dice (server only)."""

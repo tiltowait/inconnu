@@ -115,7 +115,8 @@ async def test_user_menu_shows_theme_to_supporters(ctx: AppCtx, theme: Theme):
 
     assert select is not None
     assert [opt.value for opt in select.options if opt.default] == [theme.name]
-    assert [opt.label for opt in select.options] == [t.description for t in Theme]
+    assert [opt.label for opt in select.options] == [t.human_name for t in Theme]
+    assert [opt.description for opt in select.options] == [t.description or None for t in Theme]
     assert not select.disabled
 
 
@@ -193,11 +194,13 @@ async def test_set_theme(ctx: AppCtx, mock_save: AsyncMock):
     assert select is not None
     interaction = AsyncMock(spec=discord.Interaction)
 
-    with patch.object(Select, "values", new_callable=PropertyMock, return_value=["BRUISED"]):
+    # Choose the value the select offers, so it must round-trip
+    value = next(opt.value for opt in select.options if opt.label == Theme.BRUISED.human_name)
+    with patch.object(Select, "values", new_callable=PropertyMock, return_value=[value]):
         await menu.set_theme(interaction)
 
     assert vuser.settings.theme == Theme.BRUISED
-    assert [opt.value for opt in select.options if opt.default] == ["BRUISED"]
+    assert [opt.value for opt in select.options if opt.default] == [value]
     preview = theme_preview(menu)
     assert preview is not None
     assert ":bruised_ln_crit:" in preview.content

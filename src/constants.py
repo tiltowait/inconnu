@@ -119,7 +119,7 @@ class Theme(StrEnum):
     BRUISED = "bruised"
 
     @property
-    def description(self) -> str:
+    def human_name(self) -> str:
         """Human-readable name."""
         match self:
             case Theme.STANDARD:
@@ -128,6 +128,17 @@ class Theme(StrEnum):
                 return "Citrus Sherbert"
             case Theme.BRUISED:
                 return "Bruised"
+
+    @property
+    def description(self) -> str:
+        """A user-facing description."""
+        match self:
+            case Theme.STANDARD:
+                return ""
+            case Theme.CITRUS_SHERBERT:
+                return "Complements the Discord theme."
+            case Theme.BRUISED:
+                return "Red and bone tones, like the web app."
 
 
 def get_standard_traits() -> list[str]:

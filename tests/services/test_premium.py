@@ -7,10 +7,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import discord
 import pytest
 
+from bot import InconnuBot
 from config import settings
 from services import premium
 from tests.mocks import MockGuild, MockMember
 
+type MockBot = MagicMock
 type MockClient = MagicMock
 
 
@@ -102,22 +104,34 @@ async def test_mark_lost(mock_update: AsyncMock):
     assert "within 7 days" in sent_description(member)
 
 
-async def test_mark_gained(mock_update: AsyncMock):
-    """Gaining premium clears the discontinuation date and points to the upload command."""
+def make_bot(*, commands=True) -> MockBot:
+    """A bot that finds its commands' mentions, or doesn't."""
+    bot = MagicMock(spec=InconnuBot)
+    bot.cmd_mention.side_effect = lambda name: f"</{name}:1>" if commands else None
+    return bot
+
+
+@pytest.mark.parametrize("commands", [True, False])
+async def test_mark_gained(mock_update: AsyncMock, commands: bool):
+    """Gaining premium clears the discontinuation date and lists the features,
+    with their commands."""
     member = make_member()
-    await premium.mark_gained(member, "</character image upload:1>")
+    await premium.mark_gained(member, make_bot(commands=commands))
 
     assert recorded_discontinued(mock_update) is None
     assert sent_title(member) == "Thank you for your support!"
-    embed = member.send.await_args.kwargs["embed"]
-    assert "</character image upload:1>" in embed.description
+    description = sent_description(member)
+    for command in ("character image upload", "post", "settings"):
+        assert (f"</{command}:1>" if commands else f"`/{command}`") in description
+    for page in ("character-images", "roleposting", "server-settings#emoji-theme", "web-app"):
+        assert page in description
 
 
 async def test_marking_updates_supporters(mock_update: AsyncMock, supporters: set[int]):
     """Gaining and losing premium updates the supporter checks."""
     member = make_member()
 
-    await premium.mark_gained(member, None)
+    await premium.mark_gained(member, make_bot())
     assert premium.is_supporter(member.id)
 
     await premium.mark_lost(member)
@@ -131,13 +145,13 @@ async def test_status_changes_before_write(mock_update: AsyncMock, gained: bool)
     during it doesn't repeat the change (and its DM)."""
     member = make_member()
     if not gained:
-        await premium.mark_gained(member, None)
+        await premium.mark_gained(member, make_bot())
 
     seen: list[bool] = []
     mock_update.side_effect = lambda *_, **__: seen.append(premium.is_supporter(member.id))
 
     if gained:
-        await premium.mark_gained(member, None)
+        await premium.mark_gained(member, make_bot())
     else:
         await premium.mark_lost(member)
 
@@ -197,7 +211,7 @@ async def test_sync_keeps_changes_seen_meanwhile(mock_update: AsyncMock, support
     async def fetch_members(limit: int | None) -> AsyncIterator[MockMember]:
         """Yield the member before their role arrives, then grant it."""
         yield member
-        await premium.mark_gained(member, None)
+        await premium.mark_gained(member, make_bot())
 
     guild = support_server([])
     guild.fetch_members = fetch_members

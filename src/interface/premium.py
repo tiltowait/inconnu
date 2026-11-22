@@ -36,9 +36,7 @@ class PremiumCog(commands.Cog):
             await premium.mark_lost(payload.member)
         elif is_supporter and not was_supporter:
             logger.info("{} is now a supporter!", payload.member.name)
-            await premium.mark_gained(
-                payload.member, self.bot.cmd_mention("character image upload")
-            )
+            await premium.mark_gained(payload.member, self.bot)
 
     @commands.Cog.listener()
     async def on_raw_member_remove(self, payload: discord.RawMemberRemoveEvent):

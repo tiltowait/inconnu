@@ -1,6 +1,7 @@
 """Supporter (premium) status tracking."""
 
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import discord
 from loguru import logger
@@ -10,6 +11,9 @@ import db
 from config import settings
 from utils.text import pluralize
 from utils.urls import docs_url
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 # How long lapsed supporters keep their images
 GRACE_PERIOD = timedelta(days=7)
@@ -81,10 +85,10 @@ async def mark_lost(user: discord.Member | discord.User):
     await _inform_loss(user, "You are no longer a supporter!")
 
 
-async def mark_gained(member: discord.Member, upload_mention: str | None):
+async def mark_gained(member: discord.Member, bot: InconnuBot):
     """Record that the member gained premium and DM them."""
     await _set_status(member.id, None)
-    await _inform_features(member, upload_mention)
+    await _inform_features(member, bot)
 
 
 async def lapse_date(user_id: int) -> datetime | None:
@@ -166,14 +170,28 @@ async def _inform_loss(member: discord.Member | discord.User, title: str):
         logger.info("Could not DM {} about premium loss", member.name)
 
 
-async def _inform_features(member: discord.Member, upload_mention: str | None):
+async def _inform_features(member: discord.Member, bot: InconnuBot):
     """DM the member about the premium features they can now use."""
+
+    def mention(name: str) -> str:
+        """The command's mention, or its name if it can't be found."""
+        return bot.cmd_mention(name) or f"`/{name}`"
+
+    features = [
+        f"Add [character images]({docs_url('premium/character-images')}) with "
+        + mention("character image upload"),
+        f"Post as your characters with [Roleposting]({docs_url('premium/roleposting')}) "
+        + f"using {mention('post')}",
+        f"Choose an [emoji theme]({docs_url('advanced/server-settings#emoji-theme')}) "
+        + f"in {mention('settings')}",
+        f"Edit and play your characters in the [web app]({docs_url('premium/web-app')})",
+    ]
     embed = discord.Embed(
         title="Thank you for your support!",
         description=(
-            f"You may now upload profile images via {upload_mention}. "
-            "(Use it in a server, not from this DM!)\n\n"
-            f"[Read more here!]({docs_url('premium/character-images')})"
+            "You can now:\n"
+            + "\n".join(f"- {feature}" for feature in features)
+            + "\n\nUse commands in a server, not this DM."
         ),
         color=discord.Color.green(),
     )

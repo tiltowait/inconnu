@@ -10,8 +10,8 @@ from models import PostedHeader, VChar
 from models.postedheader import HeaderOwner
 from models.rpheader import HeaderSubdoc
 from services.haven import haven
+from services.premium import is_supporter
 from utils import get_avatar
-from utils.permissions import is_supporter
 from utils.urls import docs_url, profile_url
 
 __HELP_URL = docs_url("command-reference/characters#rp-headers")
@@ -27,7 +27,7 @@ async def show_header(ctx: AppCtx, character: VChar, **kwargs):
     header_doc = HeaderSubdoc.create(character, **kwargs)
     message = None
     try:
-        if not is_supporter(ctx):
+        if not is_supporter(ctx.user.id):
             raise errors.NotPremium
         if not ctx.bot.can_webhook(ctx.channel):
             raise errors.WebhookError

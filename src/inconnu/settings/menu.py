@@ -26,7 +26,8 @@ from inconnu.character.display.trackmoji import (
 )
 from inconnu.vr.dicemoji import emojify
 from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
-from utils.permissions import is_admin, is_supporter
+from services.premium import is_supporter
+from utils.permissions import is_admin
 
 
 async def show(ctx: AppCtx, scope: str):
@@ -36,7 +37,7 @@ async def show(ctx: AppCtx, scope: str):
     else:
         obj = await VUser.get_or_fetch(ctx.user.id)
 
-    view = SettingsMenu(ctx, obj, is_admin(ctx.user), supporter=is_supporter(ctx))
+    view = SettingsMenu(ctx, obj, is_admin(ctx.user), supporter=is_supporter(ctx.user.id))
     await ctx.respond(view=view, ephemeral=True)
 
 

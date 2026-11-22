@@ -1,15 +1,12 @@
 """User routing."""
 
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from routes.auth import get_authenticated_user, is_supporter
-from routes.deps import get_bot
-
-if TYPE_CHECKING:
-    from bot import InconnuBot
+from routes.auth import get_authenticated_user
+from services.premium import is_supporter
 
 router = APIRouter()
 
@@ -23,7 +20,6 @@ class PremiumStatus(BaseModel):
 @router.get("/users/check-premium")
 async def check_premium(
     user_id: Annotated[int, Depends(get_authenticated_user)],
-    bot: Annotated[InconnuBot, Depends(get_bot)],
 ) -> PremiumStatus:
     """Whether the requester is a supporter."""
-    return PremiumStatus(is_supporter=await is_supporter(bot, user_id))
+    return PremiumStatus(is_supporter=is_supporter(user_id))

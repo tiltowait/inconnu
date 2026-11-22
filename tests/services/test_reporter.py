@@ -159,7 +159,6 @@ async def test_ignored_error(reporter: ErrorReporter, ctx: AppCtx, error: discor
     "error,title",
     [
         (errors.InvalidAttachment("Allowed file types: `.png`."), "Invalid file"),
-        (errors.NotReady("Still loading."), "One moment, please"),
     ],
 )
 async def test_error_embed_with_reason(

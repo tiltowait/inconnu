@@ -38,12 +38,7 @@ from inconnu.misc.slake import slake_hunger, slake_update_message
 from models import VChar, VGuild
 from models.vchar import Tracker
 from models.vguild import VGuildSettings
-from routes.auth import (
-    get_authenticated_user,
-    is_supporter,
-    require_supporter,
-    verify_api_key,
-)
+from routes.auth import get_authenticated_user, require_supporter, verify_api_key
 from routes.characters.edit import (
     apply_edit,
     body_errors,
@@ -76,6 +71,7 @@ from routes.characters.models import (
 from routes.deps import get_bot
 from services import char_mgr, guild_cache, send_update, wizard_cache
 from services.guildcache import CachedGuild, CachedMember
+from services.premium import is_supporter
 from services.settings import oblivion_stains
 from services.wizard import CharacterGuild
 from utils.permissions import is_storyteller
@@ -741,9 +737,7 @@ async def get_wizard(token: str) -> WizardSchema:
 
 
 @router.post("/characters/wizard/{token}", status_code=201, dependencies=[Depends(verify_api_key)])
-async def create_character(
-    token: str, data: CreationBody, bot: Annotated[InconnuBot, Depends(get_bot)]
-) -> CreationSuccess:
+async def create_character(token: str, data: CreationBody) -> CreationSuccess:
     """Create the character and insert it into the database."""
     wizard = wizard_cache.get(token)
     if wizard is None:
@@ -774,7 +768,7 @@ async def create_character(
 
     wizard_cache.delete(token)
 
-    has_premium = await is_supporter(bot, wizard.user)
+    has_premium = is_supporter(wizard.user)
 
     return CreationSuccess(
         guild=wizard.guild,

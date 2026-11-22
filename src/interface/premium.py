@@ -8,7 +8,6 @@ from loguru import logger
 
 from config import settings
 from services import premium
-from utils.permissions import has_supporter_role
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -20,37 +19,32 @@ class PremiumCog(commands.Cog):
     def __init__(self, bot: InconnuBot):
         self.bot = bot
 
+    # _raw_ listeners don't need the caches, so we can catch supporter changes
+    # while the bot is still starting up.
+
     @commands.Cog.listener()
-    async def on_member_update(self, before: discord.Member, after: discord.Member):
+    async def on_raw_member_update(self, payload: discord.RawMemberUpdateEvent):
         """Check for supporter status changes."""
-        if after.guild.id != settings.supporter_guild:
+        if payload.guild_id != settings.supporter_guild:
             return
 
-        was_supporter = has_supporter_role(before)
-        is_supporter = has_supporter_role(after)
+        was_supporter = premium.is_supporter(payload.user_id)
+        is_supporter = settings.supporter_role in map(int, payload.data["roles"])
 
         if was_supporter and not is_supporter:
-            logger.info("{} is no longer a supporter", after.name)
-            await premium.mark_lost(after)
+            logger.info("{} is no longer a supporter", payload.member.name)
+            await premium.mark_lost(payload.member)
         elif is_supporter and not was_supporter:
-            logger.info("{} is now a supporter!", after.name)
-            await self._mark_gained(after)
+            logger.info("{} is now a supporter!", payload.member.name)
+            await premium.mark_gained(
+                payload.member, self.bot.cmd_mention("character image upload")
+            )
 
     @commands.Cog.listener()
-    async def on_member_join(self, member: discord.Member):
-        """Restore a returning supporter's status."""
-        if member.guild.id == settings.supporter_guild and has_supporter_role(member):
-            await self._mark_gained(member)
-
-    @commands.Cog.listener()
-    async def on_member_remove(self, member: discord.Member):
+    async def on_raw_member_remove(self, payload: discord.RawMemberRemoveEvent):
         """A supporter who leaves the supporter guild loses their status."""
-        if member.guild.id == settings.supporter_guild and has_supporter_role(member):
-            await premium.mark_lost(member)
-
-    async def _mark_gained(self, member: discord.Member):
-        """Mark premium gain, pointing the member to the image upload command."""
-        await premium.mark_gained(member, self.bot.cmd_mention("character image upload"))
+        if payload.guild_id == settings.supporter_guild and premium.is_supporter(payload.user.id):
+            await premium.mark_lost(payload.user)
 
 
 def setup(bot: InconnuBot):

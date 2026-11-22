@@ -10,7 +10,8 @@ from loguru import logger
 
 import errors
 from ctx import AppCtx
-from utils.permissions import get_or_fetch_supporter, is_storyteller
+from services import premium as premium_service
+from utils.permissions import is_storyteller
 
 
 def _app_check(predicate: Callable[[AppCtx], bool | Awaitable[bool]]):
@@ -38,9 +39,9 @@ def blocked_on_lockdown(command: discord.ApplicationCommand) -> bool:
     return _lockdown_check in command.checks
 
 
-async def _check_supporter(ctx: AppCtx, user: discord.Member | None = None):
-    """Wraps is_supporter() to raise on failure."""
-    if not await get_or_fetch_supporter(ctx, user):
+def _check_supporter(ctx: AppCtx) -> bool:
+    """Refuse the command unless the user is a supporter."""
+    if not premium_service.is_supporter(ctx.user.id):
         raise errors.NotPremium
 
     return True

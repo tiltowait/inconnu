@@ -1,20 +1,14 @@
 """Web API authentication utilities."""
 
 import hmac
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
-import discord
 from fastapi import Depends, Request
 from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from loguru import logger
 
 from config import settings
-from routes.deps import get_bot
-from utils.permissions import has_supporter_role
-
-if TYPE_CHECKING:
-    from bot import InconnuBot
+from services.premium import is_supporter
 
 DISCORD_HEADER = "X-Discord-User-ID"
 
@@ -39,22 +33,7 @@ async def get_authenticated_user(
     return int(user_id)
 
 
-async def is_supporter(bot: InconnuBot, user_id: int) -> bool:
-    """Whether the user has the supporter role on the support server. Users
-    not on it never are."""
-    guild = await bot.get_or_fetch_guild(settings.supporter_guild)
-    if guild is None:
-        logger.warning("Support server {} not found", settings.supporter_guild)
-        return False
-
-    member = await guild.get_or_fetch(discord.Member, user_id)
-    return member is not None and has_supporter_role(member)
-
-
-async def require_supporter(
-    user_id: Annotated[int, Depends(get_authenticated_user)],
-    bot: Annotated[InconnuBot, Depends(get_bot)],
-):
+async def require_supporter(user_id: Annotated[int, Depends(get_authenticated_user)]):
     """Refuse requests from users who aren't supporters."""
-    if not await is_supporter(bot, user_id):
+    if not is_supporter(user_id):
         raise HTTPException(403, detail="This feature is for supporters only")

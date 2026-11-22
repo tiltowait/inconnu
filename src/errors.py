@@ -30,10 +30,6 @@ class InconnuError(Exception):
     """Base error all others inherit from."""
 
 
-class NotReady(commands.CommandError):
-    """An exception for when the bot hasn't fully loaded yet."""
-
-
 class FetchError(Exception):
     """Generic character fetch error."""
 

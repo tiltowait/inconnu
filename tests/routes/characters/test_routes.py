@@ -28,7 +28,7 @@ from routes.characters.routes import char_event_stream
 from routes.constraints import Constraints
 from routes.deps import get_bot
 from server import app
-from services import char_mgr, guild_cache
+from services import char_mgr, guild_cache, premium
 from services.guildcache import GuildCache
 from services.wizard import CharacterGuild, WizardData
 
@@ -38,8 +38,6 @@ TEST_USER_ID = 987654321
 TEST_GUILD_ID = 123456789
 TEST_TOKEN = "valid-wizard-token"
 TEST_EXPIRY = datetime(2026, 1, 1, tzinfo=UTC)
-TEST_SUPPORTER_GUILD_ID = 54321
-TEST_SUPPORTER_ROLE_ID = 99999
 
 type MockAsyncFn = AsyncMock
 type MockBot = MagicMock
@@ -181,9 +179,6 @@ def mock_bot() -> Iterator[MockBot]:
         return None
 
     bot.get_guild = MagicMock(side_effect=get_guild)
-
-    # Mock get_or_fetch_guild for premium checks (returns None by default)
-    bot.get_or_fetch_guild = AsyncMock(return_value=None)
 
     with patch.dict(app.dependency_overrides, {get_bot: lambda: bot}):
         yield bot
@@ -872,46 +867,20 @@ async def test_create_regular_character_user_id(
 # Premium status tests
 
 
-async def test_create_character_premium_user(
+@pytest.mark.parametrize("supporter", [True, False])
+async def test_create_character_premium(
     valid_character_data: dict[str, Any],
     auth_headers: dict[str, str],
     mock_wizard_data: WizardData,
     mock_wizard_cache_pop: tuple[MockFn, MockFn],
     mock_char_mgr_register: MockAsyncFn,
-    mock_bot: MockBot,
+    supporter: bool,
 ):
-    """User with supporter role gets has_premium=True."""
+    """The response says whether the creator is a supporter."""
     mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_wizard_data
 
-    # Mock supporter guild and member with role
-    mock_supporter_guild = MagicMock(spec=discord.Guild)
-    mock_supporter_guild.id = TEST_SUPPORTER_GUILD_ID
-
-    mock_member = MagicMock(spec=discord.Member)
-    mock_member.id = TEST_USER_ID
-    mock_supporter_role = MagicMock(spec=discord.Role)
-    mock_supporter_role.id = TEST_SUPPORTER_ROLE_ID
-    mock_member.get_role = MagicMock(return_value=mock_supporter_role)
-
-    # Mock get_or_fetch to return member
-    async def mock_get_or_fetch(
-        member_type: type[discord.Member], user_id: int
-    ) -> discord.Member | None:
-        """Return the test member, if it's the one sought."""
-        if user_id == TEST_USER_ID:
-            return mock_member
-        return None
-
-    mock_supporter_guild.get_or_fetch = AsyncMock(side_effect=mock_get_or_fetch)
-
-    # Configure bot to return supporter guild
-    mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
-
-    with (
-        patch.object(settings, "supporter_guild", TEST_SUPPORTER_GUILD_ID),
-        patch.object(settings, "supporter_role", TEST_SUPPORTER_ROLE_ID),
-    ):
+    with patch.object(premium, "_supporters", {TEST_USER_ID} if supporter else set()):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/characters/wizard/{TEST_TOKEN}",
@@ -920,87 +889,7 @@ async def test_create_character_premium_user(
             )
             assert response.status_code == 201
             result = response.json()
-            assert result["has_premium"] is True
-
-
-async def test_create_character_non_premium_user(
-    valid_character_data: dict[str, Any],
-    auth_headers: dict[str, str],
-    mock_wizard_data: WizardData,
-    mock_wizard_cache_pop: tuple[MockFn, MockFn],
-    mock_char_mgr_register: MockAsyncFn,
-    mock_bot: MockBot,
-):
-    """User in supporter guild without role gets has_premium=False."""
-    mock_get, _mock_delete = mock_wizard_cache_pop
-    mock_get.return_value = mock_wizard_data
-
-    # Mock supporter guild and member WITHOUT role
-    mock_supporter_guild = MagicMock(spec=discord.Guild)
-    mock_supporter_guild.id = TEST_SUPPORTER_GUILD_ID
-
-    mock_member = MagicMock(spec=discord.Member)
-    mock_member.id = TEST_USER_ID
-    mock_member.get_role = MagicMock(return_value=None)  # No role
-
-    async def mock_get_or_fetch(
-        member_type: type[discord.Member], user_id: int
-    ) -> discord.Member | None:
-        """Return the test member, if it's the one sought."""
-        if user_id == TEST_USER_ID:
-            return mock_member
-        return None
-
-    mock_supporter_guild.get_or_fetch = AsyncMock(side_effect=mock_get_or_fetch)
-    mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
-
-    with (
-        patch.object(settings, "supporter_guild", TEST_SUPPORTER_GUILD_ID),
-        patch.object(settings, "supporter_role", TEST_SUPPORTER_ROLE_ID),
-    ):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post(
-                f"/characters/wizard/{TEST_TOKEN}",
-                json=valid_character_data,
-                headers=auth_headers,
-            )
-            assert response.status_code == 201
-            result = response.json()
-            assert result["has_premium"] is False
-
-
-async def test_create_character_user_not_in_supporter_guild(
-    valid_character_data: dict[str, Any],
-    auth_headers: dict[str, str],
-    mock_wizard_data: WizardData,
-    mock_wizard_cache_pop: tuple[MockFn, MockFn],
-    mock_char_mgr_register: MockAsyncFn,
-    mock_bot: MockBot,
-):
-    """User not in supporter guild gets has_premium=False."""
-    mock_get, _mock_delete = mock_wizard_cache_pop
-    mock_get.return_value = mock_wizard_data
-
-    # Mock supporter guild but user not a member
-    mock_supporter_guild = MagicMock(spec=discord.Guild)
-    mock_supporter_guild.id = TEST_SUPPORTER_GUILD_ID
-    mock_supporter_guild.get_or_fetch = AsyncMock(return_value=None)  # User not found
-
-    mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
-
-    with (
-        patch.object(settings, "supporter_guild", TEST_SUPPORTER_GUILD_ID),
-        patch.object(settings, "supporter_role", TEST_SUPPORTER_ROLE_ID),
-    ):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post(
-                f"/characters/wizard/{TEST_TOKEN}",
-                json=valid_character_data,
-                headers=auth_headers,
-            )
-            assert response.status_code == 201
-            result = response.json()
-            assert result["has_premium"] is False
+            assert result["has_premium"] is supporter
 
 
 async def test_create_spc_premium_check_uses_wizard_creator(
@@ -1009,38 +898,14 @@ async def test_create_spc_premium_check_uses_wizard_creator(
     mock_spc_wizard_data: WizardData,
     mock_wizard_cache_pop: tuple[MockFn, MockFn],
     mock_char_mgr_register: MockAsyncFn,
-    mock_bot: MockBot,
 ):
     """SPC character premium check uses wizard creator (wizard.user), not SPC_OWNER."""
     mock_get, _mock_delete = mock_wizard_cache_pop
     mock_get.return_value = mock_spc_wizard_data
 
-    # Mock supporter guild
-    mock_supporter_guild = MagicMock(spec=discord.Guild)
-    mock_supporter_guild.id = TEST_SUPPORTER_GUILD_ID
-
-    # Admin creating the SPC has premium
-    mock_member = MagicMock(spec=discord.Member)
-    mock_member.id = TEST_USER_ID  # wizard.user, not SPC_OWNER
-    mock_supporter_role = MagicMock(spec=discord.Role)
-    mock_supporter_role.id = TEST_SUPPORTER_ROLE_ID
-    mock_member.get_role = MagicMock(return_value=mock_supporter_role)
-
-    async def mock_get_or_fetch(
-        member_type: type[discord.Member], user_id: int
-    ) -> discord.Member | None:
-        """Return the test member, if it's the one sought."""
-        if user_id == TEST_USER_ID:  # wizard.user
-            return mock_member
-        return None
-
-    mock_supporter_guild.get_or_fetch = AsyncMock(side_effect=mock_get_or_fetch)
-    mock_bot.get_or_fetch_guild = AsyncMock(return_value=mock_supporter_guild)
-
     with (
         patch("routes.characters.routes.VChar.SPC_OWNER", 0),
-        patch.object(settings, "supporter_guild", TEST_SUPPORTER_GUILD_ID),
-        patch.object(settings, "supporter_role", TEST_SUPPORTER_ROLE_ID),
+        patch.object(premium, "_supporters", {TEST_USER_ID}),  # wizard.user, not SPC_OWNER
     ):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
@@ -4159,19 +4024,14 @@ async def test_frenzy_access(
         ("POST", "/mend"),
     ],
 )
-async def test_supporter_gate(
-    mock_bot: MockBot, auth_headers: dict[str, str], method: str, path: str
-):
+async def test_supporter_gate(auth_headers: dict[str, str], method: str, path: str):
     """Gameplay and edit routes refuse requesters who aren't supporters."""
     del app.dependency_overrides[require_supporter]
-    support_server = MagicMock(spec=discord.Guild)
-    support_server.get_or_fetch = AsyncMock(return_value=None)
-    mock_bot.get_or_fetch_guild = AsyncMock(return_value=support_server)
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.request(
-            method, f"/characters/{PydanticObjectId()}{path}", headers=auth_headers, json={}
-        )
+    with patch.object(premium, "_supporters", set()):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.request(
+                method, f"/characters/{PydanticObjectId()}{path}", headers=auth_headers, json={}
+            )
 
     assert response.status_code == 403
-    support_server.get_or_fetch.assert_awaited_once_with(discord.Member, TEST_USER_ID)

@@ -153,7 +153,19 @@ async def test_supporters_see_theme_preview(ctx: AppCtx):
     assert preview is not None
     faces = ("bestial", "crit", "succ", "fail")
     dice = [f"{kind}_{face}" for kind in ("ln", "h") for face in faces]
-    trackers = ["x", "/", ".", "hu_filled", "hu_unfilled", "stain", "degen", "hunger", "no_hunger"]
+    trackers = [
+        "x",
+        "/",
+        ".",
+        "hu_filled",
+        "hu_unfilled",
+        "stain",
+        "degen",
+        "bp",
+        "bp_unfilled",
+        "hunger",
+        "no_hunger",
+    ]
     for name in dice + trackers:
         assert f":bruised_{name}:" in preview.content
     assert patreon_button(menu) is None

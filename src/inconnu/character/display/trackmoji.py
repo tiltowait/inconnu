@@ -32,7 +32,7 @@ def emojify_hunger(theme: Theme, level: int) -> str:
 def emojify_blood_potency(theme: Theme, level: int) -> str:
     """Create a Blood Potency track."""
     if level > 0:
-        potency = services.emojis.get(theme, "bp_filled", level)
+        potency = services.emojis.get(theme, "bp", level)
         return " ".join(potency)
 
     return services.emojis.emoji(theme, "bp_unfilled")

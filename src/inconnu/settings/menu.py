@@ -18,7 +18,12 @@ from loguru import logger
 
 from constants import PATREON, Theme
 from ctx import AppCtx
-from inconnu.character.display.trackmoji import emojify_humanity, emojify_hunger, emojify_track
+from inconnu.character.display.trackmoji import (
+    emojify_blood_potency,
+    emojify_humanity,
+    emojify_hunger,
+    emojify_track,
+)
 from inconnu.vr.dicemoji import emojify
 from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
 from utils.permissions import is_admin, is_supporter
@@ -44,6 +49,8 @@ def theme_preview(theme: Theme) -> str:
             f"**Health**\n{emojify_track(theme, 'x//....')}",
             f"**Humanity**\n{emojify_humanity(theme, 7, 2)}",
             emojify_humanity(theme, 7, 4),  # Degeneration
+            f"**Blood Potency**\n{emojify_blood_potency(theme, 3)}",
+            emojify_blood_potency(theme, 0),  # Unfilled
             f"**Hunger**\n{emojify_hunger(theme, 3)}",
         )
     )

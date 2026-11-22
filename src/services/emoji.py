@@ -20,18 +20,11 @@ class _EmojiManager:
 
     def emoji(self, theme: Theme, emoji_name: str) -> str:
         """Get an emoji in the given theme."""
-        standard = {"bp_filled": ":red_circle:\u200b", "bp_unfilled": ":o:\u200b"}
         emoji_map = {
             Damage.NONE.value: "no_dmg",
             Damage.SUPERFICIAL.value: "sup_dmg",
             Damage.AGGRAVATED.value: "agg_dmg",
         }
-
-        if emoji := standard.get(emoji_name):
-            # Eventually, we won't need the "standard" emoji set, as everything
-            # will be custom
-            return emoji + "\u200b"
-
         emoji_name = emoji_map.get(emoji_name, emoji_name)
 
         # Themes without the emoji fall back to the standard one

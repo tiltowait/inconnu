@@ -16,8 +16,10 @@ from discord import (
 from discord.ui import Button, Select, TextDisplay
 from loguru import logger
 
-from constants import Theme
+from constants import PATREON, Theme
 from ctx import AppCtx
+from inconnu.character.display.trackmoji import emojify_humanity, emojify_hunger, emojify_track
+from inconnu.vr.dicemoji import emojify
 from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
 from utils.permissions import is_admin, is_supporter
 
@@ -31,6 +33,20 @@ async def show(ctx: AppCtx, scope: str):
 
     view = SettingsMenu(ctx, obj, is_admin(ctx.user), supporter=is_supporter(ctx))
     await ctx.respond(view=view, ephemeral=True)
+
+
+def theme_preview(theme: Theme) -> str:
+    """A sample roll and trackers in the theme, using every emoji."""
+    dice = f"{emojify(theme, [10, 7, 3, 1], False)} {emojify(theme, [10, 6, 4, 1], True)}"
+    return "\n".join(
+        (
+            f"**Dice**\n{dice}",
+            f"**Health**\n{emojify_track(theme, 'x//....')}",
+            f"**Humanity**\n{emojify_humanity(theme, 7, 2)}",
+            emojify_humanity(theme, 7, 4),  # Degeneration
+            f"**Hunger**\n{emojify_hunger(theme, 3)}",
+        )
+    )
 
 
 class SettingsIDs(IntEnum):
@@ -51,6 +67,7 @@ class SettingsIDs(IntEnum):
     HIDDEN_DICE = auto()
     STORYTELLER_ROLE = auto()
     THEME = auto()
+    THEME_PREVIEW = auto()
 
 
 class OblivionOptions(StrEnum):
@@ -135,10 +152,18 @@ class SettingsMenu(discord.ui.DesignerView):
             ]
             select = Select(options=options, id=SettingsIDs.THEME, disabled=not supporter)
             select.callback = self.set_theme
-            container.add_text(
-                "## Appearance\n### Emoji theme\nRestyle dice and tracker emoji. Supporters only."
-            )
+            container.add_text("## Appearance\n### Emoji theme\nRestyle dice and tracker emoji.")
             container.add_row(select)
+
+            if supporter:
+                container.add_item(
+                    TextDisplay(theme_preview(current_theme), id=SettingsIDs.THEME_PREVIEW)
+                )
+            else:
+                patreon = Button(label="Patreon", url=PATREON)
+                container.add_section(
+                    TextDisplay("Become a patron to choose a theme!"), accessory=patreon
+                )
 
             # GAMEPLAY SETTINGS
             container.add_item(discord.ui.Separator(spacing=discord.SeparatorSpacingSize.large))
@@ -355,6 +380,9 @@ class SettingsMenu(discord.ui.DesignerView):
 
         vuser = cast(VUser, self.scope)
         vuser.settings.theme = Theme[name]
+
+        preview = cast(TextDisplay, self.get_item(SettingsIDs.THEME_PREVIEW))
+        preview.content = theme_preview(vuser.settings.theme)
 
         await interaction.edit(view=self)
         await vuser.save_changes()

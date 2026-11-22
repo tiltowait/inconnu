@@ -26,7 +26,7 @@ Use custom emojis for dice and trackers. When off, **Inconnu** uses plain text i
 > [!NOTE]
 > **Default:** `Standard`
 
-Restyles dice and tracker emojis. [Supporters only.](https://www.patreon.com/tiltowait)
+Restyles dice and tracker emojis. The menu previews your theme. [Supporters only.](https://www.patreon.com/tiltowait)
 
 ### Automatically apply Impairment
 

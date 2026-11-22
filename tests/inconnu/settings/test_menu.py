@@ -6,13 +6,14 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import discord
 import pytest
-from discord.ui import Button, Select
+from discord.ui import Button, Select, TextDisplay
 
 from bot import InconnuBot
-from constants import Theme
+from constants import PATREON, Theme
 from ctx import AppCtx
 from inconnu.settings.menu import OblivionOptions, SettingsIDs, SettingsMenu
 from models import HiddenDicePerms, VGuild, VUser
+from services.emoji import _EmojiManager
 
 ST_ROLE = 1234
 MAX_COMPONENTS = 40  # Discord's limit per message, nested components included
@@ -25,6 +26,23 @@ def ctx() -> AppCtx:
     ctx.bot = MagicMock(spec=InconnuBot)
     ctx.bot.cmd_mention.return_value = "/resonance"
     return ctx
+
+
+def placeholder(theme: Theme, name: str) -> str:
+    """An emoji's placeholder: ":ln_crit:", or ":bruised_ln_crit:" in a theme."""
+    return f":{theme}_{name}:" if theme else f":{name}:"
+
+
+@pytest.fixture(autouse=True)
+def mock_emojis() -> Iterator[None]:
+    """Replace emoji with readable placeholders."""
+    emojis = MagicMock(spec=_EmojiManager)
+    emojis.emoji = MagicMock(side_effect=placeholder)
+    emojis.get = MagicMock(
+        side_effect=lambda theme, name, count=1: [placeholder(theme, name)] * count
+    )
+    with patch("services.emojis", emojis):
+        yield
 
 
 @pytest.fixture
@@ -112,6 +130,43 @@ async def test_user_menu_disables_theme_for_non_supporters(ctx: AppCtx):
     assert select.disabled
 
 
+def theme_preview(menu: SettingsMenu) -> TextDisplay | None:
+    """The emoji theme preview, if the menu has one."""
+    return cast(TextDisplay | None, menu.get_item(SettingsIDs.THEME_PREVIEW))
+
+
+def patreon_button(menu: SettingsMenu) -> Button | None:
+    """The Patreon link, if the menu has one."""
+    for item in menu.walk_children():
+        if isinstance(item, Button) and item.url == PATREON:
+            return item
+    return None
+
+
+async def test_supporters_see_theme_preview(ctx: AppCtx):
+    """Supporters see their theme previewed, with no Patreon link."""
+    vuser = VUser(user=1)
+    vuser.settings.theme = Theme.BRUISED
+    menu = SettingsMenu(ctx, vuser, admin=False, supporter=True)
+    preview = theme_preview(menu)
+
+    assert preview is not None
+    faces = ("bestial", "crit", "succ", "fail")
+    dice = [f"{kind}_{face}" for kind in ("ln", "h") for face in faces]
+    trackers = ["x", "/", ".", "hu_filled", "hu_unfilled", "stain", "degen", "hunger", "no_hunger"]
+    for name in dice + trackers:
+        assert f":bruised_{name}:" in preview.content
+    assert patreon_button(menu) is None
+
+
+async def test_non_supporters_see_patreon_link(ctx: AppCtx):
+    """Non-supporters get a Patreon link instead of a preview."""
+    menu = SettingsMenu(ctx, VUser(user=1), admin=False)
+
+    assert theme_preview(menu) is None
+    assert patreon_button(menu) is not None
+
+
 async def test_guild_menu_has_no_theme(ctx: AppCtx):
     """Themes are a personal setting, so servers don't get them."""
     vguild = VGuild(guild=1, name="Test Guild")
@@ -131,6 +186,9 @@ async def test_set_theme(ctx: AppCtx, mock_save: AsyncMock):
 
     assert vuser.settings.theme == Theme.BRUISED
     assert [opt.value for opt in select.options if opt.default] == ["BRUISED"]
+    preview = theme_preview(menu)
+    assert preview is not None
+    assert ":bruised_ln_crit:" in preview.content
     interaction.edit.assert_awaited_once_with(view=menu)
     mock_save.assert_awaited_once()
 
@@ -259,11 +317,12 @@ def count_components(component: dict[str, Any]) -> int:
     return 1 + sum(count_components(child) for child in nested)
 
 
+@pytest.mark.parametrize("supporter", [True, False])
 @pytest.mark.parametrize("guild", [True, False])
-async def test_menu_within_component_limit(ctx: AppCtx, guild: bool):
+async def test_menu_within_component_limit(ctx: AppCtx, guild: bool, supporter: bool):
     """Discord rejects messages with more than 40 components, counting nested
     ones, so both menus must stay within it."""
     scope = VGuild(guild=1, name="Test Guild") if guild else VUser(user=1)
-    menu = SettingsMenu(ctx, scope, admin=True, supporter=True)
+    menu = SettingsMenu(ctx, scope, admin=True, supporter=supporter)
     total = sum(count_components(component) for component in menu.to_components())
     assert total <= MAX_COMPONENTS

@@ -73,7 +73,8 @@ async def _warn_if_deletion(new_owner: discord.Member, character: VChar):
         title=f"{character.name} has profile images",
         description=(
             f"You aren't a {patreon}, so {character.name}'s images will be deleted "
-            f"{deadline}. To keep them, join the {server} and become a {patreon}."
+            f"{deadline}. To keep them, join the {server} and become a {patreon} "
+            f"(only {constants.PATREON_PRICE})."
         ),
         color=discord.Color.red(),
     )

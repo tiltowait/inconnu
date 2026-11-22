@@ -155,7 +155,7 @@ async def _inform_loss(member: discord.Member | discord.User, title: str):
             f"If you aren't a {patreon} within {pluralize(GRACE_PERIOD.days, 'day')}, your "
             "character profile images will be deleted.\n\n"
             f"To maintain supporter status, you must be on the {server} "
-            f"and a {patreon}.\n\n"
+            f"and a {patreon} (only {constants.PATREON_PRICE}).\n\n"
             "**Note:** Old-style (URL-based) images are grandfathered "
             "in and will not be removed."
         ),

@@ -126,7 +126,10 @@ class ErrorReporter:
             cmd_mention = "this feature"
         await ui.embeds.error(
             ctx,
-            (f"Only patrons can use {cmd_mention}. Click the Patreon button to get started!"),
+            (
+                f"Only patrons can use {cmd_mention}. Click the Patreon button "
+                f"to get started for only {constants.PATREON_PRICE}!"
+            ),
             (
                 "Already a patron?",
                 f"[Check the troubleshooting page.]({troubleshoot_url})",

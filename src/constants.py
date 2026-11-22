@@ -8,6 +8,7 @@ from flatdict import FlatDict
 
 SUPPORT_URL = "https://discord.gg/QHnCdSPeEE"
 PATREON = "https://www.patreon.com/tiltowait"
+PATREON_PRICE = "$3/mo"
 
 GROUPED_TRAITS = {
     "ATTRIBUTES": {

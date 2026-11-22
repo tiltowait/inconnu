@@ -12,6 +12,7 @@ import discord
 import pytest
 
 import inconnu
+from constants import Theme
 from ctx import AppCtx
 from inconnu.reference.probabilities import Strategy, calculate, probability
 from inconnu.roll.dicethrow import DiceThrow
@@ -160,6 +161,7 @@ def mock_settings() -> Iterator[None]:
     with (
         patch("services.settings.auto_impairment", new_callable=AsyncMock, return_value=True),
         patch("services.settings.can_emoji", new_callable=AsyncMock, return_value=False),
+        patch("services.settings.theme", new_callable=AsyncMock, return_value=Theme.STANDARD),
     ):
         yield
 

@@ -5,12 +5,15 @@ from beanie import Document
 from pydantic import BaseModel, Field
 from pymongo import IndexModel
 
+from constants import Theme
+
 
 class VUserSettings(BaseModel):
     """Represents individual user settings."""
 
     accessibility: bool = False
     auto_impairment: bool = True
+    theme: Theme = Theme.STANDARD
 
     @property
     def use_emojis(self) -> bool:

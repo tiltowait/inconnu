@@ -111,6 +111,36 @@ class Damage(StrEnum):
     AGGRAVATED = "x"
 
 
+class Theme(StrEnum):
+    """Emoji themes. The value is the themed emoji names' prefix."""
+
+    STANDARD = ""
+    CITRUS_SHERBERT = "peach"  # Discord's spelling
+    BRUISED = "bruised"
+
+    @property
+    def human_name(self) -> str:
+        """Human-readable name."""
+        match self:
+            case Theme.STANDARD:
+                return "Standard"
+            case Theme.CITRUS_SHERBERT:
+                return "Citrus Sherbert"
+            case Theme.BRUISED:
+                return "Bruised"
+
+    @property
+    def description(self) -> str:
+        """A user-facing description."""
+        match self:
+            case Theme.STANDARD:
+                return ""
+            case Theme.CITRUS_SHERBERT:
+                return "Complements the Discord theme."
+            case Theme.BRUISED:
+                return "Red and bone tones, like the web app."
+
+
 def get_standard_traits() -> list[str]:
     """Generate a flattened list of all standard traits. We use a generator
     function to remove any possibility of modifying the source list."""

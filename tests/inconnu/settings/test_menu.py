@@ -6,12 +6,14 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import discord
 import pytest
-from discord.ui import Button, Select
+from discord.ui import Button, Select, TextDisplay
 
 from bot import InconnuBot
+from constants import PATREON, Theme
 from ctx import AppCtx
 from inconnu.settings.menu import OblivionOptions, SettingsIDs, SettingsMenu
 from models import HiddenDicePerms, VGuild, VUser
+from services.emoji import _EmojiManager
 
 ST_ROLE = 1234
 MAX_COMPONENTS = 40  # Discord's limit per message, nested components included
@@ -24,6 +26,23 @@ def ctx() -> AppCtx:
     ctx.bot = MagicMock(spec=InconnuBot)
     ctx.bot.cmd_mention.return_value = "/resonance"
     return ctx
+
+
+def placeholder(theme: Theme, name: str) -> str:
+    """An emoji's placeholder: ":ln_crit:", or ":bruised_ln_crit:" in a theme."""
+    return f":{theme}_{name}:" if theme else f":{name}:"
+
+
+@pytest.fixture(autouse=True)
+def mock_emojis() -> Iterator[None]:
+    """Replace emoji with readable placeholders."""
+    emojis = MagicMock(spec=_EmojiManager)
+    emojis.emoji = MagicMock(side_effect=placeholder)
+    emojis.get = MagicMock(
+        side_effect=lambda theme, name, count=1: [placeholder(theme, name)] * count
+    )
+    with patch("services.emojis", emojis):
+        yield
 
 
 @pytest.fixture
@@ -80,6 +99,153 @@ async def test_toggle_auto_impairment(ctx: AppCtx, mock_save: AsyncMock):
 
     await menu.toggle_auto_impairment(interaction)
     assert vuser.settings.auto_impairment
+
+
+def theme_select(menu: SettingsMenu) -> Select | None:
+    """The emoji theme select, if the menu has one."""
+    return cast(Select | None, menu.get_item(SettingsIDs.THEME))
+
+
+@pytest.mark.parametrize("theme", list(Theme))
+async def test_user_menu_shows_theme_to_supporters(ctx: AppCtx, theme: Theme):
+    """Supporters get an enabled select that defaults to their theme."""
+    vuser = VUser(user=1)
+    vuser.settings.theme = theme
+    select = theme_select(SettingsMenu(ctx, vuser, admin=False, supporter=True))
+
+    assert select is not None
+    assert [opt.value for opt in select.options if opt.default] == [theme.name]
+    assert [opt.label for opt in select.options] == [t.human_name for t in Theme]
+    assert [opt.description for opt in select.options] == [t.description or None for t in Theme]
+    assert not select.disabled
+
+
+async def test_user_menu_disables_theme_for_non_supporters(ctx: AppCtx):
+    """Non-supporters see the select disabled, on the standard theme they get."""
+    vuser = VUser(user=1)
+    vuser.settings.theme = Theme.BRUISED
+    select = theme_select(SettingsMenu(ctx, vuser, admin=False))
+
+    assert select is not None
+    assert [opt.value for opt in select.options if opt.default] == [Theme.STANDARD.name]
+    assert select.disabled
+
+
+def theme_preview(menu: SettingsMenu) -> TextDisplay | None:
+    """The emoji theme preview, if the menu has one."""
+    return cast(TextDisplay | None, menu.get_item(SettingsIDs.THEME_PREVIEW))
+
+
+def patreon_button(menu: SettingsMenu) -> Button | None:
+    """The Patreon link, if the menu has one."""
+    for item in menu.walk_children():
+        if isinstance(item, Button) and item.url == PATREON:
+            return item
+    return None
+
+
+async def test_supporters_see_theme_preview(ctx: AppCtx):
+    """Supporters see their theme previewed, with no Patreon link."""
+    vuser = VUser(user=1)
+    vuser.settings.theme = Theme.BRUISED
+    menu = SettingsMenu(ctx, vuser, admin=False, supporter=True)
+    preview = theme_preview(menu)
+
+    assert preview is not None
+    faces = ("bestial", "crit", "succ", "fail")
+    dice = [f"{kind}_{face}" for kind in ("ln", "h") for face in faces]
+    trackers = [
+        "x",
+        "/",
+        ".",
+        "hu_filled",
+        "hu_unfilled",
+        "stain",
+        "degen",
+        "bp",
+        "bp_unfilled",
+        "hunger",
+        "no_hunger",
+    ]
+    for name in dice + trackers:
+        assert f":bruised_{name}:" in preview.content
+    assert patreon_button(menu) is None
+
+
+async def test_non_supporters_see_patreon_link(ctx: AppCtx):
+    """Non-supporters get a Patreon link instead of a preview."""
+    menu = SettingsMenu(ctx, VUser(user=1), admin=False)
+
+    assert theme_preview(menu) is None
+    assert patreon_button(menu) is not None
+
+
+@pytest.mark.parametrize("supporter", [True, False])
+async def test_theme_hidden_without_emojis(ctx: AppCtx, supporter: bool):
+    """Users with emojis off get a note instead of the select, preview, or Patreon link."""
+    vuser = VUser(user=1)
+    vuser.settings.accessibility = True
+    menu = SettingsMenu(ctx, vuser, admin=False, supporter=supporter)
+
+    assert theme_select(menu) is None
+    assert theme_preview(menu) is None
+    assert patreon_button(menu) is None
+    assert any(
+        isinstance(item, TextDisplay) and "Disabled by the **Use emojis?** setting" in item.content
+        for item in menu.walk_children()
+    )
+
+
+async def test_toggle_emojis_refreshes_theme(ctx: AppCtx, mock_save: AsyncMock):
+    """Turning emojis off rebuilds the menu without the theme select, and
+    turning them back on restores it."""
+    vuser = VUser(user=1)
+    menu = SettingsMenu(ctx, vuser, admin=False, supporter=True)
+    interaction = AsyncMock(spec=discord.Interaction)
+
+    await menu.toggle_emojis(interaction)
+
+    assert not vuser.settings.use_emojis
+    assert menu.is_finished()
+    rebuilt = interaction.edit.await_args.kwargs["view"]
+    assert rebuilt is not menu
+    assert theme_select(rebuilt) is None
+    button = cast(Button, rebuilt.get_item(SettingsIDs.EMOJIS))
+    assert button.label == "No"
+    mock_save.assert_awaited_once()
+
+    await rebuilt.toggle_emojis(interaction)
+
+    assert vuser.settings.use_emojis
+    assert theme_select(interaction.edit.await_args.kwargs["view"]) is not None
+
+
+async def test_guild_menu_has_no_theme(ctx: AppCtx):
+    """Themes are a personal setting, so servers don't get them."""
+    vguild = VGuild(guild=1, name="Test Guild")
+    assert theme_select(SettingsMenu(ctx, vguild, admin=True, supporter=True)) is None
+
+
+async def test_set_theme(ctx: AppCtx, mock_save: AsyncMock):
+    """Choosing a theme updates the setting and the select's default, and saves."""
+    vuser = VUser(user=1)
+    menu = SettingsMenu(ctx, vuser, admin=False, supporter=True)
+    select = theme_select(menu)
+    assert select is not None
+    interaction = AsyncMock(spec=discord.Interaction)
+
+    # Choose the value the select offers, so it must round-trip
+    value = next(opt.value for opt in select.options if opt.label == Theme.BRUISED.human_name)
+    with patch.object(Select, "values", new_callable=PropertyMock, return_value=[value]):
+        await menu.set_theme(interaction)
+
+    assert vuser.settings.theme == Theme.BRUISED
+    assert [opt.value for opt in select.options if opt.default] == [value]
+    preview = theme_preview(menu)
+    assert preview is not None
+    assert ":bruised_ln_crit:" in preview.content
+    interaction.edit.assert_awaited_once_with(view=menu)
+    mock_save.assert_awaited_once()
 
 
 def hidden_dice_select(menu: SettingsMenu) -> Select | None:
@@ -206,11 +372,12 @@ def count_components(component: dict[str, Any]) -> int:
     return 1 + sum(count_components(child) for child in nested)
 
 
+@pytest.mark.parametrize("supporter", [True, False])
 @pytest.mark.parametrize("guild", [True, False])
-async def test_menu_within_component_limit(ctx: AppCtx, guild: bool):
+async def test_menu_within_component_limit(ctx: AppCtx, guild: bool, supporter: bool):
     """Discord rejects messages with more than 40 components, counting nested
     ones, so both menus must stay within it."""
     scope = VGuild(guild=1, name="Test Guild") if guild else VUser(user=1)
-    menu = SettingsMenu(ctx, scope, admin=True)
+    menu = SettingsMenu(ctx, scope, admin=True, supporter=supporter)
     total = sum(count_components(component) for component in menu.to_components())
     assert total <= MAX_COMPONENTS

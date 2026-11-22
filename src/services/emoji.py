@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from discord import AppEmoji
 from loguru import logger
 
-from constants import Damage
+from constants import Damage, Theme
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -18,28 +18,27 @@ class _EmojiManager:
         self._emojis: dict[str, AppEmoji] = {}
         self.loaded = False
 
-    def __getitem__(self, emoji_name: str) -> str:
-        standard = {"bp_filled": ":red_circle:\u200b", "bp_unfilled": ":o:\u200b"}
+    def emoji(self, theme: Theme, emoji_name: str) -> str:
+        """Get an emoji in the given theme."""
         emoji_map = {
             Damage.NONE.value: "no_dmg",
             Damage.SUPERFICIAL.value: "sup_dmg",
             Damage.AGGRAVATED.value: "agg_dmg",
         }
-
-        if emoji := standard.get(emoji_name):
-            # Eventually, we won't need the "standard" emoji set, as everything
-            # will be custom
-            return emoji + "\u200b"
-
         emoji_name = emoji_map.get(emoji_name, emoji_name)
+
+        # Themes without the emoji fall back to the standard one
+        app_emoji = self._emojis.get(f"{theme}_{emoji_name}") if theme else None
+        if app_emoji is None:
+            app_emoji = self._emojis[emoji_name]
 
         # We attach <0x200b>, a zero-width space, to every emoji. This prevents
         # a weird Android bug where emojis in embeds are gigantic.
-        return str(self._emojis[emoji_name]) + "\u200b"
+        return str(app_emoji) + "\u200b"
 
-    def get(self, emoji_name, count=1) -> list[str]:
-        """Get 'count' copies of an emoji."""
-        return [self[emoji_name]] * count
+    def get(self, theme: Theme, emoji_name: str, count=1) -> list[str]:
+        """Get 'count' copies of an emoji in the given theme."""
+        return [self.emoji(theme, emoji_name)] * count
 
     async def load(self, bot: InconnuBot):
         """Load the emoji from the specified guild ."""

@@ -14,6 +14,7 @@ from loguru import logger
 
 import inconnu
 import services
+from constants import Theme
 from ctx import AppCtx, AppInteraction, AppInvocation
 from inconnu.character.impairment import impairment_reminder, incapacitation_reminder
 from inconnu.roll import Roll, Strategy
@@ -88,6 +89,7 @@ class RollDisplay(EphemeralSafeView):
         self.public_message: discord.Message | None = None  # Guild rolls only
         self.state = _ButtonState()
         self.use_emoji = True  # Looked up when displayed
+        self.theme = Theme.STANDARD  # Looked up when displayed
         self.auto_impairment = False  # Looked up when displayed
 
         self._render_buttons()
@@ -95,6 +97,8 @@ class RollDisplay(EphemeralSafeView):
     async def display(self):
         """Send the roll."""
         self.use_emoji = await services.settings.can_emoji(self.ctx)
+        if self.use_emoji:
+            self.theme = await services.settings.theme(self.ctx)
         if self.character is not None:
             # Only needed to word the Impairment reminder, which requires a character
             self.auto_impairment = await services.settings.auto_impairment(self.ctx)
@@ -430,8 +434,8 @@ class RollDisplay(EphemeralSafeView):
     def _add_dice_fields(self, embed: discord.Embed):
         """Add the dice, pool size, Hunger, Difficulty, and pool string fields."""
         if self.outcome.pool <= 30 and self.use_emoji:
-            normalmoji = dicemoji.emojify(self.outcome.normal.dice, False)
-            hungermoji = dicemoji.emojify(self.outcome.hunger.dice, True)
+            normalmoji = dicemoji.emojify(self.theme, self.outcome.normal.dice, False)
+            hungermoji = dicemoji.emojify(self.theme, self.outcome.hunger.dice, True)
             embed.add_field(
                 name=f"Margin: {self.outcome.margin}",
                 value=f"{normalmoji} {hungermoji}",

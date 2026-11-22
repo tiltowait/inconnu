@@ -7,6 +7,7 @@ import discord
 import pytest
 
 import services.settings
+from constants import Theme
 from ctx import AppCtx
 from models import ExpPerms, HiddenDicePerms, ResonanceMode, VGuild, VUser
 
@@ -63,11 +64,12 @@ def mock_guild(guild_id: int = GUILD_ID) -> MockGuild:
     return guild
 
 
-def mock_vuser(accessibility=False, auto_impairment=True) -> MockVUser:
+def mock_vuser(accessibility=False, auto_impairment=True, theme=Theme.STANDARD) -> MockVUser:
     """Create a mock VUser with settings."""
     vuser = MagicMock(spec=VUser)
     vuser.settings.accessibility = accessibility
     vuser.settings.auto_impairment = auto_impairment
+    vuser.settings.theme = theme
     return vuser
 
 
@@ -319,6 +321,28 @@ async def test_auto_impairment_returns_user_setting(mock_vuser_fetch: MockAsyncF
     result = await services.settings.auto_impairment(ctx)
     assert result is enabled
     mock_vuser_fetch.assert_awaited_once_with(USER_ID)
+
+
+# Tests for theme()
+
+
+async def test_theme_returns_supporter_setting(mock_vuser_fetch: MockAsyncFn):
+    """Supporters get their chosen theme."""
+    mock_vuser_fetch.return_value = mock_vuser(theme=Theme.BRUISED)
+
+    with patch("services.settings.is_supporter", return_value=True):
+        result = await services.settings.theme(mock_ctx())
+    assert result is Theme.BRUISED
+    mock_vuser_fetch.assert_awaited_once_with(USER_ID)
+
+
+async def test_theme_standard_for_non_supporters(mock_vuser_fetch: MockAsyncFn):
+    """Non-supporters get the standard theme, whatever their setting."""
+    mock_vuser_fetch.return_value = mock_vuser(theme=Theme.BRUISED)
+
+    with patch("services.settings.is_supporter", return_value=False):
+        result = await services.settings.theme(mock_ctx())
+    assert result is Theme.STANDARD
 
 
 # Tests for update_channel()

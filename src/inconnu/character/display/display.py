@@ -1,13 +1,14 @@
 """character/display/display.py - Tools for displaying characters."""
 
+from collections.abc import Callable
 from enum import StrEnum
-from typing import Any
+from typing import Any, cast
 
 import discord
 
 import services
 import ui
-from constants import Damage
+from constants import Damage, Theme
 from ctx import AppCtx, AppInvocation, AppResponse
 from inconnu.character.display import trackmoji
 from models import VChar
@@ -156,10 +157,11 @@ async def __get_embed(
     embed.set_thumbnail(url=thumbnail or None)
 
     can_emoji = await services.settings.can_emoji(ctx)
+    theme = await services.settings.theme(ctx) if can_emoji else Theme.STANDARD
 
     for field, parameter in fields:
         # We use optionals because ghouls and mortals don't have every parameter
-        if (value := __embed_field_value(character, parameter, can_emoji)) is not None:
+        if (value := __embed_field_value(character, parameter, can_emoji, theme)) is not None:
             embed.add_field(name=field, value=value, inline=False)
 
     if custom is not None:
@@ -169,27 +171,31 @@ async def __get_embed(
     return embed
 
 
-def __embed_field_value(character, parameter, can_emoji):
+def __embed_field_value(
+    character: VChar, parameter: DisplayField, can_emoji: bool, theme: Theme
+) -> str | None:
     """Generates the value for a given embed field."""
     value = None
 
     match parameter:
         case DisplayField.HEALTH:
-            value = __stat_repr(can_emoji, trackmoji.emojify_track, character.health)
+            value = __stat_repr(can_emoji, theme, trackmoji.emojify_track, character.health)
 
         case DisplayField.WILLPOWER:
-            value = __stat_repr(can_emoji, trackmoji.emojify_track, character.willpower)
+            value = __stat_repr(can_emoji, theme, trackmoji.emojify_track, character.willpower)
 
         case DisplayField.HUMANITY:
             value = __stat_repr(
-                can_emoji, trackmoji.emojify_humanity, character.humanity, character.stains
+                can_emoji, theme, trackmoji.emojify_humanity, character.humanity, character.stains
             )
 
         case DisplayField.POTENCY if character.is_vampire:
-            value = __stat_repr(can_emoji, trackmoji.emojify_blood_potency, character.potency)
+            value = __stat_repr(
+                can_emoji, theme, trackmoji.emojify_blood_potency, character.potency
+            )
 
         case DisplayField.HUNGER if character.is_vampire:
-            value = __stat_repr(can_emoji, trackmoji.emojify_hunger, character.hunger)
+            value = __stat_repr(can_emoji, theme, trackmoji.emojify_hunger, character.hunger)
 
         case DisplayField.SEVERITY if character.is_vampire:
             value = f"```{character.bane_severity}```"
@@ -200,30 +206,30 @@ def __embed_field_value(character, parameter, can_emoji):
     return value
 
 
-def __stat_repr(can_emoji, function, *stats):
+def __stat_repr(
+    can_emoji: bool, theme: Theme, function: Callable[..., str], *stats: str | int
+) -> str:
     """Generate the string or emoji representation of a stat, depending on permissions."""
     if len(stats) == 2:
         # Humanity
         humanity, stains = stats
 
         if can_emoji:
-            return function(humanity, stains)
+            return function(theme, humanity, stains)
 
-        stains = pluralize(stains, "Stain")
-
-        return f"{humanity} ({stains})"
+        return f"{humanity} ({pluralize(cast(int, stains), 'Stain')})"
 
     # Not Humanity
     stat = stats[0]
 
     if can_emoji:
-        return function(stat)
+        return function(theme, stat)
 
     if isinstance(stat, str):
         return __stringify_track(stat)
 
     # The stat should be an int
-    return stat
+    return str(stat)
 
 
 def __stringify_track(track: str):

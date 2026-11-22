@@ -21,6 +21,13 @@ Anyone can change their own settings, which follow them across servers. Anyone c
 
 Use custom emojis for dice and trackers. When off, **Inconnu** uses plain text instead. If the server turns emojis off, they're off for everyone.
 
+### Emoji theme
+
+> [!NOTE]
+> **Default:** `Standard`
+
+Restyles dice and tracker emojis. The menu previews your theme. [Supporters only.](https://www.patreon.com/tiltowait)
+
 ### Automatically apply Impairment
 
 > [!NOTE]

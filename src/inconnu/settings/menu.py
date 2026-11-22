@@ -16,7 +16,7 @@ from discord import (
 from discord.ui import Button, Select, TextDisplay
 from loguru import logger
 
-from constants import PATREON, Theme
+from constants import PATREON, PATREON_PRICE, Theme
 from ctx import AppCtx
 from inconnu.character.display.trackmoji import (
     emojify_blood_potency,
@@ -347,7 +347,8 @@ class SettingsMenu(discord.ui.DesignerView):
         else:
             patreon = Button(label="Patreon", url=PATREON)
             container.add_section(
-                TextDisplay("Become a patron to choose a theme!"), accessory=patreon
+                TextDisplay(f"Become a patron for only {PATREON_PRICE} to choose a theme!"),
+                accessory=patreon,
             )
 
     @staticmethod

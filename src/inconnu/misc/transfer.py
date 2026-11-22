@@ -1,11 +1,18 @@
 """Transfer character ownership."""
 
-import discord
+from datetime import timedelta
 
+import discord
+from loguru import logger
+
+import constants
 import errors
 import services
 import ui
 from ctx import AppCtx
+from models import VChar
+from services.premium import GRACE_PERIOD
+from utils.text import pluralize
 
 
 async def transfer_character(
@@ -32,7 +39,7 @@ async def transfer_character(
                 await ctx.respond(
                     f"Transferred **{xfer.name}** from {current_mention} to {new_mention}."
                 )
-                await services.premium.check_transfer(new_owner, xfer)
+                await _warn_if_deletion(new_owner, xfer)
             except errors.DuplicateCharacterError as err:
                 await ui.embeds.error(ctx, str(err))
         else:
@@ -42,3 +49,38 @@ async def transfer_character(
         await ui.embeds.error(ctx, "Character not found.")
     except (errors.WrongGuild, errors.WrongOwner, ValueError) as err:
         await ui.embeds.error(ctx, err)
+
+
+async def _warn_if_deletion(new_owner: discord.Member, character: VChar):
+    """If the new owner isn't a supporter, DM them when their new character's
+    images will be deleted. Starts their grace period if it hasn't begun."""
+    if not character.profile.images:
+        return
+    lapsed = await services.premium.lapse_date(new_owner.id)
+    if lapsed is None:
+        logger.info("{} is a supporter; inheriting {}'s images", new_owner.name, character.name)
+        return
+
+    days_left = round((lapsed + GRACE_PERIOD - discord.utils.utcnow()) / timedelta(days=1))
+    if days_left < 1:
+        deadline = "within a day"
+    else:
+        deadline = f"in {pluralize(days_left, 'day')}"
+
+    server = f"[Inconnu server]({constants.SUPPORT_URL})"
+    patreon = f"[patron]({constants.PATREON})"
+    embed = discord.Embed(
+        title=f"{character.name} has profile images",
+        description=(
+            f"You aren't a {patreon}, so {character.name}'s images will be deleted "
+            f"{deadline}. To keep them, join the {server} and become a {patreon} "
+            f"(only {constants.PATREON_PRICE})."
+        ),
+        color=discord.Color.red(),
+    )
+
+    try:
+        await new_owner.send(embed=embed)
+        logger.info("Warned {} that {}'s images will be deleted", new_owner.name, character.name)
+    except discord.HTTPException:
+        logger.info("Could not DM {} about {}'s images", new_owner.name, character.name)

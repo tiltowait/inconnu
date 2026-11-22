@@ -12,7 +12,6 @@ from interface.premium import PremiumCog
 from services import premium
 from tests.mocks import MockMember
 
-UPLOAD_MENTION = "</character image upload:1>"
 USER_ID = 1
 
 type MockRemoveEvent = MagicMock
@@ -58,9 +57,7 @@ def supporters() -> Iterator[set[int]]:
 @pytest.fixture
 def cog() -> PremiumCog:
     """A PremiumCog on a mock bot."""
-    bot = MagicMock(spec=InconnuBot)
-    bot.cmd_mention.return_value = UPLOAD_MENTION
-    return PremiumCog(bot)
+    return PremiumCog(MagicMock(spec=InconnuBot))
 
 
 @pytest.fixture
@@ -82,7 +79,7 @@ async def test_role_gained(cog: PremiumCog, mock_lost: AsyncMock, mock_gained: A
     payload = update_event(supporter=True)
     await PremiumCog.on_raw_member_update(cog, payload)
 
-    mock_gained.assert_awaited_once_with(payload.member, UPLOAD_MENTION)
+    mock_gained.assert_awaited_once_with(payload.member, cog.bot)
     mock_lost.assert_not_awaited()
 
 

@@ -1,8 +1,11 @@
 """Character transfer command tests."""
 
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime, timedelta
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import discord
 import pytest
 
@@ -48,9 +51,9 @@ async def mock_transfer() -> AsyncGenerator[AsyncMock]:
 
 
 @pytest.fixture
-async def mock_transfer_premium() -> AsyncGenerator[AsyncMock]:
-    """premium.check_transfer(), patched."""
-    with patch.object(services.premium, "check_transfer", new_callable=AsyncMock) as mock:
+async def mock_lapse_date() -> AsyncGenerator[AsyncMock]:
+    """premium.lapse_date(), patched to say the new owner is a supporter."""
+    with patch.object(services.premium, "lapse_date", autospec=True, return_value=None) as mock:
         yield mock
 
 
@@ -83,10 +86,10 @@ async def test_transfer_success(
     new_owner: discord.Member,
     mock_fetchone: AsyncMock,
     mock_transfer: AsyncMock,
-    mock_transfer_premium: AsyncMock,
+    mock_lapse_date: AsyncMock,
     mock_respond: AsyncMock,
 ):
-    """A valid transfer updates ownership, responds, and checks premium status."""
+    """A valid transfer updates ownership and responds."""
     await transfer_character(ctx, current_owner, char.name, new_owner)
 
     mock_transfer.assert_awaited_once_with(char, current_owner, new_owner)
@@ -98,8 +101,6 @@ async def test_transfer_success(
     assert current_owner.mention in message
     assert new_owner.mention in message
 
-    mock_transfer_premium.assert_awaited_once_with(new_owner, char)
-
 
 async def test_transfer_duplicate_name_rejected(
     ctx: AppCtx,
@@ -108,7 +109,7 @@ async def test_transfer_duplicate_name_rejected(
     new_owner: discord.Member,
     mock_fetchone: AsyncMock,
     mock_transfer: AsyncMock,
-    mock_transfer_premium: AsyncMock,
+    mock_lapse_date: AsyncMock,
     mock_respond: AsyncMock,
     mock_error: AsyncMock,
 ):
@@ -123,7 +124,7 @@ async def test_transfer_duplicate_name_rejected(
     assert mock_error.await_args is not None
     assert "already has a character named" in str(mock_error.await_args.args[1])
     mock_respond.assert_not_awaited()
-    mock_transfer_premium.assert_not_awaited()
+    mock_lapse_date.assert_not_awaited()
 
 
 async def test_transfer_character_not_found(
@@ -187,3 +188,93 @@ async def test_transfer_ownership_mismatch(
     assert mock_error.await_args is not None
     assert "doesn't own" in str(mock_error.await_args.args[1])
     mock_transfer.assert_not_awaited()
+
+
+def sent_description(member: discord.Member) -> str:
+    """The description of the embed DMed to the member."""
+    send = cast(AsyncMock, member.send)
+    assert send.await_args is not None
+    return send.await_args.kwargs["embed"].description
+
+
+async def test_transfer_without_images(
+    ctx: AppCtx,
+    char: VChar,
+    current_owner: discord.Member,
+    new_owner: discord.Member,
+    mock_fetchone: AsyncMock,
+    mock_transfer: AsyncMock,
+    mock_lapse_date: AsyncMock,
+):
+    """Characters without images don't affect the new owner."""
+    await transfer_character(ctx, current_owner, char.name, new_owner)
+
+    mock_lapse_date.assert_not_awaited()
+    cast(AsyncMock, new_owner.send).assert_not_awaited()
+
+
+async def test_transfer_images_to_supporter(
+    ctx: AppCtx,
+    char: VChar,
+    current_owner: discord.Member,
+    new_owner: discord.Member,
+    mock_fetchone: AsyncMock,
+    mock_transfer: AsyncMock,
+    mock_lapse_date: AsyncMock,
+):
+    """Supporters inherit images without warning."""
+    char.profile.images.append("https://example.com/image.webp")
+
+    await transfer_character(ctx, current_owner, char.name, new_owner)
+
+    mock_lapse_date.assert_awaited_once_with(new_owner.id)
+    cast(AsyncMock, new_owner.send).assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    "lapsed,deadline",
+    [
+        (timedelta(0), "in 7 days"),
+        (timedelta(days=3), "in 4 days"),
+        (timedelta(days=6), "in 1 day"),
+        (timedelta(days=6, hours=20), "within a day"),
+    ],
+)
+async def test_transfer_images_to_non_supporter(
+    ctx: AppCtx,
+    char: VChar,
+    current_owner: discord.Member,
+    new_owner: discord.Member,
+    mock_fetchone: AsyncMock,
+    mock_transfer: AsyncMock,
+    mock_lapse_date: AsyncMock,
+    lapsed: timedelta,
+    deadline: str,
+):
+    """Non-supporters are warned when their new character's images will be deleted."""
+    char.profile.images.append("https://example.com/image.webp")
+    mock_lapse_date.return_value = datetime.now(UTC) - lapsed
+
+    await transfer_character(ctx, current_owner, char.name, new_owner)
+
+    assert f"images will be deleted {deadline}" in sent_description(new_owner)
+
+
+async def test_transfer_warning_dm_failure_ignored(
+    ctx: AppCtx,
+    char: VChar,
+    current_owner: discord.Member,
+    new_owner: discord.Member,
+    mock_fetchone: AsyncMock,
+    mock_transfer: AsyncMock,
+    mock_lapse_date: AsyncMock,
+):
+    """Recipients with closed DMs don't break the transfer."""
+    char.profile.images.append("https://example.com/image.webp")
+    mock_lapse_date.return_value = datetime.now(UTC)
+    response = MagicMock(spec=aiohttp.ClientResponse, status=403, reason="Forbidden")
+    cast(AsyncMock, new_owner.send).side_effect = discord.Forbidden(response, "Closed DMs")
+
+    await transfer_character(ctx, current_owner, char.name, new_owner)
+
+    cast(AsyncMock, new_owner.send).assert_awaited_once()

@@ -1,6 +1,7 @@
 """Supporter (premium) status tracking."""
 
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import discord
 from loguru import logger
@@ -8,9 +9,11 @@ from loguru import logger
 import constants
 import db
 from config import settings
-from models import VChar
 from utils.text import pluralize
 from utils.urls import docs_url
+
+if TYPE_CHECKING:
+    from bot import InconnuBot
 
 # How long lapsed supporters keep their images
 GRACE_PERIOD = timedelta(days=7)
@@ -82,17 +85,17 @@ async def mark_lost(user: discord.Member | discord.User):
     await _inform_loss(user, "You are no longer a supporter!")
 
 
-async def mark_gained(member: discord.Member, upload_mention: str | None):
+async def mark_gained(member: discord.Member, bot: InconnuBot):
     """Record that the member gained premium and DM them."""
     await _set_status(member.id, None)
-    await _inform_features(member, upload_mention)
+    await _inform_features(member, bot)
 
 
-async def check_transfer(member: discord.Member, character: VChar):
-    """Warn a non-supporter who receives a character with images that they'll be deleted.
-
-    Non-supporters without a lapsed record are marked as lapsed. Lapsed supporters
-    keep their existing deadline, so transfers can't extend it.
+async def lapse_date(user_id: int) -> datetime | None:
+    """When the user's premium lapsed, for timing image deletion. None for
+    supporters. Non-supporters without a lapsed record are marked as lapsed
+    now, giving them the full grace period. Lapsed supporters keep their
+    existing date, so transfers can't extend it.
 
     NOTE: This races with recording a role gain (by sync() or a member event).
     If the gain lands during find_one() or _record(), this overwrites it with a
@@ -100,32 +103,22 @@ async def check_transfer(member: discord.Member, character: VChar):
     (whose sync repairs the record) within GRACE_PERIOD, the images are then
     deleted. It needs a transfer of a character with images within milliseconds
     of the new owner's role gain, so we accept the risk."""
-    if not character.profile.images:
-        logger.info("{} has no images; no premium transfer needed", character.name)
-        return
-    if is_supporter(member.id):
-        logger.info("{} is a supporter; inheriting {}'s images", member.name, character.name)
-        return
+    if is_supporter(user_id):
+        return None
 
-    # Figure out the grace period after which to delete the images. A recently
-    # lapsed supporter is already in their grace period, so we'll use that. If,
-    # like most users, they don't have a supporter record at all, we give them
-    # the full grace period.
-    record = await db.supporters.find_one({"_id": member.id})
+    record = await db.supporters.find_one({"_id": user_id})
     if record is None or record["discontinued"] is None:
         # Never was a supporter, or their record is somehow stale
-        logger.info("Marking {} as lapsed, because {} has images", member.name, character.name)
+        logger.info("Marking {} as lapsed", user_id)
         discontinued = discord.utils.utcnow()
-        await _record(member.id, discontinued)
-    else:
-        discontinued = record["discontinued"]
-        if discontinued.tzinfo is None:
-            # Mongo returns naive UTC datetimes
-            discontinued = discontinued.replace(tzinfo=UTC)
+        await _record(user_id, discontinued)
+        return discontinued
 
-    remaining = discontinued + GRACE_PERIOD - discord.utils.utcnow()
-    days_left = round(remaining / timedelta(days=1))
-    await _inform_transfer(member, character, days_left)
+    discontinued = record["discontinued"]
+    if discontinued.tzinfo is None:
+        # Mongo returns naive UTC datetimes
+        discontinued = discontinued.replace(tzinfo=UTC)
+    return discontinued
 
 
 async def _set_status(user_id: int, discontinued: datetime | None):
@@ -162,7 +155,7 @@ async def _inform_loss(member: discord.Member | discord.User, title: str):
             f"If you aren't a {patreon} within {pluralize(GRACE_PERIOD.days, 'day')}, your "
             "character profile images will be deleted.\n\n"
             f"To maintain supporter status, you must be on the {server} "
-            f"and a {patreon}.\n\n"
+            f"and a {patreon} (only {constants.PATREON_PRICE}).\n\n"
             "**Note:** Old-style (URL-based) images are grandfathered "
             "in and will not be removed."
         ),
@@ -177,39 +170,28 @@ async def _inform_loss(member: discord.Member | discord.User, title: str):
         logger.info("Could not DM {} about premium loss", member.name)
 
 
-async def _inform_transfer(member: discord.Member, character: VChar, days_left: int):
-    """DM a non-supporter that their new character's images will be deleted."""
-    if days_left < 1:
-        deadline = "within a day"
-    else:
-        deadline = f"in {pluralize(days_left, 'day')}"
-
-    server = f"[Inconnu server]({constants.SUPPORT_URL})"
-    patreon = f"[patron]({constants.PATREON})"
-    embed = discord.Embed(
-        title=f"{character.name} has profile images",
-        description=(
-            f"You aren't a {patreon}, so {character.name}'s images will be deleted "
-            f"{deadline}. To keep them, join the {server} and become a {patreon}."
-        ),
-        color=discord.Color.red(),
-    )
-
-    try:
-        await member.send(embed=embed)
-        logger.info("Warned {} that {}'s images will be deleted", member.name, character.name)
-    except discord.HTTPException:
-        logger.info("Could not DM {} about {}'s images", member.name, character.name)
-
-
-async def _inform_features(member: discord.Member, upload_mention: str | None):
+async def _inform_features(member: discord.Member, bot: InconnuBot):
     """DM the member about the premium features they can now use."""
+
+    def mention(name: str) -> str:
+        """The command's mention, or its name if it can't be found."""
+        return bot.cmd_mention(name) or f"`/{name}`"
+
+    features = [
+        f"Add [character images]({docs_url('premium/character-images')}) with "
+        + mention("character image upload"),
+        f"Post as your characters with [Roleposting]({docs_url('premium/roleposting')}) "
+        + f"using {mention('post')}",
+        f"Choose an [emoji theme]({docs_url('advanced/server-settings#emoji-theme')}) "
+        + f"in {mention('settings')}",
+        f"Edit and play your characters in the [web app]({docs_url('premium/web-app')})",
+    ]
     embed = discord.Embed(
         title="Thank you for your support!",
         description=(
-            f"You may now upload profile images via {upload_mention}. "
-            "(Use it in a server, not from this DM!)\n\n"
-            f"[Read more here!]({docs_url('premium/character-images')})"
+            "You can now:\n"
+            + "\n".join(f"- {feature}" for feature in features)
+            + "\n\nUse commands in a server, not this DM."
         ),
         color=discord.Color.green(),
     )

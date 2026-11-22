@@ -8,6 +8,7 @@ from flatdict import FlatDict
 
 SUPPORT_URL = "https://discord.gg/QHnCdSPeEE"
 PATREON = "https://www.patreon.com/tiltowait"
+PATREON_PRICE = "$3/mo"
 
 GROUPED_TRAITS = {
     "ATTRIBUTES": {
@@ -138,7 +139,7 @@ class Theme(StrEnum):
             case Theme.CITRUS_SHERBERT:
                 return "Complements the Discord theme."
             case Theme.BRUISED:
-                return "Red and bone tones, like the web app."
+                return "Blood and bone tones, like the web app."
 
 
 def get_standard_traits() -> list[str]:

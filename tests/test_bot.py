@@ -11,8 +11,9 @@ import pytest
 
 import bot as bot_module
 import errors
+import services
 from bot import InconnuBot
-from models import RPPost
+from models import RPPost, VChar
 from services import WebhookCache
 from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
 from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook
@@ -60,6 +61,52 @@ def test_webhook_cache_before_connect(mock_bot: MockBot):
     mock_bot._webhook_cache = None
     with pytest.raises(RuntimeError):
         InconnuBot.webhook_cache.__get__(mock_bot)
+
+
+# Connecting
+
+
+async def test_supporter_sync_on_connect(mock_bot: MockBot):
+    """Each connection syncs supporters, but only one sync runs at a time."""
+    mock_bot.connected = False
+    mock_bot.user.id = 1
+    mock_bot._supporter_sync = None
+
+    # on_connect() sets the SPC owner
+    with patch.object(VChar, "SPC_OWNER", VChar.SPC_OWNER):
+        await InconnuBot.on_connect(mock_bot)
+        await InconnuBot.on_connect(mock_bot)  # Another shard, mid-sync
+        mock_bot._sync_supporters.assert_called_once()
+
+        await mock_bot._supporter_sync
+        await InconnuBot.on_connect(mock_bot)  # A later reconnect
+
+    assert mock_bot._sync_supporters.call_count == 2
+    await mock_bot._supporter_sync
+
+
+async def test_supporter_sync_retries(mock_bot: MockBot):
+    """A failed supporter sync is retried after a delay."""
+    failures = [RuntimeError, RuntimeError, None]
+    with (
+        patch.object(services.premium, "sync", autospec=True, side_effect=failures) as sync,
+        patch.object(bot_module.asyncio, "sleep", autospec=True) as sleep,
+    ):
+        await InconnuBot._sync_supporters(mock_bot)
+
+    assert sync.await_count == 3
+    assert [c.args[0] for c in sleep.await_args_list] == list(bot_module.SUPPORTER_SYNC_RETRIES[:2])
+
+
+async def test_supporter_sync_gives_up(mock_bot: MockBot):
+    """A supporter sync that keeps failing gives up without escaping its task."""
+    with (
+        patch.object(services.premium, "sync", autospec=True, side_effect=RuntimeError) as sync,
+        patch.object(bot_module.asyncio, "sleep", autospec=True),
+    ):
+        await InconnuBot._sync_supporters(mock_bot)
+
+    assert sync.await_count == len(bot_module.SUPPORTER_SYNC_RETRIES) + 1
 
 
 # Lockdown

@@ -1,5 +1,6 @@
 """Bot instance and event handlers."""
 
+import asyncio
 from pathlib import Path
 from typing import Any, cast
 
@@ -18,6 +19,9 @@ from services import WebhookCache
 from services.lockdown import LOCKDOWN_DELAY, Lockdown, LockdownReason
 from services.webhooks import UNKNOWN_WEBHOOK, ChannelWebhook, webhook_home
 
+# Seconds between supporter sync attempts
+SUPPORTER_SYNC_RETRIES = (60, 300, 900)
+
 
 class InconnuBot(discord.AutoShardedBot):
     """Adds minor functionality over the superclass. All commands in cogs."""
@@ -32,6 +36,7 @@ class InconnuBot(discord.AutoShardedBot):
         self.motd_given: set[int] = set()
         self._webhook_cache: WebhookCache | None = None
         self._guild_fetch_failures = TTLCache[int, bool](maxsize=200, ttl=1200)
+        self._supporter_sync: asyncio.Task[None] | None = None
 
         self._check_config()
         self._load_cogs()
@@ -251,8 +256,28 @@ class InconnuBot(discord.AutoShardedBot):
 
             self.connected = True
 
+        # Member updates sent while disconnected are lost, so each connection
+        # syncs supporters (one sync at a time, as each shard connects). It
+        # doesn't wait for the support server's members to be cached.
+        if self._supporter_sync is None or self._supporter_sync.done():
+            self._supporter_sync = asyncio.create_task(self._sync_supporters())
+
         await self.sync_commands()
         logger.info("Commands synced")
+
+    async def _sync_supporters(self):
+        """Bring supporter status up to date with the support server, retrying
+        failures. Until it succeeds, status is as the database last had it."""
+        for delay in (*SUPPORTER_SYNC_RETRIES, None):
+            try:
+                await services.premium.sync(self)
+                return
+            except Exception:
+                if delay is None:
+                    logger.exception("Supporter sync failed; giving up")
+                    return
+                logger.exception("Supporter sync failed; retrying in {}s", delay)
+                await asyncio.sleep(delay)
 
     async def on_ready(self):
         """Log startup info and set the presence."""

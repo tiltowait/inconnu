@@ -21,6 +21,7 @@ async def startup():
     await db.init()
     await services.char_mgr.initialize()
     await services.guild_cache.initialize()
+    await services.premium.initialize()
 
     intents = discord.Intents(guilds=True, members=True, messages=True, webhooks=True)
     bot = InconnuBot(intents=intents, debug_guilds=settings.debug_guilds, cache_app_emojis=True)

@@ -3,8 +3,8 @@
 import discord
 
 import constants
+from services.premium import is_supporter
 from utils import cmd_replace_respond, get_avatar
-from utils.permissions import is_supporter
 from utils.urls import profile_url
 
 
@@ -24,7 +24,7 @@ class VCharEmbed(discord.Embed):
             author_name = owner.name
             kwargs["title"] = character.name
 
-        if is_supporter(ctx, owner):
+        if is_supporter(owner.id):
             # Premium color
             kwargs["color"] = 0x00A4FF
 

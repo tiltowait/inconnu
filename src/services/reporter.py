@@ -89,8 +89,6 @@ class ErrorReporter:
                 # NotFound: the message or resource is gone, usually a deleted message.
                 # HandledError: the user was already told.
                 pass
-            case errors.NotReady():
-                await ui.embeds.error(ctx, str(error), title="One moment, please")
             case errors.NotPremium():
                 await self._report_not_premium(ctx)
             case commands.NotOwner():

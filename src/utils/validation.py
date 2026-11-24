@@ -24,6 +24,15 @@ HUNGER_ALIASES = ("current_hunger",)
 # Reserved trait names, compared by name_key()
 RESERVED_TRAIT_KEYS = {name_key(trait): trait for trait in RESERVED_TRAITS}
 POWER_BONUS_KEYS = ("powerbonus", "power_bonus")
+MAX_MACRO_NAME_LENGTH = 50
+MAX_MACRO_COMMENT_LENGTH = 300
+MAX_MACRO_ROUSES = 5
+MAX_MACRO_DIFFICULTY = 100  # For web edits; Discord has no limit
+# Letters and underscores, with at least one letter. Served to the web app, so
+# it must also be a valid JS pattern
+VALID_MACRO_NAME_PATTERN = re.compile(r"^_*[A-Za-z][A-Za-z_]*$")
+# "no" comes from /macro update; "show", from /macro create
+MACRO_STAINING = ("apply", "show", "no")
 
 
 def clean_name(name: str) -> str:

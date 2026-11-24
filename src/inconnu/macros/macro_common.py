@@ -1,21 +1,20 @@
 """macros/macrocommon.py - Common macro utilities."""
 
-import re
-
 import errors
+from utils.validation import (
+    MAX_MACRO_COMMENT_LENGTH,
+    MAX_MACRO_NAME_LENGTH,
+    VALID_MACRO_NAME_PATTERN,
+)
 
-NAME_LEN = 50
-COMMENT_LEN = 300
+NAME_LEN = MAX_MACRO_NAME_LENGTH
+COMMENT_LEN = MAX_MACRO_COMMENT_LENGTH
 
 
 def is_macro_name_valid(name: str) -> bool:
     """Validate macro name: letters and underscores only, must contain at least one letter."""
-    if len(name) > NAME_LEN or not name:
-        return False
-    if not re.match(r"^[a-zA-Z_]+$", name):
-        return False
-
-    return any(c.isalpha() for c in name)
+    # $ alone would allow a trailing newline
+    return len(name) <= NAME_LEN and VALID_MACRO_NAME_PATTERN.fullmatch(name) is not None
 
 
 def check_has_action(pool: list[str], rouses: int):

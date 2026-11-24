@@ -44,6 +44,7 @@ from routes.characters.edit import (
     apply_edit,
     body_errors,
     check_edit,
+    clean_macros,
     edit_summary,
     summarize,
 )
@@ -57,6 +58,7 @@ from routes.characters.models import (
     FrenzyBody,
     FrenzyResult,
     GuildChars,
+    MacrosBody,
     MendBody,
     MendResult,
     OwnerData,
@@ -290,6 +292,21 @@ async def edit_character(
             title="Character Updated",
             description=edit_summary(char, access.user_id, changes),
         )
+
+    return Response(status_code=204)
+
+
+@router.patch(
+    "/characters/{oid}/macros", status_code=204, dependencies=[Depends(require_supporter)]
+)
+async def edit_macros(body: MacrosBody, access: OwnedChar) -> Response:
+    """Replace the character's macros with the body's. As in Discord, only
+    the owner may edit them, though Storytellers may edit SPCs', and nothing
+    is posted to the update channel."""
+    char = access.char
+
+    char.macros = clean_macros(char, body.macros)
+    await access.save()
 
     return Response(status_code=204)
 

@@ -5,7 +5,13 @@ from datetime import UTC, datetime
 import pytest
 from beanie.odm.utils.encoder import Encoder
 
-from models.vchardocs import CAREER_STATS_LIVE, VICTIMS_DRAINED_LIVE, VCharLog
+from models.vchardocs import (
+    CAREER_STATS_LIVE,
+    VICTIMS_DRAINED_LIVE,
+    MacroUpdate,
+    VCharLog,
+    VCharMacro,
+)
 
 
 @pytest.mark.parametrize(
@@ -81,3 +87,8 @@ def test_log_tracking_started_names_real_fields():
     for field in VCharLog.TRACKING_STARTED:
         assert field in VCharLog.model_fields
         assert field in dumped
+
+
+def test_macro_update_fields():
+    """Test that a macro update covers every macro field, and nothing else."""
+    assert MacroUpdate.__annotations__.keys() == VCharMacro.model_fields.keys()

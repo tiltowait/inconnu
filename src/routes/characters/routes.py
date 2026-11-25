@@ -3,7 +3,7 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, cast
 
 import discord
 from beanie import PydanticObjectId
@@ -38,12 +38,14 @@ from inconnu.misc.rouse import (
 from inconnu.misc.slake import slake_hunger, slake_update_message
 from models import VChar, VGuild
 from models.vchar import Tracker
+from models.vchardocs import MacroUpdate, VCharMacro
 from models.vguild import VGuildSettings
 from routes.auth import get_authenticated_user, require_supporter, verify_api_key
 from routes.characters.edit import (
     apply_edit,
     body_errors,
     check_edit,
+    clean_macro,
     clean_macros,
     edit_summary,
     summarize,
@@ -306,6 +308,38 @@ async def edit_macros(body: MacrosBody, editor: OwnedChar) -> Response:
     char = editor.char
 
     char.macros = clean_macros(char, body.macros)
+    await editor.save()
+
+    return Response(status_code=204)
+
+
+@router.post("/characters/{oid}/macros", status_code=204, dependencies=[Depends(require_supporter)])
+async def create_macro(body: VCharMacro, editor: OwnedChar) -> Response:
+    """Create one macro. The others aren't validated. Access is as in
+    edit_macros(), and nothing is posted to the update channel."""
+    macro = clean_macro(editor.char, body)
+    editor.char.add_macro(**macro.model_dump())
+    await editor.save()
+
+    return Response(status_code=204)
+
+
+@router.put(
+    "/characters/{oid}/macros/{name}", status_code=204, dependencies=[Depends(require_supporter)]
+)
+async def update_macro(name: str, body: VCharMacro, editor: OwnedChar) -> Response:
+    """Replace one macro, found by its current name (ignoring case). The
+    body's name may differ, which renames it. The others aren't validated.
+    Access is as in edit_macros(), and nothing is posted to the update
+    channel."""
+    char = editor.char
+    try:
+        current = char.find_macro(name)
+    except errors.MacroNotFoundError as err:
+        raise HTTPException(404, detail="Macro not found") from err
+
+    macro = clean_macro(char, body, replacing=current)
+    char.update_macro(name, cast(MacroUpdate, macro.model_dump()))
     await editor.save()
 
     return Response(status_code=204)

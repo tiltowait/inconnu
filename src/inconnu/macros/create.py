@@ -62,8 +62,8 @@ async def create(
             hunt=hunt,
             comment=comment,
         )
-        await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
         await character.save_changes()
+        await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
 
     except (
         SyntaxError,

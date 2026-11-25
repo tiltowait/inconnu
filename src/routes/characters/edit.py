@@ -108,18 +108,8 @@ def clean_macros(char: VChar, macros: list[VCharMacro]) -> list[VCharMacro]:
     seen: set[str] = set()
 
     for index, original in enumerate(macros):
-        pool, pool_errors = _clean_pool(char, original.pool)
-        macro = original.model_copy(
-            update={
-                "name": original.name.strip(),
-                "pool": pool,
-                "comment": (original.comment or "").strip() or None,
-            }
-        )
+        macro, found = _clean_macro(char, original)
         cleaned.append(macro)
-
-        found: list[tuple[ErrorLoc, str]] = [(("pool", *loc), msg) for loc, msg in pool_errors]
-        found.extend(_macro_errors(macro))
         if macro.name.casefold() in seen:
             found.append((("name",), f"Duplicate macro: `{macro.name}`."))
         seen.add(macro.name.casefold())
@@ -128,6 +118,39 @@ def clean_macros(char: VChar, macros: list[VCharMacro]) -> list[VCharMacro]:
     if errors:
         raise body_errors(errors)
     return sorted(cleaned, key=lambda m: m.name.casefold())
+
+
+def clean_macro(char: VChar, macro: VCharMacro, replacing: VCharMacro | None = None) -> VCharMacro:
+    """Validate one macro, returning it cleaned. Its name must be new, unless
+    it's replacing a macro of that name. The stored macros aren't validated.
+    Raises RequestValidationError with every error at once."""
+    cleaned, errors = _clean_macro(char, macro)
+
+    key = cleaned.name.casefold()
+    if replacing is None or key != replacing.name.casefold():
+        existing = next((m for m in char.macros if m.name.casefold() == key), None)
+        if existing is not None:
+            errors.append((("name",), f"A macro named `{existing.name}` already exists."))
+
+    if errors:
+        raise body_errors(errors)
+    return cleaned
+
+
+def _clean_macro(char: VChar, macro: VCharMacro) -> tuple[VCharMacro, list[tuple[ErrorLoc, str]]]:
+    """A macro, cleaned, and any errors, aside from duplicate names, with
+    their locations in the macro."""
+    pool, pool_errors = _clean_pool(char, macro.pool)
+    cleaned = macro.model_copy(
+        update={
+            "name": macro.name.strip(),
+            "pool": pool,
+            "comment": (macro.comment or "").strip() or None,
+        }
+    )
+    errors: list[tuple[ErrorLoc, str]] = [(("pool", *loc), msg) for loc, msg in pool_errors]
+    errors.extend(_macro_errors(cleaned))
+    return cleaned, errors
 
 
 def _macro_errors(macro: VCharMacro) -> Iterator[tuple[ErrorLoc, str]]:

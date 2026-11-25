@@ -167,7 +167,7 @@ class MacroUpdate(TypedDict, total=False):
     reroll_rouses: bool
     staining: str
     hunt: bool
-    comment: str
+    comment: str | None
 
 
 class VCharMacro(BaseModel):

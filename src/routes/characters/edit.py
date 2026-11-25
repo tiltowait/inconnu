@@ -174,8 +174,9 @@ def _clean_pool(char: VChar, pool: list[str]) -> tuple[list[str], list[tuple[Err
                     token = char.find_trait(token, exact=True).key
                 except TraitError as err:
                     errors.append(((index,), str(err)))
-                if token == "Hunger":
-                    errors.append(((index,), "Hunger can't be a part of your pool."))
+                else:
+                    if token == "Hunger":
+                        errors.append(((index,), "Hunger can't be a part of your pool."))
         cleaned.append(token)
 
     if pool and expecting_operand:

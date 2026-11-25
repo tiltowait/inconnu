@@ -4379,6 +4379,32 @@ async def test_macro_reports_every_error(
     assert (await reload(char)).macros == before
 
 
+@pytest.mark.parametrize(
+    "splat,message",
+    [
+        (VCharSplat.VAMPIRE, "Hunger can't be a part of your pool."),
+        (VCharSplat.MORTAL, "Nadea Theron has no trait named `Hunger`."),
+    ],
+)
+async def test_macro_hunger_in_pool(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    splat: VCharSplat,
+    message: str,
+):
+    """Hunger in a pool is one error: vampires can't roll it, and others
+    don't have it."""
+    char = await make_saved_char(splat=splat)
+    mock_char_mgr_fetchid.return_value = char
+    macro = macro_data("test", pool=["Hunger"])
+
+    status, data = await send_macro(char, "POST", "", macro, auth_headers)
+
+    assert status == 422
+    assert [(e["loc"], e["msg"]) for e in data["detail"]] == [(["body", "pool", 0], message)]
+
+
 @pytest.mark.parametrize("method,path,name", [("POST", "", "new"), ("PUT", "/climb", "climb")])
 async def test_macro_ignores_broken_macros(
     auth_headers: dict[str, str],

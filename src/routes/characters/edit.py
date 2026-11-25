@@ -99,47 +99,11 @@ def apply_edit(char: VChar, body: EditBody):
     char.raw_traits = with_core_traits(body.traits)
 
 
-def clean_macros(char: VChar, macros: list[VCharMacro]) -> list[VCharMacro]:
-    """Validate macros, returning them cleaned and sorted by name, as they're
-    stored. Pools get the character's own spelling of each trait. Raises
-    RequestValidationError with every error at once."""
-    errors: list[tuple[ErrorLoc, str]] = []
-    cleaned: list[VCharMacro] = []
-    seen: set[str] = set()
-
-    for index, original in enumerate(macros):
-        macro, found = _clean_macro(char, original)
-        cleaned.append(macro)
-        if macro.name.casefold() in seen:
-            found.append((("name",), f"Duplicate macro: `{macro.name}`."))
-        seen.add(macro.name.casefold())
-        errors.extend((("macros", index, *loc), msg) for loc, msg in found)
-
-    if errors:
-        raise body_errors(errors)
-    return sorted(cleaned, key=lambda m: m.name.casefold())
-
-
 def clean_macro(char: VChar, macro: VCharMacro, replacing: VCharMacro | None = None) -> VCharMacro:
-    """Validate one macro, returning it cleaned. Its name must be new, unless
-    it's replacing a macro of that name. The stored macros aren't validated.
-    Raises RequestValidationError with every error at once."""
-    cleaned, errors = _clean_macro(char, macro)
-
-    key = cleaned.name.casefold()
-    if replacing is None or key != replacing.name.casefold():
-        existing = next((m for m in char.macros if m.name.casefold() == key), None)
-        if existing is not None:
-            errors.append((("name",), f"A macro named `{existing.name}` already exists."))
-
-    if errors:
-        raise body_errors(errors)
-    return cleaned
-
-
-def _clean_macro(char: VChar, macro: VCharMacro) -> tuple[VCharMacro, list[tuple[ErrorLoc, str]]]:
-    """A macro, cleaned, and any errors, aside from duplicate names, with
-    their locations in the macro."""
+    """Validate one macro, returning it cleaned. Pools get the character's own
+    spelling of each trait. Its name must be new, unless it's replacing a
+    macro of that name. The stored macros aren't validated. Raises
+    RequestValidationError with every error at once."""
     pool, pool_errors = _clean_pool(char, macro.pool)
     cleaned = macro.model_copy(
         update={
@@ -150,7 +114,16 @@ def _clean_macro(char: VChar, macro: VCharMacro) -> tuple[VCharMacro, list[tuple
     )
     errors: list[tuple[ErrorLoc, str]] = [(("pool", *loc), msg) for loc, msg in pool_errors]
     errors.extend(_macro_errors(cleaned))
-    return cleaned, errors
+
+    key = cleaned.name.casefold()
+    if replacing is None or key != replacing.name.casefold():
+        existing = next((m for m in char.macros if m.name.casefold() == key), None)
+        if existing is not None:
+            errors.append((("name",), f"A macro named `{existing.name}` already exists."))
+
+    if errors:
+        raise body_errors(errors)
+    return cleaned
 
 
 def _macro_errors(macro: VCharMacro) -> Iterator[tuple[ErrorLoc, str]]:

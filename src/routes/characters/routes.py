@@ -46,7 +46,6 @@ from routes.characters.edit import (
     body_errors,
     check_edit,
     clean_macro,
-    clean_macros,
     edit_summary,
     summarize,
 )
@@ -60,7 +59,6 @@ from routes.characters.models import (
     FrenzyBody,
     FrenzyResult,
     GuildChars,
-    MacrosBody,
     MendBody,
     MendResult,
     OwnerData,
@@ -298,25 +296,11 @@ async def edit_character(
     return Response(status_code=204)
 
 
-@router.patch(
-    "/characters/{oid}/macros", status_code=204, dependencies=[Depends(require_supporter)]
-)
-async def edit_macros(body: MacrosBody, editor: OwnedChar) -> Response:
-    """Replace the character's macros with the body's. As in Discord, only
-    the owner may edit them, though Storytellers may edit SPCs', and nothing
-    is posted to the update channel."""
-    char = editor.char
-
-    char.macros = clean_macros(char, body.macros)
-    await editor.save()
-
-    return Response(status_code=204)
-
-
 @router.post("/characters/{oid}/macros", status_code=204, dependencies=[Depends(require_supporter)])
 async def create_macro(body: VCharMacro, editor: OwnedChar) -> Response:
-    """Create one macro. The others aren't validated. Access is as in
-    edit_macros(), and nothing is posted to the update channel."""
+    """Create one macro. The others aren't validated. As in Discord, only the
+    owner may create macros, though Storytellers may for SPCs, and nothing is
+    posted to the update channel."""
     macro = clean_macro(editor.char, body)
     editor.char.add_macro(**macro.model_dump())
     await editor.save()
@@ -330,7 +314,7 @@ async def create_macro(body: VCharMacro, editor: OwnedChar) -> Response:
 async def update_macro(name: str, body: VCharMacro, editor: OwnedChar) -> Response:
     """Replace one macro, found by its current name (ignoring case). The
     body's name may differ, which renames it. The others aren't validated.
-    Access is as in edit_macros(), and nothing is posted to the update
+    Access is as in create_macro(), and nothing is posted to the update
     channel."""
     char = editor.char
     try:

@@ -33,7 +33,7 @@ from constants import (
 from errors import CharacterError
 from models import MAX_FRENZY_BONUS, FrenzyAdvantage, FrenzyPenalty, VChar
 from models.vchar import Tracker
-from models.vchardocs import VCharMacro, VCharProfile, VCharSplat, VCharTrait
+from models.vchardocs import VCharProfile, VCharSplat, VCharTrait
 from routes.constraints import Constraints
 from services import guild_cache
 from services.guildcache import CachedMember
@@ -404,15 +404,6 @@ class EditBody(BaseModel):
         """Normalize the Convictions. Blanks are kept, so error locations match
         the app's slots; the route drops them, and checks their length."""
         return [" ".join(conviction.split()) for conviction in v]
-
-
-class MacrosBody(BaseModel):
-    """A web app macro edit: all of the character's macros, replacing the
-    stored ones. The route validates them, since pools need the character."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    macros: list[VCharMacro]
 
 
 class RouseBody(BaseModel):

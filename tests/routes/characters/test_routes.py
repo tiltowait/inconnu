@@ -4015,7 +4015,6 @@ async def test_frenzy_access(
     "method,path",
     [
         ("PATCH", ""),
-        ("PATCH", "/macros"),
         ("POST", "/macros"),
         ("PUT", "/macros/hunt"),
         ("DELETE", "/macros/hunt"),
@@ -4061,57 +4060,16 @@ def macro_data(name: str, **overrides: Any) -> dict[str, Any]:
     return macro
 
 
-async def patch_macros(
-    char: VChar, macros: list[dict[str, Any]], headers: dict[str, str]
+async def send_macro(
+    char: VChar, method: str, path: str, macro: dict[str, Any], headers: dict[str, str]
 ) -> tuple[int, Any]:
-    """PATCH the character's macros, returning the status and any JSON body."""
+    """Send one macro to the macro routes, returning the status and any JSON
+    body."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.patch(
-            f"/characters/{char.id}/macros", json={"macros": macros}, headers=headers
+        response = await client.request(
+            method, f"/characters/{char.id}/macros{path}", json=macro, headers=headers
         )
     return response.status_code, response.json() if response.content else None
-
-
-async def test_macros_replaced(
-    auth_headers: dict[str, str],
-    edit_guild: MockGuild,
-    mock_char_mgr_fetchid: MockAsyncFn,
-    update_channel: MockChannel,
-):
-    """The macros replace the stored ones, sorted and cleaned, and nothing is
-    posted."""
-    char = await make_saved_char()
-    char.macros = [VCharMacro(**macro_data("old"))]
-    await char.save_changes()
-    mock_char_mgr_fetchid.return_value = char
-    macros = [
-        macro_data("Zed", pool=["0"], rouses=1, staining="no"),
-        macro_data(" climb ", comment="  "),
-    ]
-
-    status, data = await patch_macros(char, macros, auth_headers)
-
-    assert status == 204, data
-    assert (await reload(char)).macros == [
-        VCharMacro(**macro_data("climb")),
-        VCharMacro(**macro_data("Zed", pool=[], rouses=1, staining="no")),
-    ]
-    update_channel.send.assert_not_awaited()
-
-
-async def test_macros_cleared(
-    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
-):
-    """An empty list deletes every macro."""
-    char = await make_saved_char()
-    char.macros = [VCharMacro(**macro_data("old"))]
-    await char.save_changes()
-    mock_char_mgr_fetchid.return_value = char
-
-    status, _ = await patch_macros(char, [], auth_headers)
-
-    assert status == 204
-    assert (await reload(char)).macros == []
 
 
 @pytest.mark.parametrize(
@@ -4124,7 +4082,7 @@ async def test_macros_cleared(
         (["7"], ["7"]),
     ],
 )
-async def test_macros_pool_spelling(
+async def test_macro_pool_spelling(
     auth_headers: dict[str, str],
     edit_guild: MockGuild,
     mock_char_mgr_fetchid: MockAsyncFn,
@@ -4135,7 +4093,8 @@ async def test_macros_pool_spelling(
     char = await make_saved_char()
     mock_char_mgr_fetchid.return_value = char
 
-    status, data = await patch_macros(char, [macro_data("test", pool=pool)], auth_headers)
+    macro = macro_data("test", pool=pool)
+    status, data = await send_macro(char, "POST", "", macro, auth_headers)
 
     assert status == 204, data
     assert (await reload(char)).macros[0].pool == expected
@@ -4168,7 +4127,7 @@ async def test_macros_pool_spelling(
         ({"pool": ["\u00b2"]}, ["pool", 0]),
     ],
 )
-async def test_macros_invalid(
+async def test_macro_invalid(
     auth_headers: dict[str, str],
     edit_guild: MockGuild,
     mock_char_mgr_fetchid: MockAsyncFn,
@@ -4178,57 +4137,14 @@ async def test_macros_invalid(
     """Invalid macros are a 422 pointing at the field, and nothing changes."""
     char = await make_saved_char()
     mock_char_mgr_fetchid.return_value = char
-    macros = [macro_data("fine"), macro_data("test") | overrides]
+    macro = macro_data("test") | overrides
 
-    status, data = await patch_macros(char, macros, auth_headers)
+    status, data = await send_macro(char, "POST", "", macro, auth_headers)
 
     assert status == 422
-    assert data["detail"][0]["loc"] == ["body", "macros", 1, *loc]
+    assert data["detail"][0]["loc"] == ["body", *loc]
     assert char.macros == []
     assert (await reload(char)).macros == []
-
-
-async def test_macros_reports_every_error(
-    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
-):
-    """Every macro's errors are reported at once. Names ignore case."""
-    char = await make_saved_char()
-    mock_char_mgr_fetchid.return_value = char
-    macros = [macro_data("hunt", rouses=9), macro_data("HUNT", pool=["Juggling", "+", "Sewing"])]
-
-    status, data = await patch_macros(char, macros, auth_headers)
-
-    assert status == 422
-    assert [error["loc"][1:] for error in data["detail"]] == [
-        ["macros", 0, "rouses"],
-        ["macros", 1, "pool", 0],
-        ["macros", 1, "pool", 2],
-        ["macros", 1, "name"],
-    ]
-
-
-@pytest.mark.parametrize(
-    "spc,storyteller,status",
-    [(False, True, 403), (True, True, 204), (False, False, 403), (True, False, 403)],
-)
-async def test_macros_access(
-    auth_headers: dict[str, str],
-    edit_guild: MockGuild,
-    mock_char_mgr_fetchid: MockAsyncFn,
-    spc: bool,
-    storyteller: bool,
-    status: int,
-):
-    """Only the owner may edit macros, except Storytellers on SPCs."""
-    char = await make_saved_char(user_id=VChar.SPC_OWNER if spc else 999999)
-    mock_char_mgr_fetchid.return_value = char
-
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
-        result, _ = await patch_macros(char, [macro_data("test")], auth_headers)
-
-    assert result == status
 
 
 async def delete_macro(char: VChar, name: str, headers: dict[str, str]) -> int:
@@ -4296,18 +4212,6 @@ async def test_delete_macro_access(
     assert len((await reload(char)).macros) == (1 if status == 204 else 2)
 
 
-async def send_macro(
-    char: VChar, method: str, path: str, macro: dict[str, Any], headers: dict[str, str]
-) -> tuple[int, Any]:
-    """Send one macro to the macro routes, returning the status and any JSON
-    body."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.request(
-            method, f"/characters/{char.id}/macros{path}", json=macro, headers=headers
-        )
-    return response.status_code, response.json() if response.content else None
-
-
 async def test_create_macro(
     auth_headers: dict[str, str],
     edit_guild: MockGuild,
@@ -4330,6 +4234,22 @@ async def test_create_macro(
         VCharMacro(**macro_data("Hunt")),
     ]
     update_channel.send.assert_not_awaited()
+
+
+async def test_create_macro_without_pool(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """A pool of 0 is no pool, and a blank comment is no comment."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    macro = macro_data("test", pool=["0"], rouses=1, staining="no", comment="  ")
+
+    status, data = await send_macro(char, "POST", "", macro, auth_headers)
+
+    assert status == 204, data
+    assert (await reload(char)).macros == [
+        VCharMacro(**macro_data("test", pool=[], rouses=1, staining="no"))
+    ]
 
 
 async def test_update_macro(
@@ -4436,7 +4356,7 @@ async def test_macro_duplicate_name(
         ),
     ],
 )
-async def test_macro_invalid(
+async def test_macro_reports_every_error(
     auth_headers: dict[str, str],
     edit_guild: MockGuild,
     mock_char_mgr_fetchid: MockAsyncFn,

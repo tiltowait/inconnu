@@ -1074,7 +1074,7 @@ async def test_get_full_character_storyteller(
         ),
         patch(
             "routes.characters.routes.is_storyteller",
-            new_callable=AsyncMock,
+            autospec=True,
             return_value=storyteller,
         ) as mock_is_storyteller,
     ):
@@ -2113,9 +2113,7 @@ async def test_edit_character_allowed(
     char = await make_saved_char(user_id=TEST_USER_ID if owner else 999999)
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         status, data = await patch_char(char, edit_body(char, humanity=5), auth_headers)
 
     assert status == 204
@@ -2130,7 +2128,7 @@ async def test_edit_character_public_access_forbidden(
     char = await make_saved_char(user_id=999999)
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(routes_module, "is_storyteller", new_callable=AsyncMock, return_value=False):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=False):
         status, _ = await patch_char(char, edit_body(char, humanity=5), auth_headers)
 
     assert status == 403
@@ -2842,9 +2840,7 @@ async def test_rouse_players_character_forbidden(
     mock_char_mgr_fetchid.return_value = char
     body = {"count": 1, "reroll": False, "oblivion_stains": False}
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         status, _ = await post_rouse(char, body, auth_headers)
 
     assert status == 403
@@ -2865,9 +2861,7 @@ async def test_rouse_spc(
     body = {"count": 1, "reroll": False, "oblivion_stains": False}
 
     with (
-        patch.object(
-            routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-        ),
+        patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller),
         patch("inconnu.d10", return_value=8),
     ):
         result, _ = await post_rouse(char, body, auth_headers)
@@ -3191,9 +3185,7 @@ async def test_mend_access(
     mock_char_mgr_fetchid.return_value = char
 
     with (
-        patch.object(
-            routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-        ),
+        patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller),
         patch("inconnu.d10", return_value=8),
     ):
         result, _ = await post_mend(char, SUPERFICIAL, auth_headers)
@@ -3466,9 +3458,7 @@ async def test_damage_players_character(
     mock_char_mgr_fetchid.return_value = char
     body = {"track": "health", "superficial": 1, "aggravated": 0}
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         result, _ = await post_damage(char, body, auth_headers)
 
     assert result == status
@@ -3691,7 +3681,7 @@ async def test_amount_storyteller_access(
     await char.save_changes()
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(routes_module, "is_storyteller", new_callable=AsyncMock, return_value=True):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=True):
         result, _ = await post_action(char, action, {"amount": 1}, auth_headers)
 
     assert result == status
@@ -3710,7 +3700,7 @@ async def test_amount_public_access_forbidden(
     await char.save_changes()
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(routes_module, "is_storyteller", new_callable=AsyncMock, return_value=False):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=False):
         status, _ = await post_action(char, action, {"amount": 1}, auth_headers)
 
     assert status == 403
@@ -3850,9 +3840,7 @@ async def test_remorse_access(
     char = await stained_char(1, user_id=VChar.SPC_OWNER if spc else 999999)
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         result, _ = await post_action(char, "remorse", REMORSE, auth_headers)
 
     assert result == status
@@ -4003,9 +3991,7 @@ async def test_frenzy_access(
     char = await make_saved_char(user_id=VChar.SPC_OWNER if spc else 999999)
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         result, _ = await post_action(char, "frenzy", {"difficulty": 2}, auth_headers)
 
     assert result == status
@@ -4208,9 +4194,7 @@ async def test_delete_macro_access(
     char = await make_macro_char(user_id=VChar.SPC_OWNER if spc else 999999)
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         assert await delete_macro(char, "hunt", auth_headers) == status
 
     assert len((await reload(char)).macros) == (1 if status == 204 else 2)
@@ -4456,9 +4440,7 @@ async def test_macro_access(
     mock_char_mgr_fetchid.return_value = char
     before = [macro.model_copy(deep=True) for macro in char.macros]
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         result, _ = await send_macro(char, method, path, macro_data("new"), auth_headers)
 
     assert result == status

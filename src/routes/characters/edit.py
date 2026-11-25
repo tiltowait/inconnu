@@ -5,7 +5,7 @@ from collections.abc import Iterator
 
 from fastapi.exceptions import RequestValidationError
 
-from constants import MAX_THIN_BLOOD_POTENCY, Damage
+from constants import MAX_POOL, MAX_THIN_BLOOD_POTENCY, Damage
 from errors import MacroError, TraitError
 from inconnu.macros import macro_common
 from models import VChar
@@ -25,6 +25,7 @@ from utils.validation import (
     MAX_MACRO_COMMENT_LENGTH,
     MAX_MACRO_DIFFICULTY,
     MAX_MACRO_NAME_LENGTH,
+    MAX_MACRO_POOL_TOKENS,
     MAX_MACRO_ROUSES,
     clean_name,
 )
@@ -156,7 +157,12 @@ def _macro_errors(macro: VCharMacro) -> Iterator[tuple[ErrorLoc, str]]:
 def _clean_pool(char: VChar, pool: list[str]) -> tuple[list[str], list[tuple[ErrorLoc, str]]]:
     """A macro's pool, with each trait as the character spells it, and any
     errors, with their locations in the pool. Trait names must be complete:
-    otherwise, a deleted trait could turn into another it's a prefix of."""
+    otherwise, a deleted trait could turn into another it's a prefix of.
+    Numbers can't exceed a roll's maximum pool."""
+    if len(pool) > MAX_MACRO_POOL_TOKENS:
+        message = f"Pools can't have more than {MAX_MACRO_POOL_TOKENS} traits, numbers, and signs."
+        return pool, [((), message)]
+
     cleaned: list[str] = []
     errors: list[tuple[ErrorLoc, str]] = []
     expecting_operand = True
@@ -169,7 +175,10 @@ def _clean_pool(char: VChar, pool: list[str]) -> tuple[list[str], list[tuple[Err
                 errors.append(((index,), f"`{token}` needs a `+` or `-` before it."))
             expecting_operand = False
 
-            if not (token.isascii() and token.isdigit()):
+            if token.isascii() and token.isdigit():
+                if int(token) > MAX_POOL:
+                    errors.append(((index,), f"Numbers can't exceed {MAX_POOL}."))
+            else:
                 try:
                     token = char.find_trait(token, exact=True).key
                 except TraitError as err:

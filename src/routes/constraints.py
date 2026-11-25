@@ -9,6 +9,7 @@ from constants import (
     MAX_CONVICTIONS,
     MAX_HUMANITY,
     MAX_HUNGER,
+    MAX_POOL,
     MAX_POTENCY,
     MAX_PROFILE_LENGTH,
     MAX_STAINS,
@@ -25,6 +26,7 @@ from utils.validation import (
     MAX_MACRO_COMMENT_LENGTH,
     MAX_MACRO_DIFFICULTY,
     MAX_MACRO_NAME_LENGTH,
+    MAX_MACRO_POOL_TOKENS,
     MAX_MACRO_ROUSES,
     MAX_NAME_LENGTH,
     MAX_TRAIT_LENGTH,
@@ -114,6 +116,9 @@ class Constraints(BaseModel):
     macro_difficulty: Range = Range(min=0, max=MAX_MACRO_DIFFICULTY)
     macro_rouses: Range = Range(min=0, max=MAX_MACRO_ROUSES)
     macro_staining: list[str] = list(MACRO_STAINING)
+    # Tokens: traits, numbers, and operators. Numbers may be up to pool_max
+    macro_pool_max_tokens: int = MAX_MACRO_POOL_TOKENS
+    pool_max: int = MAX_POOL
 
 
 CONSTRAINTS = Constraints()

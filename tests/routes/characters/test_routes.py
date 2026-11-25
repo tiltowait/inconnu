@@ -4080,6 +4080,8 @@ async def send_macro(
         (["-", "1", "+", "Potence.Prowess"], ["-", "1", "+", "Potence.Prowess"]),
         (["Willpower"], ["Willpower"]),
         (["7"], ["7"]),
+        (["100"], ["100"]),
+        (["1", *["+", "1"] * 24], ["1", *["+", "1"] * 24]),
     ],
 )
 async def test_macro_pool_spelling(
@@ -4125,6 +4127,8 @@ async def test_macro_pool_spelling(
         ({"pool": [""]}, ["pool", 0]),
         ({"pool": ["+-"]}, ["pool", 0]),
         ({"pool": ["\u00b2"]}, ["pool", 0]),
+        ({"pool": ["Strength", "+", "101"]}, ["pool", 2]),
+        ({"pool": ["1", *["+", "1"] * 25]}, ["pool"]),
     ],
 )
 async def test_macro_invalid(

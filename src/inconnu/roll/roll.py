@@ -5,7 +5,7 @@ from typing import Literal
 from bson import ObjectId
 
 import inconnu
-from constants import ATTRIBUTES_AND_SKILLS
+from constants import ATTRIBUTES_AND_SKILLS, MAX_POOL
 from inconnu.roll.dicethrow import DiceThrow
 from models import Impairment
 from models.pool import pool_traits
@@ -53,8 +53,8 @@ class Roll:
             raise ValueError(f"Difficulty cannot be less than 0. (Got `{difficulty}`.)")
 
         pool = max(1, pool)
-        if pool > 100:
-            raise ValueError(f"Pool cannot exceed 100. (Got `{pool}`.)")
+        if pool > MAX_POOL:
+            raise ValueError(f"Pool cannot exceed {MAX_POOL}. (Got `{pool}`.)")
 
         normal_dice = max(0, pool - hunger)
         hunger = min(pool, hunger)

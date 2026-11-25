@@ -28,6 +28,7 @@ MAX_MACRO_NAME_LENGTH = 50
 MAX_MACRO_COMMENT_LENGTH = 300
 MAX_MACRO_ROUSES = 5
 MAX_MACRO_DIFFICULTY = 100  # For web edits; Discord has no limit
+MAX_MACRO_POOL_TOKENS = 50  # Traits, numbers, and operators, for web edits
 # Letters and underscores, with at least one letter. Served to the web app, so
 # it must also be a valid JS pattern
 VALID_MACRO_NAME_PATTERN = re.compile(r"^_*[A-Za-z][A-Za-z_]*$")

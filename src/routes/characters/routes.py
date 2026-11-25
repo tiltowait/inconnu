@@ -311,6 +311,22 @@ async def edit_macros(body: MacrosBody, access: OwnedChar) -> Response:
     return Response(status_code=204)
 
 
+@router.delete(
+    "/characters/{oid}/macros/{name}", status_code=204, dependencies=[Depends(require_supporter)]
+)
+async def delete_macro(name: str, access: OwnedChar) -> Response:
+    """Delete one macro, by name (ignoring case). As in Discord, only the
+    owner may delete it, though Storytellers may delete SPCs', and nothing is
+    posted to the update channel."""
+    try:
+        access.char.delete_macro(name)
+    except errors.MacroNotFoundError as err:
+        raise HTTPException(404, detail="Macro not found") from err
+    await access.save()
+
+    return Response(status_code=204)
+
+
 @router.post("/characters/{oid}/rouse", dependencies=[Depends(require_supporter)])
 async def rouse_character(
     body: RouseBody,

@@ -4016,6 +4016,7 @@ async def test_frenzy_access(
     [
         ("PATCH", ""),
         ("PATCH", "/macros"),
+        ("DELETE", "/macros/hunt"),
         ("POST", "/rouse"),
         ("POST", "/damage"),
         ("POST", "/stain"),
@@ -4226,3 +4227,68 @@ async def test_macros_access(
         result, _ = await patch_macros(char, [macro_data("test")], auth_headers)
 
     assert result == status
+
+
+async def delete_macro(char: VChar, name: str, headers: dict[str, str]) -> int:
+    """DELETE one of the character's macros, returning the status."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.delete(f"/characters/{char.id}/macros/{name}", headers=headers)
+    return response.status_code
+
+
+async def make_macro_char(user_id=TEST_USER_ID) -> VChar:
+    """Insert a character with two macros."""
+    char = await make_saved_char(user_id=user_id)
+    char.macros = [VCharMacro(**macro_data("climb")), VCharMacro(**macro_data("Hunt"))]
+    await char.save_changes()
+    return char
+
+
+@pytest.mark.parametrize(
+    "name,status,remaining",
+    [
+        ("Hunt", 204, ["climb"]),
+        ("hUNT", 204, ["climb"]),
+        ("hun", 404, ["climb", "Hunt"]),  # No prefixes
+    ],
+)
+async def test_delete_macro(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    name: str,
+    status: int,
+    remaining: list[str],
+):
+    """Only the named macro is deleted, ignoring case, and nothing is posted."""
+    char = await make_macro_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    assert await delete_macro(char, name, auth_headers) == status
+    assert [macro.name for macro in (await reload(char)).macros] == remaining
+    update_channel.send.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    "spc,storyteller,status",
+    [(False, True, 403), (True, True, 204), (False, False, 403), (True, False, 403)],
+)
+async def test_delete_macro_access(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    spc: bool,
+    storyteller: bool,
+    status: int,
+):
+    """Only the owner may delete macros, except Storytellers on SPCs."""
+    char = await make_macro_char(user_id=VChar.SPC_OWNER if spc else 999999)
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch.object(
+        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
+    ):
+        assert await delete_macro(char, "hunt", auth_headers) == status
+
+    assert len((await reload(char)).macros) == (1 if status == 204 else 2)

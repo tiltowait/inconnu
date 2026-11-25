@@ -189,13 +189,13 @@ async def get_character(
 
 
 @dataclass
-class CharAccess:
+class CharEditor:
     """A character the user may change. The guild is None if the bot doesn't
-    have it. The editor, the user's cached member, is for update posts."""
+    have it. The member, from the guild cache, is for update posts."""
 
     char: VChar
     guild: discord.Guild | None
-    editor: CachedMember
+    member: CachedMember
     user_id: int
 
     async def save(self):
@@ -208,7 +208,7 @@ class CharAccess:
             raise
 
     async def post_update(self, *, title: str, description: str, color: int | None = None):
-        """Post a web change to the guild's update channel. The editor comes
+        """Post a web change to the guild's update channel. The member comes
         from the guild cache, which, unlike the gateway's, is sure to have the
         user: it vouched for them. The change is already saved, so a failed
         post is only logged, whatever went wrong: a 500 would invite a retry
@@ -217,7 +217,7 @@ class CharAccess:
             return
 
         embed = discord.Embed(title=title, description=description, color=color)
-        embed.set_author(name=self.char.name, icon_url=self.editor.icon)
+        embed.set_author(name=self.char.name, icon_url=self.member.icon)
         try:
             await send_update(self.guild, embed)
         except Exception as err:
@@ -226,11 +226,11 @@ class CharAccess:
 
 async def _fetch_editable_character(
     oid: PydanticObjectId, user_id: int, bot: InconnuBot, *, players: bool
-) -> CharAccess:
+) -> CharEditor:
     """Fetch a character the user may change: the owner always may, and
     Storytellers may change SPCs, and players' characters if players is
     True. Raises 403 otherwise, and as _fetch_guild_character() does."""
-    char, _, editor = await _fetch_guild_character(oid, user_id)
+    char, _, member = await _fetch_guild_character(oid, user_id)
 
     discord_guild = bot.get_guild(char.guild)
     discord_member = discord_guild.get_member(user_id) if discord_guild else None
@@ -242,14 +242,14 @@ async def _fetch_editable_character(
                 403, detail="Only the owner or a Storyteller may change this character"
             )
 
-    return CharAccess(char=char, guild=discord_guild, editor=editor, user_id=user_id)
+    return CharEditor(char=char, guild=discord_guild, member=member, user_id=user_id)
 
 
 async def _owned_character(
     oid: PydanticObjectId,
     bot: Annotated[InconnuBot, Depends(get_bot)],
     user_id: Annotated[int, Depends(get_authenticated_user)],
-) -> CharAccess:
+) -> CharEditor:
     """The user's own character, or an SPC if they're a Storyteller."""
     return await _fetch_editable_character(oid, user_id, bot, players=False)
 
@@ -258,39 +258,39 @@ async def _authorized_character(
     oid: PydanticObjectId,
     bot: Annotated[InconnuBot, Depends(get_bot)],
     user_id: Annotated[int, Depends(get_authenticated_user)],
-) -> CharAccess:
+) -> CharEditor:
     """The user's own character, or any character if they're a Storyteller."""
     return await _fetch_editable_character(oid, user_id, bot, players=True)
 
 
-type OwnedChar = Annotated[CharAccess, Depends(_owned_character)]
-type AuthorizedChar = Annotated[CharAccess, Depends(_authorized_character)]
+type OwnedChar = Annotated[CharEditor, Depends(_owned_character)]
+type AuthorizedChar = Annotated[CharEditor, Depends(_authorized_character)]
 
 
 @router.patch("/characters/{oid}", status_code=204, dependencies=[Depends(require_supporter)])
 async def edit_character(
     body: EditBody,
-    access: AuthorizedChar,
+    editor: AuthorizedChar,
 ) -> Response:
     """Save the web app's edits: every editable field, at once. Only the
     owner and Storytellers may edit. Edits are corrections, so they don't
     touch the Chronicle log or experience, but they are posted to the
     update channel. Other tabs refresh through the "changed" event."""
-    char = access.char
+    char = editor.char
     await check_edit(char, body)
 
     old = char.model_copy(deep=True)
     apply_edit(char, body)
-    await access.save()
+    await editor.save()
 
     if char.raw_name != old.raw_name:
         # After the save, so a failed one can't leave the list misordered
         await char_mgr.sort_chars()
 
     if changes := summarize(old, char):
-        await access.post_update(
+        await editor.post_update(
             title="Character Updated",
-            description=edit_summary(char, access.user_id, changes),
+            description=edit_summary(char, editor.user_id, changes),
         )
 
     return Response(status_code=204)
@@ -299,14 +299,14 @@ async def edit_character(
 @router.patch(
     "/characters/{oid}/macros", status_code=204, dependencies=[Depends(require_supporter)]
 )
-async def edit_macros(body: MacrosBody, access: OwnedChar) -> Response:
+async def edit_macros(body: MacrosBody, editor: OwnedChar) -> Response:
     """Replace the character's macros with the body's. As in Discord, only
     the owner may edit them, though Storytellers may edit SPCs', and nothing
     is posted to the update channel."""
-    char = access.char
+    char = editor.char
 
     char.macros = clean_macros(char, body.macros)
-    await access.save()
+    await editor.save()
 
     return Response(status_code=204)
 
@@ -314,15 +314,15 @@ async def edit_macros(body: MacrosBody, access: OwnedChar) -> Response:
 @router.delete(
     "/characters/{oid}/macros/{name}", status_code=204, dependencies=[Depends(require_supporter)]
 )
-async def delete_macro(name: str, access: OwnedChar) -> Response:
+async def delete_macro(name: str, editor: OwnedChar) -> Response:
     """Delete one macro, by name (ignoring case). As in Discord, only the
     owner may delete it, though Storytellers may delete SPCs', and nothing is
     posted to the update channel."""
     try:
-        access.char.delete_macro(name)
+        editor.char.delete_macro(name)
     except errors.MacroNotFoundError as err:
         raise HTTPException(404, detail="Macro not found") from err
-    await access.save()
+    await editor.save()
 
     return Response(status_code=204)
 
@@ -330,20 +330,20 @@ async def delete_macro(name: str, access: OwnedChar) -> Response:
 @router.post("/characters/{oid}/rouse", dependencies=[Depends(require_supporter)])
 async def rouse_character(
     body: RouseBody,
-    access: OwnedChar,
+    editor: OwnedChar,
 ) -> RouseResult:
     """Make Rouse checks, as /rouse does: Hunger rises on failures, the
     checks are logged, and Oblivion Stains are applied if asked for. Ghouls
     take one Aggravated Health damage instead, unless they're dead, and
     mortals can't Rouse. As in Discord, only the owner may Rouse, though
     Storytellers may Rouse SPCs."""
-    char = access.char
+    char = editor.char
 
     if not (char.is_vampire or char.is_ghoul):
         raise _invalid(f"{char.name} is a mortal.")
 
-    if access.guild is not None:
-        faces = await oblivion_stains(access.guild)
+    if editor.guild is not None:
+        faces = await oblivion_stains(editor.guild)
     else:
         # By ID, since the gateway doesn't have the guild
         vguild = await VGuild.find_one(VGuild.guild == char.guild)
@@ -353,8 +353,8 @@ async def rouse_character(
         if char.incapacitated:
             raise _invalid(f"{char.name} is dead.")
         char.set_aggravated_hp(char.aggravated_hp + 1)
-        await access.save()
-        await access.post_update(
+        await editor.save()
+        await editor.post_update(
             title=GHOUL_ROUSE_TITLE,
             description=ghoul_rouse_update_message(char),
         )
@@ -374,8 +374,8 @@ async def rouse_character(
         char, body.count, body.reroll, faces if body.oblivion_stains else ()
     )
     degeneration = char.add_stains(outcome.stains, log=True) if outcome.stains else 0
-    await access.save()
-    await access.post_update(
+    await editor.save()
+    await editor.post_update(
         title="Rouse Check",
         description=rouse_update_message(char, outcome),
         color=ROUSE_FAIL_COLOR if char.hunger >= 4 else None,
@@ -397,13 +397,13 @@ async def rouse_character(
 @router.post("/characters/{oid}/damage", status_code=204, dependencies=[Depends(require_supporter)])
 async def damage_character(
     body: DamageBody,
-    access: AuthorizedChar,
+    editor: AuthorizedChar,
 ) -> Response:
     """Deal Superficial, then Aggravated, damage to a track, as /character
     update does: Superficial damage past the track's end wraps into
     Aggravated. The damage is logged. A track that's all Aggravated can take
     no more. As in Discord, Storytellers may damage players' characters."""
-    char = access.char
+    char = editor.char
     track_name = body.track.title()
 
     track: str = getattr(char, body.track)
@@ -424,11 +424,11 @@ async def damage_character(
         char.apply_damage(body.track, Damage.AGGRAVATED, body.aggravated)
         lines.append(f"`+{body.aggravated}` Aggravated {track_name} damage.")
 
-    await access.save()
+    await editor.save()
     summary = "\n".join(f"* {line}" for line in lines)
-    await access.post_update(
+    await editor.post_update(
         title="Damage Taken",
-        description=f"__<@{access.user_id}> damaged {char.name} on the web:__\n{summary}",
+        description=f"__<@{editor.user_id}> damaged {char.name} on the web:__\n{summary}",
     )
 
     return Response(status_code=204)
@@ -442,21 +442,21 @@ def _invalid(message: str, *loc: str | int) -> RequestValidationError:
 @router.post("/characters/{oid}/stain", status_code=204, dependencies=[Depends(require_supporter)])
 async def stain_character(
     body: AmountBody,
-    access: AuthorizedChar,
+    editor: AuthorizedChar,
 ) -> Response:
     """Add Stains, as /stain does, up to 10. Stains past the empty Humanity
     boxes deal Aggravated Willpower damage. Both are logged. As in Discord,
     Storytellers may stain players' characters."""
-    char = access.char
+    char = editor.char
 
     added = min(char.stains + body.amount, 10) - char.stains
     if added == 0:
         raise _invalid(f"{char.name} already has 10 Stains.", "amount")
 
     char.add_stains(added, log=True)
-    await access.save()
+    await editor.save()
     stains = "Stains" if added > 1 else "Stain"
-    await access.post_update(
+    await editor.post_update(
         title="Stains",
         description=f"**{char.name}** gained `{added}` {stains}.",
     )
@@ -467,13 +467,13 @@ async def stain_character(
 @router.post("/characters/{oid}/slake", dependencies=[Depends(require_supporter)])
 async def slake_character(
     body: AmountBody,
-    access: OwnedChar,
+    editor: OwnedChar,
 ) -> SlakeResult:
     """Slake Hunger, as /slake does, down to 0, and log it. Slaking from
     Hunger 4 or more calls for a frenzy check. Only vampires have Hunger.
     As in Discord, only the owner may slake, though Storytellers may slake
     SPCs."""
-    char = access.char
+    char = editor.char
 
     if not char.is_vampire:
         raise _invalid("Only vampires need to slake Hunger.")
@@ -481,8 +481,8 @@ async def slake_character(
         raise _invalid(f"{char.name} has no Hunger.", "amount")
 
     slaked, frenzy = slake_hunger(char, body.amount)
-    await access.save()
-    await access.post_update(
+    await editor.save()
+    await editor.post_update(
         title="Hunger Slaked",
         description=slake_update_message(char, slaked),
     )
@@ -493,19 +493,19 @@ async def slake_character(
 @router.post("/characters/{oid}/remorse", dependencies=[Depends(require_supporter)])
 async def remorse_character(
     body: RemorseBody,
-    access: OwnedChar,
+    editor: OwnedChar,
 ) -> RemorseResult:
     """Make a Remorse test, as /remorse does: failing costs a Humanity, and
     either way clears the Stains. The test is logged. As in Discord, only
     the owner may make it, though Storytellers may for SPCs."""
-    char = access.char
+    char = editor.char
 
     if char.stains == 0:
         raise _invalid(f"{char.name} has no Stains.")
 
     outcome = remorse_roll(char, body.min_override, body.lasombra_alt)
-    await access.save()
-    await access.post_update(
+    await editor.save()
+    await editor.post_update(
         title=remorse_update_title(outcome.remorseful),
         description=remorse_update_message(char, outcome.remorseful),
         color=None if outcome.remorseful else REMORSE_FAIL_COLOR,
@@ -517,19 +517,19 @@ async def remorse_character(
 @router.post("/characters/{oid}/frenzy", dependencies=[Depends(require_supporter)])
 async def frenzy_character(
     body: FrenzyBody,
-    access: OwnedChar,
+    editor: OwnedChar,
 ) -> FrenzyResult:
     """Make a frenzy check, as /frenzy does, and log it. Only vampires
     frenzy. As in Discord, only the owner may make it, though Storytellers
     may for SPCs."""
-    char = access.char
+    char = editor.char
 
     if not char.is_vampire:
         raise _invalid("Only vampires can frenzy.")
 
     outcome = frenzy_roll(char, body.difficulty, body.penalty, body.bonus, body.advantages)
-    await access.save()
-    await access.post_update(
+    await editor.save()
+    await editor.post_update(
         title=frenzy_update_title(outcome.passed),
         description=frenzy_update_message(char, outcome.passed),
         color=None if outcome.passed else FRENZY_FAIL_COLOR,
@@ -558,14 +558,14 @@ def _heal_willpower(char: VChar, severity: Damage) -> int:
 @router.post("/characters/{oid}/mend", dependencies=[Depends(require_supporter)])
 async def mend_character(
     body: MendBody,
-    access: OwnedChar,
+    editor: OwnedChar,
 ) -> MendResult:
     """Heal damage. Health heals as /mend (Superficial) and /aggheal
     (Aggravated) do, Rouse Checks and logging included. Willpower recovers
     what /awaken would (Superficial) or one Aggravated, with no Rouse Checks
     or logging. As in Discord, only the owner may heal, though Storytellers
     may heal SPCs."""
-    char = access.char
+    char = editor.char
 
     severity = Damage.SUPERFICIAL if body.type == "superficial" else Damage.AGGRAVATED
     track: str = getattr(char, body.track)
@@ -578,9 +578,9 @@ async def mend_character(
             message = f"{char.name} has no Resolve or Composure to recover Willpower with."
             raise _invalid(message, "type")
         healed = _heal_willpower(char, severity)
-        await access.save()
+        await editor.save()
         remaining = char.willpower.count(severity)
-        await access.post_update(
+        await editor.post_update(
             title="Willpower Recovered",
             description=(
                 f"Recovered `{healed}` {body.type.title()} Willpower damage.\n"
@@ -593,16 +593,16 @@ async def mend_character(
 
     if severity == Damage.SUPERFICIAL:
         mended = mend_superficial(char)
-        await access.save()
-        await access.post_update(
+        await editor.save()
+        await editor.post_update(
             title="Damage Mended",
             description=mend_update_message(char, mended),
         )
         dice, frenzy, torpor = mended.dice, mended.frenzy, False
     else:
         healed = heal_aggravated(char)
-        await access.save()
-        await access.post_update(
+        await editor.save()
+        await editor.post_update(
             title="Aggravated Damage Healed",
             description=aggheal_update_message(char, healed),
         )

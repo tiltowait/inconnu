@@ -111,3 +111,19 @@ async def test_rouses_limit(
 
     assert character.find_macro("test").rouses == (int(rouses) if allowed else 0)
     assert mock_error.await_count == (0 if allowed else 1)
+
+
+@pytest.mark.parametrize("name,allowed", [("Other", False), ("OTHER", False), ("TEST", True)])
+async def test_rename_must_be_free(
+    ctx: AppCtx, character: VChar, mock_error: AsyncMock, name: str, allowed: bool
+):
+    """A macro can't take another's name, ignoring case, but may change its
+    own name's case."""
+    character.add_macro(**character.find_macro("test").model_dump() | {"name": "other"})
+
+    with patch.object(VChar, "save_changes", new_callable=AsyncMock):
+        await update(ctx, character, "test", f"name={name}")
+
+    names = [macro.name for macro in character.macros]
+    assert names == (["other", name] if allowed else ["other", "test"])
+    assert mock_error.await_count == (0 if allowed else 1)

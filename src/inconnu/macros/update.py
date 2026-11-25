@@ -6,7 +6,7 @@ import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
 from models import VChar
-from models.vchardocs import MacroUpdate
+from models.vchardocs import MacroUpdate, VCharMacro
 from services.haven import haven
 from utils import parse_parameters
 from utils.text import strtobool
@@ -37,6 +37,8 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         macro_update = __validate_parameters(character, parameters)
 
         current = character.find_macro(macro)
+        if (new_name := macro_update.get("name")) is not None:
+            __check_name_free(character, current, new_name)
         macro_common.check_has_action(
             macro_update.get("pool", current.pool), macro_update.get("rouses", current.rouses)
         )
@@ -61,6 +63,15 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         ]
 
         await ui.embeds.error(ctx, err, *instructions, help=__HELP_URL, character=character.name)
+
+
+def __check_name_free(character: VChar, current: VCharMacro, name: str):
+    """Raise MacroAlreadyExistsError if another macro has the name, ignoring
+    case. The macro being renamed may keep it, or change its case."""
+    key = name.casefold()
+    for other in character.macros:
+        if other is not current and other.name.casefold() == key:
+            raise errors.MacroAlreadyExistsError(f"You already have a macro named `{other.name}`.")
 
 
 def __validate_parameters(character: VChar, parameters: dict[str, str]) -> MacroUpdate:

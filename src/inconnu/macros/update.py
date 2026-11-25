@@ -11,6 +11,7 @@ from services.haven import haven
 from utils import parse_parameters
 from utils.text import strtobool
 from utils.urls import docs_url
+from utils.validation import MAX_MACRO_ROUSES
 
 __HELP_URL = docs_url("command-reference/macros#macro-update")
 __VALID_KEYS = {
@@ -107,8 +108,8 @@ def __validate_parameters(character: VChar, parameters: dict[str, str]) -> Macro
             macro_update["comment"] = value
 
         elif key in ("rouses", "rouse"):
-            if not value.isdigit() or not 0 <= int(value) <= 3:
-                raise ValueError("`rouses` must be a number between 0 and 3.")
+            if not value.isdigit() or not 0 <= int(value) <= MAX_MACRO_ROUSES:
+                raise ValueError(f"`rouses` must be a number between 0 and {MAX_MACRO_ROUSES}.")
             macro_update["rouses"] = int(value)
 
         elif key in ("reroll_rouses", "reroll", "rerolls", "reroll_rouse"):

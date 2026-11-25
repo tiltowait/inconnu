@@ -99,3 +99,15 @@ async def test_removing_rouses_with_pool(ctx: AppCtx, rouse_only: VChar, mock_er
     macro = rouse_only.find_macro("rouse")
     assert macro.rouses == 0
     assert macro.pool == ["Strength"]
+
+
+@pytest.mark.parametrize("rouses,allowed", [("5", True), ("6", False)])
+async def test_rouses_limit(
+    ctx: AppCtx, character: VChar, mock_error: AsyncMock, rouses: str, allowed: bool
+):
+    """Macros may make up to 5 Rouse Checks, as /macro create allows."""
+    with patch.object(VChar, "save_changes", new_callable=AsyncMock):
+        await update(ctx, character, "test", f"rouses={rouses}")
+
+    assert character.find_macro("test").rouses == (int(rouses) if allowed else 0)
+    assert mock_error.await_count == (0 if allowed else 1)

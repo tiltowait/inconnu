@@ -102,6 +102,7 @@ MAX_STAINS = 10
 MAX_POTENCY = 10
 MAX_THIN_BLOOD_POTENCY = 2
 MAX_HUNGER = 5
+MAX_POOL = 100  # Dice in a roll
 
 
 class Damage(StrEnum):

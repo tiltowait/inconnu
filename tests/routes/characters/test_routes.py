@@ -21,7 +21,7 @@ from errors import DuplicateCharacterError
 from events import CharEvents, CharEventType, char_events
 from models import VChar, VGuild
 from models.vchar import Tracker
-from models.vchardocs import VCharSplat, VCharTrait
+from models.vchardocs import VCharMacro, VCharSplat, VCharTrait
 from routes.auth import require_supporter
 from routes.characters.models import MAX_DAMAGE, OwnerData, with_core_traits
 from routes.characters.routes import char_event_stream
@@ -1074,7 +1074,7 @@ async def test_get_full_character_storyteller(
         ),
         patch(
             "routes.characters.routes.is_storyteller",
-            new_callable=AsyncMock,
+            autospec=True,
             return_value=storyteller,
         ) as mock_is_storyteller,
     ):
@@ -2113,9 +2113,7 @@ async def test_edit_character_allowed(
     char = await make_saved_char(user_id=TEST_USER_ID if owner else 999999)
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         status, data = await patch_char(char, edit_body(char, humanity=5), auth_headers)
 
     assert status == 204
@@ -2130,7 +2128,7 @@ async def test_edit_character_public_access_forbidden(
     char = await make_saved_char(user_id=999999)
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(routes_module, "is_storyteller", new_callable=AsyncMock, return_value=False):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=False):
         status, _ = await patch_char(char, edit_body(char, humanity=5), auth_headers)
 
     assert status == 403
@@ -2842,9 +2840,7 @@ async def test_rouse_players_character_forbidden(
     mock_char_mgr_fetchid.return_value = char
     body = {"count": 1, "reroll": False, "oblivion_stains": False}
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         status, _ = await post_rouse(char, body, auth_headers)
 
     assert status == 403
@@ -2865,9 +2861,7 @@ async def test_rouse_spc(
     body = {"count": 1, "reroll": False, "oblivion_stains": False}
 
     with (
-        patch.object(
-            routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-        ),
+        patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller),
         patch("inconnu.d10", return_value=8),
     ):
         result, _ = await post_rouse(char, body, auth_headers)
@@ -3191,9 +3185,7 @@ async def test_mend_access(
     mock_char_mgr_fetchid.return_value = char
 
     with (
-        patch.object(
-            routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-        ),
+        patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller),
         patch("inconnu.d10", return_value=8),
     ):
         result, _ = await post_mend(char, SUPERFICIAL, auth_headers)
@@ -3466,9 +3458,7 @@ async def test_damage_players_character(
     mock_char_mgr_fetchid.return_value = char
     body = {"track": "health", "superficial": 1, "aggravated": 0}
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         result, _ = await post_damage(char, body, auth_headers)
 
     assert result == status
@@ -3691,7 +3681,7 @@ async def test_amount_storyteller_access(
     await char.save_changes()
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(routes_module, "is_storyteller", new_callable=AsyncMock, return_value=True):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=True):
         result, _ = await post_action(char, action, {"amount": 1}, auth_headers)
 
     assert result == status
@@ -3710,7 +3700,7 @@ async def test_amount_public_access_forbidden(
     await char.save_changes()
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(routes_module, "is_storyteller", new_callable=AsyncMock, return_value=False):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=False):
         status, _ = await post_action(char, action, {"amount": 1}, auth_headers)
 
     assert status == 403
@@ -3850,9 +3840,7 @@ async def test_remorse_access(
     char = await stained_char(1, user_id=VChar.SPC_OWNER if spc else 999999)
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         result, _ = await post_action(char, "remorse", REMORSE, auth_headers)
 
     assert result == status
@@ -4003,9 +3991,7 @@ async def test_frenzy_access(
     char = await make_saved_char(user_id=VChar.SPC_OWNER if spc else 999999)
     mock_char_mgr_fetchid.return_value = char
 
-    with patch.object(
-        routes_module, "is_storyteller", new_callable=AsyncMock, return_value=storyteller
-    ):
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
         result, _ = await post_action(char, "frenzy", {"difficulty": 2}, auth_headers)
 
     assert result == status
@@ -4015,6 +4001,9 @@ async def test_frenzy_access(
     "method,path",
     [
         ("PATCH", ""),
+        ("POST", "/macros"),
+        ("PUT", "/macros/hunt"),
+        ("DELETE", "/macros/hunt"),
         ("POST", "/rouse"),
         ("POST", "/damage"),
         ("POST", "/stain"),
@@ -4035,3 +4024,444 @@ async def test_supporter_gate(auth_headers: dict[str, str], method: str, path: s
             )
 
     assert response.status_code == 403
+
+
+# Macros
+
+
+def macro_data(name: str, **overrides: Any) -> dict[str, Any]:
+    """A valid macro, plus overrides."""
+    macro: dict[str, Any] = {
+        "name": name,
+        "pool": ["Strength", "+", "Athletics"],
+        "hunger": True,
+        "difficulty": 2,
+        "rouses": 0,
+        "reroll_rouses": False,
+        "staining": "show",
+        "hunt": False,
+        "comment": None,
+    }
+    macro.update(overrides)
+    return macro
+
+
+async def send_macro(
+    char: VChar, method: str, path: str, macro: dict[str, Any], headers: dict[str, str]
+) -> tuple[int, Any]:
+    """Send one macro to the macro routes, returning the status and any JSON
+    body."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.request(
+            method, f"/characters/{char.id}/macros{path}", json=macro, headers=headers
+        )
+    return response.status_code, response.json() if response.content else None
+
+
+@pytest.mark.parametrize(
+    "pool,expected",
+    [
+        (["strength", "+", "ATHLETICS.running"], ["Strength", "+", "Athletics.Running"]),
+        (["animalken", "-", "1"], ["Animal Ken", "-", "1"]),
+        (["-", "1", "+", "Potence.Prowess"], ["-", "1", "+", "Potence.Prowess"]),
+        (["Willpower"], ["Willpower"]),
+        (["7"], ["7"]),
+        (["100"], ["100"]),
+        (["1", *["+", "1"] * 24], ["1", *["+", "1"] * 24]),
+    ],
+)
+async def test_macro_pool_spelling(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    pool: list[str],
+    expected: list[str],
+):
+    """Pools are stored with the character's spelling of each trait."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    macro = macro_data("test", pool=pool)
+    status, data = await send_macro(char, "POST", "", macro, auth_headers)
+
+    assert status == 204, data
+    assert (await reload(char)).macros[0].pool == expected
+
+
+@pytest.mark.parametrize(
+    "overrides,loc",
+    [
+        ({"name": ""}, ["name"]),
+        ({"name": "two words"}, ["name"]),
+        ({"name": "___"}, ["name"]),
+        ({"name": "a" * 51}, ["name"]),
+        ({"comment": "a" * 301}, ["comment"]),
+        ({"difficulty": -1}, ["difficulty"]),
+        ({"difficulty": 10**30}, ["difficulty"]),
+        ({"rouses": 6}, ["rouses"]),
+        ({"rouses": -1}, ["rouses"]),
+        ({"staining": "maybe"}, ["staining"]),
+        ({"pool": []}, ["pool"]),
+        ({"pool": ["0"]}, ["pool"]),
+        ({"pool": ["Strength", "+"]}, ["pool"]),
+        ({"pool": ["Strength", "Athletics"]}, ["pool", 1]),
+        ({"pool": ["Strength", "2"]}, ["pool", 1]),
+        ({"pool": ["Strength", "+", "Juggling"]}, ["pool", 2]),
+        ({"pool": ["Stren"]}, ["pool", 0]),
+        ({"pool": ["Athletics.Swimming"]}, ["pool", 0]),
+        ({"pool": ["Hunger"]}, ["pool", 0]),
+        ({"pool": [""]}, ["pool", 0]),
+        ({"pool": ["+-"]}, ["pool", 0]),
+        ({"pool": ["\u00b2"]}, ["pool", 0]),
+        ({"pool": ["Strength", "+", "101"]}, ["pool", 2]),
+        ({"pool": ["1", *["+", "1"] * 25]}, ["pool"]),
+    ],
+)
+async def test_macro_invalid(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    overrides: dict[str, Any],
+    loc: list[str | int],
+):
+    """Invalid macros are a 422 pointing at the field, and nothing changes."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    macro = macro_data("test") | overrides
+
+    status, data = await send_macro(char, "POST", "", macro, auth_headers)
+
+    assert status == 422
+    assert data["detail"][0]["loc"] == ["body", *loc]
+    assert char.macros == []
+    assert (await reload(char)).macros == []
+
+
+async def delete_macro(char: VChar, name: str, headers: dict[str, str]) -> int:
+    """DELETE one of the character's macros, returning the status."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.delete(f"/characters/{char.id}/macros/{name}", headers=headers)
+    return response.status_code
+
+
+async def make_macro_char(user_id=TEST_USER_ID) -> VChar:
+    """Insert a character with two macros."""
+    char = await make_saved_char(user_id=user_id)
+    char.macros = [VCharMacro(**macro_data("climb")), VCharMacro(**macro_data("Hunt"))]
+    await char.save_changes()
+    return char
+
+
+@pytest.mark.parametrize(
+    "name,status,remaining",
+    [
+        ("Hunt", 204, ["climb"]),
+        ("hUNT", 204, ["climb"]),
+        ("hun", 404, ["climb", "Hunt"]),  # No prefixes
+    ],
+)
+async def test_delete_macro(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+    name: str,
+    status: int,
+    remaining: list[str],
+):
+    """Only the named macro is deleted, ignoring case, and nothing is posted."""
+    char = await make_macro_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    assert await delete_macro(char, name, auth_headers) == status
+    assert [macro.name for macro in (await reload(char)).macros] == remaining
+    update_channel.send.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    "spc,storyteller,status",
+    [(False, True, 403), (True, True, 204), (False, False, 403), (True, False, 403)],
+)
+async def test_delete_macro_access(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    spc: bool,
+    storyteller: bool,
+    status: int,
+):
+    """Only the owner may delete macros, except Storytellers on SPCs."""
+    char = await make_macro_char(user_id=VChar.SPC_OWNER if spc else 999999)
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
+        assert await delete_macro(char, "hunt", auth_headers) == status
+
+    assert len((await reload(char)).macros) == (1 if status == 204 else 2)
+
+
+async def test_create_macro(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+):
+    """The macro is cleaned and inserted in order, the others are untouched,
+    and nothing is posted."""
+    char = await make_macro_char()
+    mock_char_mgr_fetchid.return_value = char
+    macro = macro_data(" Dodge ", pool=["strength"], comment="  Duck!  ")
+
+    status, data = await send_macro(char, "POST", "", macro, auth_headers)
+
+    assert status == 204, data
+    assert data is None
+    assert (await reload(char)).macros == [
+        VCharMacro(**macro_data("climb")),
+        VCharMacro(**macro_data("Dodge", pool=["Strength"], comment="Duck!")),
+        VCharMacro(**macro_data("Hunt")),
+    ]
+    update_channel.send.assert_not_awaited()
+
+
+async def test_create_macro_without_pool(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """A pool of 0 is no pool, and a blank comment is no comment."""
+    char = await make_saved_char()
+    mock_char_mgr_fetchid.return_value = char
+    macro = macro_data("test", pool=["0"], rouses=1, staining="no", comment="  ")
+
+    status, data = await send_macro(char, "POST", "", macro, auth_headers)
+
+    assert status == 204, data
+    assert (await reload(char)).macros == [
+        VCharMacro(**macro_data("test", pool=[], rouses=1, staining="no"))
+    ]
+
+
+async def test_update_macro(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    update_channel: MockChannel,
+):
+    """Every field is replaced, the rename re-sorts, the others are untouched,
+    and nothing is posted."""
+    char = await make_macro_char()
+    mock_char_mgr_fetchid.return_value = char
+    macro = {
+        "name": "Zed",
+        "pool": ["Potence"],
+        "hunger": False,
+        "difficulty": 5,
+        "rouses": 2,
+        "reroll_rouses": True,
+        "staining": "apply",
+        "hunt": True,
+        "comment": "New",
+    }
+
+    status, data = await send_macro(char, "PUT", "/CLIMB", macro, auth_headers)
+
+    assert status == 204, data
+    assert data is None
+    assert (await reload(char)).macros == [VCharMacro(**macro_data("Hunt")), VCharMacro(**macro)]
+    update_channel.send.assert_not_awaited()
+
+
+@pytest.mark.parametrize("name", ["Hunt", "HUNT"])
+async def test_update_macro_same_name(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    name: str,
+):
+    """Keeping the name, or changing only its case, isn't a duplicate. A null
+    comment clears the old one."""
+    char = await make_macro_char()
+    char.macros[1].comment = "Old"
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+    macro = macro_data(name, difficulty=4)
+
+    status, data = await send_macro(char, "PUT", "/hunt", macro, auth_headers)
+
+    assert status == 204, data
+    assert (await reload(char)).macros == [VCharMacro(**macro_data("climb")), VCharMacro(**macro)]
+
+
+async def test_update_macro_not_found(
+    auth_headers: dict[str, str], edit_guild: MockGuild, mock_char_mgr_fetchid: MockAsyncFn
+):
+    """An unknown macro is a 404, and nothing is created."""
+    char = await make_macro_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    status, data = await send_macro(char, "PUT", "/hun", macro_data("hun"), auth_headers)
+
+    assert status == 404
+    assert data == {"detail": "Macro not found"}
+    assert [macro.name for macro in (await reload(char)).macros] == ["climb", "Hunt"]
+
+
+@pytest.mark.parametrize("method,path", [("POST", ""), ("PUT", "/climb")])
+async def test_macro_duplicate_name(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    method: str,
+    path: str,
+):
+    """Another macro's name, ignoring case, is a 422, and nothing changes."""
+    char = await make_macro_char()
+    mock_char_mgr_fetchid.return_value = char
+    before = [macro.model_copy(deep=True) for macro in char.macros]
+
+    status, data = await send_macro(char, method, path, macro_data("hUNT"), auth_headers)
+
+    assert status == 422
+    assert [(e["loc"], e["msg"]) for e in data["detail"]] == [
+        (["body", "name"], "A macro named `Hunt` already exists.")
+    ]
+    assert char.macros == before
+    assert (await reload(char)).macros == before
+
+
+@pytest.mark.parametrize("method,path", [("POST", ""), ("PUT", "/climb")])
+@pytest.mark.parametrize(
+    "overrides,locs",
+    [
+        ({"pool": []}, [["pool"]]),
+        ({"pool": ["Strength", "+", "Juggling"]}, [["pool", 2]]),
+        (
+            {"name": "Hunt", "rouses": 9, "pool": ["Sewing"]},
+            [["pool", 0], ["rouses"], ["name"]],
+        ),
+        (
+            {"name": "2", "comment": "a" * 301, "difficulty": -1, "staining": "maybe"},
+            [["name"], ["comment"], ["difficulty"], ["staining"]],
+        ),
+    ],
+)
+async def test_macro_reports_every_error(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    method: str,
+    path: str,
+    overrides: dict[str, Any],
+    locs: list[list[str | int]],
+):
+    """Every error is reported at its field, and nothing changes."""
+    char = await make_macro_char()
+    mock_char_mgr_fetchid.return_value = char
+    before = [macro.model_copy(deep=True) for macro in char.macros]
+    macro = macro_data("new") | overrides
+
+    status, data = await send_macro(char, method, path, macro, auth_headers)
+
+    assert status == 422
+    assert [error["loc"] for error in data["detail"]] == [["body", *loc] for loc in locs]
+    assert char.macros == before
+    assert (await reload(char)).macros == before
+
+
+@pytest.mark.parametrize(
+    "splat,message",
+    [
+        (VCharSplat.VAMPIRE, "Hunger can't be a part of your pool."),
+        (VCharSplat.MORTAL, "Nadea Theron has no trait named `Hunger`."),
+    ],
+)
+async def test_macro_hunger_in_pool(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    splat: VCharSplat,
+    message: str,
+):
+    """Hunger in a pool is one error: vampires can't roll it, and others
+    don't have it."""
+    char = await make_saved_char(splat=splat)
+    mock_char_mgr_fetchid.return_value = char
+    macro = macro_data("test", pool=["Hunger"])
+
+    status, data = await send_macro(char, "POST", "", macro, auth_headers)
+
+    assert status == 422
+    assert [(e["loc"], e["msg"]) for e in data["detail"]] == [(["body", "pool", 0], message)]
+
+
+@pytest.mark.parametrize("method,path,name", [("POST", "", "new"), ("PUT", "/climb", "climb")])
+async def test_macro_ignores_broken_macros(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    method: str,
+    path: str,
+    name: str,
+):
+    """A stored macro with a deleted trait doesn't get in the way, and is left
+    as it was."""
+    char = await make_macro_char()
+    broken = VCharMacro(**macro_data("broken", pool=["Juggling"]))
+    char.macros.insert(0, broken.model_copy(deep=True))
+    await char.save_changes()
+    mock_char_mgr_fetchid.return_value = char
+    macro = macro_data(name, difficulty=6)
+
+    status, data = await send_macro(char, method, path, macro, auth_headers)
+
+    assert status == 204, data
+    saved = await reload(char)
+    assert saved.find_macro("broken") == broken
+    assert saved.find_macro(name) == VCharMacro(**macro)
+
+
+@pytest.mark.parametrize("method,path", [("POST", ""), ("PUT", "/hunt")])
+@pytest.mark.parametrize(
+    "spc,storyteller,status",
+    [(False, True, 403), (True, True, 204), (False, False, 403), (True, False, 403)],
+)
+async def test_macro_access(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    method: str,
+    path: str,
+    spc: bool,
+    storyteller: bool,
+    status: int,
+):
+    """Only the owner may create or update macros, except Storytellers on
+    SPCs."""
+    char = await make_macro_char(user_id=VChar.SPC_OWNER if spc else 999999)
+    mock_char_mgr_fetchid.return_value = char
+    before = [macro.model_copy(deep=True) for macro in char.macros]
+
+    with patch.object(routes_module, "is_storyteller", autospec=True, return_value=storyteller):
+        result, _ = await send_macro(char, method, path, macro_data("new"), auth_headers)
+
+    assert result == status
+    assert ((await reload(char)).macros == before) == (status == 403)
+
+
+@pytest.mark.parametrize("method,path", [("POST", ""), ("PUT", "/hunt")])
+async def test_macro_publishes_change(
+    auth_headers: dict[str, str],
+    edit_guild: MockGuild,
+    mock_char_mgr_fetchid: MockAsyncFn,
+    method: str,
+    path: str,
+):
+    """A save publishes one changed event. Subscribers coalesce events, so
+    this counts the publishing itself."""
+    char = await make_macro_char()
+    mock_char_mgr_fetchid.return_value = char
+
+    with patch.object(char_events, "publish", autospec=True) as publish:
+        status, _ = await send_macro(char, method, path, macro_data("new"), auth_headers)
+
+    assert status == 204
+    publish.assert_called_once_with(char.id_str)

@@ -6,11 +6,12 @@ import ui
 from ctx import AppCtx
 from inconnu.macros import macro_common
 from models import VChar
-from models.vchardocs import MacroUpdate
+from models.vchardocs import MacroUpdate, VCharMacro
 from services.haven import haven
 from utils import parse_parameters
 from utils.text import strtobool
 from utils.urls import docs_url
+from utils.validation import MAX_MACRO_ROUSES
 
 __HELP_URL = docs_url("command-reference/macros#macro-update")
 __VALID_KEYS = {
@@ -36,13 +37,15 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         macro_update = __validate_parameters(character, parameters)
 
         current = character.find_macro(macro)
+        if (new_name := macro_update.get("name")) is not None:
+            __check_name_free(character, current, new_name)
         macro_common.check_has_action(
             macro_update.get("pool", current.pool), macro_update.get("rouses", current.rouses)
         )
 
         macro_name = character.update_macro(macro, macro_update)
-        await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
         await character.save_changes()
+        await ctx.respond(f"Updated **{character.name}'s** `{macro_name}` macro.")
 
     except (
         errors.AmbiguousTraitError,
@@ -60,6 +63,15 @@ async def update(ctx: AppCtx, character: VChar, macro: str, syntax: str):
         ]
 
         await ui.embeds.error(ctx, err, *instructions, help=__HELP_URL, character=character.name)
+
+
+def __check_name_free(character: VChar, current: VCharMacro, name: str):
+    """Raise MacroAlreadyExistsError if another macro has the name, ignoring
+    case. The macro being renamed may keep it, or change its case."""
+    key = name.casefold()
+    for other in character.macros:
+        if other is not current and other.name.casefold() == key:
+            raise errors.MacroAlreadyExistsError(f"You already have a macro named `{other.name}`.")
 
 
 def __validate_parameters(character: VChar, parameters: dict[str, str]) -> MacroUpdate:
@@ -107,8 +119,8 @@ def __validate_parameters(character: VChar, parameters: dict[str, str]) -> Macro
             macro_update["comment"] = value
 
         elif key in ("rouses", "rouse"):
-            if not value.isdigit() or not 0 <= int(value) <= 3:
-                raise ValueError("`rouses` must be a number between 0 and 3.")
+            if not value.isdigit() or not 0 <= int(value) <= MAX_MACRO_ROUSES:
+                raise ValueError(f"`rouses` must be a number between 0 and {MAX_MACRO_ROUSES}.")
             macro_update["rouses"] = int(value)
 
         elif key in ("reroll_rouses", "reroll", "rerolls", "reroll_rouse"):

@@ -9,6 +9,7 @@ from constants import (
     MAX_CONVICTIONS,
     MAX_HUMANITY,
     MAX_HUNGER,
+    MAX_POOL,
     MAX_POTENCY,
     MAX_PROFILE_LENGTH,
     MAX_STAINS,
@@ -21,10 +22,17 @@ from routes.auth import verify_api_key
 from utils.validation import (
     HUNGER_ALIASES,
     HUNGER_WORD,
+    MACRO_STAINING,
+    MAX_MACRO_COMMENT_LENGTH,
+    MAX_MACRO_DIFFICULTY,
+    MAX_MACRO_NAME_LENGTH,
+    MAX_MACRO_POOL_TOKENS,
+    MAX_MACRO_ROUSES,
     MAX_NAME_LENGTH,
     MAX_TRAIT_LENGTH,
     POWER_BONUS_KEYS,
     RESERVED_TRAIT_KEYS,
+    VALID_MACRO_NAME_PATTERN,
     VALID_NAME_PATTERN_JS,
     VALID_TRAIT_PATTERN,
 )
@@ -102,6 +110,15 @@ class Constraints(BaseModel):
     # leave it out
     hunger: dict[VCharSplat, Range | None] = Field(default_factory=_hunger_ranges)
     potency: dict[VCharSplat, Range | None] = Field(default_factory=_potency_ranges)
+    macro_name_pattern: str = VALID_MACRO_NAME_PATTERN.pattern
+    macro_name_max_length: int = MAX_MACRO_NAME_LENGTH
+    macro_comment_max_length: int = MAX_MACRO_COMMENT_LENGTH
+    macro_difficulty: Range = Range(min=0, max=MAX_MACRO_DIFFICULTY)
+    macro_rouses: Range = Range(min=0, max=MAX_MACRO_ROUSES)
+    macro_staining: list[str] = list(MACRO_STAINING)
+    # Tokens: traits, numbers, and operators. Numbers may be up to pool_max
+    macro_pool_max_tokens: int = MAX_MACRO_POOL_TOKENS
+    pool_max: int = MAX_POOL
 
 
 CONSTRAINTS = Constraints()

@@ -14,7 +14,7 @@ The [**Inconnu** website](https://inconnu.app) shows your characters' full sheet
 
 Edit mode changes every part of a character at once: Traits, specialties, trackers, profile, and more. Edits are corrections, so they don't appear in the character's Chronicle stats.
 
-Worry not, [Storytellers](../advanced/storytellers/README.md)! All edits are posted to the server's [update channel](../advanced/server-settings.md#character-updates-channel), if set.
+Worry not, [Storytellers](../advanced/storytellers/README.md)! Sheet edits are posted to the server's [update channel](../advanced/server-settings.md#character-updates-channel), if set.
 
 The following features are *not* currently available through the web:
 
@@ -30,13 +30,17 @@ The sheet handles many common gameplay actions, as the [gameplay shortcuts](../g
 * **Taking damage** to Health or Willpower
 * **Stains** and **Remorse**
 * **Slaking** Hunger
-* **Frenzy Checks,** which, unlike `/frenzy`, can combine bonus dice and advantages
+* **Frenzy Checks**
 
 These count toward the character's Chronicle, as they would in Discord.
 
 > [!TIP]
 > Open sheets update live, so changes made in Discord, or in another tab, show up right away.
 
+## Macros
+
+You can create, edit, and delete your characters' [macros](../guides/macros.md).
+
 ## Storytellers
 
-Storytellers who are supporters can edit and damage players' characters, give them Stains, and play SPCs.
+Storytellers who are supporters can edit and damage players' characters, give them Stains, and play SPCs, including managing their macros.

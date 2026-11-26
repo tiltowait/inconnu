@@ -1,12 +1,16 @@
 """Applying the web app's character edits. Edits are corrections: they never
 touch the Chronicle log or experience."""
 
+from collections.abc import Iterator
+
 from fastapi.exceptions import RequestValidationError
 
-from constants import MAX_THIN_BLOOD_POTENCY, Damage
+from constants import MAX_POOL, MAX_THIN_BLOOD_POTENCY, Damage
+from errors import MacroError, TraitError
+from inconnu.macros import macro_common
 from models import VChar
 from models.vchar import Tracker
-from models.vchardocs import VCharTrait
+from models.vchardocs import VCharMacro, VCharTrait
 from routes.characters.models import (
     EditBody,
     ErrorLoc,
@@ -16,6 +20,15 @@ from routes.characters.models import (
     with_core_traits,
 )
 from services import char_mgr
+from utils.validation import (
+    MACRO_STAINING,
+    MAX_MACRO_COMMENT_LENGTH,
+    MAX_MACRO_DIFFICULTY,
+    MAX_MACRO_NAME_LENGTH,
+    MAX_MACRO_POOL_TOKENS,
+    MAX_MACRO_ROUSES,
+    clean_name,
+)
 
 MAX_SUMMARY_LENGTH = 4000  # Embed descriptions max out at 4096
 SEVERITIES = ((Damage.SUPERFICIAL, "Superficial"), (Damage.AGGRAVATED, "Aggravated"))
@@ -85,6 +98,102 @@ def apply_edit(char: VChar, body: EditBody):
     char.profile.description = body.profile.description
     char.profile.biography = body.profile.biography
     char.raw_traits = with_core_traits(body.traits)
+
+
+def clean_macro(char: VChar, macro: VCharMacro, replacing: VCharMacro | None = None) -> VCharMacro:
+    """Validate one macro, returning it cleaned. Pools get the character's own
+    spelling of each trait. Its name must be new, unless it's replacing a
+    macro of that name. The stored macros aren't validated. Raises
+    RequestValidationError with every error at once."""
+    pool, pool_errors = _clean_pool(char, macro.pool)
+    cleaned = macro.model_copy(
+        update={
+            "name": macro.name.strip(),
+            "pool": pool,
+            "comment": (macro.comment or "").strip() or None,
+        }
+    )
+    errors: list[tuple[ErrorLoc, str]] = [(("pool", *loc), msg) for loc, msg in pool_errors]
+    errors.extend(_macro_errors(cleaned))
+
+    key = cleaned.name.casefold()
+    if replacing is None or key != replacing.name.casefold():
+        existing = next((m for m in char.macros if m.name.casefold() == key), None)
+        if existing is not None:
+            errors.append((("name",), f"A macro named `{existing.name}` already exists."))
+
+    if errors:
+        raise body_errors(errors)
+    return cleaned
+
+
+def _macro_errors(macro: VCharMacro) -> Iterator[tuple[ErrorLoc, str]]:
+    """Yield every problem with a macro's fields, aside from its traits."""
+    if not macro_common.is_macro_name_valid(macro.name):
+        message = (
+            f"Macro names must be 1-{MAX_MACRO_NAME_LENGTH} characters, with only letters and "
+            "underscores, and at least one letter."
+        )
+        yield ("name",), message
+    if len(macro.comment or "") > MAX_MACRO_COMMENT_LENGTH:
+        message = f"Comments can't be longer than {MAX_MACRO_COMMENT_LENGTH} characters."
+        yield ("comment",), message
+
+    limits = {"difficulty": MAX_MACRO_DIFFICULTY, "rouses": MAX_MACRO_ROUSES}
+    for field, limit in limits.items():
+        if not 0 <= getattr(macro, field) <= limit:
+            yield (field,), f"Must be between 0 and {limit}."
+
+    if macro.staining not in MACRO_STAINING:
+        options = ", ".join(f"`{option}`" for option in MACRO_STAINING)
+        yield ("staining",), f"Must be one of {options}."
+
+    try:
+        macro_common.check_has_action(macro.pool, macro.rouses)
+    except MacroError as err:
+        yield ("pool",), str(err)
+
+
+def _clean_pool(char: VChar, pool: list[str]) -> tuple[list[str], list[tuple[ErrorLoc, str]]]:
+    """A macro's pool, with each trait as the character spells it, and any
+    errors, with their locations in the pool. Trait names must be complete:
+    otherwise, a deleted trait could turn into another it's a prefix of.
+    Numbers can't exceed a roll's maximum pool."""
+    if len(pool) > MAX_MACRO_POOL_TOKENS:
+        message = f"Pools can't have more than {MAX_MACRO_POOL_TOKENS} traits, numbers, and signs."
+        return pool, [((), message)]
+
+    cleaned: list[str] = []
+    errors: list[tuple[ErrorLoc, str]] = []
+    expecting_operand = True
+
+    for index, token in enumerate(map(clean_name, pool)):
+        if token in ("+", "-"):
+            expecting_operand = True
+        else:
+            if not expecting_operand:
+                errors.append(((index,), f"`{token}` needs a `+` or `-` before it."))
+            expecting_operand = False
+
+            if token.isascii() and token.isdigit():
+                if int(token) > MAX_POOL:
+                    errors.append(((index,), f"Numbers can't exceed {MAX_POOL}."))
+            else:
+                try:
+                    token = char.find_trait(token, exact=True).key
+                except TraitError as err:
+                    errors.append(((index,), str(err)))
+                else:
+                    if token == "Hunger":
+                        errors.append(((index,), "Hunger can't be a part of your pool."))
+        cleaned.append(token)
+
+    if pool and expecting_operand:
+        errors.append(((), "The pool can't end with an operator."))
+    if cleaned == ["0"]:
+        cleaned = []  # As in /macro create, no pool
+
+    return cleaned, errors
 
 
 def summarize(old: VChar, new: VChar) -> list[str]:

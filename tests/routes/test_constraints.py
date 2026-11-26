@@ -109,3 +109,19 @@ async def test_reserved_traits_are_name_keys(client: AsyncClient):
     for key in reserved:
         with pytest.raises(ValueError):
             validate_trait_names(key)
+
+
+async def test_macro_rules_served(client: AsyncClient):
+    """Macro limits are served, and the name pattern needs a letter."""
+    constraints = await fetch(client)
+    assert constraints["macro_name_max_length"] == 50
+    assert constraints["macro_comment_max_length"] == 300
+    assert constraints["macro_rouses"] == {"min": 0, "max": 5}
+    assert constraints["macro_difficulty"] == {"min": 0, "max": 100}
+    assert constraints["macro_staining"] == ["apply", "show", "no"]
+    assert constraints["macro_pool_max_tokens"] == 50
+    assert constraints["pool_max"] == 100
+    pattern = re.compile(constraints["macro_name_pattern"])
+    assert pattern.match("_hunt_")
+    assert not pattern.match("___")
+    assert not pattern.match("hunt2")

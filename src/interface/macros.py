@@ -12,6 +12,7 @@ from inconnu.options import char_option, dice_option, impairment_option
 from interface import CommandCog
 from models import ImpairmentCategory
 from utils.urls import docs_url
+from utils.validation import MAX_MACRO_ROUSES
 
 if TYPE_CHECKING:
     from bot import InconnuBot
@@ -68,7 +69,7 @@ class Macros(CommandCog, name="Macros"):  # pyright: ignore[reportCallIssue, rep
     @option(
         "rouses",
         description="The number of Rouse checks (default 0)",
-        choices=inconnu.options.ratings(0, 5),
+        choices=inconnu.options.ratings(0, MAX_MACRO_ROUSES),
         default=0,
     )
     @option(

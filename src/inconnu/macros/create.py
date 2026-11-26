@@ -30,9 +30,15 @@ async def create(
     try:
         # Make sure fields aren't too long
         if (length := len(name)) > macro_common.NAME_LEN:
-            raise SyntaxError(f"Macro names can't be longer than 50 characters. (Yours: {length})")
+            raise SyntaxError(
+                f"Macro names can't be longer than {macro_common.NAME_LEN} characters."
+                f" (Yours: {length})"
+            )
         if comment is not None and (length := len(comment)) > macro_common.COMMENT_LEN:
-            raise SyntaxError(f"Comments can't be longer than 300 characters. (Yours: {length})")
+            raise SyntaxError(
+                f"Comments can't be longer than {macro_common.COMMENT_LEN} characters."
+                f" (Yours: {length})"
+            )
 
         if not macro_common.is_macro_name_valid(name):
             await ui.embeds.error(
@@ -62,8 +68,8 @@ async def create(
             hunt=hunt,
             comment=comment,
         )
-        await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
         await character.save_changes()
+        await ctx.respond(f"**{character.name}:** Created macro `{name}`.", ephemeral=True)
 
     except (
         SyntaxError,

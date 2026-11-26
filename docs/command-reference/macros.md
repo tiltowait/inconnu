@@ -73,7 +73,7 @@ Change one or more of a macro's settings using `KEY=VALUE` pairs:
 | `pool` | The new pool | Must be a valid pool |
 | `hunger` | Whether to use Hunger | `Yes` or `No` |
 | `difficulty` | The default Difficulty | 0 or higher |
-| `rouses` | Rouse Checks to make | 0–3 |
+| `rouses` | Rouse Checks to make | 0–5 |
 | `reroll_rouses` | Whether to re-roll the Rouse Checks | `Yes` or `No` |
 | `staining` | Whether the Rouse Checks can give a Stain | `Yes` or `No` |
 | `hunt` | Offer a menu to slake Hunger on success | `Yes` or `No` |
